@@ -44,6 +44,7 @@ Use this procedure to generate a key pair including a self-signed certificate.
 . Click *Add provider* and select *rsa-generated*.
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair. The highest number makes the key pair active.
 . Select a value for *AES Key size*.
+. Optionally, set a key identifier in the "Key ID" field. If the field is left empty, the key identifier is automatically generated.
 . Click *Save*.
 
 Changing the priority for a provider will not cause the keys to be re-generated, but if you want to change the keysize
@@ -111,6 +112,7 @@ the priority to make sure the new key pair becomes the active key pair.
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
 . Click *Browse...* beside *Private RSA Key* to upload the private key file.
 . If you have a signed certificate for your private key,  click *Browse...* beside *X509 Certificate* to upload the certificate file. {project_name} automatically generates a self-signed certificate if you do not upload a certificate.
+. Optionally, set a key identifier in the "Key ID" field. If the field is left empty, the key identifier is automatically generated.
 . Click *Save*.
 
 ==== Loading keys from a Java Keystore
@@ -127,6 +129,7 @@ For the associated certificate chain to be loaded it must be imported to the Jav
 . Click the *Providers* tab.
 . Click *Add provider* and select *java-keystore*.
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
+. Optionally, set a key identifier in the "Key ID" field. If the field is left empty, the key identifier is automatically generated.
 . Enter a value for *Keystore*.
 . Enter a value for *Keystore Password*.
 . Enter a value for *Key Alias*.

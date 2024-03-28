@@ -56,6 +56,7 @@ public interface Attributes {
             KeyUse.SIG.getSpecName(), KeyUse.SIG.getSpecName(), KeyUse.ENC.getSpecName());
 
     String KID_KEY = "kid";
+    ProviderConfigProperty KID_PROPERTY = new ProviderConfigProperty(KID_KEY, "Key ID", "Identifier of the key. If left empty, it is automatically generated.", STRING_TYPE, null);
 
     String SECRET_KEY = "secret";
 
