@@ -37,9 +37,9 @@ describe("Realm tests", () => {
   it("should fail creating duplicated or empty name realm", () => {
     sidebarPage.goToCreateRealm();
 
-    createRealmPage.createRealm().verifyRealmNameFieldInvalid();
+    createRealmPage.createRealm().verifyRealmIDFieldInvalid();
 
-    createRealmPage.fillRealmName("master").createRealm();
+    createRealmPage.fillRealmID("master").createRealm();
 
     masthead.checkNotificationMessage(
       "Could not create realm Conflict detected. See logs for details",
@@ -55,7 +55,7 @@ describe("Realm tests", () => {
     createRealmPage.fillCodeEditor();
     createRealmPage.clearTextField();
 
-    createRealmPage.fillRealmName(testRealmName).createRealm();
+    createRealmPage.fillRealmID(testRealmName).createRealm();
 
     masthead.checkNotificationMessage("Realm created successfully");
   });
@@ -64,7 +64,7 @@ describe("Realm tests", () => {
     sidebarPage.goToCreateRealm();
     sidebarPage.waitForPageLoad();
 
-    createRealmPage.fillRealmName(testDisabledName).createRealm();
+    createRealmPage.fillRealmID(testDisabledName).createRealm();
 
     masthead.checkNotificationMessage("Realm created successfully");
 
@@ -95,12 +95,12 @@ describe("Realm tests", () => {
 
   it("should create realm from new a realm", () => {
     sidebarPage.goToCreateRealm();
-    createRealmPage.fillRealmName(newRealmName).createRealm();
+    createRealmPage.fillRealmID(newRealmName).createRealm();
 
     masthead.checkNotificationMessage("Realm created successfully");
 
     sidebarPage.goToCreateRealm();
-    createRealmPage.fillRealmName(editedRealmName).createRealm();
+    createRealmPage.fillRealmID(editedRealmName).createRealm();
 
     masthead.checkNotificationMessage("Realm created successfully");
 

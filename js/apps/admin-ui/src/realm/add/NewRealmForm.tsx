@@ -71,7 +71,7 @@ export default function NewRealmForm() {
             />
             <TextControl
               name="realm"
-              label={t("realmNameField")}
+              label={t("realmIDField")}
               rules={{ required: t("required") }}
             />
             <DefaultSwitchControl
