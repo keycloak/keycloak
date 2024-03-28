@@ -61,9 +61,9 @@ The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previ
 
 The old behavior to preload offline sessions at startup is now removed after it has been deprecated in the previous release.
 
-= kcadm Changes
+= kcadm and kcreg Changes
 
-How kcadm parses and handles options and parameters has changed. Error messages from usage errors, the wrong option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
+How kcadm and kcreg parses and handles options and parameters has changed. Error messages from usage errors, the wrong option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
 
 = Removing custom user attribute indexes
 

@@ -26,7 +26,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
         FileConfigHandler handler = initCustomConfigFile();
 
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
             final String realm = "test";
 
@@ -91,9 +91,9 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
             // check that using an invalid attribute key is not ignored
             exe = execute("update my_client --nonexisting --config '" + configFile.getName() + "'");
 
-            assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-            Assert.assertEquals("error message", "Unsupported option: --nonexisting", exe.stderrLines().get(0));
-            Assert.assertEquals("try help", "Try '" + CMD + " help update' for more information", exe.stderrLines().get(1));
+            assertExitCodeAndStreamSizes(exe, 2, 0, 3);
+            Assert.assertEquals("error message", "Unknown option: '--nonexisting'", exe.stderrLines().get(0));
+            Assert.assertEquals("try help", "Try '" + CMD + " update --help' for more information on the available options.", exe.stderrLines().get(2));
 
 
             // try use incompatible endpoint

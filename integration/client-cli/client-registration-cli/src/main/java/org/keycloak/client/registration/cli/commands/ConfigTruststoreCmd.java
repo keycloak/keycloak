@@ -16,96 +16,41 @@
  */
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.console.command.Command;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
 import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
 import static org.keycloak.client.registration.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "truststore", description = "PATH [ARGUMENTS]")
-public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Command {
+@Command(name = "truststore", description = "PATH [ARGUMENTS]")
+public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd {
 
-    private ConfigCmd parent;
-
+    @Option(names = {"-d", "--delete"}, description = "Indicates that initial access token should be removed")
     private boolean delete;
 
-
-    protected void initFromParent(ConfigCmd parent) {
-        this.parent = parent;
-        super.initFromParent(parent);
-    }
-
-    @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            return process(commandInvocation);
-
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
-        }
-    }
+    @Parameters(arity = "0..1")
+    private String truststorePath;
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && parent.args.size() == 1;
+        return noOptions() && truststorePath == null && !delete;
     }
 
-    public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-
-        List<String> args = new ArrayList<>();
-
-        Iterator<String> it = parent.args.iterator();
-        // skip the first argument 'truststore'
-        it.next();
-
-        while (it.hasNext()) {
-            String arg = it.next();
-            switch (arg) {
-                case "-d":
-                case "--delete": {
-                    delete = true;
-                    break;
-                }
-                default: {
-                    args.add(arg);
-                }
-            }
-        }
-
-        if (args.size() > 1) {
-            throw new IllegalArgumentException("Invalid option: " + args.get(1));
-        }
-
-        String truststore = null;
-        if (args.size() > 0) {
-            truststore = args.get(0);
-        }
-
-        checkUnsupportedOptions("--server", server,
+    @Override
+    protected String[] getUnsupportedOptions() {
+        return new String[] {"--server", server,
                 "--realm", realm,
                 "--client", clientId,
                 "--user", user,
@@ -115,33 +60,35 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
                 "--keystore", keystore,
                 "--keypass", keyPass,
                 "--alias", alias,
-                "--no-config", booleanOptionForCheck(noconfig));
+                "--no-config", booleanOptionForCheck(noconfig)};
+    }
 
+    @Override
+    protected void process() {
         // now update the config
-        processGlobalOptions();
 
         String store;
         String pass;
 
         if (!delete) {
 
-            if (truststore == null) {
+            if (truststorePath == null) {
                 throw new IllegalArgumentException("No truststore specified");
             }
 
-            if (!new File(truststore).isFile()) {
-                throw new RuntimeException("Truststore file not found: " + truststore);
+            if (!new File(truststorePath).isFile()) {
+                throw new RuntimeException("Truststore file not found: " + truststorePath);
             }
 
             if ("-".equals(trustPass)) {
-                trustPass = readSecret("Enter truststore password: ", commandInvocation);
+                trustPass = readSecret("Enter truststore password: ");
             }
 
-            store = truststore;
+            store = truststorePath;
             pass = trustPass;
 
         } else {
-            if (truststore != null) {
+            if (truststorePath != null) {
                 throw new IllegalArgumentException("Option --delete is mutually exclusive with specifying a TRUSTSTORE");
             }
             if (trustPass != null) {
@@ -155,14 +102,9 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
             config.setTruststore(store);
             config.setTrustpass(pass);
         });
-
-        return CommandResult.SUCCESS;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help config truststore' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }
