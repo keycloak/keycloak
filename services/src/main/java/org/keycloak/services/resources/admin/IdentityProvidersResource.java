@@ -186,7 +186,7 @@ public class IdentityProvidersResource {
 
         Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
-                : m -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, m));
+                : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, m));
 
         Stream<IdentityProviderModel> stream = realm.getIdentityProvidersStream().sorted(new IdPComparator());
         if (!StringUtil.isBlank(search)) {
@@ -235,7 +235,7 @@ public class IdentityProvidersResource {
 
             representation.setInternalId(identityProvider.getInternalId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
-                    .representation(StripSecretsUtils.strip(representation)).success();
+                    .representation(StripSecretsUtils.stripSecrets(session, representation)).success();
             
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (IllegalArgumentException e) {

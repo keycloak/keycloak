@@ -155,8 +155,7 @@ public class RealmsAdminResource {
             AdminEventBuilder adminEvent = new AdminEventBuilder(auth.getRealm(), auth, session, clientConnection);
             adminEvent.resource(ResourceType.REALM).realm(auth.getRealm().getId()).operation(OperationType.CREATE)
                     .resourcePath(realm.getName())
-                    .representation(
-                            StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(session, realm, false)))
+                    .representation(ModelToRepresentation.toRepresentation(session, realm, false))
                     .success();
 
             return Response.created(location).build();
