@@ -35,14 +35,18 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
     }
   };
 
-  const options =
-    (attribute.validators?.options as Options | undefined)?.options || [];
-
   const optionLabel = attribute.annotations?.[
     "inputOptionLabels"
   ] as OptionLabel;
   const label = (label: string) =>
     optionLabel ? t(unWrap(optionLabel[label])) : label;
+
+  let options =
+    (attribute.validators?.options as Options | undefined)?.options || [];
+
+  options = options.sort((a, b) => {
+    return label(a).localeCompare(label(b));
+  });
 
   return (
     <UserProfileGroup {...props}>
@@ -66,7 +70,13 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
             selections={
               field.value ? field.value : isMultiValue ? [] : t("choose")
             }
-            variant={isMultiValue ? "typeaheadmulti" : "single"}
+            variant={
+              isMultiValue
+                ? "typeaheadmulti"
+                : options.length >= 10
+                  ? "typeahead"
+                  : "single"
+            }
             aria-label={t("selectOne")}
             isOpen={open}
             isDisabled={attribute.readOnly}

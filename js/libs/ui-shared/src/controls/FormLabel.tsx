@@ -7,6 +7,8 @@ import { PropsWithChildren, ReactNode } from "react";
 import { FieldError, FieldValues, Merge } from "react-hook-form";
 import { HelpItem } from "./HelpItem";
 
+const selectToggleTypeahead = "pf-c-select__toggle-typeahead";
+
 export type FieldProps<T extends FieldValues = FieldValues> = {
   label?: string;
   name: string;
@@ -26,6 +28,13 @@ export const FormLabel = ({
   ...rest
 }: PropsWithChildren<FormLabelProps>) => (
   <FormGroup
+    onFocus={() => {
+      const input = document.activeElement as HTMLInputElement;
+      // Autofocus is currently limited to Option form elements where we are using
+      // a typeahed control because there are more than 10 options
+      if (input.classList.contains(selectToggleTypeahead) && input.value)
+        input.select();
+    }}
     label={label || name}
     fieldId={name}
     labelIcon={

@@ -36,6 +36,10 @@ export const UserProfileGroup = ({
   return (
     <FormGroup
       key={attribute.name}
+      onFocus={() => {
+        const input = document.activeElement as HTMLInputElement;
+        if (input.value) input.select();
+      }}
       label={labelAttribute(t, attribute) || ""}
       fieldId={attribute.name}
       isRequired={isRequiredAttribute(attribute)}

@@ -19,10 +19,12 @@ export const LocaleSelector = ({
   form,
   supportedLocales,
 }: LocaleSelectorProps) => {
-  const locales = supportedLocales.map((locale) => ({
-    key: locale,
-    value: localeToDisplayName(locale) || "",
-  }));
+  const locales = supportedLocales
+    .map((locale) => ({
+      key: locale,
+      value: localeToDisplayName(locale) || "",
+    }))
+    .sort((a, b) => a.value.localeCompare(b.value));
   if (!locales.length) {
     return null;
   }
@@ -34,6 +36,7 @@ export const LocaleSelector = ({
         label={t("selectALocale")}
         controller={{ defaultValue: "" }}
         options={locales}
+        variant={locales.length >= 10 ? "typeahead" : "single"}
       />
     </FormProvider>
   );
