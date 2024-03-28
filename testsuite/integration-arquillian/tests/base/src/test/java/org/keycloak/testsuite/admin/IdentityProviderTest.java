@@ -1032,6 +1032,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         // check that saml-idp-metadata.xml was properly converted into key value pairs
         //System.out.println(config);
         assertThat(config.keySet(), containsInAnyOrder(
+          "syncMode",
           "validateSignature",
           "singleLogoutServiceUrl",
           "postBindingLogout",

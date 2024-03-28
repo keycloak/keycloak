@@ -54,8 +54,8 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
             assertExitCodeAndStdErrSize(exe, 0, 1);
         }
 
-        // If the sync mode is not present on creating the idp, it will never be added automatically. However, the model will always assume "LEGACY", so no errors should occur.
-        Assert.assertNull(realmResource.identityProviders().get("idpAlias").toRepresentation().getConfig().get(IdentityProviderModel.SYNC_MODE));
+        // If the sync mode is not present on creating the idp, it will never be stored automatically. However, the model will always report behaviour as "LEGACY", so no errors should occur.
+        Assert.assertEquals("LEGACY", realmResource.identityProviders().get("idpAlias").toRepresentation().getConfig().get(IdentityProviderModel.SYNC_MODE));
     }
 
     @Test

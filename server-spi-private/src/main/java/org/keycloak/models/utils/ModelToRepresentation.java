@@ -773,6 +773,11 @@ public class ModelToRepresentation {
         providerRep.setConfig(config);
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
+        String syncMode = config.get(IdentityProviderModel.SYNC_MODE);
+        if (syncMode == null) {
+            config.put(IdentityProviderModel.SYNC_MODE, "LEGACY");
+        }
+
         String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
         if (firstBrokerLoginFlowId != null) {
             AuthenticationFlowModel flow = realm.getAuthenticationFlowById(firstBrokerLoginFlowId);
