@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.RequestedLevelOfAuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
@@ -36,8 +37,8 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
-import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -61,8 +62,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -296,7 +297,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (request.getMaxAge() != null) authenticationSession.setClientNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
         if (request.getUiLocales() != null) authenticationSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, request.getUiLocales());
 
-        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authenticationSession.getClient());
         List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());
 
         if (acrValues.isEmpty()) {
@@ -305,23 +305,20 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
 
-        acrValues.stream().mapToInt(acr -> {
-            try {
-                Integer loa = acrLoaMap.get(acr);
-                return loa == null ? Integer.parseInt(acr) : loa;
-            } catch (NumberFormatException e) {
-                // this is an unknown acr. In case of an essential claim, we directly reject authentication as we cannot met the specification requirement. Otherwise fallback to minimum LoA
-                boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
-                if (essential) {
-                    logger.errorf("Requested essential acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct ACR passed in the 'claims' parameter.", acr);
-                    event.error(Errors.INVALID_REQUEST);
-                    throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
-                } else {
-                    logger.warnf("Requested acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct used ACR.", acr);
-                    return Constants.MINIMUM_LOA;
-                }
-            }
-        }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+        RequestedLevelOfAuthenticationProvider acrToLoaProvider = session.getProvider(RequestedLevelOfAuthenticationProvider.class);
+
+        try {
+            acrValues.stream()
+                    .map(acr -> acrToLoaProvider.getRequestedLoa(authenticationSession, acr))
+                    .flatMap(loa -> loa.isPresent() ? Stream.of(loa.get()) : Stream.empty())
+                    .mapToInt(loa -> loa)
+                    .min()
+                    .ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+        } catch (Exception e) {
+            logger.error("Failed to determine requested level of authentication", e);
+            event.error(Errors.INVALID_REQUEST);
+            throw e;
+        }
 
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {
