@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -133,6 +135,18 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
         assertNotCors(response);
+    }
+
+    @Test
+    public void accessTokenEndPointWithMissingContentTypeHeader() throws Exception {
+        oauth.realm("test");
+        // Successful token request with empty request headers
+        Map<String, String> requestHeader = new HashMap<>();
+        oauth.requestHeaders(requestHeader);
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, null, null);
+        assertEquals(400, response.getStatusCode());
+        assertEquals("Missing Request Header: Content-Type", response.getErrorDescription());
+        assertEquals("invalid_request", response.getError());
     }
 
     private static void assertCors(OAuthClient.AccessTokenResponse response) {

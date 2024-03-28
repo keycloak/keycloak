@@ -655,12 +655,16 @@ public class OAuthClient {
             }
 
             UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
+
+            if (requestHeaders != null && !requestHeaders.isEmpty()) {
+                try {
+                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+                post.setEntity(formEntity);
             }
-            post.setEntity(formEntity);
+
 
             return new AccessTokenResponse(client.execute(post));
         }
