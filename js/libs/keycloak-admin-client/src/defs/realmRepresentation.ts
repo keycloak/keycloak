@@ -74,6 +74,7 @@ export default interface RealmRepresentation {
   maxDeltaTimeSeconds?: number;
   maxFailureWaitSeconds?: number;
   maxTemporaryLockouts?: number;
+  bruteForceStrategy?: string;
   minimumQuickLoginWaitSeconds?: number;
   notBefore?: number;
   oauth2DeviceCodeLifespan?: number;
