@@ -29,9 +29,9 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
     @Test
     public void test() throws IOException {
 
-        FileConfigHandler handler = initCustomConfigFile();
+        initCustomConfigFile();
 
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
             // login as admin
             loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin");
@@ -196,8 +196,8 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
     @Test
     public void testCompositeRoleCreationWithHigherVolumeOfRoles() throws Exception {
 
-        FileConfigHandler handler = initCustomConfigFile();
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        initCustomConfigFile();
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
             // login as admin
             loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin");

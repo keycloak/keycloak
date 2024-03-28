@@ -14,28 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.client.admin.cli.aesh;
-
-import org.jboss.aesh.console.AeshConsoleImpl;
-import org.jboss.aesh.console.Console;
-
-import java.lang.reflect.Field;
+package org.keycloak.client.admin.cli;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class AeshEnhancer {
+public class Globals {
 
-    public static void enhance(AeshConsoleImpl console) {
-        try {
-            Globals.stdin.setConsole(console);
+    public static boolean dumpTrace = false;
 
-            Field field = AeshConsoleImpl.class.getDeclaredField("console");
-            field.setAccessible(true);
-            Console internalConsole = (Console) field.get(console);
-            internalConsole.setConsoleCallback(new AeshConsoleCallbackImpl(console));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to install Aesh enhancement", e);
-        }
-    }
+    public static boolean help = false;
+
 }

@@ -38,7 +38,7 @@ public class ParseUtil {
         // we expect = as a separator
         int pos = keyval.indexOf("=");
         if (pos <= 0) {
-            throw new RuntimeException("Invalid key=value parameter: [" + keyval + "]");
+            throw new IllegalArgumentException("Invalid key=value parameter: [" + keyval + "]");
         }
 
         String [] parsed = new String[2];

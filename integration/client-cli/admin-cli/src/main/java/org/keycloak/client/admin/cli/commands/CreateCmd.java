@@ -16,70 +16,63 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
 import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
 import static org.keycloak.client.admin.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "create", description = "Command to create new resources")
+@Command(name = "create", description = "Command to create new resources")
 public class CreateCmd extends AbstractRequestCmd {
 
-    @Option(shortName = 'f', name = "file", description = "Read object from file or standard input if FILENAME is set to '-'")
-    String file;
+    public CreateCmd() {
+        this.httpVerb = "post";
+    }
 
-    @Option(shortName = 'b', name = "body", description = "JSON object to be sent as-is or used as a template")
-    String body;
+    @Option(names = {"-f", "--file"}, description = "Read object from file or standard input if FILENAME is set to '-'")
+    public void setFile(String file) {
+        this.file = file;
+    }
 
-    @Option(shortName = 'F', name = "fields", description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header", hasValue = true)
-    String fields;
+    @Option(names = {"-b", "--body"}, description = "JSON object to be sent as-is or used as a template")
+    public void setBody(String body) {
+        this.body = body;
+    }
 
-    @Option(shortName = 'H', name = "print-headers", description = "Print response headers", hasValue = false)
-    boolean printHeaders;
+    @Option(names = {"-F", "--fields"}, description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header")
+    public void setFields(String fields) {
+        this.fields = fields;
+    }
 
-    @Option(shortName = 'i', name = "id", description = "After creation only print id of created resource to standard output", hasValue = false)
-    boolean returnId = false;
+    @Option(names = {"-H", "--print-headers"}, description = "Print response headers")
+    public void setPrintHeaders(boolean printHeaders) {
+        this.printHeaders = printHeaders;
+    }
 
-    @Option(shortName = 'o', name = "output", description = "After creation output the new resource to standard output", hasValue = false)
-    boolean outputResult = false;
+    @Option(names = {"-i", "--id"}, description = "After creation only print id of created resource to standard output")
+    public void setReturnId(boolean returnId) {
+        this.returnId = returnId;
+    }
 
-    @Option(shortName = 'c', name = "compressed", description = "Don't pretty print the output", hasValue = false)
-    boolean compressed = false;
+    @Option(names = {"-o", "--output"}, description = "After creation output the new resource to standard output")
+    public void setOutputResult(boolean outputResult) {
+        this.outputResult = outputResult;
+    }
 
-    //@OptionGroup(shortName = 's', name = "set", description = "Set attribute to the specified value")
-    //Map<String, String> attributes = new LinkedHashMap<>();
-
-    @Override
-    void initOptions() {
-        // set options on parent
-        super.file = file;
-        super.body = body;
-        super.fields = fields;
-        super.printHeaders = printHeaders;
-        super.returnId = returnId;
-        super.outputResult = outputResult;
-        super.compressed = compressed;
-        super.httpVerb = "post";
+    @Option(names = {"-c", "--compressed"}, description = "Don't pretty print the output")
+    public void setCompressed(boolean compressed) {
+        this.compressed = compressed;
     }
 
     @Override
-    protected boolean nothingToDo() {
-        return noOptions() && file == null && body == null && (args == null || args.size() == 0);
-    }
-
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help create' for more information";
-    }
-
     protected String help() {
         return usage();
     }

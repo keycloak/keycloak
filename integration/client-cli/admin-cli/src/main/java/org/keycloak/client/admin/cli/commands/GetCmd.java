@@ -16,69 +16,63 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
 import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
 import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "get", description = "[ARGUMENTS]")
-public class GetCmd extends  AbstractRequestCmd {
+@Command(name = "get", description = "[ARGUMENTS]")
+public class GetCmd extends AbstractRequestCmd {
 
-    @Option(name = "noquotes", description = "", hasValue = false)
-    boolean unquoted;
+    public GetCmd() {
+        this.httpVerb = "get";
+        this.outputResult = true;
+    }
 
-    @Option(shortName = 'F', name = "fields", description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header")
-    String fields;
+    @Option(names = "--noquotes", description = "")
+    public void setUnquoted(boolean unquoted) {
+        this.unquoted = unquoted;
+    }
 
-    @Option(shortName = 'H', name = "print-headers", description = "Print response headers", hasValue = false)
-    boolean printHeaders;
+    @Option(names = {"-F", "--fields"}, description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header")
+    public void setFields(String fields) {
+        this.fields = fields;
+    }
 
-    @Option(shortName = 'c', name = "compressed", description = "Don't pretty print the output", hasValue = false)
-    boolean compressed;
+    @Option(names = {"-H", "--print-headers"}, description = "Print response headers")
+    public void setPrintHeaders(boolean printHeaders) {
+        this.printHeaders = printHeaders;
+    }
 
-    @Option(shortName = 'o', name = "offset", description = "Number of results from beginning of resultset to skip")
-    Integer offset;
+    @Option(names = {"-c", "--compressed"}, description = "Don't pretty print the output")
+    public void setCompressed(boolean compressed) {
+        this.compressed = compressed;
+    }
 
-    @Option(shortName = 'l', name = "limit", description = "Maksimum number of results to return")
-    Integer limit;
+    @Option(names = {"-o", "--offset"}, description = "Number of results from beginning of resultset to skip")
+    public void setOffset(Integer offset) {
+        this.offset = offset;
+    }
 
-    @Option(name = "format", description = "Output format - one of: json, csv", defaultValue = "json")
-    String format;
+    @Option(names = {"-l", "--limit"}, description = "Maksimum number of results to return")
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
 
-
-    @Override
-    void initOptions() {
-        // set options on parent
-        super.fields = fields;
-        super.printHeaders = printHeaders;
-        super.returnId = false;
-        super.outputResult = true;
-        super.compressed = compressed;
-        super.offset = offset;
-        super.limit = limit;
-        super.format = format;
-        super.unquoted = unquoted;
-        super.httpVerb = "get";
+    @Option(names = "--format", description = "Output format - one of: json, csv", defaultValue = "json")
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     @Override
-    protected boolean nothingToDo() {
-        return noOptions() && (args == null || args.size() == 0);
-    }
-
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help get' for more information";
-    }
-
     protected String help() {
         return usage();
     }
