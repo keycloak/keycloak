@@ -19,11 +19,13 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,6 +36,9 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -41,15 +46,15 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
 
-    private final KeycloakSession kcSession;
+    protected final KeycloakSession kcSession;
     private final String cacheName;
-    private final Cache<K, SessionEntityWrapper<V>> cache;
+    protected final Cache<K, SessionEntityWrapper<V>> cache;
     private final RemoteCacheInvoker remoteCacheInvoker;
 
-    private final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
+    protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
 
-    private final SessionFunction<V> lifespanMsLoader;
-    private final SessionFunction<V> maxIdleTimeMsLoader;
+    protected final SessionFunction<V> lifespanMsLoader;
+    protected final SessionFunction<V> maxIdleTimeMsLoader;
 
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker,
                                                SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
@@ -65,6 +70,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, CLIENT_SESSION_CACHE_NAME))) {
+                throw new IllegalStateException("Can't load from cache");
+            }
+
             // Lookup entity from cache
             SessionEntityWrapper<V> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
@@ -95,9 +104,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity, persistenceState);
         updates.put(key, myUpdates);
 
-        // Run the update now, so reader in same transaction can see it
-        task.runUpdate(entity);
-        myUpdates.add(task);
+        if (task != null) {
+            // Run the update now, so reader in same transaction can see it
+            task.runUpdate(entity);
+            myUpdates.add(task);
+        }
     }
 
 
@@ -149,7 +160,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             return scheduledForRemove ? null : myUpdates.getEntityWrapper();
         }
     }
-
 
     @Override
     protected void commitImpl() {

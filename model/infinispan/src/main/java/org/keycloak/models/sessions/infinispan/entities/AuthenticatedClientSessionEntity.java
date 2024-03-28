@@ -57,6 +57,8 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private final UUID id;
 
+    private transient String userSessionId;
+
     public AuthenticatedClientSessionEntity(UUID id) {
         this.id = id;
     }
@@ -188,6 +190,14 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         logger.debugf("Updating client session entity %s. timestamp=%d, timestampRemote=%d", getId(), getTimestamp(), timestampRemote);
 
         return entityWrapper;
+    }
+
+    public String getUserSessionId() {
+        return userSessionId;
+    }
+
+    public void setUserSessionId(String userSessionId) {
+        this.userSessionId = userSessionId;
     }
 
     public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionEntity> {

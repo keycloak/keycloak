@@ -109,6 +109,9 @@ public class Profile {
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
         //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
+        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.EXPERIMENTAL),
+        PERSISTENT_USER_SESSIONS_NO_CACHE("No caching for online user sessions when they are persisted", Type.EXPERIMENTAL),
+        
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),

@@ -303,6 +303,63 @@ jobs:
         with:
           job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
 
+  persistent-sessions-tests:
+    name: Persistent Sessions IT
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-store == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run base tests
+        run: |
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
+          echo "Tests: $TESTS"
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.features=persistent-user-sessions,persistent-user-sessions-no-cache -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Store IT
+
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: store-integration-tests-${{ matrix.db }}
+
+      - name: EC2 Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: store-it-mvn-logs
+          path: .github/scripts/ansible/files
+
+      - name: Delete Aurora EC2 Instance
+        if: ${{ always() && matrix.db == 'aurora-postgres' }}
+        working-directory: .github/scripts/ansible
+        run: |
+          export CLUSTER_NAME=${{ steps.aurora-tests.outputs.ec2_cluster }}
+          ./aws_ec2.sh delete ${{ steps.aurora-init.outputs.region }}
+
+      - name: Delete Aurora DB
+        if: ${{ always() && matrix.db == 'aurora-postgres' }}
+        uses: ./.github/actions/aurora-delete-database
+        with:
+          name: ${{ steps.aurora-init.outputs.name }}
+          region: ${{ steps.aurora-init.outputs.region }}
+
   store-integration-tests:
     name: Store IT
     needs: [build, conditional]
@@ -757,6 +814,7 @@ jobs:
       - quarkus-integration-tests
       - jdk-integration-tests
       - store-integration-tests
+      - persistent-sessions-tests
       - store-model-tests
       - clustering-integration-tests
       - fips-unit-tests

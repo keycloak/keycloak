@@ -17,6 +17,63 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
+    <changeSet author="keycloak" id="25.0.0-xxx">
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <!-- length(broker_session_id) + length(realm_id) <= 1700 for mssql -->
+            <column name="BROKER_SESSION_ID" type="VARCHAR(1024)" />
+            <column name="VERSION" type="INT" defaultValueNumeric="0" />
+        </addColumn>
+        <addColumn tableName="OFFLINE_CLIENT_SESSION">
+            <column name="VERSION" type="INT" defaultValueNumeric="0" />
+        </addColumn>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH" >
+            <!-- optimize this index for range queries for expire sessions -->
+            <!-- it should also distribute hot segments across realms and online/offline -->
+            <column name="REALM_ID" />
+            <column name="OFFLINE_FLAG" />
+            <column name="LAST_SESSION_REFRESH" />
+        </createIndex>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_CREATEDON" />
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_PRELOAD" />
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_USERSESS" />
+        <dropIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_PRELOAD" />
+        <modifySql dbms="mssql">
+            <!-- ensure that existing rows also get the new values on mssql -->
+            <!-- https://github.com/liquibase/liquibase/issues/4644 -->
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-xxx-2-mysql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID" >
+            <!-- This is not unique as we can't guarantee if broker sessions are unique across user sessions, and the table might include expired entries.
+            At least we would need to add the offline flag -->
+            <column name="BROKER_SESSION_ID(255)" valueComputed="BROKER_SESSION_ID(255)" />
+            <column name="REALM_ID" />
+        </createIndex>
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-xxx-2-not-mysql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                </or>
+            </not>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID" >
+            <!-- This is not unique as we can't guarantee if broker sessions are unique across user sessions, and the table might include expired entries.
+            At least we would need to add the offline flag -->
+            <column name="BROKER_SESSION_ID" />
+            <column name="REALM_ID" />
+        </createIndex>
+    </changeSet>
+
     <changeSet author="keycloak" id="25.0.0-org">
         <createTable tableName="ORGANIZATION">
             <column name="ID" type="VARCHAR(255)">

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models;
 
-/**
- * Hacked extension to UserSessionModel so that user id can be obtain directly so
- *
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
-public interface OfflineUserSessionModel extends UserSessionModel {
-    public String getUserId();
+package org.keycloak.models.sessions.infinispan;
 
-    void setLoginUsername(String loginUsername);
+import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
+import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
+
+public interface SessionRefreshStore {
+    CrossDCLastSessionRefreshStore getLastSessionRefreshStore();
+
+    CrossDCLastSessionRefreshStore getOfflineLastSessionRefreshStore();
+
+    PersisterLastSessionRefreshStore getPersisterLastSessionRefreshStore();
 }

@@ -52,9 +52,45 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         data.setNotes(clientSession.getNotes());
         data.setRedirectUri(clientSession.getRedirectUri());
 
-        model = new PersistentClientSessionModel();
+        model = new PersistentClientSessionModel() {
+            private String userSessionId;
+            private String clientId;
+            private int timestamp;
+            private String data;
+
+            public String getUserSessionId() {
+                return userSessionId;
+            }
+
+            public void setUserSessionId(String userSessionId) {
+                this.userSessionId = userSessionId;
+            }
+
+            public String getClientId() {
+                return clientId;
+            }
+
+            public void setClientId(String clientId) {
+                this.clientId = clientId;
+            }
+
+            public int getTimestamp() {
+                return timestamp;
+            }
+
+            public void setTimestamp(int timestamp) {
+                this.timestamp = timestamp;
+            }
+
+            public String getData() {
+                return data;
+            }
+
+            public void setData(String data) {
+                this.data = data;
+            }
+        };
         model.setClientId(clientSession.getClient().getId());
-        model.setUserId(clientSession.getUserSession().getUser().getId());
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());
 
@@ -151,22 +187,22 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public String getCurrentRefreshToken() {
-        return null; // Information not persisted.
+        return getData().getCurrentRefreshToken();
     }
 
     @Override
     public void setCurrentRefreshToken(String currentRefreshToken) {
-        // Information not persisted.
+        getData().setCurrentRefreshToken(currentRefreshToken);
     }
 
     @Override
     public int getCurrentRefreshTokenUseCount() {
-        return 0; // Information not persisted.
+        return getData().getCurrentRefreshTokenUseCount();
     }
 
     @Override
     public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        // Information not persisted.
+        getData().setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
     }
 
     @Override
@@ -263,7 +299,10 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         private Set<String> protocolMappers;
         @JsonProperty("roles")
         private Set<String> roles;
-
+        @JsonProperty("currentRefreshToken")
+        private String currentRefreshToken;
+        @JsonProperty("currentRefreshTokenUseCount")
+        private int currentRefreshTokenUseCount;
 
         public String getAuthMethod() {
             return authMethod;
@@ -335,6 +374,22 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
         public void setRoles(Set<String> roles) {
             this.roles = roles;
+        }
+
+        public String getCurrentRefreshToken() {
+            return currentRefreshToken;
+        }
+
+        public void setCurrentRefreshToken(String currentRefreshToken) {
+            this.currentRefreshToken = currentRefreshToken;
+        }
+
+        public int getCurrentRefreshTokenUseCount() {
+            return currentRefreshTokenUseCount;
+        }
+
+        public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+            this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
         }
     }
 }
