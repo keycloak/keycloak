@@ -17,46 +17,48 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
-import static org.keycloak.common.util.Resteasy.clearContextData;
+import io.quarkus.arc.Arc;
+import io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext;
 
-import jakarta.ws.rs.container.CompletionCallback;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
 
-import io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext;
-import io.vertx.ext.web.RoutingContext;
+import static org.keycloak.common.util.Resteasy.clearContextData;
 
-public final class CreateSessionHandler implements ServerRestHandler, TransactionalSessionHandler, CompletionCallback {
+public final class TransactionalSessionHandler implements ServerRestHandler {
 
     @Override
     public void handle(ResteasyReactiveRequestContext requestContext) {
         QuarkusResteasyReactiveRequestContext context = (QuarkusResteasyReactiveRequestContext) requestContext;
-        RoutingContext routingContext = context.getContext();
-        KeycloakSession currentSession = routingContext.get(KeycloakSession.class.getName());
+        requestContext.requireCDIRequestScope();
+        KeycloakSession currentSession = Arc.container().instance(KeycloakSession.class).get();
 
-        if (currentSession == null) {
-            // this handler might be invoked multiple times when resolving sub-resources
-            // make sure the session is created once
-            KeycloakSession session = create();
-            routingContext.put(KeycloakSession.class.getName(), session);
+        // this handler might be invoked multiple times when resolving sub-resources
+        // make sure the transaction is created once
+        if (currentSession != null && !currentSession.getTransactionManager().isActive()) {
+            // start the thread-bound transaction and associate the thread-bound KeycloakSession
+            currentSession.getTransactionManager().begin();
+            Resteasy.pushContext(KeycloakSession.class, currentSession);
             // the CloseSessionFilter is needed because it runs sooner than this callback
             // this is just a catch-all if the CloseSessionFilter doesn't get a chance to run
-            context.registerCompletionCallback(this);
+            context.registerCompletionCallback(ignored -> {
+                try {
+                    close(currentSession);
+                } catch (Exception e) {
+
+                }
+                clearContextData();
+            });
         }
     }
 
-    @Override
-    public void onComplete(Throwable throwable) {
-        try {
-            close(Resteasy.getContextData(KeycloakSession.class));
-        } catch (Exception e) {
-
+    public static void close(KeycloakSession session) {
+        if (session == null || session.isClosed()) {
+            return;
         }
-        clearContextData();
+
+        session.close();
     }
 }

@@ -17,21 +17,22 @@
 
 package org.keycloak.quarkus.runtime.integration.cdi;
 
+import io.quarkus.arc.Unremovable;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Produces;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.models.KeycloakSession;
-
-import io.quarkus.arc.Unremovable;
 
 @ApplicationScoped
 @Unremovable
 public class KeycloakBeanProducer {
 
-    @Produces
     @RequestScoped
     public KeycloakSession getKeycloakSession() {
-        return Resteasy.getContextData(KeycloakSession.class);
+        KeycloakSessionFactory sessionFactory = QuarkusKeycloakSessionFactory.getInstance();
+        return sessionFactory.create();
     }
 }
