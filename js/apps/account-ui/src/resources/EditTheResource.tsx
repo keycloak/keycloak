@@ -3,7 +3,11 @@ import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { SelectControl, TextControl, useAlerts } from "ui-shared";
+import {
+  SelectControl,
+  TextControl,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import { updatePermissions } from "../api";
 import type { Permission, Resource } from "../api/representations";
 import { useEnvironment } from "../root/KeycloakContext";

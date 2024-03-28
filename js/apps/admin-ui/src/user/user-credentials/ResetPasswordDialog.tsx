@@ -9,7 +9,7 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { PasswordInput } from "ui-shared";
+import { PasswordInput } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";

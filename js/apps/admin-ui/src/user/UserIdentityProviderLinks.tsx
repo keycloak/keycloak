@@ -14,7 +14,7 @@ import { capitalize } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { FormPanel } from "ui-shared";
+import { FormPanel } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";

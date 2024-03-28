@@ -18,7 +18,7 @@ import {
   NumberControl,
   SelectControl,
   SwitchControl,
-} from "ui-shared";
+} from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";

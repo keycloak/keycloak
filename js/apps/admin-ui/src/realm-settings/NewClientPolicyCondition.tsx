@@ -17,7 +17,7 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { FormPanel, HelpItem } from "ui-shared";
+import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";

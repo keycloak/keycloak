@@ -5,7 +5,10 @@ import {
   type GetDerivedStateFromError,
   type ReactNode,
 } from "react";
-import { createNamedContext, useRequiredContext } from "ui-shared";
+import {
+  createNamedContext,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 
 export interface ErrorBoundaryContextValue {
   error?: Error;

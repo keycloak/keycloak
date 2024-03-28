@@ -3,7 +3,11 @@ import { ExpandableSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextAreaControl, TextControl } from "ui-shared";
+import {
+  SelectControl,
+  TextAreaControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 import "./discovery-settings.css";

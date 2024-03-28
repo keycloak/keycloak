@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { PasswordControl, TextControl } from "ui-shared";
+import { PasswordControl, TextControl } from "@keycloak/keycloak-ui-shared";
 
 export const StoreSettings = ({
   hidePassword = false,

@@ -1,5 +1,6 @@
 {
-  "name": "keycloak-masthead",
+  "name": "@keycloak/keycloak-masthead",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
   "main": "./dist/keycloak-masthead.js",
   "types": "./dist/keycloak-masthead.d.ts",

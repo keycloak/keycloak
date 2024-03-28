@@ -4,7 +4,7 @@ import { AlertVariant, PageSection, Text } from "@patternfly/react-core";
 import type { TFunction } from "i18next";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { ScrollForm } from "ui-shared";
+import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import type { AddAlertFunction } from "../components/alert/Alerts";
 import { convertAttributeNameToForm, toUpperCase } from "../util";
 import type { FormFields, SaveOptions } from "./ClientDetails";

@@ -1,12 +1,13 @@
 {
-  "name": "account-ui",
+  "name": "@keycloak/keycloak-account-ui",
+  "version": "0.0.5-alpha",
   "type": "module",
-  "main": "dist/account-ui.js",
-  "types": "./dist/account-ui.d.ts",
+  "main": "dist/keycloak-account-ui.js",
+  "types": "./dist/keycloak-account-ui.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/account-ui.js",
-      "types": "./dist/account-ui.d.ts"
+      "import": "./dist/keycloak-account-ui.js",
+      "types": "./dist/keycloak-account-ui.d.ts"
     }
   },
   "scripts": {
@@ -24,14 +25,14 @@
     "i18next": "^23.10.1",
     "i18next-http-backend": "^2.5.0",
     "keycloak-js": "workspace:*",
-    "keycloak-masthead": "workspace:*",
+    "@keycloak/keycloak-masthead": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.2",
     "react-i18next": "^14.1.0",
     "react-router-dom": "^6.22.3",
-    "ui-shared": "workspace:*"
+    "@keycloak/keycloak-ui-shared": "workspace:*"
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",

@@ -2,7 +2,7 @@ import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";

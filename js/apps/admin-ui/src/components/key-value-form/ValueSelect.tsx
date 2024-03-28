@@ -2,7 +2,7 @@ import { Select, SelectOption } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { KeycloakTextInput } from "ui-shared";
+import { KeycloakTextInput } from "@keycloak/keycloak-ui-shared";
 
 import { DefaultValue } from "./KeyValueInput";
 

@@ -1,7 +1,7 @@
 import { Page } from "@patternfly/react-core";
 import { PropsWithChildren, Suspense } from "react";
 import { Outlet } from "react-router-dom";
-import { Help, mainPageContentId } from "ui-shared";
+import { Help, mainPageContentId } from "@keycloak/keycloak-ui-shared";
 
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
