@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.policy.provider.role;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.function.BiFunction;
 
@@ -32,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -55,7 +57,9 @@ public class RolePolicyProvider implements PolicyProvider {
         RealmModel realm = authorizationProvider.getKeycloakSession().getContext().getRealm();
         Identity identity = evaluation.getContext().getIdentity();
 
-        for (RolePolicyRepresentation.RoleDefinition roleDefinition : roleIds) {
+        Iterator<RolePolicyRepresentation.RoleDefinition> iterator = roleIds.iterator();
+        while (iterator.hasNext()) {
+            RolePolicyRepresentation.RoleDefinition roleDefinition = iterator.next();
             RoleModel role = realm.getRoleById(roleDefinition.getId());
 
             if (role != null) {
@@ -67,8 +71,16 @@ public class RolePolicyProvider implements PolicyProvider {
                 } else if (hasRole) {
                     evaluation.grant();
                 }
+            } else {
+                iterator.remove();
+                try {
+                    policy.putConfig("roles", JsonSerialization.writeValueAsString(roleIds));
+                } catch (Exception e) {
+                    logger.error("Failed to serialize roles", e);
+                }
             }
         }
+
         logger.debugv("policy {} evaluated with status {} on identity {}", policy.getName(), evaluation.getEffect(), identity.getId());
     }
 
