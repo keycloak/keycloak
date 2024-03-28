@@ -17,21 +17,17 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
-import static org.keycloak.common.util.Resteasy.clearContextData;
-
-import jakarta.ws.rs.container.CompletionCallback;
-import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
-import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
-
 import io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext;
 import io.vertx.ext.web.RoutingContext;
 
-public final class CreateSessionHandler implements ServerRestHandler, TransactionalSessionHandler, CompletionCallback {
+import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
+import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
+
+import static org.keycloak.common.util.Resteasy.clearContextData;
+
+public final class CreateSessionHandler implements ServerRestHandler, TransactionalSessionHandler {
 
     @Override
     public void handle(ResteasyReactiveRequestContext requestContext) {
@@ -46,17 +42,15 @@ public final class CreateSessionHandler implements ServerRestHandler, Transactio
             routingContext.put(KeycloakSession.class.getName(), session);
             // the CloseSessionFilter is needed because it runs sooner than this callback
             // this is just a catch-all if the CloseSessionFilter doesn't get a chance to run
-            context.registerCompletionCallback(this);
+            context.registerCompletionCallback(ignored -> {
+                try {
+                    close(session);
+                } catch (Exception e) {
+
+                }
+                clearContextData();
+            });
         }
     }
 
-    @Override
-    public void onComplete(Throwable throwable) {
-        try {
-            close(Resteasy.getContextData(KeycloakSession.class));
-        } catch (Exception e) {
-
-        }
-        clearContextData();
-    }
 }
