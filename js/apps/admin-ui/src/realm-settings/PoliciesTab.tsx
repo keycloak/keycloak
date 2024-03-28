@@ -122,7 +122,7 @@ export const PoliciesTab = () => {
               label={t("enabled")}
               labelOff={t("disabled")}
               isChecked={field.value}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {
@@ -206,7 +206,7 @@ export const PoliciesTab = () => {
               label={t("policiesConfigTypes.formView")}
               id="formView-policiesView"
               data-testid="formView-policiesView"
-              className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
+              className="kc-form-radio-btn pf-v5-u-mr-sm pf-v5-u-ml-sm"
             />
           </FlexItem>
           <FlexItem>
@@ -278,7 +278,7 @@ export const PoliciesTab = () => {
         />
       ) : (
         <>
-          <div className="pf-u-mt-md pf-u-ml-lg">
+          <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
             <CodeEditor
               isLineNumbersVisible
               isLanguageLabelVisible
@@ -289,10 +289,10 @@ export const PoliciesTab = () => {
               onChange={setCode}
             />
           </div>
-          <div className="pf-u-mt-md">
+          <div className="pf-v5-u-mt-md">
             <Button
               variant={ButtonVariant.primary}
-              className="pf-u-mr-md pf-u-ml-lg"
+              className="pf-v5-u-mr-md pf-v5-u-ml-lg"
               data-testid="jsonEditor-policies-saveBtn"
               onClick={save}
             >

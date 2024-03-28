@@ -1,6 +1,6 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   Divider,
@@ -8,31 +8,34 @@ import {
   Grid,
   GridItem,
   Radio,
+  Switch,
+  TextInput,
+  Tooltip,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-  Tooltip,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
+import { GlobeRouteIcon } from "@patternfly/react-icons";
 import { isEqual } from "lodash-es";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "ui-shared";
 
 import { adminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
+import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
-import { USERNAME_EMAIL } from "../../NewAttributeSettings";
-import "../../realm-settings-section.css";
-import { GlobeRouteIcon } from "@patternfly/react-icons";
-import { AddTranslationsDialog } from "./AddTranslationsDialog";
 import useToggle from "../../../utils/useToggle";
+import { USERNAME_EMAIL } from "../../NewAttributeSettings";
 import { AttributeParams } from "../../routes/Attribute";
-import { useRealm } from "../../../context/realm-context/RealmContext";
+import { AddTranslationsDialog } from "./AddTranslationsDialog";
+
+import "../../realm-settings-section.css";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -83,14 +86,14 @@ export const AttributeGeneralSettings = ({
   const displayNameRegex = /\$\{([^}]+)\}/;
 
   const handleAttributeNameChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.FormEvent<HTMLInputElement>,
+    value: string,
   ) => {
-    const newAttributeName = event.target.value;
-    setNewAttributeName(newAttributeName);
+    setNewAttributeName(value);
 
     const newDisplayName =
-      newAttributeName !== "" && realm?.internationalizationEnabled
-        ? "${profile.attributes." + `${newAttributeName}}`
+      value !== "" && realm?.internationalizationEnabled
+        ? "${profile.attributes." + `${value}}`
         : "";
 
     setGeneratedDisplayName(newDisplayName);
@@ -195,10 +198,8 @@ export const AttributeGeneralSettings = ({
           }
           fieldId="kc-attribute-name"
           isRequired
-          validated={form.formState.errors.name ? "error" : "default"}
-          helperTextInvalid={t("validateAttributeName")}
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             id="kc-attribute-name"
             defaultValue=""
@@ -208,6 +209,9 @@ export const AttributeGeneralSettings = ({
             {...form.register("name", { required: true })}
             onChange={handleAttributeNameChange}
           />
+          {form.formState.errors.name && (
+            <FormErrorText message={t("validateAttributeName")} />
+          )}
         </FormGroup>
         <FormGroup
           label={t("attributeDisplayName")}
@@ -221,7 +225,7 @@ export const AttributeGeneralSettings = ({
         >
           <Grid hasGutter>
             <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
-              <KeycloakTextInput
+              <TextInput
                 id="kc-attribute-display-name"
                 data-testid="attribute-display-name"
                 isDisabled={
@@ -255,7 +259,7 @@ export const AttributeGeneralSettings = ({
                 />
                 <Tooltip
                   content={t("addAttributeTranslationTooltip")}
-                  reference={tooltipRef}
+                  triggerRef={tooltipRef}
                 />
               </GridItem>
             )}
@@ -325,7 +329,7 @@ export const AttributeGeneralSettings = ({
                 name="enabledWhen"
                 label={t("always")}
                 onChange={() => setHasSelector(false)}
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
               />
               <Radio
                 id="scopesAsRequested"
@@ -334,7 +338,7 @@ export const AttributeGeneralSettings = ({
                 name="enabledWhen"
                 label={t("scopesAsRequested")}
                 onChange={() => setHasSelector(true)}
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
               />
             </FormGroup>
             {hasSelector && (
@@ -354,7 +358,9 @@ export const AttributeGeneralSettings = ({
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
-                      onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
+                      onToggle={(_event, isOpen) =>
+                        setSelectEnabledWhenOpen(isOpen)
+                      }
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();
@@ -469,7 +475,7 @@ export const AttributeGeneralSettings = ({
                     name="requiredWhen"
                     label={t("always")}
                     onChange={() => setHasRequiredScopes(false)}
-                    className="pf-u-mb-md"
+                    className="pf-v5-u-mb-md"
                   />
                   <Radio
                     id="requiredScopesAsRequested"
@@ -478,7 +484,7 @@ export const AttributeGeneralSettings = ({
                     name="requiredWhen"
                     label={t("scopesAsRequested")}
                     onChange={() => setHasRequiredScopes(true)}
-                    className="pf-u-mb-md"
+                    className="pf-v5-u-mb-md"
                   />
                 </FormGroup>
                 {hasRequiredScopes && (
@@ -498,7 +504,7 @@ export const AttributeGeneralSettings = ({
                             expandedText: t("hide"),
                             collapsedText: t("showRemaining"),
                           }}
-                          onToggle={(isOpen) =>
+                          onToggle={(_event, isOpen) =>
                             setSelectRequiredForOpen(isOpen)
                           }
                           selections={field.value}

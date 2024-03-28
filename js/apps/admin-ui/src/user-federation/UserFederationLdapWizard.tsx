@@ -1,10 +1,10 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { Button } from "@patternfly/react-core";
 import {
-  Button,
   Wizard,
   WizardContextConsumer,
   WizardFooter,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 

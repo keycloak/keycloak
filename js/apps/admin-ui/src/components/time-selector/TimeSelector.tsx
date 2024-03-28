@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  DropdownProps,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
   TextInput,
   TextInputProps,
 } from "@patternfly/react-core";
+import {
+  DropdownProps,
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 
 export type Unit = "second" | "minute" | "hour" | "day";
 
@@ -123,7 +125,7 @@ export const TimeSelector = ({
           min={min || 0}
           value={timeValue}
           className={`${className}-input`}
-          onChange={(value) => {
+          onChange={(_event, value) => {
             updateTimeout("" === value ? value : parseInt(value));
           }}
         />

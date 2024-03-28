@@ -22,7 +22,7 @@ export default class WebAuthnPolicies {
           isPasswordLess ? prop.replace("Policy", "PolicyPasswordless") : prop
         }`,
       ).click();
-      cy.get(".pf-c-select__menu").contains(data[prop]).click();
+      cy.get(".pf-v5-c-select__menu").contains(data[prop]).click();
     }
     return this;
   }

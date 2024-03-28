@@ -7,10 +7,10 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -127,11 +127,11 @@ export default function ResourceDetails() {
             isInline
             isPlain
             title={t("deleteResourceWarning")}
-            className="pf-u-pt-lg"
+            className="pf-v5-u-pt-lg"
           >
-            <p className="pf-u-pt-xs">
+            <p className="pf-v5-u-pt-xs">
               {permissions?.map((permission) => (
-                <strong key={permission.id} className="pf-u-pr-md">
+                <strong key={permission.id} className="pf-v5-u-pr-md">
                   {permission.name}
                 </strong>
               ))}
@@ -251,7 +251,7 @@ export default function ResourceDetails() {
               <KeyValueInput name="attributes" isDisabled={isDisabled} />
             </FormGroup>
             <ActionGroup>
-              <div className="pf-u-mt-md">
+              <div className="pf-v5-u-mt-md">
                 <Button
                   variant={ButtonVariant.primary}
                   type="submit"

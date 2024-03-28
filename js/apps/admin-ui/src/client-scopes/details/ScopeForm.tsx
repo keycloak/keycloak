@@ -1,5 +1,6 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import { ActionGroup, Button, SelectVariant } from "@patternfly/react-core";
+import { ActionGroup, Button } from "@patternfly/react-core";
+import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -96,7 +97,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               )}
               label={t("dynamicScope")}
               labelIcon={t("dynamicScopeHelp")}
-              onChange={(value) => {
+              onChange={(event, value) => {
                 setDynamicRegex(
                   value ? form.getValues("name") || "" : "",
                   value,

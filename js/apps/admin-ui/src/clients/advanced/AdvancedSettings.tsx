@@ -1,12 +1,10 @@
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -160,7 +158,7 @@ export const AdvancedSettings = ({
                 <Select
                   toggleId="keyForCodeExchange"
                   variant={SelectVariant.single}
-                  onToggle={setOpen}
+                  onToggle={(_event, val) => setOpen(val)}
                   isOpen={open}
                   onSelect={(_, value) => {
                     field.onChange(value);

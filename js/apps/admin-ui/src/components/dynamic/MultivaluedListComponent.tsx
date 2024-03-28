@@ -1,9 +1,9 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -57,7 +57,7 @@ export const MultiValuedListComponent = ({
             }}
             variant={SelectVariant.typeaheadMulti}
             typeAheadAriaLabel="Select"
-            onToggle={(isOpen) => setOpen(isOpen)}
+            onToggle={(_event, isOpen) => setOpen(isOpen)}
             selections={
               stringify ? stringToMultiline(field.value) : field.value
             }

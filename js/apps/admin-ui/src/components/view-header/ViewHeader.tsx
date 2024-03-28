@@ -2,9 +2,6 @@ import {
   Badge,
   Button,
   Divider,
-  Dropdown,
-  DropdownPosition,
-  DropdownToggle,
   Level,
   LevelItem,
   PageSection,
@@ -15,6 +12,11 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownPosition,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import {
   ReactElement,
   ReactNode,
@@ -92,7 +94,7 @@ export const ViewHeader = ({
           <LevelItem>
             <Level>
               <LevelItem>
-                <TextContent className="pf-u-mr-sm">
+                <TextContent className="pf-v5-u-mr-sm">
                   <Text
                     className={className}
                     component="h1"
@@ -121,7 +123,7 @@ export const ViewHeader = ({
             </Level>
           </LevelItem>
           <LevelItem>
-            <Toolbar className="pf-u-p-0">
+            <Toolbar className="pf-v5-u-p-0">
               <ToolbarContent>
                 {onToggle && (
                   <ToolbarItem>
@@ -130,11 +132,11 @@ export const ViewHeader = ({
                       data-testid={`${titleKey}-switch`}
                       label={t("enabled")}
                       labelOff={t("disabled")}
-                      className="pf-u-mr-lg"
+                      className="pf-v5-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       aria-label={t("enabled")}
-                      onChange={(value) => {
+                      onChange={(_event, value) => {
                         onToggle(value);
                       }}
                     />
@@ -182,7 +184,7 @@ export const ViewHeader = ({
                   title={t("learnMore")}
                   href={helpUrl}
                   isInline
-                  className="pf-u-ml-md"
+                  className="pf-v5-u-ml-md"
                 />
               )}
             </Text>
@@ -194,7 +196,7 @@ export const ViewHeader = ({
             toggle={
               <DropdownToggle
                 onToggle={() => onLowerDropdownToggle()}
-                isPrimary
+                toggleVariant="primary"
                 id="ufToggleId"
               >
                 {t(lowerDropdownMenuTitle)}

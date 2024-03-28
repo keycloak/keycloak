@@ -22,7 +22,7 @@ export default class CredentialsPage {
   readonly #labelField = "userLabelFld";
   readonly #editConfirmationBtn = "editUserLabelAcceptBtn";
   readonly #showDataDialogBtn = "showDataBtn";
-  readonly #closeDataDialogBtn = '.pf-c-modal-box [aria-label^="Close"]';
+  readonly #closeDataDialogBtn = '.pf-v5-c-modal-box [aria-label^="Close"]';
 
   goToCredentialsTab() {
     cy.intercept("/admin/realms/*/users/*/credentials").as("load");
@@ -57,7 +57,7 @@ export default class CredentialsPage {
   }
 
   clickResetModalAction(index: number) {
-    cy.get("[data-testid=credential-reset-modal] .pf-c-select__menu")
+    cy.get("[data-testid=credential-reset-modal] .pf-v5-c-select__menu")
       .contains(this.#resetActions[index])
       .click();
 

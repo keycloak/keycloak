@@ -5,7 +5,9 @@ import {
   Form,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Modal,
+  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
@@ -16,8 +18,8 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { FormErrorText, SelectControl, useAlerts } from "ui-shared";
 
-import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
 import { useEnvironment } from "../root/KeycloakContext";
@@ -139,36 +141,36 @@ export const ShareTheResource = ({
         <FormGroup
           label={t("shareUser")}
           type="string"
-          helperTextInvalid={errors.usernames?.message}
           fieldId="users"
           isRequired
-          validated={
-            errors.usernames ? ValidatedOptions.error : ValidatedOptions.default
-          }
         >
           <InputGroup>
-            <KeycloakTextInput
-              id="users"
-              data-testid="users"
-              placeholder={t("usernamePlaceholder")}
-              validated={
-                errors.usernames
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              {...register(`usernames.${fields.length - 1}.value`, {
-                validate: validateUser,
-              })}
-            />
-            <Button
-              key="add-user"
-              variant="primary"
-              data-testid="add"
-              onClick={() => append({ value: "" })}
-              isDisabled={isDisabled}
-            >
-              {t("add")}
-            </Button>
+            <InputGroupItem>
+              <TextInput
+                id="users"
+                data-testid="users"
+                placeholder={t("usernamePlaceholder")}
+                validated={
+                  errors.usernames
+                    ? ValidatedOptions.error
+                    : ValidatedOptions.default
+                }
+                {...register(`usernames.${fields.length - 1}.value`, {
+                  validate: validateUser,
+                })}
+              />
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                key="add-user"
+                variant="primary"
+                data-testid="add"
+                onClick={() => append({ value: "" })}
+                isDisabled={isDisabled}
+              >
+                {t("add")}
+              </Button>
+            </InputGroupItem>
           </InputGroup>
           {fields.length > 1 && (
             <ChipGroup categoryName={t("shareWith")}>
@@ -181,6 +183,9 @@ export const ShareTheResource = ({
                   ),
               )}
             </ChipGroup>
+          )}
+          {errors.usernames && (
+            <FormErrorText message={errors.usernames.message!} />
           )}
         </FormGroup>
         <FormProvider {...form}>

@@ -14,7 +14,7 @@ export default class UserProfile {
   #deleteDrpDwnOption = "deleteDropdownAttributeItem";
   #editDrpDwnOption = "editDropdownAttributeItem";
   #cancelNewAttribute = "attribute-cancel";
-  #newAttributeNameInput = "attribute-name";
+  #newAttributeNameInput = "name";
   #newAttributeDisplayNameInput = "attribute-display-name";
   #newAttributeEnabledWhen = 'input[name="enabledWhen"]';
   #newAttributeEmptyValidators = ".kc-emptyValidators";
@@ -27,7 +27,7 @@ export default class UserProfile {
   #removeValidatorBtn = "deleteValidator";
   #deleteValidatorBtn = "confirm";
   #cancelRemovingValidatorBtn = "cancel";
-  #newAttributeRequiredField = "input#kc-required.pf-c-switch__input";
+  #newAttributeRequiredField = "input#kc-required.pf-v5-c-switch__input";
   #newAttributeUserEdit = "user-edit";
   #newAttributeAdminEdit = "admin-edit";
   #newAttributeUserView = "user-view";
@@ -143,7 +143,7 @@ export default class UserProfile {
 
   setAttributeGroup(group: string) {
     cy.get("#kc-attributeGroup").click();
-    cy.get("button.pf-c-select__menu-item").contains(group).click();
+    cy.get("button.pf-v5-c-select__menu-item").contains(group).click();
 
     return this;
   }
@@ -196,7 +196,7 @@ export default class UserProfile {
   }
 
   #textArea() {
-    return cy.get(".pf-c-code-editor__code textarea");
+    return cy.get(".pf-v5-c-code-editor__code textarea");
   }
 
   #getText() {

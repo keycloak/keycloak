@@ -1,11 +1,9 @@
+import { AlertVariant, Button, PageSection } from "@patternfly/react-core";
 import {
-  AlertVariant,
-  Button,
-  PageSection,
   Wizard,
   WizardContextConsumer,
   WizardFooter,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

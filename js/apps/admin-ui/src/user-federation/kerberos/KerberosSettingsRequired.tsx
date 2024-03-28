@@ -1,10 +1,9 @@
+import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { useState } from "react";
 import {
@@ -17,7 +16,6 @@ import { useTranslation } from "react-i18next";
 import { HelpItem, TextControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
@@ -63,21 +61,17 @@ export const KerberosSettingsRequired = ({
       {/* Required settings */}
       <FormAccess role="manage-realm" isHorizontal>
         {/* These hidden fields are required so data object written back matches data retrieved */}
-        <KeycloakTextInput
+        <TextInput
           hidden
           defaultValue="kerberos"
           {...form.register("providerId")}
         />
-        <KeycloakTextInput
+        <TextInput
           hidden
           defaultValue="org.keycloak.storage.UserStorageProvider"
           {...form.register("providerType")}
         />
-        <KeycloakTextInput
-          hidden
-          defaultValue={realm}
-          {...form.register("parentId")}
-        />
+        <TextInput hidden defaultValue={realm} {...form.register("parentId")} />
         <TextControl
           name="name"
           label={t("uiDisplayName")}
@@ -126,7 +120,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-debug"}
                 data-testid="debug"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -154,7 +148,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-allow-password-authentication"}
                 data-testid="allow-password-authentication"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -221,7 +215,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-update-first-login"}
                 data-testid="update-first-login"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}

@@ -71,7 +71,7 @@ export const ScrollForm = ({
           <JumpLinks
             isVertical
             // scrollableSelector has to point to the id of the element whose scrollTop changes
-            // to scroll the entire main section, it has to be the pf-c-page__main
+            // to scroll the entire main section, it has to be the pf-v5-c-page__main
             scrollableSelector={`#${mainPageContentId}`}
             label={label}
             offset={100}

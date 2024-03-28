@@ -1,13 +1,13 @@
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Td } from "@patternfly/react-table";
+import { Button } from "@patternfly/react-core";
 import {
-  Button,
   Dropdown,
   DropdownPosition,
   KebabToggle,
   DropdownItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import useToggle from "../../utils/useToggle";

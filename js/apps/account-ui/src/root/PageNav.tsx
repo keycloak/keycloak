@@ -5,6 +5,7 @@ import {
   NavList,
   PageSidebar,
   Spinner,
+  PageSidebarBody,
 } from "@patternfly/react-core";
 import {
   PropsWithChildren,
@@ -48,8 +49,8 @@ export const PageNav = () => {
 
   usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
-    <PageSidebar
-      nav={
+    <PageSidebar>
+      <PageSidebarBody>
         <Nav>
           <NavList>
             <Suspense fallback={<Spinner />}>
@@ -68,8 +69,8 @@ export const PageNav = () => {
             </Suspense>
           </NavList>
         </Nav>
-      }
-    />
+      </PageSidebarBody>
+    </PageSidebar>
   );
 };
 

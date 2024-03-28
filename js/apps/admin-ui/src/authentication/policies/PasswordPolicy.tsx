@@ -9,15 +9,15 @@ import {
   EmptyState,
   EmptyStateBody,
   EmptyStateIcon,
-  EmptyStatePrimary,
   PageSection,
-  Select,
-  SelectOption,
-  Title,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
+  EmptyStateActions,
+  EmptyStateHeader,
+  EmptyStateFooter,
 } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -56,7 +56,7 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
         onSelect(selection as PasswordPolicyTypeRepresentation);
         setOpen(false);
       }}
-      onToggle={(value) => setOpen(value)}
+      onToggle={(_event, value) => setOpen(value)}
       isOpen={open}
       selections={t("addPolicy")}
       isDisabled={policies?.length === 0}
@@ -128,7 +128,7 @@ export const PasswordPolicy = ({
   };
 
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       {(rows.length !== 0 || realm.passwordPolicy) && (
         <>
           <Toolbar>
@@ -180,15 +180,18 @@ export const PasswordPolicy = ({
         </>
       )}
       {!rows.length && !realm.passwordPolicy && (
-        <EmptyState data-testid="empty-state" variant="large">
-          <EmptyStateIcon icon={PlusCircleIcon} />
-          <Title headingLevel="h1" size="lg">
-            {t("noPasswordPolicies")}
-          </Title>
+        <EmptyState data-testid="empty-state" variant="lg">
+          <EmptyStateHeader
+            titleText={<>{t("noPasswordPolicies")}</>}
+            icon={<EmptyStateIcon icon={PlusCircleIcon} />}
+            headingLevel="h1"
+          />
           <EmptyStateBody>{t("noPasswordPoliciesInstructions")}</EmptyStateBody>
-          <EmptyStatePrimary>
-            <PolicySelect onSelect={onSelect} selectedPolicies={[]} />
-          </EmptyStatePrimary>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <PolicySelect onSelect={onSelect} selectedPolicies={[]} />
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
     </PageSection>

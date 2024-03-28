@@ -32,7 +32,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
   });
 
   return (
-    <div className="pf-c-form pf-m-horizontal">
+    <div className="pf-v5-c-form pf-m-horizontal">
       <TextControl
         name="config.authorizationUrl"
         label={t("authorizationUrl")}

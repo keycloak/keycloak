@@ -6,6 +6,7 @@ import {
   InputGroup,
   Split,
   SplitItem,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
@@ -45,13 +46,17 @@ const SecretInput = ({
     <Split hasGutter>
       <SplitItem isFilled>
         <InputGroup>
-          <PasswordInput id={id} value={secret} isReadOnly />
-          <CopyToClipboardButton
-            id={id}
-            text={secret}
-            label="clientSecret"
-            variant="control"
-          />
+          <InputGroupItem>
+            <PasswordInput id={id} value={secret} readOnly />
+          </InputGroupItem>
+          <InputGroupItem>
+            <CopyToClipboardButton
+              id={id}
+              text={secret}
+              label="clientSecret"
+              variant="control"
+            />
+          </InputGroupItem>
         </InputGroup>
       </SplitItem>
       <SplitItem>
@@ -80,7 +85,7 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
         })
       : undefined;
 
-  return <div className="pf-u-my-md">{unixTimeToString(time)}</div>;
+  return <div className="pf-v5-u-my-md">{unixTimeToString(time)}</div>;
 };
 
 export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
@@ -120,7 +125,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
       <FormGroup
         label={t("clientSecret")}
         fieldId="kc-client-secret"
-        className="pf-u-my-md"
+        className="pf-v5-u-my-md"
       >
         <SecretInput
           id="kc-client-secret"

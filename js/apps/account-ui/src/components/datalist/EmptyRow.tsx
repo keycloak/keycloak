@@ -11,7 +11,7 @@ type EmptyRowProps = {
 
 export const EmptyRow = ({ message, ...props }: EmptyRowProps) => {
   return (
-    <DataListItem className="pf-u-align-items-center pf-p-b-0">
+    <DataListItem className="pf-v5-u-align-items-center pf-p-b-0">
       <DataListItemRow>
         <DataListItemCells
           dataListCells={[

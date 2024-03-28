@@ -171,7 +171,7 @@ describe("User creation", () => {
 
     masthead.checkNotificationMessage("The user has not been saved: ");
 
-    cy.get(".pf-c-helper-text__item-text")
+    cy.get(".pf-v5-c-helper-text__item-text")
       .filter(':contains("Update of read-only attribute rejected")')
       .should("have.length", 2);
 

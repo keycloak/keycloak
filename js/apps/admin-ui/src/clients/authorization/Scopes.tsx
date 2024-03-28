@@ -8,7 +8,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -148,7 +148,7 @@ export const AuthorizationScopes = ({
   const noData = scopes.length === 0;
   const searching = search !== "";
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteScopeDialog
         clientId={clientId}
         open={deleteDialog}
@@ -184,7 +184,7 @@ export const AuthorizationScopes = ({
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("scopes")} variant="compact">
+            <Table aria-label={t("scopes")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -301,7 +301,7 @@ export const AuthorizationScopes = ({
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

@@ -1,13 +1,15 @@
-import { Button, InputGroup } from "@patternfly/react-core";
-import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
-import { forwardRef, MutableRefObject, Ref, useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
-  KeycloakTextInput,
-  KeycloakTextInputProps,
-} from "../keycloak-text-input/KeycloakTextInput";
+  Button,
+  InputGroup,
+  InputGroupItem,
+  TextInput,
+  type TextInputProps,
+} from "@patternfly/react-core";
+import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
+import { MutableRefObject, Ref, forwardRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-export type PasswordInputProps = KeycloakTextInputProps & {
+export type PasswordInputProps = TextInputProps & {
   hasReveal?: boolean;
 };
 
@@ -20,11 +22,13 @@ const PasswordInputBase = ({
   const [hidePassword, setHidePassword] = useState(true);
   return (
     <InputGroup>
-      <KeycloakTextInput
-        {...rest}
-        type={hidePassword ? "password" : "text"}
-        ref={innerRef}
-      />
+      <InputGroupItem>
+        <TextInput
+          {...rest}
+          type={hidePassword ? "password" : "text"}
+          ref={innerRef}
+        />
+      </InputGroupItem>
       {hasReveal && (
         <Button
           variant="control"

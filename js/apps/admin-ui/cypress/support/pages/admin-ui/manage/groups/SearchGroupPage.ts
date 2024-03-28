@@ -19,7 +19,7 @@ export class SearchGroupPage extends GroupPage {
   }
 
   public goToGroupChildGroupsFromTree(item: string) {
-    cy.get(".pf-c-tree-view__content").contains(item).click();
+    cy.get(".pf-v5-c-tree-view__content").contains(item).click();
     this.#sidebarPage.waitForPageLoad();
     return this;
   }
@@ -35,7 +35,10 @@ export class SearchGroupPage extends GroupPage {
   }
 
   public checkTerm(searchTerm: string) {
-    cy.get(".pf-c-chip-group").children().contains(searchTerm).should("exist");
+    cy.get(".pf-v5-c-chip-group")
+      .children()
+      .contains(searchTerm)
+      .should("exist");
     return this;
   }
 }

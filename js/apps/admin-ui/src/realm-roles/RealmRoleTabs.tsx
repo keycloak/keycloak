@@ -3,11 +3,11 @@ import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/ro
 import {
   AlertVariant,
   ButtonVariant,
-  DropdownItem,
   PageSection,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import {
   FormProvider,
@@ -337,7 +337,7 @@ export default function RealmRoleTabs() {
         dropdownItems={dropdownItems}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs isBox mountOnEnter defaultLocation={toTab("details")}>
             <Tab

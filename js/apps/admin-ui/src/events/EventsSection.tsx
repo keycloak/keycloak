@@ -16,13 +16,15 @@ import {
   Form,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth, expandable } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
@@ -267,7 +269,7 @@ export default function EventsSection() {
                         }}
                         variant={SelectVariant.typeaheadMulti}
                         typeAheadAriaLabel="Select"
-                        onToggle={(isOpen) => setSelectOpen(isOpen)}
+                        onToggle={(_event, isOpen) => setSelectOpen(isOpen)}
                         selections={field.value}
                         onSelect={(_, selectedValue) => {
                           const option = selectedValue.toString() as EventType;
@@ -325,7 +327,7 @@ export default function EventsSection() {
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        className="pf-u-w-100"
+                        className="pf-v5-u-w-100"
                         value={field.value}
                         onChange={(_, value) => field.onChange(value)}
                         inputProps={{ id: "kc-dateFrom" }}
@@ -343,7 +345,7 @@ export default function EventsSection() {
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        className="pf-u-w-100"
+                        className="pf-v5-u-w-100"
                         value={field.value}
                         onChange={(_, value) => field.onChange(value)}
                         inputProps={{ id: "kc-dateTo" }}
@@ -378,7 +380,7 @@ export default function EventsSection() {
           </FlexItem>
           <FlexItem>
             {Object.entries(activeFilters).length > 0 && (
-              <div className="keycloak__searchChips pf-u-ml-md">
+              <div className="keycloak__searchChips pf-v5-u-ml-md">
                 {Object.entries(activeFilters).map((filter) => {
                   const [key, value] = filter as [
                     keyof UserEventSearchForm,
@@ -387,7 +389,7 @@ export default function EventsSection() {
 
                   return (
                     <ChipGroup
-                      className="pf-u-mt-md pf-u-mr-md"
+                      className="pf-v5-u-mt-md pf-v5-u-mr-md"
                       key={key}
                       categoryName={filterLabels[key]}
                       isClosable
@@ -433,7 +435,7 @@ export default function EventsSection() {
         helpUrl={helpUrls.eventsUrl}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           isBox
           defaultLocation={toEvents({ realm, tab: "user-events" })}

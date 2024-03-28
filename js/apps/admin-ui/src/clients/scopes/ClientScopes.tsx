@@ -3,11 +3,13 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import {
   Dropdown,
   DropdownItem,
   KebabToggle,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";

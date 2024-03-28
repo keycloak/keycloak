@@ -14,16 +14,19 @@ import {
   Panel,
   PanelHeader,
   PanelMainBody,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Title,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "ui-shared";
+import { FormErrorText, HelpItem, TextControl } from "ui-shared";
+
 import { ForbiddenSection } from "../../ForbiddenSection";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -220,8 +223,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   <HelpItem helpText={t("rolesHelp")} fieldLabelId="roles" />
                 }
                 fieldId="realmRole"
-                validated={errors.roleIds ? "error" : "default"}
-                helperTextInvalid={t("required")}
                 isRequired={user.length === 0}
               >
                 <Controller
@@ -237,7 +238,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       placeholderText={t("selectARole")}
                       variant={SelectVariant.typeaheadMulti}
                       toggleId="role"
-                      onToggle={setRoleDropdownOpen}
+                      onToggle={(_event, val) => setRoleDropdownOpen(val)}
                       selections={field.value}
                       onSelect={(_, v) => {
                         const option = v.toString();
@@ -269,6 +270,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     </Select>
                   )}
                 />
+                {errors.roleIds && <FormErrorText message={t("required")} />}
               </FormGroup>
             </FormAccess>
           </PanelMainBody>
@@ -294,7 +296,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={applyToResourceType}
-                  onChange={setApplyToResourceType}
+                  onChange={(_event, val) => setApplyToResourceType(val)}
                   aria-label={t("applyToResourceType")}
                 />
               </FormGroup>
@@ -344,7 +346,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       render={({ field }) => (
                         <Select
                           toggleId="authScopes"
-                          onToggle={setScopesDropdownOpen}
+                          onToggle={(_event, val) => setScopesDropdownOpen(val)}
                           onSelect={(_, v) => {
                             const option = v.toString();
                             if (field.value.includes(option)) {
@@ -391,7 +393,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       fieldLabelId={`contextualAttributes`}
                     />
                   }
-                  helperTextInvalid={t("required")}
                   fieldId="contextualAttributes"
                 >
                   <KeyBasedAttributeInput
@@ -407,7 +408,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           <Button
             data-testid="authorization-eval"
             id="authorization-eval"
-            className="pf-u-mr-md"
+            className="pf-v5-u-mr-md"
             isDisabled={!isValid}
             onClick={() => evaluate()}
           >
@@ -416,7 +417,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           <Button
             data-testid="authorization-revert"
             id="authorization-revert"
-            className="pf-u-mr-md"
+            className="pf-v5-u-mr-md"
             variant="link"
             onClick={() => reset()}
           >

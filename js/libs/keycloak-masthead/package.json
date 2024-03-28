@@ -40,8 +40,8 @@
     }
   },
   "dependencies": {
-    "@patternfly/react-core": "^4.278.0",
-    "@patternfly/react-styles": "^4.92.8",
+    "@patternfly/react-core": "^5.2.3",
+    "@patternfly/react-styles": "^5.2.1",
     "keycloak-js": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
