@@ -52,7 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class SdJwtSigningServiceTest extends SigningServiceTest {
+public class SdJwtSigningServiceTest extends OID4VCTest {
 
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static KeyWrapper rsaKey = getRsaKey();

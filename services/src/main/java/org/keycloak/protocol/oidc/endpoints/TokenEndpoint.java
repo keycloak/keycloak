@@ -33,6 +33,8 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
@@ -58,6 +60,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+
 import javax.xml.namespace.QName;
 
 import java.io.IOException;
@@ -130,7 +133,9 @@ public class TokenEndpoint {
         checkRealm();
         checkGrantType();
 
-        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)) {
+        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)
+                // pre-authorized grants are not necessarily used by known clients.
+                && !grantType.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
         }
@@ -202,7 +207,7 @@ public class TokenEndpoint {
         for (String key : formParams.keySet()) {
             if (formParams.get(key).size() != 1) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
-                    Response.Status.BAD_REQUEST);
+                        Response.Status.BAD_REQUEST);
             }
         }
     }

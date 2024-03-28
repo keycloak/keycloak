@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -50,7 +49,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
         String tokenType = model.get(SigningProperties.TOKEN_TYPE.getKey());
         String hashAlgorithm = model.get(SigningProperties.HASH_ALGORITHM.getKey());
         Optional<String> kid = Optional.ofNullable(model.get(SigningProperties.KID_HEADER.getKey()));
-        int decoys = Integer.valueOf(model.get(SigningProperties.DECOYS.getKey()));
+        int decoys = Integer.parseInt(model.get(SigningProperties.DECOYS.getKey()));
 
         List<String> visibleClaims = Optional.ofNullable(model.get(SigningProperties.VISIBLE_CLAIMS.getKey()))
                 .map(visibileClaims -> visibileClaims.split(","))

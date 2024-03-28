@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
@@ -53,7 +52,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 
-public class JwtSigningServiceTest extends SigningServiceTest {
+public class JwtSigningServiceTest extends OID4VCTest {
 
     private static final Logger LOGGER = Logger.getLogger(JwtSigningServiceTest.class);
 

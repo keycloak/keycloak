@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.runonserver;
+package org.keycloak.protocol.oid4vc.model;
 
-import org.keycloak.common.VerificationException;
-import org.keycloak.models.KeycloakSession;
-
-import java.io.IOException;
-import java.io.Serializable;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Enum to provide potential proof types for holder-binding
+ *
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public interface RunOnServer extends Serializable {
+public enum ProofType {
 
-    void run(KeycloakSession session) throws IOException, VerificationException;
+    JWT("jwt"),
+    LD_PROOF("ldp_vp"),
+    CWT("cwt");
 
+    private final String value;
+
+    ProofType(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
 }

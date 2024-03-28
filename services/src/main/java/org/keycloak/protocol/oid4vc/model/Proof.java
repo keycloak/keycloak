@@ -17,37 +17,38 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Pojo to represent a CredentialSubject for internal handling
+ * Proof to be used in the Credential Request(to allow holder binding) according to OID4VCI
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CredentialSubject {
+public class Proof {
 
-    @JsonIgnore
-    private Map<String, Object> claims = new HashMap<>();
+    @JsonProperty("proof_type")
+    private ProofType proofType;
 
-    @JsonAnyGetter
-    public Map<String, Object> getClaims() {
-        return claims;
+    private Object proofObject;
+
+    public ProofType getProofType() {
+        return proofType;
     }
 
-    @JsonAnySetter
-    public void setClaims(String name, Object claim) {
-        claims.put(name, claim);
+    public Proof setProofType(ProofType proofType) {
+        this.proofType = proofType;
+        return this;
     }
 
-    public CredentialSubject setClaims(Map<String, Object> claims) {
-        this.claims = claims;
+    public Object getProofObject() {
+        return proofObject;
+    }
+
+    public Proof setProofObject(Object proofObject) {
+        this.proofObject = proofObject;
         return this;
     }
 }
