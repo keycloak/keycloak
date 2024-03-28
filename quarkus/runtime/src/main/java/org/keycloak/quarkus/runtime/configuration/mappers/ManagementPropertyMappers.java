@@ -105,6 +105,7 @@ public class ManagementPropertyMappers {
                         .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_TYPE.getKey())
                         .to("quarkus.management.ssl.certificate.key-store-file-type")
+                        .transformer((value, config) -> value.or(() -> Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_TYPE.getKey())))
                         .paramLabel("type")
                         .build(),
         };

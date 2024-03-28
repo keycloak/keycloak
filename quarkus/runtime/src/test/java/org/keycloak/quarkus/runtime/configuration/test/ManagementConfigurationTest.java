@@ -199,6 +199,31 @@ public class ManagementConfigurationTest extends ConfigurationTest {
         assertManagementHttpsEnabled(true);
     }
 
+    @Test
+    public void fipsKeystoreType(){
+        putEnvVar("KC_FIPS_MODE", "strict");
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "https-key-store-type", "BCFKS",
+                "management-https-key-store-type", "BCFKS"
+                ));
+    }
+
+    @Test
+    public void keystoreType(){
+        putEnvVar("KC_HTTPS_KEY_STORE_TYPE", "pkcs12");
+        putEnvVar("KC_MANAGEMENT_HTTPS_KEY_STORE_TYPE", "BCFKS");
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "https-key-store-type", "pkcs12",
+                "management-https-key-store-type", "BCFKS"
+        ));
+    }
+
     private void assertManagementHttpsEnabled(boolean expected) {
         assertThat("Expected value for Management HTTPS is different", ManagementPropertyMappers.isManagementTlsEnabled(), is(expected));
     }

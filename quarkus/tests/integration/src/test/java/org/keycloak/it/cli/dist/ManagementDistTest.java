@@ -50,6 +50,7 @@ public class ManagementDistTest {
     }
 
     @Test
+    @Order(2)
     @Launch({"start-dev", "--management-enabled=false"})
     void testManagementDisabled(LaunchResult result, KeycloakDistribution distribution) {
         CLIResult cliResult = (CLIResult) result;
@@ -65,7 +66,8 @@ public class ManagementDistTest {
     }
 
     @Test
-    @Launch({"start-dev"})
+    @Order(3)
+    @Launch({"start-dev", "--management-enabled=true"})
     void testManagementEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
