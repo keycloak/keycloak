@@ -48,6 +48,7 @@ import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -97,6 +98,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String WEB_ORIGINS_SCOPE = "web-origins";
     public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
     public static final String ACR_SCOPE = "acr";
+    public static final String BASIC_SCOPE = "basic";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -220,6 +222,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             model = AcrProtocolMapper.create(ACR, true, true, true);
             builtins.put(ACR, model);
         }
+
+        model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
+                IDToken.AUTH_TIME, "long",
+                true, true, false, true);
+        builtins.put(BASIC_SCOPE, model);
     }
 
     private void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
@@ -298,6 +305,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         addWebOriginsClientScope(newRealm);
         addMicroprofileJWTClientScope(newRealm);
         addAcrClientScope(newRealm);
+        addBasicClientScope(newRealm);
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
             ClientScopeModel organizationScope = newRealm.addClientScope(OAuth2Constants.ORGANIZATION);
@@ -402,6 +410,25 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         } else {
             logger.debugf("Skip creating client scope '%s' in the realm '%s' due the step-up authentication feature is disabled.", ACR_SCOPE, newRealm.getName());
         }
+    }
+
+    public ClientScopeModel addBasicClientScope(RealmModel newRealm) {
+        ClientScopeModel basicScope = KeycloakModelUtils.getClientScopeByName(newRealm, BASIC_SCOPE);
+        if (basicScope == null) {
+            basicScope = newRealm.addClientScope(BASIC_SCOPE);
+            basicScope.setDescription("OpenID Connect scope for add all basic claims to the token");
+            basicScope.setDisplayOnConsentScreen(false);
+            basicScope.setIncludeInTokenScope(false);
+            basicScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            basicScope.addProtocolMapper(builtins.get(BASIC_SCOPE));
+
+            newRealm.addDefaultClientScope(basicScope, true);
+
+            logger.debugf("Client scope '%s' created in the realm '%s'.", BASIC_SCOPE, newRealm.getName());
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", BASIC_SCOPE, newRealm.getName());
+        }
+        return basicScope;
     }
 
     @Override

@@ -77,4 +77,12 @@ public interface MigrationProvider extends Provider {
      * @return created or already existing client scope 'acr'
      */
     void addOIDCAcrClientScope(RealmModel realm);
+
+    /**
+     * Add 'basic' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'basic'
+     */
+    ClientScopeModel addOIDCBasicClientScope(RealmModel realm);
 }

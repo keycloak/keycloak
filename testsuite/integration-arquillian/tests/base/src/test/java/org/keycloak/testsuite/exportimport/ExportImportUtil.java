@@ -724,6 +724,7 @@ public class ExportImportUtil {
           OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
           OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE,
           OIDCLoginProtocolFactory.ACR_SCOPE,
+          OIDCLoginProtocolFactory.BASIC_SCOPE,
           SamlProtocolFactory.SCOPE_ROLE_LIST
         ));
 
@@ -745,7 +746,8 @@ public class ExportImportUtil {
           OAuth2Constants.SCOPE_EMAIL,
           OIDCLoginProtocolFactory.ROLES_SCOPE,
           OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
-          OIDCLoginProtocolFactory.ACR_SCOPE
+          OIDCLoginProtocolFactory.ACR_SCOPE,
+          OIDCLoginProtocolFactory.BASIC_SCOPE
         ));
 
         Set<String> optionalClientScopes = realm.getDefaultOptionalClientScopes()
