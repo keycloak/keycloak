@@ -32,7 +32,7 @@ describe("OIDC identity provider test", () => {
   const authorizationUrl = `${keycloakServer}/realms/master/protocol/openid-connect/auth`;
 
   describe("OIDC Identity provider creation", () => {
-    const oidcProviderName = "OIDC";
+    const oidcProviderName = "oidc";
     const secret = "123";
 
     beforeEach(() => {
@@ -67,7 +67,7 @@ describe("OIDC identity provider test", () => {
       sidebarPage.goToIdentityProviders();
       listingPage.goToItemDetails(oidcProviderName);
       //general settings
-      cy.findByTestId("displayName").type("oidc");
+      cy.findByTestId("displayName").click().type("OIDC");
       cy.findByTestId("jump-link-general-settings").click();
       providerBaseGeneralSettingsPage.typeDisplayOrder("1");
       createProviderPage.clickSave();
