@@ -47,14 +47,14 @@ public class ManagementOptions {
     public static final Option<String> MANAGEMENT_HOST = new OptionBuilder<>("management-host", String.class)
             .hidden()
             .category(OptionCategory.MANAGEMENT)
-            .description("Host of the management interface.")
+            .description("Host of the management interface. If not given, the value is inherited from HTTP options.")
             .defaultValue("0.0.0.0")
             .build();
 
     //HTTPS
     public static final Option<HttpOptions.ClientAuth> MANAGEMENT_HTTPS_CLIENT_AUTH = new OptionBuilder<>("management-https-client-auth", HttpOptions.ClientAuth.class)
             .category(OptionCategory.MANAGEMENT)
-            .description("Configures the management interface to require/request client authentication.")
+            .description("Configures the management interface to require/request client authentication. If not given, the value is inherited from HTTP options.")
             .defaultValue(HttpOptions.ClientAuth.none)
             .buildTime(true)
             .build();
@@ -62,43 +62,42 @@ public class ManagementOptions {
     public static final Option<String> MANAGEMENT_HTTPS_CIPHER_SUITES = new OptionBuilder<>("management-https-cipher-suites", String.class)
             .hidden()
             .category(OptionCategory.MANAGEMENT)
-            .description("The cipher suites to use for the management server. If none is given, a reasonable default is selected.")
+            .description("The cipher suites to use for the management server. If not given, the value is inherited from HTTP options.")
             .hidden()
             .build();
 
     public static final Option<List<String>> MANAGEMENT_HTTPS_PROTOCOLS = OptionBuilder.listOptionBuilder("management-https-protocols", String.class)
             .hidden()
             .category(OptionCategory.MANAGEMENT)
-            .description("The list of protocols to explicitly enable for the management server.")
+            .description("The list of protocols to explicitly enable for the management server. If not given, the value is inherited from HTTP options.")
             .defaultValue(List.of("TLSv1.3,TLSv1.2"))
             .hidden()
             .build();
 
     public static final Option<File> MANAGEMENT_HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("management-https-certificate-file", File.class)
             .category(OptionCategory.MANAGEMENT)
-            .description("The file path to a server certificate or certificate chain in PEM format for the management server.")
+            .description("The file path to a server certificate or certificate chain in PEM format for the management server. If not given, the value is inherited from HTTP options.")
             .build();
 
     public static final Option<File> MANAGEMENT_HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("management-https-certificate-key-file", File.class)
             .category(OptionCategory.MANAGEMENT)
-            .description("The file path to a private key in PEM format for the management server.")
+            .description("The file path to a private key in PEM format for the management server. If not given, the value is inherited from HTTP options.")
             .build();
 
     public static final Option<File> MANAGEMENT_HTTPS_KEY_STORE_FILE = new OptionBuilder<>("management-https-key-store-file", File.class)
             .category(OptionCategory.MANAGEMENT)
-            .description("The key store which holds the certificate information instead of specifying separate files for the management server.")
+            .description("The key store which holds the certificate information instead of specifying separate files for the management server. If not given, the value is inherited from HTTP options.")
             .build();
 
     public static final Option<String> MANAGEMENT_HTTPS_KEY_STORE_PASSWORD = new OptionBuilder<>("management-https-key-store-password", String.class)
             .category(OptionCategory.MANAGEMENT)
-            .description("The password of the key store file for the management server.")
+            .description("The password of the key store file for the management server. If not given, the value is inherited from HTTP options.")
             .defaultValue("password")
             .build();
 
     public static final Option<String> MANAGEMENT_HTTPS_KEY_STORE_TYPE = new OptionBuilder<>("management-https-key-store-type", String.class)
             .hidden()
             .category(OptionCategory.MANAGEMENT)
-            .description("The type of the key store file for the management server. " +
-                    "If not given, the type is automatically detected based on the file name.")
+            .description("The type of the key store file for the management server. If not given, the value is inherited from HTTP options.")
             .build();
 }

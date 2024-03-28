@@ -214,21 +214,26 @@ Management:
                        endpoints. Default: true.
 --management-https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format for
-                       the management server. Available only when Management interface is enabled.
+                       the management server. If not given, the value is inherited from HTTP
+                       options. Available only when Management interface is enabled.
 --management-https-certificate-key-file <file>
-                     The file path to a private key in PEM format for the management server.
-                       Available only when Management interface is enabled.
+                     The file path to a private key in PEM format for the management server. If not
+                       given, the value is inherited from HTTP options. Available only when
+                       Management interface is enabled.
 --management-https-client-auth <auth>
                      Configures the management interface to require/request client authentication.
-                       Possible values are: none, request, required. Default: none. Available only
-                       when Management interface is enabled.
+                       If not given, the value is inherited from HTTP options. Possible values are:
+                       none, request, required. Default: none. Available only when Management
+                       interface is enabled.
 --management-https-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
-                       separate files for the management server. Available only when Management
-                       interface is enabled.
+                       separate files for the management server. If not given, the value is
+                       inherited from HTTP options. Available only when Management interface is
+                       enabled.
 --management-https-key-store-password <password>
-                     The password of the key store file for the management server. Default:
-                       password. Available only when Management interface is enabled.
+                     The password of the key store file for the management server. If not given,
+                       the value is inherited from HTTP options. Default: password. Available only
+                       when Management interface is enabled.
 --management-port <port>
                      Port of the management interface. Default: 9000. Available only when
                        Management interface is enabled.
