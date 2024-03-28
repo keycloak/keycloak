@@ -25,6 +25,7 @@ import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.representations.AccessToken;
 
 import java.io.IOException;

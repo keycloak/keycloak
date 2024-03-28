@@ -48,7 +48,7 @@ import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
-import org.keycloak.adapters.CorsHeaders;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.adapters.pep.HttpAuthzRequest;
 import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.keycloak.adapters.KeycloakDeployment;

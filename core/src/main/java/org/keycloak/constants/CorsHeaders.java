@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters;
+package org.keycloak.constants;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

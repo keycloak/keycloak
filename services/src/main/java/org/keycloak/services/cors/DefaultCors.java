@@ -21,8 +21,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiConsumer;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 
@@ -34,6 +36,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.util.DPoPUtil;
+
+import static org.keycloak.constants.CorsHeaders.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,14 +47,30 @@ public class DefaultCors implements Cors {
 
     private static final Logger logger = Logger.getLogger(DefaultCors.class);
 
+    private static final Set<String> DEFAULT_ALLOW_HEADERS = new TreeSet<>(Arrays.asList(
+        ORIGIN,
+        HttpHeaders.ACCEPT,
+        Cors.X_REQUESTED_WITH,
+        HttpHeaders.CONTENT_TYPE,
+        ACCESS_CONTROL_REQUEST_METHOD,
+        ACCESS_CONTROL_REQUEST_HEADERS,
+        DPoPUtil.DPOP_HTTP_HEADER
+    ));
+    private static String defaultAllowHeaders;
+
     private HttpRequest request;
     private ResponseBuilder builder;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
+    private Set<String> allowedHeaders;
     private Set<String> exposedHeaders;
 
     private boolean preflight;
     private boolean auth;
+
+    static {
+        cacheDefautlAllowHeaders();
+    }
 
     DefaultCors(HttpRequest request) {
         this.request = request;
@@ -116,6 +137,12 @@ public class DefaultCors implements Cors {
     }
 
     @Override
+    public Cors allowedHeaders(String... allowedHeaders) {
+        this.allowedHeaders = new HashSet<>(Arrays.asList(allowedHeaders));
+        return this;
+    }
+
+    @Override
     public Cors exposedHeaders(String... exposedHeaders) {
         this.exposedHeaders = new HashSet<>(Arrays.asList(exposedHeaders));
         return this;
@@ -158,7 +185,7 @@ public class DefaultCors implements Cors {
             throw new IllegalStateException("request is not set");
         }
 
-        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
+        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN);
         if (origin == null) {
             logger.trace("No Origin header, ignoring");
             return false;
@@ -188,11 +215,14 @@ public class DefaultCors implements Cors {
         addHeader.accept(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
 
         if (preflight) {
-            if (auth) {
-                addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
-            } else {
-                addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+            StringBuilder sb = new StringBuilder(defaultAllowHeaders);
+            if (allowedHeaders != null) {
+                sb.append(", ").append(CollectionUtil.join(allowedHeaders, ", "));
             }
+            if (auth) {
+                sb.append(", ").append(HttpHeaders.AUTHORIZATION);
+            }
+            addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, sb.toString());
         }
 
         if (preflight) {
@@ -204,6 +234,17 @@ public class DefaultCors implements Cors {
 
     @Override
     public void close() {
+    }
+
+    public static void addDefaultAllowHeaders(String[] headers) {
+        if (headers != null) {
+            DEFAULT_ALLOW_HEADERS.addAll(Arrays.asList(headers));
+            cacheDefautlAllowHeaders();
+        }
+    }
+
+    private static void cacheDefautlAllowHeaders() {
+        defaultAllowHeaders = CollectionUtil.join(DEFAULT_ALLOW_HEADERS, ", ");
     }
 
 }

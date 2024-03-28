@@ -7,7 +7,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.services.cors.Cors;
+import org.keycloak.constants.CorsHeaders;
 
 import java.io.IOException;
 
@@ -40,12 +40,12 @@ public class AdminPreflightTest extends AbstractAdminTest {
 
         CloseableHttpResponse response = client.execute(options);
         assertEquals(200, response.getStatusLine().getStatusCode());
-        assertEquals("true", response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS).getValue());
-        assertEquals("DELETE, POST, GET, PUT", response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_METHODS).getValue());
-        assertEquals("http://test", response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN).getValue());
-        assertEquals("3600", response.getFirstHeader(Cors.ACCESS_CONTROL_MAX_AGE).getValue());
-        assertTrue(response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_HEADERS).getValue().contains("Authorization"));
-        assertTrue(response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_HEADERS).getValue().contains("Content-Type"));
+        assertEquals("true", response.getFirstHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS).getValue());
+        assertEquals("DELETE, POST, GET, PUT", response.getFirstHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS).getValue());
+        assertEquals("http://test", response.getFirstHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN).getValue());
+        assertEquals("3600", response.getFirstHeader(CorsHeaders.ACCESS_CONTROL_MAX_AGE).getValue());
+        assertTrue(response.getFirstHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_HEADERS).getValue().contains("Authorization"));
+        assertTrue(response.getFirstHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_HEADERS).getValue().contains("Content-Type"));
     }
 
     private String getAdminUrl(String resource) {

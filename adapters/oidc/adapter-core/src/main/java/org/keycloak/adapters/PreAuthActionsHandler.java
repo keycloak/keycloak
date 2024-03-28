@@ -26,6 +26,7 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
