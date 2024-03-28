@@ -24,10 +24,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.infinispan.commons.util.FileLookupFactory;
+import org.jboss.logging.Logger;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
@@ -42,11 +48,33 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 
 public class CacheBuildSteps {
+    private static final Logger logger = Logger.getLogger(CacheBuildSteps.class);
 
-    @Consume(ConfigBuildItem.class)
+    @Consume(KeycloakSessionFactoryPreInitBuildItem.class)
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
+    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems,
+                             ShutdownContextBuildItem shutdownContext, KeycloakSessionFactoryPreInitBuildItem keycloakSessionFactoryPreInitBuildItem) {
+        Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>> infinispanProviders = keycloakSessionFactoryPreInitBuildItem.getFactories().entrySet()
+                .stream()
+                .filter(e -> e.getKey().getProviderFactoryClass().equals(InfinispanConnectionProviderFactory.class))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+
+        if (infinispanProviders == null || infinispanProviders.isEmpty()) {
+            logger.info("Skipping Infinispan configuration because no providers are enabled.");
+            return;
+        }
+
+        Map<String, Class<? extends ProviderFactory>> infinispanConnectionProviders = infinispanProviders
+                .get(InfinispanConnectionProvider.class);
+
+        if (!infinispanConnectionProviders.containsKey("default") && !infinispanConnectionProviders.containsKey("quarkus")) {
+            logger.info("Skipping Infinispan configuration because providers 'default' and 'quarkus' are disabled.");
+            return;
+        }
+
         String configFile = getConfigValue("kc.spi-connections-infinispan-quarkus-config-file").getValue();
 
         if (configFile != null) {

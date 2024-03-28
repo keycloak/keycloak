@@ -17,11 +17,45 @@
 
 package org.keycloak.quarkus.deployment;
 
-import io.quarkus.builder.item.EmptyBuildItem;
+import io.quarkus.builder.item.SimpleBuildItem;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * A symbolic build item that can be consumed by other build steps when the {@link org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory}
  * is pre-initialized.
  */
-public final class KeycloakSessionFactoryPreInitBuildItem extends EmptyBuildItem {
+public final class KeycloakSessionFactoryPreInitBuildItem extends SimpleBuildItem {
+    private Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories;
+    private Map<Class<? extends Provider>, String> defaultProviders;
+    private Map<String, ProviderFactory> preConfiguredProviders;
+    private List<ClasspathThemeProviderFactory.ThemesRepresentation> themes;
+
+    public KeycloakSessionFactoryPreInitBuildItem(Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories, Map<Class<? extends Provider>, String> defaultProviders, Map<String, ProviderFactory> preConfiguredProviders, List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
+        this.factories = factories;
+        this.defaultProviders = defaultProviders;
+        this.preConfiguredProviders = preConfiguredProviders;
+        this.themes = themes;
+    }
+
+    public Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> getFactories() {
+        return factories;
+    }
+
+    public Map<Class<? extends Provider>, String> getDefaultProviders() {
+        return defaultProviders;
+    }
+
+    public Map<String, ProviderFactory> getPreConfiguredProviders() {
+        return preConfiguredProviders;
+    }
+
+    public List<ClasspathThemeProviderFactory.ThemesRepresentation> getThemes() {
+        return themes;
+    }
 }
