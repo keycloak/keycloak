@@ -14,6 +14,7 @@ import { RoleComponent } from "./RoleComponent";
 import { ScriptComponent } from "./ScriptComponent";
 import { StringComponent } from "./StringComponent";
 import { TextComponent } from "./TextComponent";
+import { UrlComponent } from "./UrlComponent";
 import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
@@ -37,6 +38,7 @@ const ComponentTypes = [
   "MultivaluedString",
   "File",
   "Password",
+  "Url",
 ] as const;
 
 export type Components = (typeof ComponentTypes)[number];
@@ -58,6 +60,7 @@ export const COMPONENTS: {
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,
   Password: PasswordComponent,
+  Url: UrlComponent,
 } as const;
 
 export const isValidComponentType = (value: string): value is Components =>
