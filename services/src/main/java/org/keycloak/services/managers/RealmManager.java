@@ -504,10 +504,105 @@ public class RealmManager {
         }
     }
 
+    public RealmModel mergeRealm(RealmRepresentation rep, boolean skipUserDependent) {
+        RealmModel realm = model.getRealmByName(rep.getRealm());
+        RealmModel currentRealm = session.getContext().getRealm();
+
+        try {
+            session.getContext().setRealm(realm);
+            ReservedCharValidator.validate(rep.getRealm());
+            realm.setName(rep.getRealm());
+
+            boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
+            if (!postponeMasterClientSetup) {
+                setupMasterAdminManagement(realm);
+            }
+
+            boolean postponeImpersonationSetup = hasRealmAdminManagementClient(rep);
+            if (!postponeImpersonationSetup) {
+                setupImpersonationService(realm);
+            }
+
+            boolean postponeAdminCliSetup = false;
+            if (!hasAdminCliClient(rep)) {
+                postponeAdminCliSetup = hasRealmAdminManagementClient(rep);
+
+                if(!postponeAdminCliSetup) {
+                    setupAdminCli(realm);
+                }
+            }
+
+            if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE) || !hasClientScope(rep, Constants.OFFLINE_ACCESS_ROLE)) {
+                setupOfflineTokens(realm, rep);
+            }
+
+            RepresentationToModel.updateRealm(rep, realm, session);
+
+            setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
+
+            setupAdminConsoleLocaleMapper(realm);
+
+            if (postponeMasterClientSetup) {
+                setupMasterAdminManagement(realm);
+            }
+
+            if (rep.getRoles() != null || hasRealmAdminManagementClient(rep)) {
+                // Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
+                checkMasterAdminManagementRoles(realm);
+                checkRealmAdminManagementRoles(realm);
+            }
+
+            // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
+            // I need to postpone impersonation because it needs "realm-management" client and its roles set
+            if (postponeImpersonationSetup) {
+                setupImpersonationService(realm);
+            }
+
+            if (postponeAdminCliSetup) {
+                setupAdminCli(realm);
+            }
+
+            setupAuthenticationFlows(realm);
+            setupRequiredActions(realm);
+
+            if (!hasRealmRole(rep, AccountRoles.DELETE_ACCOUNT)) {
+                KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
+            }
+
+            // enlistAfterCompletion(..) as we need to ensure that the realm is committed to the database before we can update the sync tasks
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    // Refresh periodic sync tasks for configured storageProviders
+                    StoreSyncEvent.fire(session, realm, false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
+
+            setupAuthorizationServices(realm);
+            setupClientRegistrations(realm);
+
+            if (rep.getKeycloakVersion() != null) {
+                StoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
+            }
+
+            session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
+
+            fireRealmPostCreate(realm);
+        } finally {
+            session.getContext().setRealm(currentRealm);
+        }
+
+        return realm;
+    }
+
     public RealmModel importRealm(RealmRepresentation rep) {
         return importRealm(rep, false);
     }
-
 
     /**
      * if "skipUserDependent" is true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization

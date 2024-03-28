@@ -22,6 +22,7 @@ package org.keycloak.exportimport;
  */
 public enum Strategy {
 
-    IGNORE_EXISTING,         // Ignore existing user entries
-    OVERWRITE_EXISTING       // Overwrite existing user entries
+    IGNORE_EXISTING,         // Ignore existing realm
+    OVERWRITE_EXISTING,      // Overwrite existing realm
+    MERGE_EXISTING           // Merge existing realm (preserves users)
 }
