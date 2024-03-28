@@ -139,8 +139,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = new HashMap<>();
         for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : factoriesMap.entrySet()) {
-            Map<String, ProviderFactory> valCopy = new HashMap<>();
-            valCopy.putAll(entry.getValue());
+            Map<String, ProviderFactory> valCopy = new HashMap<>(entry.getValue());
             copy.put(entry.getKey(), valCopy);
         }
         return copy;
@@ -279,7 +278,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
 
         for (Spi spi : spiList) {
 
-            Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
+            Map<String, ProviderFactory> factories = new HashMap<>();
             factoryMap.put(spi.getProviderClass(), factories);
 
             String provider = Config.getProvider(spi.getName());
@@ -327,7 +326,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
             return false;
         }
         if (factory instanceof EnvironmentDependentProviderFactory) {
-            return ((EnvironmentDependentProviderFactory) factory).isSupported();
+            return ((EnvironmentDependentProviderFactory) factory).isSupported(scope);
         }
         return true;
     }

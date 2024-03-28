@@ -23,6 +23,7 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -141,7 +142,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                         checkRemoteCaches(session);
                         loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
                         registerClusterListeners(session);
-                        loadSessionsFromRemoteCaches(session);
+                        // TODO [pruivo] to remove: workaround to run the testsuite.
+                        if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+                            loadSessionsFromRemoteCaches(session);
+                        }
 
                     }, preloadTransactionTimeout);
 
