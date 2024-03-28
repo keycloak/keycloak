@@ -107,7 +107,7 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
             ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https-certificate-file");
 
             if (fse.getFile().equals(Optional.ofNullable(httpsCertFile.getValue()).orElse(null))) {
-                logError(errorWriter, Messages.httpsConfigurationNotSet().getMessage());
+                logError(errorWriter, Messages.httpsConfigurationNotSet());
             }
         }
     }

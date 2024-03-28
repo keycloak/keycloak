@@ -139,7 +139,7 @@ final class HttpPropertyMappers {
             }
 
             if (proceed == null || proceed.getValue() == null) {
-                addInitializationException(Messages.httpsConfigurationNotSet());
+                addInitializationException(new IllegalStateException(Messages.httpsConfigurationNotSet()));
             }
         }
 

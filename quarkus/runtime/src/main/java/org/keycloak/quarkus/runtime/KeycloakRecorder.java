@@ -30,6 +30,8 @@ import io.quarkus.agroal.DataSource;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
 
 import org.hibernate.cfg.AvailableSettings;
@@ -71,6 +73,11 @@ public class KeycloakRecorder {
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
+    }
+
+    // default handler for the management interface
+    public Handler<RoutingContext> getManagementHandler() {
+        return routingContext -> routingContext.response().end("Keycloak Management Interface");
     }
 
     public void configureTruststore() {

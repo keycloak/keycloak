@@ -23,8 +23,6 @@ import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -287,6 +285,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+        assertManagementInterfaceAccessibleViaService(kc, false);
     }
 
     @Test
@@ -296,6 +295,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+
+        // if TLS is enabled, management interface should use https
+        assertManagementInterfaceAccessibleViaService(kc, true);
     }
 
     @Test
@@ -527,55 +529,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testHttpRelativePathWithPlainValue() {
-        var kc = getTestKeycloakDeployment(false);
-        kc.getSpec().setImage(null); // doesn't seem to become ready with the custom image
-        kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, "/foobar"));
-        deployKeycloak(k8sclient, kc, true);
-
-        var pods = k8sclient
-                .pods()
-                .inNamespace(namespace)
-                .withLabels(Constants.DEFAULT_LABELS)
-                .list()
-                .getItems();
-
-        assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath().contains("foobar"));
-    }
-
-    @Test
-    public void testHttpRelativePathWithSecretValue() {
-        var kc = getTestKeycloakDeployment(false);
-        kc.getSpec().setImage(null); // doesn't seem to become ready with the custom image
-        var secretName = "my-http-relative-path";
-        var keyName = "rel-path";
-        var httpRelativePathSecret = new SecretBuilder()
-                .withNewMetadata()
-                .withName(secretName)
-                .withNamespace(namespace)
-                .endMetadata()
-                .addToStringData(keyName, "/barfoo")
-                .build();
-        K8sUtils.set(k8sclient, httpRelativePathSecret);
-
-        kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY,
-                new SecretKeySelectorBuilder()
-                    .withName(secretName)
-                    .withKey(keyName)
-                    .build()));
-        deployKeycloak(k8sclient, kc, true);
-
-        var pods = k8sclient
-                .pods()
-                .inNamespace(namespace)
-                .withLabels(Constants.DEFAULT_LABELS)
-                .list()
-                .getItems();
-
-        assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath().contains("barfoo"));
-    }
-
-    @Test
     public void testUpgradeRecreatesPods() {
         var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setInstances(3);
@@ -726,6 +679,25 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                             .stream().map(ServicePort::getName).anyMatch(protocol::equals));
 
                     String url = protocol + "://" + serviceName + "." + namespace + ":" + port + "/admin/master/console/";
+                    Log.info("Checking url: " + url);
+
+                    var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);
+                    Log.info("Curl Output: " + curlOutput);
+
+                    assertEquals("200", curlOutput);
+                });
+    }
+
+    private void assertManagementInterfaceAccessibleViaService(Keycloak kc, boolean https) {
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+                    assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
+                            .stream().map(ServicePort::getName).anyMatch(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME::equals));
+
+                    String protocol = https ? "https" : "http";
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + Constants.KEYCLOAK_MANAGEMENT_PORT;
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);

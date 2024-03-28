@@ -61,9 +61,6 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         currentService.getSpec().setSessionAffinity("ClientIP");
         var origSpecs = new ServiceSpecBuilder(currentService.getSpec()).build(); // deep copy
 
-        // a managed change
-        currentService.getSpec().getPorts().get(0).setName(null);
-
         currentService.getMetadata().getLabels().putAll(labels);
 
         currentService.getMetadata().setResourceVersion(null);
