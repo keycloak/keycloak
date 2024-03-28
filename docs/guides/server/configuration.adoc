@@ -41,7 +41,7 @@ The following example shows how the `db-url` value is set in four configuration 
 
 Based on the priority of application, the value that is used at startup is `cliValue`, because the command line is the highest priority.
 
-If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. If none of the previous values were applied, the value `kc.db-url=confFileValue` would be used due to the lowest priority among the available configuration sources.
+If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. If none of the previous values were applied, the value `kc.db-url=keystoreValue` would be used due to the lowest priority among the available configuration sources.
 
 == Formats for configuration
 The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another. Note that these formats apply to spi options as well.
