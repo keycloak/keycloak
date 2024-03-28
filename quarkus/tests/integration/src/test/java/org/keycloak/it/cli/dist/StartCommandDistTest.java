@@ -41,8 +41,8 @@ public class StartCommandDistTest {
     @Test
     @Launch({ "start", "--hostname-strict=false" })
     void failNoTls(LaunchResult result) {
-        assertTrue(result.getOutput().contains("Key material not provided to setup HTTPS"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+        assertTrue(result.getErrorOutput().contains("Key material not provided to setup HTTPS"),
+                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 
     @Test

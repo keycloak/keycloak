@@ -94,7 +94,7 @@ class BuildCommandDistTest {
         distribution.removeProperty("proxy");
 
         CLIResult result = distribution.run("start", "--hostname=mykeycloak", OPTIMIZED_BUILD_OPTION_LONG);
-        result.assertMessage("Key material not provided to setup HTTPS");
+        result.assertError("Key material not provided to setup HTTPS");
     }
 
     @Test

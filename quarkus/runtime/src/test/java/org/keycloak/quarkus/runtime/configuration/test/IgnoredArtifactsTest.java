@@ -137,7 +137,7 @@ public class IgnoredArtifactsTest {
                     resultArtifacts,
                     CoreMatchers.hasItems(includedArtifacts.toArray(new String[0])));
         } finally {
-            System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), "");
+            System.getProperties().remove(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey());
         }
     }
 

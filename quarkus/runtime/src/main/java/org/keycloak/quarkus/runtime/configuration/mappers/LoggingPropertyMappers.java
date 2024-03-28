@@ -4,22 +4,21 @@ import static java.util.Optional.of;
 import static org.keycloak.config.LoggingOptions.GELF_ACTIVATED;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 import java.io.File;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public final class LoggingPropertyMappers {
 
@@ -80,6 +79,8 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_LEVEL)
                         .to("quarkus.log.level")
                         .transformer(LoggingPropertyMappers::resolveLogLevel)
+                        .validator((mapper, value) -> mapper.validateExpectedValues(value,
+                                (c, v) -> validateLogLevel(v)))
                         .paramLabel("category:level")
                         .build()
         };
@@ -158,30 +159,11 @@ public final class LoggingPropertyMappers {
 
     private static BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> resolveLogHandler(String handler) {
         return (parentValue, context) -> {
-            //we want to fall back to console to not have nothing shown up when wrong values are set.
-            String consoleDependantErrorResult = handler.equals(LoggingOptions.DEFAULT_LOG_HANDLER.name()) ? Boolean.TRUE.toString() : Boolean.FALSE.toString();
             String handlers = parentValue.get();
 
-            if (handlers.isBlank()) {
-                addInitializationException(Messages.emptyValueForKey("log"));
-                return of(consoleDependantErrorResult);
-            }
-
             String[] logHandlerValues = handlers.split(",");
-            final List<String> availableLogHandlers = LoggingOptions.getAvailableHandlerNames();
 
-            if (!availableLogHandlers.containsAll(List.of(logHandlerValues))) {
-                addInitializationException(Messages.notRecognizedValueInList("log", handlers, String.join(",", availableLogHandlers)));
-                return of(consoleDependantErrorResult);
-            }
-
-            for (String handlerInput : logHandlerValues) {
-                if (handlerInput.equals(handler)) {
-                    return of(Boolean.TRUE.toString());
-                }
-            }
-
-            return of(Boolean.FALSE.toString());
+            return of(String.valueOf(Stream.of(logHandlerValues).anyMatch(handler::equals)));
         };
     }
 
@@ -203,37 +185,39 @@ public final class LoggingPropertyMappers {
         LogContext.getLogContext().getLogger(category).setLevel(toLevel(level));
     }
 
+    record CategoryLevel(String category, String levelName) {}
+
+    private static CategoryLevel validateLogLevel(String level) {
+        String[] parts = level.split(":");
+        String category = null;
+        String categoryLevel;
+
+        if (parts.length == 1) {
+            categoryLevel = parts[0];
+        } else if (parts.length == 2) {
+            category = parts[0];
+            categoryLevel = parts[1];
+        } else {
+            throw new PropertyException(Messages.invalidLogCategoryFormat(level));
+        }
+
+        try {
+            Level levelType = toLevel(categoryLevel);
+            return new CategoryLevel(category, levelType.getName());
+        } catch (IllegalArgumentException iae) {
+            throw new PropertyException(Messages.invalidLogCategoryFormat(level));
+        }
+    }
+
     private static Optional<String> resolveLogLevel(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
         Optional<String> rootLevel = of(LoggingOptions.DEFAULT_LOG_LEVEL.name());
 
         for (String level : value.get().split(",")) {
-            String[] parts = level.split(":");
-            String category = null;
-            String categoryLevel;
-
-            if (parts.length == 1) {
-                categoryLevel = parts[0];
-            } else if (parts.length == 2) {
-                category = parts[0];
-                categoryLevel = parts[1];
+            var categoryLevel = validateLogLevel(level);
+            if (categoryLevel.category == null) {
+                rootLevel = of(categoryLevel.levelName);
             } else {
-                addInitializationException(Messages.invalidLogCategoryFormat(level));
-                return rootLevel;
-            }
-
-            Level levelType;
-
-            try {
-                levelType = toLevel(categoryLevel);
-            } catch (IllegalArgumentException iae) {
-                addInitializationException(Messages.invalidLogLevel(categoryLevel));
-                return rootLevel;
-            }
-
-            if (category == null) {
-                rootLevel = of(levelType.getName());
-            } else {
-                setCategoryLevel(category, levelType.getName());
+                setCategoryLevel(categoryLevel.category, categoryLevel.levelName);
             }
         }
 
