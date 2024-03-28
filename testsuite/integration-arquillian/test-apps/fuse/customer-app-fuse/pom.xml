@@ -113,8 +113,8 @@
                         <supportedProjectType>war</supportedProjectType>
                     </supportedProjectTypes>
                     <instructions>
-                        <Webapp-Context>customer-portal</Webapp-Context>
-                        <Web-ContextPath>customer-portal</Web-ContextPath>
+                        <Webapp-Context>/customer-portal</Webapp-Context>
+                        <Web-ContextPath>/customer-portal</Web-ContextPath>
                         <Embed-Directory>WEB-INF/lib</Embed-Directory>
                         <Bundle-ClassPath>.,WEB-INF/classes</Bundle-ClassPath>
                         <Bundle-Name>${project.name}</Bundle-Name>

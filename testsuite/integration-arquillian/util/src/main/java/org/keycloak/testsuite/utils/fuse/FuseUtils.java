@@ -113,7 +113,7 @@ public class FuseUtils {
         assertCommand(managementUser, managementPassword,
             "feature:repo-add mvn:org.keycloak/keycloak-osgi-features/" + fuseAdapterVersion + "/xml/features; " +
             "feature:repo-add mvn:org.keycloak.testsuite/fuse-example-keycloak-features/" + projectVersion + "/xml/features; " +
-            "feature:install pax-http-undertow; " +
+            "feature:install pax-web-http-undertow; " +
             "feature:install keycloak-jaas keycloak-pax-http-undertow; " +
             "feature:install keycloak-fuse-7.0-example",
         Result.OK);
