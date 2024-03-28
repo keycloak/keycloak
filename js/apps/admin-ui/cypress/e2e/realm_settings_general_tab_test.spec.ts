@@ -45,16 +45,14 @@ describe("Realm settings general tab tests", () => {
 
     // Enable realm
     realmSettingsPage.toggleSwitch(`${realmName}-switch`);
-    masthead.checkNotificationMessage("Realm successfully updated", true);
+    masthead.checkNotificationMessage("Realm successfully updated");
+    sidebarPage.waitForPageLoad();
 
     // Disable realm
     realmSettingsPage.toggleSwitch(`${realmName}-switch`);
     realmSettingsPage.disableRealm();
     masthead.checkNotificationMessage("Realm successfully updated", true);
-
-    // Sometimes it takes the Keycloak server a while to disable the realm, even though the notification message has been displayed.
-    // To prevent flaky tests, we wait a second before continuing.
-    cy.wait(1000);
+    sidebarPage.waitForPageLoad();
 
     // Re-enable realm
     realmSettingsPage.toggleSwitch(`${realmName}-switch`);

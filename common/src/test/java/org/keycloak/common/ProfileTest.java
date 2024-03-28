@@ -27,7 +27,7 @@ public class ProfileTest {
     private static final Profile.Feature DISABLED_BY_DEFAULT_FEATURE = Profile.Feature.DOCKER;
     private static final Profile.Feature PREVIEW_FEATURE = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ;
     private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.DYNAMIC_SCOPES;
-    private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.ACCOUNT2;
+    private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.LINKEDIN_OAUTH;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -94,7 +94,7 @@ public class ProfileTest {
         properties.setProperty("keycloak.profile.feature.account3", "disabled");
         properties.setProperty("keycloak.profile.feature.account_api", "disabled");
         Profile.configure(new PropertiesProfileConfigResolver(properties));
-        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2));
+                Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3));
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API));
     }
 
@@ -149,9 +149,9 @@ public class ProfileTest {
 
     @Test
     public void testKeys() {
-        Assert.assertEquals("account2", Profile.Feature.ACCOUNT2.getKey());
-        Assert.assertEquals("account2", Profile.Feature.ACCOUNT2.getUnversionedKey());
-        Assert.assertEquals("account2:v1", Profile.Feature.ACCOUNT2.getVersionedKey());
+        Assert.assertEquals("account3", Profile.Feature.ACCOUNT3.getKey());
+        Assert.assertEquals("account3", Profile.Feature.ACCOUNT3.getUnversionedKey());
+        Assert.assertEquals("account3:v1", Profile.Feature.ACCOUNT3.getVersionedKey());
     }
 
     @Test

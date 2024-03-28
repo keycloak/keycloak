@@ -22,51 +22,24 @@ import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.ext.web.RoutingContext;
 import org.keycloak.common.util.ResteasyProvider;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
+
+import jakarta.enterprise.context.ContextNotActiveException;
 
 public class ResteasyVertxProvider implements ResteasyProvider {
 
-    private static final ThreadLocal<Map<Class<?>, Object>> contextualData = new ThreadLocal<Map<Class<?>, Object>>() {
-        @Override
-        protected Map<Class<?>, Object> initialValue() {
-            return new HashMap<>();
-        };
-    };
-
     @Override
     public <R> R getContextData(Class<R> type) {
-        R data = (R) contextualData.get().get(type);
+        return (R) getRoutingContext().map(c -> c.get(type.getName())).orElse(null);
+    }
 
-        if (data == null) {
-            RoutingContext contextData = Optional.ofNullable(Arc.container())
-                    .map(c -> c.instance(CurrentVertxRequest.class).get()).map(CurrentVertxRequest::getCurrent)
-                    .orElse(null);
-
-            if (contextData == null) {
-                return null;
-            }
-
-            return (R) contextData.data().get(type.getName());
+    private static Optional<RoutingContext> getRoutingContext() {
+        try {
+            return Optional.ofNullable(Arc.container())
+                    .map(c -> c.instance(CurrentVertxRequest.class).get()).map(CurrentVertxRequest::getCurrent);
+        } catch (ContextNotActiveException e) {
+            return Optional.empty();
         }
-
-        return data;
-    }
-
-    @Override
-    public void pushContext(Class type, Object instance) {
-        contextualData.get().put(type, instance);
-    }
-
-    @Override
-    public void pushDefaultContextObject(Class type, Object instance) {
-        pushContext(type, instance);
-    }
-
-    @Override
-    public void clearContextData() {
-        contextualData.remove();
     }
 
 }

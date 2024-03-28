@@ -2,10 +2,8 @@ import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
+import { HelpItem, PasswordControl } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 
 export const ClientIdSecret = ({
   secretRequired = true,
@@ -44,40 +42,13 @@ export const ClientIdSecret = ({
           {...register("config.clientId", { required: true })}
         />
       </FormGroup>
-      <FormGroup
+      <PasswordControl
+        name="config.clientSecret"
         label={t("clientSecret")}
-        labelIcon={
-          <HelpItem
-            helpText={t("clientSecretHelp")}
-            fieldLabelId="clientSecret"
-          />
-        }
-        fieldId="kc-client-secret"
-        isRequired={secretRequired}
-        validated={
-          errors.config?.clientSecret
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        {create ? (
-          <PasswordInput
-            isRequired={secretRequired}
-            id="kc-client-secret"
-            data-testid="clientSecret"
-            {...register("config.clientSecret", { required: secretRequired })}
-          />
-        ) : (
-          <KeycloakTextInput
-            isRequired={secretRequired}
-            type="password"
-            id="kc-client-secret"
-            data-testid="clientSecret"
-            {...register("config.clientSecret", { required: secretRequired })}
-          />
-        )}
-      </FormGroup>
+        labelIcon={t("clientSecretHelp")}
+        hasReveal={create}
+        rules={{ required: { value: secretRequired, message: t("required") } }}
+      />
     </>
   );
 };

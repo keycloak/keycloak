@@ -3,17 +3,15 @@ import {
   ActionGroup,
   Button,
   FormGroup,
-  NumberInput,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { HelpItem, NumberControl } from "ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";
 
@@ -31,7 +29,6 @@ export const BruteForceDetection = ({
   const {
     setValue,
     handleSubmit,
-    control,
     formState: { isDirty },
   } = form;
 
@@ -131,74 +128,26 @@ export const BruteForceDetection = ({
         </FormGroup>
         {bruteForceMode !== BruteForceMode.Disabled && (
           <>
-            <FormGroup
+            <NumberControl
+              name="failureFactor"
               label={t("failureFactor")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("failureFactorHelp")}
-                  fieldLabelId="failureFactor"
-                />
-              }
-              fieldId="failureFactor"
-            >
-              <Controller
-                name="failureFactor"
-                defaultValue={0}
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <NumberInput
-                    type="text"
-                    id="failureFactor"
-                    value={field.value}
-                    onPlus={() => field.onChange(field.value + 1)}
-                    onMinus={() => field.onChange(field.value - 1)}
-                    onChange={(event) =>
-                      field.onChange(
-                        Number((event.target as HTMLInputElement).value),
-                      )
-                    }
-                  />
-                )}
-              />
-            </FormGroup>
-
+              labelIcon={t("failureFactorHelp")}
+              controller={{
+                defaultValue: 0,
+                rules: { required: t("required") },
+              }}
+            />
             {bruteForceMode ===
               BruteForceMode.PermanentAfterTemporaryLockout && (
-              <FormGroup
+              <NumberControl
+                name="maxTemporaryLockouts"
                 label={t("maxTemporaryLockouts")}
-                labelIcon={
-                  <HelpItem
-                    helpText={t("maxTemporaryLockoutsHelp")}
-                    fieldLabelId="maxTemporaryLockouts"
-                  />
-                }
-                fieldId="maxTemporaryLockouts"
-                hasNoPaddingTop
-              >
-                <Controller
-                  name="maxTemporaryLockouts"
-                  defaultValue={0}
-                  control={control}
-                  render={({ field }) => (
-                    <NumberInput
-                      type="text"
-                      id="maxTemporaryLockouts"
-                      value={field.value}
-                      onPlus={() => field.onChange(field.value + 1)}
-                      onMinus={() => field.onChange(field.value - 1)}
-                      onChange={(event) =>
-                        field.onChange(
-                          Number((event.target as HTMLInputElement).value),
-                        )
-                      }
-                      aria-label={t("maxTemporaryLockouts")}
-                    />
-                  )}
-                />
-              </FormGroup>
+                labelIcon={t("maxTemporaryLockoutsHelp")}
+                controller={{
+                  defaultValue: 0,
+                }}
+              />
             )}
-
             {(bruteForceMode === BruteForceMode.TemporaryLockout ||
               bruteForceMode ===
                 BruteForceMode.PermanentAfterTemporaryLockout) && (
@@ -208,38 +157,14 @@ export const BruteForceDetection = ({
                 <Time name="maxDeltaTimeSeconds" />
               </>
             )}
-
-            <FormGroup
+            <NumberControl
+              name="quickLoginCheckMilliSeconds"
               label={t("quickLoginCheckMilliSeconds")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("quickLoginCheckMilliSecondsHelp")}
-                  fieldLabelId="quickLoginCheckMilliSeconds"
-                />
-              }
-              fieldId="quickLoginCheckMilliSeconds"
-            >
-              <Controller
-                name="quickLoginCheckMilliSeconds"
-                defaultValue={0}
-                control={control}
-                render={({ field }) => (
-                  <NumberInput
-                    type="text"
-                    id="quickLoginCheckMilliSeconds"
-                    value={field.value}
-                    onPlus={() => field.onChange(field.value + 1)}
-                    onMinus={() => field.onChange(field.value - 1)}
-                    onChange={(event) =>
-                      field.onChange(
-                        Number((event.target as HTMLInputElement).value),
-                      )
-                    }
-                  />
-                )}
-              />
-            </FormGroup>
-
+              labelIcon={t("quickLoginCheckMilliSecondsHelp")}
+              controller={{
+                defaultValue: 0,
+              }}
+            />
             <Time name="minimumQuickLoginWaitSeconds" />
           </>
         )}

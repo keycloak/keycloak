@@ -18,7 +18,7 @@ export default class ProviderPage {
   bindTypeInput = "#kc-bind-type";
   #bindTypeList = "#kc-bind-type + ul";
   bindDnInput = "config.bindDn.0";
-  bindCredsInput = "ldap-bind-credentials";
+  bindCredsInput = "config.bindCredential.0";
   #testConnectionBtn = "test-connection-button";
   #testAuthBtn = "test-auth-button";
 

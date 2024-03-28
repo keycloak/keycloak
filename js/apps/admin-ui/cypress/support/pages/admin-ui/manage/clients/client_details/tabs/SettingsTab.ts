@@ -11,24 +11,25 @@ export enum NameIdFormat {
 const masthead = new Masthead();
 
 export default class SettingsTab extends PageObject {
-  #samlNameIdFormat = "#samlNameIdFormat";
-  #forceNameIdFormat = "forceNameIdFormat";
-  #forcePostBinding = "forcePostBinding";
-  #forceArtifactBinding = "forceArtifactBinding";
-  #includeAuthnStatement = "includeAuthnStatement";
-  #includeOneTimeUseCondition = "includeOneTimeUseCondition";
-  #optimizeLookup = "optimizeLookup";
+  #samlNameIdFormat = "#saml_name_id_format";
+  #forceNameIdFormat = "attributes.saml_force_name_id_format";
+  #forcePostBinding = "attributes.saml🍺force🍺post🍺binding";
+  #forceArtifactBinding = "attributes.saml🍺artifact🍺binding";
+  #includeAuthnStatement = "attributes.saml🍺authnstatement";
+  #includeOneTimeUseCondition = "attributes.saml🍺onetimeuse🍺condition";
+  #optimizeLookup = "attributes.saml🍺server🍺signature🍺keyinfo🍺ext";
 
-  #signDocumentsSwitch = "signDocuments";
-  #signAssertionsSwitch = "signAssertions";
-  #signatureAlgorithm = "#signatureAlgorithm";
-  #signatureKeyName = "#signatureKeyName";
-  #canonicalization = "#canonicalization";
+  #signDocumentsSwitch = "attributes.saml🍺server🍺signature";
+  #signAssertionsSwitch = "attributes.saml🍺assertion🍺signature";
+  #signatureAlgorithm = "#saml🍺signature🍺algorithm";
+  #signatureKeyName =
+    "#saml🍺server🍺signature🍺keyinfo🍺xmlSigKeyInfoKeyNameTransformer";
+  #canonicalization = "#saml_signature_canonicalization_method";
 
-  #loginTheme = "#loginTheme";
-  #consentSwitch = "#kc-consent-switch";
-  #displayClientSwitch = "#kc-display-on-client-switch";
-  #consentScreenText = "#kc-consent-screen-text";
+  #loginTheme = "#login_theme";
+  #consentSwitch = "#consentRequired";
+  #displayClientSwitch = "attributes.display🍺on🍺consent🍺screen";
+  #consentScreenText = "attributes.consent🍺screen🍺text";
 
   #saveBtn = "settings-save";
   #revertBtn = "settingsRevert";
@@ -123,7 +124,7 @@ export default class SettingsTab extends PageObject {
   }
 
   public clickDisplayClientSwitch() {
-    cy.get(this.#displayClientSwitch).parent().click();
+    cy.findByTestId(this.#displayClientSwitch).parent().click();
     return this;
   }
 
@@ -201,13 +202,14 @@ export default class SettingsTab extends PageObject {
   }
 
   public assertLoginSettings() {
-    cy.get(this.#displayClientSwitch).should("be.disabled");
-    cy.get(this.#consentScreenText).should("be.disabled");
+    cy.findByTestId(this.#displayClientSwitch).should("be.disabled");
+    cy.findByTestId(this.#consentScreenText).should("be.disabled");
     this.clickConsentSwitch();
-    cy.get(this.#displayClientSwitch).should("not.be.disabled");
+    cy.findByTestId(this.#displayClientSwitch).should("not.be.disabled");
     this.clickDisplayClientSwitch();
-    cy.get(this.#consentScreenText).should("not.be.disabled");
-    cy.get(this.#consentScreenText).click().type("Consent Screen Text");
+    cy.findByTestId(this.#consentScreenText).should("not.be.disabled");
+    cy.findByTestId(this.#consentScreenText).click();
+    cy.findByTestId(this.#consentScreenText).type("Consent Screen Text");
     return this;
   }
 

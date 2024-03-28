@@ -97,7 +97,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 props.setProperty("mail.smtp.starttls.enable", "true");
             }
 
-            if (ssl || starttls) {
+            if (ssl || starttls || auth){
                 props.put("mail.smtp.ssl.protocols", SUPPORTED_SSL_PROTOCOLS);
 
                 setupTruststore(props);

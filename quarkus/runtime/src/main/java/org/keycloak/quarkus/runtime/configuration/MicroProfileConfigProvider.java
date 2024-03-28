@@ -54,6 +54,11 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
     }
 
     @Override
+    public String getDefaultProvider(String spi) {
+        return scope(spi).get("provider.default");
+    }
+
+    @Override
     public Config.Scope scope(String... scope) {
         return new MicroProfileScope(scope);
     }

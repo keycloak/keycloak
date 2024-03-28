@@ -20,7 +20,6 @@ import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jboss.resteasy.core.ResteasyContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,9 +29,9 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.HttpRequestImpl;
+import org.keycloak.services.resteasy.HttpRequestImpl;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 
 /**
  * <p>Little test class for RedirectUtils methods.</p>
@@ -46,12 +45,12 @@ public class RedirectUtilsTest {
     @BeforeClass
     public static void beforeClass() {
         HttpRequest httpRequest = new HttpRequestImpl(MockHttpRequest.create("GET", URI.create("https://keycloak.org/"), URI.create("https://keycloak.org")));
-        ResteasyContext.getContextDataMap().put(HttpRequest.class, httpRequest);
         Profile.defaults();
         CryptoIntegration.init(CryptoProvider.class.getClassLoader());
-        DefaultKeycloakSessionFactory sessionFactory = new DefaultKeycloakSessionFactory();
+        ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
         sessionFactory.init();
-        session = new DefaultKeycloakSession(sessionFactory);
+        session = new ResteasyKeycloakSession(sessionFactory);
+        session.getContext().setHttpRequest(httpRequest);
     }
 
     @Test

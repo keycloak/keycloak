@@ -1,8 +1,8 @@
+import Select from "../../../../forms/Select";
 import CommonPage from "../../../CommonPage";
 
 export default class CreateClientPage extends CommonPage {
-  #clientTypeDrpDwn = ".pf-c-select__toggle";
-  #clientTypeList = ".pf-c-select__toggle + ul";
+  #clientTypeDrpDwn = "#protocol";
   #clientIdInput = "#clientId";
   #clientIdError = "#clientId + div";
   #clientNameInput = "#name";
@@ -31,13 +31,15 @@ export default class CreateClientPage extends CommonPage {
   #firstWebOriginsInput = "webOrigins0";
   #adminUrlInput = "adminUrl";
 
-  #loginThemeDrpDwn = "#loginTheme";
-  #loginThemeList = 'ul[aria-label="Login theme"]';
-  #consentRequiredSwitch = '[for="kc-consent-switch"] > .pf-c-switch__toggle';
-  #consentRequiredSwitchInput = "#kc-consent-switch";
-  #displayClientOnScreenSwitch = '[for="kc-display-on-client-switch"]';
-  #displayClientOnScreenSwitchInput = "#kc-display-on-client-switch";
-  #clientConsentScreenText = "#kc-consent-screen-text";
+  #loginThemeDrpDwn = "#login_theme";
+  #loginThemeList = 'ul[class="pf-c-select__menu"]';
+  #consentRequiredSwitch = '[for="consentRequired"] .pf-c-switch__toggle';
+  #consentRequiredSwitchInput = "#consentRequired";
+  #displayClientOnScreenSwitch =
+    '[for="attributes.display🍺on🍺consent🍺screen"].pf-c-switch';
+  #displayClientOnScreenSwitchInput =
+    "#attributes\\.display🍺on🍺consent🍺screen";
+  #clientConsentScreenText = "attributes.consent🍺screen🍺text";
 
   #frontChannelLogoutSwitch =
     '[for="kc-frontchannelLogout-switch"] > .pf-c-switch__toggle';
@@ -60,8 +62,7 @@ export default class CreateClientPage extends CommonPage {
 
   //#region General Settings
   selectClientType(clientType: string) {
-    cy.get(this.#clientTypeDrpDwn).click();
-    cy.get(this.#clientTypeList).findByTestId(`option-${clientType}`).click();
+    Select.selectItem(cy.get(this.#clientTypeDrpDwn), clientType);
 
     return this;
   }
@@ -238,11 +239,11 @@ export default class CreateClientPage extends CommonPage {
   }
 
   checkLoginSettingsElements() {
-    cy.get(this.#clientConsentScreenText).scrollIntoView();
+    cy.findByTestId(this.#clientConsentScreenText).scrollIntoView();
     cy.get(this.#loginThemeDrpDwn).should("not.be.disabled");
     cy.get(this.#consentRequiredSwitchInput).should("not.be.disabled");
     cy.get(this.#displayClientOnScreenSwitchInput).should("be.disabled");
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
 
     cy.get(this.#loginThemeDrpDwn).click();
     cy.get(this.#loginThemeList).findByText("base").should("exist");
@@ -251,13 +252,13 @@ export default class CreateClientPage extends CommonPage {
 
     cy.get(this.#consentRequiredSwitch).click();
     cy.get(this.#displayClientOnScreenSwitchInput).should("not.be.disabled");
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
 
     cy.get(this.#displayClientOnScreenSwitch).click();
-    cy.get(this.#clientConsentScreenText).should("not.be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("not.be.disabled");
 
     cy.get(this.#displayClientOnScreenSwitch).click();
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
     cy.get(this.#consentRequiredSwitch).click();
     cy.get(this.#displayClientOnScreenSwitchInput).should("be.disabled");
 

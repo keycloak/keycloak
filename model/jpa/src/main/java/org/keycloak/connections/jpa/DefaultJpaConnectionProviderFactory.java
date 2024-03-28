@@ -210,8 +210,9 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         try {
                             prepareOperationalInfo(connection);
 
-                            String driverDialect = detectDialect(connection);
-                            if (driverDialect != null) {
+                            String driverDialect = config.get("driverDialect");
+                            // use configured dialect, else rely on Hibernate detection
+                            if (driverDialect != null && !driverDialect.isBlank()) {
                                 properties.put("hibernate.dialect", driverDialect);
                             }
 
@@ -286,47 +287,6 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             logger.infof("Database info: %s", operationalInfo.toString());
         } catch (SQLException e) {
             logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
-        }
-    }
-
-
-    protected String detectDialect(Connection connection) {
-        String driverDialect = config.get("driverDialect");
-        if (driverDialect != null && driverDialect.length() > 0) {
-            return driverDialect;
-        } else {
-            try {
-                String dbProductName = connection.getMetaData().getDatabaseProductName();
-                String dbProductVersion = connection.getMetaData().getDatabaseProductVersion();
-
-                // For MSSQL2014, we may need to fix the autodetected dialect by hibernate
-                if (dbProductName.equals("Microsoft SQL Server")) {
-                    String topVersionStr = dbProductVersion.split("\\.")[0];
-                    boolean shouldSet2012Dialect = true;
-                    try {
-                        int topVersion = Integer.parseInt(topVersionStr);
-                        if (topVersion < 12) {
-                            shouldSet2012Dialect = false;
-                        }
-                    } catch (NumberFormatException nfe) {
-                    }
-                    if (shouldSet2012Dialect) {
-                        String sql2012Dialect = "org.hibernate.dialect.SQLServer2012Dialect";
-                        logger.debugf("Manually override hibernate dialect to %s", sql2012Dialect);
-                        return sql2012Dialect;
-                    }
-                }
-
-                // For Oracle19c, we may need to set dialect explicitly to workaround https://hibernate.atlassian.net/browse/HHH-13184
-                if (dbProductName.equals("Oracle") && connection.getMetaData().getDatabaseMajorVersion() > 12) {
-                    logger.debugf("Manually specify dialect for Oracle to org.hibernate.dialect.Oracle12cDialect");
-                    return "org.hibernate.dialect.Oracle12cDialect";
-                }
-            } catch (SQLException e) {
-                logger.warnf("Unable to detect hibernate dialect due database exception : %s", e.getMessage());
-            }
-
-            return null;
         }
     }
 

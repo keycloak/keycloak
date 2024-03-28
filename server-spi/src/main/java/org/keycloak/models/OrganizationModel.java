@@ -19,10 +19,13 @@ package org.keycloak.models;
 
 public interface OrganizationModel {
 
+    String USER_ORGANIZATION_ATTRIBUTE = "kc.org";
+
     String getId();
 
     void setName(String name);
 
     String getName();
 
+    RealmModel getRealm();
 }

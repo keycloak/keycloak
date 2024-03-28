@@ -3,14 +3,14 @@ import {
   FormGroupProps,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, ReactNode } from "react";
 import { FieldError, FieldValues, Merge } from "react-hook-form";
 import { HelpItem } from "./HelpItem";
 
 export type FieldProps<T extends FieldValues = FieldValues> = {
   label?: string;
   name: string;
-  labelIcon?: string;
+  labelIcon?: string | ReactNode;
   error?: FieldError | Merge<FieldError, T>;
   isRequired: boolean;
 };

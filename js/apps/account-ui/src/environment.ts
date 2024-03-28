@@ -34,6 +34,10 @@ export type Environment = {
   locale: string;
   /** Feature flags */
   features: Feature;
+  /** Client id of the application to add back link */
+  referrer?: string;
+  /** URI to the referrer application in the back link */
+  referrer_uri?: string;
 };
 
 // Detect the current realm from the URL.
@@ -41,7 +45,7 @@ const match = matchPath(ROOT_PATH, location.pathname);
 
 const defaultEnvironment: Environment = {
   authUrl: "http://localhost:8180",
-  baseUrl: `http://localhost:8180/realms/${match?.params.realm ?? DEFAULT_REALM}/account`,
+  baseUrl: `http://localhost:8180/realms/${match?.params.realm ?? DEFAULT_REALM}/account/`,
   realm: match?.params.realm ?? DEFAULT_REALM,
   clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
@@ -78,18 +82,26 @@ export { environment };
 function getInjectedEnvironment(): Record<string, string | number | boolean> {
   const element = document.getElementById("environment");
 
-  // If the element cannot be found, return an empty record.
-  if (!element?.textContent) {
-    return {};
-  }
+  let env = {} as Record<string, string | number | boolean>;
 
   // Attempt to parse the contents as JSON and return its value.
   try {
-    return JSON.parse(element.textContent);
+    // If the element cannot be found, return an empty record.
+    if (element?.textContent) {
+      env = JSON.parse(element.textContent);
+    }
   } catch (error) {
     console.error("Unable to parse environment variables.");
   }
 
+  const searchParams = new URLSearchParams(location.search);
+  if (searchParams.has("referrer_uri")) {
+    env["referrer_uri"] = searchParams.get("referrer_uri")!;
+  }
+  if (searchParams.has("referrer")) {
+    env["referrer"] = searchParams.get("referrer")!;
+  }
+
   // Otherwise, return an empty record.
-  return {};
+  return env;
 }

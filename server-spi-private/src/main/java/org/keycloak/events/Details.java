@@ -91,4 +91,7 @@ public interface Details {
 
     String NOT_BEFORE = "not_before";
     String NUM_FAILURES = "num_failures";
+
+    String LOGOUT_TRIGGERED_BY_ACTION_TOKEN = "logout_triggered_by_action_token";
+    String LOGOUT_TRIGGERED_BY_REQUIRED_ACTION = "logout_triggered_by_required_action";
 }

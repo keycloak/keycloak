@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshChecker;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -43,16 +44,14 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserSessionAdapter implements UserSessionModel {
+public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvider> implements UserSessionModel {
 
     private final KeycloakSession session;
 
-    private final InfinispanUserSessionProvider provider;
+    private final T provider;
 
     private final InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx;
 
@@ -68,7 +67,7 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private SessionPersistenceState persistenceState;
 
-    public UserSessionAdapter(KeycloakSession session, UserModel user, InfinispanUserSessionProvider provider,
+    public UserSessionAdapter(KeycloakSession session, UserModel user, T provider,
                               InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                               InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
                               RealmModel realm, UserSessionEntity entity, boolean offline) {
@@ -94,7 +93,7 @@ public class UserSessionAdapter implements UserSessionModel {
                 // Check if client still exists
                 ClientModel client = realm.getClientById(key);
                 if (client != null) {
-                    final AuthenticatedClientSessionAdapter clientSession = provider.getClientSession(this, client, value.toString(), offline);
+                    final AuthenticatedClientSessionModel clientSession = provider.getClientSession(this, client, value.toString(), offline);
                     if (clientSession != null) {
                         result.put(key, clientSession);
                     }
@@ -330,7 +329,7 @@ public class UserSessionAdapter implements UserSessionModel {
 
             @Override
             public void runUpdate(UserSessionEntity entity) {
-                provider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+                InfinispanUserSessionProvider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
                 entity.setState(null);
                 entity.getNotes().clear();
@@ -360,7 +359,8 @@ public class UserSessionAdapter implements UserSessionModel {
         return getId().hashCode();
     }
 
-    UserSessionEntity getEntity() {
+    // TODO: This should not be public
+    public UserSessionEntity getEntity() {
         return entity;
     }
 

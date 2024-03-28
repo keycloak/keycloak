@@ -320,7 +320,7 @@ describe("Clients test", () => {
 
       createClientPage
         .fillClientData("")
-        .selectClientType("openid-connect")
+        .selectClientType("OpenID Connect")
         .cancel();
 
       cy.url().should("not.include", "/add-client");
@@ -360,7 +360,7 @@ describe("Clients test", () => {
 
       createClientPage
         .fillClientData("test_client")
-        .selectClientType("openid-connect")
+        .selectClientType("OpenID Connect")
         .continue()
         .back()
         .checkGeneralSettingsStepActive();
@@ -373,7 +373,7 @@ describe("Clients test", () => {
 
       createClientPage
         .fillClientData("")
-        .selectClientType("openid-connect")
+        .selectClientType("OpenID Connect")
         .continue()
         .checkClientIdRequiredMessage();
 
@@ -398,7 +398,7 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().clickPrimaryButton();
 
       createClientPage
-        .selectClientType("openid-connect")
+        .selectClientType("OpenID Connect")
         .fillClientData(itemId)
         .continue()
         .switchClientAuthentication()
@@ -765,7 +765,7 @@ describe("Clients test", () => {
       client = "client_" + uuid();
       commonPage.tableToolbarUtils().createClient();
       createClientPage
-        .selectClientType("openid-connect")
+        .selectClientType("OpenID Connect")
         .fillClientData(client)
         .continue();
 
@@ -854,8 +854,8 @@ describe("Clients test", () => {
 
       advancedTab.revertAuthFlowOverride();
       advancedTab.jumpToAuthFlow();
-      advancedTab.checkBrowserFlowInput("");
-      advancedTab.checkDirectGrantInput("");
+      advancedTab.checkBrowserFlowInput("Choose...");
+      advancedTab.checkDirectGrantInput("Choose...");
       advancedTab.selectBrowserFlowInput("browser");
       advancedTab.selectDirectGrantInput("docker auth");
 

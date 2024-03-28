@@ -69,6 +69,9 @@ The table below summarizes the available metrics groups:
 |Database
 |A set of metrics from the database connection pool, if using a database.
 
+|HTTP
+|A set of global and individual metrics from the HTTP endpoints
+
 |Cache
 |A set of metrics from Infinispan caches. See <@links.server id="caching"/> for more details.
 

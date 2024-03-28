@@ -18,6 +18,7 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -25,12 +26,15 @@ import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -40,7 +44,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     private final PersistentUserSessionModel model;
     private UserModel user;
     private String userId;
-    private final RealmModel realm;
+    private RealmModel realm;
     private KeycloakSession session;
     private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;
 
@@ -58,7 +62,78 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             data.setState(other.getState().toString());
         }
 
-        this.model = new PersistentUserSessionModel();
+        this.model = new PersistentUserSessionModel() {
+            private String userSessionId;
+            private int started;
+            private int lastSessionRefresh;
+            private boolean offline;
+            private String data;
+
+            @Override
+            public String getUserSessionId() {
+                return userSessionId;
+            }
+
+            @Override
+            public void setUserSessionId(String userSessionId) {
+                this.userSessionId = userSessionId;
+            }
+
+            @Override
+            public int getStarted() {
+                return started;
+            }
+
+            @Override
+            public void setStarted(int started) {
+                this.started = started;
+            }
+
+            @Override
+            public int getLastSessionRefresh() {
+                return lastSessionRefresh;
+            }
+
+            @Override
+            public void setLastSessionRefresh(int lastSessionRefresh) {
+                this.lastSessionRefresh = lastSessionRefresh;
+            }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
+
+            @Override
+            public void setOffline(boolean offline) {
+                this.offline = offline;
+            }
+
+            @Override
+            public String getData() {
+                return data;
+            }
+
+            @Override
+            public void setData(String data) {
+                this.data = data;
+            }
+
+            @Override
+            public void setRealmId(String realmId) {
+                /* ignored */
+            }
+
+            @Override
+            public void setUserId(String userId) {
+                /* ignored */
+            }
+
+            @Override
+            public void setBrokerSessionId(String brokerSessionId) {
+                /* ignored */
+            }
+        };
         this.model.setStarted(other.getStarted());
         this.model.setUserSessionId(other.getId());
         this.model.setLastSessionRefresh(other.getLastSessionRefresh());
@@ -120,7 +195,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public UserModel getUser() {
         if (user == null) {
-            user = session.users().getUserById(realm, userId);
+            if (LightweightUserAdapter.isLightweightUser(userId)) {
+                user = LightweightUserAdapter.fromString(session, realm, getData().getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
+            } else {
+                user = session.users().getUserById(realm, userId);
+            }
         }
         return user;
     }
@@ -137,7 +216,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     @Override
     public String getLoginUsername() {
-        return getUser().getUsername();
+        if (isOffline() || !Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            return getUser().getUsername();
+        } else {
+            return getData().getLoginUsername();
+        }
     }
 
     @Override
@@ -244,6 +327,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     }
 
     @Override
+    public void setLoginUsername(String loginUsername) {
+        getData().setLoginUsername(loginUsername);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserSessionModel)) return false;
@@ -260,6 +348,41 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public String toString() {
         return getId();
+    }
+
+    public void setRealm(RealmModel realm) {
+        this.realm = realm;
+        model.setRealmId(realm.getId());
+    }
+
+    public void setUser(UserModel user) {
+        this.user = user;
+        model.setUserId(user.getId());
+    }
+
+    public void setIpAddress(String ipAddress) {
+        getData().setIpAddress(ipAddress);
+    }
+
+    public void setAuthMethod(String authMethod) {
+        getData().setAuthMethod(authMethod);
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        getData().setRememberMe(rememberMe);
+    }
+
+    public void setStarted(int started) {
+        getData().setStarted(started);
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        getData().setBrokerSessionId(brokerSessionId);
+        model.setBrokerSessionId(brokerSessionId);
+    }
+
+    public void setBrokerUserId(String brokerUserId) {
+        getData().setBrokerUserId(brokerUserId);
     }
 
     protected static class PersistentUserSessionData {
@@ -288,6 +411,9 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
         @JsonProperty("state")
         private String state;
+
+        @JsonProperty("loginUsername")
+        private String loginUsername;
 
         public String getBrokerSessionId() {
             return brokerSessionId;
@@ -353,6 +479,14 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
         public void setState(String state) {
             this.state = state;
+        }
+
+        public void setLoginUsername(String loginUsername) {
+            this.loginUsername = loginUsername;
+        }
+
+        public String getLoginUsername() {
+            return loginUsername;
         }
     }
 }

@@ -200,6 +200,31 @@ export const RealmSettingsTokensTab = ({
                   {...form.register("attributes.shortVerificationUri")}
                 />
               </FormGroup>
+              <FormGroup
+                label={t("parRequestUriLifespan")}
+                fieldId="parRequestUriLifespan"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("parRequestUriLifespanHelp")}
+                    fieldLabelId="parRequestUriLifespan"
+                  />
+                }
+              >
+                <Controller
+                  name="attributes.parRequestUriLifespan"
+                  control={form.control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      id="parRequestUriLifespan"
+                      className="par-request-uri-lifespan"
+                      data-testid="par-request-uri-lifespan-input"
+                      aria-label="par-request-uri-lifespan"
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </FormGroup>
             </>
           )}
         </FormAccess>

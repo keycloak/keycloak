@@ -33,11 +33,7 @@ public class PasswordPolicy implements Serializable {
 
     public static final String HASH_ALGORITHM_ID = "hashAlgorithm";
 
-    public static final String HASH_ALGORITHM_DEFAULT = "pbkdf2-sha512";
-
     public static final String HASH_ITERATIONS_ID = "hashIterations";
-
-    public static final int HASH_ITERATIONS_DEFAULT = 210_000;
 
     public static final String PASSWORD_HISTORY_ID = "passwordHistory";
 
@@ -81,7 +77,7 @@ public class PasswordPolicy implements Serializable {
         if (policyConfig.containsKey(HASH_ALGORITHM_ID)) {
             return getPolicyConfig(HASH_ALGORITHM_ID);
         } else {
-            return HASH_ALGORITHM_DEFAULT;
+            return null;
         }
     }
 

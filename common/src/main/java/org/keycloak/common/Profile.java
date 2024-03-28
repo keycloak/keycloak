@@ -50,8 +50,6 @@ public class Profile {
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
-        @Deprecated
-        ACCOUNT2("Account Console version 2", Type.DEPRECATED, Feature.ACCOUNT_API),
         ACCOUNT3("Account Console version 3", Type.DEFAULT, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
@@ -111,6 +109,9 @@ public class Profile {
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
         //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
+        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.EXPERIMENTAL),
+        PERSISTENT_USER_SESSIONS_NO_CACHE("No caching for online user sessions when they are persisted", Type.EXPERIMENTAL),
+        
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),

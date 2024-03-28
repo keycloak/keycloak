@@ -32,7 +32,6 @@ public enum SigningProperties {
     KID_HEADER("kidHeader", "Kid to be set for the JWT.", "The kid to be set in the jwt-header. Depending on the did-schema, the pure key-id might not be enough and can be overwritten here.", ProviderConfigProperty.STRING_TYPE, null),
     PROOF_TYPE("proofType", "Type of the LD-Proof.", "The type of LD-Proofs to be created. Needs to fit the provided signing key.", ProviderConfigProperty.STRING_TYPE, null),
     ALGORITHM_TYPE("algorithmType", "Type of the signing algorithm.", "The type of the algorithm to be used for signing. Needs to fit the provided signing key.", ProviderConfigProperty.STRING_TYPE, Algorithm.RS256),
-
     TOKEN_TYPE("tokenType", "Type of the token.", "The type of the token to be created.  Will be used as `typ` claim in the JWT-Header.", ProviderConfigProperty.STRING_TYPE, "JWT"),
     DECOYS("decoys", "Number of decoys to be added.", "The number of decoys to be added to the SD-JWT.", ProviderConfigProperty.STRING_TYPE, 0),
     HASH_ALGORITHM("hashAlgorithm", "Hash algorithm for SD-JWTs.", "The hash algorithm to be used for the SD-JWTs.", ProviderConfigProperty.STRING_TYPE, "sha-256"),

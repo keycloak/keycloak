@@ -90,53 +90,39 @@
         <h1 class="pf-v5-c-title pf-m-3xl"><#nested "header"></h1>
         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
         <div class="pf-v5-c-login__main-header-utilities">
-          <div class="pf-v5-c-select">
-            <span id="login-select-label" hidden>Choose one</span>
-
-            <button
-              x-ref="button"
-              x-on:click="toggle()"
-              :aria-expanded="open"
-              :aria-controls="$id('language-select')"
-              class="pf-v5-c-select__toggle"
-              type="button"
+          <div class="pf-v5-c-form-control">
+            <select
+              aria-label="${msg("languages")}"
               id="login-select-toggle"
-              aria-haspopup="true"
-              aria-labelledby="login-select-label login-select-toggle"
+              onchange="if (this.value) window.location.href=this.value"
             >
-              <div class="pf-v5-c-select__toggle-wrapper">
-                <span class="pf-v5-c-select__toggle-text">${locale.current}</span>
-              </div>
-              <span class="pf-v5-c-select__toggle-arrow">
-                <i class="fas fa-caret-down" aria-hidden="true"></i>
+              <#list locale.supported?sort_by("label") as l>
+                <option
+                  value="${l.url}"
+                  ${(l.languageTag == locale.currentLanguageTag)?then('selected','')}
+                >
+                  ${l.label}
+                </option>
+              </#list>
+            </select>
+            <span class="pf-v5-c-form-control__utilities">
+              <span class="pf-v5-c-form-control__toggle-icon">
+                <svg
+                  class="pf-v5-svg"
+                  viewBox="0 0 320 512"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  role="img"
+                  width="1em"
+                  height="1em"
+                >
+                  <path
+                    d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                  >
+                  </path>
+                </svg>
               </span>
-            </button>
-            <ul
-              class="pf-v5-c-select__menu"
-              :id="$id('language-select')"
-              x-on:click.outside="close($refs.button)"
-              role="listbox"
-              aria-labelledby="login-select-label"
-              x-transition.origin.top.left
-              x-ref="panel"
-              x-show="open"
-              style="display: none;"
-            >
-                <#list locale.supported as l>
-                    <li role="presentation">
-                        <button class="pf-v5-c-select__menu-item ${(locale.current == l.label)?then('pf-m-selected', '')}"
-                          aria-selected="${(locale.current == l.label)?string}"
-                          role="option" onclick="window.location = '${l.url}'">
-                          ${l.label}
-                          <#if locale.current == l.label>
-                            <span class="pf-v5-c-select__menu-item-icon">
-                              <i class="fas fa-check" aria-hidden="true"></i>
-                            </span>
-                          </#if>
-                        </button>
-                    </li>
-                </#list>
-            </ul>
+            </span>
           </div>
         </div>
         </#if>

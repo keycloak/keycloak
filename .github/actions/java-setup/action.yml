@@ -16,7 +16,7 @@ runs:
   steps:
     - id: setup-java
       name: Setup Java
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}

@@ -19,7 +19,7 @@ runs:
 
     - id: cache-maven-repository
       name: Maven cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       if: inputs.create-cache-if-it-doesnt-exist == 'true'
       with:
         # Two asterisks are needed to make the follow-up exclusion work
@@ -31,7 +31,7 @@ runs:
 
     - id: restore-maven-repository
       name: Maven cache
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       if: inputs.create-cache-if-it-doesnt-exist == 'false'
       with:
         # Two asterisks are needed to make the follow-up exclusion work
@@ -42,7 +42,7 @@ runs:
         key: ${{ steps.weekly-cache-key.outputs.key }}
 
     - name: Cache Maven Wrapper
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .mvn/wrapper/maven-wrapper.jar
         key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('**/maven-wrapper.properties') }}

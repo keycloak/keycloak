@@ -69,7 +69,7 @@ public class ConfigUtil {
 
     public static void checkServerInfo(ConfigData config) {
         if (config.getServerUrl() == null) {
-            throw new RuntimeException("No server specified. Use --server, or '" + OsUtil.CMD + " config credentials or connection'.");
+            throw new RuntimeException("No server specified. Use --server, or '" + OsUtil.CMD + " config credentials'.");
         }
         if (config.getRealm() == null && config.getExternalToken() == null) {
             throw new RuntimeException("No realm or token specified. Use --realm, --token, or '" + OsUtil.CMD + " config credentials'.");

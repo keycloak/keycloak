@@ -48,10 +48,6 @@ public interface ThemeSelectorProvider extends Provider {
             return DEFAULT_V3;
         }
 
-        if ((type == Theme.Type.ACCOUNT) && Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
-            return DEFAULT_V2;
-        }
-
         if ((type == Theme.Type.ADMIN) && Profile.isFeatureEnabled(Profile.Feature.ADMIN2)) {
             return DEFAULT_V2;
         }

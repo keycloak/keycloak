@@ -16,37 +16,27 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import picocli.CommandLine.Command;
+
 import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
 import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "delete", description = "CLIENT [GLOBAL_OPTIONS]")
+@Command(name = "delete", description = "CLIENT [GLOBAL_OPTIONS]")
 public class DeleteCmd extends CreateCmd {
 
-    void initOptions() {
-        super.initOptions();
-        httpVerb = "delete";
+    public DeleteCmd() {
+        this.httpVerb = "delete";
     }
 
     @Override
-    protected boolean nothingToDo() {
-        return noOptions() && (args == null || args.size() == 0);
-    }
-
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help delete' for more information";
-    }
-
     protected String help() {
         return usage();
     }

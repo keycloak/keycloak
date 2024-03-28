@@ -52,9 +52,9 @@ public final class Database {
         return false;
     }
 
-    public static Optional<Vendor> getVendorByDbKind(String dbKind) {
+    public static Optional<Vendor> getVendor(String vendor) {
         return Arrays.stream(Vendor.values())
-                .filter(v -> v.isOfKind(dbKind))
+                .filter(v -> v.isOfKind(vendor) || asList(v.aliases).contains(vendor))
                 .findAny();
     }
 

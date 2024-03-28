@@ -202,7 +202,7 @@
         "file": {
             "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
-            "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
+            "hostname-verification-policy": "${keycloak.truststore.policy:DEFAULT}",
             "type": "${keycloak.truststore.type:}",
             "disabled": "${keycloak.truststore.disabled:false}"
         }

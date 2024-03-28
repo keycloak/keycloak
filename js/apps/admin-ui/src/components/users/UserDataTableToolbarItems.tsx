@@ -97,16 +97,14 @@ export function UserDataTableToolbarItems({
           placeholder={t("searchForUser")}
           aria-label={t("search")}
           value={searchUser}
-          onChange={(_, value) => {
-            setSearchUser(value);
-          }}
-          onSearch={() => {
-            setSearchUser(searchUser);
+          onSearch={(_, _v, attribute) => {
+            setSearchUser(attribute["haswords"]);
             refresh();
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              setSearchUser(searchUser);
+              const target = e.target as HTMLInputElement;
+              setSearchUser(target.value);
               refresh();
             }
           }}

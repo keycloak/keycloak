@@ -13,6 +13,7 @@ import { ErrorOption, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   UserProfileFields,
+  beerify,
   debeerify,
   setUserProfileServerError,
   useAlerts,
@@ -39,7 +40,7 @@ export const PersonalInfo = () => {
     useState<UserProfileMetadata>();
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
   const form = useForm<UserRepresentation>({ mode: "onChange" });
-  const { handleSubmit, reset, setError } = form;
+  const { handleSubmit, reset, setValue, setError } = form;
   const { addAlert, addError } = useAlerts();
 
   usePromise(
@@ -52,6 +53,9 @@ export const PersonalInfo = () => {
       setUserProfileMetadata(personalInfo.userProfileMetadata);
       setSupportedLocales(supportedLocales);
       reset(personalInfo);
+      Object.entries(personalInfo.attributes || {}).forEach(([k, v]) =>
+        setValue(`attributes[${beerify(k)}]`, v),
+      );
     },
   );
 

@@ -7,3 +7,6 @@
 :infinispan-operator-docs: https://infinispan.org/docs/infinispan-operator/main/operator.html
 :infinispan-xsite-docs: https://infinispan.org/docs/stable/titles/xsite/xsite.html
 :containerlabel: latest
+:project_product: false
+:project_community: true
+:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{version}/rest-api/

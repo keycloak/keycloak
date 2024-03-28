@@ -16,56 +16,43 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.Command;
-import org.keycloak.client.admin.cli.aesh.Globals;
+import org.keycloak.client.admin.cli.Globals;
 import org.keycloak.client.admin.cli.util.FilterUtil;
 import org.keycloak.client.admin.cli.util.ReturnFields;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 import static org.keycloak.client.admin.cli.util.HttpUtil.normalize;
 import static org.keycloak.client.admin.cli.util.IoUtil.printOut;
 
-/**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
- */
-public abstract class AbstractGlobalOptionsCmd implements Command {
+public abstract class AbstractGlobalOptionsCmd implements Runnable {
 
-    @Option(shortName = 'x', description = "Print full stack trace when exiting with error", hasValue = false)
-    boolean dumpTrace;
-
-    @Option(name = "help", description = "Print command specific help", hasValue = false)
-    boolean help;
-
-
-    // we don't want Aesh to handle illegal options
-    @Arguments
-    List<String> args;
-
-
-    protected void initFromParent(AbstractGlobalOptionsCmd parent) {
-        dumpTrace = parent.dumpTrace;
-        help = parent.help;
-        args = parent.args;
+    @Option(names = "--help",
+            description = "Print command specific help")
+    public void setHelp(boolean help) {
+        Globals.help = help;
     }
 
-    protected void processGlobalOptions() {
+    @Option(names = "-x",
+            description = "Print full stack trace when exiting with error")
+    public void setDumpTrace(boolean dumpTrace) {
         Globals.dumpTrace = dumpTrace;
     }
 
-    protected boolean printHelp() {
-        if (help || nothingToDo()) {
+    protected void printHelpIfNeeded() {
+        if (Globals.help) {
             printOut(help());
-            return true;
+            System.exit(CommandLine.ExitCode.OK);
+        } else if (nothingToDo()) {
+            printOut(help());
+            System.exit(CommandLine.ExitCode.USAGE);
         }
-
-        return false;
     }
 
     protected boolean nothingToDo() {
@@ -78,13 +65,6 @@ public abstract class AbstractGlobalOptionsCmd implements Command {
 
     protected String composeAdminRoot(String server) {
         return normalize(server) + "admin";
-    }
-
-
-    protected void requireValue(Iterator<String> it, String option) {
-        if (!it.hasNext()) {
-            throw new IllegalArgumentException("Option " + option + " requires a value");
-        }
     }
 
     protected String extractTypeNameFromUri(String resourceUrl) {
@@ -110,4 +90,47 @@ public abstract class AbstractGlobalOptionsCmd implements Command {
             throw new RuntimeException("Failed to apply fields filter", e);
         }
     }
+
+    @Override
+    public void run() {
+        printHelpIfNeeded();
+
+        checkUnsupportedOptions(getUnsupportedOptions());
+
+        processOptions();
+
+        process();
+    }
+
+    protected String[] getUnsupportedOptions() {
+        return new String[0];
+    }
+
+    protected void processOptions() {
+
+    }
+
+    protected void process() {
+
+    }
+
+    protected void checkUnsupportedOptions(String ... options) {
+        if (options.length % 2 != 0) {
+            throw new IllegalArgumentException("Even number of argument required");
+        }
+
+        for (int i = 0; i < options.length; i++) {
+            String name = options[i];
+            String value = options[++i];
+
+            if (value != null) {
+                throw new IllegalArgumentException("Unsupported option: " + name);
+            }
+        }
+    }
+
+    protected static String booleanOptionForCheck(boolean value) {
+        return value ? "true" : null;
+    }
+
 }

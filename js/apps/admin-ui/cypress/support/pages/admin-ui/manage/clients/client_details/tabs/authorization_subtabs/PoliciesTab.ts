@@ -29,6 +29,7 @@ export default class PoliciesTab extends CommonPage {
   inputClient(clientName: string) {
     cy.get("#clients").click();
     cy.get("ul li").contains(clientName).click();
+    cy.get("#clients").click();
     return this;
   }
 }

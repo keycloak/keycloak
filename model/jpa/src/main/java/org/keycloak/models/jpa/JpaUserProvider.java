@@ -208,15 +208,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
-
-        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.NONE);
-        if (consentEntity != null) {
-            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
-        }
-
+        
         long currentTime = Time.currentTimeMillis();
 
-        consentEntity = new UserConsentEntity();
+        UserConsentEntity consentEntity = new UserConsentEntity();
         consentEntity.setId(KeycloakModelUtils.generateId());
         consentEntity.setUser(em.getReference(UserEntity.class, userId));
         StorageId clientStorageId = new StorageId(clientId);
@@ -1006,15 +1001,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 // All unknown attributes will be assumed as custom attributes
                 default:
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
-
                     if (value.length() > 255) {
                         customLongValueSearchAttributes.put(key, value);
                         attributePredicates.add(builder.and(
-                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
                     } else {
                         attributePredicates.add(builder.and(
-                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
                     }
                     break;

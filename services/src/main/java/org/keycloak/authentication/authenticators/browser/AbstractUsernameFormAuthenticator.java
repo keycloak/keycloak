@@ -100,27 +100,16 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return challengeResponse;
     }
 
-    protected void runDefaultDummyHash(AuthenticationFlowContext context) {
-        PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
-        hash.encode("SlightlyLongerDummyPassword", PasswordPolicy.HASH_ITERATIONS_DEFAULT);
-    }
-
     protected void dummyHash(AuthenticationFlowContext context) {
-        PasswordPolicy policy = context.getRealm().getPasswordPolicy();
-        if (policy == null) {
-            runDefaultDummyHash(context);
-            return;
+        PasswordPolicy passwordPolicy = context.getRealm().getPasswordPolicy();
+        PasswordHashProvider provider;
+        if (passwordPolicy != null && passwordPolicy.getHashAlgorithm() != null) {
+            provider = context.getSession().getProvider(PasswordHashProvider.class, passwordPolicy.getHashAlgorithm());
         } else {
-            PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
-            if (hash == null) {
-                runDefaultDummyHash(context);
-                return;
-
-            } else {
-                hash.encode("SlightlyLongerDummyPassword", policy.getHashIterations());
-            }
+            provider = context.getSession().getProvider(PasswordHashProvider.class);
         }
-
+        int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
+        provider.encode("SlightlyLongerDummyPassword", iterations);
     }
 
     public void testInvalidUser(AuthenticationFlowContext context, UserModel user) {

@@ -49,7 +49,7 @@ public class FeaturePropertyMappersTest {
     @Test
     public void testValidFeatures() {
         FeaturePropertyMappers.validateEnabledFeature("preview");
-        FeaturePropertyMappers.validateEnabledFeature(Feature.ACCOUNT2.getVersionedKey());
+        FeaturePropertyMappers.validateEnabledFeature(Feature.ACCOUNT3.getVersionedKey());
     }
 
 }

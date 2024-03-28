@@ -16,11 +16,6 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.keycloak.client.admin.cli.config.ConfigData;
 import org.keycloak.client.admin.cli.operations.ClientOperations;
 import org.keycloak.client.admin.cli.operations.GroupOperations;
@@ -29,7 +24,9 @@ import org.keycloak.client.admin.cli.operations.UserOperations;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import static org.keycloak.client.admin.cli.util.AuthUtil.ensureToken;
 import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
@@ -42,69 +39,58 @@ import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "get-roles", description = "[ARGUMENTS]")
+@Command(name = "get-roles", description = "[ARGUMENTS]")
 public class GetRolesCmd extends GetCmd {
 
-    @Option(name = "uusername", description = "Target user's 'username'")
+    @Option(names = "--uusername", description = "Target user's 'username'")
     String uusername;
 
-    @Option(name = "uid", description = "Target user's 'id'")
+    @Option(names = "--uid", description = "Target user's 'id'")
     String uid;
 
-    @Option(name = "cclientid", description = "Target client's 'clientId'")
+    @Option(names = "--cclientid", description = "Target client's 'clientId'")
     String cclientid;
 
-    @Option(name = "cid", description = "Target client's 'id'")
+    @Option(names = "--cid", description = "Target client's 'id'")
     String cid;
 
-    @Option(name = "rname", description = "Composite role's 'name'")
+    @Option(names = "--rname", description = "Composite role's 'name'")
     String rname;
 
-    @Option(name = "rid", description = "Composite role's 'id'")
+    @Option(names = "--rid", description = "Composite role's 'id'")
     String rid;
 
-    @Option(name = "gname", description = "Target group's 'name'")
+    @Option(names = "--gname", description = "Target group's 'name'")
     String gname;
 
-    @Option(name = "gpath", description = "Target group's 'path'")
+    @Option(names = "--gpath", description = "Target group's 'path'")
     String gpath;
 
-    @Option(name = "gid", description = "Target group's 'id'")
+    @Option(names = "--gid", description = "Target group's 'id'")
     String gid;
 
-    @Option(name = "rolename", description = "Target role's 'name'")
+    @Option(names = "--rolename", description = "Target role's 'name'")
     String rolename;
 
-    @Option(name = "roleid", description = "Target role's 'id'")
+    @Option(names = "--roleid", description = "Target role's 'id'")
     String roleid;
 
-    @Option(name = "available", description = "List only available roles", hasValue = false)
+    @Option(names = "--available", description = "List only available roles")
     boolean available;
 
-    @Option(name = "effective", description = "List assigned roles including transitively included roles", hasValue = false)
+    @Option(names = "--effective", description = "List assigned roles including transitively included roles")
     boolean effective;
 
-    @Option(name = "all", description = "List roles for all clients in addition to realm roles", hasValue = false)
+    @Option(names = "--all", description = "List roles for all clients in addition to realm roles")
     boolean all;
 
-
-    void initOptions() {
-
-        super.initOptions();
-
+    @Override
+    protected void processOptions() {
         // hack args so that GetCmd option check doesn't fail
         // set a placeholder
-        if (args == null) {
-            args = new ArrayList();
+        if (uri == null) {
+            uri = "uri";
         }
-        if (args.size() == 0) {
-            args.add("uri");
-        } else {
-            args.add(0, "uri");
-        }
-    }
-
-    void processOptions(CommandInvocation commandInvocation) {
 
         if (uid != null && uusername != null) {
             throw new IllegalArgumentException("Incompatible options: --uid and --uusername are mutually exclusive");
@@ -146,19 +132,19 @@ public class GetRolesCmd extends GetCmd {
             throw new IllegalArgumentException("Incompatible options: --all can't be used at the same time as --available");
         }
 
-        super.processOptions(commandInvocation);
+        super.processOptions();
     }
 
-    public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-
+    @Override
+    protected void process() {
         ConfigData config = loadConfig();
         config = copyWithServerInfo(config);
 
-        setupTruststore(config, commandInvocation);
+        setupTruststore(config);
 
         String auth = null;
 
-        config = ensureAuthInfo(config, commandInvocation);
+        config = ensureAuthInfo(config);
         config = copyWithServerInfo(config);
         if (credentialsAvailable(config)) {
             auth = ensureToken(config);
@@ -180,20 +166,20 @@ public class GetRolesCmd extends GetCmd {
                     cid = ClientOperations.getIdFromClientId(adminRoot, realm, auth, cclientid);
                 }
                 if (available) {
-                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/clients/" + cid + "/available");
+                    super.uri = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/clients/" + cid + "/available");
                 } else if (effective) {
-                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/clients/" + cid + "/composite");
+                    super.uri = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/clients/" + cid + "/composite");
                 } else {
-                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/clients/" + cid);
+                    super.uri = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/clients/" + cid);
                 }
             } else {
                 // list realm roles for a user
                 if (available) {
-                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/realm/available");
+                    super.uri = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/realm/available");
                 } else if (effective) {
-                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/realm/composite");
+                    super.uri = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/realm/composite");
                 } else {
-                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + (all ? "/role-mappings" : "/role-mappings/realm"));
+                    super.uri = composeResourceUrl(adminRoot, realm, "users/" + uid + (all ? "/role-mappings" : "/role-mappings/realm"));
                 }
             }
         } else if (isGroupSpecified()) {
@@ -208,20 +194,20 @@ public class GetRolesCmd extends GetCmd {
                     cid = ClientOperations.getIdFromClientId(adminRoot, realm, auth, cclientid);
                 }
                 if (available) {
-                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/clients/" + cid + "/available");
+                    super.uri = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/clients/" + cid + "/available");
                 } else if (effective) {
-                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/clients/" + cid + "/composite");
+                    super.uri = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/clients/" + cid + "/composite");
                 } else {
-                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/clients/" + cid);
+                    super.uri = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/clients/" + cid);
                 }
             } else {
                 // list realm roles for a group
                 if (available) {
-                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/realm/available");
+                    super.uri = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/realm/available");
                 } else if (effective) {
-                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/realm/composite");
+                    super.uri = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/realm/composite");
                 } else {
-                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + (all ? "/role-mappings" : "/role-mappings/realm"));
+                    super.uri = composeResourceUrl(adminRoot, realm, "groups/" + gid + (all ? "/role-mappings" : "/role-mappings/realm"));
                 }
             }
         } else if (isCompositeRoleSpecified()) {
@@ -248,7 +234,7 @@ public class GetRolesCmd extends GetCmd {
 
                 uri += all ? "/composites" : "/composites/realm";
             }
-            super.url = composeResourceUrl(adminRoot, realm, uri);
+            super.uri = composeResourceUrl(adminRoot, realm, uri);
 
         } else if (isClientSpecified()) {
             if (cid == null) {
@@ -260,10 +246,10 @@ public class GetRolesCmd extends GetCmd {
                 if (rolename == null) {
                     rolename = RoleOperations.getClientRoleNameFromId(adminRoot, realm, auth, cid, roleid);
                 }
-                super.url = composeResourceUrl(adminRoot, realm, "clients/" + cid + "/roles/" + rolename);
+                super.uri = composeResourceUrl(adminRoot, realm, "clients/" + cid + "/roles/" + rolename);
             } else {
                 // list defined client roles
-                super.url = composeResourceUrl(adminRoot, realm, "clients/" + cid + "/roles");
+                super.uri = composeResourceUrl(adminRoot, realm, "clients/" + cid + "/roles");
             }
         } else {
             if (isRoleSpecified()) {
@@ -271,14 +257,14 @@ public class GetRolesCmd extends GetCmd {
                 if (rolename == null) {
                     rolename = RoleOperations.getClientRoleNameFromId(adminRoot, realm, auth, cid, roleid);
                 }
-                super.url = composeResourceUrl(adminRoot, realm, "roles/" + rolename);
+                super.uri = composeResourceUrl(adminRoot, realm, "roles/" + rolename);
             } else {
                 // list defined realm roles
-                super.url = composeResourceUrl(adminRoot, realm, "roles");
+                super.uri = composeResourceUrl(adminRoot, realm, "roles");
             }
         }
 
-        return super.process(commandInvocation);
+        super.process();
     }
 
     private boolean isRoleSpecified() {
@@ -301,14 +287,12 @@ public class GetRolesCmd extends GetCmd {
         return uid != null || uusername != null;
     }
 
-    protected String suggestHelp() {
-        return "";
-    }
-
+    @Override
     protected boolean nothingToDo() {
         return false;
     }
 
+    @Override
     protected String help() {
         return usage();
     }

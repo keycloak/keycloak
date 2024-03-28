@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Multi-site deployments"
@@ -15,7 +16,7 @@ The different {sections} introduce the necessary concepts and building blocks.
 For each building block, a blueprint shows how to set a fully functional example.
 Additional performance tuning and security hardening are still recommended when preparing a production setup.
 
-ifeval::[{project_community}==true]
+<@profile.ifCommunity>
 == Concept and building block overview
 
 * <@links.ha id="concepts-active-passive-sync" />
@@ -40,6 +41,6 @@ ifeval::[{project_community}==true]
 * <@links.ha id="operate-network-partition-recovery" />
 * <@links.ha id="operate-switch-back" />
 
-endif::[]
+</@profile.ifCommunity>
 
 </@tmpl.guide>

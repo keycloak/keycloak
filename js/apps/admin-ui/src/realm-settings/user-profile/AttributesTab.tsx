@@ -89,6 +89,12 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         (attribute) => attribute.name === attributeToDelete,
       )?.displayName;
 
+      // Remove the the `${}` from translationsToDelete string
+      const formattedTranslationsToDelete = translationsToDelete?.substring(
+        2,
+        translationsToDelete.length - 1,
+      );
+
       try {
         await Promise.all(
           combinedLocales.map(async (locale) => {
@@ -103,7 +109,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                 await adminClient.realms.deleteRealmLocalizationTexts({
                   realm: realmName,
                   selectedLocale: locale,
-                  key: translationsToDelete,
+                  key: formattedTranslationsToDelete,
                 });
 
                 const updatedData =

@@ -9,6 +9,7 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { PasswordInput } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -16,7 +17,6 @@ import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 import useToggle from "../../utils/useToggle";
 
 type ResetPasswordDialogProps = {

@@ -39,7 +39,7 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
     public void testTruststoreMissing() {
         var kc = getTestKeycloakDeployment(true);
         var deploymentName = kc.getMetadata().getName();
-        kc.getSpec().getTruststores().put("xyz", new TruststoreBuilder().withName("xyz").withNewSecret().withName("xyz").endSecret().build());
+        kc.getSpec().getTruststores().put("xyz", new TruststoreBuilder().withNewSecret().withName("xyz").endSecret().build());
 
         deployKeycloak(k8sclient, kc, false);
         Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
@@ -58,7 +58,7 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         var deploymentName = kc.getMetadata().getName();
 
         K8sUtils.set(k8sclient, getResourceFromFile("example-truststore-secret.yaml", Secret.class));
-        kc.getSpec().getTruststores().put("example", new TruststoreBuilder().withName("example").withNewSecret().withName("example-truststore-secret").endSecret().build());
+        kc.getSpec().getTruststores().put("example", new TruststoreBuilder().withNewSecret().withName("example-truststore-secret").endSecret().build());
 
         deployKeycloak(k8sclient, kc, true);
         Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);

@@ -237,8 +237,8 @@ describe("Realm settings events tab tests", () => {
   it("Realm header settings", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-security-defenses-tab").click();
-    cy.findByTestId("headers-form-tab-save").should("be.disabled");
-    cy.get("#xFrameOptions").clear().type("DENY");
+    cy.findByTestId("browserSecurityHeaders.xFrameOptions").clear();
+    cy.findByTestId("browserSecurityHeaders.xFrameOptions").type("DENY");
     cy.findByTestId("headers-form-tab-save").should("be.enabled").click();
 
     masthead.checkNotificationMessage("Realm successfully updated");
@@ -248,8 +248,6 @@ describe("Realm settings events tab tests", () => {
     sidebarPage.goToRealmSettings();
     cy.findAllByTestId("rs-security-defenses-tab").click();
     cy.get("#pf-tab-20-bruteForce").click();
-
-    cy.findByTestId("brute-force-tab-save").should("be.disabled");
 
     cy.get("#kc-brute-force-mode").click();
     cy.findByTestId("select-brute-force-mode")
@@ -345,6 +343,10 @@ describe("Realm settings events tab tests", () => {
     cy.findByTestId(realmSettingsPage.accessTokenLifespanInput).should(
       "have.value",
       1,
+    );
+    cy.findByTestId(realmSettingsPage.parRequestUriLifespanInput).should(
+      "have.value",
+      2,
     );
     cy.findByTestId(realmSettingsPage.accessTokenLifespanImplicitInput).should(
       "have.value",

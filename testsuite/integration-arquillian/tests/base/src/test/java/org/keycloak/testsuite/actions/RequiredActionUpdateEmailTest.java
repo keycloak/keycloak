@@ -65,6 +65,12 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
         changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions);
 
+        if (logoutOtherSessions) {
+            events.expectLogout(event1.getSessionId())
+                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_EMAIL.name())
+                    .assertEvent();
+        }
+
         events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
                 .detail(Details.UPDATED_EMAIL, "new@localhost").assertEvent();
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());

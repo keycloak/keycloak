@@ -49,6 +49,9 @@ export const fieldName = (name?: string) =>
     "🍺",
   )}` as FieldPath<UserFormFields>;
 
+export const beerify = <T extends string>(name: T) =>
+  name.replaceAll(".", "🍺");
+
 export const debeerify = <T extends string>(name: T) =>
   name.replaceAll("🍺", ".");
 

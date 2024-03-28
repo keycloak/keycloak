@@ -123,7 +123,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
 
         // remove the session in keycloak
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
-        adminClient.realm("test").deleteSession(accessToken.getSessionState());
+        adminClient.realm("test").deleteSession(accessToken.getSessionState(), false);
 
         try (ResteasyClient resteasyClient = AdminClientUtil.createResteasyClient()) {
             WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(resteasyClient);

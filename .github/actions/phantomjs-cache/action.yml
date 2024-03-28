@@ -12,7 +12,7 @@ runs:
   steps:
     - id: cache-phantomjs-driver
       name: PhantomJS Driver cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.arquillian/drone
         key: phantomjs-${{ inputs.version }}

@@ -96,11 +96,11 @@ describe("Sessions test", () => {
       sidebarPage.waitForPageLoad();
 
       // Now check that offline session exists (online one has been logged off above)
-      // and that it is not possible to sign it out
+      // and that it is possible to revoke it
       commonPage
         .tableUtils()
         .checkRowItemExists(username)
-        .assertRowItemActionDoesNotExist(username, "Sign out");
+        .selectRowItemAction(username, "Revoke");
     });
   });
 

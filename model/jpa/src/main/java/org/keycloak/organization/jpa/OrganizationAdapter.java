@@ -18,14 +18,17 @@
 package org.keycloak.organization.jpa;
 
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 
-public class OrganizationAdapter implements OrganizationModel, JpaModel<OrganizationEntity> {
+public final class OrganizationAdapter implements OrganizationModel, JpaModel<OrganizationEntity> {
 
+    private final RealmModel realm;
     private final OrganizationEntity entity;
 
-    public OrganizationAdapter(OrganizationEntity entity) {
+    public OrganizationAdapter(RealmModel realm, OrganizationEntity entity) {
+        this.realm = realm;
         this.entity = entity;
     }
 
@@ -34,8 +37,13 @@ public class OrganizationAdapter implements OrganizationModel, JpaModel<Organiza
         return entity.getId();
     }
 
-    String getRealm() {
-        return entity.getRealmId();
+    @Override
+    public RealmModel getRealm() {
+        return realm;
+    }
+
+    String getGroupId() {
+        return entity.getGroupId();
     }
 
     @Override
@@ -51,5 +59,21 @@ public class OrganizationAdapter implements OrganizationModel, JpaModel<Organiza
     @Override
     public OrganizationEntity getEntity() {
         return entity;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder()
+                .append("id=")
+                .append(getId())
+                .append(",")
+                .append("name=")
+                .append(getName())
+                .append(",")
+                .append("realm=")
+                .append(getRealm().getName())
+                .append(",")
+                .append("groupId=")
+                .append(getGroupId()).toString();
     }
 }

@@ -36,7 +36,7 @@ spec:
 ----
 
 This CR should be created in the same namespace as the Keycloak Deployment CR, defined in the field `keycloakCRName`.
-The `realm` field accepts a full https://www.keycloak.org/docs-api/{version}/rest-api/index.html#RealmRepresentation[RealmRepresentation].
+The `realm` field accepts a full {apidocs_adminrest_link}/index.html#RealmRepresentation[RealmRepresentation].
 
 The recommended way to obtain a `RealmRepresentation` is by leveraging the export functionality <@links.server id="importExport"/>.
 

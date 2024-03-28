@@ -136,7 +136,8 @@ describe("Realm settings tabs tests", () => {
     it("Realm header settings- update single input", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();
-      cy.get("#xFrameOptions").clear().type("DENY");
+      cy.findByTestId("browserSecurityHeaders.xFrameOptions").clear();
+      cy.findByTestId("browserSecurityHeaders.xFrameOptions").type("DENY");
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });
@@ -144,14 +145,34 @@ describe("Realm settings tabs tests", () => {
     it("Realm header settings- update all inputs", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();
-      cy.get("#xFrameOptions").clear().type("SAMEORIGIN");
-      cy.get("#contentSecurityPolicy").clear().type("default-src 'self'");
-      cy.get("#strictTransportSecurity").clear().type("max-age=31536000");
-      cy.get("#xContentTypeOptions").clear().type("nosniff");
-      cy.get("#xRobotsTag").clear().type("none");
-      cy.get("#xXSSProtection").clear().type("1; mode=block");
-      cy.get("#strictTransportSecurity").clear().type("max-age=31537000");
-      cy.get("#referrerPolicy").clear().type("referrer");
+      cy.findByTestId("browserSecurityHeaders.xFrameOptions").clear();
+      cy.findByTestId("browserSecurityHeaders.xFrameOptions").type(
+        "SAMEORIGIN",
+      );
+      cy.findByTestId("browserSecurityHeaders.contentSecurityPolicy").clear();
+      cy.findByTestId("browserSecurityHeaders.contentSecurityPolicy").type(
+        "default-src 'self'",
+      );
+      cy.findByTestId("browserSecurityHeaders.strictTransportSecurity").clear();
+      cy.findByTestId("browserSecurityHeaders.strictTransportSecurity").type(
+        "max-age=31536000",
+      );
+      cy.findByTestId("browserSecurityHeaders.xContentTypeOptions").clear();
+      cy.findByTestId("browserSecurityHeaders.xContentTypeOptions").type(
+        "nosniff",
+      );
+      cy.findByTestId("browserSecurityHeaders.xRobotsTag").clear();
+      cy.findByTestId("browserSecurityHeaders.xRobotsTag").type("none");
+      cy.findByTestId("browserSecurityHeaders.xXSSProtection").clear();
+      cy.findByTestId("browserSecurityHeaders.xXSSProtection").type(
+        "1; mode=block",
+      );
+      cy.findByTestId("browserSecurityHeaders.strictTransportSecurity").clear();
+      cy.findByTestId("browserSecurityHeaders.strictTransportSecurity").type(
+        "max-age=31537000",
+      );
+      cy.findByTestId("browserSecurityHeaders.referrerPolicy").clear();
+      cy.findByTestId("browserSecurityHeaders.referrerPolicy").type("referrer");
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });

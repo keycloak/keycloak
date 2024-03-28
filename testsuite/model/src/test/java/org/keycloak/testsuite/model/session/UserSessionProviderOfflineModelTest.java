@@ -24,6 +24,7 @@ import org.infinispan.context.Flag;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -300,9 +301,19 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 session.sessions().createOfflineUserSession(userSession);
                 session.sessions().createOfflineUserSession(origSessions[0]);
 
-                // try to load user session from persister
-                Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                    // This does not work with persistent user sessions because we currently have two transactions and the one that creates the offline user sessions is not committing the changes
+                    // try to load user session from persister
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                }
             });
+
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                inComittedTransaction(session -> {
+                    persister = session.getProvider(UserSessionPersisterProvider.class);
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                });
+            }
 
         } finally {
             setTimeOffset(0);

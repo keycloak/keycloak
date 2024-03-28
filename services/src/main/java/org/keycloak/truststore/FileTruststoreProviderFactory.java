@@ -43,6 +43,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -112,12 +114,15 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             }
         }
         if (policy == null) {
-            verificationPolicy = HostnameVerificationPolicy.WILDCARD;
+            verificationPolicy = HostnameVerificationPolicy.DEFAULT;
         } else {
             try {
                 verificationPolicy = HostnameVerificationPolicy.valueOf(policy);
             } catch (Exception e) {
-                throw new RuntimeException("Invalid value for 'hostname-verification-policy': " + policy + " (must be one of: ANY, WILDCARD, STRICT)");
+                throw new RuntimeException("Invalid value for 'hostname-verification-policy': " + policy
+                        + " (must be one of: " + Stream.of(HostnameVerificationPolicy.values())
+                                .map(HostnameVerificationPolicy::name).collect(Collectors.joining(", "))
+                        + ")");
             }
         }
 
@@ -158,8 +163,8 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 .name(HOSTNAME_VERIFICATION_POLICY)
                 .type("string")
                 .helpText("DEPRECATED: The hostname verification policy.")
-                .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).map(String::toLowerCase).toArray(String[]::new))
-                .defaultValue(HostnameVerificationPolicy.WILDCARD.name().toLowerCase())
+                .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).toArray(String[]::new))
+                .defaultValue(HostnameVerificationPolicy.DEFAULT.name())
                 .add()
                 .property()
                 .name("type")

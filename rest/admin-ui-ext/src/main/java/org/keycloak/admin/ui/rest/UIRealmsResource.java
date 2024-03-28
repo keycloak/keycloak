@@ -4,6 +4,7 @@ import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
 
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -17,7 +18,6 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.admin.ui.rest.model.RealmNameRepresentation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.RealmsPermissionEvaluator;

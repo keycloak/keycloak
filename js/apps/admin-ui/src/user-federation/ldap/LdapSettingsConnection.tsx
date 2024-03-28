@@ -7,7 +7,6 @@ import {
   SelectOption,
   SelectVariant,
   Switch,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { get, isEqual } from "lodash-es";
 import { useState } from "react";
@@ -18,11 +17,10 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "ui-shared";
+import { HelpItem, PasswordControl, TextControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
@@ -264,38 +262,15 @@ export const LdapSettingsConnection = ({
                 required: t("validateBindDn"),
               }}
             />
-            <FormGroup
+            <PasswordControl
+              name="config.bindCredential.0"
               label={t("bindCredentials")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("bindCredentialsHelp")}
-                  fieldLabelId="bindCredentials"
-                />
-              }
-              fieldId="kc-ui-bind-credentials"
-              helperTextInvalid={t("validateBindCredentials")}
-              validated={
-                (form.formState.errors.config as any)?.bindCredential
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              isRequired
-            >
-              <PasswordInput
-                hasReveal={!edit}
-                isRequired
-                id="kc-ui-bind-credentials"
-                data-testid="ldap-bind-credentials"
-                validated={
-                  (form.formState.errors.config as any)?.bindCredential
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                {...form.register("config.bindCredential.0", {
-                  required: true,
-                })}
-              />
-            </FormGroup>
+              labelIcon={t("bindCredentialsHelp")}
+              hasReveal={!edit}
+              rules={{
+                required: t("validateBindCredentials"),
+              }}
+            />
           </>
         )}
         <FormGroup fieldId="kc-test-auth-button">

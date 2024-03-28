@@ -283,7 +283,7 @@ export const UserForm = ({
             validated={errors.requiredActions ? "error" : "default"}
             helperTextInvalid={t("required")}
             labelIcon={
-              <HelpItem helpText={t("groups")} fieldLabelId="groups" />
+              <HelpItem helpText={t("groupsHelp")} fieldLabelId="groups" />
             }
           >
             <Controller

@@ -18,6 +18,7 @@ package org.keycloak.storage.jpa;
 
 import java.util.regex.Pattern;
 import org.jboss.logging.Logger;
+import org.keycloak.models.light.LightweightUserAdapter;
 
 /**
  *
@@ -33,6 +34,8 @@ public class KeyUtils {
       UUID_PATTERN.pattern()
       + "|"
       + "f:" + UUID_PATTERN.pattern() + ":.*"
+      + "|"
+      + LightweightUserAdapter.ID_PREFIX + UUID_PATTERN.pattern()
     );
 
     /**

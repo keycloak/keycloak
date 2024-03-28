@@ -216,6 +216,14 @@ export default class UserProfile {
     return this;
   }
 
+  assertNotificationUpdated() {
+    this.masthead.checkNotificationMessage(
+      "User profile settings successfully updated.",
+    );
+
+    return this;
+  }
+
   shouldHaveText(text: string) {
     this.#getText().should("have.text", text);
     return this;

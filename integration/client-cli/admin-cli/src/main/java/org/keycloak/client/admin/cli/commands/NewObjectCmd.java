@@ -17,11 +17,10 @@
 package org.keycloak.client.admin.cli.commands;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
 import org.keycloak.client.admin.cli.common.AttributeOperation;
 import org.keycloak.client.admin.cli.common.CmdStdinContext;
 import org.keycloak.client.admin.cli.util.AccessibleBufferOutputStream;
@@ -32,15 +31,14 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.SET;
 import static org.keycloak.client.admin.cli.util.IoUtil.copyStream;
 import static org.keycloak.client.admin.cli.util.IoUtil.printErr;
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
 import static org.keycloak.client.admin.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.admin.cli.util.OutputUtil.MAPPER;
@@ -51,59 +49,24 @@ import static org.keycloak.client.admin.cli.util.ParseUtil.parseKeyVal;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "new-object", description = "Command to create new JSON objects locally")
+@Command(name = "new-object", description = "Command to create new JSON objects locally")
 public class NewObjectCmd extends AbstractGlobalOptionsCmd {
 
-    @Option(shortName = 'f', name = "file", description = "Read object from file or standard input if FILENAME is set to '-'", hasValue = true)
+    @Option(names = {"-f", "--file"}, description = "Read object from file or standard input if FILENAME is set to '-'")
     String file;
 
-    @Option(shortName = 'c', name = "compressed", description = "Don't pretty print the output", hasValue = false)
+    @Option(names = {"-c", "--compressed"}, description = "Don't pretty print the output")
     boolean compressed;
 
-    //@OptionGroup(shortName = 's', name = "set", description = "Set attribute to the specified value")
-    //Map<String, String> attributes = new LinkedHashMap<>();
-
+    @Option(names = {"-s", "--set"}, description = "Set a specific attribute NAME to a specified value VALUE")
+    List<String> values = new ArrayList<>();
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            processGlobalOptions();
-
-            return process(commandInvocation);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
-        }
-    }
-
-    public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-
-        List<AttributeOperation> attrs = new LinkedList<>();
-
-        Iterator<String> it = args.iterator();
-
-        while (it.hasNext()) {
-            String option = it.next();
-            switch (option) {
-                case "-s":
-                case "--set": {
-                    if (!it.hasNext()) {
-                        throw new IllegalArgumentException("Option " + option + " requires a value");
-                    }
-                    String[] keyVal = parseKeyVal(it.next());
-                    attrs.add(new AttributeOperation(SET, keyVal[0], keyVal[1]));
-                    break;
-                }
-                default: {
-                    throw new IllegalArgumentException("Invalid option: " + option);
-                }
-            }
-        }
+    public void process() {
+        List<AttributeOperation> attrs = values.stream().map(it -> {
+            String[] keyVal = parseKeyVal(it);
+            return new AttributeOperation(SET, keyVal[0], keyVal[1]);
+        }).collect(Collectors.toList());
 
         InputStream body = null;
 
@@ -142,20 +105,14 @@ public class NewObjectCmd extends AbstractGlobalOptionsCmd {
         if (lastByte != -1 && lastByte != 13 && lastByte != 10) {
             printErr("");
         }
-
-        return CommandResult.SUCCESS;
     }
-
 
     @Override
     protected boolean nothingToDo() {
-        return file == null && (args == null || args.size() == 0);
+        return file == null && values.isEmpty();
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help create' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }

@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -24,6 +26,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -31,6 +34,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -39,14 +43,16 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.RealmManager;
+import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -118,14 +124,21 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     }
 
     @Test
-    public void logoutSessionsCheckboxNotPresent() {
+    public void resetPasswordLogoutSessionsChecked() {
+        resetPassword(true);
+    }
+
+    @Test
+    public void resetPasswordLogoutSessionsNotChecked() {
+        resetPassword(false);
+    }
+
+    private void resetPassword(boolean logoutOtherSessions) {
         OAuthClient oauth2 = new OAuthClient();
         oauth2.init(driver2);
-
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
-
         oauth2.doLogin("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventRepresentation event1 = events.expectLogin().assertEvent();
         assertEquals(1, testUser.getUserSessions().size());
 
         requireUpdatePassword();
@@ -135,12 +148,29 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         changePasswordPage.assertCurrent();
         assertTrue(changePasswordPage.isLogoutSessionDisplayed());
         assertTrue(changePasswordPage.isLogoutSessionsChecked());
-        changePasswordPage.uncheckLogoutSessions();
+        if (!logoutOtherSessions) {
+            changePasswordPage.uncheckLogoutSessions();
+        }
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectLogin().assertEvent();
 
-        assertEquals("All sessions are still active", 2, testUser.getUserSessions().size());
+        if (logoutOtherSessions) {
+            events.expectLogout(event1.getSessionId())
+                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name())
+                    .assertEvent();
+        }
+
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+
+        EventRepresentation event2 = events.expectLogin().assertEvent();
+        List<UserSessionRepresentation> sessions = testUser.getUserSessions();
+        if (logoutOtherSessions) {
+            assertEquals(1, sessions.size());
+            assertEquals(event2.getSessionId(), sessions.iterator().next().getId());
+        } else {
+            assertEquals(2, sessions.size());
+            MatcherAssert.assertThat(sessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
+                    Matchers.containsInAnyOrder(event1.getSessionId(), event2.getSessionId()));
+        }
     }
 
     @Test
@@ -162,8 +192,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
             loginUsernameOnlyPage.open();
             loginUsernameOnlyPage.login("test-user@localhost");
             events.expectLogin().assertEvent();
-        }
-        finally {
+        } finally {
             //reset browser flow and delete username only flow
             RealmRepresentation realm = testRealm().toRepresentation();
             realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);

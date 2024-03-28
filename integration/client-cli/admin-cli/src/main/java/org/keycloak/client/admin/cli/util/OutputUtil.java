@@ -17,6 +17,7 @@
 package org.keycloak.client.admin.cli.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -37,6 +38,7 @@ public class OutputUtil {
 
     static {
         MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+        MAPPER.enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
         MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 

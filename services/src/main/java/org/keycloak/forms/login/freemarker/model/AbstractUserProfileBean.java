@@ -42,7 +42,7 @@ public abstract class AbstractUserProfileBean {
             return a1.compareTo(a2);
         }
 
-        return Comparator.nullsLast(AttributeGroup::compareTo).compare(g1, g2);
+        return Comparator.nullsFirst(AttributeGroup::compareTo).compare(g1, g2);
     };
 
     protected final MultivaluedMap<String, String> formData;

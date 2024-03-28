@@ -13,7 +13,7 @@ export default class AdvancedTab extends PageObject {
   #nodeHostInput = "node";
   #addNodeConfirmBtn = "#add-node-confirm";
 
-  #accessTokenSignatureAlgorithmInput = "#accessTokenSignatureAlgorithm";
+  #accessTokenSignatureAlgorithmInput = "#access🍺token🍺signed🍺response🍺alg";
   #fineGrainSaveBtn = "#fineGrainSave";
   #fineGrainRevertBtn = "#fineGrainRevert";
   #OIDCCompatabilitySaveBtn = "OIDCCompatabilitySave";
@@ -36,8 +36,8 @@ export default class AdvancedTab extends PageObject {
   #pushedAuthorizationRequestRequiredSwitch =
     "attributes.require🍺pushed🍺authorization🍺requests";
 
-  #browserFlowInput = "#browserFlow";
-  #directGrantInput = "#directGrant";
+  #browserFlowInput = "#browser";
+  #directGrantInput = "#direct_grant";
 
   #jumpToOIDCCompatabilitySettings =
     "jump-link-openid-connect-compatibility-modes";

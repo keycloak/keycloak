@@ -17,16 +17,13 @@
 
 package org.keycloak.common.util;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
- * <p>Provides a layer of indirection to abstract invocations to Resteasy internal APIs. Making also possible to use different
- * versions of Resteasy (e.g.: v3 and v4) depending on the stack that the server is running.
- *
- * <p>The methods herein provided are basically related with accessing context data from Resteasy, which changed in latest versions of Resteasy.
- *
- * <p>It is important to use this class when access to context data is necessary in order to avoid incompatibilities with future
- * versions of Resteasy.
+ * <p>Provides a layer of indirection to abstract invocations to Resteasy internal APIs for obtaining the KeycloakSession
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -35,8 +32,18 @@ public final class Resteasy {
     private static ResteasyProvider provider;
 
     static {
-        provider = ServiceLoader.load(ResteasyProvider.class, Resteasy.class.getClassLoader()).iterator().next();
+        Iterator<ResteasyProvider> iter = ServiceLoader.load(ResteasyProvider.class, Resteasy.class.getClassLoader()).iterator();
+        if (iter.hasNext()) {
+            provider = iter.next();
+        }
     }
+
+    private static final ThreadLocal<Map<Class<?>, Object>> contextualData = new ThreadLocal<Map<Class<?>, Object>>() {
+        @Override
+        protected Map<Class<?>, Object> initialValue() {
+            return new HashMap<>(1);
+        };
+    };
 
     public static ResteasyProvider getProvider() {
         return provider;
@@ -44,29 +51,36 @@ public final class Resteasy {
 
     /**
      * Push the given {@code instance} with type/key {@code type} to the Resteasy context associated with the current thread.
-     * 
-     * @param type the type/key to associate the {@code instance} with 
+     * <br>Should not be called directly
+     *
+     * @param type the type/key to associate the {@code instance} with
      * @param instance the instance
      */
-    public static void pushContext(Class type, Object instance) {
-        provider.pushContext(type, instance);
-    }
-
-    /**
-     * Lookup the instance associated with the given type/key {@code type} from the Resteasy context associated with the current thread.
-     *
-     * @param type the type/key to lookup 
-     * @return the instance associated with the given {@code type} or null if non-existent.                
-     */
-    public static <R> R getContextData(Class<R> type) {
-        return provider.getContextData(type);
+    public static <R> R pushContext(Class<R> type, R instance) {
+        return (R) contextualData.get().put(type, instance);
     }
 
     /**
      * Clear the Resteasy context associated with the current thread.
+     * <br>Should not be called directly
      */
     public static void clearContextData() {
-        provider.clearContextData();
+        contextualData.remove();
+    }
+
+    /**
+     * Lookup the instance associated with the given type/key {@code type} from the Resteasy context associated with the current thread, or from the provider.
+     * <br> Should only be used to obtain the KeycloakSession
+     *
+     * @param type the type/key to lookup
+     * @return the instance associated with the given {@code type} or null if non-existent.
+     */
+    public static <R> R getContextData(Class<R> type) {
+        R result = (R) contextualData.get().get(type);
+        if (result != null) {
+            return result;
+        }
+        return provider.getContextData(type);
     }
 
     /**
@@ -74,9 +88,11 @@ public final class Resteasy {
      *
      * @param type the type/key to associate the {@code instance} with
      * @param instance the instance
+     * @deprecated use {@link #pushContext(Class, Object)}
      */
+    @Deprecated
     public static void pushDefaultContextObject(Class type, Object instance) {
-        provider.pushDefaultContextObject(type, instance);
+        pushContext(type, instance);
     }
 
 }

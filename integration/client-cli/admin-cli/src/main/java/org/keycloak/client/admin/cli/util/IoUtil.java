@@ -16,14 +16,7 @@
  */
 package org.keycloak.client.admin.cli.util;
 
-import org.jboss.aesh.console.AeshConsoleBufferBuilder;
-import org.jboss.aesh.console.AeshInputProcessorBuilder;
-import org.jboss.aesh.console.ConsoleBuffer;
-import org.jboss.aesh.console.InputProcessor;
-import org.jboss.aesh.console.Prompt;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.client.admin.cli.aesh.Globals;
-
+import java.io.Console;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -50,7 +43,6 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.createFile;
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.isRegularFile;
-import static org.keycloak.client.admin.cli.util.OsUtil.OS_ARCH;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -81,43 +73,16 @@ public class IoUtil {
         }
     }
 
-    public static String readSecret(String prompt, CommandInvocation invocation) {
-
-        // TODO Windows hack - masking not working on Windows
-        char maskChar = OS_ARCH.isWindows() ? 0 : '*';
-        ConsoleBuffer consoleBuffer = new AeshConsoleBufferBuilder()
-                .shell(invocation.getShell())
-                .prompt(new Prompt(prompt, maskChar))
-                .create();
-        InputProcessor inputProcessor = new AeshInputProcessorBuilder()
-                .consoleBuffer(consoleBuffer)
-                .create();
-
-        consoleBuffer.displayPrompt();
-
-        // activate stdin
-        Globals.stdin.setInputStream(System.in);
-
-        String result;
-        try {
-            do {
-                result = inputProcessor.parseOperation(invocation.getInput());
-            } while (result == null);
-        } catch (Exception e) {
-            throw new RuntimeException("^C", e);
+    public static String readSecret(String prompt) {
+        Console cons = System.console();
+        if (cons == null) {
+            throw new RuntimeException("Console is not active, but a password is required");
         }
-        /*
-        if (!Globals.stdin.isStdinAvailable()) {
-            try {
-                return readLine(new InputStreamReader(System.in));
-            } catch (IOException e) {
-                throw new RuntimeException("Standard input not available");
-            }
+        char[] passwd;
+        if ((passwd = cons.readPassword("%s", prompt)) != null) {
+            return new String(passwd);
         }
-         */
-        // Windows hack - get rid of any \n
-        result = result.replaceAll("\\n", "");
-        return result;
+        throw new RuntimeException("No password provided");
     }
 
     public static String readFully(InputStream is) {

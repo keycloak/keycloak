@@ -16,7 +16,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 import { adminClient } from "../../../admin-client";
@@ -117,9 +117,30 @@ export const AddTranslationsDialog = ({
 
   const handleOk = () => {
     const formData = getValues();
-    onTranslationsAdded(formData);
+
+    const updatedTranslations = formData.translations.map((translation) => {
+      if (translation.locale === filter) {
+        return {
+          ...translation,
+          value:
+            formData.translations.find((t) => t.locale === filter)?.value ?? "",
+        };
+      }
+      return translation;
+    });
+
+    onTranslationsAdded({
+      key: formData.key,
+      translations: updatedTranslations,
+    });
+
     toggleDialog();
   };
+
+  const isRequiredTranslation = useWatch({
+    control: form.control,
+    name: "translations.0.value",
+  });
 
   return (
     <Modal
@@ -134,7 +155,7 @@ export const AddTranslationsDialog = ({
           variant="primary"
           type="submit"
           form="add-translation"
-          isDisabled={!isValid}
+          isDisabled={!isValid || !isRequiredTranslation}
         >
           {t("addTranslationDialogOkBtn")}
         </Button>,
@@ -234,48 +255,53 @@ export const AddTranslationsDialog = ({
                         </Tr>
                       </Thead>
                       <Tbody>
-                        {filteredLocales.map((locale, rowIndex) => (
-                          <Tr key={rowIndex}>
-                            <Td
-                              className="pf-m-sm pf-u-px-sm"
-                              dataLabel={t("supportedLanguage")}
-                            >
-                              <FormGroup fieldId="kc-supportedLanguage">
-                                {localeToDisplayName(
-                                  locale,
-                                  whoAmI.getLocale(),
-                                )}
+                        {filteredLocales.map((locale, index) => {
+                          const rowIndex = combinedLocales.findIndex(
+                            (combinedLocale) => combinedLocale === locale,
+                          );
+                          return (
+                            <Tr key={index}>
+                              <Td
+                                className="pf-m-sm pf-u-px-sm"
+                                dataLabel={t("supportedLanguage")}
+                              >
+                                <FormGroup fieldId="kc-supportedLanguage">
+                                  {localeToDisplayName(
+                                    locale,
+                                    whoAmI.getLocale(),
+                                  )}
+                                  {locale === defaultLocales.toString() && (
+                                    <Label className="pf-u-ml-xs" color="blue">
+                                      {t("defaultLanguage")}
+                                    </Label>
+                                  )}
+                                </FormGroup>
+                              </Td>
+                              <Td>
                                 {locale === defaultLocales.toString() && (
-                                  <Label className="pf-u-ml-xs" color="blue">
-                                    {t("defaultLanguage")}
-                                  </Label>
+                                  <TextControl
+                                    name={`translations.${rowIndex}.value`}
+                                    label={t("translationValue")}
+                                    data-testid={`translation-value-${rowIndex}`}
+                                    rules={{
+                                      required: {
+                                        value: true,
+                                        message: t("required"),
+                                      },
+                                    }}
+                                  />
                                 )}
-                              </FormGroup>
-                            </Td>
-                            <Td>
-                              {locale === defaultLocales.toString() && (
-                                <TextControl
-                                  name={`translations.${rowIndex}.value`}
-                                  label={t("translationValue")}
-                                  data-testid="translation-value"
-                                  rules={{
-                                    required: {
-                                      value: true,
-                                      message: t("required"),
-                                    },
-                                  }}
-                                />
-                              )}
-                              {locale !== defaultLocales.toString() && (
-                                <TextControl
-                                  name={`translations.${rowIndex}.value`}
-                                  label={t("translationValue")}
-                                  data-testid="translation-value"
-                                />
-                              )}
-                            </Td>
-                          </Tr>
-                        ))}
+                                {locale !== defaultLocales.toString() && (
+                                  <TextControl
+                                    name={`translations.${rowIndex}.value`}
+                                    label={t("translationValue")}
+                                    data-testid={`translation-value-${rowIndex}`}
+                                  />
+                                )}
+                              </Td>
+                            </Tr>
+                          );
+                        })}
                       </Tbody>
                     </Table>
                   )}

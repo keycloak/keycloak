@@ -17,15 +17,18 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Provider Factory to create {@link  LDSigningService}s
@@ -36,11 +39,15 @@ public class LDSigningServiceProviderFactory implements VCSigningServiceProvider
     public static final Format SUPPORTED_FORMAT = Format.LDP_VC;
     private static final String HELP_TEXT = "Issues Verifiable Credentials in the W3C Data Model, using Linked-Data Proofs. See https://www.w3.org/TR/vc-data-model/";
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     @Override
     public VerifiableCredentialsSigningService create(KeycloakSession session, ComponentModel model) {
         String keyId = model.get(SigningProperties.KEY_ID.getKey());
         String proofType = model.get(SigningProperties.PROOF_TYPE.getKey());
-        return new LDSigningService(session, keyId, proofType);
+        String algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
+        Optional<String> kid = Optional.ofNullable(model.get(SigningProperties.KID_HEADER.getKey()));
+        return new LDSigningService(session, keyId, algorithmType, proofType, OBJECT_MAPPER, new OffsetTimeProvider(), kid);
     }
 
     @Override
@@ -51,7 +58,9 @@ public class LDSigningServiceProviderFactory implements VCSigningServiceProvider
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return VCSigningServiceProviderFactory.configurationBuilder()
+                .property(SigningProperties.ALGORITHM_TYPE.asConfigProperty())
                 .property(SigningProperties.PROOF_TYPE.asConfigProperty())
+                .property(SigningProperties.KID_HEADER.asConfigProperty())
                 .build();
     }
 
@@ -63,6 +72,7 @@ public class LDSigningServiceProviderFactory implements VCSigningServiceProvider
     @Override
     public void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         ConfigurationValidationHelper.check(model)
+                .checkRequired(SigningProperties.ALGORITHM_TYPE.asConfigProperty())
                 .checkRequired(SigningProperties.PROOF_TYPE.asConfigProperty());
     }
 

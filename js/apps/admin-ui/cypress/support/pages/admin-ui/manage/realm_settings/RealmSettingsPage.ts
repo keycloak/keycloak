@@ -116,6 +116,7 @@ export default class RealmSettingsPage extends CommonPage {
   revokeRefreshTokenSwitch = "revoke-refresh-token-switch";
   accessTokenLifespanInput = "access-token-lifespan-input";
   accessTokenLifespanImplicitInput = "access-token-lifespan-implicit-input";
+  parRequestUriLifespanInput = "par-request-uri-lifespan-input";
   clientLoginTimeoutInput = "client-login-timeout-input";
   offlineSessionMaxInput = "offline-session-max-input";
   userInitiatedActionLifespanInput = "user-initiated-action-lifespan";
@@ -128,6 +129,10 @@ export default class RealmSettingsPage extends CommonPage {
   accessTokenLifespanSelectMenu = "#kc-access-token-lifespan-select-menu";
   accessTokenLifespanSelectMenuList =
     "#kc-access-token-lifespan-select-menu > div > ul";
+
+  parRequestUriLifespanSelectMenu = "#par-request-uri-lifespan-select-menu";
+  parRequestUriLifespanSelectMenuList =
+    "#par-request-uri-lifespan-select-menu > div > ul";
 
   accessTokenLifespanImplicitSelectMenu =
     "#kc-access-token-lifespan-implicit-select-menu";
@@ -222,7 +227,7 @@ export default class RealmSettingsPage extends CommonPage {
   #eventListenersSaveBtn = "saveEventListenerBtn";
   #eventListenersRevertBtn = "revertEventListenerBtn";
   #eventListenersInputFld = ".pf-c-form-control.pf-c-select__toggle-typeahead";
-  #eventListenersDrpDwnOption = ".pf-c-select__menu-item";
+  #eventListenersDrpDwnOption = ".pf-c-select__menu";
   #eventListenersDrwDwnSelect =
     ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
   #eventListenerRemove = '[data-ouia-component-id="Remove"]';
@@ -267,7 +272,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#modalDialogBodyText).contains(
       "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
     );
-    cy.findByTestId(this.modalConfirm).contains("Disable").click();
+    cy.findByTestId(this.modalConfirm).click();
   }
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -630,6 +635,12 @@ export default class RealmSettingsPage extends CommonPage {
       "Minutes",
       this.accessTokenLifespanImplicitSelectMenu,
       this.accessTokenLifespanImplicitSelectMenuList,
+    );
+    cy.findByTestId("par-request-uri-lifespan-input").clear().type("2");
+    this.changeTimeUnit(
+      "Hours",
+      this.parRequestUriLifespanSelectMenu,
+      this.parRequestUriLifespanSelectMenuList,
     );
 
     cy.findByTestId(this.clientLoginTimeoutInput).clear().type("3");
@@ -1014,16 +1025,16 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.#jsonEditorReloadBtn).click();
 
     cy.get(this.#jsonEditor).type(`{pageup}{del} [{
-      "name": "Reload", 
+      "name": "Reload",
     }, {downarrow}{end}{backspace}{backspace}{backspace}{backspace}`);
 
     cy.findByTestId(this.#jsonEditorReloadBtn).click();
 
     cy.get(this.#jsonEditor).type(`{pageup}{del} [{
-      "name": "Test", 
+      "name": "Test",
       "description": "Test Description",
       "enabled": false,
-      "conditions": [], 
+      "conditions": [],
       "profiles": [],
     }, {downarrow}{end}{backspace}{backspace}{backspace}{backspace}`);
 
