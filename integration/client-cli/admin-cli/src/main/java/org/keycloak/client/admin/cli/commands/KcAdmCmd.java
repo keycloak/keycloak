@@ -16,14 +16,16 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
+import org.keycloak.client.admin.cli.KcAdmMain;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import picocli.CommandLine.Command;
 
-import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 
 @Command(name = "kcadm",
 header = {
@@ -47,11 +49,16 @@ subcommands = {
         GetRolesCmd.class,
         SetPasswordCmd.class
 })
-public class KcAdmCmd extends AbstractGlobalOptionsCmd {
+public class KcAdmCmd extends BaseGlobalOptionsCmd {
 
     @Override
     protected boolean nothingToDo() {
         return true;
+    }
+
+    @Override
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {
@@ -76,7 +83,7 @@ public class KcAdmCmd extends AbstractGlobalOptionsCmd {
         out.println("Global options:");
         out.println("  -x            Print full stack trace when exiting with error");
         out.println("  --help        Print help for specific command");
-        out.println("  --config      Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("  --config      Path to the config file (" + KcAdmMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println();
         out.println("Commands: ");
         out.println("  config        Set up credentials, and other configuration settings using the config file");

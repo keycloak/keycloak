@@ -1,7 +1,5 @@
 package org.keycloak.client.registration.cli;
 
-import org.keycloak.client.registration.cli.common.EndpointType;
-
 import picocli.CommandLine.ITypeConverter;
 
 /**

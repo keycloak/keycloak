@@ -1,8 +1,9 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.registration.cli.common.AttributeKey;
-import org.keycloak.client.registration.cli.common.EndpointType;
-import org.keycloak.client.registration.cli.util.ReflectionUtil;
+import org.keycloak.client.cli.common.AttributeKey;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+import org.keycloak.client.registration.cli.EndpointType;
+import org.keycloak.client.registration.cli.ReflectionUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
@@ -20,18 +21,18 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
-import static org.keycloak.client.registration.cli.util.ReflectionUtil.getAttributeListWithJSonTypes;
-import static org.keycloak.client.registration.cli.util.ReflectionUtil.isBasicType;
-import static org.keycloak.client.registration.cli.util.ReflectionUtil.isListType;
-import static org.keycloak.client.registration.cli.util.ReflectionUtil.isMapType;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
+import static org.keycloak.client.registration.cli.ReflectionUtil.getAttributeListWithJSonTypes;
+import static org.keycloak.client.registration.cli.ReflectionUtil.isBasicType;
+import static org.keycloak.client.registration.cli.ReflectionUtil.isListType;
+import static org.keycloak.client.registration.cli.ReflectionUtil.isMapType;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @Command(name = "attrs", description = "[ATTRIBUTE] [--endpoint TYPE]")
-public class AttrsCmd extends AbstractGlobalOptionsCmd {
+public class AttrsCmd extends BaseGlobalOptionsCmd {
 
     CommandLine.Model.CommandSpec spec;
 

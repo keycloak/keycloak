@@ -5,7 +5,7 @@ import java.util.List;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
+import static org.keycloak.client.cli.util.IoUtil.printOut;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -27,7 +27,7 @@ public class HelpCmd implements Runnable {
                     if (args.size() > 1) {
                         switch (args.get(1)) {
                             case "credentials": {
-                                printOut(ConfigCredentialsCmd.usage());
+                                printOut(new ConfigCredentialsCmd().help());
                                 break outer;
                             }
                             case "initial-token": {
@@ -39,7 +39,7 @@ public class HelpCmd implements Runnable {
                                 break outer;
                             }
                             case "truststore": {
-                                printOut(ConfigTruststoreCmd.usage());
+                                printOut(new ConfigTruststoreCmd().help());
                                 break outer;
                             }
                         }

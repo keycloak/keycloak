@@ -1,8 +1,9 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.registration.cli.config.RealmConfigData;
-import org.keycloak.client.registration.cli.util.IoUtil;
-import org.keycloak.client.registration.cli.util.ParseUtil;
+import org.keycloak.client.cli.config.RealmConfigData;
+import org.keycloak.client.cli.util.IoUtil;
+import org.keycloak.client.registration.cli.CmdStdinContext;
+import org.keycloak.client.registration.cli.KcRegMain;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,12 +12,11 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.IoUtil.warnfOut;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
+import static org.keycloak.client.cli.util.IoUtil.warnfOut;
+import static org.keycloak.client.cli.util.OsUtil.OS_ARCH;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -34,7 +34,7 @@ public class ConfigInitialTokenCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && token == null && !delete && !keepDomain;
+        return super.nothingToDo() && token == null && !delete && !keepDomain;
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ConfigInitialTokenCmd extends AbstractAuthOptionsCmd {
         }
 
         if (token != null && token.startsWith("-")) {
-            warnfOut(ParseUtil.TOKEN_OPTION_WARN, token);
+            warnfOut(CmdStdinContext.TOKEN_OPTION_WARN, token);
         }
 
         if (!delete && token == null) {
@@ -106,7 +106,7 @@ public class ConfigInitialTokenCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                      Print full stack trace when exiting with error");
-        out.println("    --config                Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config                Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println();
         out.println("  Command specific options:");
         out.println("    --server SERVER         Server endpoint url (e.g. 'http://localhost:8080')");
