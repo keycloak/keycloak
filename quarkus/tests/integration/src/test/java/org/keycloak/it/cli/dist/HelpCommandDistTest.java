@@ -18,23 +18,23 @@
 package org.keycloak.it.cli.dist;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.keycloak.it.cli.dist.GelfRemovedTest.INCLUDE_GELF_PROPERTY;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.approvaltests.Approvals;
-import org.approvaltests.namer.NamedEnvironment;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.OS;
-import org.keycloak.it.approvaltests.KcNamerFactory;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -51,6 +51,8 @@ import io.quarkus.test.junit.main.LaunchResult;
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
 public class HelpCommandDistTest {
+
+    public static final String REPLACE_EXPECTED = "KEYCLOAK_REPLACE_EXPECTED";
 
     @BeforeAll
     public static void assumeGelfEnabled() {
@@ -176,23 +178,32 @@ public class HelpCommandDistTest {
     }
 
     private void assertHelp(CLIResult result) {
+        // normalize the output to prevent changes around the feature toggles to mark the output to differ
+        String output = result.getOutput().replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>");
+
+        String osName = System.getProperty("os.name");
+        if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
+            // On Windows, all output should have at least one "kc.bat" in it.
+            MatcherAssert.assertThat(output, Matchers.containsString("kc.bat"));
+            output = output.replaceAll("kc.bat", "kc.sh");
+            output = output.replaceAll(Pattern.quote("data\\log\\"), "data/log/");
+            // line wrap which looks differently due to ".bat" vs. ".sh"
+            output = output.replaceAll("including\nbuild ", "including build\n");
+        }
+
         try {
-            // normalize the output to prevent changes around the feature toggles to mark the output to differ
-            String output = result.getOutput().replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>");
-
-            String osName = System.getProperty("os.name");
-            if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
-                // On Windows, all output should have at least one "kc.bat" in it.
-                MatcherAssert.assertThat(output, Matchers.containsString("kc.bat"));
-                output = output.replaceAll("kc.bat", "kc.sh");
-                output = output.replaceAll(Pattern.quote("data\\log\\"), "data/log/");
-                // line wrap which looks differently due to ".bat" vs. ".sh"
-                output = output.replaceAll("including\nbuild ", "including build\n");
-            }
-
             Approvals.verify(output);
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to assert help", cause);
+        } catch (AssertionError cause) {
+            if ("true".equals(System.getenv(REPLACE_EXPECTED))) {
+                try {
+                    FileUtils.write(Approvals.createApprovalNamer().getApprovedFile(".txt"), output,
+                            StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to assert help, and could not replace expected", cause);
+                }
+            } else {
+                throw cause;
+            }
         }
     }
 }
