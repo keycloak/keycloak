@@ -16,131 +16,19 @@
  */
 package org.keycloak.client.registration.cli.commands;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import org.keycloak.client.cli.common.BaseConfigTruststoreCmd;
+import org.keycloak.client.registration.cli.KcRegMain;
 
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
-
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.IoUtil.readSecret;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @Command(name = "truststore", description = "PATH [ARGUMENTS]")
-public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd {
+public class ConfigTruststoreCmd extends BaseConfigTruststoreCmd {
 
-    @Option(names = {"-d", "--delete"}, description = "Indicates that initial access token should be removed")
-    private boolean delete;
-
-    @Parameters(arity = "0..1")
-    private String truststorePath;
-
-    @Override
-    protected boolean nothingToDo() {
-        return noOptions() && truststorePath == null && !delete;
+    public ConfigTruststoreCmd() {
+        super(KcRegMain.COMMAND_STATE);
     }
 
-    @Override
-    protected String[] getUnsupportedOptions() {
-        return new String[] {"--server", server,
-                "--realm", realm,
-                "--client", clientId,
-                "--user", user,
-                "--password", password,
-                "--secret", secret,
-                "--truststore", trustStore,
-                "--keystore", keystore,
-                "--keypass", keyPass,
-                "--alias", alias,
-                "--no-config", booleanOptionForCheck(noconfig)};
-    }
-
-    @Override
-    protected void process() {
-        // now update the config
-
-        String store;
-        String pass;
-
-        if (!delete) {
-
-            if (truststorePath == null) {
-                throw new IllegalArgumentException("No truststore specified");
-            }
-
-            if (!new File(truststorePath).isFile()) {
-                throw new RuntimeException("Truststore file not found: " + truststorePath);
-            }
-
-            if ("-".equals(trustPass)) {
-                trustPass = readSecret("Enter truststore password: ");
-            }
-
-            store = truststorePath;
-            pass = trustPass;
-
-        } else {
-            if (truststorePath != null) {
-                throw new IllegalArgumentException("Option --delete is mutually exclusive with specifying a TRUSTSTORE");
-            }
-            if (trustPass != null) {
-                throw new IllegalArgumentException("Options --trustpass and --delete are mutually exclusive");
-            }
-            store = null;
-            pass = null;
-        }
-
-        saveMergeConfig(config -> {
-            config.setTruststore(store);
-            config.setTrustpass(pass);
-        });
-    }
-
-    @Override
-    protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
-        StringWriter sb = new StringWriter();
-        PrintWriter out = new PrintWriter(sb);
-        out.println("Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]");
-        out.println();
-        out.println("Command to configure a global truststore to use when using https to connect to Keycloak server.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                      Print full stack trace when exiting with error");
-        out.println("    --config                Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println();
-        out.println("  Command specific options:");
-        out.println("    TRUSTSTORE              Path to truststore file");
-        out.println("    --trustpass PASSWORD    Truststore password to unlock truststore (prompted for if set to '-')");
-        out.println("    -d, --delete            Remove truststore configuration");
-        out.println();
-        out.println();
-        out.println("Examples:");
-        out.println();
-        out.println("Specify a truststore - you will be prompted for truststore password every time it is used:");
-        out.println("  " + PROMPT + " " + CMD + " config truststore " + OS_ARCH.path("~/.keycloak/truststore.jks"));
-        out.println();
-        out.println("Specify a truststore, and password - truststore will automatically be used without prompting for password:");
-        out.println("  " + PROMPT + " " + CMD + " config truststore --storepass " + OS_ARCH.envVar("PASSWORD") + " " + OS_ARCH.path("~/.keycloak/truststore.jks"));
-        out.println();
-        out.println("Remove truststore configuration:");
-        out.println("  " + PROMPT + " " + CMD + " config truststore --delete");
-        out.println();
-        out.println();
-        out.println("Use '" + CMD + " help' for general information and a list of commands");
-        return sb.toString();
-    }
 }

@@ -17,8 +17,9 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.util.ParseUtil;
+import org.keycloak.client.registration.cli.KcRegMain;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.registration.cli.CmdStdinContext;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -26,17 +27,15 @@ import java.io.StringWriter;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.credentialsAvailable;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.getRegistrationToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doDelete;
-import static org.keycloak.client.registration.cli.util.HttpUtil.urlencode;
-import static org.keycloak.client.registration.cli.util.IoUtil.warnfErr;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
+import static org.keycloak.client.cli.util.ConfigUtil.getRegistrationToken;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
+import static org.keycloak.client.cli.util.HttpUtil.doDelete;
+import static org.keycloak.client.cli.util.HttpUtil.urlencode;
+import static org.keycloak.client.cli.util.IoUtil.warnfErr;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 
 /**
@@ -55,7 +54,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
         }
 
         if (clientId.startsWith("-")) {
-            warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
+            warnfErr(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
         }
 
         String regType = "default";
@@ -63,14 +62,14 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
         ConfigData config = loadConfig();
         config = copyWithServerInfo(config);
 
-        if (token == null) {
+        if (externalToken == null) {
             // if registration access token is not set via -t, try use the one from configuration
-            token = getRegistrationToken(config.sessionRealmConfigData(), clientId);
+            externalToken = getRegistrationToken(config.sessionRealmConfigData(), clientId);
         }
 
         setupTruststore(config);
 
-        String auth = token;
+        String auth = externalToken;
         if (auth == null) {
             config = ensureAuthInfo(config);
             config = copyWithServerInfo(config);
@@ -94,7 +93,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && clientId == null;
+        return super.nothingToDo() && clientId == null;
     }
 
     @Override
@@ -114,7 +113,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");

@@ -24,13 +24,13 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+import org.keycloak.client.registration.cli.CmdStdinContext;
+import org.keycloak.client.registration.cli.EndpointType;
 import org.keycloak.client.registration.cli.EndpointTypeConverter;
-import org.keycloak.client.registration.cli.common.AttributeOperation;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.common.CmdStdinContext;
-import org.keycloak.client.registration.cli.common.EndpointType;
-import org.keycloak.client.registration.cli.util.ParseUtil;
-import org.keycloak.client.registration.cli.util.ReflectionUtil;
+import org.keycloak.client.registration.cli.ReflectionUtil;
+import org.keycloak.client.registration.cli.KcRegMain;
+import org.keycloak.client.cli.common.AttributeOperation;
+import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -43,29 +43,25 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.keycloak.client.registration.cli.common.AttributeOperation.Type.DELETE;
-import static org.keycloak.client.registration.cli.common.AttributeOperation.Type.SET;
-import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.credentialsAvailable;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.getRegistrationToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.setRegistrationToken;
-import static org.keycloak.client.registration.cli.common.EndpointType.DEFAULT;
-import static org.keycloak.client.registration.cli.common.EndpointType.OIDC;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doGet;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doPut;
-import static org.keycloak.client.registration.cli.util.HttpUtil.urlencode;
-import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
-import static org.keycloak.client.registration.cli.util.IoUtil.warnfErr;
-import static org.keycloak.client.registration.cli.util.IoUtil.readFully;
-import static org.keycloak.client.registration.cli.util.HttpUtil.APPLICATION_JSON;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
-import static org.keycloak.client.registration.cli.util.ParseUtil.mergeAttributes;
-import static org.keycloak.client.registration.cli.util.ParseUtil.parseFileOrStdin;
-import static org.keycloak.client.registration.cli.util.ParseUtil.parseKeyVal;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.DELETE;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.SET;
+import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
+import static org.keycloak.client.cli.util.ConfigUtil.getRegistrationToken;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.setRegistrationToken;
+import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
+import static org.keycloak.client.cli.util.HttpUtil.doGet;
+import static org.keycloak.client.cli.util.HttpUtil.doPut;
+import static org.keycloak.client.cli.util.HttpUtil.urlencode;
+import static org.keycloak.client.cli.util.IoUtil.printOut;
+import static org.keycloak.client.cli.util.IoUtil.readFully;
+import static org.keycloak.client.cli.util.IoUtil.warnfErr;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
+import static org.keycloak.client.registration.cli.EndpointType.DEFAULT;
+import static org.keycloak.client.registration.cli.EndpointType.OIDC;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -123,7 +119,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         }
 
         if (clientId.startsWith("-")) {
-            warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
+            warnfErr(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
         }
 
         if (file == null && attrs.size() == 0) {
@@ -165,7 +161,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
         CmdStdinContext ctx = new CmdStdinContext();
         if (file != null) {
-            ctx = parseFileOrStdin(file, regType);
+            ctx = CmdStdinContext.parseFileOrStdin(file, regType);
             regType = ctx.getEndpointType();
         }
 
@@ -185,7 +181,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         final String server = config.getServerUrl();
         final String realm = config.getRealm();
 
-        if (token == null) {
+        if (externalToken == null) {
             // if registration access token is not set via --token, see if it's in the body of any input file
             // but first see if it's overridden by --set, or maybe deliberately muted via -d registrationAccessToken
             boolean processed = false;
@@ -193,25 +189,25 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
                 if ("registrationAccessToken".equals(op.getKey().toString())) {
                     processed = true;
                     if (op.getType() == AttributeOperation.Type.SET) {
-                        token = op.getValue();
+                        externalToken = op.getValue();
                     }
                     // otherwise it's delete - meaning it should stay null
                     break;
                 }
             }
             if (!processed) {
-                token = ctx.getRegistrationAccessToken();
+                externalToken = ctx.getRegistrationAccessToken();
             }
         }
 
-        if (token == null) {
+        if (externalToken == null) {
             // if registration access token is not set, try use the one from configuration
-            token = getRegistrationToken(config.sessionRealmConfigData(), clientId);
+            externalToken = getRegistrationToken(config.sessionRealmConfigData(), clientId);
         }
 
         setupTruststore(config);
 
-        String auth = token;
+        String auth = externalToken;
         if (auth == null) {
             config = ensureAuthInfo(config);
             config = copyWithServerInfo(config);
@@ -236,10 +232,10 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
                 if (regType == DEFAULT) {
                     ctxremote.setClient(JsonSerialization.readValue(json, ClientRepresentation.class));
-                    token = ctxremote.getClient().getRegistrationAccessToken();
+                    externalToken = ctxremote.getClient().getRegistrationAccessToken();
                 } else if (regType == OIDC) {
                     ctxremote.setOidcClient(JsonSerialization.readValue(json, OIDCClientRepresentation.class));
-                    token = ctxremote.getOidcClient().getRegistrationAccessToken();
+                    externalToken = ctxremote.getOidcClient().getRegistrationAccessToken();
                 }
             } catch (JsonParseException e) {
                 throw new RuntimeException("Not a valid JSON document. " + e.getMessage(), e);
@@ -249,11 +245,11 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
             // we have to use registration access token retrieved from previous operation
             // that ensures optimistic locking semantics
-            if (token != null) {
+            if (externalToken != null) {
                 // we use auth with doPost later
-                auth = "Bearer " + token;
+                auth = "Bearer " + externalToken;
 
-                String newToken = token;
+                String newToken = externalToken;
                 String clientToUpdate = clientId;
                 saveMergeConfig(cfg -> {
                     setRegistrationToken(cfg.ensureRealmConfigData(server, realm), clientToUpdate, newToken);
@@ -270,7 +266,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         }
 
         if (attrs.size() > 0) {
-            ctx = mergeAttributes(ctx, attrs);
+            ctx = CmdStdinContext.mergeAttributes(ctx, attrs);
         }
 
         // now update
@@ -280,14 +276,14 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
             if (regType == DEFAULT) {
                 ClientRepresentation clirep = JsonSerialization.readValue(response, ClientRepresentation.class);
                 outputResult(clirep);
-                token = clirep.getRegistrationAccessToken();
+                externalToken = clirep.getRegistrationAccessToken();
             } else if (regType == OIDC) {
                 OIDCClientRepresentation clirep = JsonSerialization.readValue(response, OIDCClientRepresentation.class);
                 outputResult(clirep);
-                token = clirep.getRegistrationAccessToken();
+                externalToken = clirep.getRegistrationAccessToken();
             }
 
-            String newToken = token;
+            String newToken = externalToken;
             String clientToUpdate = clientId;
             saveMergeConfig(cfg -> {
                 setRegistrationToken(cfg.ensureRealmConfigData(server, realm), clientToUpdate, newToken);
@@ -310,7 +306,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && regType == null && file == null && rawAttributeOperations.isEmpty() && clientId == null;
+        return super.nothingToDo() && regType == null && file == null && rawAttributeOperations.isEmpty() && clientId == null;
     }
 
     @Override
@@ -332,7 +328,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");

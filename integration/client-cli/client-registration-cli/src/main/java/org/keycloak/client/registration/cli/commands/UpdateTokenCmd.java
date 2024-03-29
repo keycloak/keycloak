@@ -22,8 +22,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.util.ParseUtil;
+import org.keycloak.client.registration.cli.KcRegMain;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -33,18 +34,16 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 
-import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.setRegistrationToken;
-import static org.keycloak.client.registration.cli.util.HttpUtil.APPLICATION_JSON;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doGet;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doPost;
-import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
-import static org.keycloak.client.registration.cli.util.IoUtil.warnfOut;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.setRegistrationToken;
+import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
+import static org.keycloak.client.cli.util.HttpUtil.doGet;
+import static org.keycloak.client.cli.util.HttpUtil.doPost;
+import static org.keycloak.client.cli.util.IoUtil.printOut;
+import static org.keycloak.client.cli.util.IoUtil.warnfOut;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -62,7 +61,7 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         }
 
         if (clientId.startsWith("-")) {
-            warnfOut(ParseUtil.CLIENT_OPTION_WARN, clientId);
+            warnfOut(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
         }
 
         ConfigData config = loadConfig();
@@ -116,7 +115,7 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && clientId == null;
+        return super.nothingToDo() && clientId == null;
     }
 
     @Override
@@ -136,7 +135,7 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");

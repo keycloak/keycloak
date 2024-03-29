@@ -2,14 +2,14 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
 
 import java.io.IOException;
 
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
+import static org.keycloak.client.cli.util.OsUtil.EOL;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**

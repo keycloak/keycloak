@@ -22,7 +22,7 @@ import java.io.StringWriter;
 
 import picocli.CommandLine.Command;
 
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

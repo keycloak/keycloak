@@ -2,9 +2,9 @@ package org.keycloak.testsuite.cli.admin;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.admin.cli.config.ConfigData;
-import org.keycloak.client.admin.cli.config.FileConfigHandler;
-import org.keycloak.client.admin.cli.util.OsUtil;
+import org.keycloak.client.admin.cli.KcAdmMain;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TempFileResource;
@@ -12,8 +12,8 @@ import org.keycloak.testsuite.util.TempFileResource;
 import java.io.File;
 import java.io.IOException;
 
-import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_PATH;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import static org.keycloak.client.admin.cli.KcAdmMain.DEFAULT_CONFIG_FILE_PATH;
+import static org.keycloak.client.cli.util.OsUtil.EOL;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
@@ -31,7 +31,7 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
 
         // only run this test if ssl protected keycloak server is available
         if (!AUTH_SERVER_SSL_REQUIRED) {
@@ -101,12 +101,12 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
         exe = execute("config truststore --delete '" + truststore.getAbsolutePath() + "'");
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("incompatible", "Option --delete is mutually exclusive with specifying a TRUSTSTORE", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
 
         exe = execute("config truststore --delete --trustpass secret");
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("no truststore error", "Options --trustpass and --delete are mutually exclusive", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
 
         FileConfigHandler cfghandler = new FileConfigHandler();
         FileConfigHandler.setConfigFile(DEFAULT_CONFIG_FILE_PATH);

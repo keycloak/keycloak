@@ -3,9 +3,9 @@ package org.keycloak.testsuite.cli.registration;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
-import org.keycloak.client.registration.cli.config.RealmConfigData;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcRegExec;
@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
+import static org.keycloak.client.cli.util.OsUtil.EOL;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 

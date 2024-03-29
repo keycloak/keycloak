@@ -21,9 +21,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-import org.keycloak.client.admin.cli.common.AttributeOperation;
-import org.keycloak.client.admin.cli.common.CmdStdinContext;
-import org.keycloak.client.admin.cli.util.AccessibleBufferOutputStream;
+import org.keycloak.client.admin.cli.CmdStdinContext;
+import org.keycloak.client.cli.common.AttributeOperation;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+import org.keycloak.client.cli.util.AccessibleBufferOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,22 +36,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.SET;
-import static org.keycloak.client.admin.cli.util.IoUtil.copyStream;
-import static org.keycloak.client.admin.cli.util.IoUtil.printErr;
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.OS_ARCH;
-import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
-import static org.keycloak.client.admin.cli.util.OutputUtil.MAPPER;
-import static org.keycloak.client.admin.cli.util.ParseUtil.mergeAttributes;
-import static org.keycloak.client.admin.cli.util.ParseUtil.parseFileOrStdin;
-import static org.keycloak.client.admin.cli.util.ParseUtil.parseKeyVal;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.SET;
+import static org.keycloak.client.cli.util.IoUtil.copyStream;
+import static org.keycloak.client.cli.util.IoUtil.printErr;
+import static org.keycloak.client.cli.util.OsUtil.OS_ARCH;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.cli.util.OutputUtil.MAPPER;
+import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @Command(name = "new-object", description = "Command to create new JSON objects locally")
-public class NewObjectCmd extends AbstractGlobalOptionsCmd {
+public class NewObjectCmd extends BaseGlobalOptionsCmd implements GlobalOptionsCmdHelper {
 
     @Option(names = {"-f", "--file"}, description = "Read object from file or standard input if FILENAME is set to '-'")
     String file;
@@ -73,11 +72,11 @@ public class NewObjectCmd extends AbstractGlobalOptionsCmd {
         CmdStdinContext<JsonNode> ctx = new CmdStdinContext<>();
 
         if (file != null) {
-            ctx = parseFileOrStdin(file);
+            ctx = CmdStdinContext.parseFileOrStdin(file);
         }
 
         if (attrs.size() > 0) {
-            ctx = mergeAttributes(ctx, MAPPER.createObjectNode(), attrs);
+            ctx = CmdStdinContext.mergeAttributes(ctx, MAPPER.createObjectNode(), attrs);
         }
 
         if (body == null && ctx.getContent() != null) {

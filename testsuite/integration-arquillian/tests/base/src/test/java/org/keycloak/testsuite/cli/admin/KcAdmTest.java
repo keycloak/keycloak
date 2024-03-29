@@ -2,9 +2,9 @@ package org.keycloak.testsuite.cli.admin;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.admin.cli.config.ConfigData;
-import org.keycloak.client.admin.cli.config.FileConfigHandler;
-import org.keycloak.client.admin.cli.config.RealmConfigData;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcAdmExec;
@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.cli.util.OsUtil.EOL;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 /**
@@ -67,7 +67,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         exe = KcAdmExec.execute("config credentials");
         assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assert.assertEquals("help message", "       " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(1));
 
         exe = KcAdmExec.execute("config truststore");
         assertExitCodeAndStdErrSize(exe, 2, 0);
@@ -184,9 +184,9 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         exe = KcAdmExec.execute("config credentials --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line",
-                "Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assert.assertEquals("stdout line",
+                "       " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]",
+                exe.stdoutLines().get(1));
 
         exe = KcAdmExec.execute("config truststore --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);

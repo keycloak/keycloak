@@ -3,7 +3,7 @@ package org.keycloak.testsuite.cli.admin;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.client.admin.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcAdmExec;

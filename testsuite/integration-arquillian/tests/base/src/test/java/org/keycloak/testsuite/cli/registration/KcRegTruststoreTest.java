@@ -2,9 +2,8 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
-import org.keycloak.client.registration.cli.util.OsUtil;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TempFileResource;
@@ -12,9 +11,9 @@ import org.keycloak.testsuite.util.TempFileResource;
 import java.io.File;
 import java.io.IOException;
 
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_PATH;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
+import static org.keycloak.client.registration.cli.KcRegMain.DEFAULT_CONFIG_FILE_PATH;
+import static org.keycloak.client.cli.util.OsUtil.EOL;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
@@ -32,7 +31,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
 
         // only run the rest of this test if ssl protected keycloak server is available
         if (!AUTH_SERVER_SSL_REQUIRED) {

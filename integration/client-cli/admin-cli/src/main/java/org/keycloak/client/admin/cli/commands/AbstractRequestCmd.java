@@ -17,18 +17,18 @@
 package org.keycloak.client.admin.cli.commands;
 
 import org.apache.http.entity.ContentType;
-import org.keycloak.client.admin.cli.common.AttributeOperation;
-import org.keycloak.client.admin.cli.common.CmdStdinContext;
-import org.keycloak.client.admin.cli.config.ConfigData;
-import org.keycloak.client.admin.cli.util.AccessibleBufferOutputStream;
-import org.keycloak.client.admin.cli.util.Header;
-import org.keycloak.client.admin.cli.util.Headers;
-import org.keycloak.client.admin.cli.util.HeadersBody;
-import org.keycloak.client.admin.cli.util.HeadersBodyStatus;
-import org.keycloak.client.admin.cli.util.HttpUtil;
-import org.keycloak.client.admin.cli.util.OutputFormat;
-import org.keycloak.client.admin.cli.util.ReflectionUtil;
-import org.keycloak.client.admin.cli.util.ReturnFields;
+import org.keycloak.client.admin.cli.CmdStdinContext;
+import org.keycloak.client.admin.cli.ReflectionUtil;
+import org.keycloak.client.cli.common.AttributeOperation;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.util.AccessibleBufferOutputStream;
+import org.keycloak.client.cli.util.Header;
+import org.keycloak.client.cli.util.Headers;
+import org.keycloak.client.cli.util.HeadersBody;
+import org.keycloak.client.cli.util.HeadersBodyStatus;
+import org.keycloak.client.cli.util.HttpUtil;
+import org.keycloak.client.cli.util.OutputFormat;
+import org.keycloak.client.cli.util.ReturnFields;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -52,22 +52,19 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.DELETE;
-import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.SET;
-import static org.keycloak.client.admin.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.admin.cli.util.ConfigUtil.credentialsAvailable;
-import static org.keycloak.client.admin.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.admin.cli.util.HttpUtil.checkSuccess;
-import static org.keycloak.client.admin.cli.util.HttpUtil.composeResourceUrl;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doGet;
-import static org.keycloak.client.admin.cli.util.IoUtil.copyStream;
-import static org.keycloak.client.admin.cli.util.IoUtil.printErr;
-import static org.keycloak.client.admin.cli.util.IoUtil.printOut;
-import static org.keycloak.client.admin.cli.util.OutputUtil.MAPPER;
-import static org.keycloak.client.admin.cli.util.OutputUtil.printAsCsv;
-import static org.keycloak.client.admin.cli.util.ParseUtil.mergeAttributes;
-import static org.keycloak.client.admin.cli.util.ParseUtil.parseFileOrStdin;
-import static org.keycloak.client.admin.cli.util.ParseUtil.parseKeyVal;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.DELETE;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.SET;
+import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.HttpUtil.checkSuccess;
+import static org.keycloak.client.cli.util.HttpUtil.composeResourceUrl;
+import static org.keycloak.client.cli.util.HttpUtil.doGet;
+import static org.keycloak.client.cli.util.IoUtil.copyStream;
+import static org.keycloak.client.cli.util.IoUtil.printErr;
+import static org.keycloak.client.cli.util.IoUtil.printOut;
+import static org.keycloak.client.cli.util.OutputUtil.MAPPER;
+import static org.keycloak.client.cli.util.OutputUtil.printAsCsv;
+import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -208,7 +205,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                     }
                 }
             } else {
-                ctx = parseFileOrStdin(file);
+                ctx = CmdStdinContext.parseFileOrStdin(file);
             }
         } else if (body != null) {
             content = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
@@ -280,7 +277,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                 throw new RuntimeException("Can't set attributes on content of type other than application/json");
             }
 
-            ctx = mergeAttributes(ctx, MAPPER.createObjectNode(), attrs);
+            ctx = CmdStdinContext.mergeAttributes(ctx, MAPPER.createObjectNode(), attrs);
         }
 
         if (content == null && ctx.getContent() != null) {
