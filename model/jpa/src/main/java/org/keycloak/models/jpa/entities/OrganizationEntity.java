@@ -26,7 +26,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
-@Table(name="ORGANIZATION")
+@Table(name="ORG")
 @Entity
 @NamedQueries({
         @NamedQuery(name="getByRealm", query="select o from OrganizationEntity o where o.realmId = :realmId")
