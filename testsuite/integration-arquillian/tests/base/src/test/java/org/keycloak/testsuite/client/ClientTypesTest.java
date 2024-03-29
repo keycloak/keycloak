@@ -18,24 +18,17 @@
 
 package org.keycloak.testsuite.client;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-
 import org.junit.Test;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
-
 import org.keycloak.representations.idm.ClientTypesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.services.clienttype.impl.DefaultClientTypeProviderFactory;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -45,7 +38,13 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.ClientBuilder;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
 
@@ -75,9 +74,9 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testCreateClientWithClientType() {
         ClientRepresentation clientRep = createClientWithType("foo", ClientTypeManager.SERVICE_ACCOUNT);
-        Assert.assertEquals("foo", clientRep.getClientId());
-        Assert.assertEquals(ClientTypeManager.SERVICE_ACCOUNT, clientRep.getType());
-        Assert.assertEquals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep.getProtocol());
+        assertEquals("foo", clientRep.getClientId());
+        assertEquals(ClientTypeManager.SERVICE_ACCOUNT, clientRep.getType());
+        assertEquals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep.getProtocol());
         Assert.assertFalse(clientRep.isStandardFlowEnabled());
         Assert.assertFalse(clientRep.isImplicitFlowEnabled());
         Assert.assertFalse(clientRep.isDirectAccessGrantsEnabled());
@@ -87,6 +86,17 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
         // Check type not included as client attribute
         Assert.assertFalse(clientRep.getAttributes().containsKey(ClientModel.TYPE));
+    }
+
+    @Test
+    public void testThatCreateClientWithWrongClientTypeFails() {
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("client-type-does-not-exist-request")
+                .type("DNE")
+                .build();
+
+        Response response = testRealm().clients().create(clientRep);
+        assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
     }
 
     @Test
@@ -133,7 +143,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
     public void testClientTypesAdminRestAPI_globalTypes() {
         ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
 
-        Assert.assertEquals(0, clientTypes.getRealmClientTypes().size());
+        assertEquals(0, clientTypes.getRealmClientTypes().size());
 
         List<String> globalClientTypeNames = clientTypes.getGlobalClientTypes().stream()
                 .map(ClientTypeRepresentation::getName)
@@ -144,7 +154,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
                 .filter(clientType -> "service-account".equals(clientType.getName()))
                 .findFirst()
                 .get();
-        Assert.assertEquals("default", serviceAccountType.getProvider());
+        assertEquals("default", serviceAccountType.getProvider());
 
         ClientTypeRepresentation.PropertyConfig cfg = serviceAccountType.getConfig().get("standardFlowEnabled");
         assertPropertyConfig("standardFlowEnabled", cfg, true, true, false);
