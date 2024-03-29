@@ -17,6 +17,7 @@
 
 package org.keycloak.storage;
 
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.component.ComponentModel;
 
 /**
@@ -25,6 +26,7 @@ import org.keycloak.component.ComponentModel;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
+@ProtoTypeId(65539) //see org.keycloak.Marshalling
 public class UserStorageProviderModel extends CacheableStorageProviderModel {
 
     public static final String IMPORT_ENABLED = "importEnabled";

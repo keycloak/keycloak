@@ -57,6 +57,7 @@ public class CrossDCInfinispan extends KeycloakModelParameters {
                     .config("siteName", siteName(NODE_COUNTER.get()))
                     .config("remoteStorePort", siteName(NODE_COUNTER.get()).equals("site-2") ? "11333" : "11222")
                     .config("jgroupsUdpMcastAddr", mcastAddr(NODE_COUNTER.get()))
+                    .config("jgroupsBindAddr", "127.0.0.1") // bind to localhost for testing
                     .spi(UserSessionSpi.NAME)
                     .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
                     .config("offlineSessionCacheEntryLifespanOverride", "43200")

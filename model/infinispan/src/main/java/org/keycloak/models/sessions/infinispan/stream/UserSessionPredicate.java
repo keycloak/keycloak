@@ -17,25 +17,22 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.Map;
 import java.util.function.Predicate;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@SerializeWith(UserSessionPredicate.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.USER_SESSION_PREDICATE)
 public class UserSessionPredicate implements Predicate<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>> {
 
     private final String realm;
@@ -43,14 +40,6 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     private String user;
 
     private String client;
-
-    private Integer expired;
-
-    private Integer expiredRefresh;
-
-    private Integer expiredRememberMe;
-
-    private Integer expiredRefreshRememberMe;
 
     private String brokerSessionId;
     private String brokerUserId;
@@ -86,18 +75,6 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         return this;
     }
 
-    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh) {
-        return this.expired(expired, expiredRefresh, null, null);
-    }
-
-    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh, Integer expiredRememberMe, Integer expiredRefreshRememberMe) {
-        this.expired = expired;
-        this.expiredRefresh = expiredRefresh;
-        this.expiredRememberMe = expiredRememberMe;
-        this.expiredRefreshRememberMe = expiredRefreshRememberMe;
-        return this;
-    }
-
 
     public UserSessionPredicate brokerSessionId(String id) {
         this.brokerSessionId = id;
@@ -113,156 +90,61 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
      * Returns the user id.
      * @return
      */
+    @ProtoField(1)
     public String getUserId() {
         return user;
     }
 
+    @ProtoField(2)
     public String getBrokerSessionId() {
         return brokerSessionId;
     }
 
+    @ProtoField(3)
     public String getBrokerUserId() {
         return brokerUserId;
+    }
+
+    @ProtoField(4)
+    String getRealm() {
+        return realm;
+    }
+
+    @ProtoField(5)
+    public String getClient() {
+        return client;
+    }
+
+    @ProtoFactory
+    static UserSessionPredicate create(String userId, String brokerSessionId, String brokerUserId, String realm, String client) {
+        return create(realm)
+                .user(Marshalling.emptyStringToNull(userId))
+                .client(Marshalling.emptyStringToNull(client))
+                .brokerSessionId(Marshalling.emptyStringToNull(brokerSessionId))
+                .brokerUserId(Marshalling.emptyStringToNull(brokerUserId));
     }
 
     @Override
     public boolean test(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
         UserSessionEntity entity = entry.getValue().getEntity();
 
-        if (!realm.equals(entity.getRealmId())) {
-            return false;
-        }
+        return realm.equals(entity.getRealmId()) &&
+                (user == null || entity.getUser().equals(user)) &&
+                (client == null || (entity.getAuthenticatedClientSessions() != null && entity.getAuthenticatedClientSessions().containsKey(client))) &&
+                (brokerSessionId == null || brokerSessionId.equals(entity.getBrokerSessionId())) &&
+                (brokerUserId == null || brokerUserId.equals(entity.getBrokerUserId()));
 
-        if (user != null && !entity.getUser().equals(user)) {
-            return false;
-        }
-
-        if (client != null && (entity.getAuthenticatedClientSessions() == null || !entity.getAuthenticatedClientSessions().containsKey(client))) {
-            return false;
-        }
-
-        if (brokerSessionId != null && !brokerSessionId.equals(entity.getBrokerSessionId())) {
-            return false;
-        }
-
-        if (brokerUserId != null && !brokerUserId.equals(entity.getBrokerUserId())) {
-            return false;
-        }
-
-        if (entity.isRememberMe()) {
-            if (expiredRememberMe != null && expiredRefreshRememberMe != null && entity.getStarted() > expiredRememberMe && entity.getLastSessionRefresh() > expiredRefreshRememberMe) {
-                return false;
-            }
-        }
-        else {
-            if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
-                return false;
-            }
-        }
-
-        if (expired == null && expiredRefresh != null && entity.getLastSessionRefresh() > expiredRefresh) {
-            return false;
-        }
-        return true;
-    }
-
-    public String getClient() {
-        return client;
     }
 
     public Predicate<? super UserSessionModel> toModelPredicate() {
 
-        return (Predicate<UserSessionModel>) entity -> {
-            if (!realm.equals(entity.getRealm().getId())) {
-                return false;
-            }
-
-            if (user != null && !entity.getUser().getId().equals(user)) {
-                return false;
-            }
-
-            if (client != null && (entity.getAuthenticatedClientSessions() == null || !entity.getAuthenticatedClientSessions().containsKey(client))) {
-                return false;
-            }
-
-            if (brokerSessionId != null && !brokerSessionId.equals(entity.getBrokerSessionId())) {
-                return false;
-            }
-
-            if (brokerUserId != null && !brokerUserId.equals(entity.getBrokerUserId())) {
-                return false;
-            }
-
-            if (entity.isRememberMe()) {
-                if (expiredRememberMe != null && expiredRefreshRememberMe != null && entity.getStarted() > expiredRememberMe && entity.getLastSessionRefresh() > expiredRefreshRememberMe) {
-                    return false;
-                }
-            } else {
-                if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
-                    return false;
-                }
-            }
-
-            if (expired == null && expiredRefresh != null && entity.getLastSessionRefresh() > expiredRefresh) {
-                return false;
-            }
-            return true;
-        };
+        return (Predicate<UserSessionModel>) entity ->
+                realm.equals(entity.getRealm().getId()) &&
+                        (user == null || entity.getUser().getId().equals(user)) &&
+                        (client == null || (entity.getAuthenticatedClientSessions() != null && entity.getAuthenticatedClientSessions().containsKey(client))) &&
+                        (brokerSessionId == null || brokerSessionId.equals(entity.getBrokerSessionId())) &&
+                        (brokerUserId == null || brokerUserId.equals(entity.getBrokerUserId()));
     }
 
 
-    public static class ExternalizerImpl implements Externalizer<UserSessionPredicate> {
-
-        private static final int VERSION_1 = 1;
-        private static final int VERSION_2 = 2;
-
-        @Override
-        public void writeObject(ObjectOutput output, UserSessionPredicate obj) throws IOException {
-            output.writeByte(VERSION_2);
-
-            MarshallUtil.marshallString(obj.realm, output);
-            MarshallUtil.marshallString(obj.user, output);
-            MarshallUtil.marshallString(obj.client, output);
-            KeycloakMarshallUtil.marshall(obj.expired, output);
-            KeycloakMarshallUtil.marshall(obj.expiredRefresh, output);
-            KeycloakMarshallUtil.marshall(obj.expiredRememberMe, output);
-            KeycloakMarshallUtil.marshall(obj.expiredRefreshRememberMe, output);
-            MarshallUtil.marshallString(obj.brokerSessionId, output);
-            MarshallUtil.marshallString(obj.brokerUserId, output);
-
-        }
-
-        @Override
-        public UserSessionPredicate readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                case VERSION_2:
-                    return readObjectVersion2(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public UserSessionPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            UserSessionPredicate res = new UserSessionPredicate(MarshallUtil.unmarshallString(input));
-            res.user(MarshallUtil.unmarshallString(input));
-            res.client(MarshallUtil.unmarshallString(input));
-            res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
-            res.brokerSessionId(MarshallUtil.unmarshallString(input));
-            res.brokerUserId(MarshallUtil.unmarshallString(input));
-            return res;
-        }
-
-        public UserSessionPredicate readObjectVersion2(ObjectInput input) throws IOException, ClassNotFoundException {
-            UserSessionPredicate res = new UserSessionPredicate(MarshallUtil.unmarshallString(input));
-            res.user(MarshallUtil.unmarshallString(input));
-            res.client(MarshallUtil.unmarshallString(input));
-            res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input),
-                    KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
-            res.brokerSessionId(MarshallUtil.unmarshallString(input));
-            res.brokerUserId(MarshallUtil.unmarshallString(input));
-            return res;
-        }
-    }
 }

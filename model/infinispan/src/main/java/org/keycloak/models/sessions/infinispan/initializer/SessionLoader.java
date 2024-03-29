@@ -17,8 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.io.Serializable;
-
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -26,7 +24,7 @@ import org.keycloak.models.KeycloakSession;
  */
 public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContext,
         WORKER_CONTEXT extends SessionLoader.WorkerContext,
-        WORKER_RESULT extends SessionLoader.WorkerResult> extends Serializable {
+        WORKER_RESULT extends SessionLoader.WorkerResult> {
 
 
     /**
@@ -69,9 +67,9 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
 
     /**
      * Object, which contains some context data to be used by SessionLoader implementation. It's computed just once and then passed
-     * to each {@link SessionLoader}. It needs to be {@link Serializable}
+     * to each {@link SessionLoader}.
      */
-    class LoaderContext implements Serializable {
+    class LoaderContext {
 
         private final int segmentsCount;
 
@@ -91,13 +89,13 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
      * Object, which is computed before each worker iteration and contains some data to be used by the corresponding worker iteration.
      * For example info about which segment/page should be loaded by current worker.
      */
-    record WorkerContext(int segment) implements Serializable {
+    record WorkerContext(int segment) {
     }
 
 
     /**
      * Result of single worker iteration
      */
-    record WorkerResult(boolean success, int segment) implements Serializable {
+    record WorkerResult(boolean success, int segment) {
     }
 }

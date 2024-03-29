@@ -17,18 +17,17 @@
 
 package org.keycloak.cluster.infinispan;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Retry;
-import org.keycloak.common.util.Time;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -130,26 +129,18 @@ public class InfinispanClusterProvider implements ClusterProvider {
         this.notificationsManager.notify(taskKey, event, ignoreSender, dcNotify);
     }
 
-    private LockEntry createLockEntry() {
-        LockEntry lock = new LockEntry();
-        lock.setNode(myAddress);
-        lock.setTimestamp(Time.currentTime());
-        return lock;
-    }
-
-
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
-        LockEntry myLock = createLockEntry();
+        LockEntry myLock = new LockEntry(myAddress);
 
         LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsentWithRetries(crossDCAwareCacheFactory, cacheKey, myLock, taskTimeoutInSeconds);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.getNode());
+                logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.node());
             }
             return false;
         } else {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.getNode());
+                logger.tracef("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.node());
             }
             return true;
         }

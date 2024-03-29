@@ -23,8 +23,6 @@ import org.infinispan.lifecycle.ComponentStatus;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -35,11 +33,11 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
     private static final Logger log = Logger.getLogger(BaseCacheInitializer.class);
 
     protected final KeycloakSessionFactory sessionFactory;
-    protected final Cache<String, Serializable> workCache;
+    protected final Cache<String, InitializerState> workCache;
     protected final SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader;
     protected final String stateKey;
 
-    public BaseCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader, String stateKeySuffix) {
+    public BaseCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, InitializerState> workCache, SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader, String stateKeySuffix) {
         this.sessionFactory = sessionFactory;
         this.workCache = workCache;
         this.sessionLoader = sessionLoader;
@@ -67,7 +65,7 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
 
     protected InitializerState getStateFromCache() {
         // We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored.
-        return (InitializerState) workCache.getAdvancedCache()
+        return workCache.getAdvancedCache()
                 .withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
                 .get(stateKey);
     }

@@ -17,30 +17,29 @@
 
 package org.keycloak.models.sessions.infinispan.changes.sessions;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.marshalling.Marshalling;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
-import org.keycloak.cluster.ClusterEvent;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(LastSessionRefreshEvent.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.LAST_SESSION_REFRESH_EVENT)
 public class LastSessionRefreshEvent implements ClusterEvent {
 
     private final Map<String, SessionData> lastSessionRefreshes;
 
+    @ProtoFactory
     public LastSessionRefreshEvent(Map<String, SessionData> lastSessionRefreshes) {
         this.lastSessionRefreshes = lastSessionRefreshes;
     }
 
+    @ProtoField(value = 1, mapImplementation = HashMap.class)
     public Map<String, SessionData> getLastSessionRefreshes() {
         return lastSessionRefreshes;
     }
@@ -55,29 +54,4 @@ public class LastSessionRefreshEvent implements ClusterEvent {
         return 1;
     }
 
-    public static class ExternalizerImpl implements Externalizer<LastSessionRefreshEvent> {
-
-
-        @Override
-        public void writeObject(ObjectOutput output, LastSessionRefreshEvent obj) throws IOException {
-            MarshallUtil.marshallMap(obj.lastSessionRefreshes, output);
-        }
-
-
-        @Override
-        public LastSessionRefreshEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            Map<String, SessionData> map = MarshallUtil.unmarshallMap(input, new MarshallUtil.MapBuilder<String, SessionData, Map<String, SessionData>>() {
-
-                @Override
-                public Map<String, SessionData> build(int size) {
-                    return new HashMap<>(size);
-                }
-
-            });
-
-            LastSessionRefreshEvent event = new LastSessionRefreshEvent(map);
-            return event;
-        }
-
-    }
 }
