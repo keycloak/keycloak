@@ -32,6 +32,7 @@ import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupTreeResolver;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -114,6 +115,11 @@ public class LDAPServerCapabilitiesManager {
              errorMsg = "ServiceUnavailable";
         if (throwable instanceof InvalidBindDNException)
              errorMsg = "InvalidBindDN";
+        if (throwable instanceof javax.naming.NameNotFoundException)
+             errorMsg = "NameNotFound";
+        if (throwable instanceof GroupTreeResolver.GroupTreeResolveException) {
+             errorMsg = "GroupsMultipleParents";
+        }
 
         if (throwable instanceof javax.naming.NamingException) {
             Throwable rootCause = ((javax.naming.NamingException)throwable).getRootCause();

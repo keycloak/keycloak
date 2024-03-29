@@ -252,9 +252,19 @@ public class UserStorageProviderResource {
 
         SynchronizationResult syncResult;
         if ("fedToKeycloak".equals(direction)) {
-            syncResult = mapper.syncDataFromFederationProviderToKeycloak(realm);
+            try {
+                syncResult = mapper.syncDataFromFederationProviderToKeycloak(realm);
+            } catch(Exception e) {
+                String errorMsg = getErrorCode(e);
+                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+            }
         } else if ("keycloakToFed".equals(direction)) {
-            syncResult = mapper.syncDataFromKeycloakToFederationProvider(realm);
+            try {
+                syncResult = mapper.syncDataFromKeycloakToFederationProvider(realm);
+            } catch(Exception e) {
+                String errorMsg = getErrorCode(e);
+                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+            }
         } else {
             throw new BadRequestException("Unknown direction: " + direction);
         }
