@@ -75,7 +75,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="25.0.0-org">
-        <createTable tableName="ORGANIZATION">
+        <createTable tableName="ORG">
             <column name="ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
@@ -90,9 +90,9 @@
             </column>
         </createTable>
 
-        <addPrimaryKey columnNames="ID" tableName="ORGANIZATION"/>
-        <addUniqueConstraint tableName="ORGANIZATION" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
-        <addUniqueConstraint tableName="ORGANIZATION" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
+        <addPrimaryKey columnNames="ID" tableName="ORG"/>
+        <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
+        <addUniqueConstraint tableName="ORG" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
     </changeSet>
 
     <changeSet author="keycloak" id="unique-consentuser">
