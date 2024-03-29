@@ -96,7 +96,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
         ClientTypesRepresentation clientTypes = getClientTypes(realm);
         ClientTypeRepresentation clientType = getClientTypeByName(clientTypes, typeName);
         if (clientType == null) {
-            logger.errorf("Referenced client type '%s' not found");
+            logger.errorf("Referenced client type '%s' not found", typeName);
             throw new ClientTypeException("Client type not found");
         }
 
@@ -109,8 +109,14 @@ public class DefaultClientTypeManager implements ClientTypeManager {
         if (client.getType() == null) {
             return client;
         } else {
-            ClientType clientType = getClientType(client.getRealm(), client.getType());
-            return new TypeAwareClientModelDelegate(clientType, () -> client);
+            try {
+                ClientType clientType = getClientType(client.getRealm(), client.getType());
+                return new TypeAwareClientModelDelegate(clientType, () -> client);
+            } catch(ClientTypeException cte) {
+                logger.errorf("Could not augment client, %s, due to client type exception: %s",
+                        client, cte);
+                return client;
+            }
         }
     }
 
