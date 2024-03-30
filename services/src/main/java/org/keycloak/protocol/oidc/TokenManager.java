@@ -99,6 +99,7 @@ import org.keycloak.util.TokenUtil;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -438,6 +439,8 @@ public class TokenManager {
             responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
+        storeRefreshTimingInformation(event, refreshToken, validation.newToken);
+
         return responseBuilder;
     }
 
@@ -454,6 +457,16 @@ public class TokenManager {
 
             return null;
         };
+    }
+
+    /**
+     * Store information to identify early token refreshes of clients which stress the IAM system.
+     */
+    private void storeRefreshTimingInformation(EventBuilder event, RefreshToken refreshToken, AccessToken newToken) {
+        long expirationAccessToken = newToken.getExp() - newToken.getIat();
+        long ageOfRefreshToken = newToken.getIat() - refreshToken.getIat();
+        event.detail(Details.ACCESS_TOKEN_EXPIRATION_TIME, Long.toString(expirationAccessToken));
+        event.detail(Details.AGE_OF_REFRESH_TOKEN, Long.toString(ageOfRefreshToken));
     }
 
     private void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
