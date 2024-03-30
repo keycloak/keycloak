@@ -104,16 +104,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
     private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
                                                                                       String realmId, String clientId) {
-        UUID clientSessionId = null;
-        if (clientSession.getId() != null) {
-            clientSessionId = UUID.fromString(clientSession.getId());
-        } else {
-            if (offline) {
-                clientSessionId = keyGenerator.generateKeyUUID(kcSession, cache);
-            } else {
-                clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
-            }
-        }
+        UUID clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realmId);

@@ -481,6 +481,8 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
     public void testOfflineSessionLifespanOverride() {
         // skip the test for CrossDC
         Assume.assumeFalse(Objects.equals(CONFIG.scope("connectionsInfinispan.default").get("remoteStoreEnabled"), "true"));
+        // As we don't put things in the embedded cache, the test will fail as the number of entries will always be 0.
+        Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE));
 
         createOfflineSessions("user1", 2, new LinkedList<>(), new LinkedList<>());
 
