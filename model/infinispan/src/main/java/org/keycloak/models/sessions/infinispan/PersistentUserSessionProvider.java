@@ -113,9 +113,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     protected final RemoteCacheInvoker remoteCacheInvoker;
     protected final InfinispanKeyGenerator keyGenerator;
 
-    protected final SessionFunction offlineSessionCacheEntryLifespanAdjuster;
+    protected final SessionFunction<UserSessionEntity> offlineSessionCacheEntryLifespanAdjuster;
 
-    protected final SessionFunction offlineClientSessionCacheEntryLifespanAdjuster;
+    protected final SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster;
 
     public PersistentUserSessionProvider(KeycloakSession session,
                                          RemoteCacheInvoker remoteCacheInvoker,
@@ -234,7 +234,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         SessionUpdateTask<AuthenticatedClientSessionEntity> createClientSessionTask = Tasks.addIfAbsentSync();
         clientSessionUpdateTx.addTask(clientSessionId, createClientSessionTask, entity, persistenceState);
 
-        SessionUpdateTask registerClientSessionTask = new RegisterClientSessionTask(client.getId(), clientSessionId);
+        SessionUpdateTask<UserSessionEntity> registerClientSessionTask = new RegisterClientSessionTask(client.getId(), clientSessionId);
         userSessionUpdateTx.addTask(userSession.getId(), registerClientSessionTask);
 
         return adapter;
@@ -792,93 +792,66 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         if (persistentUserSessions == null || persistentUserSessions.isEmpty()) {
             return;
         }
+        persistentUserSessions.forEach(userSessionModel -> importUserSession(userSessionModel, offline));
+    }
 
+    public SessionEntityWrapper<UserSessionEntity> importUserSession(UserSessionModel persistentUserSession, boolean offline) {
         Map<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionsById = new HashMap<>();
 
-        Map<String, SessionEntityWrapper<UserSessionEntity>> sessionsById = persistentUserSessions.stream()
-                .map((UserSessionModel persistentUserSession) -> {
+        UserSessionEntity userSessionEntityToImport = createUserSessionEntityInstance(persistentUserSession);
 
-                    UserSessionEntity userSessionEntityToImport = createUserSessionEntityInstance(persistentUserSession);
+        for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
+            String clientUUID = entry.getKey();
+            AuthenticatedClientSessionModel clientSession = entry.getValue();
+            AuthenticatedClientSessionEntity clientSessionToImport = createAuthenticatedClientSessionInstance(userSessionEntityToImport.getId(), clientSession,
+                    userSessionEntityToImport.getRealmId(), clientUUID, offline);
+            clientSessionToImport.setUserSessionId(userSessionEntityToImport.getId());
 
-                    for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
-                        String clientUUID = entry.getKey();
-                        AuthenticatedClientSessionModel clientSession = entry.getValue();
-                        AuthenticatedClientSessionEntity clientSessionToImport = createAuthenticatedClientSessionInstance(userSessionEntityToImport.getId(), clientSession,
-                                userSessionEntityToImport.getRealmId(), clientUUID, offline);
-                        clientSessionToImport.setUserSessionId(userSessionEntityToImport.getId());
+            // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
+            clientSessionToImport.setTimestamp(userSessionEntityToImport.getLastSessionRefresh());
 
-                        // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
-                        clientSessionToImport.setTimestamp(userSessionEntityToImport.getLastSessionRefresh());
+            clientSessionsById.put(clientSessionToImport.getId(), new SessionEntityWrapper<>(clientSessionToImport));
 
-                        clientSessionsById.put(clientSessionToImport.getId(), new SessionEntityWrapper<>(clientSessionToImport));
+            // Update userSession entity with the clientSession
+            AuthenticatedClientSessionStore clientSessions = userSessionEntityToImport.getAuthenticatedClientSessions();
+            clientSessions.put(clientUUID, clientSessionToImport.getId());
+        }
 
-                        // Update userSession entity with the clientSession
-                        AuthenticatedClientSessionStore clientSessions = userSessionEntityToImport.getAuthenticatedClientSessions();
-                        clientSessions.put(clientUUID, clientSessionToImport.getId());
-                    }
+        SessionEntityWrapper<UserSessionEntity>  wrappedUserSessionEntity = new SessionEntityWrapper<>(userSessionEntityToImport);
 
-                    return userSessionEntityToImport;
-                })
-                .map(SessionEntityWrapper::new)
-                .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
+        Map<String, SessionEntityWrapper<UserSessionEntity>> sessionsById =
+                    Stream.of(wrappedUserSessionEntity).collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
         // Directly put all entities to the infinispan cache
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(getCache(offline));
 
-        boolean importWithExpiration = sessionsById.size() == 1;
-        if (importWithExpiration) {
-            importSessionsWithExpiration(sessionsById, cache,
-                    offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
-                    offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
-        } else {
-            Retry.executeWithBackoff((int iteration) -> {
-                cache.putAll(sessionsById);
-            }, 10, 10);
+        sessionsById = importSessionsWithExpiration(sessionsById, cache,
+                offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
+                offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
+
+        if (sessionsById.isEmpty()) {
+            return null;
         }
 
         // put all entities to the remoteCache (if exists)
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
         if (remoteCache != null) {
-            Map<String, SessionEntityWrapper<UserSessionEntity>> sessionsByIdForTransport = sessionsById.values().stream()
+            Map<String, SessionEntityWrapper<UserSessionEntity>> sessionsByIdForTransport = Stream.of(wrappedUserSessionEntity)
                     .map(SessionEntityWrapper::forTransport)
                     .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
-            if (importWithExpiration) {
-                importSessionsWithExpiration(sessionsByIdForTransport, remoteCache,
-                        offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
-                        offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
-            } else {
-                Retry.executeWithBackoff((int iteration) -> {
-
-                    try {
-                        remoteCache.putAll(sessionsByIdForTransport);
-                    } catch (HotRodClientException re) {
-                        if (log.isDebugEnabled()) {
-                            log.debugf(re, "Failed to put import %d sessions to remoteCache. Iteration '%s'. Will try to retry the task",
-                                    sessionsByIdForTransport.size(), iteration);
-                        }
-
-                        // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                        throw re;
-                    }
-
-                }, 10, 10);
-            }
+            importSessionsWithExpiration(sessionsByIdForTransport, remoteCache,
+                    offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
+                    offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
         }
 
         // Import client sessions
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache =
                 CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(offline ? offlineClientSessionCache : clientSessionCache);
 
-        if (importWithExpiration) {
-            importSessionsWithExpiration(clientSessionsById, clientSessCache,
-                    offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
-                    offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
-        } else {
-            Retry.executeWithBackoff((int iteration) -> {
-                clientSessCache.putAll(clientSessionsById);
-            }, 10, 10);
-        }
+        importSessionsWithExpiration(clientSessionsById, clientSessCache,
+                offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
+                offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
 
         // put all entities to the remoteCache (if exists)
         RemoteCache remoteCacheClientSessions = InfinispanUtil.getRemoteCache(clientSessCache);
@@ -887,38 +860,22 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     .map(SessionEntityWrapper::forTransport)
                     .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
-            if (importWithExpiration) {
-                importSessionsWithExpiration(sessionsByIdForTransport, remoteCacheClientSessions,
-                        offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
-                        offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
-            } else {
-                Retry.executeWithBackoff((int iteration) -> {
-
-                    try {
-                        remoteCacheClientSessions.putAll(sessionsByIdForTransport);
-                    } catch (HotRodClientException re) {
-                        if (log.isDebugEnabled()) {
-                            log.debugf(re, "Failed to put import %d client sessions to remoteCache. Iteration '%s'. Will try to retry the task",
-                                    sessionsByIdForTransport.size(), iteration);
-                        }
-
-                        // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                        throw re;
-                    }
-
-                }, 10, 10);
-            }
+            importSessionsWithExpiration(sessionsByIdForTransport, remoteCacheClientSessions,
+                    offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
+                    offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
         }
+
+        return sessionsById.entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
     }
 
-    private <T extends SessionEntity> void importSessionsWithExpiration(Map<? extends Object, SessionEntityWrapper<T>> sessionsById,
-                                                                        BasicCache cache, SessionFunction<T> lifespanMsCalculator,
-                                                                        SessionFunction<T> maxIdleTimeMsCalculator) {
-        sessionsById.forEach((id, sessionEntityWrapper) -> {
+    private <T extends SessionEntity, K> Map<K, SessionEntityWrapper<T>> importSessionsWithExpiration(Map<K, SessionEntityWrapper<T>> sessionsById,
+                                                                              BasicCache<K, SessionEntityWrapper<T>> cache, SessionFunction<T> lifespanMsCalculator,
+                                                                              SessionFunction<T> maxIdleTimeMsCalculator) {
+        return sessionsById.entrySet().stream().map(entry -> {
 
-            T sessionEntity = sessionEntityWrapper.getEntity();
+            T sessionEntity = entry.getValue().getEntity();
             RealmModel currentRealm = session.realms().getRealm(sessionEntity.getRealmId());
-            ClientModel client = sessionEntityWrapper.getClientIfNeeded(currentRealm);
+            ClientModel client = entry.getValue().getClientIfNeeded(currentRealm);
             long lifespan = lifespanMsCalculator.apply(currentRealm, client, sessionEntity);
             long maxIdle = maxIdleTimeMsCalculator.apply(currentRealm, client, sessionEntity);
 
@@ -928,7 +885,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     Retry.executeWithBackoff((int iteration) -> {
 
                         try {
-                            cache.put(id, sessionEntityWrapper, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+                            cache.putIfAbsent(entry.getKey(), entry.getValue(), lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
                         } catch (HotRodClientException re) {
                             if (log.isDebugEnabled()) {
                                 log.debugf(re, "Failed to put import %d sessions to remoteCache. Iteration '%s'. Will try to retry the task",
@@ -941,10 +898,13 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
                     }, 10, 10);
                 } else {
-                    cache.put(id, sessionEntityWrapper, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+                    cache.putIfAbsent(entry.getKey(), entry.getValue(), lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
                 }
+                return entry;
+            } else {
+                return null;
             }
-        });
+        }).filter(Objects::nonNull).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private UserSessionEntity createUserSessionEntityInstance(UserSessionModel userSession) {

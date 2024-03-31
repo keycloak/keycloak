@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Metrics;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -111,6 +112,17 @@ public class CacheManagerFactory {
             configureTransportStack(builder);
             configureRemoteStores(builder);
         }
+
+        DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+            if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
+                (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+                ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
+                if (configurationBuilder.memory().maxSize() == null && configurationBuilder.memory().maxCount() == -1) {
+                    logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries", cacheName);
+                    configurationBuilder.memory().maxCount(10000);
+                }
+            }
+        });
 
         if (metricsEnabled) {
             builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);

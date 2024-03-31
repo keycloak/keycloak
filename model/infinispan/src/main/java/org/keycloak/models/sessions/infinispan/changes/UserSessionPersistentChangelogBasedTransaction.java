@@ -118,10 +118,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         }
 
         LOG.debugf("Attempting to import user-session for sessionId=%s offline=%s", sessionId, offline);
-        kcSession.sessions().importUserSessions(Collections.singleton(persistentUserSession), offline);
-        LOG.debugf("user-session imported, trying another lookup for sessionId=%s offline=%s", sessionId, offline);
-
-        SessionEntityWrapper<UserSessionEntity> ispnUserSessionEntity = cache.get(sessionId);
+        SessionEntityWrapper<UserSessionEntity> ispnUserSessionEntity = ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).importUserSession(persistentUserSession, offline);;
 
         if (ispnUserSessionEntity != null) {
             LOG.debugf("user-session found after import for sessionId=%s offline=%s", sessionId, offline);
