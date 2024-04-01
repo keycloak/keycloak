@@ -122,15 +122,11 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             // Expected
         }
 
-        // Adding non-applicable attribute should fail
+
         clientRep.setServiceAccountsEnabled(true);
+
+        // Adding non-applicable attribute should not fail
         clientRep.getAttributes().put(ClientModel.LOGO_URI, "https://foo");
-        try {
-            testRealm().clients().get(clientRep.getId()).update(clientRep);
-            Assert.fail("Not expected to update client");
-        } catch (BadRequestException bre) {
-            // Expected
-        }
 
         // Update of supported attribute should be successful
         clientRep.getAttributes().remove(ClientModel.LOGO_URI);
