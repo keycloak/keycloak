@@ -17,7 +17,7 @@
     "test": "wireit"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.224.5",
+    "@patternfly/patternfly": "^5.2.1",
     "@patternfly/react-core": "^4.278.0",
     "@patternfly/react-icons": "^4.93.7",
     "@patternfly/react-table": "^4.113.6",
