@@ -85,8 +85,9 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
             if (roles == null) {
                 representation.setRoles(Collections.emptySet());
             } else {
-                representation.setRoles(new HashSet<>(
-                        Arrays.asList(JsonSerialization.readValue(roles, RolePolicyRepresentation.RoleDefinition[].class))));
+                List<RolePolicyRepresentation.RoleDefinition> roleDefinitions = Arrays.asList(JsonSerialization.readValue(roles, RolePolicyRepresentation.RoleDefinition[].class));
+                roleDefinitions.removeIf(definition -> getRole(definition, authorization.getRealm()) == null);
+                representation.setRoles(new HashSet<>(roleDefinitions));
             }
 
             String fetchRoles = policy.getConfig().get("fetchRoles");
@@ -171,35 +172,9 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         if (roles != null) {
             RealmModel realm = authorization.getRealm();
             for (RolePolicyRepresentation.RoleDefinition definition : roles) {
-                String roleName = definition.getId();
-                String clientId = null;
-                int clientIdSeparator = roleName.indexOf("/");
-
-                if (clientIdSeparator != -1) {
-                    clientId = roleName.substring(0, clientIdSeparator);
-                    roleName = roleName.substring(clientIdSeparator + 1);
-                }
-
-                RoleModel role;
-
-                if (clientId == null) {
-                    role = realm.getRole(roleName);
-
-                    if (role == null) {
-                        role = realm.getRoleById(roleName);
-                    }
-                } else {
-                    ClientModel client = realm.getClientByClientId(clientId);
-
-                    if (client == null) {
-                        throw new RuntimeException("Client with id [" + clientId + "] not found.");
-                    }
-
-                    role = client.getRole(roleName);
-                }
-
+                RoleModel role = getRole(definition, realm);
                 if (role == null) {
-                    throw new RuntimeException("Error while updating policy [" + policy.getName()  + "]. Role [" + roleName + "] could not be found.");
+                    continue;
                 }
 
                 definition.setId(role.getId());
@@ -222,58 +197,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(event -> {
-            if (event instanceof RoleRemovedEvent) {
-                KeycloakSession keycloakSession = ((RoleRemovedEvent) event).getKeycloakSession();
-                AuthorizationProvider provider = keycloakSession.getProvider(AuthorizationProvider.class);
-                StoreFactory storeFactory = provider.getStoreFactory();
-                PolicyStore policyStore = storeFactory.getPolicyStore();
-                RoleModel removedRole = ((RoleRemovedEvent) event).getRole();
-                RoleContainerModel container = removedRole.getContainer();
-                ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
 
-                if (container instanceof RealmModel) {
-                    RealmModel realm = (RealmModel) container;
-                    realm.getClientsStream()
-                            .forEach(clientModel -> updateResourceServer(clientModel, removedRole, resourceServerStore, policyStore));
-                } else {
-                    ClientModel clientModel = (ClientModel) container;
-                    updateResourceServer(clientModel, removedRole, resourceServerStore, policyStore);
-                }
-            }
-        });
-    }
-
-    private void updateResourceServer(ClientModel clientModel, RoleModel removedRole, ResourceServerStore resourceServerStore, PolicyStore policyStore) {
-        ResourceServer resourceServer = resourceServerStore.findByClient(clientModel);
-
-        if (resourceServer != null) {
-            policyStore.findByType(resourceServer, getId()).forEach(policy -> {
-                List<Map> roles = new ArrayList<>();
-
-                for (Map<String,Object> role : getRoles(policy)) {
-                    if (!role.get("id").equals(removedRole.getId())) {
-                        Map updated = new HashMap();
-                        updated.put("id", role.get("id"));
-                        Object required = role.get("required");
-                        if (required != null) {
-                            updated.put("required", required);
-                        }
-                        roles.add(updated);
-                    }
-                }
-
-                try {
-                    if (roles.isEmpty()) {
-                        policyStore.delete(policy.getId());
-                    } else {
-                        policy.putConfig("roles", JsonSerialization.writeValueAsString(roles));
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException("Error while synchronizing roles with policy [" + policy.getName() + "].", e);
-                }
-            });
-        }
     }
 
     @Override
@@ -298,5 +222,36 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         }
 
         return new Map[] {};
+    }
+
+    private RoleModel getRole(RolePolicyRepresentation.RoleDefinition definition, RealmModel realm) {
+        String roleName = definition.getId();
+        String clientId = null;
+        int clientIdSeparator = roleName.indexOf("/");
+
+        if (clientIdSeparator != -1) {
+            clientId = roleName.substring(0, clientIdSeparator);
+            roleName = roleName.substring(clientIdSeparator + 1);
+        }
+
+        RoleModel role;
+
+        if (clientId == null) {
+            role = realm.getRole(roleName);
+
+            if (role == null) {
+                role = realm.getRoleById(roleName);
+            }
+        } else {
+            ClientModel client = realm.getClientByClientId(clientId);
+
+            if (client == null) {
+                throw new RuntimeException("Client with id [" + clientId + "] not found.");
+            }
+
+            role = client.getRole(roleName);
+        }
+
+        return role;
     }
 }
