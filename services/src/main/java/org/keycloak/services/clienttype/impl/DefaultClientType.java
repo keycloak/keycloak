@@ -18,29 +18,23 @@
 
 package org.keycloak.services.clienttype.impl;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
-import org.keycloak.client.clienttype.ClientType;
-import org.keycloak.client.clienttype.ClientTypeException;
-import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.services.ErrorResponse;
+
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -104,17 +98,16 @@ public class DefaultClientType implements ClientType {
         validateClientRequest(newClient, currentRep);
     }
 
-    protected void validateClientRequest(ClientRepresentation newClient, ClientRepresentation currentClient) {
+    protected void validateClientRequest(ClientRepresentation newClient, ClientRepresentation currentClient) throws ClientTypeException {
         List<String> validationErrors = clientType.getConfig().entrySet().stream()
                 .filter(property -> clientPropertyHasInvalidChangeRequested(currentClient, newClient, property.getKey(), property.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
 
         if (validationErrors.size() > 0) {
-            throw ErrorResponse.error(
+            throw new ClientTypeException(
                     "Cannot change property of client as it is not allowed by the specified client type.",
-                    validationErrors.toArray(),
-                    Response.Status.BAD_REQUEST);
+                    validationErrors.toArray());
         }
     }
 
