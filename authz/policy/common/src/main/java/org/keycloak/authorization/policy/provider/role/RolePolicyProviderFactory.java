@@ -20,31 +20,24 @@ package org.keycloak.authorization.policy.provider.role;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceServerStore;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation.RoleDefinition;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,25 +71,14 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
     @Override
     public RolePolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         RolePolicyRepresentation representation = new RolePolicyRepresentation();
+        String roles = policy.getConfig().get("roles");
 
-        try {
-            String roles = policy.getConfig().get("roles");
+        representation.setRoles(getRoles(roles, authorization.getRealm()));
 
-            if (roles == null) {
-                representation.setRoles(Collections.emptySet());
-            } else {
-                List<RolePolicyRepresentation.RoleDefinition> roleDefinitions = Arrays.asList(JsonSerialization.readValue(roles, RolePolicyRepresentation.RoleDefinition[].class));
-                roleDefinitions.removeIf(definition -> getRole(definition, authorization.getRealm()) == null);
-                representation.setRoles(new HashSet<>(roleDefinitions));
-            }
+        String fetchRoles = policy.getConfig().get("fetchRoles");
 
-            String fetchRoles = policy.getConfig().get("fetchRoles");
-
-            if (StringUtil.isNotBlank(fetchRoles)) {
-                representation.setFetchRoles(Boolean.parseBoolean(fetchRoles));
-            }
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to deserialize roles", cause);
+        if (StringUtil.isNotBlank(fetchRoles)) {
+            representation.setFetchRoles(Boolean.parseBoolean(fetchRoles));
         }
 
         return representation;
@@ -119,11 +101,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        try {
-            updateRoles(policy, authorization, new HashSet<>(Arrays.asList(JsonSerialization.readValue(representation.getConfig().get("roles"), RolePolicyRepresentation.RoleDefinition[].class))));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to deserialize roles during import", cause);
-        }
+        updateRoles(policy, authorization, getRoles(representation.getConfig().get("roles"), authorization.getRealm()));
         String fetchRoles = representation.getConfig().get("fetchRoles");
 
         if (StringUtil.isNotBlank(fetchRoles)) {
@@ -210,18 +188,18 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         return "role";
     }
 
-    private Map<String, Object>[] getRoles(Policy policy) {
-        String roles = policy.getConfig().get("roles");
-
-        if (roles != null) {
+    private Set<RoleDefinition> getRoles(String rawRoles, RealmModel realm) {
+        if (rawRoles != null) {
             try {
-                return JsonSerialization.readValue(roles.getBytes(), Map[].class);
+                Set<RoleDefinition> roles = new HashSet<>(Arrays.asList(JsonSerialization.readValue(rawRoles, RoleDefinition[].class)));
+                roles.removeIf(definition -> getRole(definition, realm) == null);
+                return roles;
             } catch (IOException e) {
-                throw new RuntimeException("Could not parse roles [" + roles + "] from policy config [" + policy.getName() + ".", e);
+                throw new RuntimeException("Could not parse roles from config: [" + rawRoles + "]", e);
             }
         }
 
-        return new Map[] {};
+        return Collections.emptySet();
     }
 
     private RoleModel getRole(RolePolicyRepresentation.RoleDefinition definition, RealmModel realm) {
