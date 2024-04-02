@@ -755,7 +755,7 @@ public class AuthenticationManager {
         token.type(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID);
 
         if (session != null) {
-            token.setSessionState(session.getId());
+            token.setSessionId(session.getId());
         }
 
         if (session != null && session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {

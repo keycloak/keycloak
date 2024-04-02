@@ -17,7 +17,6 @@
 
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenCategory;
@@ -66,10 +65,8 @@ public class IDToken extends JsonWebToken {
 
     protected Long auth_time;
 
-    // session_state is deprecated, sid should be used instead
-    @JsonProperty(SESSION_STATE)
-    @JsonAlias(SESSION_ID)
-    protected String sessionState;
+    @JsonProperty(SESSION_ID)
+    protected String sessionId;
 
     @JsonProperty(AT_HASH)
     protected String accessTokenHash;
@@ -177,17 +174,22 @@ public class IDToken extends JsonWebToken {
         this.auth_time = Long.valueOf(authTime);
     }
 
-    @JsonProperty(SESSION_ID)
+
     public String getSessionId() {
-        return sessionState;
+        return sessionId;
     }
 
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    /**
+     * @deprecated Use {@link #getSessionId()} instead.
+     */
+    @Deprecated
+    @JsonIgnore
     public String getSessionState() {
-        return sessionState;
-    }
-
-    public void setSessionState(String sessionState) {
-        this.sessionState = sessionState;
+        return sessionId;
     }
 
     public String getAccessTokenHash() {

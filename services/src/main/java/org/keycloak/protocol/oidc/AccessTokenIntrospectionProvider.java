@@ -164,7 +164,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         newToken.issuer(token.getIssuer());
         newToken.setNonce(token.getNonce());
         newToken.setScope(token.getScope());
-        newToken.setSessionState(token.getSessionState());
+        newToken.setSessionId(token.getSessionId());
 
         // In the case of a refresh token, aud is a basic claim.
         newToken.audience(token.getAudience());

@@ -77,4 +77,14 @@ This scope contains preconfigured protocol mappers for the following claims:
 
  * `auth_time`
 
-This helps to reduce even more the number of claims in a lightweight access token, but also gives the chance to configure claims that were always added automatically.
+This provides additional help to reduce the number of claims in a lightweight access token, but also gives the chance to configure claims that were always added automatically.
+
+= Removed `session_state` claim
+
+The `session_state` claim, which contains the same value as the `sid` claim, is now removed from all tokens as it is not required according to the OpenID Connect Front-Channel Logout and OpenID Connect Back-Channel Logout specifications. The `session_state` claim remains present in the Access Token Response in accordance with OpenID Connect Session Management specification.
+
+Note that the `setSessionState()` method is also removed from the `IDToken` class in favor of the `setSessionId()` method, and the `getSessionState()` method is now deprecated.
+
+A new `Session State (session_state)` mapper is also included and can be assigned to client scopes (for instance `basic` client scope) to revert to the old behavior.
+
+If an old version of the JS adapter is used, the `Session State (session_state)` mapper should also be used via client scopes as described above.

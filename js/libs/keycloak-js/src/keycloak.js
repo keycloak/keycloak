@@ -1009,7 +1009,7 @@ function Keycloak (config) {
         if (token) {
             kc.token = token;
             kc.tokenParsed = jwtDecode(token);
-            kc.sessionId = kc.tokenParsed.session_state;
+            kc.sessionId = kc.tokenParsed.sid;
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
             kc.realmAccess = kc.tokenParsed.realm_access;
