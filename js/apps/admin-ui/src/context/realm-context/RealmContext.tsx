@@ -23,7 +23,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
 
   const realmParam = routeMatch?.params.realm;
   const realm = useMemo(
-    () => realmParam ?? environment.loginRealm,
+    () => decodeURIComponent(realmParam ?? environment.loginRealm),
     [realmParam],
   );
 
