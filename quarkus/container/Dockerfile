@@ -1,6 +1,9 @@
 FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
 
 ENV KEYCLOAK_VERSION 999.0.0-SNAPSHOT
+ENV KEYCLOAK_DISPLAY_NAME "Keycloak"
+ENV KEYCLOAK_IMAGE_NAME "keycloak"
+ENV KEYCLOAK_MAINTAINER "https://www.keycloak.org/"
 ARG KEYCLOAK_DIST=https://github.com/keycloak/keycloak/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
 
 RUN dnf install -y tar gzip
@@ -37,3 +40,9 @@ EXPOSE 8080
 EXPOSE 8443
 
 ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
+
+LABEL name="$KEYCLOAK_IMAGE_NAME" \
+      maintainer="$KEYCLOAK_MAINTAINER" \
+      io.k8s.display-name="$KEYCLOAK_DISPLAY_NAME" \
+      description="$KEYCLOAK_DISPLAY_NAME Image" \
+      io.k8s.description="$KEYCLOAK_DISPLAY_NAME Image"

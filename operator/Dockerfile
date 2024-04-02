@@ -1,5 +1,9 @@
 FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
 
+ENV KEYCLOAK_OPERATOR_DISPLAY_NAME "Keycloak Operator"
+ENV KEYCLOAK_OPERATOR_IMAGE_NAME "keycloak-operator"
+ENV KEYCLOAK_MAINTAINER "https://www.keycloak.org/"
+
 ADD target/ubi-null.sh /tmp/
 RUN bash /tmp/ubi-null.sh java-17-openjdk-headless glibc-langpack-en
 
@@ -19,3 +23,9 @@ USER 1000
 WORKDIR /opt/keycloak
 
 ENTRYPOINT [ "java", "-Djava.util.logging.manager=org.jboss.logmanager.LogManager", "-jar", "quarkus-run.jar" ]
+
+LABEL name="$KEYCLOAK_OPERATOR_IMAGE_NAME" \
+      maintainer="$KEYCLOAK_MAINTAINER" \
+      io.k8s.display-name="$KEYCLOAK_OPERATOR_DISPLAY_NAME" \
+      description="$KEYCLOAK_OPERATOR_DISPLAY_NAME Image" \
+      io.k8s.description="$KEYCLOAK_OPERATOR_DISPLAY_NAME Image"
