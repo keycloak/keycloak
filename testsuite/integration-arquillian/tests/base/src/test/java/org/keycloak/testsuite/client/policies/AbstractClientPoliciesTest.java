@@ -304,7 +304,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                             createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList(SAMPLE_CLIENT_ROLE)))
                         .addProfile("ordinal-test-profile")
                         .addProfile("lack-of-builtin-field-test-profile")
-                        .addProfile("ordinal-test-profile")
 
                     .toRepresentation();
 

@@ -14,6 +14,7 @@ import {
   Flex,
   FlexItem,
   FormGroup,
+  Label,
   PageSection,
   Text,
   TextVariants,
@@ -67,7 +68,12 @@ export default function NewClientPolicy() {
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
+  const [isGlobalPolicy, setIsGlobalPolicy] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
+  const [globalPolicies, setGlobalPolicies] =
+    useState<ClientPolicyRepresentation[]>();
+  const [allPolicies, setAllPolicies] =
+    useState<ClientPolicyRepresentation[]>();
   const [clientProfiles, setClientProfiles] = useState<
     ClientProfileRepresentation[]
   >([]);
@@ -101,7 +107,9 @@ export default function NewClientPolicy() {
   useFetch(
     async () => {
       const [policies, profiles] = await Promise.all([
-        adminClient.clientPolicies.listPolicies(),
+        adminClient.clientPolicies.listPolicies({
+          includeGlobalPolicies: true,
+        }),
         adminClient.clientPolicies.listProfiles({
           includeGlobalProfiles: true,
         }),
@@ -110,16 +118,29 @@ export default function NewClientPolicy() {
       return { policies, profiles };
     },
     ({ policies, profiles }) => {
-      const currentPolicy = policies.policies?.find(
+      let currentPolicy = policies.policies?.find(
         (item) => item.name === policyName,
       );
+      if (currentPolicy === undefined) {
+        currentPolicy = policies.globalPolicies?.find(
+          (item) => item.name === policyName,
+        );
+        setIsGlobalPolicy(currentPolicy !== undefined);
+      }
 
       const allClientProfiles = [
         ...(profiles.globalProfiles ?? []),
         ...(profiles.profiles ?? []),
       ];
 
+      const allClientPolicies = [
+        ...(policies.globalPolicies ?? []),
+        ...(policies.policies ?? []),
+      ];
+
       setPolicies(policies.policies ?? []);
+      setGlobalPolicies(policies.globalPolicies ?? []);
+      setAllPolicies(allClientPolicies);
       if (currentPolicy) {
         setupForm(currentPolicy);
         setClientProfiles(allClientProfiles);
@@ -134,7 +155,7 @@ export default function NewClientPolicy() {
     form.reset(policy);
   };
 
-  const policy = (policies || []).filter(
+  const policy = (allPolicies || []).filter(
     (policy) => policy.name === policyName,
   );
   const policyConditions = policy[0]?.conditions || [];
@@ -151,8 +172,6 @@ export default function NewClientPolicy() {
     const createdForm = form.getValues();
     const createdPolicy = {
       ...createdForm,
-      profiles: [],
-      conditions: [],
     };
 
     const getAllPolicies = () => {
@@ -279,6 +298,7 @@ export default function NewClientPolicy() {
             policies: policies,
           });
           addAlert(t("deleteClientPolicyProfileSuccess"), AlertVariant.success);
+          form.setValue("profiles", currentPolicy?.profiles || []);
           navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
         } catch (error) {
           addError(t("deleteClientPolicyProfileError"), error);
@@ -346,6 +366,10 @@ export default function NewClientPolicy() {
         policies: newPolicies,
       });
       setPolicies(newPolicies);
+      const allClientPolicies = [...(globalPolicies || []), ...newPolicies];
+      setAllPolicies(allClientPolicies);
+      setCurrentPolicy(createdPolicy);
+      form.setValue("profiles", createdPolicy.profiles);
       navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
       addAlert(t("addClientProfileSuccess"), AlertVariant.success);
     } catch (error) {
@@ -393,9 +417,20 @@ export default function NewClientPolicy() {
                   ? policyName
                   : "createPolicy"
               }
+              badges={[
+                {
+                  id: "global-client-policy-badge",
+                  text: isGlobalPolicy ? (
+                    <Label color="blue">{t("global")}</Label>
+                  ) : (
+                    ""
+                  ),
+                },
+              ]}
               divider
               dropdownItems={
-                showAddConditionsAndProfilesForm || policyName
+                (showAddConditionsAndProfilesForm || policyName) &&
+                !isGlobalPolicy
                   ? [
                       <DropdownItem
                         key="delete"
@@ -410,6 +445,7 @@ export default function NewClientPolicy() {
                     ]
                   : undefined
               }
+              isReadOnly={isGlobalPolicy}
               isEnabled={field.value}
               onToggle={(value) => {
                 if (!value) {
@@ -455,7 +491,7 @@ export default function NewClientPolicy() {
                 variant="primary"
                 type="submit"
                 data-testid="saveCreatePolicy"
-                isDisabled={!form.formState.isValid}
+                isDisabled={!form.formState.isValid || isGlobalPolicy}
               >
                 {t("save")}
               </Button>
@@ -463,7 +499,8 @@ export default function NewClientPolicy() {
                 id="cancelCreatePolicy"
                 variant="link"
                 onClick={() =>
-                  showAddConditionsAndProfilesForm || policyName
+                  (showAddConditionsAndProfilesForm || policyName) &&
+                  !isGlobalPolicy
                     ? reset()
                     : navigate(
                         toClientPolicies({
@@ -474,7 +511,9 @@ export default function NewClientPolicy() {
                 }
                 data-testid="cancelCreatePolicy"
               >
-                {showAddConditionsAndProfilesForm ? t("reload") : t("cancel")}
+                {showAddConditionsAndProfilesForm && !isGlobalPolicy
+                  ? t("reload")
+                  : t("cancel")}
               </Button>
             </ActionGroup>
             {(showAddConditionsAndProfilesForm ||
@@ -490,26 +529,28 @@ export default function NewClientPolicy() {
                       />
                     </Text>
                   </FlexItem>
-                  <FlexItem align={{ default: "alignRight" }}>
-                    <Button
-                      id="addCondition"
-                      component={(props) => (
-                        <Link
-                          {...props}
-                          to={toNewClientPolicyCondition({
-                            realm,
-                            policyName: policyName!,
-                          })}
-                        ></Link>
-                      )}
-                      variant="link"
-                      className="kc-addCondition"
-                      data-testid="addCondition"
-                      icon={<PlusCircleIcon />}
-                    >
-                      {t("addCondition")}
-                    </Button>
-                  </FlexItem>
+                  {!isGlobalPolicy && (
+                    <FlexItem align={{ default: "alignRight" }}>
+                      <Button
+                        id="addCondition"
+                        component={(props) => (
+                          <Link
+                            {...props}
+                            to={toNewClientPolicyCondition({
+                              realm,
+                              policyName: policyName!,
+                            })}
+                          ></Link>
+                        )}
+                        variant="link"
+                        className="kc-addCondition"
+                        data-testid="addCondition"
+                        icon={<PlusCircleIcon />}
+                      >
+                        {t("addCondition")}
+                      </Button>
+                    </FlexItem>
+                  )}
                 </Flex>
                 {policyConditions.length > 0 ? (
                   <DataList aria-label={t("conditions")} isCompact>
@@ -552,24 +593,26 @@ export default function NewClientPolicy() {
                                           helpText={type.helpText}
                                           fieldLabelId={condition.condition}
                                         />
-                                        <Button
-                                          variant="link"
-                                          aria-label="remove-condition"
-                                          isInline
-                                          icon={
-                                            <TrashIcon
-                                              className="kc-conditionType-trash-icon"
-                                              data-testid={`delete-${condition.condition}-condition`}
-                                              onClick={() => {
-                                                toggleDeleteConditionDialog();
-                                                setConditionToDelete({
-                                                  idx: idx,
-                                                  name: type.id!,
-                                                });
-                                              }}
-                                            />
-                                          }
-                                        ></Button>
+                                        {!isGlobalPolicy && (
+                                          <Button
+                                            variant="link"
+                                            aria-label="remove-condition"
+                                            isInline
+                                            icon={
+                                              <TrashIcon
+                                                className="kc-conditionType-trash-icon"
+                                                data-testid={`delete-${condition.condition}-condition`}
+                                                onClick={() => {
+                                                  toggleDeleteConditionDialog();
+                                                  setConditionToDelete({
+                                                    idx: idx,
+                                                    name: type.id!,
+                                                  });
+                                                }}
+                                              />
+                                            }
+                                          ></Button>
+                                        )}
                                       </>
                                     ),
                                 )}
@@ -609,18 +652,20 @@ export default function NewClientPolicy() {
                       />
                     </Text>
                   </FlexItem>
-                  <FlexItem align={{ default: "alignRight" }}>
-                    <Button
-                      id="addClientProfile"
-                      variant="link"
-                      className="kc-addClientProfile"
-                      data-testid="addClientProfile"
-                      icon={<PlusCircleIcon />}
-                      onClick={toggleModal}
-                    >
-                      {t("addClientProfile")}
-                    </Button>
-                  </FlexItem>
+                  {!isGlobalPolicy && (
+                    <FlexItem align={{ default: "alignRight" }}>
+                      <Button
+                        id="addClientProfile"
+                        variant="link"
+                        className="kc-addClientProfile"
+                        data-testid="addClientProfile"
+                        icon={<PlusCircleIcon />}
+                        onClick={toggleModal}
+                      >
+                        {t("addClientProfile")}
+                      </Button>
+                    </FlexItem>
+                  )}
                 </Flex>
                 {policyProfiles.length > 0 ? (
                   <DataList aria-label={t("profiles")} isCompact>
@@ -663,24 +708,26 @@ export default function NewClientPolicy() {
                                         }
                                         fieldLabelId={profile}
                                       />
-                                      <Button
-                                        variant="link"
-                                        aria-label="remove-client-profile"
-                                        isInline
-                                        icon={
-                                          <TrashIcon
-                                            className="kc-conditionType-trash-icon"
-                                            data-testid="deleteClientProfileDropdown"
-                                            onClick={() => {
-                                              toggleDeleteProfileDialog();
-                                              setProfileToDelete({
-                                                idx: idx,
-                                                name: type!,
-                                              });
-                                            }}
-                                          />
-                                        }
-                                      ></Button>
+                                      {!isGlobalPolicy && (
+                                        <Button
+                                          variant="link"
+                                          aria-label="remove-client-profile"
+                                          isInline
+                                          icon={
+                                            <TrashIcon
+                                              className="kc-conditionType-trash-icon"
+                                              data-testid="deleteClientProfileDropdown"
+                                              onClick={() => {
+                                                toggleDeleteProfileDialog();
+                                                setProfileToDelete({
+                                                  idx: idx,
+                                                  name: type!,
+                                                });
+                                              }}
+                                            />
+                                          }
+                                        ></Button>
+                                      )}
                                     </>
                                   ))}
                               </DataListCell>,

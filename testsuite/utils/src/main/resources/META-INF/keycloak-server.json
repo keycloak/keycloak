@@ -184,6 +184,12 @@
             "sslCertChainPrefix": "x-ssl-client-cert-chain",
             "certificateChainLength": 1
         }
-    }
+    },
 
+    "security-profile": {
+        "provider": "${keycloak.security-profile.provider:default}",
+        "default": {
+            "name":"${keycloak.security-profile.default.name:none-security-profile}"
+        }
+    }
 }

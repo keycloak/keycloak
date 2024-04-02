@@ -93,9 +93,10 @@ public interface ClientPolicyManager extends Provider {
      * when getting client policies via Admin REST API, returns the existing client policies set on the realm.
      * 
      * @param realm - the realm whose client policies is to be returned
+     * @param includeGlobalPolicies - the json representation will include the default policies
      * @return the json representation of the client policies set on the realm
      */
-    ClientPoliciesRepresentation getClientPolicies(RealmModel realm) throws ClientPolicyException;
+    ClientPoliciesRepresentation getClientPolicies(RealmModel realm, boolean includeGlobalPolicies) throws ClientPolicyException;
 
     /**
      * when exporting realm, or retrieve the realm for admin REST API, prepares the exported representation of the client profiles and policies.
