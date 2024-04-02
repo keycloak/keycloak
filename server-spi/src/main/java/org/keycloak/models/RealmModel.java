@@ -420,6 +420,12 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticatorConfigModel getAuthenticatorConfigById(String id);
     AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias);
 
+    RequiredActionConfigModel getRequiredActionConfigById(String id);
+    RequiredActionConfigModel getRequiredActionConfigByAlias(String alias);
+    void removeRequiredActionProviderConfig(RequiredActionConfigModel model);
+    void updateRequiredActionConfig(RequiredActionConfigModel model);
+    Stream<RequiredActionConfigModel> getRequiredActionConfigsStream();
+
     /**
      * Returns sorted {@link RequiredActionProviderModel RequiredActionProviderModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.

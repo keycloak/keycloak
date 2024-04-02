@@ -43,6 +43,7 @@ import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -131,6 +132,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
     protected List<AuthenticationFlowModel> authenticationFlowList;
     protected Map<String, AuthenticatorConfigModel> authenticatorConfigs;
+    protected Map<String, RequiredActionConfigModel> requiredActionProviderConfigs = new HashMap<>();
+    protected Map<String, RequiredActionConfigModel> requiredActionProviderConfigsByAlias = new HashMap<>();
     protected Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
     protected List<RequiredActionProviderModel> requiredActionProviderList;
     protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
@@ -290,9 +293,15 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         authenticatorConfigs = model.getAuthenticatorConfigsStream()
                 .collect(Collectors.toMap(AuthenticatorConfigModel::getId, Function.identity()));
+        List<RequiredActionConfigModel> requiredActionConfigsList = model.getRequiredActionConfigsStream().collect(Collectors.toList());
+        for (RequiredActionConfigModel requiredActionConfig : requiredActionConfigsList) {
+            requiredActionProviderConfigs.put(requiredActionConfig.getId(), requiredActionConfig);
+            requiredActionProviderConfigsByAlias.put(requiredActionConfig.getAlias(), requiredActionConfig);
+        }
+
         requiredActionProviderList = model.getRequiredActionProvidersStream().collect(Collectors.toList());
         for (RequiredActionProviderModel action : requiredActionProviderList) {
-            this.requiredActionProviders.put(action.getId(), action);
+            requiredActionProviders.put(action.getId(), action);
             requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
@@ -755,5 +764,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Map<String, Map<String, String>> getRealmLocalizationTexts() {
         return realmLocalizationTexts;
+    }
+
+    public Map<String, RequiredActionConfigModel> getRequiredActionProviderConfigsByAlias() {
+        return requiredActionProviderConfigsByAlias;
+    }
+
+    public Map<String, RequiredActionConfigModel> getRequiredActionProviderConfigs() {
+        return requiredActionProviderConfigs;
     }
 }

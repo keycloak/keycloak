@@ -19,6 +19,8 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.Config;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -32,6 +34,7 @@ import org.keycloak.models.GroupModel.GroupUpdatedEvent;
 import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderConfigProperty;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -1849,25 +1852,102 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+         return getRequiredActionProvidersStream() //
+                 .map(this::requiredActionToConfigModel);
+    }
+
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+        return getRequiredActionConfigsStream() //
+                .filter(req -> req.getId().equals(id))//
+                .findFirst() //
+                .orElse(null);
+    }
+
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+        return getRequiredActionConfigsStream() //
+                .filter(req -> req.getAlias().equals(alias))//
+                .findFirst() //
+                .orElse(null);
+    }
+
+    private RequiredActionConfigModel requiredActionToConfigModel(RequiredActionProviderModel reqAction) {
+        RequiredActionConfigModel configModel = new RequiredActionConfigModel();
+        configModel.setId(reqAction.getId());
+        configModel.setConfig(new HashMap<>(reqAction.getConfig()));
+        configModel.setProviderId(reqAction.getProviderId());
+        configModel.setAlias(reqAction.getAlias());
+        return configModel;
+    }
+
+    @Override
+    public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+        getRequiredActionProvidersStream() //
+                .filter(req -> req.getProviderId().equals(model.getProviderId()) && req.getAlias().equals(model.getAlias()))//
+                .findFirst() //
+                .ifPresent(reqAction -> { //
+                    reqAction.setConfig(null);
+                    updateRequiredActionProvider(reqAction);
+                });
+    }
+
+    @Override
+    public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+
+        getRequiredActionProvidersStream() //
+                .filter(req -> req.getProviderId().equals(model.getProviderId()) && req.getAlias().equals(model.getAlias()))//
+                .findFirst() //
+                .ifPresent(reqAction -> { //
+
+                    RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+                    if (factory == null || !factory.isConfigurable()) {
+                        return;
+                    }
+
+                    // validate model config
+                    factory.validateConfig(session, this, model);
+
+                    // update model config
+                    Map<String, String> config = new HashMap<>();
+                    if (reqAction.getConfig() != null) {
+                        config.putAll(reqAction.getConfig());
+                    }
+                    if (model != null && model.getConfig() != null) {
+                        // only apply explicitly listed config properties
+                        for (ProviderConfigProperty configProperty : factory.getConfigMetadata()) {
+                            String value = model.getConfig().get(configProperty.getName());
+                            config.put(configProperty.getName(), value);
+                        }
+                    }
+                    reqAction.setConfig(config);
+
+                    // propagate update to database
+                    updateRequiredActionProvider(reqAction);
+                });
+    }
+
+    @Override
     public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
         if (getRequiredActionProviderByAlias(model.getAlias()) != null) {
             throw new ModelDuplicateException("A Required Action Provider with given alias already exists.");
         }
-        RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
+        RequiredActionProviderEntity action = new RequiredActionProviderEntity();
         String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
-        auth.setId(id);
-        auth.setAlias(model.getAlias());
-        auth.setName(model.getName());
-        auth.setRealm(realm);
-        auth.setProviderId(model.getProviderId());
-        auth.setConfig(model.getConfig());
-        auth.setEnabled(model.isEnabled());
-        auth.setDefaultAction(model.isDefaultAction());
-        auth.setPriority(model.getPriority());
-        realm.getRequiredActionProviders().add(auth);
-        em.persist(auth);
+        action.setId(id);
+        action.setAlias(model.getAlias());
+        action.setName(model.getName());
+        action.setRealm(realm);
+        action.setProviderId(model.getProviderId());
+        action.setConfig(model.getConfig());
+        action.setEnabled(model.isEnabled());
+        action.setDefaultAction(model.isDefaultAction());
+        action.setPriority(model.getPriority());
+        realm.getRequiredActionProviders().add(action);
+        em.persist(action);
         em.flush();
-        model.setId(auth.getId());
+        model.setId(action.getId());
         return model;
     }
 
@@ -1896,9 +1976,11 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         model.setDefaultAction(entity.isDefaultAction());
         model.setPriority(entity.getPriority());
         model.setName(entity.getName());
-        Map<String, String> config = new HashMap<>();
-        if (entity.getConfig() != null) config.putAll(entity.getConfig());
-        model.setConfig(config);
+        if (entity.getConfig() != null) {
+            Map<String, String> config = new HashMap<>();
+            config.putAll(entity.getConfig());
+            model.setConfig(config);
+        }
         return model;
     }
 
