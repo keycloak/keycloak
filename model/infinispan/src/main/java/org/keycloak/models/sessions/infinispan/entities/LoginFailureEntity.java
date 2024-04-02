@@ -64,7 +64,9 @@ public class LoginFailureEntity extends SessionEntity {
     }
 
     public void setFailedLoginNotBefore(int failedLoginNotBefore) {
-        this.failedLoginNotBefore = failedLoginNotBefore;
+        if(failedLoginNotBefore>this.failedLoginNotBefore) {
+            this.failedLoginNotBefore = failedLoginNotBefore;
+        }
     }
 
     public int getNumFailures() {
@@ -88,7 +90,9 @@ public class LoginFailureEntity extends SessionEntity {
     }
 
     public void setLastFailure(long lastFailure) {
-        this.lastFailure = lastFailure;
+        if(lastFailure>this.lastFailure) {
+            this.lastFailure = lastFailure;
+        }
     }
 
     public String getLastIPFailure() {
