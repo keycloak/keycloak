@@ -186,7 +186,7 @@ public class ClientResource {
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client already exists");
         } catch (ClientTypeException cte) {
-            throw ErrorResponse.error(cte.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(cte.getMessage(), cte.getParameters(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

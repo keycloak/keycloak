@@ -28,6 +28,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.representations.idm.ClientTypesRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clienttype.impl.DefaultClientTypeProviderFactory;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
@@ -122,7 +124,6 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             // Expected
         }
 
-
         clientRep.setServiceAccountsEnabled(true);
 
         // Adding non-applicable attribute should not fail
@@ -134,6 +135,22 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         testRealm().clients().get(clientRep.getId()).update(clientRep);
     }
 
+    @Test
+    public void testCreateClientFailsWithMultipleInvalidClientTypeOverrides() {
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("invalid-client-type-fields-set")
+                .type(ClientTypeManager.SERVICE_ACCOUNT)
+                .serviceAccountsEnabled(false)
+                .publicClient()
+                .build();
+
+        Response response = testRealm().clients().create(clientRep);
+        assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
+        ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
+        assertThat(
+                List.of(errorRepresentation.getParams()),
+                containsInAnyOrder("publicClient", "serviceAccountsEnabled"));
+    }
 
     @Test
     public void testClientTypesAdminRestAPI_globalTypes() {
