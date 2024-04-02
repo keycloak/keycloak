@@ -7,6 +7,7 @@ import {
   Divider,
   Flex,
   FlexItem,
+  Label,
   PageSection,
   Radio,
   Switch,
@@ -36,29 +37,48 @@ import { toEditClientPolicy } from "./routes/EditClientPolicy";
 
 import "./realm-settings-section.css";
 
+type ClientPolicy = ClientPolicyRepresentation & {
+  global?: boolean;
+};
+
 export const PoliciesTab = () => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
-  const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
-  const [selectedPolicy, setSelectedPolicy] =
-    useState<ClientPolicyRepresentation>();
+  const [policies, setPolicies] = useState<ClientPolicy[]>();
+  const [selectedPolicy, setSelectedPolicy] = useState<ClientPolicy>();
   const [key, setKey] = useState(0);
   const [code, setCode] = useState<string>();
-  const [tablePolicies, setTablePolicies] =
-    useState<ClientPolicyRepresentation[]>();
+  const [tablePolicies, setTablePolicies] = useState<ClientPolicy[]>();
   const refresh = () => setKey(key + 1);
 
   const form = useForm<Record<string, boolean>>({ mode: "onChange" });
 
   useFetch(
-    () => adminClient.clientPolicies.listPolicies(),
-    (policies) => {
-      setPolicies(policies.policies),
-        setTablePolicies(policies.policies || []),
-        setCode(prettyPrintJSON(policies.policies));
+    () =>
+      adminClient.clientPolicies.listPolicies({
+        includeGlobalPolicies: true,
+      }),
+    (allPolicies) => {
+      const globalPolicies = allPolicies.globalPolicies?.map(
+        (globalPolicies) => ({
+          ...globalPolicies,
+          global: true,
+        }),
+      );
+
+      const policies = allPolicies.policies?.map((policies) => ({
+        ...policies,
+        global: false,
+      }));
+
+      const allClientPolicies = globalPolicies?.concat(policies ?? []);
+
+      setPolicies(allClientPolicies),
+        setTablePolicies(allClientPolicies || []),
+        setCode(prettyPrintJSON(allClientPolicies));
     },
     [key],
   );
@@ -68,16 +88,19 @@ export const PoliciesTab = () => {
   const saveStatus = async () => {
     const switchValues = form.getValues();
 
-    const updatedPolicies = policies?.map<ClientPolicyRepresentation>(
-      (policy) => {
+    const updatedPolicies = policies
+      ?.filter((policy) => {
+        return !policy.global;
+      })
+      .map<ClientPolicyRepresentation>((policy) => {
         const enabled = switchValues[policy.name!];
-
-        return {
+        const enabledPolicy = {
           ...policy,
           enabled,
         };
-      },
-    );
+        delete enabledPolicy.global;
+        return enabledPolicy;
+      });
 
     try {
       await adminClient.clientPolicies.updatePolicy({
@@ -90,15 +113,13 @@ export const PoliciesTab = () => {
     }
   };
 
-  const ClientPolicyDetailLink = ({ name }: ClientPolicyRepresentation) => (
-    <Link to={toEditClientPolicy({ realm, policyName: name! })}>{name}</Link>
+  const ClientPolicyDetailLink = (row: ClientPolicy) => (
+    <Link to={toEditClientPolicy({ realm, policyName: row.name! })}>
+      {row.name} {row.global && <Label color="blue">{t("global")}</Label>}
+    </Link>
   );
 
-  const SwitchRenderer = ({
-    clientPolicy,
-  }: {
-    clientPolicy: ClientPolicyRepresentation;
-  }) => {
+  const SwitchRenderer = ({ clientPolicy }: { clientPolicy: ClientPolicy }) => {
     const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
       titleKey: "disablePolicyConfirmTitle",
       messageKey: "disablePolicyConfirm",
@@ -122,6 +143,7 @@ export const PoliciesTab = () => {
               label={t("enabled")}
               labelOff={t("disabled")}
               isChecked={field.value}
+              isDisabled={clientPolicy.global}
               onChange={(_event, value) => {
                 if (!value) {
                   toggleDisableDialog();
@@ -144,7 +166,7 @@ export const PoliciesTab = () => {
     }
 
     try {
-      const obj: ClientPolicyRepresentation[] = JSON.parse(code);
+      const obj: ClientPolicy[] = JSON.parse(code);
 
       try {
         await adminClient.clientPolicies.updatePolicy({
@@ -169,9 +191,15 @@ export const PoliciesTab = () => {
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
-      const updatedPolicies = policies?.filter(
-        (policy) => policy.name !== selectedPolicy?.name,
-      );
+      const updatedPolicies = policies
+        ?.filter((policy) => {
+          return !policy.global && policy.name !== selectedPolicy?.name;
+        })
+        .map<ClientPolicyRepresentation>((policy) => {
+          const newPolicy = { ...policy };
+          delete newPolicy.global;
+          return newPolicy;
+        });
 
       try {
         await adminClient.clientPolicies.updatePolicy({
@@ -250,6 +278,7 @@ export const PoliciesTab = () => {
               </Button>
             </ToolbarItem>
           }
+          isRowDisabled={(value) => !!value.global}
           actions={[
             {
               title: t("delete"),
@@ -257,7 +286,7 @@ export const PoliciesTab = () => {
                 toggleDeleteDialog();
                 setSelectedPolicy(item);
               },
-            } as Action<ClientPolicyRepresentation>,
+            } as Action<ClientPolicy>,
           ]}
           columns={[
             {

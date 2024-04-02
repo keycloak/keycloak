@@ -265,5 +265,12 @@
 
     "saml-artifact-resolver": {
         "provider": "${keycloak.saml-artifact-resolver.provider:default}"
+    },
+
+    "security-profile": {
+        "provider": "${keycloak.security-profile.provider:default}",
+        "default": {
+            "name":"${keycloak.security-profile.default.name:none-security-profile}"
+        }
     }
 }

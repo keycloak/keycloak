@@ -1,0 +1,5 @@
+{
+  "name":"strict",
+  "client-profiles":"keycloak-default-client-profiles",
+  "client-policies":"keycloak-strict-client-policies"
+}

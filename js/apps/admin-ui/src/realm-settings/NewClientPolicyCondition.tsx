@@ -18,12 +18,13 @@ import { camelCase } from "lodash-es";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
-import { FormPanel, HelpItem } from "ui-shared";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { FormAccess } from "../components/form/FormAccess";
+import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
@@ -44,6 +45,7 @@ export default function NewClientPolicyCondition() {
   const { realm } = useRealm();
 
   const [openConditionType, setOpenConditionType] = useState(false);
+  const [isGlobalPolicy, setIsGlobalPolicy] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
 
   const [condition, setCondition] = useState<
@@ -72,15 +74,24 @@ export default function NewClientPolicyCondition() {
   };
 
   useFetch(
-    () => adminClient.clientPolicies.listPolicies(),
+    () =>
+      adminClient.clientPolicies.listPolicies({
+        includeGlobalPolicies: true,
+      }),
 
     (policies) => {
       setPolicies(policies.policies ?? []);
 
       if (conditionName) {
-        const currentPolicy = policies.policies?.find(
+        let currentPolicy = policies.policies?.find(
           (item) => item.name === policyName,
         );
+        if (currentPolicy === undefined) {
+          currentPolicy = policies.globalPolicies?.find(
+            (item) => item.name === policyName,
+          );
+          setIsGlobalPolicy(currentPolicy !== undefined);
+        }
 
         const typeAndConfigData = currentPolicy?.conditions?.find(
           (item) => item.condition === conditionName,
@@ -170,14 +181,22 @@ export default function NewClientPolicyCondition() {
   };
 
   return (
-    <PageSection variant="light">
-      <FormPanel
-        className="kc-login-screen"
-        title={conditionName ? t("editCondition") : t("addCondition")}
-      >
+    <>
+      <ViewHeader
+        titleKey={
+          conditionName
+            ? isGlobalPolicy
+              ? t("viewCondition")
+              : t("editCondition")
+            : t("addCondition")
+        }
+        divider
+      />
+      <PageSection variant="light">
         <FormAccess
           isHorizontal
           role="manage-realm"
+          isReadOnly={isGlobalPolicy}
           className="pf-v5-u-mt-lg"
           onSubmit={form.handleSubmit(save)}
         >
@@ -245,27 +264,48 @@ export default function NewClientPolicyCondition() {
           <FormProvider {...form}>
             <DynamicComponents properties={conditionProperties} />
           </FormProvider>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              data-testid="addCondition-saveBtn"
-              isDisabled={conditionType === "" && !conditionName}
-            >
-              {conditionName ? t("save") : t("add")}
-            </Button>
-            <Button
-              variant="link"
-              data-testid="addCondition-cancelBtn"
-              onClick={() =>
-                navigate(toEditClientPolicy({ realm, policyName: policyName! }))
-              }
-            >
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
+          {!isGlobalPolicy && (
+            <ActionGroup>
+              <Button
+                variant="primary"
+                type="submit"
+                data-testid="addCondition-saveBtn"
+                isDisabled={
+                  conditionType === "" && !conditionName && isGlobalPolicy
+                }
+              >
+                {conditionName ? t("save") : t("add")}
+              </Button>
+              <Button
+                variant="link"
+                data-testid="addCondition-cancelBtn"
+                onClick={() =>
+                  navigate(
+                    toEditClientPolicy({ realm, policyName: policyName! }),
+                  )
+                }
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          )}
         </FormAccess>
-      </FormPanel>
-    </PageSection>
+        {isGlobalPolicy && (
+          <div className="kc-backToProfile">
+            <Button
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toEditClientPolicy({ realm, policyName: policyName! })}
+                />
+              )}
+              variant="primary"
+            >
+              {t("back")}
+            </Button>
+          </div>
+        )}
+      </PageSection>
+    </>
   );
 }

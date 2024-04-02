@@ -18,11 +18,11 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -66,11 +66,11 @@ public class ClientPoliciesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
-    public ClientPoliciesRepresentation getPolicies() {
+    public ClientPoliciesRepresentation getPolicies(@QueryParam("include-global-policies") boolean includeGlobalPolicies) {
         auth.realm().requireViewRealm();
 
         try {
-            return session.clientPolicy().getClientPolicies(realm);
+            return session.clientPolicy().getClientPolicies(realm, includeGlobalPolicies);
         } catch (ClientPolicyException e) {
             throw ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
         }
