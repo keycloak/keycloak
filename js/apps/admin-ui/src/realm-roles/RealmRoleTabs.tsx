@@ -346,6 +346,7 @@ export default function RealmRoleTabs() {
               {...detailsTab}
             >
               <RoleForm
+                form={form}
                 onSubmit={onSubmit}
                 role={clientRoleMatch ? "manage-clients" : "manage-realm"}
                 cancelLink={

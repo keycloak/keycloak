@@ -48,6 +48,7 @@ export default function CreateRealmRole() {
   return (
     <FormProvider {...form}>
       <RoleForm
+        form={form}
         onSubmit={onSubmit}
         cancelLink={toRealmRoles({ realm })}
         role="manage-realm"

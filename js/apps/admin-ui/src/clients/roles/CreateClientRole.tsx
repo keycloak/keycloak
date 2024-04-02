@@ -57,6 +57,7 @@ export default function CreateClientRole() {
   return (
     <FormProvider {...form}>
       <RoleForm
+        form={form}
         onSubmit={onSubmit}
         cancelLink={toClient({
           realm,
