@@ -29,7 +29,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ManagementSpec;
 
 import java.util.Optional;
 
@@ -56,13 +58,31 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
         Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
         boolean httpEnabled = httpSpec.map(HttpSpec::getHttpEnabled).orElse(false);
         if (!tlsConfigured || httpEnabled) {
-            builder.addNewPort().withPort(getServicePort(false, keycloak)).withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
-                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL).endPort();
+            builder.addNewPort()
+                    .withPort(getServicePort(false, keycloak))
+                    .withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
+                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+                    .endPort();
         }
         if (tlsConfigured) {
-            builder.addNewPort().withPort(getServicePort(true, keycloak)).withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
-                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL).endPort();
+            builder.addNewPort()
+                    .withPort(getServicePort(true, keycloak))
+                    .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
+                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+                    .endPort();
         }
+
+        var managementPort = Optional.ofNullable(keycloak.getSpec())
+                .map(KeycloakSpec::getManagementSpec)
+                .map(ManagementSpec::getPort)
+                .orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
+
+        builder.addNewPort()
+                .withPort(managementPort)
+                .withName(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME)
+                .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+                .endPort();
+
         return builder.build();
     }
 

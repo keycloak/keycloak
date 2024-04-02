@@ -60,6 +60,8 @@ public final class Constants {
     public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
     public static final String KEYCLOAK_DISCOVERY_TCP_PORT_NAME = "tcp";
     public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
+    public static final Integer KEYCLOAK_MANAGEMENT_PORT = 9000;
+    public static final String KEYCLOAK_MANAGEMENT_PORT_NAME = "management";
 
     public static final String KEYCLOAK_INGRESS_SUFFIX = "-ingress";
 

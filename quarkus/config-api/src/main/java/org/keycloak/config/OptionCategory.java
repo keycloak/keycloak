@@ -3,13 +3,14 @@ package org.keycloak.config;
 public enum OptionCategory {
     // ordered by name asc
     CACHE("Cache", 10, ConfigSupportLevel.SUPPORTED),
+    CONFIG("Config", 15, ConfigSupportLevel.SUPPORTED),
     DATABASE("Database", 20, ConfigSupportLevel.SUPPORTED),
     TRANSACTION("Transaction",30, ConfigSupportLevel.SUPPORTED),
     FEATURE("Feature", 40, ConfigSupportLevel.SUPPORTED),
     HOSTNAME("Hostname", 50, ConfigSupportLevel.SUPPORTED),
     HTTP("HTTP(S)", 60, ConfigSupportLevel.SUPPORTED),
     HEALTH("Health", 70, ConfigSupportLevel.SUPPORTED),
-    CONFIG("Config", 75, ConfigSupportLevel.SUPPORTED),
+    MANAGEMENT("Management", 75, ConfigSupportLevel.SUPPORTED),
     METRICS("Metrics", 80, ConfigSupportLevel.SUPPORTED),
     PROXY("Proxy", 90, ConfigSupportLevel.SUPPORTED),
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),

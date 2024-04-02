@@ -127,6 +127,16 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
     }
 
     @Override
+    public void setRequestPort() {
+        delegate.setRequestPort();
+    }
+
+    @Override
+    public void setRequestPort(int port) {
+        delegate.setRequestPort(port);
+    }
+
+    @Override
     public  <D extends KeycloakDistribution> D unwrap(Class<D> type) {
         if (!KeycloakDistribution.class.isAssignableFrom(type)) {
             throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");

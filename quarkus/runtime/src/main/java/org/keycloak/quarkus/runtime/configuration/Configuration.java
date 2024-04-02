@@ -52,6 +52,10 @@ public final class Configuration {
         return getOptionalBooleanValue(NS_KEYCLOAK_PREFIX + option.getKey()).orElse(false);
     }
 
+    public static boolean isTrue(String propertyName) {
+        return getOptionalBooleanValue(propertyName).orElse(false);
+    }
+
     public static boolean contains(Option<?> option, String value) {
         return getOptionalValue(NS_KEYCLOAK_PREFIX + option.getKey())
                 .filter(f -> f.contains(value))

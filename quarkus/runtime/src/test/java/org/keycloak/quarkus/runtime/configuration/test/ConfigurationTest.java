@@ -77,6 +77,10 @@ public class ConfigurationTest {
         }
     }
 
+    public static void putEnvVars(Map<String, String> map) {
+        map.forEach(ConfigurationTest::putEnvVar);
+    }
+
     @SuppressWarnings("unchecked")
     public static void removeEnvVar(String name) {
         Map<String, String> env = System.getenv();
@@ -573,7 +577,7 @@ public class ConfigurationTest {
         assertEquals("secret", secret.getValue());
     }
 
-    private Config.Scope initConfig(String... scope) {
+    protected Config.Scope initConfig(String... scope) {
         Config.init(new MicroProfileConfigProvider(createConfig()));
         return Config.scope(scope);
     }
