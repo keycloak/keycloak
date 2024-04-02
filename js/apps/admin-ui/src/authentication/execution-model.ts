@@ -98,17 +98,15 @@ export class ExecutionList {
     return found;
   }
 
-  #getParentNodes(level?: number) {
-    for (let index = 0; index < this.#list.length; index++) {
-      const ex = this.#list[index];
-      if (
-        index + 1 < this.#list.length &&
-        this.#list[index + 1].level! > ex.level! &&
-        ex.level! + 1 === level
-      ) {
-        return ex;
+  #getParentNodes(level: number, index: number) {
+    let parent = undefined;
+    for (let i = 0; i < index; i++) {
+      const ex = this.#list[i];
+      if (level - 1 === ex.level) {
+        parent = ex;
       }
     }
+    return parent;
   }
 
   getChange(
@@ -117,13 +115,14 @@ export class ExecutionList {
   ) {
     const currentOrder = this.order();
     const newLocIndex = order.findIndex((id) => id === changed.id);
-    const oldLocation =
-      currentOrder[currentOrder.findIndex((ex) => ex.id === changed.id)];
+    const oldLocIndex = currentOrder.findIndex((ex) => ex.id === changed.id);
+    const oldLocation = currentOrder[oldLocIndex];
     const newLocation = currentOrder[newLocIndex];
 
-    if (newLocation.level !== oldLocation.level) {
+    const currentParent = this.#getParentNodes(oldLocation.level!, oldLocIndex);
+    const parent = this.#getParentNodes(newLocation.level!, newLocIndex);
+    if (currentParent?.id !== parent?.id) {
       if (newLocation.level! > 0) {
-        const parent = this.#getParentNodes(newLocation.level);
         return new LevelChange(
           parent?.executionList?.length || 0,
           newLocation.index!,
