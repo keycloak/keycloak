@@ -991,7 +991,7 @@ public class TokenManager {
             token.setAcr(acr);
         }
 
-        token.setSessionState(session.getId());
+        token.setSessionId(session.getId());
         ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
         boolean offlineTokenRequested = offlineAccessScope == null ? false
             : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
@@ -1189,7 +1189,7 @@ public class TokenManager {
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
             idToken.setNonce(clientSessionCtx.getAttribute(OIDCLoginProtocol.NONCE_PARAM, String.class));
-            idToken.setSessionState(accessToken.getSessionState());
+            idToken.setSessionId(accessToken.getSessionId());
             idToken.expiration(accessToken.getExpiration());
 
             // Protocol mapper is supposed to set this in case "step_up_authentication" feature enabled

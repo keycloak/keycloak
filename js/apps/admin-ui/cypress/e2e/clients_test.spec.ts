@@ -302,7 +302,7 @@ describe("Clients test", () => {
 
       clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
       cy.get("div#generatedIdToken").contains('"preferred_username": "admin"');
-      cy.get("div#generatedIdToken").contains('"session_state"');
+      cy.get("div#generatedIdToken").contains('"sid"');
     });
   });
 
