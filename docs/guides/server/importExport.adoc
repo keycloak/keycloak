@@ -45,13 +45,13 @@ When exporting realms to a directory, the server is going to create separate fil
 You are also able to configure how users are going to be exported by setting the `--users <strategy>` option. The values available for this
 option are:
 
-* *different_files*: Users export into different json files, depending on the maximum number of users per file set by `--users-per-file`. This is the default value.
+`different_files`:: Users export into different json files, depending on the maximum number of users per file set by `--users-per-file`. This is the default value.
 
-* *skip*: Skips exporting users.
+`skip`:: Skips exporting users.
 
-* *realm_file*:  Users will be exported to the same file as the realm settings. For a realm named "foo", this would be "foo-realm.json" with realm data and users.
+`realm_file`::  Users will be exported to the same file as the realm settings. For a realm named "foo", this would be "foo-realm.json" with realm data and users.
 
-* *same_file*:  All users are exported to one explicit file. So you will get two json files for a realm, one with realm data and one with users.
+`same_file`::  All users are exported to one explicit file. So you will get two json files for a realm, one with realm data and one with users.
 
 If you are exporting users using the `different_files` strategy, you can set how many users per file you want by setting the `--users-per-file` option. The default value is `50`.
 
@@ -138,6 +138,7 @@ NOTE: When using the Admin Console export, the realm and the selected resources 
 named `realm-export.json`. Also, all sensitive values like passwords and client secrets will be masked with `+*+` symbols.
 
 To export a realm using the Admin Console, perform these steps:
+
 . Select a realm.
 . Click *Realm settings* in the menu.
 . Point to the *Action* menu in the top right corner of the realm settings screen, and select  *Partial export*.
@@ -153,16 +154,18 @@ WARNING: If the realm contains many groups, roles, and clients, the operation ma
 unresponsive to user requests for a while. Use this feature with caution, especially on a production system.
 
 In a similar way, you can import a previously exported realm. Perform these steps:
+
 . Click *Realm settings* in the menu.
 . Point to the *Action* menu in the top right corner of the realm settings screen, and select  *Partial import*.
 + 
 A prompt appears where you can select the file you want to import. Based on  this file, you see the resources you can import along with the realm settings.
 . Click *Import*.
 
-You can also control what {project_name} should do if the imported resource already exists. These options exist
-* `Fail import` - aborts the import.
-* `Skip` - skips the duplicate resources without aborting the process
-* `Overwrite` - replaces the existing resources with the ones being imported.
+You can also control what {project_name} should do if the imported resource already exists. These options exist:
+
+Fail import:: Abort the import.
+Skip:: Skip the duplicate resources without aborting the process
+Overwrite:: Replace the existing resources with the ones being imported.
 
 NOTE: The Admin Console partial import can also import files created by the CLI `export` command. In other words, full exports created
 by the CLI can be imported  by using the Admin Console. If the file contains users, those users will also be available for importing into the
