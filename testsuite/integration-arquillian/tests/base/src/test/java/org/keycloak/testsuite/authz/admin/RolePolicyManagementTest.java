@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 
 /**
@@ -176,6 +177,30 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
             } catch (NotFoundException ignore) {
 
             }
+        }
+    }
+
+    @Test
+    public void testDeleteRole() {
+        RoleRepresentation role = RoleBuilder.create().name(KeycloakModelUtils.generateId()).build();
+        getRealm().roles().create(role);
+        AuthorizationResource authorization = getClient().authorization();
+        RolePolicyRepresentation representation = new RolePolicyRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.addRole(role.getName(), false);
+
+        RolePoliciesResource policies = authorization.policies().role();
+
+        try (Response response = policies.create(representation)) {
+            RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
+            RolePolicyResource rolePolicy = policies.findById(created.getId());
+            RolePolicyRepresentation rolePolicyRep = rolePolicy.toRepresentation();
+            assertEquals(1, rolePolicyRep.getRoles().size());
+
+            getRealm().roles().deleteRole(role.getName());
+            rolePolicyRep = rolePolicy.toRepresentation();
+            assertTrue(rolePolicyRep.getRoles().isEmpty());
         }
     }
 
