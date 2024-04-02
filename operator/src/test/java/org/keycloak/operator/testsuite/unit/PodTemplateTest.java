@@ -399,13 +399,13 @@ public class PodTemplateTest {
 
         // Act
         var podTemplate = getDeployment(additionalPodTemplate, null,
-                s -> s.addToAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS, "/something")))
+                s -> s.addToAdditionalOptions(new ValueOrSecret("truststore-paths", "/something")))
                 .getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream()
+        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
                 .anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)
-                        && envVar.getValue().equals("/something")));
+                        && envVar.getValue().equals("/something"));
     }
 
     @Test
@@ -419,7 +419,7 @@ public class PodTemplateTest {
                 .getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getCommand().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG));
+        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
     }
 
     @Test
