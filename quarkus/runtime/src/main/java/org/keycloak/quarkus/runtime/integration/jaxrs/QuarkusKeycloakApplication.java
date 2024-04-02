@@ -37,7 +37,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     void onStartupEvent(@Observes StartupEvent event) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
         platform.started();
-        QuarkusPlatform.exitOnError();
         startup();
     }
 
