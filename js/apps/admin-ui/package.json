@@ -66,7 +66,7 @@
     "@patternfly/react-code-editor": "^4.82.121",
     "@patternfly/react-core": "^4.278.0",
     "@patternfly/react-icons": "^4.93.7",
-    "@patternfly/react-styles": "^4.92.8",
+    "@patternfly/react-styles": "^5.2.1",
     "@patternfly/react-table": "^4.113.6",
     "admin-ui": "file:",
     "dagre": "^0.8.5",
