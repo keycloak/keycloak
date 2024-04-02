@@ -36,60 +36,23 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-                <excludes>
-                    <exclude>**/node_modules/**/node_modules/**</exclude>
-                    <exclude>**/minimist/**</exclude>
-                    <exclude>**/mkdirp/**</exclude>
-                    <exclude>**/package.json</exclude>
-                    <exclude>**/package-lock.json</exclude>
-                    <exclude>**/pnpm-lock.yaml</exclude>
-                    <exclude>**/pnpm-workspace.yaml</exclude>
-                    <exclude>**/component.json</exclude>
-                    <exclude>**/composer.json</exclude>
-                    <exclude>**/npm-shrinkwrap.json</exclude>
-                    <exclude>**/select2.jquery.json</exclude>
-                    <exclude>**/*.markdown</exclude>
-                    <exclude>**/*.swf</exclude>
-                    <exclude>**/*.sh</exclude>
-                    <exclude>**/.bin/**</exclude>
-                    <exclude>**/bin/**</exclude>
-                    <exclude>**/build/**</exclude>
-                    <exclude>**/docs/**</exclude>
-                    <exclude>**/demo/**</exclude>
-                    <exclude>**/devtools/**</exclude>
-                    <exclude>**/example/**</exclude>
-                    <exclude>**/examples/**</exclude>
-                    <exclude>**/grunt/**</exclude>
-                    <exclude>**/less/**</exclude>
-                    <exclude>**/sass/**</exclude>
-                    <exclude>**/scss/**</exclude>
-                    <exclude>**/jquery/src/**</exclude>
-                    <exclude>**/angular-treeview/src/**</exclude>
-                    <exclude>**/test/**</exclude>
-                    <exclude>**/tests/**</exclude>
-                    <exclude>**/_config.yml</exclude>
-                    <exclude>**/api.md</exclude>
-                    <exclude>**/AUTHORS.txt</exclude>
-                    <exclude>**/CHANGELOG.md</exclude>
-                    <exclude>**/CONTRIBUTING.md</exclude>
-                    <exclude>**/HELP-US-OUT.txt</exclude>
-                    <exclude>**/README.md</exclude>
-                    <exclude>**/Gruntfile.js</exclude>
-                    <exclude>**/Gemfile*</exclude>
-                    <exclude>**/.*</exclude>
-                </excludes>
             </resource>
         </resources>
+
         <plugins>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>**/node_modules/**/*</exclude>
-                        <exclude>**/web_modules/**/*</exclude>
-                        <exclude>**/*.js.map</exclude>
-                        <exclude>**/account/resources/*.js</exclude>
+                        <exclude>**/node_modules/**</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <configuration>
+                    <workingDirectory>src/main/resources/theme/keycloak/common/resources</workingDirectory>
                 </configuration>
             </plugin>
         </plugins>
@@ -109,61 +72,6 @@
                         <directory>src/main/resources-community</directory>
                     </resource>
                 </resources>
-            </build>
-        </profile>
-
-        <profile>
-            <id>common</id>
-            <activation>
-                <property>
-                    <name>!skipCommon</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>${dir.common}/web_modules</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>install-node-and-pnpm-common</id>
-                                <goals>
-                                    <goal>install-node-and-pnpm</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>pnpm-install-common</id>
-                                <goals>
-                                    <goal>pnpm</goal>
-                                </goals>
-                                <configuration>
-                                    <arguments>${pnpm.args.install}</arguments>
-                                    <workingDirectory>${dir.common}</workingDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>pnpm-build-common</id>
-                                <goals>
-                                    <goal>pnpm</goal>
-                                </goals>
-                                <configuration>
-                                    <arguments>run build</arguments>
-                                    <workingDirectory>${dir.common}</workingDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
     </profiles>

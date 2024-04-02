@@ -1,0 +1,4 @@
+packages:
+  - js/apps/*
+  - js/libs/*
+  - themes/src/main/resources/theme/keycloak/common/resources
