@@ -504,8 +504,8 @@ importers:
         specifier: ^4.278.1
         version: 4.278.1(react-dom@18.2.0)(react@18.2.0)
       alpinejs:
-        specifier: ^3.13.7
-        version: 3.13.7
+        specifier: ^3.13.8
+        version: 3.13.8
       jquery:
         specifier: ^3.7.1
         version: 3.7.1
@@ -3176,8 +3176,8 @@ packages:
       uri-js: 4.4.1
     dev: true
 
-  /alpinejs@3.13.7:
-    resolution: {integrity: sha512-rcTyjTANbsePq1hb7eSekt3qjI94HLGeO6JaRjCssCVbIIc+qBrc7pO5S/+2JB6oojIibjM6FA+xRI3zhGPZIg==}
+  /alpinejs@3.13.8:
+    resolution: {integrity: sha512-XolbBJryCndomtaHd/KHQjQeD/L72FJxy/YhLLFD4Lr7zzGcpcbg+UgXteMR2pYg1KhRUr6V4O3GfN1zJAmRWw==}
     dependencies:
       '@vue/reactivity': 3.1.5
     dev: false
