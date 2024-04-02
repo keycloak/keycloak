@@ -15,7 +15,7 @@
                     </div>
 
                     <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
-                        <input tabindex="4"
+                        <button tabindex="4"
                                class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                                name="confirmLogout" id="kc-logout" type="submit" value="${msg("doLogout")}"/>
                     </div>
