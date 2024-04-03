@@ -167,5 +167,5 @@ public final class Constants {
     public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
 
     // Sent to clients when authentication session expired, but user is already logged-in in current browser
-    public static final String AUTHENTICATION_EXPIRED_MESSAGE = "Authentication expired. Please try again.";
+    public static final String AUTHENTICATION_EXPIRED_MESSAGE = "authentication_expired";
 }

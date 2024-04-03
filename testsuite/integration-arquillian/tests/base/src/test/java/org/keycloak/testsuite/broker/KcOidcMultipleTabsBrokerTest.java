@@ -127,7 +127,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             appPage.assertCurrent();
             events.clear();
 
-            // Login in provider realm will redirect back to consumer with "authentication expired" error.
+            // Login in provider realm will redirect back to consumer with "authentication_expired" error.
             // The consumer has also expired authentication session, so that one will redirect straight to client due the "clientData" in IdentityBrokerState
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
@@ -197,7 +197,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             appPage.assertCurrent();
             events.clear();
 
-            // Login in provider realm will redirect back to consumer with "authentication expired" error. That one will handle the "authentication expired" error and redirect back to "provider"
+            // Login in provider realm will redirect back to consumer with "authentication_expired" error. That one will handle the "authentication_expired" error and redirect back to "provider"
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
             loginPage.login(bc.getUserLogin(), bc.getUserPassword());

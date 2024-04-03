@@ -85,7 +85,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             appPage.assertCurrent();
             events.clear();
 
-            // Login in provider realm will redirect back to consumer with "authentication expired" error. That one cannot redirect due the "clientData" missing in IdentityBrokerState for SAML brokers.
+            // Login in provider realm will redirect back to consumer with "authentication_expired" error. That one cannot redirect due the "clientData" missing in IdentityBrokerState for SAML brokers.
             // Hence need to display "You are already logged in" here
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
@@ -151,7 +151,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             appPage.assertCurrent();
             events.clear();
 
-            // Login in provider realm will redirect back to consumer with "authentication expired" error. That one will redirect back to IDP (provider) as authenticationSession still exists on "consumer"
+            // Login in provider realm will redirect back to consumer with "authentication_expired" error. That one will redirect back to IDP (provider) as authenticationSession still exists on "consumer"
             // Then automatic SSO login on provider and then being redirected right away to consumer and finally to client
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));

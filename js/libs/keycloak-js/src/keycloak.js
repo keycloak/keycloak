@@ -753,7 +753,7 @@ function Keycloak (config) {
 
         if (error) {
             if (prompt != 'none') {
-                if (oauth.error_description && oauth.error_description === "Authentication+expired.+Please+try+again.") {
+                if (oauth.error_description && oauth.error_description === "authentication_expired") {
                     kc.login(oauth.loginOptions);
                 } else {
                     var errorData = { error: error, error_description: oauth.error_description };
