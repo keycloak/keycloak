@@ -34,9 +34,12 @@ import jakarta.persistence.Table;
 public class OrganizationEntity {
 
     @Id
-    @Column(name="ID", length = 36)
+    @Column(name = "ID", length = 36)
     @Access(AccessType.PROPERTY)
-    protected String id;
+    private String id;
+
+    @Column(name = "NAME")
+    private String name;
 
     @Column(name = "REALM_ID")
     private String realmId;
@@ -44,8 +47,8 @@ public class OrganizationEntity {
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @Column(name="NAME")
-    protected String name;
+    @Column(name = "IPD_ALIAS")
+    private String idpAlias;
 
     public String getId() {
         return id;
@@ -53,6 +56,10 @@ public class OrganizationEntity {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getRealmId() {
@@ -75,8 +82,12 @@ public class OrganizationEntity {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getIdpAlias() {
+        return idpAlias;
+    }
+
+    public void setIdpAlias(String idpAlias) {
+        this.idpAlias = idpAlias;
     }
 
     @Override

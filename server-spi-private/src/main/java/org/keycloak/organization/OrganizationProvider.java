@@ -17,7 +17,7 @@
 package org.keycloak.organization;
 
 import java.util.stream.Stream;
-
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
@@ -29,7 +29,7 @@ import org.keycloak.provider.Provider;
 public interface OrganizationProvider extends Provider {
 
     /**
-     * Creates a new organization with given {@code name} to the given realm.
+     * Creates a new organization with given {@code name} to the realm.
      * The internal ID of the organization will be created automatically.
      * @param name String name of the organization.
      * @throws ModelDuplicateException If there is already an organization with the given name
@@ -41,60 +41,85 @@ public interface OrganizationProvider extends Provider {
      * Returns a {@link OrganizationModel} by its {@code id};
      *
      * @param id the id of an organization
-     * @return the organization with the given {@code id}
+     * @return the organization with the given {@code id} or {@code null} if there is no such an organization.
      */
     OrganizationModel getById(String id);
 
     /**
-     * Removes the given organization from the given realm.
+     * Removes the given organization from the realm together with the data associated with it, e.g. its members etc.
      *
      * @param organization Organization to be removed.
-     * @return true if the organization was removed, false if group doesn't exist or doesn't belong to the given realm
+     * @throws ModelException if the organization doesn't exist or doesn't belong to the realm.
+     * @return {@code true} if the organization was removed, {@code false} otherwise
      */
     boolean remove(OrganizationModel organization);
 
     /**
-     * Removes all organizations from the given realm.
+     * Removes all organizations from the realm.
      */
     void removeAll();
 
     /**
-     * Adds the give {@link UserModel} as a member of the given {@link OrganizationModel}.
+     * Adds the given {@link UserModel} as a member of the given {@link OrganizationModel}.
      *
      * @param organization the organization
      * @param user the user
+     * @throws ModelException if the {@link UserModel} is member of different organization
      * @return {@code true} if the user was added as a member. Otherwise, returns {@code false}
      */
     boolean addMember(OrganizationModel organization, UserModel user);
 
     /**
-     * Returns the organizations of the given realm as a stream.
+     * Returns the organizations of the realm as a stream.
      * @return Stream of the organizations. Never returns {@code null}.
      */
     Stream<OrganizationModel> getAllStream();
 
     /**
-     * Returns the members of a given {@code organization}.
+     * Returns the members of a given {@link OrganizationModel}.
      *
      * @param organization the organization
-     * @return the organization with the given {@code id}
+     * @return Stream of the members. Never returns {@code null}.
      */
     Stream<UserModel> getMembersStream(OrganizationModel organization);
 
     /**
-     * Returns the member of an {@code organization} by its {@code id}.
+     * Returns the member of the {@link OrganizationModel} by its {@code id}.
      *
      * @param organization the organization
      * @param id the member id
-     * @return the organization with the given {@code id}
+     * @return the member of the {@link OrganizationModel} with the given {@code id}
      */
     UserModel getMemberById(OrganizationModel organization, String id);
 
     /**
-     * Returns the {@link OrganizationModel} that a {@code member} belongs to.
+     * Returns the {@link OrganizationModel} that the {@code member} belongs to.
      *
      * @param member the member of a organization
-     * @return the organization the {@code member} belongs to
+     * @return the organization the {@code member} belongs to or {@code null} if the user doesn't belong to any.
      */
     OrganizationModel getByMember(UserModel member);
+
+    /**
+     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
+     * 
+     * @param organization the organization
+     * @param identityProvider the identityProvider
+     * @return {@code true} if the identityProvider was associated with the organization. Otherwise, returns {@code false}
+     */
+    boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
+
+    /**
+     * @param organization the organization
+     * @return The identityProvider associated with a given {@code organization} or {@code null} if there is none.
+     */
+    IdentityProviderModel getIdentityProvider(OrganizationModel organization);
+
+    /**
+     * Removes the link between the given {@link OrganizationModel} and identity provider associated with it if such a link exists.
+     * 
+     * @param organization the organization
+     * @return {@code true} if the link was removed, {@code false} otherwise
+     */
+    boolean removeIdentityProvider(OrganizationModel organization);
 }
