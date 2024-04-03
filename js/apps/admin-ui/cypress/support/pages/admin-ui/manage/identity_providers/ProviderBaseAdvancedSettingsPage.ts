@@ -485,7 +485,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
     this.selectFirstLoginFlowOption(LoginFlowOption.browser);
     this.selectPostLoginFlowOption(LoginFlowOption.directGrant);
-    this.selectSyncModeOption(SyncModeOption.legacy);
+    this.selectSyncModeOption(SyncModeOption.import);
 
     this.clickRevertBtn();
     cy.get(this.#advancedSettingsToggle).scrollIntoView().click();
@@ -498,7 +498,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
     this.assertFirstLoginFlowSelectOptionEqual(LoginFlowOption.empty);
     this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
-    this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
+    this.assertSyncModeSelectOptionEqual(SyncModeOption.legacy);
     this.assertClientAssertSigAlgSelectOptionEqual(
       ClientAssertionSigningAlg.algorithmNotSpecified,
     );

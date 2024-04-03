@@ -11,16 +11,16 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem, SelectControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 const LoginFlow = ({
   field,
@@ -90,7 +90,7 @@ const LoginFlow = ({
   );
 };
 
-const syncModes = ["import", "legacy", "force"];
+const SYNC_MODES = ["IMPORT", "LEGACY", "FORCE"];
 type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
 export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
@@ -101,7 +101,6 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
     setValue,
     formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
-  const [syncModeOpen, setSyncModeOpen] = useState(false);
   const filteredByClaim = useWatch({
     control,
     name: "config.filteredByClaim",
@@ -268,46 +267,19 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         </FormGroupField>
       )}
       {syncModeAvailable && (
-        <FormGroup
-          className="pf-u-pb-3xl"
+        <SelectControl
+          name="config.syncMode"
           label={t("syncMode")}
-          labelIcon={
-            <HelpItem helpText={t("syncModeHelp")} fieldLabelId="syncMode" />
-          }
-          fieldId="syncMode"
-        >
-          <Controller
-            name="config.syncMode"
-            defaultValue={syncModes[0].toUpperCase()}
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="syncMode"
-                required
-                direction="up"
-                onToggle={() => setSyncModeOpen(!syncModeOpen)}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setSyncModeOpen(false);
-                }}
-                selections={t(`syncModes.${field.value.toLowerCase()}`)}
-                variant={SelectVariant.single}
-                aria-label={t("syncMode")}
-                isOpen={syncModeOpen}
-              >
-                {syncModes.map((option) => (
-                  <SelectOption
-                    selected={option === field.value}
-                    key={option}
-                    value={option.toUpperCase()}
-                  >
-                    {t(`syncModes.${option}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("syncModeHelp")}
+          options={SYNC_MODES.map((syncMode) => ({
+            key: syncMode,
+            value: t(`syncModes.${syncMode.toLocaleLowerCase()}`),
+          }))}
+          controller={{
+            defaultValue: SYNC_MODES[0],
+            rules: { required: t("required") },
+          }}
+        />
       )}
     </>
   );
