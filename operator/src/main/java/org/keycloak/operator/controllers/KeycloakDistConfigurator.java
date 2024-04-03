@@ -32,7 +32,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
@@ -140,9 +140,8 @@ public class KeycloakDistConfigurator {
     }
 
     void configureManagement() {
-        optionMapper(keycloakCR -> keycloakCR.getSpec().getManagementSpec())
-                .mapOption("http-management-relative-path", ManagementSpec::getRelativePath)
-                .mapOption("http-management-port", ManagementSpec::getPort);
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getHttpManagementSpec())
+                .mapOption("http-management-port", HttpManagementSpec::getPort);
     }
 
     /* ---------- END of configuration of first-class citizen fields ---------- */

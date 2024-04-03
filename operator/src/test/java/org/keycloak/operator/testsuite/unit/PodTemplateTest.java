@@ -342,7 +342,7 @@ public class PodTemplateTest {
     @Test
     public void testRelativePathHealthProbes() {
         final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
-                spec -> spec.withNewManagementSpec().withRelativePath(path).endManagementSpec())
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-relative-path", path)))
                 .getSpec()
                 .getTemplate()
                 .getSpec()

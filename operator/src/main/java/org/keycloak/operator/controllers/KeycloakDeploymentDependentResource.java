@@ -44,7 +44,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -285,9 +285,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // probes
         var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
-        var managementSpec = Optional.ofNullable(keycloakCR.getSpec()).map(KeycloakSpec::getManagementSpec);
-        var port = managementSpec.map(ManagementSpec::getPort).orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
-        var relativePath = managementSpec.map(ManagementSpec::getRelativePath)
+        var port = Optional.ofNullable(keycloakCR.getSpec())
+                .map(KeycloakSpec::getHttpManagementSpec)
+                .map(HttpManagementSpec::getPort)
+                .orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
+        var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
                 .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context))
                 .map(path -> !path.endsWith("/") ? path + "/" : path)
                 .orElse("/");

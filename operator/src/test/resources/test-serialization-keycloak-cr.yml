@@ -69,8 +69,7 @@ spec:
     x:
       secret:
         name: my-secret
-  management:
-    relativePath: /management
+  httpManagement:
     port: 9003
   unsupported:
     podTemplate:

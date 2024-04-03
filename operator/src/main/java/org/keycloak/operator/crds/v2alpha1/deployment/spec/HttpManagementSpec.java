@@ -23,21 +23,10 @@ import org.keycloak.operator.Constants;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
-public class ManagementSpec {
-
-    @JsonPropertyDescription("A common root path for management endpoints.")
-    private String relativePath = "/";
+public class HttpManagementSpec {
 
     @JsonPropertyDescription("Port of the management interface.")
     private Integer port = Constants.KEYCLOAK_MANAGEMENT_PORT;
-
-    public String getRelativePath() {
-        return relativePath;
-    }
-
-    public void setRelativePath(String relativePath) {
-        this.relativePath = relativePath;
-    }
 
     public Integer getPort() {
         return port;

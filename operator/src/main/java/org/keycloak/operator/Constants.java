@@ -74,4 +74,5 @@ public final class Constants {
     public static final String CACHE_CONFIG_FOLDER = CONFIG_FOLDER + "/" + CACHE_CONFIG_SUBFOLDER;
 
     public static final String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
+    public static final String KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY = "http-management-relative-path";
 }

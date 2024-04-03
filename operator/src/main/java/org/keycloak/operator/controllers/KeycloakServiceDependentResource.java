@@ -31,7 +31,7 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 
 import java.util.Optional;
 
@@ -73,8 +73,8 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
         }
 
         var managementPort = Optional.ofNullable(keycloak.getSpec())
-                .map(KeycloakSpec::getManagementSpec)
-                .map(ManagementSpec::getPort)
+                .map(KeycloakSpec::getHttpManagementSpec)
+                .map(HttpManagementSpec::getPort)
                 .orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
 
         builder.addNewPort()
