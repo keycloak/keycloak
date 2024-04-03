@@ -109,48 +109,46 @@ export const AddTranslationsDialog = ({
     );
   }, [combinedLocales, filter, whoAmI]);
 
-  useEffect(() => {
-    const fetchLocalizationTexts = async () => {
-      try {
-        const selectedLocales = combinedLocales.map((locale) => locale);
+  useFetch(
+    async () => {
+      const selectedLocales = combinedLocales.map((locale) => locale);
 
-        const results = await Promise.all(
-          selectedLocales.map((selectedLocale) =>
-            adminClient.realms.getRealmLocalizationTexts({
-              realm: realmName,
-              selectedLocale,
-            }),
-          ),
-        );
+      const results = await Promise.all(
+        selectedLocales.map((selectedLocale) =>
+          adminClient.realms.getRealmLocalizationTexts({
+            realm: realmName,
+            selectedLocale,
+          }),
+        ),
+      );
 
-        const translations = results.map((result, index) => {
-          const locale = selectedLocales[index];
-          const value = result[translationKey];
-          return {
-            key: translationKey,
-            translations: [{ locale, value }],
-          };
-        });
+      const translations = results.map((result, index) => {
+        const locale = selectedLocales[index];
+        const value = result[translationKey];
+        return {
+          key: translationKey,
+          translations: [{ locale, value }],
+        };
+      });
 
-        const defaultValuesMap = translations.reduce((acc, translation) => {
-          const locale = translation.translations[0].locale;
-          const value = translation.translations[0].value;
-          return { ...acc, [locale]: value };
-        }, {});
+      const defaultValuesMap = translations.reduce((acc, translation) => {
+        const locale = translation.translations[0].locale;
+        const value = translation.translations[0].value;
+        return { ...acc, [locale]: value };
+      }, {});
 
-        setDefaultTranslations((prevTranslations) => {
-          if (prevTranslations !== defaultValuesMap) {
-            return defaultValuesMap;
-          }
-          return prevTranslations;
-        });
-      } catch (error) {
-        console.error("Error fetching localization texts:", error);
-      }
-    };
-
-    fetchLocalizationTexts();
-  }, [combinedLocales, translationKey, realmName]);
+      return defaultValuesMap;
+    },
+    (fetchedData) => {
+      setDefaultTranslations((prevTranslations) => {
+        if (prevTranslations !== fetchedData) {
+          return fetchedData;
+        }
+        return prevTranslations;
+      });
+    },
+    [combinedLocales, translationKey, realmName],
+  );
 
   useEffect(() => {
     combinedLocales.forEach((locale, rowIndex) => {
