@@ -16,7 +16,7 @@
                                 <span class="pf-v5-c-form__label-text">
                                     ${msg("password")}
                                     <span class="pf-v5-c-form__label-required" aria-hidden="true">&#42;</span>
-                                <span>
+                                </span>
                             </label>
                             <span class="${properties.kcInputGroup!}">
                                 <span class="${properties.kcInputClass!}">
