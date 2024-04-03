@@ -19,7 +19,6 @@ package org.keycloak.organization.admin.resource;
 
 import java.util.stream.Stream;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -39,11 +38,11 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.UserResource;
 import org.keycloak.services.resources.admin.UsersResource;
@@ -82,26 +81,26 @@ public class OrganizationMemberResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addMember(UserRepresentation rep) {
         if (rep == null || !Objects.equals(rep.getUsername(), rep.getEmail())) {
-            throw new BadRequestException("To add a member to the organization it is expected the username and the email is the same.");
+            throw ErrorResponse.error("To add a member to the organization it is expected the username and the email is the same.", Status.BAD_REQUEST);
         }
 
         UsersResource usersResource = new UsersResource(session, auth, adminEvent);
         Response response = usersResource.createUser(rep);
 
         if (Status.CREATED.getStatusCode() == response.getStatus()) {
-            RealmModel realm = session.getContext().getRealm();
+            
             UserModel member = session.users().getUserByUsername(realm, rep.getEmail());
-            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
+            String errorMessage;
             try {
                 if (provider.addMember(organization, member)) {
-                    return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(member.getId()).build()).build();
+                    return response;
                 }
+                errorMessage = "Assigning the User as member of the organization was not succesful.";
             } catch (ModelException me) {
-                throw new BadRequestException(me.getMessage());
+                errorMessage = me.getMessage();
             }
-
-            throw new BadRequestException();
+            throw ErrorResponse.error(errorMessage, Status.BAD_REQUEST);
         }
 
         return response;
@@ -118,7 +117,7 @@ public class OrganizationMemberResource {
     @Produces(MediaType.APPLICATION_JSON)
     public UserRepresentation get(@PathParam("id") String id) {
         if (StringUtil.isBlank(id)) {
-            throw new BadRequestException();
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         return toRepresentation(getMember(id));
@@ -128,7 +127,7 @@ public class OrganizationMemberResource {
     @DELETE
     public Response delete(@PathParam("id") String id) {
         if (StringUtil.isBlank(id)) {
-            throw new BadRequestException();
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         UserModel member = getMember(id);
@@ -148,7 +147,7 @@ public class OrganizationMemberResource {
     @Produces(MediaType.APPLICATION_JSON)
     public OrganizationRepresentation getOrganization(@PathParam("id") String id) {
         if (StringUtil.isBlank(id)) {
-            throw new BadRequestException();
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         UserModel member = getMember(id);
