@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @RawDistOnly(reason = "Containers are immutable")
 public class HostnameV2DistTest {
     @Test
-    @Launch({"start"})
+    @Launch({"start", "--http-enabled=true"})
     public void testServerFailsToStartWithoutHostnameSpecified(LaunchResult result) {
         assertThat(result.getErrorOutput(), containsString("ERROR: hostname is not configured; either configure hostname, or set hostname-strict to false"));
     }
