@@ -147,7 +147,6 @@ public class KeycloakDistConfiguratorTest {
     @Test
     public void management() {
         final Map<String, String> expectedValues = new HashMap<>(Map.of(
-                "http-management-relative-path", "/management",
                 "http-management-port", "9003"
         ));
 
