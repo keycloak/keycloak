@@ -241,9 +241,9 @@ Management:
                        the value is inherited from HTTP options. Default: password. Available only
                        when Management interface is enabled.
 --legacy-observability-interface <true|false>
-                     If metrics/health endpoints should be exposed on the main HTTP server (not
-                       recommended). If set to true, the management interface is disabled. Default:
-                       false.
+                     DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
+                       server (not recommended). If set to true, the management interface is
+                       disabled. Default: false.
 
 Metrics:
 

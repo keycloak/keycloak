@@ -26,6 +26,7 @@ public class ManagementOptions {
 
     public static final Option<Boolean> LEGACY_OBSERVABILITY_INTERFACE = new OptionBuilder<>("legacy-observability-interface", Boolean.class)
             .category(OptionCategory.MANAGEMENT)
+            .deprecated()
             .description("If metrics/health endpoints should be exposed on the main HTTP server (not recommended). If set to true, the management interface is disabled.")
             .defaultValue(Boolean.FALSE)
             .buildTime(true)
