@@ -35,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
@@ -93,6 +94,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private InfinispanKeyGenerator keyGenerator;
+    SerializeExecutionsByKey<String> serializerSession = new SerializeExecutionsByKey<>();
+    SerializeExecutionsByKey<String> serializerOfflineSession = new SerializeExecutionsByKey<>();
+    SerializeExecutionsByKey<UUID> serializerClientSession = new SerializeExecutionsByKey<>();
+    SerializeExecutionsByKey<UUID> serializerOfflineClientSession = new SerializeExecutionsByKey<>();
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -115,7 +120,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     clientSessionCache,
                     offlineClientSessionsCache,
                     this::deriveOfflineSessionCacheEntryLifespanMs,
-                    this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
+                    this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs,
+                    serializerSession,
+                    serializerOfflineSession,
+                    serializerClientSession,
+                    serializerOfflineClientSession
             );
         }
         return new InfinispanUserSessionProvider(
@@ -130,7 +139,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 clientSessionCache,
                 offlineClientSessionsCache,
                 this::deriveOfflineSessionCacheEntryLifespanMs,
-                this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
+                this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs,
+                serializerSession,
+                serializerOfflineSession,
+                serializerClientSession,
+                serializerOfflineClientSession
         );
     }
 
