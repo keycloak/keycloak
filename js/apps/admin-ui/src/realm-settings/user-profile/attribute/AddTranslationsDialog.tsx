@@ -58,6 +58,9 @@ export const AddTranslationsDialog = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
+  const [defaultTranslations, setDefaultTranslations] = useState<{
+    [key: string]: string;
+  }>({});
 
   const form = useForm<{
     key: string;
@@ -106,15 +109,65 @@ export const AddTranslationsDialog = ({
     );
   }, [combinedLocales, filter, whoAmI]);
 
+  const formattedTranslationKey =
+    translationKey.startsWith("${") && translationKey.endsWith("}")
+      ? translationKey.substring(2, translationKey.length - 1)
+      : translationKey;
+
+  useEffect(() => {
+    const fetchLocalizationTexts = async () => {
+      try {
+        const selectedLocales = combinedLocales.map((locale) => locale);
+
+        const results = await Promise.all(
+          selectedLocales.map((selectedLocale) =>
+            adminClient.realms.getRealmLocalizationTexts({
+              realm: realmName,
+              selectedLocale,
+            }),
+          ),
+        );
+
+        const translations = results.map((result, index) => {
+          const locale = selectedLocales[index];
+          const value = result[formattedTranslationKey];
+          return {
+            key: formattedTranslationKey,
+            translations: [{ locale, value }],
+          };
+        });
+
+        const defaultValuesMap = translations.reduce((acc, translation) => {
+          const locale = translation.translations[0].locale;
+          const value = translation.translations[0].value;
+          return { ...acc, [locale]: value };
+        }, {});
+
+        setDefaultTranslations((prevTranslations) => {
+          if (prevTranslations !== defaultValuesMap) {
+            return defaultValuesMap;
+          }
+          return prevTranslations;
+        });
+      } catch (error) {
+        console.error("Error fetching localization texts:", error);
+      }
+    };
+
+    fetchLocalizationTexts();
+  }, [combinedLocales, formattedTranslationKey, realmName]);
+
   useEffect(() => {
     combinedLocales.forEach((locale, rowIndex) => {
-      setValue(`translations.${rowIndex}`, {
-        locale,
-        value: "",
-      });
-      setValue("key", translationKey);
+      setValue(`translations.${rowIndex}.locale`, locale);
+      setValue(
+        `translations.${rowIndex}.value`,
+        defaultTranslations[locale] || "",
+      );
     });
-  }, [combinedLocales, translationKey, setValue]);
+
+    setValue("key", formattedTranslationKey);
+  }, [combinedLocales, defaultTranslations, formattedTranslationKey, setValue]);
 
   const handleOk = () => {
     const formData = getValues();
