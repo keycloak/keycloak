@@ -158,6 +158,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         clientSessionUuids.forEach(clientSessionId -> this.clientSessionUpdateTx.addTask(clientSessionId, Tasks.removeSync()));
     }
 
+    @Override
     public String getId() {
         return entity.getId();
     }
@@ -177,6 +178,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         return entity.getBrokerUserId();
     }
 
+    @Override
     public UserModel getUser() {
         return this.user;
     }
@@ -192,6 +194,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         }
     }
 
+    @Override
     public String getIpAddress() {
         return entity.getIpAddress();
     }
@@ -206,15 +209,22 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         return entity.isRememberMe();
     }
 
+    @Override
     public int getStarted() {
         return entity.getStarted();
     }
 
+    @Override
     public int getLastSessionRefresh() {
         return entity.getLastSessionRefresh();
     }
 
+    @Override
     public void setLastSessionRefresh(int lastSessionRefresh) {
+        if (lastSessionRefresh <= entity.getLastSessionRefresh()) {
+            return;
+        }
+
         if (offline) {
             // Received the message from the other DC that we should update the lastSessionRefresh in local cluster. Don't update DB in that case.
             // The other DC already did.

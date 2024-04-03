@@ -136,6 +136,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setTimestamp(int timestamp) {
+        if (timestamp <= getTimestamp()) {
+            return;
+        }
+
         ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
