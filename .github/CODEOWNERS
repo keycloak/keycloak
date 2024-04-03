@@ -43,6 +43,7 @@
 /package.json                                               @keycloak/ui-maintainers
 /pnpm-lock.yaml                                             @keycloak/ui-maintainers
 /pnpm-workspace.yaml                                        @keycloak/ui-maintainers
+/themes/                                                    @keycloak/ui-maintainers @keycloak/maintainers
 /js/                                                        @keycloak/ui-maintainers
 /adapters/oidc/js/                                          @keycloak/ui-maintainers
 /rest/admin-ui-ext/                                         @keycloak/ui-maintainers
