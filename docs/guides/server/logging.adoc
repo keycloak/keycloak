@@ -148,8 +148,8 @@ To use unstructured logging, enter the following command:
 
 <@kc.start parameters="--log-console-output=default"/>
 
-.Example Log Message:
-[source, bash]
+.Example Log Message
+[source]
 ----
 2022-03-02 10:36:50,603 INFO  [io.quarkus] (main) Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.615s. Listening on: http://0.0.0.0:8080
 ----
