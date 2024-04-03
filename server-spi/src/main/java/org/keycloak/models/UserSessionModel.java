@@ -58,6 +58,10 @@ public interface UserSessionModel {
 
     int getLastSessionRefresh();
 
+    /**
+     * Set the last session refresh timestamp for the user session.
+     * If the timestamp is smaller or equal than the current timestamp, the operation is ignored.
+     */
     void setLastSessionRefresh(int seconds);
 
     boolean isOffline();

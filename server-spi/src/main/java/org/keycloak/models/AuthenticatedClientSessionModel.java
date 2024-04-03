@@ -49,6 +49,11 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     }
 
     int getTimestamp();
+
+    /**
+     * Set the timestamp for the client session.
+     * If the timestamp is smaller or equal than the current timestamp, the operation is ignored.
+     */
     void setTimestamp(int timestamp);
 
     /**
