@@ -60,6 +60,7 @@ import javax.net.ssl.X509TrustManager;
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.fs.util.ZipUtils;
 
+import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -91,20 +92,22 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private String relativePath;
     private int httpPort;
     private int httpsPort;
-    private boolean debug;
-    private boolean enableTls;
-    private boolean reCreate;
-    private boolean removeBuildOptionsAfterBuild;
+    private final boolean debug;
+    private final boolean enableTls;
+    private final boolean reCreate;
+    private final boolean removeBuildOptionsAfterBuild;
+    private final int requestPort;
     private ExecutorService outputExecutor;
     private boolean inited = false;
-    private Map<String, String> envVars = new HashMap<>();
+    private final Map<String, String> envVars = new HashMap<>();
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild) {
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.enableTls = enableTls;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
+        this.requestPort = requestPort;
         this.distPath = prepareDistribution();
     }
 
@@ -144,6 +147,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 envVars.clear();
             }
         }
+
+        setRequestPort();
 
         return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
     }
@@ -274,6 +279,16 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             threadDump();
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void setRequestPort() {
+        setRequestPort(requestPort);
+    }
+
+    @Override
+    public void setRequestPort(int port) {
+        RestAssured.port = port;
     }
 
     private void waitForReadiness() throws MalformedURLException {

@@ -33,7 +33,8 @@ public enum DistributionType {
         return new DockerKeycloakDistribution(
                 config.debug(),
                 config.keepAlive(),
-                !DistributionTest.ReInstall.NEVER.equals(config.reInstall()));
+                config.requestPort(),
+                config.containerExposedPorts());
     }
 
     private static KeycloakDistribution createRawDistribution(DistributionTest config) {
@@ -42,7 +43,8 @@ public enum DistributionType {
                 config.keepAlive(),
                 config.enableTls(),
                 !DistributionTest.ReInstall.NEVER.equals(config.reInstall()),
-                config.removeBuildOptionsAfterBuild());
+                config.removeBuildOptionsAfterBuild(),
+                config.requestPort());
     }
 
     private final Function<DistributionTest, KeycloakDistribution> factory;
@@ -63,6 +65,14 @@ public enum DistributionType {
         } catch (IllegalStateException cause) {
             throw new RuntimeException("Invalid distribution type: " + distributionType);
         }
+    }
+
+    public static boolean isContainerDist() {
+        return DistributionType.getCurrent().map(f -> f.equals(DistributionType.DOCKER)).orElse(false);
+    }
+
+    public static boolean isRawDist() {
+        return DistributionType.getCurrent().map(f -> f.equals(DistributionType.RAW)).orElse(false);
     }
 
     public KeycloakDistribution newInstance(DistributionTest config) {

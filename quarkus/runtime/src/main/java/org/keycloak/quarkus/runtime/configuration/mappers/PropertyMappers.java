@@ -52,6 +52,7 @@ public final class PropertyMappers {
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
         MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(ConfigKeystorePropertyMappers.getConfigKeystorePropertyMappers());
+        MAPPERS.addAll(ManagementPropertyMappers.getManagementPropertyMappers());
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
         MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());

@@ -693,6 +693,7 @@
                 <property name="bindHttpsPort">${auth.server.https.port}</property>
                 <property name="bindHttpPortOffset">2</property>
                 <property name="bindHttpsPortOffset">2</property>
+                <property name="managementPort">9001</property>
                 <property name="route">node2</property>
                 <property name="remoteMode">${quarkus.remote}</property>
                 <property name="profile">ha</property>

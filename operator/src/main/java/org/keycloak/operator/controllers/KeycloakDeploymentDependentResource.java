@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.PodResourceClaim;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -45,6 +44,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -284,12 +284,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         containerBuilder.addToArgs(0, getJGroupsParameter(keycloakCR));
 
         // probes
-        var tlsConfigured = isTlsConfigured(keycloakCR);
-        var protocol = !tlsConfigured ? "HTTP" : "HTTPS";
-        var kcPort = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloakCR);
-
-        // Relative path ends with '/'
-        var kcRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context)
+        var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
+        var port = Optional.ofNullable(keycloakCR.getSpec())
+                .map(KeycloakSpec::getHttpManagementSpec)
+                .map(HttpManagementSpec::getPort)
+                .orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
+        var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
+                .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context))
                 .map(path -> !path.endsWith("/") ? path + "/" : path)
                 .orElse("/");
 
@@ -299,8 +300,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withFailureThreshold(3)
                 .withNewHttpGet()
                 .withScheme(protocol)
-                .withNewPort(kcPort)
-                .withPath(kcRelativePath + "health/ready")
+                .withNewPort(port)
+                .withPath(relativePath + "health/ready")
                 .endHttpGet()
                 .endReadinessProbe();
         }
@@ -310,8 +311,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withFailureThreshold(3)
                 .withNewHttpGet()
                 .withScheme(protocol)
-                .withNewPort(kcPort)
-                .withPath(kcRelativePath + "health/live")
+                .withNewPort(port)
+                .withPath(relativePath + "health/live")
                 .endHttpGet()
                 .endLivenessProbe();
         }
@@ -321,14 +322,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withFailureThreshold(600)
                 .withNewHttpGet()
                 .withScheme(protocol)
-                .withNewPort(kcPort)
-                .withPath(kcRelativePath + "health/started")
+                .withNewPort(port)
+                .withPath(relativePath + "health/started")
                 .endHttpGet()
                 .endStartupProbe();
         }
 
         // add in ports - there's no merging being done here
-        StatefulSet baseDeployment = containerBuilder
+        final StatefulSet baseDeployment = containerBuilder
             .addNewPort()
                 .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
                 .withContainerPort(Constants.KEYCLOAK_HTTPS_PORT)
@@ -337,6 +338,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             .addNewPort()
                 .withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
                 .withContainerPort(Constants.KEYCLOAK_HTTP_PORT)
+                .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+            .endPort()
+            .addNewPort()
+                .withName(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME)
+                .withContainerPort(Constants.KEYCLOAK_MANAGEMENT_PORT)
                 .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
             .endPort()
             .endContainer().endSpec().endTemplate().endSpec().build();

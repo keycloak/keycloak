@@ -164,6 +164,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
             commands.add("--hostname-strict-https=false");
+        } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak ~22
+            commands.add("--http-management-port=" + configuration.getManagementPort());
         }
 
         if (configuration.getRoute() != null) {

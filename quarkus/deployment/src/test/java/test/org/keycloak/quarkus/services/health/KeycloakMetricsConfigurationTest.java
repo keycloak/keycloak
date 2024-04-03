@@ -16,38 +16,44 @@
  */
 package test.org.keycloak.quarkus.services.health;
 
-import io.agroal.api.AgroalDataSource;
 import io.quarkus.test.QuarkusUnitTest;
 import io.restassured.RestAssured;
-import org.hamcrest.Matchers;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import jakarta.inject.Inject;
-
 import static io.restassured.RestAssured.given;
 
-public class KeycloakNegativeHealthCheckTest {
+class KeycloakMetricsConfigurationTest {
 
-    @Inject
-    AgroalDataSource agroalDataSource;
+    @BeforeEach
+    void setUpPort() {
+        RestAssured.port = 9001;
+    }
 
     @RegisterExtension
     static final QuarkusUnitTest test = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addAsResource("keycloak.conf", "META-INF/keycloak.conf"));
+                .addAsResource("keycloak.conf", "META-INF/keycloak.conf"))
+            .overrideConfigKey("quarkus.micrometer.export.prometheus.path", "/prom/metrics");
 
     @Test
-    public void testReadinessDown() {
-        agroalDataSource.close();
-
-        RestAssured.port = 9001;
-        given()
-                .when().get("/health/ready")
+    void testMetrics() {
+        given().basePath("/")
+                .when().get("prom/metrics")
                 .then()
-                .statusCode(503)
-                .body(Matchers.containsString("DOWN"));
+                .statusCode(200);
+    }
+
+    @Test
+    void testWrongMetricsEndpoints() {
+        given().basePath("/")
+                .when().get("metrics")
+                .then()
+                // Metrics are available under `/prom/metrics` (see quarkus.micrometer.export.prometheus.path)
+                // so /metrics should return 404.
+                .statusCode(404);
     }
 }

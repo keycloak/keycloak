@@ -24,6 +24,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
@@ -105,6 +106,10 @@ public class KeycloakSpec {
     @JsonPropertyDescription("In this section you can configure Keycloak's reverse proxy setting")
     private ProxySpec proxySpec;
 
+    @JsonProperty("httpManagement")
+    @JsonPropertyDescription("In this section you can configure Keycloak's management interface setting.")
+    private HttpManagementSpec httpManagementSpec;
+
     public HttpSpec getHttpSpec() {
         return httpSpec;
     }
@@ -183,6 +188,14 @@ public class KeycloakSpec {
 
     public void setImagePullSecrets(List<LocalObjectReference> imagePullSecrets) {
         this.imagePullSecrets = imagePullSecrets;
+    }
+
+    public HttpManagementSpec getHttpManagementSpec() {
+        return httpManagementSpec;
+    }
+
+    public void setHttpManagementSpec(HttpManagementSpec httpManagementSpec) {
+        this.httpManagementSpec = httpManagementSpec;
     }
 
     public List<ValueOrSecret> getAdditionalOptions() {

@@ -55,6 +55,15 @@ Cache:
                        specified, 'cache-remote-host' and 'cache-remote-password' are required as
                        well and the related configuration in XML file should not be present.
 
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
 Database:
 
 --db-password <password>
@@ -159,14 +168,28 @@ HTTP(S):
                        'strict' and no value is set, it defaults to 'BCFKS'. Use the System
                        Truststore instead, see the docs for details.
 
-Config:
+Management:
 
---config-keystore <config-keystore>
-                     Specifies a path to the KeyStore Configuration Source.
---config-keystore-password <config-keystore-password>
-                     Specifies a password to the KeyStore Configuration Source.
---config-keystore-type <config-keystore-type>
-                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+--http-management-port <port>
+                     Port of the management interface. Default: 9000. Available only when
+                       Management interface is enabled.
+--https-management-certificate-file <file>
+                     The file path to a server certificate or certificate chain in PEM format for
+                       the management server. If not given, the value is inherited from HTTP
+                       options. Available only when Management interface is enabled.
+--https-management-certificate-key-file <file>
+                     The file path to a private key in PEM format for the management server. If not
+                       given, the value is inherited from HTTP options. Available only when
+                       Management interface is enabled.
+--https-management-key-store-file <file>
+                     The key store which holds the certificate information instead of specifying
+                       separate files for the management server. If not given, the value is
+                       inherited from HTTP options. Available only when Management interface is
+                       enabled.
+--https-management-key-store-password <password>
+                     The password of the key store file for the management server. If not given,
+                       the value is inherited from HTTP options. Default: password. Available only
+                       when Management interface is enabled.
 
 Proxy:
 

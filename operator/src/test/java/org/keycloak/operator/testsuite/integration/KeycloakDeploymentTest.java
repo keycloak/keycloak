@@ -287,6 +287,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+        assertManagementInterfaceAccessibleViaService(kc, false);
     }
 
     @Test
@@ -296,6 +297,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+
+        // if TLS is enabled, management interface should use https
+        assertManagementInterfaceAccessibleViaService(kc, true);
     }
 
     @Test
@@ -723,9 +727,28 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
                     String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
                     assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
-                            .stream().map(ServicePort::getName).anyMatch(protocol::equals));
+                            .stream().map(ServicePort::getName).anyMatch(protocol::equals)).isTrue();
 
                     String url = protocol + "://" + serviceName + "." + namespace + ":" + port + "/admin/master/console/";
+                    Log.info("Checking url: " + url);
+
+                    var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);
+                    Log.info("Curl Output: " + curlOutput);
+
+                    assertEquals("200", curlOutput);
+                });
+    }
+
+    private void assertManagementInterfaceAccessibleViaService(Keycloak kc, boolean https) {
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+                    assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
+                            .stream().map(ServicePort::getName).anyMatch(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME::equals)).isTrue();
+
+                    String protocol = https ? "https" : "http";
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + Constants.KEYCLOAK_MANAGEMENT_PORT;
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);
