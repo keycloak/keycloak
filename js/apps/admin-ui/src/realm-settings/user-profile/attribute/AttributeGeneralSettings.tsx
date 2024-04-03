@@ -171,13 +171,18 @@ export const AttributeGeneralSettings = ({
     handleGeneratedDisplayName(generatedDisplayName);
   };
 
+  const formattedAttributeDisplayName = attributeDisplayName?.substring(
+    2,
+    attributeDisplayName.length - 1,
+  );
+
   return (
     <>
       {addTranslationsModalOpen && (
         <AddTranslationsDialog
           translationKey={
             editMode
-              ? attributeDisplayName
+              ? formattedAttributeDisplayName
               : `profile.attributes.${newAttributeName}`
           }
           onTranslationsAdded={handleTranslationsAdded}

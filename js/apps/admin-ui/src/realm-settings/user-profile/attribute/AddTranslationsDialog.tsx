@@ -109,11 +109,6 @@ export const AddTranslationsDialog = ({
     );
   }, [combinedLocales, filter, whoAmI]);
 
-  const formattedTranslationKey =
-    translationKey.startsWith("${") && translationKey.endsWith("}")
-      ? translationKey.substring(2, translationKey.length - 1)
-      : translationKey;
-
   useEffect(() => {
     const fetchLocalizationTexts = async () => {
       try {
@@ -130,9 +125,9 @@ export const AddTranslationsDialog = ({
 
         const translations = results.map((result, index) => {
           const locale = selectedLocales[index];
-          const value = result[formattedTranslationKey];
+          const value = result[translationKey];
           return {
-            key: formattedTranslationKey,
+            key: translationKey,
             translations: [{ locale, value }],
           };
         });
@@ -155,7 +150,7 @@ export const AddTranslationsDialog = ({
     };
 
     fetchLocalizationTexts();
-  }, [combinedLocales, formattedTranslationKey, realmName]);
+  }, [combinedLocales, translationKey, realmName]);
 
   useEffect(() => {
     combinedLocales.forEach((locale, rowIndex) => {
@@ -166,8 +161,8 @@ export const AddTranslationsDialog = ({
       );
     });
 
-    setValue("key", formattedTranslationKey);
-  }, [combinedLocales, defaultTranslations, formattedTranslationKey, setValue]);
+    setValue("key", translationKey);
+  }, [combinedLocales, defaultTranslations, translationKey, setValue]);
 
   const handleOk = () => {
     const formData = getValues();
