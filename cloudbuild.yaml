@@ -1,0 +1,20 @@
+steps:
+  - name: 'maven:3-openjdk-17'
+    id: 'keycloak-java-build'
+    args: [ '/workspace/mvnw', '-DskipTests', 'clean', 'install', '-f', '/workspace/pom.xml', '-Pdistribution' ]
+
+  - name: gcr.io/cloud-builders/docker
+    entrypoint: /bin/bash
+    waitFor: [ 'keycloak-java-build' ]
+    id: 'keycloak-docker-build'
+    args: [ '-c', 'docker build -t us-docker.pkg.dev/non-production-381217/wellstand-docker/keycloak:develop-123.123 /workspace' ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: /bin/bash
+    id: 'upload-keycloak-container'
+    waitFor: ['keycloak-docker-build']
+    args: ['-c', 'docker push us-docker.pkg.dev/non-production-381217/wellstand-docker/keycloak:develop-123.123']
+
+options:
+  pool:
+    name: 'projects/non-production-381217/locations/us-central1/workerPools/build-pool'
