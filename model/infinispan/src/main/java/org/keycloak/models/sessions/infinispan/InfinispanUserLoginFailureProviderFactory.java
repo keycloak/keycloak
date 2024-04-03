@@ -24,7 +24,6 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -32,6 +31,7 @@ import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
@@ -50,6 +50,7 @@ import org.keycloak.models.utils.PostMigrationEvent;
 
 import java.io.Serializable;
 import java.util.Set;
+
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
@@ -68,13 +69,14 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     private Config.Scope config;
 
     private RemoteCacheInvoker remoteCacheInvoker;
+    SerializeExecutionsByKey<LoginFailureKey> serializer = new SerializeExecutionsByKey<>();
 
     @Override
     public UserLoginFailureProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
 
-        return new InfinispanUserLoginFailureProvider(session, remoteCacheInvoker, loginFailures);
+        return new InfinispanUserLoginFailureProvider(session, remoteCacheInvoker, loginFailures, serializer);
     }
 
     @Override
