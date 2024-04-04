@@ -169,7 +169,7 @@ public final class PropertyMappers {
     }
 
     private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper) {
-        return getMapperOrDefault(polishProperty(property), defaultMapper, null);
+        return getMapperOrDefault(property, defaultMapper, null);
     }
 
     public static PropertyMapper<?> getMapper(String property, OptionCategory category) {
