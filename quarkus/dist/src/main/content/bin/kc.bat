@@ -71,6 +71,9 @@ shift
 goto READ-ARGS
 
 :MAIN
+
+setlocal EnableDelayedExpansion
+
 if not "x%JAVA_OPTS%" == "x" (
   echo "JAVA_OPTS already set in environment; overriding default settings"
 ) else (
@@ -83,15 +86,15 @@ if not "x%JAVA_OPTS%" == "x" (
   if "x%JAVA_OPTS_KC_HEAP%" == "x" (
     set "JAVA_OPTS_KC_HEAP=-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
 
-    if "%KC_RUN_IN_CONTAINER%" == "true" (
+    if "!KC_RUN_IN_CONTAINER!" == "true" (
       rem Maximum utilization of the heap is set to 70% of the total container memory
       rem Initial heap size is set to 50% of the total container memory in order to reduce GC executions
-      set "JAVA_OPTS_KC_HEAP=%JAVA_OPTS_KC_HEAP% -XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"
+      set "JAVA_OPTS_KC_HEAP=!JAVA_OPTS_KC_HEAP! -XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"
     ) else (
-      set "JAVA_OPTS_KC_HEAP=%JAVA_OPTS_KC_HEAP% -Xms64m -Xmx512m"
+      set "JAVA_OPTS_KC_HEAP=!JAVA_OPTS_KC_HEAP! -Xms64m -Xmx512m"
     )
 
-    set "JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_KC_HEAP%"
+    set "JAVA_OPTS=!JAVA_OPTS! !JAVA_OPTS_KC_HEAP!"
   ) else (
     echo "JAVA_OPTS_KC_HEAP already set in environment; overriding default settings"
   )
@@ -165,8 +168,6 @@ if "x%JAVA%" == "x" (
 set CLASSPATH_OPTS="%DIRNAME%..\lib\quarkus-run.jar"
 
 set JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
-
-SetLocal EnableDelayedExpansion
 
 set OPTIMIZED_OPTION=--optimized
 set HELP_LONG_OPTION=--help
