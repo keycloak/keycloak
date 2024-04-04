@@ -184,7 +184,8 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             String sssdId = getSssdProviderId();
             UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
             UserRepresentation user = userResource.toRepresentation(true);
-            assertUser(user, username, getEmail(username), getFirstName(username), getLastName(username), sssdId);
+            // first and last names are removed from the UP config (unmanaged) and are not available from the representation
+            assertUser(user, username, getEmail(username), null, null, sssdId);
             assertProfileAttributes(user, null, true, UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME);
             assertProfileAttributes(user, null, false, "postal_code");
 

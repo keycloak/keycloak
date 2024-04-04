@@ -29,6 +29,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -38,6 +40,8 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -68,7 +72,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
     @Override
     protected void afterImportTestRealm() {
         testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = LDAPTestUtils.addLocalUser(session, appRealm, "marykeycloak", "mary@test.com", "Password1");
@@ -218,7 +222,20 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
     @Test
     public void testUserProfileWithoutImport() {
         setLDAPImportDisabled();
+        UPConfig origConfig = testRealm().users().userProfile().getConfiguration();
         try {
+            UPConfig config = testRealm().users().userProfile().getConfiguration();
+            // Set postal code
+            UPAttribute postalCode = new UPAttribute();
+            postalCode.setName("postal_code");
+            postalCode.setDisplayName("Postal Code");
+
+            UPAttributePermissions permissions = new UPAttributePermissions();
+            permissions.setView(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN));
+            permissions.setEdit(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN));
+            postalCode.setPermissions(permissions);
+            config.getAttributes().add(postalCode);
+            testRealm().users().userProfile().update(config);
             // Test local user is writable and has only attributes defined explicitly in user-profile
             // Test user profile of user johnkeycloak in admin API
             UserResource johnResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak2");
@@ -229,12 +246,56 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             assertProfileAttributes(john, USER_METADATA_GROUP, true, LDAPConstants.LDAP_ID, LDAPConstants.LDAP_ENTRY_DN);
         } finally {
             setLDAPImportEnabled();
+            testRealm().users().userProfile().update(origConfig);
+        }
+    }
+
+    @Test
+    public void testMultipleLDAPProviders() {
+        testingClient.server().run(session -> {
+            RealmModel testRealm = session.realms().getRealmByName(AbstractLDAPTest.TEST_REALM_NAME);
+            ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(testRealm);
+            UserStorageProviderModel ldapModel = new UserStorageProviderModel(ldapCompModel);
+            ldapModel.setId(null);
+            ldapModel.setParentId(null);
+            ldapModel.setName("other-ldap");
+            ldapModel.put(LDAPConstants.USERS_DN, ldapModel.getConfig().getFirst(LDAPConstants.USERS_DN).replace("People", "OtherPeople"));
+            ldapCompModel.put(PrioritizedComponentModel.PRIORITY, "100");
+            testRealm.addComponentModel(ldapModel);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject john = LDAPTestUtils.addLDAPUser(ldapProvider, testRealm, "anotherjohn", "AnotherJohn", "AnotherDoe", "anotherjohn@email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ldapProvider, john, "Password1");
+        });
+
+        // the provider for this user does not have postal_code mapper
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "anotherjohn");
+        UserRepresentation userRep = userResource.toRepresentation(true);
+        Assert.assertNull(userRep.getAttributes().get("postal_code"));
+
+        // the provider for this user does have postal_code mapper
+        userResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        userRep = userResource.toRepresentation(true);
+        Assert.assertNotNull(userRep.getAttributes().get("postal_code"));
+
+        setLDAPReadOnly();
+        try {
+            // the second provider is not readonly
+            userResource = ApiUtil.findUserByUsernameId(testRealm(), "anotherjohn");
+            userRep = userResource.toRepresentation(true);
+            assertProfileAttributes(userRep, null, false, "username", "email", "firstName", "lastName");
+
+            // the original provider is readonly
+            userResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+            userRep = userResource.toRepresentation(true);
+            assertProfileAttributes(userRep, null, true, "username", "email", "firstName", "lastName", "postal_code");
+        } finally {
+          setLDAPWritable();
         }
     }
 
     private void setLDAPReadOnly() {
         testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
             RealmModel appRealm = ctx.getRealm();
 
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
@@ -244,7 +305,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
     private void setLDAPWritable() {
         testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
             RealmModel appRealm = ctx.getRealm();
 
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
@@ -254,7 +315,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
     private void setLDAPImportDisabled() {
         testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
             RealmModel appRealm = ctx.getRealm();
 
             ctx.getLdapModel().getConfig().putSingle(IMPORT_ENABLED, "false");
@@ -264,7 +325,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
     private void setLDAPImportEnabled() {
         testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
             RealmModel appRealm = ctx.getRealm();
 
             ctx.getLdapModel().getConfig().putSingle(IMPORT_ENABLED, "true");
