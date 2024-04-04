@@ -127,7 +127,7 @@ describe("User creation", () => {
 
   it("Search non-existing user test", () => {
     listingPage.searchItem("user_DNE");
-    cy.findByTestId(listingPage.emptyState).should("exist");
+    listingPage.assertNoResults();
   });
 
   it("User details test", () => {
