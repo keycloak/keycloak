@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,9 +40,11 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.storage.StorageId;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -84,7 +87,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         this.context = context;
         this.user = user;
         this.session = session;
-        this.metadataByAttribute = configureMetadata(profileMetadata.getAttributes());
+        this.metadataByAttribute = configureMetadata(profileMetadata.getAttributes(), profileMetadata);
         this.upConfig = session.getProvider(UserProfileProvider.class).getConfiguration();
         putAll(Collections.unmodifiableMap(normalizeAttributes(attributes)));
     }
@@ -324,7 +327,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return createAttributeContext(createAttribute(metadata.getName()), metadata);
     }
 
-    private Map<String, AttributeMetadata> configureMetadata(List<AttributeMetadata> attributes) {
+    private Map<String, AttributeMetadata> configureMetadata(List<AttributeMetadata> attributes, UserProfileMetadata profileMetadata) {
         Map<String, AttributeMetadata> metadatas = new HashMap<>();
 
         for (AttributeMetadata metadata : attributes) {
@@ -334,7 +337,33 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             }
         }
 
+        metadatas.putAll(getUserStorageProviderMetadata(profileMetadata));
+
         return metadatas;
+    }
+
+    private Map<String, AttributeMetadata> getUserStorageProviderMetadata(UserProfileMetadata profileMetadata) {
+        if (user == null || (StorageId.isLocalStorage(user.getId()) && user.getFederationLink() == null)) {
+            // new user or not a user from a storage provider other than local
+            return Collections.emptyMap();
+        }
+
+        String providerId = user.getFederationLink();
+
+        if (providerId == null) {
+            providerId = StorageId.providerId(user.getId());
+        }
+
+        UserProvider userProvider = session.users();
+
+        if (userProvider instanceof UserProfileDecorator) {
+            // query the user provider from the source user storage provider for additional attribute metadata
+            UserProfileDecorator decorator = (UserProfileDecorator) userProvider;
+            return decorator.decorateUserProfile(providerId, profileMetadata).stream()
+                    .collect(Collectors.toMap(AttributeMetadata::getName, Function.identity()));
+        }
+
+        return Collections.emptyMap();
     }
 
     private SimpleImmutableEntry<String, List<String>> createAttribute(String name) {

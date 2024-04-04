@@ -1,0 +1,17 @@
+ifeval::[{project_community}==true]
+= Changes to the `org.keycloak.userprofile.UserProfileDecorator` interface
+
+To properly support multiple user storage providers within a realm, the `org.keycloak.userprofile.UserProfileDecorator`
+interface has changed.
+
+The `decorateUserProfile` method is no longer invoked when parsing the user profile configuration for the first time (and caching it),
+but everytime a user is being managed through the user profile provider. As a result, the method changed its contract to:
+
+```java
+List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata)
+```
+
+Differently than the previous contract and behavior, this method is only invoked for the user storage provider from where the user
+was loaded from.
+
+endif::[]
