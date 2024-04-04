@@ -173,7 +173,6 @@ export const AddTranslationsDialog = ({
 
   const handleOk = () => {
     const formData = getValues();
-
     const updatedTranslations = formData.translations.map((translation) => {
       if (translation.locale === filter) {
         return {
