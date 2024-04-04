@@ -165,21 +165,19 @@ export const ClientScopes = ({
       return row;
     });
 
-    const rows = [...optional, ...defaultScopes];
+    let rows = [...optional, ...defaultScopes];
     const names = rows.map((row) => row.name);
+
     setRest(
       clientScopes
         .filter((scope) => !names.includes(scope.name))
         .filter((scope) => scope.protocol === protocol),
     );
 
-    const filter =
-      searchType === "name" ? nameFilter(search) : typeFilter(searchTypeType);
-    const firstNum = Number(first);
-    const page = localeSort(rows.filter(filter), mapByKey("name"));
+    rows = localeSort(rows, mapByKey("name"));
 
     if (isViewer) {
-      page.unshift({
+      rows.unshift({
         id: DEDICATED_ROW,
         name: t("dedicatedScopeName", { clientName }),
         type: AllClientScopes.none,
@@ -187,7 +185,11 @@ export const ClientScopes = ({
       });
     }
 
-    return page.slice(firstNum, firstNum + Number(max));
+    const filter =
+      searchType === "name" ? nameFilter(search) : typeFilter(searchTypeType);
+    const firstNum = Number(first);
+
+    return rows.filter(filter).slice(firstNum, firstNum + Number(max));
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

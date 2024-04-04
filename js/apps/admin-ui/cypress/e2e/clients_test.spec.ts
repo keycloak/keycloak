@@ -102,7 +102,7 @@ describe("Clients test", () => {
       commonPage
         .tableUtils()
         .checkRowItemExists(clientScopeName + 0)
-        .checkRowItemsEqualTo(2);
+        .checkRowItemsEqualTo(1);
     });
 
     it("Should search non-existent client scope by name", () => {
@@ -187,7 +187,7 @@ describe("Clients test", () => {
       commonPage.modalUtils().confirmModal();
       commonPage.masthead().checkNotificationMessage(msgScopeMappingRemoved);
       commonPage.tableToolbarUtils().searchItem(itemName, false);
-      commonPage.tableUtils().checkRowItemExists(itemName, false);
+      listingPage.assertNoResults();
     });
 
     it("Should remove multiple client scopes from search bar", () => {
