@@ -18,7 +18,7 @@ import {
 } from "@patternfly/react-core";
 import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DomainIcon, TableIcon } from "@patternfly/react-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { adminClient } from "../admin-client";
@@ -73,6 +73,14 @@ export default function FlowDetails() {
   const [open, toggleOpen, setOpen] = useToggle();
   const [edit, setEdit] = useState(false);
   const [bindFlowOpen, toggleBindFlow] = useToggle();
+
+  const flowDiagram = useMemo(
+    () =>
+      executionList?.expandableList && (
+        <FlowDiagram executionList={executionList} />
+      ),
+    [executionList],
+  );
 
   useFetch(
     async () => {
@@ -498,9 +506,7 @@ export default function FlowDetails() {
             </div>
           </>
         )}
-        {!tableView && executionList?.expandableList && (
-          <FlowDiagram executionList={executionList} />
-        )}
+        {!tableView && flowDiagram}
         {!executionList?.expandableList ||
           (flow && !hasExecutions && (
             <EmptyExecutionState
