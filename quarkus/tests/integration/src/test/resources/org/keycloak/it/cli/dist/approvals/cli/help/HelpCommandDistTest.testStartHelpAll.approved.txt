@@ -68,7 +68,7 @@ Cache:
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
-                       Possible values are: tcp, udp, kubernetes, ec2, azure, google.
+                       Built-in values include: tcp, udp, kubernetes, ec2, azure, google
 
 Config:
 
