@@ -149,6 +149,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
                 .queryParam(Constants.EXECUTION, getExecution())
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, authenticationSession.getTabId())
+                .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession))
                 .build(getRealm().getName());
     }
 

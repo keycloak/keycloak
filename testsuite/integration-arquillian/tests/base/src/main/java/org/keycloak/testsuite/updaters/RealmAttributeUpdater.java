@@ -49,6 +49,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin) {
+        rep.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        return this;
+    }
+
     public RealmAttributeUpdater setSsoSessionIdleTimeout(Integer timeout) {
         rep.setSsoSessionIdleTimeout(timeout);
         return this;

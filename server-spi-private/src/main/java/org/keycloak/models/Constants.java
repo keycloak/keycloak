@@ -80,6 +80,7 @@ public final class Constants {
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
     public static final String TAB_ID = "tab_id";
+    public static final String CLIENT_DATA = "client_data";
 
     public static final String SKIP_LOGOUT = "skip_logout";
     public static final String KEY = "key";
@@ -164,4 +165,7 @@ public final class Constants {
     public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
 
     public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
+
+    // Sent to clients when authentication session expired, but user is already logged-in in current browser
+    public static final String AUTHENTICATION_EXPIRED_MESSAGE = "authentication_expired";
 }

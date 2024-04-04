@@ -408,7 +408,8 @@ function Keycloak (config) {
         var callbackState = {
             state: state,
             nonce: nonce,
-            redirectUri: encodeURIComponent(redirectUri)
+            redirectUri: encodeURIComponent(redirectUri),
+            loginOptions: options
         };
 
         if (options && options.prompt) {
@@ -752,9 +753,13 @@ function Keycloak (config) {
 
         if (error) {
             if (prompt != 'none') {
-                var errorData = { error: error, error_description: oauth.error_description };
-                kc.onAuthError && kc.onAuthError(errorData);
-                promise && promise.setError(errorData);
+                if (oauth.error_description && oauth.error_description === "authentication_expired") {
+                    kc.login(oauth.loginOptions);
+                } else {
+                    var errorData = { error: error, error_description: oauth.error_description };
+                    kc.onAuthError && kc.onAuthError(errorData);
+                    promise && promise.setError(errorData);
+                }
             } else {
                 promise && promise.setSuccess();
             }
@@ -1062,6 +1067,7 @@ function Keycloak (config) {
             oauth.storedNonce = oauthState.nonce;
             oauth.prompt = oauthState.prompt;
             oauth.pkceCodeVerifier = oauthState.pkceCodeVerifier;
+            oauth.loginOptions = oauthState.loginOptions;
         }
 
         return oauth;
