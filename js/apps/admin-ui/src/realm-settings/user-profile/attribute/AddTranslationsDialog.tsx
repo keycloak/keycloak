@@ -40,6 +40,7 @@ type Translations = {
 
 export type AddTranslationsDialogProps = {
   translationKey: string;
+  translations: Translations;
   onCancel: () => void;
   toggleDialog: () => void;
   onTranslationsAdded: (translations: Translations) => void;
@@ -47,6 +48,7 @@ export type AddTranslationsDialogProps = {
 
 export const AddTranslationsDialog = ({
   translationKey,
+  translations,
   onCancel,
   toggleDialog,
   onTranslationsAdded,
@@ -155,12 +157,19 @@ export const AddTranslationsDialog = ({
       setValue(`translations.${rowIndex}.locale`, locale);
       setValue(
         `translations.${rowIndex}.value`,
-        defaultTranslations[locale] || "",
+        translations.translations.length > 0
+          ? translations.translations[rowIndex].value
+          : defaultTranslations[locale] || "",
       );
     });
-
     setValue("key", translationKey);
-  }, [combinedLocales, defaultTranslations, translationKey, setValue]);
+  }, [
+    combinedLocales,
+    defaultTranslations,
+    translationKey,
+    setValue,
+    translations,
+  ]);
 
   const handleOk = () => {
     const formData = getValues();
