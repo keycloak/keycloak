@@ -61,7 +61,10 @@ public abstract class KeycloakDependencyProcessor implements DeploymentUnitProce
         }
 
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-        final ModuleLoader moduleLoader = Module.getBootModuleLoader();
+        ModuleLoader moduleLoader = Module.getCallerModuleLoader();
+        if (moduleLoader == null) {
+            moduleLoader = Module.getSystemModuleLoader();
+        }
         addCommonModules(moduleSpecification, moduleLoader);
         addPlatformSpecificModules(phaseContext, moduleSpecification, moduleLoader);
     }
