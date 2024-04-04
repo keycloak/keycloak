@@ -61,12 +61,12 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
                 hostname = hostnameRaw;
             }
             else {
-                hostnameUrl = valiateAndCreateUri(hostnameRaw, "Provided hostname is neither a plain hostname or a valid URL");
+                hostnameUrl = validateAndCreateUri(hostnameRaw, "Provided hostname is neither a plain hostname or a valid URL");
             }
         }
 
         Optional.ofNullable(config.get("hostname-admin")).ifPresent(h ->
-                adminUrl = valiateAndCreateUri(h, "Provided hostname-admin is not a valid URL"));
+                adminUrl = validateAndCreateUri(h, "Provided hostname-admin is not a valid URL"));
 
         // Dynamic backchannel requires hostname to be specified as full URL. Otherwise we might end up with some parts of the
         // backend request in frontend URLs. Therefore frontend (and admin) needs to be fully static.
@@ -79,7 +79,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
         }
     }
 
-    private URI valiateAndCreateUri(String uri, String validationFailedMessage) {
+    private URI validateAndCreateUri(String uri, String validationFailedMessage) {
         if (!hostnameUrlPattern.matcher(uri).matches()) {
             throw new IllegalArgumentException(validationFailedMessage);
         }
