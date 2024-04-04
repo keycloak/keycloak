@@ -1144,8 +1144,9 @@ public class TokenManager {
             if (offlineTokenRequested) {
                 UserSessionManager sessionManager = new UserSessionManager(session);
                 if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
+                    event.detail(Details.REASON, "Offline tokens not allowed for the user or client");
                     event.error(Errors.NOT_ALLOWED);
-                    throw new ErrorResponseException("not_allowed", "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
+                    throw new ErrorResponseException(Errors.NOT_ALLOWED, "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
                 }
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
                 if (realm.isOfflineSessionMaxLifespanEnabled()) {
