@@ -442,6 +442,7 @@ public class LogoutEndpoint {
                 }
             } catch (OAuthErrorException e) {
                 event.event(EventType.LOGOUT);
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
             }
@@ -538,9 +539,11 @@ public class LogoutEndpoint {
         } catch (OAuthErrorException e) {
             // KEYCLOAK-6771 Certificate Bound Token
             if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.NOT_ALLOWED);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
             } else {
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
             }

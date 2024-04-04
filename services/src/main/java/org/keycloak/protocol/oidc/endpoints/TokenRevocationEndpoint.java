@@ -171,6 +171,7 @@ public class TokenRevocationEndpoint {
         String encodedToken = formParams.getFirst(PARAM_TOKEN);
 
         if (encodedToken == null) {
+            event.detail(Details.REASON, "Token not provided");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Token not provided",
                 Response.Status.BAD_REQUEST);
@@ -184,6 +185,7 @@ public class TokenRevocationEndpoint {
         }
 
         if (!(TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType()) || TokenUtil.TOKEN_TYPE_BEARER.equals(token.getType())|| TokenUtil.TOKEN_TYPE_DPOP.equals(token.getType()))) {
+            event.detail(Details.REASON, "Unsupported token type");
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_TOKEN_TYPE, "Unsupported token type",
                 Response.Status.BAD_REQUEST);
@@ -193,11 +195,13 @@ public class TokenRevocationEndpoint {
     private void checkIssuedFor() {
         String issuedFor = token.getIssuedFor();
         if (issuedFor == null) {
+            event.detail(Details.REASON, "Issued for not set");
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
 
         if (!client.getClientId().equals(issuedFor)) {
+            event.detail(Details.REASON, "Unmatching clients");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Unmatching clients",
                 Response.Status.BAD_REQUEST);
