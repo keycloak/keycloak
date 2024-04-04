@@ -24,6 +24,7 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
   const { t } = useTranslation("common");
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
+  const encodedRealm = encodeURIComponent(realm);
   const route = routes.find(
     (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path,
   );
@@ -42,7 +43,7 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
     <li>
       <NavLink
         id={"nav-item" + path.replace("/", "-")}
-        to={`/${realm}${path}`}
+        to={`/${encodedRealm}${path}`}
         className={({ isActive }) =>
           `pf-c-nav__link${isActive ? " pf-m-current" : ""}`
         }
