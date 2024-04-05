@@ -233,43 +233,42 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
 
     private void replace(K key, MergedUpdate<V> task, SessionEntityWrapper<V> oldVersionEntity, long lifespanMs, long maxIdleTimeMs) {
-        boolean replaced = false;
         int iteration = 0;
-        V session = oldVersionEntity.getEntity();
 
-        while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+        while (true) {
             iteration++;
 
-            SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersionEntity.getLocalMetadata());
+            SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(oldVersionEntity.getEntity(), oldVersionEntity.getLocalMetadata());
 
             // Atomic cluster-aware replace
-            replaced = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).replace(key, oldVersionEntity, newVersionEntity, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
-
-            // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
-            if (!replaced) {
-                if (logger.isDebugEnabled()) {
-                    logger.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
-                }
-
-                oldVersionEntity = cache.get(key);
-
-                if (oldVersionEntity == null) {
-                    logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
-                    return;
-                }
-
-                session = oldVersionEntity.getEntity();
-
-                task.runUpdate(session);
-            } else {
+            if(CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).replace(key, oldVersionEntity, newVersionEntity, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS)) {
                 if (logger.isTraceEnabled()) {
-                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms",
+                            key, oldVersionEntity.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
                 }
+                break;
             }
-        }
 
-        if (!replaced) {
-            logger.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
+            if (iteration >= InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+                logger.warnf("Failed to replace entity '%s' in cache '%s' with Lifespan: %d ms, MaxIdle: %d ms. Old entity: %s. New entity: %s. Current entity: %s. Distribution: %s",
+                        key, cache.getName(), oldVersionEntity, newVersionEntity, cache.get(key), task.getLifespanMs(), task.getMaxIdleTimeMs(),
+                        cache.getAdvancedCache().getDistributionManager().getCacheTopology().getDistribution(key));
+                break;
+            }
+
+            // Replace failed. Need to load the latest entity from cache, apply updates again and try to replace in cache again
+            if (logger.isDebugEnabled()) {
+                logger.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
+            }
+
+            oldVersionEntity = cache.get(key);
+
+            if (oldVersionEntity == null) {
+                logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
+                return;
+            }
+
+            task.runUpdate(oldVersionEntity.getEntity());
         }
 
     }
