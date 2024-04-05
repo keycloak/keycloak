@@ -173,15 +173,11 @@ public final class PropertyMappers {
     }
 
     public static PropertyMapper<?> getMapper(String property, OptionCategory category) {
-        return getMapperOrDefault(polishProperty(property), null, category);
+        return getMapperOrDefault(property, null, category);
     }
 
     public static PropertyMapper<?> getMapper(String property) {
         return getMapper(property, null);
-    }
-
-    public static List<PropertyMapper<?>> getMappers(String property) {
-        return MAPPERS.get(polishProperty(property));
     }
 
     public static Set<PropertyMapper<?>> getMappers() {
@@ -210,10 +206,6 @@ public final class PropertyMappers {
             return isDisabledMapper.test(property.substring(property.indexOf('.') + 1));
         }
         return isDisabledMapper.test(property);
-    }
-
-    private static String polishProperty(String property) {
-        return property.startsWith("%") ? property.substring(property.indexOf('.') + 1) : property;
     }
 
     private static Set<PropertyMapper<?>> filterDeniedCategories(List<PropertyMapper<?>> mappers) {
