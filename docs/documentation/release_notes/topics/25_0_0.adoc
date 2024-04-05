@@ -11,6 +11,20 @@ better security, with almost the same CPU time as previous releases of {project_
 memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in {project_name} requires 7MB
 per-hashing request.
 
+= SameSite attribute set for all cookies
+
+The following cookies did not use to set the `SameSite` attribute, which in recent browser versions results in them
+defaulting to `SameSite=Lax`:
+
+* `KC_STATE_CHECKER` now sets `SameSite=Strict`
+* `KC_RESTART` now sets `SameSite=None`
+* `KC_AUTH_STATE` now sets `SameSite=Strict`
+* `KEYCLOAK_LOCALE` now sets `SameSite=None`
+* `KEYCLOAK_REMEMBER_ME` now sets `SameSite=None`
+
+The default value `SameSite=Lax` causes issues with POST based bindings, mostly applicable to SAML, but also used in
+some OpenID Connect / OAuth 2.0 flows.
+
 = Deprecated cookie methods removed
 
 The following methods for setting custom cookies have been removed:

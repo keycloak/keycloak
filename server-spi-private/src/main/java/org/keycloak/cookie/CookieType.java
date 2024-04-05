@@ -5,11 +5,11 @@ import jakarta.annotation.Nullable;
 public final class CookieType {
 
     public static final CookieType AUTH_DETACHED = CookieType.create("KC_STATE_CHECKER")
-            .scope(CookieScope.LEGACY)
+            .scope(CookieScope.INTERNAL)
             .build();
 
     public static final CookieType AUTH_RESTART = CookieType.create("KC_RESTART")
-            .scope(CookieScope.LEGACY)
+            .scope(CookieScope.FEDERATION)
             .defaultMaxAge(CookieMaxAge.SESSION)
             .build();
 
@@ -20,7 +20,7 @@ public final class CookieType {
             .build();
 
     public static final CookieType AUTH_STATE = CookieType.create("KC_AUTH_STATE")
-            .scope(CookieScope.LEGACY_JS)
+            .scope(CookieScope.INTERNAL_JS)
             .build();
 
     public static final CookieType IDENTITY = CookieType.create("KEYCLOAK_IDENTITY")
@@ -29,12 +29,12 @@ public final class CookieType {
             .build();
 
     public static final CookieType LOCALE = CookieType.create("KEYCLOAK_LOCALE")
-            .scope(CookieScope.LEGACY)
+            .scope(CookieScope.FEDERATION)
             .defaultMaxAge(CookieMaxAge.SESSION)
             .build();
 
     public static final CookieType LOGIN_HINT = CookieType.create("KEYCLOAK_REMEMBER_ME")
-            .scope(CookieScope.LEGACY)
+            .scope(CookieScope.FEDERATION)
             .defaultMaxAge(CookieMaxAge.YEAR)
             .build();
 
