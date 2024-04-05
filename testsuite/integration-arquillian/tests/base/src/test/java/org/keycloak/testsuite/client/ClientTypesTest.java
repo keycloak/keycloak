@@ -121,13 +121,19 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             testRealm().clients().get(clientRep.getId()).update(clientRep);
             Assert.fail("Not expected to update client");
         } catch (BadRequestException bre) {
-            // Expected
+            assertErrorResponseContainsParams(bre.getResponse(), "serviceAccountsEnabled");
         }
 
         clientRep.setServiceAccountsEnabled(true);
 
         // Adding non-applicable attribute should not fail
         clientRep.getAttributes().put(ClientModel.LOGO_URI, "https://foo");
+        try {
+            testRealm().clients().get(clientRep.getId()).update(clientRep);
+            Assert.fail("Not expected to update client");
+        } catch (BadRequestException bre) {
+            assertErrorResponseContainsParams(bre.getResponse(), "logoUri");
+        }
 
         // Update of supported attribute should be successful
         clientRep.getAttributes().remove(ClientModel.LOGO_URI);
@@ -138,18 +144,22 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testCreateClientFailsWithMultipleInvalidClientTypeOverrides() {
         ClientRepresentation clientRep = ClientBuilder.create()
-                .clientId("invalid-client-type-fields-set")
+                .clientId("service-account-client-type-required-to-be-confidential-and-service-accounts-enabled")
                 .type(ClientTypeManager.SERVICE_ACCOUNT)
                 .serviceAccountsEnabled(false)
                 .publicClient()
                 .build();
 
         Response response = testRealm().clients().create(clientRep);
+        assertErrorResponseContainsParams(response, "publicClient", "serviceAccountsEnabled");
+    }
+
+    private void assertErrorResponseContainsParams(Response response, String... items) {
         assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
         ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
         assertThat(
                 List.of(errorRepresentation.getParams()),
-                containsInAnyOrder("publicClient", "serviceAccountsEnabled"));
+                containsInAnyOrder(items));
     }
 
     @Test

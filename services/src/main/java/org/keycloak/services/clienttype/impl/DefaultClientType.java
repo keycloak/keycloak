@@ -122,11 +122,21 @@ public class DefaultClientType implements ClientType {
             ClientRepresentation newClient,
             String propertyName,
             ClientTypeRepresentation.PropertyConfig propertyConfig) {
-        // Validate that read-only client properties were not changed.
-        return propertyConfig.getApplicable() &&
-                propertyConfig.getReadOnly() &&
-                !Objects.isNull(getClientProperty(newClient, propertyName)) &&
-                !Objects.equals(getClientProperty(oldClient, propertyName), getClientProperty(newClient, propertyName));
+        Object newClientProperty = getClientProperty(newClient, propertyName);
+        Object oldClientProperty = getClientProperty(oldClient, propertyName);
+
+        return (
+                    // Validate that non-applicable client properties were not changed.
+                    !propertyConfig.getApplicable() &&
+                    !Objects.isNull(newClientProperty) &&
+                    !Objects.equals(oldClientProperty, newClientProperty)
+                ) || (
+                    // Validate that applicable read-only client properties were not changed.
+                    propertyConfig.getApplicable() &&
+                    propertyConfig.getReadOnly() &&
+                    !Objects.isNull(newClientProperty) &&
+                    !Objects.equals(oldClientProperty, newClientProperty)
+                );
     }
 
     private void setClientProperty(ClientRepresentation client,
