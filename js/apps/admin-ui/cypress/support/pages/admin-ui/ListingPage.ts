@@ -229,7 +229,7 @@ export default class ListingPage extends CommonElements {
   }
 
   goToItemDetails(itemName: string) {
-    cy.get(this.#itemsRows).contains(itemName).click();
+    cy.get(this.#itemsRows).contains(itemName).click({ force: true });
 
     return this;
   }
