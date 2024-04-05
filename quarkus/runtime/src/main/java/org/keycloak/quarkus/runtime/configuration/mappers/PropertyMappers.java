@@ -145,6 +145,7 @@ public final class PropertyMappers {
     }
 
     private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper, OptionCategory category) {
+        property = removeProfilePrefixIfNeeded(property);
         final var mappers = new ArrayList<>(MAPPERS.getOrDefault(property, Collections.emptyList()));
         if (category != null) {
             mappers.removeIf(m -> !m.getCategory().equals(category));
@@ -154,16 +155,8 @@ public final class PropertyMappers {
             case 0 -> defaultMapper;
             case 1 -> mappers.get(0);
             default -> {
-                var allowedMappers = filterDeniedCategories(mappers);
-
-                yield switch (allowedMappers.size()) {
-                    case 0 -> defaultMapper;
-                    case 1 -> allowedMappers.iterator().next();
-                    default -> {
-                        log.debugf("Duplicated mappers for key '%s'. Used the first found.", property);
-                        yield allowedMappers.iterator().next();
-                    }
-                };
+                log.debugf("Duplicated mappers for key '%s'. Used the first found.", property);
+                yield mappers.get(0);
             }
         };
     }
