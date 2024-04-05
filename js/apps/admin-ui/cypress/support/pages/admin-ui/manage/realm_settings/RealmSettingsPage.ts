@@ -1,3 +1,4 @@
+import Select from "../../../../forms/Select";
 import CommonPage from "../../../CommonPage";
 import ListingPage from "../../ListingPage";
 import RealmSettingsEventsTab from "./tabs/RealmSettingsEventsTab";
@@ -66,7 +67,7 @@ export default class RealmSettingsPage extends CommonPage {
     "#kc-l-supported-locales-select-multi-typeahead-typeahead";
   supportedLocalesToggle = "#kc-l-supported-locales";
   emailSaveBtn = "email-tab-save";
-  managedAccessSwitch = "user-managed-access-switch";
+  managedAccessSwitch = "userManagedAccessAllowed";
   userRegSwitch = "user-reg-switch";
   forgotPwdSwitch = "forgot-pw-switch";
   rememberMeSwitch = "remember-me-switch";
@@ -235,10 +236,6 @@ export default class RealmSettingsPage extends CommonPage {
   #selectScopeButton = "addValue";
   #deleteClientRolesConditionBtn = "delete-client-roles-condition";
   #deleteClientScopesConditionBtn = "delete-client-scopes-condition";
-  #realmDisplayName = "#kc-display-name";
-  #frontEndURL = "#kc-frontend-url";
-  #requireSSL = "#kc-require-ssl";
-  #unmanagedAttributes = "#kc-user-profile-unmanaged-attribute-policy";
   #fromDisplayName = "smtpServer.fromDisplayName";
   #replyToEmail = "smtpServer.replyTo";
   #port = "smtpServer.port";
@@ -260,6 +257,22 @@ export default class RealmSettingsPage extends CommonPage {
   constructor(realmName?: string) {
     super();
     this.#realmName = realmName;
+  }
+
+  #getRealmDisplayName() {
+    return cy.findByTestId("displayName");
+  }
+
+  #getFrontEndURL() {
+    return cy.findByTestId("attributes.frontendUrl");
+  }
+
+  #getSSLRequired() {
+    return cy.get("#sslRequired");
+  }
+
+  #getUnmanagedAttributes() {
+    return cy.get("#unmanagedAttributePolicy");
   }
 
   goToEventsTab() {
@@ -311,29 +324,28 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   getDisplayName(name: string) {
-    cy.get(this.#realmDisplayName).should("have.value", name);
+    this.#getRealmDisplayName().should("have.value", name);
     return this;
   }
 
   getFrontendURL(url: string) {
-    cy.get(this.#frontEndURL).should("have.value", url);
+    this.#getFrontEndURL().should("have.value", url);
     return this;
   }
 
   getRequireSSL(option: string) {
-    cy.get(this.#requireSSL).contains(option);
-
+    Select.assertSelectedItem(this.#getSSLRequired(), option);
     return this;
   }
 
   getUnmanagedAttributes(option: string) {
-    cy.get(this.#unmanagedAttributes).contains(option);
-
+    Select.assertSelectedItem(this.#getUnmanagedAttributes(), option);
     return this;
   }
 
   fillDisplayName(displayName: string) {
-    cy.get(this.#realmDisplayName).clear().type(displayName);
+    this.#getRealmDisplayName().clear();
+    this.#getRealmDisplayName().type(displayName);
   }
 
   clearRealmId() {
@@ -355,27 +367,20 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   fillFrontendURL(url: string) {
-    cy.get(this.#frontEndURL).clear().type(url);
+    this.clearFrontendURL();
+    this.#getFrontEndURL().type(url);
   }
 
   clearFrontendURL() {
-    cy.get(this.#frontEndURL).clear();
+    this.#getFrontEndURL().clear();
   }
 
   fillRequireSSL(option: string) {
-    cy.get(this.#requireSSL)
-      .click()
-      .get(".pf-c-select__menu-item")
-      .contains(option)
-      .click();
+    Select.selectItem(this.#getSSLRequired(), option);
   }
 
   fillUnmanagedAttributes(option: string) {
-    cy.get(this.#unmanagedAttributes)
-      .click()
-      .get(".pf-c-select__menu-item")
-      .contains(option)
-      .click();
+    Select.selectItem(this.#getUnmanagedAttributes(), option);
   }
 
   setDefaultLocale(locale: string) {
