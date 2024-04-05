@@ -45,17 +45,19 @@ const ClientDetailLink = (client: ClientRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
   return (
-    <Link
-      key={client.id}
-      to={toClient({ realm, clientId: client.id!, tab: "settings" })}
-    >
-      {client.clientId}
-      {!client.enabled && (
-        <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
-          {t("disabled")}
-        </Badge>
-      )}
-    </Link>
+    <TableText wrapModifier="truncate">
+      <Link
+        key={client.id}
+        to={toClient({ realm, clientId: client.id!, tab: "settings" })}
+      >
+        {client.clientId}
+        {!client.enabled && (
+          <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
+            {t("disabled")}
+          </Badge>
+        )}
+      </Link>
+    </TableText>
   );
 };
 
