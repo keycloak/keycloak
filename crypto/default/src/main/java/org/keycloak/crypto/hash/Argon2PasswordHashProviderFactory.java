@@ -12,6 +12,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -22,6 +23,14 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
     public static final String MEMORY_KEY = "memory";
     public static final String ITERATIONS_KEY = "iterations";
     public static final String PARALLELISM_KEY = "parallelism";
+    public static final String CPU_CORES_KEY = "cpuCores";
+
+    /**
+     * The Argon2 password hashing is CPU bound, so it doesn't make sense to hash more values concurrently than there are cores on the machine.
+     * When we run more, this only leads to an increased memory usage and to throttling of the process in containerized environments
+     * when a CPU limit is imposed. The throttling would have a negative impact on other concurrent non-hashing activities of Keycloak.
+     */
+    private Semaphore cpuCoreSempahore;
 
     private String version;
     private String type;
@@ -32,7 +41,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
-        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism);
+        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism, cpuCoreSempahore);
     }
 
     @Override
@@ -43,6 +52,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
         memory = config.getInt(MEMORY_KEY, Argon2Parameters.DEFAULT_MEMORY);
         iterations = config.getInt(ITERATIONS_KEY, Argon2Parameters.DEFAULT_ITERATIONS);
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
+        cpuCoreSempahore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
     }
 
     @Override
@@ -104,6 +114,12 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
                 .type("int")
                 .helpText("Parallelism")
                 .defaultValue(Argon2Parameters.DEFAULT_PARALLELISM)
+                .add();
+
+        builder.property()
+                .name(CPU_CORES_KEY)
+                .type("int")
+                .helpText("Maximum parallel CPU cores to use for hashing")
                 .add();
 
         return builder.build();

@@ -18,6 +18,7 @@ In {project_name} 24 the default hashing iterations for PBKDF2 were increased fr
 better security, with almost the same CPU time as previous releases of {project_name}. One downside is Argon2 requires more
 memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in {project_name} requires 7MB
 per-hashing request.
+To prevent excessive memory and CPU usage, the parallel computation of hashes by Argon2 is by default limited to the number of cores available to the JVM.
 
 = Cookies updates
 
