@@ -81,21 +81,26 @@ export class ExecutionList {
   }
 
   findExecution(
-    id: string,
+    index: number,
+    currentIndex: number | undefined = 0,
     list?: ExpandableExecution[],
   ): ExpandableExecution | undefined {
-    let found = (list || this.expandableList).find((ex) => ex.id === id);
-    if (!found) {
-      for (const ex of list || this.expandableList) {
-        if (ex.executionList) {
-          found = this.findExecution(id, ex.executionList);
-          if (found) {
-            return found;
-          }
+    const l = list || this.expandableList;
+    for (let i = 0; i < l.length; i++) {
+      const ex = l[i];
+      if (currentIndex === index) {
+        return ex;
+      }
+      currentIndex++;
+      if (ex.executionList) {
+        const found = this.findExecution(index, currentIndex, ex.executionList);
+        if (found) {
+          return found;
         }
+        currentIndex += ex.executionList.length;
       }
     }
-    return found;
+    return undefined;
   }
 
   #getParentNodes(level: number, index: number) {

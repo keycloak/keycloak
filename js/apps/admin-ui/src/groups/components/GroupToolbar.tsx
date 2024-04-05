@@ -1,11 +1,10 @@
 import { useTranslation } from "react-i18next";
+import { Button, ToolbarItem } from "@patternfly/react-core";
 import {
-  Button,
   Dropdown,
   DropdownItem,
   KebabToggle,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 
 import { useSubGroups } from "../SubGroupsContext";
 import { useAccess } from "../../context/access/Access";

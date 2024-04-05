@@ -3,13 +3,16 @@ import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs
 import {
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownItem,
   InputGroup,
-  KebabToggle,
   SearchInput,
   ToolbarItem,
+  InputGroupItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
 import { ArrowRightIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -76,13 +79,15 @@ export function UserDataTableToolbarItems({
     return (
       <ToolbarItem>
         <InputGroup>
-          <SearchDropdown
-            searchType={searchType}
-            onSelect={(searchType) => {
-              clearAllFilters();
-              setSearchType(searchType);
-            }}
-          />
+          <InputGroupItem>
+            <SearchDropdown
+              searchType={searchType}
+              onSelect={(searchType) => {
+                clearAllFilters();
+                setSearchType(searchType);
+              }}
+            />
+          </InputGroupItem>
           {searchType === "default" && defaultSearchInput()}
           {searchType === "attribute" && attributeSearchInput()}
         </InputGroup>
@@ -94,6 +99,7 @@ export function UserDataTableToolbarItems({
     return (
       <ToolbarItem>
         <SearchInput
+          data-testid="table-search-input"
           placeholder={t("searchForUser")}
           aria-label={t("search")}
           value={searchUser}
@@ -164,7 +170,7 @@ export function UserDataTableToolbarItems({
   ) : (
     <ToolbarItem>
       <Dropdown
-        toggle={<KebabToggle onToggle={(open) => setKebabOpen(open)} />}
+        toggle={<KebabToggle onToggle={(_event, open) => setKebabOpen(open)} />}
         isOpen={kebabOpen}
         isPlain
         dropdownItems={[

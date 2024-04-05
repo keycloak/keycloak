@@ -44,7 +44,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   });
 
   return (
-    <div className="pf-c-form pf-m-horizontal">
+    <div className="pf-v5-c-form pf-m-horizontal">
       <FormProvider {...form}>
         <TextControl
           name="config.entityId"
@@ -333,7 +333,7 @@ export const DescriptorSettings = ({ readOnly }: DescriptorSettingsProps) => {
     <ExpandableSection
       className="keycloak__discovery-settings__metadata"
       toggleText={isExpanded ? t("hideMetaData") : t("showMetaData")}
-      onToggle={(isOpen) => setIsExpanded(isOpen)}
+      onToggle={(_event, isOpen) => setIsExpanded(isOpen)}
       isExpanded={isExpanded}
     >
       <Fields readOnly={readOnly} />

@@ -7,14 +7,15 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+  TextInput,
 } from "@patternfly/react-core";
 import { capitalize } from "lodash-es";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { TextControl } from "ui-shared";
+
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type UserIdpModalProps = {
   userId: string;
@@ -88,7 +89,7 @@ export const UserIdpModal = ({
       <Form id="group-form" onSubmit={handleSubmit(onSubmit)}>
         <FormProvider {...form}>
           <FormGroup label={t("identityProvider")} fieldId="identityProvider">
-            <KeycloakTextInput
+            <TextInput
               id="identityProvider"
               data-testid="idpNameInput"
               value={capitalize(federatedId)}

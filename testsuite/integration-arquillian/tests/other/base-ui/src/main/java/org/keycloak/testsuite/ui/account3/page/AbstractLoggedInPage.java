@@ -36,7 +36,7 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     public static final String ACCOUNT_SECURITY_ID = "account-security";
 
-    @FindBy(xpath = "//div[@id='app']//header[@class='pf-c-page__header']")
+    @FindBy(xpath = "//div[@id='app']//header[@class='pf-v5-c-page__header']")
     private LoggedInPageHeader header;
 
     @FindBy(id = "page-sidebar")
@@ -48,7 +48,7 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     @Page
     private ContinueCancelModal modal;
 
-    @FindBy(className = "pf-c-title")
+    @FindBy(className = "pf-v5-c-title")
     private WebElement pageTitle;
 
     @FindBy(id = "refresh-page")

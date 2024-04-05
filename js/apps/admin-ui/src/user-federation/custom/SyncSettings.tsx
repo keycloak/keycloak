@@ -31,7 +31,7 @@ export const SyncSettings = () => {
             <Switch
               id="kc-periodic-full-sync"
               data-testid="periodic-full-sync"
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 field.onChange(value ? "604800" : "-1");
               }}
               isChecked={field.value !== "-1"}
@@ -71,7 +71,7 @@ export const SyncSettings = () => {
             <Switch
               id="kc-periodic-changed-users-sync"
               data-testid="periodic-changed-users-sync"
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 field.onChange(value ? "86400" : "-1");
               }}
               isChecked={field.value !== "-1"}

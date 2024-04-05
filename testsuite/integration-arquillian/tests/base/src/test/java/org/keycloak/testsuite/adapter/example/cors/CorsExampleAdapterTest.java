@@ -170,7 +170,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
                 "/auth/admin/master/console/#/master/info");
         jsDriverTestRealmLoginPage.form().login("admin", "admin");
         // just get the first list description which is the version
-        List<WebElement> elements = jsDriver.findElements(By.xpath(".//dd[@class='pf-c-description-list__description']"));
+        List<WebElement> elements = jsDriver.findElements(By.xpath(".//dd[@class='pf-v5-c-description-list__description']"));
         if (!elements.isEmpty()) {
             return elements.get(0).getText();
         }

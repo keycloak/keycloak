@@ -1,4 +1,9 @@
-import { ValidatedOptions } from "@patternfly/react-core";
+import {
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+  ValidatedOptions,
+} from "@patternfly/react-core";
 import {
   FieldPath,
   FieldValues,
@@ -42,7 +47,6 @@ export const PasswordControl = <
       labelIcon={labelIcon}
       isRequired={required}
       error={fieldState.error}
-      helperText={props.helperText}
     >
       <PasswordInput
         isRequired={required}
@@ -55,6 +59,13 @@ export const PasswordControl = <
         {...rest}
         {...field}
       />
+      {props.helperText && (
+        <FormHelperText>
+          <HelperText>
+            <HelperTextItem>{props.helperText}</HelperTextItem>
+          </HelperText>
+        </FormHelperText>
+      )}
     </FormLabel>
   );
 };

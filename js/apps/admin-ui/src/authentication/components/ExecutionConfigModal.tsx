@@ -184,7 +184,7 @@ export const ExecutionConfigModal = ({
               </Button>
               {config && (
                 <Button
-                  className="pf-u-ml-4xl"
+                  className="pf-v5-u-ml-4xl"
                   data-testid="clear"
                   variant={ButtonVariant.link}
                   onClick={async () => {

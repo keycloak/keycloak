@@ -4,15 +4,12 @@ import type {
   Clients,
   PolicyQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import { Button, ButtonVariant, Chip, ChipGroup } from "@patternfly/react-core";
 import {
-  Button,
-  ButtonVariant,
-  Chip,
-  ChipGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import {
   Controller,
@@ -235,7 +232,7 @@ export const ResourcesPolicySelect = ({
           <Select
             toggleId={name}
             variant={variant}
-            onToggle={setOpen}
+            onToggle={(_event, val) => setOpen(val)}
             onFilter={(_, filter) => {
               setSearch(filter);
               return toSelectOptions();

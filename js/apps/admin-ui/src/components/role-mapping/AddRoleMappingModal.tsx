@@ -1,12 +1,14 @@
 import {
   Button,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   Modal,
   ModalVariant,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -151,7 +153,7 @@ export const AddRoleMappingModal = ({
                 data-testid="filter-type-dropdown"
                 toggle={
                   <DropdownToggle
-                    onToggle={setSearchToggle}
+                    onToggle={(_event, val) => setSearchToggle(val)}
                     icon={<FilterIcon />}
                   >
                     {filterType === "roles"

@@ -362,7 +362,7 @@ export default class ProviderPage {
 
       case this.#roleLdapMapper:
         cy.findByTestId(this.#ldapRolesDnInput).clear().type(ldapDnValue);
-        cy.get(".pf-c-form__group")
+        cy.get(".pf-v5-c-form__group")
           .contains("Client ID")
           .parent()
           .parent()

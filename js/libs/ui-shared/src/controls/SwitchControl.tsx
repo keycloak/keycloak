@@ -50,9 +50,9 @@ export const SwitchControl = <
             data-testid={props.name}
             label={props.labelOn}
             isChecked={props.stringify ? value === "true" : value}
-            onChange={(checked, e) => {
+            onChange={(e, checked) => {
               const value = props.stringify ? checked.toString() : checked;
-              props.onChange?.(checked, e);
+              props.onChange?.(e, checked);
               onChange(value);
             }}
           />

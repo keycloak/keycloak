@@ -161,7 +161,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -222,7 +222,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -315,7 +315,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup

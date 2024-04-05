@@ -7,12 +7,14 @@ import {
   IFormatter,
   IRow,
   ITransform,
+  TableVariant,
+} from "@patternfly/react-table";
+import {
   Table,
   TableBody,
   TableHeader,
   TableProps,
-  TableVariant,
-} from "@patternfly/react-table";
+} from "@patternfly/react-table/deprecated";
 import { cloneDeep, differenceBy, get } from "lodash-es";
 import {
   ComponentClass,
@@ -303,7 +305,7 @@ export function KeycloakDataTable<T>({
   useEffect(() => {
     if (canSelectAll) {
       const checkboxes = document
-        .getElementsByClassName("pf-c-table__check")
+        .getElementsByClassName("pf-v5-c-table__check")
         .item(0);
       if (checkboxes) {
         const checkAllCheckbox = checkboxes.children!.item(

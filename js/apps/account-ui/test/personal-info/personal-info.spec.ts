@@ -68,7 +68,7 @@ test.describe("Personal info with userprofile enabled", async () => {
       "Could not update account due to validation errors",
     );
 
-    await expect(page.locator("#email2-helper")).toHaveText(
+    await expect(page.getByTestId("email2-helper")).toHaveText(
       "Invalid email address.",
     );
 

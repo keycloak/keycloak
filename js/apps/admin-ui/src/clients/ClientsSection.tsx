@@ -52,7 +52,7 @@ const ClientDetailLink = (client: ClientRepresentation) => {
       >
         {client.clientId}
         {!client.enabled && (
-          <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
+          <Badge key={`${client.id}-disabled`} isRead className="pf-v5-u-ml-sm">
             {t("disabled")}
           </Badge>
         )}
@@ -172,7 +172,7 @@ export default function ClientsSection() {
         helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           mountOnEnter
           isBox

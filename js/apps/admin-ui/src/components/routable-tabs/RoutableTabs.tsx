@@ -91,8 +91,8 @@ export const RoutableTabs = ({
       }}
       {...otherProps}
     >
-      {children}
-      {matchedTabs.map((t) => (
+      {children as any}
+      {matchedTabs.map<any>((t) => (
         <DynamicTab key={t.id} eventKey={t.pathname} title={t.id}>
           <PageHandler page={t} providerType={TAB_PROVIDER} />
         </DynamicTab>

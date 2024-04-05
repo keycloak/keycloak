@@ -15,7 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, SelectControl, TextControl } from "ui-shared";
+import { FormErrorText, HelpItem, SelectControl, TextControl } from "ui-shared";
 
 import { adminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
@@ -135,13 +135,7 @@ function RealmSettingsGeneralTabForm({
           className="pf-u-mt-lg"
           onSubmit={onSubmit}
         >
-          <FormGroup
-            label={t("realmId")}
-            fieldId="kc-realm-id"
-            isRequired
-            validated={errors.realm ? "error" : "default"}
-            helperTextInvalid={errors.realm?.message}
-          >
+          <FormGroup label={t("realmId")} fieldId="kc-realm-id" isRequired>
             <Controller
               name="realm"
               control={control}
@@ -158,6 +152,12 @@ function RealmSettingsGeneralTabForm({
                 </ClipboardCopy>
               )}
             />
+            {errors.realm && (
+              <FormErrorText
+                data-testid="realm-id-error"
+                message={errors.realm.message as string}
+              />
+            )}
           </FormGroup>
           <TextControl name="displayName" label={t("displayName")} />
           <TextControl name="displayNameHtml" label={t("htmlDisplayName")} />

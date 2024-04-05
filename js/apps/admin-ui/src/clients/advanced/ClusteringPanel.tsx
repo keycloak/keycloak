@@ -122,7 +122,7 @@ export const ClusteringPanel = ({
         />
         <ExpandableSection
           toggleText={t("registeredClusterNodes")}
-          onToggle={setExpanded}
+          onToggle={(_event, val) => setExpanded(val)}
           isExpanded={expanded}
         >
           <KeycloakDataTable

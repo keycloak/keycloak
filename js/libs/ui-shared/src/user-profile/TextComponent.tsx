@@ -1,5 +1,5 @@
-import { TextInputTypes } from "@patternfly/react-core";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
+import { TextInput, TextInputTypes } from "@patternfly/react-core";
+
 import { UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
 import { fieldName, isRequiredAttribute } from "./utils";
@@ -13,7 +13,7 @@ export const TextComponent = (props: UserProfileFieldProps) => {
 
   return (
     <UserProfileGroup {...props}>
-      <KeycloakTextInput
+      <TextInput
         id={attribute.name}
         data-testid={attribute.name}
         type={type}

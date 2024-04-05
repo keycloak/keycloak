@@ -1,6 +1,6 @@
 export default class CreateProviderPage {
   #github = "github";
-  #clientIdField = "clientId";
+  #clientIdField = "config.clientId";
   #clientIdError = "#config\\.clientSecret-helper";
   #clientSecretField = "config.clientSecret";
   #displayName = "displayName";
@@ -123,10 +123,9 @@ export default class CreateProviderPage {
   }
 
   shouldBeSuccessful() {
-    cy.findByTestId(this.#discoveryEndpoint).should(
-      "have.class",
-      "pf-m-success",
-    );
+    cy.findByTestId(this.#discoveryEndpoint)
+      .parent()
+      .should("have.class", "pf-m-success");
     return this;
   }
 

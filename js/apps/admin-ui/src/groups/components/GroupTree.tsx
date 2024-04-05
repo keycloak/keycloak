@@ -3,16 +3,19 @@ import {
   AlertVariant,
   Button,
   Checkbox,
+  InputGroup,
+  Tooltip,
+  TreeView,
+  TreeViewDataItem,
+  InputGroupItem,
+} from "@patternfly/react-core";
+import {
   Dropdown,
   DropdownItem,
   DropdownPosition,
   DropdownSeparator,
-  InputGroup,
   KebabToggle,
-  Tooltip,
-  TreeView,
-  TreeViewDataItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { AngleRightIcon } from "@patternfly/react-icons";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
@@ -292,17 +295,21 @@ export const GroupTree = ({
       inputGroupPlaceholder={t("searchForGroups")}
       inputGroupOnEnter={setSearch}
       toolbarItem={
-        <InputGroup className="pf-u-pt-sm">
-          <Checkbox
-            id="exact"
-            data-testid="exact-search"
-            name="exact"
-            isChecked={exact}
-            onChange={(value) => setExact(value)}
-          />
-          <label htmlFor="exact" className="pf-u-pl-sm">
-            {t("exactSearch")}
-          </label>
+        <InputGroup className="pf-v5-u-pt-sm">
+          <InputGroupItem>
+            <Checkbox
+              id="exact"
+              data-testid="exact-search"
+              name="exact"
+              isChecked={exact}
+              onChange={(_event, value) => setExact(value)}
+            />
+          </InputGroupItem>
+          <InputGroupItem>
+            <label htmlFor="exact" className="pf-v5-u-pl-sm">
+              {t("exactSearch")}
+            </label>
+          </InputGroupItem>
         </InputGroup>
       }
     >

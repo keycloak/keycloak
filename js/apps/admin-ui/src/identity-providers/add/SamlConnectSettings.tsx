@@ -3,7 +3,8 @@ import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client
 import { FormGroup, Title } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "ui-shared";
+import { FormErrorText, HelpItem, TextControl } from "ui-shared";
+
 import { adminClient } from "../../admin-client";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -100,8 +101,6 @@ export const SamlConnectSettings = () => {
                 fieldLabelId="importConfig"
               />
             }
-            validated={errors.discoveryError ? "error" : "default"}
-            helperTextInvalid={errors.discoveryError?.message}
           >
             <FileUploadForm
               id="kc-import-config"
@@ -111,6 +110,11 @@ export const SamlConnectSettings = () => {
               validated={errors.discoveryError ? "error" : "default"}
               onChange={(value) => fileUpload(value)}
             />
+            {errors.discoveryError && (
+              <FormErrorText
+                message={errors.discoveryError.message as string}
+              />
+            )}
           </FormGroup>
         }
       >

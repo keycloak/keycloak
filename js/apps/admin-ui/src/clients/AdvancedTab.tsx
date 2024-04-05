@@ -70,7 +70,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   };
 
   return (
-    <PageSection variant="light" className="pf-u-py-0">
+    <PageSection variant="light" className="pf-v5-u-py-0">
       <ScrollForm
         label={t("jumpToSection")}
         sections={[
@@ -84,7 +84,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol !== openIdConnect,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("fineGrainOpenIdConnectConfigurationHelp")}
                 </Text>
                 <FineGrainOpenIdConnect
@@ -120,7 +120,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol !== openIdConnect,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("openIdConnectCompatibilityModesHelp")}
                 </Text>
                 <OpenIdConnectCompatibilityModes
@@ -142,7 +142,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol === openIdConnect,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("fineGrainSamlEndpointConfigHelp")}
                 </Text>
                 <FineGrainSamlEndpointConfig
@@ -169,7 +169,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("advancedSettings"),
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("advancedSettings" + toUpperCase(protocol || ""))}
                 </Text>
                 <AdvancedSettings
@@ -191,7 +191,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("authenticationOverrides"),
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("authenticationOverridesHelp")}
                 </Text>
                 <AuthenticationOverrides

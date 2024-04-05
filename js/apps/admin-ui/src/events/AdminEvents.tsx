@@ -12,17 +12,18 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
+import { TableVariant, cellWidth } from "@patternfly/react-table";
 import {
   Table,
   TableBody,
   TableHeader,
-  TableVariant,
-  cellWidth,
-} from "@patternfly/react-table";
+} from "@patternfly/react-table/deprecated";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
@@ -275,7 +276,7 @@ export const AdminEvents = () => {
                             }}
                             variant={SelectVariant.typeaheadMulti}
                             typeAheadAriaLabel="Select"
-                            onToggle={(isOpen) =>
+                            onToggle={(_event, isOpen) =>
                               setSelectResourceTypesOpen(isOpen)
                             }
                             selections={field.value}
@@ -340,7 +341,7 @@ export const AdminEvents = () => {
                             }}
                             variant={SelectVariant.typeaheadMulti}
                             typeAheadAriaLabel="Select"
-                            onToggle={(isOpen) =>
+                            onToggle={(_event, isOpen) =>
                               setSelectOperationTypesOpen(isOpen)
                             }
                             selections={field.value}
@@ -403,7 +404,7 @@ export const AdminEvents = () => {
                         control={control}
                         render={({ field }) => (
                           <DatePicker
-                            className="pf-u-w-100"
+                            className="pf-v5-u-w-100"
                             value={field.value}
                             onChange={(_, value) => field.onChange(value)}
                             inputProps={{ id: "kc-dateFrom" }}
@@ -421,7 +422,7 @@ export const AdminEvents = () => {
                         control={control}
                         render={({ field }) => (
                           <DatePicker
-                            className="pf-u-w-100"
+                            className="pf-v5-u-w-100"
                             value={field.value}
                             onChange={(_, value) => field.onChange(value)}
                             inputProps={{ id: "kc-dateTo" }}
@@ -451,7 +452,7 @@ export const AdminEvents = () => {
               </FlexItem>
               <FlexItem>
                 {Object.entries(activeFilters).length > 0 && (
-                  <div className="keycloak__searchChips pf-u-ml-md">
+                  <div className="keycloak__searchChips pf-v5-u-ml-md">
                     {Object.entries(activeFilters).map((filter) => {
                       const [key, value] = filter as [
                         keyof AdminEventSearchForm,
@@ -460,7 +461,7 @@ export const AdminEvents = () => {
 
                       return (
                         <ChipGroup
-                          className="pf-u-mt-md pf-u-mr-md"
+                          className="pf-v5-u-mt-md pf-v5-u-mr-md"
                           key={key}
                           categoryName={filterLabels[key]}
                           isClosable

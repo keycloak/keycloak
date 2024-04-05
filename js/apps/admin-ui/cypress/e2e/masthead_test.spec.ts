@@ -6,7 +6,7 @@ import { keycloakBefore } from "../support/util/keycloak_hooks";
 const loginPage = new LoginPage();
 const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
-const helpLabel = ".pf-c-form__group-label-help";
+const helpLabel = ".pf-v5-c-form__group-label-help";
 
 describe("Masthead tests", () => {
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe("Masthead tests", () => {
     it("Go to realm info", () => {
       sidebarPage.goToClients();
       masthead.toggleUsernameDropdown().clickRealmInfo();
-      cy.get(".pf-l-grid").should("contain.text", "Welcome");
+      cy.get(".pf-v5-l-grid").should("contain.text", "Welcome");
     });
 
     it("Should go to documentation page", () => {
@@ -81,7 +81,7 @@ describe("Masthead tests", () => {
     });
   });
 
-  describe.skip("Accessibility tests for masthead", () => {
+  describe("Accessibility tests for masthead", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();

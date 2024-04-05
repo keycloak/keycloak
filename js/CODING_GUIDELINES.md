@@ -141,28 +141,28 @@ For the Admin UI, we modify the PatternFly convention to namespace the classes a
 **Example of a CSS custom property**
 ```css
 // Modify the height of the brand image
---keycloak-admin--brand--Height: var(--pf-global--spacer--xl); 
+--keycloak-admin--brand--Height: var(--pf-v5-global--spacer--xl); 
 ```
 
 **Example**
 ```css
 // Don’t increase specificity
 // Don’t use pixel values
-.keycloak-admin--manage-columns__modal .pf-c-dropdown {
+.keycloak-admin--manage-columns__modal .pf-v5-c-dropdown {
    margin-bottom: 24px
 }
 
 // Do use a new class
 // Do use a PatternFly global spacer variable
 .keycloak-admin--manage-columns__dropdown {
-   margin-bottom: var(--pf-global--spacer--xl);
+   margin-bottom: var(--pf-v5-global--spacer--xl);
 }
 ```
 ### Using utility classes
 
 Utility classes can be used to add specific styling to a component, such as margin-bottom or padding. However, their use should be limited to one-off styling needs.  
 
-For example, instead of using the utility class for margin-right multiple times, we should define a new Admin UI class that adds this *margin-right: var(--pf-global--spacer--sm);* and in this example, the new class can set the color appropriately as well.
+For example, instead of using the utility class for margin-right multiple times, we should define a new Admin UI class that adds this *margin-right: var(--pf-v5-global--spacer--sm);* and in this example, the new class can set the color appropriately as well.
 
 **Using a utility class **
 ```css
@@ -171,8 +171,8 @@ switch (titleStatus) {
      return (
        <>
          <InfoCircleIcon
-           className="pf-u-mr-sm" // utility class 
-           color="var(--pf-global--info-color--100)"
+           className="pf-v5-u-mr-sm" // utility class 
+           color="var(--pf-v5-global--info-color--100)"
          />{" "}
          {titleText}{" "}
        </>
@@ -181,8 +181,8 @@ switch (titleStatus) {
      return (
        <>
          <InfoCircleIcon
-           className="pf-u-mr-sm"
-           color="var(--pf-global--danger-color--100)"
+           className="pf-v5-u-mr-sm"
+           color="var(--pf-v5-global--danger-color--100)"
          />{" "}
          {titleText}{" "}
        </>

@@ -3,13 +3,13 @@ import {
   AlertVariant,
   ButtonVariant,
   Divider,
-  DropdownItem,
   Label,
   PageSection,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { cloneDeep, sortBy } from "lodash-es";
 import { useMemo, useState } from "react";
@@ -413,7 +413,7 @@ export default function ClientDetails() {
           />
         )}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs
             data-testid="client-tabs"

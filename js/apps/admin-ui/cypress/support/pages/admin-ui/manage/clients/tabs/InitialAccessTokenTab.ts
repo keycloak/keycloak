@@ -6,7 +6,7 @@ export default class InitialAccessTokenTab extends CommonPage {
   #emptyAction = "no-initial-access-tokens-empty-action";
 
   #expirationNumberInput = "expiration";
-  #expirationText = "#expiration-helper";
+  #expirationText = ".pf-v5-c-helper-text__item-text";
   #countInput = "#count input";
   #countPlusBtn = '#count [aria-label="Plus"]';
   #saveBtn = "save";

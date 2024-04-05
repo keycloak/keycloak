@@ -108,7 +108,7 @@ export const PartialExportDialog = ({
             id="include-groups-and-roles-check"
             data-testid="include-groups-and-roles-check"
             isChecked={exportGroupsAndRoles}
-            onChange={setExportGroupsAndRoles}
+            onChange={(_event, val) => setExportGroupsAndRoles(val)}
             label={t("on")}
             labelOff={t("off")}
             aria-label={t("includeGroupsAndRoles")}
@@ -122,7 +122,7 @@ export const PartialExportDialog = ({
           <Switch
             id="include-clients-check"
             data-testid="include-clients-check"
-            onChange={setExportClients}
+            onChange={(_event, val) => setExportClients(val)}
             isChecked={exportClients}
             label={t("on")}
             labelOff={t("off")}

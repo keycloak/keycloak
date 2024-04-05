@@ -114,7 +114,7 @@ describe("Clients test", () => {
     it("Should search existing client scope by assigned type", () => {
       commonPage
         .tableToolbarUtils()
-        .selectSearchType(Filter.AssignedType)
+        .selectSearchType(Filter.Name, Filter.AssignedType)
         .selectSecondarySearchType(FilterAssignedType.Default);
       commonPage
         .tableUtils()
@@ -217,13 +217,12 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().clickSearchButton();
     });
 
-    //fails, issue https://github.com/keycloak/keycloak-admin-ui/issues/1874
     it("Should show initial items after filtering", () => {
       commonPage
         .tableToolbarUtils()
-        .selectSearchType(Filter.AssignedType)
+        .selectSearchType(Filter.Name, Filter.AssignedType)
         .selectSecondarySearchType(FilterAssignedType.Optional)
-        .selectSearchType(Filter.Name);
+        .selectSearchType(Filter.AssignedType, Filter.Name);
       commonPage
         .tableUtils()
         .checkRowItemExists(FilterAssignedType.Default, false)

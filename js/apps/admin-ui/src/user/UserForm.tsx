@@ -10,7 +10,9 @@ import {
   ChipGroup,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Switch,
+  TextInput,
 } from "@patternfly/react-core";
 import { TFunction } from "i18next";
 import { useEffect, useState } from "react";
@@ -18,17 +20,18 @@ import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
+  FormErrorText,
   HelpItem,
   SwitchControl,
   TextControl,
   UserProfileFields,
 } from "ui-shared";
+
 import { adminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../context/access/Access";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
@@ -135,7 +138,7 @@ export const UserForm = ({
       onSubmit={handleSubmit(save)}
       role="query-users"
       fineGrainedAccess={user?.access?.manage}
-      className="pf-u-mt-lg"
+      className="pf-v5-u-mt-lg"
     >
       <FormProvider {...form}>
         {open && (
@@ -157,7 +160,7 @@ export const UserForm = ({
         {user?.id && (
           <>
             <FormGroup label={t("id")} fieldId="kc-id" isRequired>
-              <KeycloakTextInput
+              <TextInput
                 id={user.id}
                 aria-label={t("userID")}
                 value={user.id}
@@ -169,7 +172,7 @@ export const UserForm = ({
               fieldId="kc-created-at"
               isRequired
             >
-              <KeycloakTextInput
+              <TextInput
                 value={formatDate(new Date(user.createdTimestamp!))}
                 id="kc-created-at"
                 readOnly
@@ -265,7 +268,7 @@ export const UserForm = ({
             <Switch
               data-testid="user-locked-switch"
               id="temporaryLocked"
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 unLockUser();
                 setLocked(value);
               }}
@@ -280,8 +283,6 @@ export const UserForm = ({
           <FormGroup
             label={t("groups")}
             fieldId="kc-groups"
-            validated={errors.requiredActions ? "error" : "default"}
-            helperTextInvalid={t("required")}
             labelIcon={
               <HelpItem helpText={t("groupsHelp")} fieldLabelId="groups" />
             }
@@ -292,27 +293,34 @@ export const UserForm = ({
               control={control}
               render={() => (
                 <InputGroup>
-                  <ChipGroup categoryName={" "}>
-                    {selectedGroups.map((currentChip) => (
-                      <Chip
-                        key={currentChip.id}
-                        onClick={() => deleteItem(currentChip.name!)}
-                      >
-                        {currentChip.path}
-                      </Chip>
-                    ))}
-                  </ChipGroup>
-                  <Button
-                    id="kc-join-groups-button"
-                    onClick={toggleModal}
-                    variant="secondary"
-                    data-testid="join-groups-button"
-                  >
-                    {t("joinGroups")}
-                  </Button>
+                  <InputGroupItem>
+                    <ChipGroup categoryName={" "}>
+                      {selectedGroups.map((currentChip) => (
+                        <Chip
+                          key={currentChip.id}
+                          onClick={() => deleteItem(currentChip.name!)}
+                        >
+                          {currentChip.path}
+                        </Chip>
+                      ))}
+                    </ChipGroup>
+                  </InputGroupItem>
+                  <InputGroupItem>
+                    <Button
+                      id="kc-join-groups-button"
+                      onClick={toggleModal}
+                      variant="secondary"
+                      data-testid="join-groups-button"
+                    >
+                      {t("joinGroups")}
+                    </Button>
+                  </InputGroupItem>
                 </InputGroup>
               )}
             />
+            {errors.requiredActions && (
+              <FormErrorText message={t("required")} />
+            )}
           </FormGroup>
         )}
 

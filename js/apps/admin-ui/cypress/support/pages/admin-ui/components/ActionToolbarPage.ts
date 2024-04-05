@@ -2,7 +2,7 @@ import CommonElements from "../../CommonElements";
 
 export default class ActionToolbarPage extends CommonElements {
   constructor() {
-    super(".pf-l-level.pf-m-gutter");
+    super(".pf-v5-l-level.pf-m-gutter");
   }
 
   get bearerOnlyExplainerLabelElement() {

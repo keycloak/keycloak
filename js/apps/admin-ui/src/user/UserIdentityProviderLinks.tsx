@@ -184,7 +184,7 @@ export const UserIdentityProviderLinks = ({
         />
       )}
       <UnlinkConfirm />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <FormPanel title={t("linkedIdPs")} className="kc-linked-idps">
           <TextContent>
             <Text className="kc-available-idps-text">

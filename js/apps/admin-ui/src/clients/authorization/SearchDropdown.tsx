@@ -1,11 +1,6 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import {
-  ActionGroup,
-  Button,
-  Dropdown,
-  DropdownToggle,
-  Form,
-} from "@patternfly/react-core";
+import { ActionGroup, Button, Form } from "@patternfly/react-core";
+import { Dropdown, DropdownToggle } from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -56,7 +51,7 @@ export const SearchDropdown = ({
   return (
     <Dropdown
       data-testid="searchdropdown_dorpdown"
-      className="pf-u-ml-md"
+      className="pf-v5-u-ml-md"
       toggle={
         <DropdownToggle
           onToggle={toggle}

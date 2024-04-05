@@ -3,12 +3,15 @@ import {
   Form,
   FormGroup,
   ModalVariant,
+  Stack,
+  StackItem,
+  TextArea,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Stack,
-  StackItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,7 +24,6 @@ import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { useFetch } from "../../utils/useFetch";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 
 type DownloadDialogProps = {
   id: string;
@@ -124,7 +126,7 @@ export const DownloadDialog = ({
               <Select
                 toggleId="type"
                 isOpen={openType}
-                onToggle={(isExpanded) => setOpenType(isExpanded)}
+                onToggle={(_event, isExpanded) => setOpenType(isExpanded)}
                 variant={SelectVariant.single}
                 value={selected}
                 selections={selected}
@@ -160,7 +162,7 @@ export const DownloadDialog = ({
                   />
                 }
               >
-                <KeycloakTextArea
+                <TextArea
                   id="details"
                   readOnly
                   rows={12}

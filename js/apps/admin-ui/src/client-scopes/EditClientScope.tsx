@@ -6,11 +6,11 @@ import {
   Alert,
   AlertVariant,
   ButtonVariant,
-  DropdownItem,
   PageSection,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -234,7 +234,7 @@ export default function EditClientScope() {
         divider={false}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs isBox>
           <Tab
             id="settings"

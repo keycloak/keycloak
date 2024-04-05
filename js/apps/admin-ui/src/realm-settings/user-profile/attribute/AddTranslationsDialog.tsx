@@ -12,7 +12,8 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import { Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import { Table } from "@patternfly/react-table/deprecated";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -191,14 +192,14 @@ export const AddTranslationsDialog = ({
               <TextControl
                 name="key"
                 label={t("translationKey")}
-                className="pf-u-mt-md"
+                className="pf-v5-u-mt-md"
                 data-testid="translation-key"
                 isDisabled
               />
               <FlexItem>
                 <TextContent>
                   <Text
-                    className="pf-u-font-size-sm pf-u-font-weight-bold"
+                    className="pf-v5-u-font-size-sm pf-v5-u-font-weight-bold"
                     component={TextVariants.p}
                   >
                     {t("translationsTableHeading")}
@@ -245,10 +246,10 @@ export const AddTranslationsDialog = ({
                     >
                       <Thead>
                         <Tr>
-                          <Th className="pf-u-py-lg">
+                          <Th className="pf-v5-u-py-lg">
                             {t("supportedLanguagesTableColumnName")}
                           </Th>
-                          <Th className="pf-u-py-lg">
+                          <Th className="pf-v5-u-py-lg">
                             {t("translationTableColumnName")}
                           </Th>
                           <Th aria-hidden="true" />
@@ -262,7 +263,7 @@ export const AddTranslationsDialog = ({
                           return (
                             <Tr key={index}>
                               <Td
-                                className="pf-m-sm pf-u-px-sm"
+                                className="pf-m-sm pf-v5-u-px-sm"
                                 dataLabel={t("supportedLanguage")}
                               >
                                 <FormGroup fieldId="kc-supportedLanguage">
@@ -271,7 +272,10 @@ export const AddTranslationsDialog = ({
                                     whoAmI.getLocale(),
                                   )}
                                   {locale === defaultLocales.toString() && (
-                                    <Label className="pf-u-ml-xs" color="blue">
+                                    <Label
+                                      className="pf-v5-u-ml-xs"
+                                      color="blue"
+                                    >
                                       {t("defaultLanguage")}
                                     </Label>
                                   )}

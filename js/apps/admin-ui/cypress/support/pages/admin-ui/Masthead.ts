@@ -1,17 +1,17 @@
 import CommonElements from "../CommonElements";
 export default class Masthead extends CommonElements {
-  #logoBtn = ".pf-c-page__header-brand-link img";
+  #logoBtn = ".pf-v5-c-page__header-brand-link img";
   #helpBtn = "#help";
-  #closeAlertMessageBtn = ".pf-c-alert__action button";
-  #closeLastAlertMessageBtn = "li:first-child .pf-c-alert__action button";
+  #closeAlertMessageBtn = ".pf-v5-c-alert__action button";
+  #closeLastAlertMessageBtn = "li:first-child .pf-v5-c-alert__action button";
 
-  #alertMessage = ".pf-c-alert__title";
+  #alertMessage = ".pf-v5-c-alert__title";
   #userDrpDwn = "#user-dropdown";
   #userDrpDwnKebab = "#user-dropdown-kebab";
   #globalAlerts = "global-alerts";
   #documentationLink = "#link";
   #backToAdminConsoleLink = "referrer-link";
-  #userDrpdwnItem = ".pf-c-dropdown__menu-item";
+  #userDrpdwnItem = ".pf-v5-c-dropdown__menu-item";
 
   #getAlertsContainer() {
     return cy.findByTestId(this.#globalAlerts);
