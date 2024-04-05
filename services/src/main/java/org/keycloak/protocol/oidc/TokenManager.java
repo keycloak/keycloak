@@ -389,7 +389,7 @@ public class TokenManager {
         //if scope parameter is not null, remove every scope that is not part of scope parameter
         if (scopeParameter != null && ! scopeParameter.isEmpty()) {
             Set<String> scopeParamScopes = Arrays.stream(scopeParameter.split(" ")).collect(Collectors.toSet());
-            oldTokenScope = Arrays.stream(oldTokenScope.split(" ")).filter(sc -> scopeParamScopes.contains(sc) || sc.equals(OAuth2Constants.OFFLINE_ACCESS))
+            oldTokenScope = Arrays.stream(oldTokenScope.split(" ")).filter(sc -> scopeParamScopes.contains(sc))
                     .collect(Collectors.joining(" "));
         }
 
@@ -415,7 +415,7 @@ public class TokenManager {
             validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
         if (clientConfig.isUseRefreshToken()) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
-            responseBuilder.generateRefreshToken(refreshToken.getScope());
+            responseBuilder.generateRefreshToken(refreshToken.getScope(), clientSession);
         }
 
         if (validation.newToken.getAuthorization() != null
@@ -1099,12 +1099,14 @@ public class TokenManager {
             return this;
         }
 
-        public AccessTokenResponseBuilder generateRefreshToken(String scope) {
+        public AccessTokenResponseBuilder generateRefreshToken(String scope, AuthenticatedClientSessionModel clientSession) {
             if (accessToken == null) {
                 throw new IllegalStateException("accessToken not set");
             }
 
             boolean offlineTokenRequested = Arrays.asList(scope.split(" ")).contains(OAuth2Constants.OFFLINE_ACCESS) ;
+            if (offlineTokenRequested)
+                clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scope, session);
             generateRefreshToken(offlineTokenRequested);
             refreshToken.setScope(scope);
             return this;
