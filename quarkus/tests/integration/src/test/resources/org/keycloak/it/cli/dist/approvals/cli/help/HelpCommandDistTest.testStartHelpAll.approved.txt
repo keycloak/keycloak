@@ -276,7 +276,7 @@ Vault:
 Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
-                       are: console, file, gelf (deprecated). Default: console.
+                       are: console, file, syslog, gelf (deprecated). Default: console.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false. Available
                        only when Console log handler is activated.
@@ -337,6 +337,22 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+--log-syslog-app-name <name>
+                     The app name used when formatting the message in RFC5424 format. Default:
+                       keycloak. Available only when Syslog is activated.
+--log-syslog-endpoint <host:port>
+                     The IP address and port of the syslog server. Default: localhost:514.
+                       Available only when Syslog is activated.
+--log-syslog-format <format>
+                     Set a format specific to syslog entries. Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n. Available only when Syslog is activated.
+--log-syslog-output <output>
+                     Set the syslog output to JSON or default (plain) unstructured logging.
+                       Possible values are: default, json. Default: default. Available only when
+                       Syslog is activated.
+--log-syslog-protocol <protocol>
+                     Sets the protocol used to connect to the syslog server. Possible values are:
+                       tcp, udp, ssl-tcp. Default: tcp. Available only when Syslog is activated.
 
 Truststore:
 

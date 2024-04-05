@@ -39,3 +39,11 @@ This fix will break code that relied on casting the List or its contents to `Lis
 
 When exporting the authorization settings for a client, the IDs for resources, scopes, and policies are no longer set. As a
 result, you can now import the settings from a client to another client.
+
+= Syslog for remote logging
+
+{project_name} now supports https://en.wikipedia.org/wiki/Syslog[Syslog] protocol for remote logging.
+It utilizes the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].
+By default, the syslog handler is disabled, but when enabled, it sends all log events to a remote syslog server.
+
+For more information, see the https://www.keycloak.org/server/logging[Configuring logging] guide.
