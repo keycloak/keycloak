@@ -55,6 +55,8 @@ test.describe("Personal info with userprofile enabled", async () => {
     await expect(page.locator("#select")).toBeVisible();
     await expect(page.getByTestId("help-label-select")).toBeVisible();
     expect(page.getByText("Alternative email")).toBeDefined();
+    page.locator("#select").click();
+    expect(await page.waitForSelector("text=Three")).toBeDefined();
   });
 
   test("save user profile", async ({ page }) => {

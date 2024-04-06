@@ -7,12 +7,7 @@ import {
   UserProfileFieldProps,
 } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import {
-  UserFormFields,
-  fieldName,
-  isRequiredAttribute,
-  unWrap,
-} from "./utils";
+import { UserFormFields, fieldName, isRequiredAttribute, label } from "./utils";
 
 export const SelectComponent = (props: UserProfileFieldProps) => {
   const { t, form, inputType, attribute } = props;
@@ -41,8 +36,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
   const optionLabel = attribute.annotations?.[
     "inputOptionLabels"
   ] as OptionLabel;
-  const label = (label: string) =>
-    optionLabel ? t(unWrap(optionLabel[label])) : label;
+  const getLabel = (option: string) => label(t, optionLabel?.[option], option);
 
   return (
     <UserProfileGroup {...props}>
@@ -78,7 +72,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
                 key={option}
                 value={option}
               >
-                {option ? label(option) : t("choose")}
+                {option ? getLabel(option) : t("choose")}
               </SelectOption>
             ))}
           </Select>
