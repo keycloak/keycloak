@@ -341,7 +341,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: store-it-mvn-logs
           path: .github/scripts/ansible/files
@@ -463,7 +463,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: store-it-mvn-logs
           path: .github/scripts/ansible/files
