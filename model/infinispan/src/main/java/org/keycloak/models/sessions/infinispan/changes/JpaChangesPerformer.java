@@ -82,9 +82,11 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     @Override
     public void applyChanges() {
-        Retry.executeWithBackoff(iteration -> KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
-                        innerSession -> changes.forEach(c -> c.accept(innerSession))),
-                10, 10);
+        if (changes.size() > 0) {
+            Retry.executeWithBackoff(iteration -> KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                            innerSession -> changes.forEach(c -> c.accept(innerSession))),
+                    10, 10);
+        }
     }
 
     private void processClientSessionUpdate(KeycloakSession innerSession, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {

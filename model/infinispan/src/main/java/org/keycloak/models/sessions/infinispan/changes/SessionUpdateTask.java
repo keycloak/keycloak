@@ -30,6 +30,10 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
     CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<S> sessionWrapper);
 
+    default boolean isDeferrable() {
+        return false;
+    }
+
     enum CacheOperation {
 
         ADD,
