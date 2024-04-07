@@ -77,9 +77,13 @@ public class JWKSUtils {
                 logger.debugf("Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
             } else if ((requestedUse.asString().equals(jwk.getPublicKeyUse()) || (jwk.getPublicKeyUse() == null && useRequestedUseWhenNull))
                     && parser.isKeyTypeSupported(jwk.getKeyType())) {
-                KeyWrapper keyWrapper = wrap(jwk, parser);
-                keyWrapper.setUse(getKeyUse(requestedUse.asString()));
-                result.add(keyWrapper);
+                try {
+                    KeyWrapper keyWrapper = wrap(jwk, parser);
+                    keyWrapper.setUse(getKeyUse(requestedUse.asString()));
+                    result.add(keyWrapper);
+                } catch (RuntimeException e) {
+                    logger.debugf(e, "Ignoring JWK key '%s'. Failed to load key.", jwk.getKeyId());
+                }
             }
         }
         return new PublicKeysWrapper(result);
