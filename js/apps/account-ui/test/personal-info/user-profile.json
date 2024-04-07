@@ -124,7 +124,12 @@
       },
       "annotations": {
         "inputType": "select",
-        "inputHelperTextBefore": "This is helping a lot"
+        "inputHelperTextBefore": "This is helping a lot",
+        "inputOptionLabels": {
+          "one": "One",
+          "two": "Two",
+          "three": "Three"
+        }
       },
       "validations": {
         "options": {
