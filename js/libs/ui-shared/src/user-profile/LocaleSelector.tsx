@@ -34,6 +34,7 @@ export const LocaleSelector = ({
         label={t("selectALocale")}
         controller={{ defaultValue: "" }}
         options={locales}
+        variant={locales.length >= 10 ? "typeahead" : "single"}
       />
     </FormProvider>
   );

@@ -57,6 +57,32 @@ test.describe("Personal info with userprofile enabled", async () => {
     expect(page.getByText("Alternative email")).toBeDefined();
   });
 
+  test("render long select options as typeahead", async ({ page }) => {
+    await login(page, user, "jdoe", realm);
+
+    await page.getByText("Alternate Language").click();
+    await page.waitForSelector("text=Italiano");
+
+    await page.locator("*:focus").press("Control+A");
+    await page.locator("*:focus").pressSequentially("S");
+    await expect(page.getByText("Italiano")).toHaveCount(0);
+    expect(page.getByText("Suomi")).toBeVisible();
+    expect(page.getByText('Create "S"')).not.toBeVisible();
+  });
+
+  test("render long list of locales as typeahead", async ({ page }) => {
+    await login(page, user, "jdoe", realm);
+
+    await page.locator("#locale").click();
+    await page.waitForSelector("text=Italiano");
+
+    await page.locator("*:focus").press("Control+A");
+    await page.locator("*:focus").pressSequentially("S");
+    await expect(page.getByText("Italiano")).toHaveCount(0);
+    expect(page.getByText("Suomi")).toBeVisible();
+    expect(page.getByText('Create "S"')).not.toBeVisible();
+  });
+
   test("save user profile", async ({ page }) => {
     await login(page, user, "jdoe", realm);
 
