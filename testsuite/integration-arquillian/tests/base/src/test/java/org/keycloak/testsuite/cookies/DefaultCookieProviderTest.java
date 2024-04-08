@@ -42,7 +42,6 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         Response response = testing.server("master").runWithResponse(session -> {
             CookieProvider cookies = session.getProvider(CookieProvider.class);
             cookies.set(CookieType.AUTH_SESSION_ID, "my-auth-session-id");
-            cookies.set(CookieType.AUTH_STATE, "my-auth-state", 111);
             cookies.set(CookieType.AUTH_RESTART, "my-auth-restart");
             cookies.set(CookieType.AUTH_DETACHED, "my-auth-detached", 222);
             cookies.set(CookieType.IDENTITY, "my-identity", 333);
@@ -51,9 +50,8 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
             cookies.set(CookieType.SESSION, "my-session", 444);
             cookies.set(CookieType.WELCOME_CSRF, "my-welcome-csrf");
         });
-        Assert.assertEquals(12, response.getCookies().size());
+        Assert.assertEquals(11, response.getCookies().size());
         assertCookie(response, "AUTH_SESSION_ID", "my-auth-session-id", "/auth/realms/master/", -1, false, true, "None", true);
-        assertCookie(response, "KC_AUTH_STATE", "my-auth-state", "/auth/realms/master/", 111, false, false, "Strict", false);
         assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, false, true, "None", false);
         assertCookie(response, "KC_STATE_CHECKER", "my-auth-detached", "/auth/realms/master/", 222, false, true, "Strict", false);
         assertCookie(response, "KEYCLOAK_IDENTITY", "my-identity", "/auth/realms/master/", 333, false, true, "None", true);

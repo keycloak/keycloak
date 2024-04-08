@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.forms;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.models.Constants.CLIENT_DATA;
 import static org.keycloak.testsuite.AssertEvents.DEFAULT_REDIRECT_URI;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -34,12 +35,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -174,12 +177,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
             // Should be back on tab1
-            if (driver instanceof HtmlUnitDriver) {
-                driver.navigate().refresh(); // Need to explicitly refresh with HtmlUnitDriver due the authChecker.js javascript does not work
-            }
-
-            // Should be back on tab1 and logged-in automatically here
-            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
+            waitForAppPage(() -> driver.navigate().refresh());
             appPage.assertCurrent();
         }
     }
@@ -189,34 +187,57 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     public void multipleTabsParallelLoginTestWithAuthSessionExpiredInTheMiddle() {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             multipleTabsParallelLogin(tabUtil);
-            events.clear();
 
-            loginPage.login("login-test", "password");
+            waitForAppPage(() -> loginPage.login("login-test", "password"));
             assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN);
         }
     }
 
     @Test
-    public void multipleTabsParallelLoginTestWithAuthSessionExpiredInTheMiddle_badRedirectUri() throws Exception {
-        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
-            multipleTabsParallelLogin(tabUtil);
+    public void testWithAuthSessionExpiredInTheMiddle_badRedirectUri() throws Exception {
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
 
-            // Remove redirectUri from the client
-            try (ClientAttributeUpdater cap = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
-                    .setRedirectUris(List.of("https://foo"))
-                    .update()) {
+        // Simulate incorrect login attempt to make sure that URL is on LoginActionsService URL
+        loginPage.login("invalid", "invalid");
+        String loginUrl = driver.getCurrentUrl();
+        Assert.assertTrue(UriUtils.decodeQueryString(new URL(loginUrl).getQuery()).containsKey(CLIENT_DATA));
+        getLogger().info("URL in tab1: " + driver.getCurrentUrl());
 
-                events.clear();
-                loginPage.login("login-test", "password");
-                events.expectLogin().user((String) null).session((String) null).error(Errors.INVALID_REDIRECT_URI)
-                        .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
-                        .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
-                        .removeDetail(Details.CONSENT)
-                        .removeDetail(Details.CODE_ID)
-                        .assertEvent();
-                errorPage.assertCurrent(); // Page "You are already logged in." should not be here
-                Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
-            }
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // Wait until authentication session expires
+        setTimeOffset(7200000);
+
+        loginPage.login("login-test", "password");
+        loginPage.assertCurrent();
+        Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+        events.clear();
+
+        loginSuccessAndDoRequiredActions();
+
+        // Remove redirectUri from the client "test-app"
+        try (ClientAttributeUpdater cap = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                .setRedirectUris(List.of("https://foo"))
+                .update()) {
+
+            events.clear();
+
+            // Delete cookie and go to original loginURL. Restore from client_data parameter should fail due the incorrect redirectUri
+            driver.manage().deleteCookieNamed(RestartLoginCookie.KC_RESTART);
+
+            driver.navigate().to(loginUrl);
+            errorPage.assertCurrent();
+            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+            events.expectLogin().user((String) null).session((String) null)
+                    .error(Errors.INVALID_REDIRECT_URI)
+                    .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
+                    .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
+                    .removeDetail(Details.CONSENT)
+                    .removeDetail(Details.CODE_ID)
+                    .assertEvent(true);
         }
     }
 
@@ -239,6 +260,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("login-test", "password");
         loginPage.assertCurrent();
         Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+        events.clear();
 
         loginSuccessAndDoRequiredActions();
 
@@ -257,13 +279,19 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
     // Assert browser was redirected to the appPage with "error=temporarily_unavailable" and error_description corresponding to Constants.AUTHENTICATION_EXPIRED_MESSAGE
     private void assertOnAppPageWithAlreadyLoggedInError(EventType expectedEventType) {
+        if (!(driver instanceof HtmlUnitDriver)) {
+            // In case of real browsers, the "tab2" is automatically refreshed when tab1 finish authentication. This is done by invoking LoginActionsService.restartSession endpoint by JS.
+            // Hence event type is always RESTART_AUTHENTICATION
+            expectedEventType = EventType.RESTART_AUTHENTICATION;
+        }
+
         events.expect(expectedEventType)
                 .user((String) null).error(Errors.ALREADY_LOGGED_IN)
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .detail(Details.REDIRECTED_TO_CLIENT, "true")
                 .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
                 .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
-                .assertEvent();
+                .assertEvent(true);
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
         OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
@@ -274,9 +302,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     public void multipleTabsParallelLoginTestWithAuthSessionExpiredAndRegisterClick() {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             multipleTabsParallelLogin(tabUtil);
-            events.clear();
 
-            loginPage.clickRegister();
+            waitForAppPage(() -> loginPage.clickRegister());
             assertOnAppPageWithAlreadyLoggedInError(EventType.REGISTER);
         }
     }
@@ -285,9 +312,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     public void multipleTabsParallelLoginTestWithAuthSessionExpiredAndResetPasswordClick() {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             multipleTabsParallelLogin(tabUtil);
-            events.clear();
 
-            loginPage.resetPassword();
+            waitForAppPage(() -> loginPage.resetPassword());
             assertOnAppPageWithAlreadyLoggedInError(EventType.RESET_PASSWORD);
         }
     }
@@ -322,9 +348,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             // Go back to tab1. Usually should be automatically authenticated here (previously it showed "You are already logged-in")
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
-            events.clear();
 
-            updatePasswordPage.changePassword("password", "password");
+            waitForAppPage(() -> updatePasswordPage.changePassword("password", "password"));
             assertOnAppPageWithAlreadyLoggedInError(EventType.CUSTOM_REQUIRED_ACTION);
         }
     }
@@ -359,9 +384,11 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             // Go back to tab1 and refresh the page. Should be automatically authenticated here (previously it showed "You are already logged-in")
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
-            events.clear();
 
-            driver.navigate().refresh();
+            waitForAppPage(() -> {
+                events.clear();
+                driver.navigate().refresh();
+            });
             assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN);
         }
     }
@@ -660,13 +687,19 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
-            if (driver instanceof HtmlUnitDriver) {
-                driver.navigate().refresh(); // Need to explicitly refresh with HtmlUnitDriver due the authChecker.js javascript does not work
-            }
-
-            // Should be back on tab1 and logged-in automatically here
-            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
+            waitForAppPage(() -> driver.navigate().refresh());
             appPage.assertCurrent();
         }
+    }
+
+    private void waitForAppPage(Runnable htmlUnitAction) {
+        if (driver instanceof HtmlUnitDriver) {
+            // authChecker.js javascript does not work with HtmlUnitDriver. So need to "refresh" the current browser tab by running the last action in order to simulate "already_logged_in"
+            // error and being redirected to client
+            htmlUnitAction.run();
+        }
+
+        // Should be back on tab1 and logged-in automatically here
+        WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
     }
 }
