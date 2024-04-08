@@ -209,6 +209,7 @@ export default function UserFederationSection() {
             <Gallery hasGutter>
               {providers.map((p) => (
                 <ClickableCard
+                  id={p.id}
                   key={p.id}
                   onClick={() =>
                     navigate(

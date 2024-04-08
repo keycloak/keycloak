@@ -1,13 +1,15 @@
 import { KeyboardEvent } from "react";
-import { Card, CardProps } from "@patternfly/react-core";
+import { Card, CardHeader, CardProps } from "@patternfly/react-core";
 
 type ClickableCardProps = Omit<CardProps, "onClick"> & {
+  id: string;
   onClick: () => void;
 };
 
 export const ClickableCard = ({
-  children,
+  id,
   onClick,
+  children,
   ...rest
 }: ClickableCardProps) => {
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -17,16 +19,22 @@ export const ClickableCard = ({
   };
   return (
     <Card
-      className="keycloak-empty-state-card"
       role="button"
       aria-pressed="false"
       tabIndex={0}
-      isSelectable
+      isClickable
       onKeyDown={onKeyDown}
       onClick={onClick}
       {...rest}
     >
-      {children}
+      <CardHeader
+        selectableActions={{
+          onClickAction: onClick,
+          selectableActionId: id,
+        }}
+      >
+        {children}
+      </CardHeader>
     </Card>
   );
 };
