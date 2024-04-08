@@ -288,24 +288,17 @@ public class OID4VCIssuerEndpoint {
 
         List<OID4VCClient> clients = getClientsOfType(vcType, format);
 
-        Map<String, OID4VCMapper> mapperMap = session.getAllProviders(OID4VCMapper.class)
-                .stream()
-                .collect(Collectors.toMap(ProviderFactory::getId, mapper -> mapper, (m1, m2) -> m1));
-
         List<OID4VCMapper> protocolMappers = getProtocolMappers(clients)
                 .stream()
                 .map(pm -> {
-                    OID4VCMapper mapperFactory = mapperMap.get(pm.getProtocolMapper());
-                    if (mapperFactory == null) {
-                        LOGGER.warnf("No protocol mapper %s is registered.", pm.getProtocolMapper());
-                        return null;
+                    if (session.getProvider(ProtocolMapper.class, pm.getProtocolMapper()) instanceof OID4VCMapper mapperFactory) {
+                        ProtocolMapper protocolMapper = mapperFactory.create(session);
+                        if (protocolMapper instanceof OID4VCMapper oid4VCMapper) {
+                            oid4VCMapper.setMapperModel(pm);
+                            return oid4VCMapper;
+                        }
                     }
-                    ProtocolMapper protocolMapper = mapperFactory.create(session);
-                    if (protocolMapper instanceof OID4VCMapper oid4VCMapper) {
-                        oid4VCMapper.setMapperModel(pm);
-                        return oid4VCMapper;
-                    }
-                    LOGGER.warnf("The protocol mapper %s is not an instance of OID4VCMapper.", protocolMapper.getId());
+                    LOGGER.warnf("The protocol mapper %s is not an instance of OID4VCMapper.", pm.getId());
                     return null;
                 })
                 .filter(Objects::nonNull)

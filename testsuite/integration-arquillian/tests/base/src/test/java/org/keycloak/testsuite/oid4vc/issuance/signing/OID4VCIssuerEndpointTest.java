@@ -1,3 +1,20 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
@@ -36,6 +54,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
@@ -48,6 +67,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
@@ -403,6 +423,8 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                         requestOffer(theToken, credentialIssuer.getCredentialEndpoint(), supportedCredential);
                     } catch (IOException e) {
                         fail("Was not able to get the credential.");
+                    } catch (VerificationException e) {
+                        throw new RuntimeException(e);
                     }
                 });
     }
@@ -438,7 +460,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + realm + "/protocol/oid4vc/";
     }
 
-    private void requestOffer(String token, String credentialEndpoint, SupportedCredentialConfiguration offeredCredential) throws IOException {
+    private void requestOffer(String token, String credentialEndpoint, SupportedCredentialConfiguration offeredCredential) throws IOException, VerificationException {
         CredentialRequest request = new CredentialRequest();
         request.setFormat(offeredCredential.getFormat());
         request.setCredentialIdentifier(offeredCredential.getId());
@@ -454,6 +476,12 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         CredentialResponse credentialResponse = JsonSerialization.readValue(s, CredentialResponse.class);
 
         assertNotNull("The credential should have been responded.", credentialResponse.getCredential());
+        JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
+        assertEquals("did:web:test.org", jsonWebToken.getIssuer());
+        VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+        assertEquals(List.of("VerifiableCredential"), credential.getType());
+        assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
+        assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
 
     @Override
