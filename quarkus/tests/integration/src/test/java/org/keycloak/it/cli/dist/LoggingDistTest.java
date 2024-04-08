@@ -17,11 +17,13 @@
 
 package org.keycloak.it.cli.dist;
 
+import static org.awaitility.Awaitility.given;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -32,6 +34,8 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+
+import static io.restassured.RestAssured.when;
 
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
@@ -141,14 +145,14 @@ public class LoggingDistTest {
     void failUnknownHandlersInConfFile(KeycloakDistribution dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/keycloak.conf", Paths.get("conf", "keycloak.conf"));
         CLIResult cliResult = dist.run("start-dev");
-        cliResult.assertError("Invalid value for option 'kc.log': foo. Expected values are: console, file, gelf.");
+        cliResult.assertError("Invalid value for option 'kc.log': foo. Expected values are: console, file, syslog, gelf.");
     }
 
     @Test
     void failEmptyLogErrorFromConfFileError(KeycloakDistribution dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/emptylog.conf", Paths.get("conf", "emptylog.conf"));
         CLIResult cliResult = dist.run(CONFIG_FILE_LONG_NAME+"=../conf/emptylog.conf", "start-dev");
-        cliResult.assertError("Invalid value for option 'kc.log': . Expected values are: console, file, gelf.");
+        cliResult.assertError("Invalid value for option 'kc.log': . Expected values are: console, file, syslog, gelf.");
     }
 
     @Test
@@ -163,5 +167,14 @@ public class LoggingDistTest {
     void failEmptyLogValueInCliError(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Invalid value for option '--log': .");
+    }
+
+    @Test
+    @Launch({"start-dev", "--log=syslog"})
+    void syslogHandler(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoMessage("org.keycloak");
+        cliResult.assertNoMessage("Listening on:");
+        cliResult.assertError("Error writing to TCP stream");
     }
 }

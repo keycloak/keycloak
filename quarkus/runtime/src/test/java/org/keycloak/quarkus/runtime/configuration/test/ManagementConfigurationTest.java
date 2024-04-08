@@ -17,13 +17,11 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import org.junit.Test;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ManagementConfigurationTest extends ConfigurationTest {
@@ -263,15 +261,5 @@ public class ManagementConfigurationTest extends ConfigurationTest {
 
     private void assertManagementHttpsEnabled(boolean expected) {
         assertThat("Expected value for Management HTTPS is different", ManagementPropertyMappers.isManagementTlsEnabled(), is(expected));
-    }
-
-    private void assertConfig(String key, String expectedValue) {
-        var value = Configuration.getKcConfigValue(key).getValue();
-        assertThat(String.format("Value is null for key '%s'", key), value, notNullValue());
-        assertThat(String.format("Different value for key '%s'", key), value, is(expectedValue));
-    }
-
-    private void assertConfig(Map<String, String> expectedValues) {
-        expectedValues.forEach(this::assertConfig);
     }
 }

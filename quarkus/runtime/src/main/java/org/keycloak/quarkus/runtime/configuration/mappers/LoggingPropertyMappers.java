@@ -24,6 +24,7 @@ public final class LoggingPropertyMappers {
 
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
+    private static final String SYSLOG_ENABLED_MSG = "Syslog is activated";
     private static final String GELF_ENABLED_MSG = "GELF is activated";
 
     private LoggingPropertyMappers() {
@@ -34,6 +35,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG)
                         .paramLabel("<handler>")
                         .build(),
+                // Console
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.json")
@@ -54,6 +56,7 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.console.enable")
                         .transformer(LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
                         .build(),
+                // File
                 fromOption(LoggingOptions.LOG_FILE_ENABLED)
                         .mapFrom("log")
                         .to("quarkus.log.file.enable")
@@ -68,7 +71,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_FILE_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.format")
-                        .paramLabel("<format>")
+                        .paramLabel("format")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
@@ -76,13 +79,46 @@ public final class LoggingPropertyMappers {
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
+                // Log level
                 fromOption(LoggingOptions.LOG_LEVEL)
                         .to("quarkus.log.level")
                         .transformer(LoggingPropertyMappers::resolveLogLevel)
                         .validator((mapper, value) -> mapper.validateExpectedValues(value,
                                 (c, v) -> validateLogLevel(v)))
                         .paramLabel("category:level")
-                        .build()
+                        .build(),
+                // Syslog
+                fromOption(LoggingOptions.LOG_SYSLOG_ENABLED)
+                        .mapFrom("log")
+                        .to("quarkus.log.syslog.enable")
+                        .transformer(LoggingPropertyMappers.resolveLogHandler("syslog"))
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_ENDPOINT)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.endpoint")
+                        .paramLabel("host:port")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_APP_NAME)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.app-name")
+                        .paramLabel("name")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_PROTOCOL)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.protocol")
+                        .paramLabel("protocol")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_FORMAT)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.format")
+                        .paramLabel("format")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_OUTPUT)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.json")
+                        .paramLabel("output")
+                        .transformer(LoggingPropertyMappers::resolveLogOutput)
+                        .build(),
         };
 
         return GELF_ACTIVATED ? ArrayUtils.addAll(defaultMappers, getGelfMappers()) : defaultMappers;
@@ -155,6 +191,10 @@ public final class LoggingPropertyMappers {
 
     public static boolean isFileEnabled() {
         return isTrue(LoggingOptions.LOG_FILE_ENABLED);
+    }
+
+    public static boolean isSyslogEnabled() {
+        return isTrue(LoggingOptions.LOG_SYSLOG_ENABLED);
     }
 
     private static BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> resolveLogHandler(String handler) {
