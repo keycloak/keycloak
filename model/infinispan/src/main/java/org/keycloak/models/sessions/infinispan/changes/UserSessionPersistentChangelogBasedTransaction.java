@@ -93,12 +93,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
             return null;
         }
 
-        SessionEntityWrapper<UserSessionEntity> userSessionEntitySessionEntityWrapper = importUserSession(persistentUserSession);
-        if (userSessionEntitySessionEntityWrapper == null) {
-            removeSessionEntityFromPersister(key);
-        }
-
-        return userSessionEntitySessionEntityWrapper;
+        return importUserSession(persistentUserSession);
     }
 
     private void removeSessionEntityFromPersister(String key) {
