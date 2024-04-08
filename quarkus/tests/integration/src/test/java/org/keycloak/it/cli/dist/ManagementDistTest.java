@@ -27,7 +27,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DistributionType;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import java.net.SocketException;
+import java.io.IOException;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.is;
@@ -56,8 +56,8 @@ public class ManagementDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoMessage("Management interface listening on");
 
-        assertThrows(SocketException.class, () -> when().get("/"), "Connection refused must be thrown");
-        assertThrows(SocketException.class, () -> when().get("/health"), "Connection refused must be thrown");
+        assertThrows(IOException.class, () -> when().get("/"), "Connection refused must be thrown");
+        assertThrows(IOException.class, () -> when().get("/health"), "Connection refused must be thrown");
 
         distribution.setRequestPort(8080);
 
