@@ -6,7 +6,7 @@ import {
   UserProfileFieldProps,
 } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { fieldName, isRequiredAttribute, unWrap } from "./utils";
+import { fieldName, isRequiredAttribute, label } from "./utils";
 
 export const OptionComponent = (props: UserProfileFieldProps) => {
   const { form, inputType, attribute } = props;
@@ -16,9 +16,8 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
   const options =
     (attribute.validators?.options as Options | undefined)?.options || [];
 
-  const optionLabel = attribute.annotations?.[
-    "inputOptionLabels"
-  ] as OptionLabel;
+  const optionLabel =
+    (attribute.annotations?.["inputOptionLabels"] as OptionLabel) || {};
 
   return (
     <UserProfileGroup {...props}>
@@ -33,7 +32,7 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
                 key={option}
                 id={option}
                 data-testid={option}
-                label={props.t(unWrap(optionLabel?.on || option))}
+                label={label(props.t, optionLabel[option], option)}
                 value={option}
                 isChecked={field.value.includes(option)}
                 onChange={() => {
