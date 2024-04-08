@@ -169,7 +169,12 @@ public class ClientResource {
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            throw ErrorResponse.exists("Client already exists");
+            String errorMessage = e.getMessage();
+            if (errorMessage != null) {
+                throw ErrorResponse.exists(errorMessage);
+            } else {
+                throw ErrorResponse.exists("Client already exists");
+            }
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
