@@ -21,9 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 
 import org.jboss.logging.Logger;
@@ -42,7 +40,8 @@ public class DefaultCors implements Cors {
 
     private static final Logger logger = Logger.getLogger(DefaultCors.class);
 
-    private HttpRequest request;
+    private final HttpRequest request;
+    private final HttpResponse response;
     private ResponseBuilder builder;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
@@ -51,14 +50,9 @@ public class DefaultCors implements Cors {
     private boolean preflight;
     private boolean auth;
 
-    DefaultCors(HttpRequest request) {
-        this.request = request;
-    }
-
-    @Override
-    public Cors request(HttpRequest request) {
-        this.request = request;
-        return this;
+    DefaultCors(KeycloakSession session) {
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     @Override
@@ -117,89 +111,65 @@ public class DefaultCors implements Cors {
 
     @Override
     public Cors exposedHeaders(String... exposedHeaders) {
-        this.exposedHeaders = new HashSet<>(Arrays.asList(exposedHeaders));
-        return this;
-    }
-
-    @Override
-    public Cors addExposedHeaders(String... exposedHeaders) {
         if (this.exposedHeaders == null) {
-            this.exposedHeaders(exposedHeaders);
-        } else {
-            this.exposedHeaders.addAll(Arrays.asList(exposedHeaders));
+            this.exposedHeaders = new HashSet<>();
         }
+
+        this.exposedHeaders.addAll(Arrays.asList(exposedHeaders));
+
         return this;
     }
 
     @Override
-    public Response build() {
-        if (builder == null) {
-            throw new IllegalStateException("builder is not set");
-        }
-
-        if (build(builder::header)) {
-            logger.debug("Added CORS headers to response");
-        }
-        return builder.build();
-    }
-
-    @Override
-    public boolean build(HttpResponse response) {
-        if (build(response::addHeader)) {
-            logger.debug("Added CORS headers to response");
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean build(BiConsumer<String, String> addHeader) {
+    public void add() {
         if (request == null) {
             throw new IllegalStateException("request is not set");
+        }
+
+        if (response == null) {
+            throw new IllegalStateException("response is not set");
         }
 
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
             logger.trace("No Origin header, ignoring");
-            return false;
+            return;
         }
 
         if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
             if (logger.isDebugEnabled()) {
                 logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
             }
-            return false;
+            return;
         }
 
-        addHeader.accept(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        response.setHeader(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
         if (preflight) {
             if (allowedMethods != null) {
-                addHeader.accept(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
+                response.setHeader(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
             } else {
-                addHeader.accept(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
+                response.setHeader(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
             }
         }
 
         if (!preflight && exposedHeaders != null) {
-            addHeader.accept(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
+            response.setHeader(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
         }
 
-        addHeader.accept(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
+        response.setHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
 
         if (preflight) {
             if (auth) {
-                addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
             } else {
-                addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
             }
         }
 
         if (preflight) {
-            addHeader.accept(ACCESS_CONTROL_MAX_AGE, String.valueOf(DEFAULT_MAX_AGE));
+            response.setHeader(ACCESS_CONTROL_MAX_AGE, String.valueOf(DEFAULT_MAX_AGE));
         }
-
-        return true;
     }
 
     @Override

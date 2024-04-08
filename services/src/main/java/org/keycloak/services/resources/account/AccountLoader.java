@@ -86,7 +86,7 @@ public class AccountLoader {
         AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
         
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService(request);
+            return new CorsPreflightService();
         } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
             return getAccountRestService(client, null);
         } else if (accountResourceProvider != null) {
@@ -100,7 +100,7 @@ public class AccountLoader {
     @Produces(MediaType.APPLICATION_JSON)
     public Object getVersionedAccountRestService(final @PathParam("version") String version) {
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService(request);
+            return new CorsPreflightService();
         }
         return getAccountRestService(getAccountManagementClient(session.getContext().getRealm()), version);
     }
@@ -137,7 +137,7 @@ public class AccountLoader {
 
         Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.getUser(), client, authResult.getSession(), false);
 
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         if (authResult.getUser().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");

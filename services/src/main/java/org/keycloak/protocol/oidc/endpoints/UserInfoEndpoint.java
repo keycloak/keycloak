@@ -112,7 +112,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @OPTIONS
     public Response issueUserInfoPreflight() {
-        return Cors.add(this.request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     @Path("/")
@@ -322,7 +322,7 @@ public class UserInfoEndpoint {
 
         event.success();
 
-        return cors.builder(responseBuilder).build();
+        return cors.add(responseBuilder);
     }
 
     private String jweFromContent(String content, String jweContentType) {
@@ -363,7 +363,7 @@ public class UserInfoEndpoint {
     }
 
     private void setupCors() {
-        cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
         error.cors(cors);
     }
 
