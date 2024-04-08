@@ -261,6 +261,7 @@ As you can see, the timestamp is present twice, so you can amend it correspondin
 
 == Centralized logging using GELF
 NOTE: The support for GELF log handler is deprecated and will be removed in a future {project_name} release.
+The recommended alternative is using the Syslog log handler described above.
 
 {project_name} can send logs to a centralized log management system such as the following:
 
