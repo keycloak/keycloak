@@ -62,7 +62,7 @@ import java.util.UUID;
 /**
  * Super class for all OID4VC tests. Provides convenience methods to ease the testing.
  */
-@EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+@EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = false)
 public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCTest.class);
