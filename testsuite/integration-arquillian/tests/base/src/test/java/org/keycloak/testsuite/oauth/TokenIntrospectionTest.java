@@ -349,7 +349,6 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             assertTrue(rep.isActive());
             assertEquals("test-user@localhost", rep.getUserName());
             assertEquals("no-scope", rep.getClientId());
-            assertEquals(loginEvent.getUserId(), rep.getSubject());
             assertNull(rep.getScope());
         } finally {
             testRealm.setClientScopes(preExistingClientScopes);

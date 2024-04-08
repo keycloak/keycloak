@@ -89,7 +89,19 @@ Note that the `setSessionState()` method is also removed from the `IDToken` clas
 
 A new `Session State (session_state)` mapper is also included and can be assigned to client scopes (for instance `basic` client scope) to revert to the old behavior.
 
-If an old version of the JS adapter is used, the `Session State (session_state)` mapper should also be used via client scopes as described above.
+If an old version of the JS adapter is used, the `Session State (session_state)` mapper should also be used by using client scopes as described above.
+
+= `sub` claim is added to access token via protocol mapper
+
+The `sub` claim, which was always added to the access token, is now added by default but using a new `Subject (sub)` protocol mapper.
+
+The `Subject (sub)` mapper is configured by default in the `basic` client scope. Therefore, no extra configuration is required after upgrading to this version.
+
+Only in the case you are using `Pairwise subject identifier` mapper to map `sub` claim for access token you should disable or remove `Subject (sub)` mapper.
+
+You can use the `Subject (sub)` mapper to configure the `sub` claim only for access token, lightweight access token, and introspection response. IDToken and Userinfo always contain `sub` claim.
+
+The mapper has no effects for service accounts, because no user session exists, and the`sub` claim is always added to the access token.
 
 = Default `http-pool-max-threads` reduced
 

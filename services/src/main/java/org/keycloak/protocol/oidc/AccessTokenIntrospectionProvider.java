@@ -70,6 +70,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             ObjectNode tokenMetadata;
 
             if (accessToken != null) {
+                UserSessionModel userSession = accessToken.getSessionId() == null ? null : session.sessions().getUserSession(realm, accessToken.getSessionId());
                 tokenMetadata = JsonSerialization.createObjectNode(accessToken);
                 tokenMetadata.put("client_id", accessToken.getIssuedFor());
 
@@ -82,25 +83,21 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
                     if (accessToken.getPreferredUsername() != null) {
                         tokenMetadata.put("username", accessToken.getPreferredUsername());
                     } else {
-                        UserModel userModel = session.users().getUserById(realm, accessToken.getSubject());
+                        UserModel userModel = accessToken.getSubject() == null ? null : session.users().getUserById(realm, accessToken.getSubject());
                         if (userModel != null) {
                             tokenMetadata.put("username", userModel.getUsername());
+                        } else if (userSession != null && userSession.getUser() != null) {
+                            tokenMetadata.put("username", userSession.getUser().getUsername());
                         }
                     }
                 }
 
-                String sessionState = accessToken.getSessionState();
+                if (userSession != null) {
+                    String actor = userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString());
 
-                if (sessionState != null) {
-                    UserSessionModel userSession = session.sessions().getUserSession(realm, sessionState);
-
-                    if (userSession != null) {
-                        String actor = userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString());
-
-                        if (actor != null) {
-                            // for token exchange delegation semantics when an entity (actor) other than the subject is the acting party to whom authority has been delegated
-                            tokenMetadata.putObject("act").put("sub", actor);
-                        }
+                    if (actor != null) {
+                        // for token exchange delegation semantics when an entity (actor) other than the subject is the acting party to whom authority has been delegated
+                        tokenMetadata.putObject("act").put("sub", actor);
                     }
                 }
 
@@ -157,7 +154,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         AccessToken newToken = new AccessToken();
         newToken.id(token.getId());
         newToken.type(token.getType());
-        newToken.subject(token.getSubject() != null ? token.getSubject() : userSession.getUser().getId());
+        newToken.subject(token.getSubject());
         newToken.iat(token.getIat());
         newToken.exp(token.getExp());
         newToken.issuedFor(token.getIssuedFor());

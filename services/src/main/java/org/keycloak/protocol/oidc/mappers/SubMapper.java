@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.jboss.logging.Logger;
-
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -35,17 +34,17 @@ import java.util.Map;
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
  */
-public class SessionStateMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
+public class SubMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, TokenIntrospectionTokenMapper {
 
 
-    public static final String PROVIDER_ID = "oidc-session-state-mapper";
+    public static final String PROVIDER_ID = "oidc-sub-mapper";
 
-    private static final Logger logger = Logger.getLogger(SessionStateMapper.class);
+    private static final Logger logger = Logger.getLogger(SubMapper.class);
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
-        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, SessionStateMapper.class);
+        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, SubMapper.class);
     }
 
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -59,7 +58,7 @@ public class SessionStateMapper extends AbstractOIDCProtocolMapper implements OI
 
     @Override
     public String getDisplayType() {
-        return "Session State (session_state)";
+        return "Subject (sub)";
     }
 
     @Override
@@ -69,26 +68,24 @@ public class SessionStateMapper extends AbstractOIDCProtocolMapper implements OI
 
     @Override
     public String getHelpText() {
-        return "Add Session State (session_state) claim";
+        return "Add Subject (sub) claim";
     }
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession,
                             ClientSessionContext clientSessionCtx) {
-        if (userSession != null) {
-            token.getOtherClaims().put(IDToken.SESSION_STATE, userSession.getId());
+        if (userSession != null && userSession.getUser() != null) {
+            token.subject(userSession.getUser().getId());
         }
     }
 
-    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean userInfo, boolean introspectionEndpoint) {
+    public static ProtocolMapperModel create(String name, boolean accessToken, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Map<String, String> config = new HashMap<>();
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (userInfo) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
         if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;

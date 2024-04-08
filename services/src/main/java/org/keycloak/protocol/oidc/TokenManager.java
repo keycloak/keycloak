@@ -387,7 +387,7 @@ public class TokenManager {
      */
     public static UserModel lookupUserFromStatelessToken(KeycloakSession session, RealmModel realm, AccessToken token) {
         // Try to lookup user based on "sub" claim. It should work for most cases with some rare exceptions (EG. OIDC "pairwise" subjects)
-        UserModel user = session.users().getUserById(realm, token.getSubject());
+        UserModel user = token.getSubject() == null ? null : session.users().getUserById(realm, token.getSubject());
         if (user != null) {
             return user;
         }
@@ -976,7 +976,9 @@ public class TokenManager {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.type(TokenUtil.TOKEN_TYPE_BEARER);
-        token.subject(user.getId());
+        if (UserSessionModel.SessionPersistenceState.TRANSIENT.equals(session.getPersistenceState())) {
+            token.subject(user.getId());
+        }
         token.issuedNow();
         token.issuedFor(client.getClientId());
 
@@ -1184,7 +1186,7 @@ public class TokenManager {
             idToken = new IDToken();
             idToken.id(KeycloakModelUtils.generateId());
             idToken.type(TokenUtil.TOKEN_TYPE_ID);
-            idToken.subject(accessToken.getSubject());
+            idToken.subject(userSession.getUser().getId());
             idToken.audience(client.getClientId());
             idToken.issuedNow();
             idToken.issuedFor(accessToken.getIssuedFor());

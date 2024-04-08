@@ -67,6 +67,12 @@ Use the *Script Mapper* to map claims to tokens by running user-defined JavaScri
 
 When scripts deploy, you should be able to select the deployed scripts from the list of available mappers.
 
+== Pairwise subject identifier mapper
+
+Subject claim _sub_ is mapped by default by *Subject (sub)* protocol mapper in the default client scope *basic*.
+
+To use a pairwise subject identifier by using a protocol mapper such as *Pairwise subject identifier*, remove the *Subject (sub)* protocol mapper from the *basic* client scope.
+
 [[_using_lightweight_access_token]]
 == Using lightweight access token
 The access token in {project_name} contains sensitive information, including Personal Identifiable Information (PII).
@@ -75,7 +81,7 @@ Further, when the resource server acquires the PII removed from the access token
 
 Information that cannot be removed from a lightweight access token::
   Protocol mappers can controls which information is put onto an access token and the lightweight access token use the protocol mappers. Therefore, the following information cannot be removed from the lightweight access. +
-  `exp`, `iat`, `jti`, `iss`, `sub`, `typ`, `azp`, `nonce`, `sid`, `scope`, `cnf`
+  `exp`, `iat`, `jti`, `iss`, `typ`, `azp`, `sid`, `scope`, `cnf`
 
 Using a lightweight access token in {project_name}::
   By applying `use-lightweight-access-token` executor of <<_client_policies, client policies>> to a client, the client can receive a lightweight access token instead of an access token. The lightweight access token contains a claim controlled by a protocol mapper where its setting `Add to lightweight access token`(default OFF) is turned ON. Also, by turning ON its setting `Add to token introspection` of the protocol mapper, the client can obtain the claim by sending the access token to {project_name}'s token introspection endpoint.
