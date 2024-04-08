@@ -19,10 +19,6 @@ public final class CookieType {
             .supportSameSiteLegacy()
             .build();
 
-    public static final CookieType AUTH_STATE = CookieType.create("KC_AUTH_STATE")
-            .scope(CookieScope.INTERNAL_JS)
-            .build();
-
     public static final CookieType IDENTITY = CookieType.create("KEYCLOAK_IDENTITY")
             .scope(CookieScope.FEDERATION)
             .supportSameSiteLegacy()
