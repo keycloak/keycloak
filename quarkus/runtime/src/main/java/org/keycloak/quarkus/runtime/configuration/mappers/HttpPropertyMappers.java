@@ -20,6 +20,7 @@ import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class HttpPropertyMappers {
+    private static final int MIN_MAX_THREADS = 50;
     private static final String QUARKUS_HTTPS_CERT_FILES = "quarkus.http.ssl.certificate.files";
     private static final String QUARKUS_HTTPS_CERT_KEY_FILES = "quarkus.http.ssl.certificate.key-files";
 
@@ -111,6 +112,7 @@ public final class HttpPropertyMappers {
                         .build(),
                 fromOption(HttpOptions.HTTP_POOL_MAX_THREADS)
                         .to("quarkus.thread-pool.max-threads")
+                        .transformer(HttpPropertyMappers::resolveMaxThreads)
                         .paramLabel("threads")
                         .build()
         };
@@ -175,6 +177,14 @@ public final class HttpPropertyMappers {
                 return empty();
             } catch (IllegalArgumentException ignore) {
             }
+        }
+        return value;
+    }
+
+    private static Optional<String> resolveMaxThreads(Optional<String> value,
+            ConfigSourceInterceptorContext configSourceInterceptorContext) {
+        if (value.isEmpty()) {
+            return of(String.valueOf(Math.max(MIN_MAX_THREADS, 4 * Runtime.getRuntime().availableProcessors())));
         }
         return value;
     }

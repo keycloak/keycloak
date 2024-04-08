@@ -201,9 +201,9 @@ HTTP(S):
                        situation. Excess requests will return a "503 Server not Available" response.
 --http-pool-max-threads <threads>
                      The maximum number of threads. If this is not specified then it will be
-                       automatically sized to the greatest of 8 * the number of available
-                       processors and 200. For example if there are 4 processors the max threads
-                       will be 200. If there are 48 processors it will be 384.
+                       automatically sized to the greater of 4 * the number of available processors
+                       and 50. For example if there are 4 processors the max threads will be 50. If
+                       there are 48 processors it will be 192.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a

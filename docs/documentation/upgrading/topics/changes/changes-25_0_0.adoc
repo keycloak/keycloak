@@ -88,3 +88,7 @@ Note that the `setSessionState()` method is also removed from the `IDToken` clas
 A new `Session State (session_state)` mapper is also included and can be assigned to client scopes (for instance `basic` client scope) to revert to the old behavior.
 
 If an old version of the JS adapter is used, the `Session State (session_state)` mapper should also be used via client scopes as described above.
+
+= Default `http-pool-max-threads` reduced
+
+`http-pool-max-threads` if left unset will default to the greater of 50 or 4 x (available processors). Previously it defaulted to the greater of 200 or 8 x (available processors). Reducing the number or task threads for most usage scenarios will result in slightly higher performance due to less context switching among active threads.
