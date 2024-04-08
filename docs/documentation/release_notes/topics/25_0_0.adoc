@@ -2,6 +2,14 @@
 
 The Account Console v2 theme has been removed from {project_name}. This theme was deprecated in {project_name} 24 and replaced by the Account Console v3 theme. If you are still using this theme, you should migrate to the Account Console v3 theme.
 
+= Java 21 support
+
+{project_name} now supports OpenJDK 21, as we want to stick to the latest LTS OpenJDK versions.
+
+= Java 17 support is deprecated
+
+OpenJDK 17 support is deprecated in {project_name}, and will be removed in a following release in favor of OpenJDK 21.
+
 = Most of Java adapters removed
 
 As stated in the release notes of previous {project_name} version, the most of Java adapters are now removed from the {project_name} codebase and downloads pages.

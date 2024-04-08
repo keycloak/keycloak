@@ -52,7 +52,7 @@ You can create either `pkcs12` or `bcfks` keystore to be used for the {project_n
 
 The `p12` (or `pkcs12`) keystore (and/or truststore) works well in BCFIPS non-approved mode.
 
-PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way. For instance,  the following command can be used to generate the keystore:
+PKCS12 keystore can be generated with OpenJDK 21 Java on RHEL 9 in the standard way. For instance, the following command can be used to generate the keystore:
 
 [source,bash]
 ----
@@ -180,7 +180,7 @@ available. Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=205162
 
 == Run the CLI on the FIPS host
 
-If you want to run Client Registration CLI (`kcreg.sh|bat` script) or Admin CLI (`kcadm.sh|bat` script), 
+If you want to run Client Registration CLI (`kcreg.sh|bat` script) or Admin CLI (`kcadm.sh|bat` script),
  the CLI must also use the BouncyCastle FIPS dependencies instead of plain BouncyCastle dependencies. To achieve this, you may copy the
 jars to the CLI library folder and that is enough. CLI tool will automatically use BCFIPS dependencies instead of plain BC when
 it detects that corresponding BCFIPS jars are present (see above for the versions used). For example, use command such as the following before running the CLI:
@@ -268,8 +268,8 @@ earlier. If you prefer to avoid this option, you can for instance ask all your u
 the non-RHEL compatible platform or on the non-FIPS enabled platform, the FIPS compliance cannot be strictly guaranteed and cannot be officially supported.
 
 If you are still restricted to running {project_name} on such a system, you can at least update your security providers configured in `java.security` file. This update does not amount to FIPS compliance, but
-at least the setup is closer to it. It can be done by providing a custom security file with only an overridden list of security providers as described earlier. For a list of recommended providers, 
-see the https://access.redhat.com/documentation/en-us/openjdk/17/html/configuring_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration[OpenJDK 17 documentation].
+at least the setup is closer to it. It can be done by providing a custom security file with only an overridden list of security providers as described earlier. For a list of recommended providers,
+see the https://access.redhat.com/documentation/en-us/red_hat_build_of_openjdk/21/html/configuring_red_hat_build_of_openjdk_21_on_rhel_with_fips[OpenJDK 21 documentation].
 
 You can check the {project_name} server log at startup to see if the correct security providers are used. TRACE logging should be enabled for crypto-related {project_name} packages as described in the Keycloak startup command earlier.
 

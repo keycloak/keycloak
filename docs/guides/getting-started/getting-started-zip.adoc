@@ -13,7 +13,7 @@ summary="Get started with {project_name} on bare metal">
 
 include::templates/hw-requirements.adoc[]
 
-Make sure you have https://openjdk.java.net/[OpenJDK 17] installed. 
+Make sure you have https://openjdk.java.net/[OpenJDK 21] installed.
 
 == Download {project_name}
 

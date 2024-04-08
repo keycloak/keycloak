@@ -786,7 +786,7 @@ mvn clean install -f crypto/fips1402 -Dorg.bouncycastle.fips.approved_only=true
 
 ### Integration tests
 
-On the FIPS enabled platform with FIPS enabled OpenJDK 17, you can run this to test against a Keycloak server on Quarkus
+On the FIPS enabled platform with FIPS enabled OpenJDK 21, you can run this to test against a Keycloak server on Quarkus
 with FIPS 140-2 integration enabled
 
 ```
