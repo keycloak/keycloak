@@ -108,7 +108,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
 
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Override

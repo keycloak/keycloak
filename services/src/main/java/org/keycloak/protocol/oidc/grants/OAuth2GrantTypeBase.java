@@ -159,7 +159,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
         event.success();
 
-        return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE));
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
