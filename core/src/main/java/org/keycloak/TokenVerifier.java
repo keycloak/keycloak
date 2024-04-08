@@ -256,7 +256,6 @@ public class TokenVerifier<T extends JsonWebToken> {
     public TokenVerifier<T> withDefaultChecks()  {
         return withChecks(
           RealmUrlCheck.NULL_INSTANCE,
-          SUBJECT_EXISTS_CHECK,
           TokenTypeCheck.INSTANCE_DEFAULT_TOKEN_TYPE,
           IS_ACTIVE
         );

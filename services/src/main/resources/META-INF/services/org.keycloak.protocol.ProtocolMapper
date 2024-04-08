@@ -49,3 +49,4 @@ org.keycloak.protocol.saml.mappers.UserAttributeNameIdMapper
 org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper
 org.keycloak.protocol.oidc.mappers.NonceBackwardsCompatibleMapper
 org.keycloak.protocol.oidc.mappers.SessionStateMapper
+org.keycloak.protocol.oidc.mappers.SubMapper

@@ -45,6 +45,7 @@ import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -226,7 +227,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
                 IDToken.AUTH_TIME, "long",
                 true, true, false, true);
-        builtins.put(BASIC_SCOPE, model);
+        builtins.put(IDToken.AUTH_TIME, model);
+
+        model = SubMapper.create(IDToken.SUBJECT,true, true);
+        builtins.put(IDToken.SUBJECT, model);
     }
 
     private void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
@@ -420,7 +424,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             basicScope.setDisplayOnConsentScreen(false);
             basicScope.setIncludeInTokenScope(false);
             basicScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            basicScope.addProtocolMapper(builtins.get(BASIC_SCOPE));
+            basicScope.addProtocolMapper(builtins.get(IDToken.AUTH_TIME));
+            basicScope.addProtocolMapper(builtins.get(IDToken.SUBJECT));
 
             newRealm.addDefaultClientScope(basicScope, true);
 
