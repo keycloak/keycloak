@@ -27,6 +27,7 @@ export const ButtonEdge = ({
   targetY,
   sourcePosition,
   targetPosition,
+  label,
   style = {},
   markerType,
   markerEndId,
@@ -52,6 +53,18 @@ export const ButtonEdge = ({
         d={edgePath}
         markerEnd={markerEnd}
       />
+      {!selected && (
+        <text>
+          <textPath
+            href={`#${id}`}
+            style={{ fontSize: "11px" }}
+            startOffset="50%"
+            textAnchor="middle"
+          >
+            {label}
+          </textPath>
+        </text>
+      )}
       {selected && (
         <foreignObject
           width={foreignObjectSize}
