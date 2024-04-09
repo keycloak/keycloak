@@ -17,15 +17,21 @@
 
 package org.keycloak.organization.jpa;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 public final class OrganizationAdapter implements OrganizationModel, JpaModel<OrganizationEntity> {
 
     private final RealmModel realm;
     private final OrganizationEntity entity;
+    private GroupModel group;
 
     public OrganizationAdapter(RealmModel realm, OrganizationEntity entity) {
         this.realm = realm;
@@ -56,8 +62,45 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public void setSingleAttribute(String name, String value) {
+        getGroup().setSingleAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        getGroup().setAttribute(name, values);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getGroup().removeAttribute(name);
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        return getGroup().getFirstAttribute(name);
+    }
+
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+        return getGroup().getAttributeStream(name);
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        return getGroup().getAttributes();
+    }
+
+    @Override
     public OrganizationEntity getEntity() {
         return entity;
+    }
+
+    private GroupModel getGroup() {
+        if (group == null) {
+            group = realm.getGroupById(getGroupId());
+        }
+        return group;
     }
 
     @Override

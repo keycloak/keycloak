@@ -17,10 +17,16 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class OrganizationRepresentation {
 
     private String id;
     private String name;
+    private Map<String, List<String>> attributes = new HashMap<>();
 
     public String getId() {
         return id;
@@ -36,6 +42,20 @@ public class OrganizationRepresentation {
 
     public String getName() {
         return name;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>>  attributes) {
+        this.attributes = attributes;
+    }
+
+    public OrganizationRepresentation singleAttribute(String name, String value) {
+        if (this.attributes == null) attributes = new HashMap<>();
+        attributes.put(name, Arrays.asList(value));
+        return this;
     }
 
     @Override

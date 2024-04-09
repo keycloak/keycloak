@@ -17,6 +17,10 @@
 
 package org.keycloak.models;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 public interface OrganizationModel {
 
     String USER_ORGANIZATION_ATTRIBUTE = "kc.org";
@@ -26,4 +30,16 @@ public interface OrganizationModel {
     void setName(String name);
 
     String getName();
+
+    void setSingleAttribute(String name, String value);
+
+    void setAttribute(String name, List<String> values);
+
+    void removeAttribute(String name);
+
+    String getFirstAttribute(String name);
+
+    Stream<String> getAttributeStream(String name);
+
+    Map<String, List<String>> getAttributes();
 }

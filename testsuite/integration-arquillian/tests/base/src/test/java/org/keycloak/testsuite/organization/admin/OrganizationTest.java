@@ -20,9 +20,11 @@ package org.keycloak.testsuite.organization.admin;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import jakarta.ws.rs.NotFoundException;
@@ -92,5 +94,45 @@ public class OrganizationTest extends AbstractOrganizationTest {
             organization.toRepresentation();
             fail("should be deleted");
         } catch (NotFoundException ignore) {}
+    }
+
+    @Test
+    public void testAttributes() {
+        OrganizationRepresentation org = createOrganization();
+        org = org.singleAttribute("key", "value");
+
+        OrganizationResource organization = testRealm().organizations().get(org.getId());
+
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation updated = organization.toRepresentation();
+        assertEquals(org.getAttributes().get("key"), updated.getAttributes().get("key"));
+
+        HashMap<String, List<String>> attributes = new HashMap<>();
+        attributes.put("attr1", List.of("val11", "val12"));
+        attributes.put("attr2", List.of("val21", "val22"));
+        org.setAttributes(attributes);
+
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        updated = organization.toRepresentation();
+        assertNull(updated.getAttributes().get("key"));
+        assertEquals(2, updated.getAttributes().size());
+        assertEquals(org.getAttributes().get("attr1"), updated.getAttributes().get("attr1"));
+        assertEquals(org.getAttributes().get("attr2"), updated.getAttributes().get("attr2"));
+
+        attributes.clear();
+        org.setAttributes(attributes);
+
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        updated = organization.toRepresentation();
+        assertEquals(0, updated.getAttributes().size());
     }
 }
