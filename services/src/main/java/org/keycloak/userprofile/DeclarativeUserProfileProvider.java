@@ -176,13 +176,9 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata, KeycloakSession session) {
         UserProfileContext context = metadata.getContext();
         UserProfileMetadata decoratedMetadata = metadata.clone();
-        RealmModel realm = session.getContext().getRealm();
-
         ComponentModel component = getComponentModel().orElse(null);
 
         if (component == null) {
-            // makes sure user providers can override metadata for any attribute
-            decorateUserProfileMetadataWithUserStorage(realm, decoratedMetadata);
             return decoratedMetadata;
         }
 
@@ -411,21 +407,8 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             }
         }
 
-        if (session != null) {
-            // makes sure user providers can override metadata for any attribute
-            decorateUserProfileMetadataWithUserStorage(session.getContext().getRealm(), decoratedMetadata);
-        }
-
         return decoratedMetadata;
 
-    }
-
-    private void decorateUserProfileMetadataWithUserStorage(RealmModel realm, UserProfileMetadata userProfileMetadata) {
-        // makes sure user providers can override metadata for any attribute
-        UserProvider users = session.users();
-        if (users instanceof UserProfileDecorator) {
-            ((UserProfileDecorator) users).decorateUserProfile(realm, userProfileMetadata);
-        }
     }
 
     private Map<String, UPGroup> asHashMap(List<UPGroup> groups) {

@@ -123,6 +123,11 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         List<String> origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
         Assert.assertNotNull(origLdapId.get(0));
         Assert.assertNotNull(origLdapEntryDn.get(0));
+        adminRestUserRep = testRealm().users().get(adminRestUserRep.getId()).toRepresentation();
+        origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
+        origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
+        Assert.assertNotNull(origLdapId.get(0));
+        Assert.assertNotNull(origLdapEntryDn.get(0));
 
         // Trying to add KERBEROS_PRINCIPAL (Adding attribute, which was not yet present). Request does not fail, but attribute is not updated
         user.setFirstName("JohnUpdated");

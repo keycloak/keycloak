@@ -63,6 +63,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 
@@ -950,9 +951,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
-    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
         if (getDelegate() instanceof UserProfileDecorator) {
-            ((UserProfileDecorator) getDelegate()).decorateUserProfile(realm, metadata);
+            return ((UserProfileDecorator) getDelegate()).decorateUserProfile(providerId, metadata);
         }
+        return List.of();
     }
 }
