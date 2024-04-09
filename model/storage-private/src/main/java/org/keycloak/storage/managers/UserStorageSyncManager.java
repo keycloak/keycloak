@@ -207,7 +207,7 @@ public class UserStorageSyncManager {
         if (provider.getFullSyncPeriod() > 0) {
             // schedule periodic full sync for this provider
             UserStorageSyncTask task = new UserStorageSyncTask(provider, realm, sessionFactory, UserStorageSyncTask.SyncMode.FULL);
-            timer.schedule(task, provider.getFullSyncPeriod() * 1000, fullSyncTaskName);
+            timer.schedule(task, provider.getFullSyncPeriod() * 1000L, fullSyncTaskName);
         } else {
             // cancel potentially dangling task
             timer.cancelTask(fullSyncTaskName);
@@ -217,7 +217,7 @@ public class UserStorageSyncManager {
         if (provider.getChangedSyncPeriod() > 0) {
             // schedule periodic changed user sync for this provider
             UserStorageSyncTask task = new UserStorageSyncTask(provider, realm, sessionFactory, UserStorageSyncTask.SyncMode.CHANGED);
-            timer.schedule(task, provider.getChangedSyncPeriod() * 1000, changedSyncTaskName);
+            timer.schedule(task, provider.getChangedSyncPeriod() * 1000L, changedSyncTaskName);
         } else {
             // cancel potentially dangling task
             timer.cancelTask(changedSyncTaskName);
