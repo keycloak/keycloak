@@ -17,20 +17,8 @@
 
 package org.keycloak.quarkus.deployment;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.infinispan.commons.util.FileLookupFactory;
-import org.keycloak.config.MetricsOptions;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
 
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
@@ -47,41 +35,10 @@ public class CacheBuildSteps {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
-        String configFile = getConfigValue("kc.spi-connections-infinispan-quarkus-config-file").getValue();
-
-        if (configFile != null) {
-            Path configPath = Paths.get(configFile);
-            String path;
-
-            if (configPath.toFile().exists()) {
-                path = configPath.toFile().getAbsolutePath();
-            } else {
-                path = configPath.getFileName().toString();
-            }
-
-            InputStream url = FileLookupFactory.newInstance().lookupFile(path, KeycloakProcessor.class.getClassLoader());
-
-            if (url == null) {
-                throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url))) {
-                String config = reader.lines().collect(Collectors.joining("\n"));
-
-                syntheticBeanBuildItems.produce(SyntheticBeanBuildItem.configure(CacheManagerFactory.class)
-                        .scope(ApplicationScoped.class)
-                        .unremovable()
-                        .setRuntimeInit()
-                        .runtimeValue(recorder.createCacheInitializer(config, isMetricsEnabled(), shutdownContext)).done());
-            } catch (Exception cause) {
-                throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
-            }
-        } else {
-            throw new IllegalArgumentException("Option 'configFile' needs to be specified");
-        }
-    }
-
-    private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(MetricsOptions.METRICS_ENABLED.getKey())).orElse(false);
+        syntheticBeanBuildItems.produce(SyntheticBeanBuildItem.configure(CacheManagerFactory.class)
+                .scope(ApplicationScoped.class)
+                .unremovable()
+                .setRuntimeInit()
+                .runtimeValue(recorder.createCacheInitializer(shutdownContext)).done());
     }
 }

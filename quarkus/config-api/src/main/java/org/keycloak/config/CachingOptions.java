@@ -36,7 +36,6 @@ public class CachingOptions {
                     + "By default in production mode, a 'ispn' cache is used to create a cluster between multiple server nodes. "
                     + "By default in development mode, a 'local' cache disables clustering and is intended for development and testing purposes.")
             .defaultValue(Mechanism.ispn)
-            .buildTime(true)
             .build();
 
     public enum Stack {
@@ -53,14 +52,12 @@ public class CachingOptions {
             .expectedValues(List.of())
             .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect "
                     + "if 'cache' is set to 'ispn'. Default: udp. Built-in values include: " + Stream.of(Stack.values()).map(Stack::name).collect(Collectors.joining(", ")))
-            .buildTime(true)
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)
             .category(OptionCategory.CACHE)
             .description("Defines the file from which cache configuration should be loaded from. "
                     + "The configuration file is relative to the 'conf/' directory.")
-            .buildTime(true)
             .build();
 
     public static final Option<Boolean> CACHE_EMBEDDED_MTLS_ENABLED = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY, Boolean.class)

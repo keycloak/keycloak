@@ -185,10 +185,12 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         final String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
 
         if ("local".equals(cacheMode)) {
+            commands.add("--cache=local");
             // Save ~2s for each Quarkus startup, when we know ISPN cluster is empty. See https://github.com/keycloak/keycloak/issues/21033
             commands.add("-Djgroups.join_timeout=10");
         } else {
             commands.add("--cache=ispn");
+            commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
         }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
@@ -196,12 +198,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
         if (restart.get() || "ha".equals(cacheMode) || shouldSetUpDb.get() || configuration.getFipsMode() != FipsMode.DISABLED) {
             prepareCommandsForRebuilding(commands);
-
-            if ("local".equals(cacheMode)) {
-                commands.add("--cache=local");
-            } else {
-                commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
-            }
 
             if (configuration.getFipsMode() != FipsMode.DISABLED) {
                 addFipsOptions(commands);
