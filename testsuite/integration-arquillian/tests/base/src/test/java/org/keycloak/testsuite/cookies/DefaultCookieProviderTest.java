@@ -53,12 +53,12 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         });
         Assert.assertEquals(12, response.getCookies().size());
         assertCookie(response, "AUTH_SESSION_ID", "my-auth-session-id", "/auth/realms/master/", -1, false, true, "None", true);
-        assertCookie(response, "KC_AUTH_STATE", "my-auth-state", "/auth/realms/master/", 111, false, false, null, false);
-        assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, false, true, null, false);
-        assertCookie(response, "KC_STATE_CHECKER", "my-auth-detached", "/auth/realms/master/", 222, false, true, null, false);
+        assertCookie(response, "KC_AUTH_STATE", "my-auth-state", "/auth/realms/master/", 111, false, false, "Strict", false);
+        assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, false, true, "None", false);
+        assertCookie(response, "KC_STATE_CHECKER", "my-auth-detached", "/auth/realms/master/", 222, false, true, "Strict", false);
         assertCookie(response, "KEYCLOAK_IDENTITY", "my-identity", "/auth/realms/master/", 333, false, true, "None", true);
-        assertCookie(response, "KEYCLOAK_LOCALE", "my-locale", "/auth/realms/master/", -1, false, true, null, false);
-        assertCookie(response, "KEYCLOAK_REMEMBER_ME", "my-username", "/auth/realms/master/", 31536000, false, true, null, false);
+        assertCookie(response, "KEYCLOAK_LOCALE", "my-locale", "/auth/realms/master/", -1, false, true, "None", false);
+        assertCookie(response, "KEYCLOAK_REMEMBER_ME", "my-username", "/auth/realms/master/", 31536000, false, true, "None", false);
         assertCookie(response, "KEYCLOAK_SESSION", "my-session", "/auth/realms/master/", 444, false, false, "None", true);
         assertCookie(response, "WELCOME_STATE_CHECKER", "my-welcome-csrf", "/auth/realms/master/testing/run-on-server", 300, false, true, "Strict", false);
     }
