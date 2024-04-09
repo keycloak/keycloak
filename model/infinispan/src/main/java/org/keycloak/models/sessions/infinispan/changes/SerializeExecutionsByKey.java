@@ -17,7 +17,10 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import org.jboss.logging.Logger;
+
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Adding an in-JVM lock to prevent a best-effort concurrent executions for the same ID.
@@ -27,20 +30,24 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Alexander Schwartz
  */
 public class SerializeExecutionsByKey<K> {
-    private final ConcurrentHashMap<K, K> cacheInteractions = new ConcurrentHashMap<>();
+    private static final Logger LOG = Logger.getLogger(SerializeExecutionsByKey.class);
+    private final ConcurrentHashMap<K, ReentrantLock> cacheInteractions = new ConcurrentHashMap<>();
 
     public void runSerialized(K key, Runnable task) {
         // this locking is only to ensure that if there is a computation for the same id in the "synchronized" block below,
         // it will have the same object instance to lock the current execution until the other is finished.
-        K lock = cacheInteractions.computeIfAbsent(key, s -> key);
+        ReentrantLock lock = cacheInteractions.computeIfAbsent(key, s -> new ReentrantLock());
         try {
-            synchronized (lock) {
-                // in case the previous thread has removed the entry in the finally block
-                cacheInteractions.putIfAbsent(key, lock);
-                task.run();
+            lock.lock();
+            // in case the previous thread has removed the entry in the finally block
+            ReentrantLock existingLock = cacheInteractions.putIfAbsent(key, lock);
+            if (existingLock != lock) {
+                LOG.debugf("Concurrent execution detected for key '%s'.", key);
             }
+            task.run();
         } finally {
-            cacheInteractions.remove(lock);
+            lock.unlock();
+            cacheInteractions.remove(key, lock);
         }
     }
 }
