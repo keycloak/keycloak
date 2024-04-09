@@ -118,8 +118,7 @@ export default tseslint.config(
       "react/jsx-no-useless-fragment": "error",
       // Ban nesting components, as this will cause unintended re-mounting of components.
       // See: https://react.dev/learn/your-first-component#nesting-and-organizing-components
-      // TODO: Set this to "error" once all issues are fixed.
-      "react/no-unstable-nested-components": ["warn", { allowAsProps: true }],
+      "react/no-unstable-nested-components": ["error", { allowAsProps: true }],
       // Prefer a specific import scope (e.g. `lodash/map` vs `lodash`).
       // Allows for more efficient tree-shaking and better code splitting.
       "lodash/import-scope": ["error", "member"],
@@ -144,5 +143,5 @@ export default tseslint.config(
       "mocha/no-mocha-arrows": "off",
       "mocha/no-setup-in-describe": "off",
     },
-  },
+  }
 );
