@@ -48,9 +48,9 @@ import { toEditClientPolicyCondition } from "./routes/EditCondition";
 
 import "./realm-settings-section.css";
 
-type NewClientPolicyForm = Required<ClientPolicyRepresentation>;
+type FormFields = Required<ClientPolicyRepresentation>;
 
-const defaultValues: NewClientPolicyForm = {
+const defaultValues: FormFields = {
   name: "",
   description: "",
   conditions: [],
@@ -63,7 +63,7 @@ type PolicyDetailAttributes = {
   name: string;
 };
 
-export default function NewClientPolicyForm() {
+export default function NewClientPolicy() {
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -90,82 +90,13 @@ export default function NewClientPolicyForm() {
   const { policyName } = useParams<EditClientPolicyParams>();
 
   const navigate = useNavigate();
-  const form = useForm<NewClientPolicyForm>({
+  const form = useForm<FormFields>({
     mode: "onChange",
     defaultValues,
   });
   const { handleSubmit } = form;
 
   const formValues = form.getValues();
-
-  type ClientPoliciesHeaderProps = {
-    onChange: (value: boolean) => void;
-    value: boolean;
-    save: () => void;
-    realmName: string;
-  };
-
-  const ClientPoliciesHeader = ({
-    save,
-    onChange,
-    value,
-  }: ClientPoliciesHeaderProps) => {
-    const { t } = useTranslation();
-
-    const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-      titleKey: "disablePolicyConfirmTitle",
-      messageKey: "disablePolicyConfirm",
-      continueButtonLabel: "disable",
-      onConfirm: () => {
-        onChange(!value);
-        save();
-      },
-    });
-
-    if (!policies) {
-      return <KeycloakSpinner />;
-    }
-
-    return (
-      <>
-        <DisableConfirm />
-        <DeleteConfirm />
-        <ViewHeader
-          titleKey={
-            showAddConditionsAndProfilesForm || policyName
-              ? policyName
-              : "createPolicy"
-          }
-          divider
-          dropdownItems={
-            showAddConditionsAndProfilesForm || policyName
-              ? [
-                  <DropdownItem
-                    key="delete"
-                    value="delete"
-                    onClick={() => {
-                      toggleDeleteDialog();
-                    }}
-                    data-testid="deleteClientPolicyDropdown"
-                  >
-                    {t("deleteClientPolicy")}
-                  </DropdownItem>,
-                ]
-              : undefined
-          }
-          isEnabled={value}
-          onToggle={(value) => {
-            if (!value) {
-              toggleDisableDialog();
-            } else {
-              onChange(value);
-              save();
-            }
-          }}
-        />
-      </>
-    );
-  };
 
   useFetch(
     async () => {
@@ -422,6 +353,20 @@ export default function NewClientPolicyForm() {
     }
   };
 
+  const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
+    titleKey: "disablePolicyConfirmTitle",
+    messageKey: "disablePolicyConfirm",
+    continueButtonLabel: "disable",
+    onConfirm: () => {
+      form.setValue("enabled", !form.getValues().enabled);
+      save();
+    },
+  });
+
+  if (!policies) {
+    return <KeycloakSpinner />;
+  }
+
   return (
     <>
       <DeleteConditionConfirm />
@@ -439,12 +384,43 @@ export default function NewClientPolicyForm() {
         defaultValue={true}
         control={form.control}
         render={({ field }) => (
-          <ClientPoliciesHeader
-            value={field.value}
-            onChange={field.onChange}
-            realmName={realm}
-            save={save}
-          />
+          <>
+            <DisableConfirm />
+            <DeleteConfirm />
+            <ViewHeader
+              titleKey={
+                showAddConditionsAndProfilesForm || policyName
+                  ? policyName
+                  : "createPolicy"
+              }
+              divider
+              dropdownItems={
+                showAddConditionsAndProfilesForm || policyName
+                  ? [
+                      <DropdownItem
+                        key="delete"
+                        value="delete"
+                        onClick={() => {
+                          toggleDeleteDialog();
+                        }}
+                        data-testid="deleteClientPolicyDropdown"
+                      >
+                        {t("deleteClientPolicy")}
+                      </DropdownItem>,
+                    ]
+                  : undefined
+              }
+              isEnabled={field.value}
+              onToggle={(value) => {
+                if (!value) {
+                  toggleDisableDialog();
+                } else {
+                  field.onChange(value);
+                  save();
+                }
+              }}
+            />
+          </>
         )}
       />
       <PageSection variant="light">
@@ -461,7 +437,7 @@ export default function NewClientPolicyForm() {
               rules={{
                 required: { value: true, message: t("required") },
                 validate: (value) =>
-                  policies?.some((policy) => policy.name === value)
+                  policies.some((policy) => policy.name === value)
                     ? t("createClientProfileNameHelperText").toString()
                     : true,
               }}
