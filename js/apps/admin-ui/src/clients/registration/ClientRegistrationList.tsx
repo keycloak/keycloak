@@ -104,9 +104,7 @@ export const ClientRegistrationList = ({
       <DeleteConfirm />
       <KeycloakDataTable
         ariaLabelKey="clientRegistration"
-        searchPlaceholderKey={t("searchClientRegistration", {
-          policyType: subTab || "anonymous",
-        })}
+        searchPlaceholderKey="searchClientRegistration"
         data-testid={`clientRegistration-${subType}`}
         loader={policies}
         toolbarItem={
@@ -115,9 +113,7 @@ export const ClientRegistrationList = ({
               data-testid={`createPolicy-${subType}`}
               onClick={toggleAddDialog}
             >
-              {t("createPolicyOfType", {
-                policyType: subTab || "anonymous",
-              })}
+              {t("createPolicy")}
             </Button>
           </ToolbarItem>
         }
