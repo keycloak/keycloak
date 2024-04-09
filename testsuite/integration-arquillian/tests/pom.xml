@@ -1600,6 +1600,10 @@
                             <groupId>com.google.guava</groupId>
                             <artifactId>guava</artifactId>
                         </exclusion>
+                        <exclusion>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
                     </exclusions>
                 </dependency>
 
