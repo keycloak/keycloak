@@ -18,19 +18,12 @@ export const ClickableCard = ({
     }
   };
   return (
-    <Card
-      role="button"
-      aria-pressed="false"
-      tabIndex={0}
-      isClickable
-      onKeyDown={onKeyDown}
-      onClick={onClick}
-      {...rest}
-    >
+    <Card id={id} isClickable onKeyDown={onKeyDown} onClick={onClick} {...rest}>
       <CardHeader
         selectableActions={{
           onClickAction: onClick,
-          selectableActionId: id,
+          selectableActionId: `input-${id}`,
+          selectableActionAriaLabelledby: id,
         }}
       >
         {children}
