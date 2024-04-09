@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -141,6 +142,7 @@ public class OrganizationResource {
 
         rep.setId(model.getId());
         rep.setName(model.getName());
+        rep.setAttributes(model.getAttributes());
 
         return rep;
     }
@@ -151,6 +153,14 @@ public class OrganizationResource {
         }
 
         model.setName(rep.getName());
+
+        if (rep.getAttributes() != null) {
+            Set<String> attrsToRemove = model.getAttributes().keySet();
+            attrsToRemove.removeAll(rep.getAttributes().keySet());
+            attrsToRemove.forEach(model::removeAttribute);
+
+            rep.getAttributes().entrySet().forEach(entry -> model.setAttribute(entry.getKey(), entry.getValue()));
+        }
 
         return model;
     }
