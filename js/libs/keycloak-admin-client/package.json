@@ -30,7 +30,7 @@
       ]
     },
     "lint": {
-      "command": "eslint . --ext js,jsx,mjs,ts,tsx"
+      "command": "eslint ."
     },
     "test": {
       "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000"

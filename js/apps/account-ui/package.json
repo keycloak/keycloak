@@ -74,7 +74,7 @@
       ]
     },
     "lint": {
-      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "command": "eslint .",
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",

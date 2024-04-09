@@ -33,7 +33,7 @@
       ]
     },
     "lint": {
-      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "command": "eslint .",
       "dependencies": [
         "../keycloak-admin-client:build"
       ]
