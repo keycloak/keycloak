@@ -29,6 +29,8 @@ import io.smallrye.config.EnvConfigSource;
 
 public class KcEnvConfigSource extends EnvConfigSource {
 
+    public static final String NAME = "KcEnvVarConfigSource";
+
     public KcEnvConfigSource() {
         super(buildProperties(), 500);
     }
@@ -63,6 +65,6 @@ public class KcEnvConfigSource extends EnvConfigSource {
 
     @Override
     public String getName() {
-        return "KcEnvVarConfigSource";
+        return NAME;
     }
 }

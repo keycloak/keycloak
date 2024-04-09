@@ -37,6 +37,6 @@ public class PostgreSQLDistTest extends PostgreSQLTest {
     @Launch("show-config")
     public void testDbOptionFromPersistedConfigSource(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(),containsString("postgres (PersistedConfigSource)"));
+        assertThat(cliResult.getOutput(),containsString("postgres (Persisted)"));
     }
 }
