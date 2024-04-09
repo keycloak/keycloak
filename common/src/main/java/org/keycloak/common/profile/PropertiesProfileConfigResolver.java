@@ -46,6 +46,6 @@ public class PropertiesProfileConfigResolver implements ProfileConfigResolver {
     }
 
     public static String getPropertyKey(String feature) {
-        return "keycloak.profile.feature." + feature.replaceAll("-", "_");
+        return "keycloak.profile.feature." + feature.replaceAll("[-:]", "_");
     }
 }

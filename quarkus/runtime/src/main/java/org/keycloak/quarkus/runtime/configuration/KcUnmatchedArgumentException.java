@@ -22,6 +22,8 @@ import picocli.CommandLine;
 
 import java.util.List;
 
+import static org.keycloak.quarkus.runtime.cli.OptionRenderer.DUPLICIT_OPTION_SUFFIX;
+
 /**
  * Custom CommandLine.UnmatchedArgumentException with amended suggestions
  */
@@ -31,9 +33,13 @@ public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentE
         super(commandLine, args);
     }
 
+    public KcUnmatchedArgumentException(CommandLine.UnmatchedArgumentException ex) {
+        super(ex.getCommandLine(), ex.getUnmatched());
+    }
+
     @Override
     public List<String> getSuggestions() {
         // filter out disabled mappers
-        return super.getSuggestions().stream().filter(f -> !PropertyMappers.isDisabledMapper(f)).toList();
+        return super.getSuggestions().stream().filter(f -> !PropertyMappers.isDisabledMapper(f) && !f.endsWith(DUPLICIT_OPTION_SUFFIX)).toList();
     }
 }

@@ -249,8 +249,15 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         }
 
         log.info("Stopping auth server.");
-        sessionFactory.close();
-        undertow.stop();
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
+        if (undertow != null) {
+            undertow.stop();
+        }
+
+        sessionFactory = null;
+        undertow = null;
     }
 
     private boolean isRemoteMode() {

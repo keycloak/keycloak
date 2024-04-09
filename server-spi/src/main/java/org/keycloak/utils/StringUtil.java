@@ -99,4 +99,12 @@ public class StringUtil {
         }
         return sb == null? str : sb.toString();
     }
+
+    public static String removeSuffix(String str, String suffix) {
+        int index = str.lastIndexOf(suffix);
+        if (str.endsWith(suffix) && index > 0) {
+            str = str.substring(0, index);
+        }
+        return str;
+    }
 }
