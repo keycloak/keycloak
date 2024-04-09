@@ -25,8 +25,6 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAM
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -145,14 +143,14 @@ public class LoggingDistTest {
     void failUnknownHandlersInConfFile(KeycloakDistribution dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/keycloak.conf", Paths.get("conf", "keycloak.conf"));
         CLIResult cliResult = dist.run("start-dev");
-        cliResult.assertError("Invalid value for option 'kc.log': foo. Expected values are: console, file, syslog, gelf.");
+        cliResult.assertError("Invalid value for option 'kc.log' in keycloak.conf: foo. Expected values are: console, file, syslog, gelf");
     }
 
     @Test
     void failEmptyLogErrorFromConfFileError(KeycloakDistribution dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/emptylog.conf", Paths.get("conf", "emptylog.conf"));
         CLIResult cliResult = dist.run(CONFIG_FILE_LONG_NAME+"=../conf/emptylog.conf", "start-dev");
-        cliResult.assertError("Invalid value for option 'kc.log': . Expected values are: console, file, syslog, gelf.");
+        cliResult.assertError("Invalid value for option 'kc.log' in emptylog.conf: . Expected values are: console, file, syslog, gelf");
     }
 
     @Test

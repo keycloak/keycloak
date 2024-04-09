@@ -76,14 +76,14 @@ class BuildCommandDistTest {
     @Launch({ "build" })
     void testFailInvalidOptionInEnv(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option 'kc.db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource KcEnvVarConfigSource");
+        cliResult.assertError("Invalid value for option 'KC_DB': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
     public void testFailInvalidOptionInConf(KeycloakDistribution distribution) {
         CLIResult cliResult = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
-        cliResult.assertError("Invalid value for option 'kc.db': foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource PropertiesConfigSource[source");
+        cliResult.assertError("Invalid value for option 'kc.db' in keycloak.conf: foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test

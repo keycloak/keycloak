@@ -114,7 +114,7 @@ public class StartCommandDistTest {
     @Launch({ "start", "--optimized" })
     void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option 'kc.log': invalid. Expected values are: console, file, syslog, gelf. From ConfigSource KcEnvVarConfigSource");
+        cliResult.assertError("Invalid value for option 'KC_LOG': invalid. Expected values are: console, file, syslog, gelf");
     }
 
     @Test
