@@ -132,10 +132,11 @@ function Keycloak (config) {
                 kc.silentCheckSsoFallback = true;
             }
 
-            if (initOptions.pkceMethod) {
-                if (initOptions.pkceMethod !== "S256") {
-                    throw new TypeError(`Invalid value for 'pkceMethod', expected 'S256' but got '${initOptions.pkceMethod}'.`);
+            if (typeof initOptions.pkceMethod !== "undefined") {
+                if (initOptions.pkceMethod !== "S256" && initOptions.pkceMethod !== false) {
+                    throw new TypeError(`Invalid value for pkceMethod', expected 'S256' or false but got ${initOptions.pkceMethod}.`);
                 }
+
                 kc.pkceMethod = initOptions.pkceMethod;
             } else {
                 kc.pkceMethod = "S256";
