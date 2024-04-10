@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.storage.ReadOnlyException;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -215,7 +216,11 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             }
             logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
             user.setEnabled(false);
-            user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
+            try {
+                user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
+            }catch (ReadOnlyException e){
+                logger.debug("Cannot set disabled reason on read only user");
+            }
             // Send event
             sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
         }
