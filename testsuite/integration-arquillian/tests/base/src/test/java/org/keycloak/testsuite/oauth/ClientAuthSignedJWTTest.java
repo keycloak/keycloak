@@ -115,7 +115,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
         events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
                 .client("client1")
-                .user(client1SAUserId)
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)

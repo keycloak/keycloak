@@ -272,8 +272,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         events.expectRefresh(offlineToken.getId(), newRefreshToken.getSessionState())
                 .client("offline-client")
+                .user((String) null)
                 .error(Errors.INVALID_TOKEN)
-                .user(userId)
                 .clearDetails()
                 .assertEvent();
 
@@ -401,8 +401,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         Assert.assertEquals(400, response.getStatusCode());
         events.expectRefresh(offlineToken.getId(), token.getSessionState())
                 .client("offline-client")
+                .user((String) null)
                 .error(Errors.INVALID_TOKEN)
-                .user(userId)
                 .clearDetails()
                 .assertEvent();
 
@@ -411,8 +411,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         Assert.assertEquals(400, response2.getStatusCode());
         events.expectRefresh(offlineToken2.getId(), offlineToken2.getSessionState())
                 .client("offline-client")
+                .user((String) null)
                 .error(Errors.INVALID_TOKEN)
-                .user(userId)
                 .clearDetails()
                 .assertEvent();
 

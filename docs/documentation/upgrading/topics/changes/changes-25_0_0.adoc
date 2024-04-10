@@ -103,6 +103,13 @@ You can use the `Subject (sub)` mapper to configure the `sub` claim only for acc
 
 The mapper has no effects for service accounts, because no user session exists, and the`sub` claim is always added to the access token.
 
+= Changed `userId` for events related to refresh token
+
+The `userId` in the `REFRESH_TOKEN` event is now always taken from user session instead of `sub` claim in the refresh token. The `userId` in the `REFRESH_TOKEN_ERROR` event is now always null.
+The reason for this change is that the value of the `sub` claim in the refresh token may be null with the introduction of the optional `sub` claim or even different from the real user id when using pairwise subject identifiers or other ways to override the `sub` claim.
+
+However a `refresh_token_sub` detail is now added as backwards compatibility to have info about the user in the case of missing userId in the `REFRESH_TOKEN_ERROR` event.
+
 = Default `http-pool-max-threads` reduced
 
 `http-pool-max-threads` if left unset will default to the greater of 50 or 4 x (available processors). Previously it defaulted to the greater of 200 or 8 x (available processors). Reducing the number or task threads for most usage scenarios will result in slightly higher performance due to less context switching among active threads.
