@@ -91,7 +91,8 @@ public class KeycloakDistConfigurator {
                 .mapOption("hostname-admin", HostnameSpec::getAdmin)
                 .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
                 .mapOption("hostname-strict", HostnameSpec::isStrict)
-                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel);
+                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel)
+                .mapOption("hostname-backchannel-dynamic", HostnameSpec::isBackchannelDynamic);
     }
 
     void configureFeatures() {

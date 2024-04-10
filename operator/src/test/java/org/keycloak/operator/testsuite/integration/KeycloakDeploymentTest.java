@@ -325,7 +325,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(true);
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -354,7 +353,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -375,7 +373,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
