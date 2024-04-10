@@ -1,0 +1,4 @@
+org.keycloak.test.framework.admin.KeycloakAdminClientSupplier
+org.keycloak.test.framework.server.KeycloakTestServerSupplier
+org.keycloak.test.framework.realm.RealmSupplier
+org.keycloak.test.framework.realm.ClientSupplier

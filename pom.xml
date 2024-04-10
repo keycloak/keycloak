@@ -1748,6 +1748,13 @@
             </modules>
         </profile>
 
+        <profile>
+            <id>test-poc</id>
+            <modules>
+                <module>test-poc</module>
+            </modules>
+        </profile>
+
         <!-- Profile to activate EAP8 Adapters Build -->
         <profile>
             <id>eap8-adapters</id>
