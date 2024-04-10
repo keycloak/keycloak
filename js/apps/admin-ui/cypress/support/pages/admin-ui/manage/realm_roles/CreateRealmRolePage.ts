@@ -40,8 +40,8 @@ class CreateRealmRolePage {
   checkNameDisabled() {
     cy.findByTestId(this.#realmRoleNameInput).should(
       "have.attr",
-      "readonly",
-      "readonly",
+      "disabled",
+      "disabled",
     );
     return this;
   }
