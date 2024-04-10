@@ -15,9 +15,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
 import { HelpItem } from "ui-shared";
-
 import { adminClient } from "../../admin-client";
-import { toClient } from "../../clients/routes/Client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -31,6 +29,7 @@ import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
+import { toDedicatedScope } from "../../clients/routes/DedicatedScopeDetails";
 
 export default function MappingDetails() {
   const { t } = useTranslation("client-scopes");
@@ -60,7 +59,7 @@ export default function MappingDetails() {
   const toDetails = () =>
     isOnClientScope
       ? toClientScope({ realm, id, tab: "mappers" })
-      : toClient({ realm, clientId: id, tab: "mappers" });
+      : toDedicatedScope({ realm, clientId: id, tab: "mappers" });
 
   useFetch(
     async () => {
