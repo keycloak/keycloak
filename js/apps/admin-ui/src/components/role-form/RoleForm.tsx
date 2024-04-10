@@ -51,7 +51,7 @@ export const RoleForm = ({
                 }
               },
             }}
-            readOnly={editMode}
+            isDisabled={editMode}
           />
           <TextAreaControl
             name="description"
