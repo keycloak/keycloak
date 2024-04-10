@@ -266,8 +266,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(axe-core@4.9.0)(cypress@13.7.2)
       cypress-split:
-        specifier: ^1.21.2
-        version: 1.21.2(@babel/core@7.24.4)
+        specifier: ^1.23.0
+        version: 1.23.0(@babel/core@7.24.4)
       jsdom:
         specifier: ^24.0.0
         version: 24.0.0
@@ -4047,14 +4047,15 @@ packages:
       cypress: 13.7.2
     dev: true
 
-  /cypress-split@1.21.2(@babel/core@7.24.4):
-    resolution: {integrity: sha512-T77bGygwYT4KlJ7PfqDWhu1fdRCXa/Rf463l+pTJhJ0vqHljHo6bj7sE2JPkkkgZZKEAvxAiuEs6AxXuqO+z1w==}
+  /cypress-split@1.23.0(@babel/core@7.24.4):
+    resolution: {integrity: sha512-tZazy4dZ4fIzsTYv1MNk6Lc0DaTAAsHUBIdfDbRGBl8QY2lvRcdYjlBs9gnOOwphjXgNTPXTT3KVbnStp0kZbQ==}
     hasBin: true
     dependencies:
       '@actions/core': 1.10.1
       arg: 5.0.2
       console.table: 0.10.0
       debug: 4.3.4(supports-color@8.1.1)
+      fast-shuffle: 6.1.0
       find-cypress-specs: 1.43.1(@babel/core@7.24.4)
       globby: 11.1.0
       humanize-duration: 3.32.0
@@ -5187,6 +5188,12 @@ packages:
 
   /fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
+    dev: true
+
+  /fast-shuffle@6.1.0:
+    resolution: {integrity: sha512-3aj8oO6bvZFKYDGvXNmmEuxyOjre8trCpIbtFSM/DSKd+o3iSbQQPb5BZQeJ7SPYVivn9EeW3gKh0QdnD027MQ==}
+    dependencies:
+      pcg: 1.0.0
     dev: true
 
   /fastq@1.17.1:
@@ -6588,6 +6595,10 @@ packages:
       wrap-ansi: 9.0.0
     dev: true
 
+  /long@5.2.3:
+    resolution: {integrity: sha512-lcHwpNoggQTObv5apGNCTdJrO69eHOZMi4BNC+rTLER8iHAqGrUVeLh/irVIM7zTw2bOXA8T6uNPeujwOLg/2Q==}
+    dev: true
+
   /loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
@@ -7097,6 +7108,13 @@ packages:
       patternfly-bootstrap-treeview: 2.1.10
     dev: false
 
+  /pcg@1.0.0:
+    resolution: {integrity: sha512-6wjoSJZ4TEJhI0rLDOKd5mOu6TwS4svn9oBaRsD1PCrhlDNLWAaTimWJgBABmIGJxzkI+RbaHJYRLGVf9QFE5Q==}
+    dependencies:
+      long: 5.2.3
+      ramda: 0.29.0
+    dev: true
+
   /peek-stream@1.1.3:
     resolution: {integrity: sha512-FhJ+YbOSBb9/rIl2ZeE/QHEsWn7PqNYt8ARAY3kIgNGOk13g9FGyIY6JIl/xB/3TFRVoTv5as0l11weORrTekA==}
     dependencies:
@@ -7354,6 +7372,10 @@ packages:
 
   /rambda@7.5.0:
     resolution: {integrity: sha512-y/M9weqWAH4iopRd7EHDEQQvpFPHj1AA3oHozE9tfITHUtTR7Z9PSlIRRG2l1GuW7sefC1cXFfIcF+cgnShdBA==}
+    dev: true
+
+  /ramda@0.29.0:
+    resolution: {integrity: sha512-BBea6L67bYLtdbOqfp8f58fPMqEwx0doL+pAi8TZyp2YWz8R9G8z9x75CZI8W+ftqhFHCpEX2cRnUUXK130iKA==}
     dev: true
 
   /randombytes@2.1.0:
