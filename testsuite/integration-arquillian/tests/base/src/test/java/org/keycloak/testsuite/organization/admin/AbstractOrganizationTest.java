@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
@@ -43,11 +44,22 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected OrganizationRepresentation createOrganization(String name) {
+        return createOrganization(name, null);
+    }
+
+    protected OrganizationRepresentation createOrganization(String name, String orgDomain) {
         OrganizationRepresentation org = new OrganizationRepresentation();
 
         org.setName(name);
 
         String id;
+
+        if (orgDomain != null) {
+            OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
+            domainRep.setName(orgDomain);
+            domainRep.setVerified(true);
+            org.addDomain(domainRep);
+        }
 
         try (Response response = testRealm().organizations().create(org)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());

@@ -18,14 +18,20 @@
 package org.keycloak.organization.jpa;
 
 import org.keycloak.models.GroupModel;
+import java.util.Collection;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 public final class OrganizationAdapter implements OrganizationModel, JpaModel<OrganizationEntity> {
 
@@ -92,6 +98,37 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public Stream<OrganizationDomainModel> getDomains() {
+        return entity.getDomains().stream().map(this::toModel);
+    }
+
+    @Override
+    public void setDomains(Collection<OrganizationDomainModel> domains) {
+        Map<String, OrganizationDomainModel> modelMap = domains.stream()
+                .collect(Collectors.toMap(model -> model.getName(), Function.identity()));
+        for (OrganizationDomainEntity domainEntity : this.entity.getDomains()) {
+            // update the existing domain (for now, only the verified flag can be changed).
+            if (modelMap.containsKey(domainEntity.getName())) {
+                domainEntity.setVerified(modelMap.get(domainEntity.getName()).getVerified());
+                modelMap.remove(domainEntity.getName());
+            }
+            // remove domain that is not found in the new set.
+            else {
+                this.entity.removeDomain(domainEntity);
+            }
+        }
+
+        // create the remaining domains.
+        for (OrganizationDomainModel model : modelMap.values()) {
+            OrganizationDomainEntity domainEntity = new OrganizationDomainEntity();
+            domainEntity.setName(model.getName().toLowerCase());
+            domainEntity.setVerified(model.getVerified() == null ? Boolean.FALSE : model.getVerified());
+            domainEntity.setOrganization(this.entity);
+            this.entity.addDomain(domainEntity);
+        }
+    }
+
+    @Override
     public OrganizationEntity getEntity() {
         return entity;
     }
@@ -117,5 +154,9 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 .append(",")
                 .append("groupId=")
                 .append(getGroupId()).toString();
+    }
+
+    private OrganizationDomainModel toModel(OrganizationDomainEntity entity) {
+        return new OrganizationDomainModel(entity.getName(), entity.isVerified());
     }
 }

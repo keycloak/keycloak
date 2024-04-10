@@ -77,7 +77,7 @@
     <changeSet author="keycloak" id="25.0.0-org">
         <createTable tableName="ORG">
             <column name="ID" type="VARCHAR(255)">
-                <constraints nullable="false"/>
+                <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="REALM_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
@@ -90,10 +90,20 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-
-        <addPrimaryKey columnNames="ID" tableName="ORG"/>
         <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
         <addUniqueConstraint tableName="ORG" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
+
+        <createTable tableName="ORG_DOMAIN">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="VERIFIED" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ORG_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
     </changeSet>
 
     <changeSet author="keycloak" id="unique-consentuser">

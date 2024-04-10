@@ -21,12 +21,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 public class OrganizationRepresentation {
 
     private String id;
     private String name;
     private Map<String, List<String>> attributes = new HashMap<>();
+    private Set<OrganizationDomainRepresentation> domains = new HashSet<>();
 
     public String getId() {
         return id;
@@ -56,6 +59,18 @@ public class OrganizationRepresentation {
         if (this.attributes == null) attributes = new HashMap<>();
         attributes.put(name, Arrays.asList(value));
         return this;
+    }
+
+    public Set<OrganizationDomainRepresentation> getDomains() {
+        return this.domains;
+    }
+
+    public void addDomain(OrganizationDomainRepresentation domain) {
+        this.domains.add(domain);
+    }
+
+    public void removeDomain(OrganizationDomainRepresentation domain) {
+        this.domains.remove(domain);
     }
 
     @Override
