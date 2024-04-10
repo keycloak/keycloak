@@ -790,6 +790,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
         } else {
             // Use Naming LDAP API
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
+            if (ldapUser == null) {
+                // user was removed from ldap - password verification must fail.
+                return false;
+            }
 
             try {
                 ldapIdentityStore.validatePassword(ldapUser, password);
@@ -821,6 +825,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPIdentityStore ldapIdentityStore = getLdapIdentityStore();
             String password = input.getChallengeResponse();
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
+            if (ldapUser == null) {
+                logger.warnf("User '%s' can't be updated in LDAP as it doesn't exist there", user.getUsername());
+                return false;
+            }
             if (ldapIdentityStore.getConfig().isValidatePasswordPolicy()) {
                 PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm, user, password);
                 if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
@@ -967,7 +975,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 return null;
             } else {
                 LDAPObject ldapObject = loadAndValidateUser(realm, user);
-                if (kerberosPrincipalAttrName != null && !kerberosPrincipal.toString().equalsIgnoreCase(ldapObject.getAttributeAsString(kerberosPrincipalAttrName))) {
+                if (kerberosPrincipalAttrName != null && ldapObject != null &&
+                        !kerberosPrincipal.toString().equalsIgnoreCase(ldapObject.getAttributeAsString(kerberosPrincipalAttrName))) {
                     logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Authenticated kerberos principal is [%s], but LDAP user has different kerberos principal [%s]",
                             user.getUsername(),  model.getName(), kerberosPrincipal, ldapObject.getAttributeAsString(kerberosPrincipalAttrName));
                     ldapObject = null;
