@@ -23,6 +23,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
@@ -35,6 +36,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
@@ -120,6 +122,18 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     public OrganizationModel getById(String id) {
         OrganizationEntity entity = getEntity(id, false);
         return entity == null ? null : new OrganizationAdapter(realm, entity);
+    }
+
+    @Override
+    public OrganizationModel getByDomainName(String domain) {
+        TypedQuery<OrganizationDomainEntity> query = em.createNamedQuery("getByName", OrganizationDomainEntity.class);
+        query.setParameter("name", domain.toLowerCase());
+        try {
+            OrganizationDomainEntity entity = query.getSingleResult();
+            return new OrganizationAdapter(realm, entity.getOrganization());
+        } catch (NoResultException nre) {
+            return null;
+        }
     }
 
     @Override

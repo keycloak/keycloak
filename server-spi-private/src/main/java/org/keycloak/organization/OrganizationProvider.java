@@ -46,6 +46,20 @@ public interface OrganizationProvider extends Provider {
     OrganizationModel getById(String id);
 
     /**
+     * Returns a {@link OrganizationModel} by its internet domain.
+     *
+     * @param domainName the organization's internet domain (e.g. redhat.com)
+     * @return the organization that is linked to the given internet domain
+     */
+    OrganizationModel getByDomainName(String domainName);
+
+    /**
+     * Returns the organizations of the given realm as a stream.
+     * @return Stream of the organizations. Never returns {@code null}.
+     */
+    Stream<OrganizationModel> getAllStream();
+
+    /**
      * Removes the given organization from the realm together with the data associated with it, e.g. its members etc.
      *
      * @param organization Organization to be removed.
@@ -68,12 +82,6 @@ public interface OrganizationProvider extends Provider {
      * @return {@code true} if the user was added as a member. Otherwise, returns {@code false}
      */
     boolean addMember(OrganizationModel organization, UserModel user);
-
-    /**
-     * Returns the organizations of the realm as a stream.
-     * @return Stream of the organizations. Never returns {@code null}.
-     */
-    Stream<OrganizationModel> getAllStream();
 
     /**
      * Returns the members of a given {@link OrganizationModel}.

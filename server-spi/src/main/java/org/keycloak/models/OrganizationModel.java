@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 import java.util.stream.Stream;
 
 public interface OrganizationModel {
@@ -42,4 +43,8 @@ public interface OrganizationModel {
     Stream<String> getAttributeStream(String name);
 
     Map<String, List<String>> getAttributes();
+
+    Stream<OrganizationDomainModel> getDomains();
+
+    void setDomains(Collection<OrganizationDomainModel> domains);
 }
