@@ -50,6 +50,12 @@ Behavior supported by STRICT, that is not supported by DEFAULT:
 
 It is not expected that you should be relying upon these behaviors from the WILDCARD or STRICT options.
 
+= Addressed 'You are already logged in' for expired authentication sessions
+
+{project_name} now does not display the message _You are already logged in_ to the end user when authentication session expires and user is already logged-in. Instead it redirects the error
+about expired authentication session to the client application, so client can act on it and restart authentication as described in the link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions chapter].
+You may consider updating your applications to being able to handle this error.
+
 = Removed a model module
 
 The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previous release and is removed in this release. Use the `org.keycloak:keycloak-model-storage` module instead.

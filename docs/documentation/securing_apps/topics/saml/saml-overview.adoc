@@ -1,3 +1,5 @@
+
+[[_saml]]
 ==  Using SAML to secure applications and services
 
 This section describes how you can secure applications and services with SAML using either {project_name} client adapters or generic SAML provider libraries.
