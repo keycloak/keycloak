@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,8 +33,6 @@ import java.util.List;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
@@ -129,7 +129,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         List<OrganizationRepresentation> existing = testRealm().organizations().getAll(null);
         assertFalse(existing.isEmpty());
-        MatcherAssert.assertThat(expected, Matchers.containsInAnyOrder(existing.toArray()));
+        assertThat(expected, containsInAnyOrder(existing.toArray()));
     }
 
     @Test
@@ -195,8 +195,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
         updated = organization.toRepresentation();
         assertNull(updated.getAttributes().get("key"));
         assertEquals(2, updated.getAttributes().size());
-        assertEquals(org.getAttributes().get("attr1"), updated.getAttributes().get("attr1"));
-        assertEquals(org.getAttributes().get("attr2"), updated.getAttributes().get("attr2"));
+        assertThat(org.getAttributes().get("attr1"), containsInAnyOrder(updated.getAttributes().get("attr1").toArray()));
+        assertThat(org.getAttributes().get("attr2"), containsInAnyOrder(updated.getAttributes().get("attr2").toArray()));
 
         attributes.clear();
         org.setAttributes(attributes);
