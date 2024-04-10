@@ -44,10 +44,10 @@ spec:
     httpsPort: 8543
     tlsSecret: my-tls-secret
   hostname:
-    hostname: my-hostname
-    admin: my-admin-hostname
+    hostname: https://my-hostname.tld
+    admin: https://my-hostname.tld/admin
     strict: false
-    strictBackchannel: false
+    backchannelDynamic: true
   features:
     enabled:
       - docker
@@ -168,7 +168,6 @@ spec:
     httpEnabled: true
   hostname:
     strict: false
-    strictBackchannel: false
 ----
 
 === Resource requirements

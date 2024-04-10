@@ -43,6 +43,7 @@ spec:
     adminUrl: https://www.my-admin-hostname.org:8448/something
     strict: true
     strictBackchannel: true
+    backchannelDynamic: true
   cache:
     configMapFile:
       name: my-config-map
