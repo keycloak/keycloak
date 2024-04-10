@@ -613,12 +613,12 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, response3.getStatusCode());
 
-            events.expectRefresh(refreshToken1.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken1.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // Client session invalidated hence old refresh token not valid anymore
             OAuthClient.AccessTokenResponse response4 = oauth.doRefreshTokenRequest(response2.getRefreshToken(), "password");
             assertEquals(400, response4.getStatusCode());
-            events.expectRefresh(refreshToken2.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken2.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
         }
@@ -656,17 +656,18 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Second refresh (allowed).
             OAuthClient.AccessTokenResponse responseFirstReuse = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
             RefreshToken newTokenFirstReuse = oauth.parseRefreshToken(responseFirstReuse.getRefreshToken());
+            String userId = newTokenFirstReuse.getSubject();
 
             assertEquals(200, responseFirstReuse.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).assertEvent();
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).detail(Details.REFRESH_TOKEN_SUB, userId).assertEvent();
 
             // Token reused twice, became invalid.
             OAuthClient.AccessTokenResponse responseSecondReuse = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
 
             assertEquals(400, responseSecondReuse.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).detail(Details.REFRESH_TOKEN_SUB, userId).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // Refresh token from first use became invalid.
@@ -675,7 +676,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseUseOfInvalidatedRefreshToken.getStatusCode());
 
-            events.expectRefresh(newTokenFirstUse.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(newTokenFirstUse.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // Refresh token from reuse is not valid. Client session was invalidated
@@ -684,7 +685,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseUseOfValidRefreshToken.getStatusCode());
 
-            events.expectRefresh(newTokenFirstReuse.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(newTokenFirstReuse.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test"))
@@ -725,7 +726,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseReuseExceeded.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test"))
                     .refreshTokenMaxReuse(0)
@@ -760,7 +761,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseReuseExceeded.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
@@ -768,7 +769,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Config changed, token cannot be used again at this point due the client session invalidated
             OAuthClient.AccessTokenResponse responseReuseExceeded2 = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
             assertEquals(400, responseReuseExceeded2.getStatusCode());
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test"))
@@ -816,7 +817,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, response3.getStatusCode());
 
-            events.expectRefresh(refreshToken1.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken1.getId(), sessionId).removeDetail(Details.TOKEN_ID).user((String) null).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // No client sessions available after revoke
             Assert.assertFalse(hasClientSessionForTestApp());
@@ -863,7 +864,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Try to refresh with one of the old refresh tokens before SSO re-authentication - should fail
             OAuthClient.AccessTokenResponse response5 = oauth.doRefreshTokenRequest(response2.getRefreshToken(), "password");
             assertEquals(400, response5.getStatusCode());
-            events.expectRefresh(refreshToken2.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken2.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             resetTimeOffset();
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
@@ -1559,7 +1560,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusCode());
             assertEquals("invalid_grant", response.getError());
 
-            events.expectRefresh(refreshToken.getId(), sessionId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+            events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
         } finally {
             UserManager.realm(adminClient.realm("test")).username("test-user@localhost").enabled(true);
         }
@@ -1589,7 +1590,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), sessionId).user(userId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+        events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
     }
 
     @Test

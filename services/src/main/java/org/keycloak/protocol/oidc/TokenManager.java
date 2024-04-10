@@ -405,9 +405,14 @@ public class TokenManager {
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
-        event.user(refreshToken.getSubject()).session(refreshToken.getSessionState())
+        event.session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
+
+        if (refreshToken.getSubject() != null) {
+            event.detail(Details.REFRESH_TOKEN_SUB, refreshToken.getSubject());
+        }
+
         // Setup clientScopes from refresh token to the context
         String oldTokenScope = refreshToken.getScope();
         //The requested scope MUST NOT include any scope not originally granted by the resource owner
@@ -429,6 +434,8 @@ public class TokenManager {
         }
 
         validateTokenReuseForRefresh(session, realm, refreshToken, validation);
+
+        event.user(validation.userSession.getUser());
 
         if (refreshToken.getAuthorization() != null) {
             validation.newToken.setAuthorization(refreshToken.getAuthorization());

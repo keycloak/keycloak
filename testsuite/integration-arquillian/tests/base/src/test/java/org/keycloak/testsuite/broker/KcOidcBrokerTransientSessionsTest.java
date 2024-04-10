@@ -631,8 +631,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             events.expectRefresh(offlineToken.getId(), newRefreshToken.getSessionState())
                     .realm(consumerRealmRep)
                     .client(CONSUMER_BROKER_APP_CLIENT_ID)
+                    .user((String) null)
                     .error(Errors.INVALID_TOKEN)
-                    .user(lwUserId)
                     .clearDetails()
                     .assertEvent();
         } finally {

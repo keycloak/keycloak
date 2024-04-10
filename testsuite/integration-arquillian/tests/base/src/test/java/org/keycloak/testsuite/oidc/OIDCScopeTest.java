@@ -517,7 +517,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertEquals(400, refreshResponse.getStatusCode());
         events.expectRefresh(refreshToken1.getId(), idToken.getSessionState())
                 .client("third-party")
-                .user(userId)
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
