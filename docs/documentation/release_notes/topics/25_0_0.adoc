@@ -11,19 +11,24 @@ better security, with almost the same CPU time as previous releases of {project_
 memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in {project_name} requires 7MB
 per-hashing request.
 
-= SameSite attribute set for all cookies
+= Cookies updates
+
+== SameSite attribute set for all cookies
 
 The following cookies did not use to set the `SameSite` attribute, which in recent browser versions results in them
 defaulting to `SameSite=Lax`:
 
 * `KC_STATE_CHECKER` now sets `SameSite=Strict`
 * `KC_RESTART` now sets `SameSite=None`
-* `KC_AUTH_STATE` now sets `SameSite=Strict`
 * `KEYCLOAK_LOCALE` now sets `SameSite=None`
 * `KEYCLOAK_REMEMBER_ME` now sets `SameSite=None`
 
 The default value `SameSite=Lax` causes issues with POST based bindings, mostly applicable to SAML, but also used in
 some OpenID Connect / OAuth 2.0 flows.
+
+== Removing KC_AUTH_STATE cookie
+
+The cookie `KC_AUTH_STATE` is removed and it is no longer set by the {project_name} server as this server no longer needs this cookie.
 
 = Deprecated cookie methods removed
 
@@ -32,6 +37,13 @@ The following methods for setting custom cookies have been removed:
 * `LocaleSelectorProvider.KEYCLOAK_LOCALE` - replaced by `CookieType.LOCALE`
 * `HttpCookie` - replaced by `NewCookie.Builder`
 * `HttpResponse.setCookieIfAbsent(HttpCookie cookie)` - replaced by `HttpResponse.setCookieIfAbsent(NewCookie cookie)`
+
+= Addressed 'You are already logged in' for expired authentication sessions
+
+The Keycloak 23 release provided improvements for when a user is authenticated in parallel in multiple browser tabs. However, this improvement did not address the case when an authentication session
+expired. Now for the case when user is already logged-in in one browser tab and an authentication session expired in other browser tabs, {project_name} is able to redirect back to the client
+application with an OIDC/SAML error, so the client application can immediately retry authentication, which should usually automatically log in the application because of the SSO session. For more
+details, see link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions].
 
 = Password policy for check if password contains Username
 

@@ -12,6 +12,8 @@ include::topics/oidc/available-endpoints.adoc[]
 
 include::topics/oidc/supported-grant-types.adoc[]
 
+include::topics/oidc/oidc-errors.adoc[]
+
 ifeval::[{project_community}==true]
 include::topics/oidc/java/java-adapters.adoc[]
 endif::[]
@@ -41,6 +43,7 @@ endif::[]
 ifeval::[{project_product}==true]
 include::topics/saml/java/java-adapters-product.adoc[]
 endif::[]
+include::topics/saml/saml-errors.adoc[]
 
 include::topics/docker/docker-overview.adoc[]
 include::topics/client-registration.adoc[]
