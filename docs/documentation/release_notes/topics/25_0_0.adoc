@@ -20,6 +20,20 @@ memory, which is a requirement to be resistant against GPU attacks. The defaults
 per-hashing request.
 To prevent excessive memory and CPU usage, the parallel computation of hashes by Argon2 is by default limited to the number of cores available to the JVM.
 
+= New Hostname options
+
+In response to the complexity and lack of intuitiveness experienced with previous hostname configuration settings, we are proud to introduce Hostname v2 options.
+
+We have listened to your feedback, tackled the tricky issues, and created a smoother experience for managing hostname configuration.
+Be aware that even the behavior behind these options has changed and requires your attention - if you are dealing with custom hostname settings.
+
+Hostname v2 options are supported by default, as the old hostname options are deprecated and will be removed in the following releases.
+You should migrate to them as soon as possible.
+
+New options are activated by default, so {project_name} will not recognize the old ones.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Cookies updates
 
 == SameSite attribute set for all cookies
