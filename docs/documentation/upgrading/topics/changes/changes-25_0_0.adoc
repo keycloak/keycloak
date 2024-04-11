@@ -119,13 +119,13 @@ However a `refresh_token_sub` detail is now added as backwards compatibility to 
 
 = Using older javascript adapter
 
-In case that you use latest {project_name} server with older versions of javascript adapter in your applications, you may be affected by the token changes mentioned above as previous
-versions of javascript adapter rely on the claims, which were added by {project_name}, but not supported by the OIDC specification. This include:
+If you use the latest {project_name} server with older versions of the javascript adapter in your applications, you may be affected by the token changes mentioned above as previous
+versions of javascript adapter rely on the claims, which were added by {project_name}, but not supported by the OIDC specification. This includes:
 
-* Adding `Session State (session_state)` mapper in case of using Keycloak Javascript adapter 24.0.3 or older
-* Adding `Nonce backwards compatible` mapper in case of using Keycloak Javascript adapter older than Keycloak 24
+* Adding the `Session State (session_state)` mapper in case of using the Keycloak Javascript adapter 24.0.3 or older
+* Adding the `Nonce backwards compatible` mapper in case of using a Keycloak Javascript adapter that is older than Keycloak 24
 
-You can add the protocol mappers directly to the corresponding client or to some client scope, which can be used by your client applications relying on older versions of Keycloak Javascript adapter.
+You can add the protocol mappers directly to the corresponding client or to some client scope, which can be used by your client applications relying on older versions of the Keycloak Javascript adapter.
 Some more details are in the previous sections dedicated to `session_state` and `nonce` claims.
 
 = Default `http-pool-max-threads` reduced
