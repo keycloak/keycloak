@@ -7,12 +7,12 @@ Whenever a new login page is opened from a different tab in the same browser, {p
 Authentication requests can come from any type of clients such as the Admin CLI. In that case, a new authentication session is also created with one authentication sub-session.
 Please note that authentication sessions can be created also in other ways than using a browser flow.
 
-The authentication session usually expires after 30 minutes by default. The exact time is specified by *Login timeout* switch in the *Sessions* tab of the admin console when <<configuring-realms,configuring realm>>.
+The authentication session usually expires after 30 minutes by default. The exact time is specified by the *Login timeout* switch in the *Sessions* tab of the admin console when <<configuring-realms,configuring realm>>.
 
 ==== Authentication in more browser tabs
 
-As pointed above, it can happen that user is trying to authenticate to {project_name} server from multiple browser tabs of same browser. However when user authenticates in one of browser tabs,
-the other browser tabs will automatically restart the authentication in themselves. This is done due the small javascript available on {project_name} login pages. The restart will typically
+As described in the previous section, a situation can involve a user who is trying to authenticate to the {project_name} server from multiple tabs of a single browser. However, when that user authenticates in one browser tab,
+the other browser tabs will automatically restart the authentication. This authentication occurs due to the small javascript available on the {project_name} login pages. The restart will typically
 automatically authenticate user in other browser tabs and redirect to clients because there is SSO session now due the fact that user just successfully authenticated in first browser tab. There
 are some rare exceptions when user is not automatically authenticated in other browser tabs, such as for instance using of OIDC parameter _prompt=login_ or <<_step-up-flow, step-up authentication>>  requesting stronger
 authentication factor than currently authenticated factor.
