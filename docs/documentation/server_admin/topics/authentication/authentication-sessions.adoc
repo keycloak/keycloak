@@ -17,9 +17,9 @@ authenticate the user in other browser tabs and redirect to clients because ther
 Some rare exceptions exist when a user is not automatically authenticated in other browser tabs, such as for instance when using an OIDC parameter _prompt=login_ or <<_step-up-flow, step-up authentication>>  requesting a stronger
 authentication factor than the currently authenticated factor.
 
-In some rare cases, it can happen that after authentication in first browser tab, the other browser tabs are not able to restart authentication because authentication session is already
-expired. In this case, the particular browser tab will redirect error about expired authentication session back to the client in a protocol specific way. For more details, see the corresponding sections
-of  link:{adapterguide_link}#_oidc-errors[OIDC documentation] and  link:{adapterguide_link}#_saml-errors[SAML documentation]. When client application receives such error, it can immediately send again OIDC/SAML authentication request to {project_name} as
-this should usually automatically authenticate user due the existing SSO session as discussed above. As a result, end user would be authenticated automatically in all browser tabs.
-The link:{adapterguide_link}#_javascript_adapter[{project_name} Javascript adapter], link:{adapterguide_link}#_saml[{project_name} SAML adapter] and <<_identity_broker, {project_name} Identity provider>>
-support to handle this error automatically and retry authentication to {project_name} server in such a case.
+In some rare cases, it can happen that after authentication in the first browser tab, other browser tabs are not able to restart authentication because the authentication session is already
+expired. In this case, the particular browser tab will redirect the error about the expired authentication session back to the client in a protocol specific way. For more details, see the corresponding sections
+of  link:{adapterguide_link}#_oidc-errors[OIDC documentation] and  link:{adapterguide_link}#_saml-errors[SAML documentation]. When the client application receives such an error, it can immediately resubmit the OIDC/SAML authentication request to {project_name} as
+this should usually automatically authenticate the user due to the existing SSO session as described earlier. As a result, the end user is authenticated automatically in all browser tabs.
+The link:{adapterguide_link}#_javascript_adapter[{project_name} Javascript adapter], link:{adapterguide_link}#_saml[{project_name} SAML adapter], and <<_identity_broker, {project_name} Identity provider>>
+support to handle this error automatically and retry the authentication to the {project_name} server in such a case.
