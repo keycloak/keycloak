@@ -1,3 +1,11 @@
+= Account Console v2 theme removed
+
+The Account Console v2 theme has been removed from {project_name}. This theme was deprecated in {project_name} 24 and replaced by the Account Console v3 theme. If you are still using this theme, you should migrate to the Account Console v3 theme.
+
+= Upgrade to PatternFly 5
+
+In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://www.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
+
 = Argon2 password hashing
 
 Argon2 is now the default password hashing algorithm used by {project_name}
