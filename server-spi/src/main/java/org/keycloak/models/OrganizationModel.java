@@ -32,17 +32,9 @@ public interface OrganizationModel {
 
     String getName();
 
-    void setSingleAttribute(String name, String value);
-
-    void setAttribute(String name, List<String> values);
-
-    void removeAttribute(String name);
-
-    String getFirstAttribute(String name);
-
-    Stream<String> getAttributeStream(String name);
-
     Map<String, List<String>> getAttributes();
+
+    void setAttributes(Map<String, List<String>> attributes);
 
     Stream<OrganizationDomainModel> getDomains();
 
