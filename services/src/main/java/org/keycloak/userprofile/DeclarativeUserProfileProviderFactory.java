@@ -35,6 +35,7 @@ import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -44,6 +45,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.validator.OrganizationMemberValidator;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -340,6 +342,16 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private void addContextualProfileMetadata(UserProfileMetadata metadata) {
         if (contextualMetadataRegistry.putIfAbsent(metadata.getContext(), metadata) != null) {
             throw new IllegalStateException("Multiple profile metadata found for context " + metadata.getContext());
+        }
+
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            for (AttributeMetadata attribute : metadata.getAttributes()) {
+                String name = attribute.getName();
+
+                if (UserModel.EMAIL.equals(name) || UserModel.USERNAME.equals(name)) {
+                    attribute.addValidators(List.of(new AttributeValidatorMetadata(OrganizationMemberValidator.ID)));
+                }
+            }
         }
     }
 

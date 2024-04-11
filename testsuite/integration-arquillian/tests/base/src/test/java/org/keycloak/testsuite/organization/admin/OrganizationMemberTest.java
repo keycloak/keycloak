@@ -27,6 +27,7 @@ import static org.keycloak.models.OrganizationModel.USER_ORGANIZATION_ATTRIBUTE;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -34,11 +35,12 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(Feature.ORGANIZATION)
@@ -67,14 +69,13 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testFailCreateUser() {
+    public void testFailSetUserOrganizationAttribute() {
         UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         testRealm().users().userProfile().update(upConfig);
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation expected = new UserRepresentation();
 
-        expected.setEmail("u@o.org");
         expected.setUsername(expected.getEmail());
         expected.singleAttribute(USER_ORGANIZATION_ATTRIBUTE, "invalid");
 
@@ -82,6 +83,58 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
             assertTrue(testRealm().users().search("u@o.org").isEmpty());
         }
+    }
+
+    @Test
+    public void testFailSetEmailDomainOtherThanOrganizationDomain() {
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        testRealm().users().userProfile().update(upConfig);
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        UserRepresentation expected = new UserRepresentation();
+
+        expected.setUsername(KeycloakModelUtils.generateId() + "@user.org");
+        expected.setEmail(expected.getUsername());
+
+        try (Response response = organization.members().addMember(expected)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertTrue(testRealm().users().search(expected.getUsername()).isEmpty());
+        }
+
+        expected.setUsername(expected.getUsername().replace("@user.org", "@" + organizationName + ".org"));
+        expected.setEmail(expected.getUsername());
+
+        try (Response response = organization.members().addMember(expected)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            assertFalse(testRealm().users().search(expected.getUsername()).isEmpty());
+        }
+    }
+
+    @Test
+    public void testFailSetEmailDomainOtherThanOrganizationDomainViaUserApi() {
+        RealmRepresentation representation = testRealm().toRepresentation();
+        representation.setEditUsernameAllowed(true);
+        testRealm().update(representation);
+        OrganizationRepresentation organization = createOrganization();
+        UserRepresentation member = addMember(testRealm().organizations().get(organization.getId()));
+
+        member.setUsername(KeycloakModelUtils.generateId() + "@user.org");
+        member.setEmail(member.getUsername());
+        member.setFirstName("f");
+        member.setLastName("l");
+        member.setEnabled(true);
+
+        try {
+            testRealm().users().get(member.getId()).update(member);
+            fail("Should fail because email domain does not match any from organization");
+        } catch (BadRequestException expected) {
+
+        }
+
+        member.setUsername(member.getUsername().replace("@user.org", "@" + organizationName + ".org"));
+        member.setEmail(member.getUsername());
+
+        testRealm().users().get(member.getId()).update(member);
     }
 
     @Test

@@ -17,7 +17,6 @@
 
 package org.keycloak.organization.admin.resource;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Objects;
@@ -45,7 +44,6 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
@@ -77,7 +75,9 @@ public class OrganizationResource {
             throw new BadRequestException();
         }
 
-        OrganizationModel model = provider.create(organization.getName());
+        Set<String> domains = organization.getDomains().stream().map(OrganizationDomainRepresentation::getName).collect(Collectors.toSet());
+        OrganizationModel model = provider.create(organization.getName(), domains);
+
         toModel(organization, model);
 
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
@@ -133,6 +133,7 @@ public class OrganizationResource {
     @Path("{id}/members")
     public OrganizationMemberResource members(@PathParam("id") String id) {
         OrganizationModel organization = getOrganization(id);
+        session.setAttribute(OrganizationModel.class.getName(), organization);
         return new OrganizationMemberResource(session, organization, auth, adminEvent);
     }
 
@@ -186,24 +187,13 @@ public class OrganizationResource {
         model.setName(rep.getName());
         model.setAttributes(rep.getAttributes());
         model.setDomains(Optional.ofNullable(rep.getDomains()).orElse(Set.of()).stream()
-                .filter(this::validateDomainRepresentation)
-                .peek(domainRep -> {
-                    OrganizationModel orgModel = provider.getByDomainName(domainRep.getName());
-                    if (orgModel != null && !Objects.equals(model.getId(), orgModel.getId())) {
-                        throw ErrorResponse.error("Domain " + domainRep.getName() + " is already linked to another organization", Response.Status.BAD_REQUEST);
-                    }
-                })
-                .map(this::toModel)
-                .collect(Collectors.toSet()));
+                    .map(this::toModel)
+                    .collect(Collectors.toSet()));
 
         return model;
     }
 
     private OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
         return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
-    }
-
-    private boolean validateDomainRepresentation(OrganizationDomainRepresentation rep) {
-        return rep != null && rep.getName() != null && !rep.getName().trim().isEmpty();
     }
 }

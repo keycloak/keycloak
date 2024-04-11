@@ -20,6 +20,8 @@ package org.keycloak.organization.jpa;
 import static org.keycloak.models.OrganizationModel.USER_ORGANIZATION_ATTRIBUTE;
 import static org.keycloak.utils.StreamsUtil.closing;
 
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -32,6 +34,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -40,6 +44,7 @@ import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.utils.StringUtil;
 
 public class JpaOrganizationProvider implements OrganizationProvider {
 
@@ -59,7 +64,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel create(String name) {
+    public OrganizationModel create(String name, Set<String> domains) {
+        if (StringUtil.isBlank(name)) {
+            throw new ModelValidationException("Name can not be null");
+        }
+
         GroupModel group = createOrganizationGroup(name);
         OrganizationEntity entity = new OrganizationEntity();
 
@@ -70,7 +79,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         em.persist(entity);
 
-        return new OrganizationAdapter(realm, entity);
+        OrganizationAdapter adapter = new OrganizationAdapter(realm, entity, this);
+
+        adapter.setDomains(domains.stream().map(OrganizationDomainModel::new).collect(Collectors.toSet()));
+
+        return adapter;
     }
 
     @Override
@@ -121,7 +134,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public OrganizationModel getById(String id) {
         OrganizationEntity entity = getEntity(id, false);
-        return entity == null ? null : new OrganizationAdapter(realm, entity);
+        return entity == null ? null : new OrganizationAdapter(realm, entity, this);
     }
 
     @Override
@@ -130,7 +143,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         query.setParameter("name", domain.toLowerCase());
         try {
             OrganizationDomainEntity entity = query.getSingleResult();
-            return new OrganizationAdapter(realm, entity.getOrganization());
+            return new OrganizationAdapter(realm, entity.getOrganization(), this);
         } catch (NoResultException nre) {
             return null;
         }
@@ -142,7 +155,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         query.setParameter("realmId", realm.getId());
 
-        return closing(query.getResultStream().map(entity -> new OrganizationAdapter(realm, entity)));
+        return closing(query.getResultStream().map(entity -> new OrganizationAdapter(realm, entity, this)));
     }
 
     @Override

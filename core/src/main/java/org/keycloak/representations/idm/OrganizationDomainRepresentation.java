@@ -25,7 +25,7 @@ package org.keycloak.representations.idm;
 public class OrganizationDomainRepresentation {
 
     private String name;
-    private Boolean verified;
+    private boolean verified;
 
     public String getName() {
         return this.name;
@@ -35,11 +35,11 @@ public class OrganizationDomainRepresentation {
         this.name = name;
     }
 
-    public Boolean isVerified() {
+    public boolean isVerified() {
         return this.verified;
     }
 
-    public void setVerified(Boolean verified) {
+    public void setVerified(boolean verified) {
         this.verified = verified;
     }
 

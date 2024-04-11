@@ -19,7 +19,7 @@ package org.keycloak.models;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public interface OrganizationModel {
@@ -38,5 +38,5 @@ public interface OrganizationModel {
 
     Stream<OrganizationDomainModel> getDomains();
 
-    void setDomains(Collection<OrganizationDomainModel> domains);
+    void setDomains(Set<OrganizationDomainModel> domains);
 }

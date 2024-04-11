@@ -28,8 +28,8 @@ public class OrganizationRepresentation {
 
     private String id;
     private String name;
-    private Map<String, List<String>> attributes = new HashMap<>();
-    private Set<OrganizationDomainRepresentation> domains = new HashSet<>();
+    private Map<String, List<String>> attributes;
+    private Set<OrganizationDomainRepresentation> domains;
 
     public String getId() {
         return id;
@@ -62,15 +62,31 @@ public class OrganizationRepresentation {
     }
 
     public Set<OrganizationDomainRepresentation> getDomains() {
-        return this.domains;
+        return domains;
+    }
+
+    public OrganizationDomainRepresentation getDomain(String name) {
+        if (domains == null) {
+            return null;
+        }
+        return domains.stream()
+                .filter(organizationDomainRepresentation -> name.equals(organizationDomainRepresentation.getName()))
+                .findAny()
+                .orElse(null);
     }
 
     public void addDomain(OrganizationDomainRepresentation domain) {
-        this.domains.add(domain);
+        if (domains == null) {
+            domains = new HashSet<>();
+        }
+        domains.add(domain);
     }
 
     public void removeDomain(OrganizationDomainRepresentation domain) {
-        this.domains.remove(domain);
+        if (domains == null) {
+            return;
+        }
+        getDomains().remove(domain);
     }
 
     @Override
