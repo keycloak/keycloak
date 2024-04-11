@@ -37,11 +37,6 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    settings: {
-      react: {
-        version: "detect",
-      },
-    },
     rules: {
       // ## Rules overwriting config, disabled for now, but will have to be evaluated. ##
       "no-undef": "off",
