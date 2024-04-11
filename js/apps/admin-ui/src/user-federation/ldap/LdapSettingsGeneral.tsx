@@ -1,5 +1,5 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { FormGroup, TextInput } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
 import {
   Select,
   SelectOption,
@@ -107,17 +107,21 @@ export const LdapSettingsGeneral = ({
       )}
       <FormAccess role="manage-realm" isHorizontal>
         {/* These hidden fields are required so data object written back matches data retrieved */}
-        <TextInput
-          hidden
+        <input
+          type="hidden"
           defaultValue="ldap"
           {...form.register("providerId")}
         />
-        <TextInput
-          hidden
+        <input
+          type="hidden"
           defaultValue="org.keycloak.storage.UserStorageProvider"
           {...form.register("providerType")}
         />
-        <TextInput hidden defaultValue={realm} {...form.register("parentId")} />
+        <input
+          type="hidden"
+          defaultValue={realm}
+          {...form.register("parentId")}
+        />
         <TextControl
           name="name"
           label={t("uiDisplayName")}
