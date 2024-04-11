@@ -18,12 +18,6 @@ http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri
 Use the new options `http-metrics-histograms-enabled` and `http-metrics-slos` to enable default histogram buckets or specific buckets for service level objectives (SLOs).
 Read more about histograms in the https://prometheus.io/docs/concepts/metric_types/#histogram[Prometheus documentation about histograms] on how to use the additional metrics series provided in `http_server_requests_seconds_bucket`.
 
-= Nonce claim is only added to the ID token
-
-The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).
-
-A new `Nonce backwards compatible` mapper is also included in the software that can be assigned to client scopes to revert to the old behavior. For example, the JS adapter checked the returned `nonce` claim in all the tokens before fixing issue https://github.com/keycloak/keycloak/issues/26651[#26651] in version 24.0.0. Therefore, if an old version of the JS adapter is used, the mapper should be added to the required clients by using client scopes.
-
 = Limiting memory usage when consuming HTTP responses
 
 In some scenarios like brokering Keycloak uses HTTP to talk to external servers.
@@ -83,6 +77,7 @@ The new client scope named `basic` is added as a realm "default" client scope an
 
 This scope contains preconfigured protocol mappers for the following claims:
 
+ * `sub` (See the details below in the dedicated section)
  * `auth_time`
 
 This provides additional help to reduce the number of claims in a lightweight access token, but also gives the chance to configure claims that were always added automatically.
@@ -107,7 +102,13 @@ Only in the case you are using `Pairwise subject identifier` mapper to map `sub`
 
 You can use the `Subject (sub)` mapper to configure the `sub` claim only for access token, lightweight access token, and introspection response. IDToken and Userinfo always contain `sub` claim.
 
-The mapper has no effects for service accounts, because no user session exists, and the`sub` claim is always added to the access token.
+The mapper has no effects for service accounts, because no user session exists, and the `sub` claim is always added to the access token.
+
+= Nonce claim is only added to the ID token
+
+The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).
+
+A new `Nonce backwards compatible` mapper is also included in the software that can be assigned to client scopes to revert to the old behavior. For example, the JS adapter checked the returned `nonce` claim in all the tokens before fixing issue https://github.com/keycloak/keycloak/issues/26651[#26651] in version 24.0.0. Therefore, if an old version of the JS adapter is used, the mapper should be added to the required clients by using client scopes.
 
 = Changed `userId` for events related to refresh token
 
@@ -115,6 +116,17 @@ The `userId` in the `REFRESH_TOKEN` event is now always taken from user session 
 The reason for this change is that the value of the `sub` claim in the refresh token may be null with the introduction of the optional `sub` claim or even different from the real user id when using pairwise subject identifiers or other ways to override the `sub` claim.
 
 However a `refresh_token_sub` detail is now added as backwards compatibility to have info about the user in the case of missing userId in the `REFRESH_TOKEN_ERROR` event.
+
+= Using older javascript adapter
+
+If you use the latest {project_name} server with older versions of the javascript adapter in your applications, you may be affected by the token changes mentioned above as previous
+versions of javascript adapter rely on the claims, which were added by {project_name}, but not supported by the OIDC specification. This includes:
+
+* Adding the `Session State (session_state)` mapper in case of using the Keycloak Javascript adapter 24.0.3 or older
+* Adding the `Nonce backwards compatible` mapper in case of using a Keycloak Javascript adapter that is older than Keycloak 24
+
+You can add the protocol mappers directly to the corresponding client or to some client scope, which can be used by your client applications relying on older versions of the Keycloak Javascript adapter.
+Some more details are in the previous sections dedicated to `session_state` and `nonce` claims.
 
 = Default `http-pool-max-threads` reduced
 

@@ -53,6 +53,17 @@ expired. Now for the case when user is already logged-in in one browser tab and 
 application with an OIDC/SAML error, so the client application can immediately retry authentication, which should usually automatically log in the application because of the SSO session. For more
 details, see link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions].
 
+= Lightweight access token to be even more lightweight
+
+In previous releases, the support for lightweight access token was added. In this release, we managed to remove even more built-in claims from the lightweight access token. The claims are added
+by protocol mappers. Some of them affect even the regular access tokens or ID tokens as they were not strictly required by the OIDC specification.
+
+* Claims `sub` and `auth_time` are added by protocol mappers now, which are configured by default on the new client scope `basic`, which is added automatically to all the clients. The claims are still added to the ID token and access token as before, but not to lightweight access token.
+* Claim `nonce` is added only to the ID token now.  It is not added to a regular access token or lightweight access token. For backwards compatibility, you can add this claim to an access token by protocol mapper, which needs to be explicitly configured.
+* Claim `session_state` is not added to any token now. It is still possible to add it by protocol mapper if needed. There is still the other dedicated claim `sid` supported by the specification, which was available in previous versions as well and which has exactly the same value.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}]..
+
 = Password policy for check if password contains Username
 
 Keycloak supports a new password policy that allows you to deny user passwords which contains the user username.
