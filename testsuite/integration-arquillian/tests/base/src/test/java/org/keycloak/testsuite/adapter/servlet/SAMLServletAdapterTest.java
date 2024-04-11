@@ -117,6 +117,7 @@ import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.cookie.CookieType;
@@ -129,6 +130,7 @@ import org.keycloak.keys.Attributes;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -146,6 +148,7 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -164,15 +167,19 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.BrowserTabUtil;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -673,10 +680,14 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         }
     }
 
-    private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
-    private static final String NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
+    private static KeyPair NEW_KEY_PAIR;
+    private static String NEW_KEY_PRIVATE_KEY_PEM;
 
     private PublicKey createKeys(String priority) throws Exception {
+        if (NEW_KEY_PAIR == null) {
+            NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
+            NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
+        }
         PublicKey publicKey = NEW_KEY_PAIR.getPublic();
 
         ComponentRepresentation rep = new ComponentRepresentation();
@@ -1825,6 +1836,93 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         salesPostSigServletPage.logout();
         checkLoggedOut(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void testMultipleTabsParallelLogin() throws Exception {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // open an application in tab1 and go to the login page
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            salesPostServletPage.navigateTo();
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+
+            // Prepare a login in tab2
+            tabUtil.newTab(salesPostServletPage.buildUri().toASCIIString());
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            Assert.assertEquals(2, tabUtil.getCountOfTabs());
+            testRealmSAMLPostLoginPage.form().login(bburkeUser);
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+
+            // Go back to tab1 and it should automatically login
+            tabUtil.closeTab(1);
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            if (driver instanceof HtmlUnitDriver) {
+                // go to restart URI manually as JS does not work
+                KeycloakUriBuilder current = KeycloakUriBuilder.fromUri(driver.getCurrentUrl(), false);
+                KeycloakUriBuilder restart = KeycloakUriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + DEMO + "/login-actions/restart", false)
+                        .replaceQuery(current.getQuery(), false)
+                        .queryParam(Constants.SKIP_LOGOUT, Boolean.TRUE.toString());
+                driver.navigate().to(restart.buildAsString());
+            }
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+        } finally {
+            salesPostServletPage.logout();
+        }
+    }
+
+    @Test
+    public void testMultipleTabsParallelLoginAfterAuthSessionExpiration() throws Exception {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // open an application in tab1 and go to the login page
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            salesPostServletPage.navigateTo();
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+
+            // Prepare a login in tab2
+            tabUtil.newTab(salesPostServletPage.buildUri().toASCIIString());
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            Assert.assertEquals(2, tabUtil.getCountOfTabs());
+
+            // remove the authentication session in the server to simulate expiration
+            Cookie sessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+            Assert.assertNotNull(sessionCookie);
+            final String authSessionId = sessionCookie.getValue();
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(DEMO);
+                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+                session.authenticationSessions().removeRootAuthenticationSession(realm, root);
+            });
+
+            // finish the login that should fail
+            testRealmSAMLPostLoginPage.form().login(bburkeUser);
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage); // we are still in login
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.",
+                    UIUtils.getTextFromElement(driver.findElement(By.className("alert-error"))));
+
+            // login successfully in tab2 after the error
+            loginPage.form().login(bburkeUser);
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+
+            // Go back to tab1 and it should automatically log into the app with retry
+            tabUtil.closeTab(1);
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            if (driver instanceof HtmlUnitDriver) {
+                // go to restart URI manually as JS does not work
+                KeycloakUriBuilder current = KeycloakUriBuilder.fromUri(driver.getCurrentUrl(), false);
+                KeycloakUriBuilder restart = KeycloakUriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + DEMO + "/login-actions/restart", false)
+                        .replaceQuery(current.getQuery(), false)
+                        .queryParam(Constants.SKIP_LOGOUT, Boolean.TRUE.toString());
+                driver.navigate().to(restart.buildAsString());
+            }
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+        } finally {
+            salesPostServletPage.logout();
+        }
     }
 
     private List<Cookie> impersonate(String admin, String adminPassword, String userId) throws IOException {
