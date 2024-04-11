@@ -7,5 +7,4 @@ if [ ! -f "$FILE" ]; then
   exit 0;
 fi
 
-cd js
-pnpm exec lint-staged
+ESLINT_USE_FLAT_CONFIG=true pnpm exec lint-staged
