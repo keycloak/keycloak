@@ -50,12 +50,6 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertEquals(organizationName, expected.getName());
         expected.setName("acme");
 
-        // add an internet domain to the organization.
-        OrganizationDomainRepresentation orgDomain = new OrganizationDomainRepresentation();
-        orgDomain.setName("neworg.org");
-        orgDomain.setVerified(true);
-        expected.addDomain(orgDomain);
-
         OrganizationResource organization = testRealm().organizations().get(expected.getId());
 
         try (Response response = organization.update(expected)) {
@@ -66,48 +60,6 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getName(), existing.getName());
         assertEquals(1, existing.getDomains().size());
-
-        OrganizationDomainRepresentation existingDomain = existing.getDomains().iterator().next();
-        assertEquals(orgDomain.getName(), existingDomain.getName());
-        assertEquals(orgDomain.isVerified(), existingDomain.isVerified());
-
-        // now test updating an existing internet domain (change verified to false and check the model was updated).
-        orgDomain.setVerified(false);
-        try (Response response = organization.update(expected)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
-        }
-        existing = organization.toRepresentation();
-        assertEquals(1, existing.getDomains().size());
-        existingDomain = existing.getDomains().iterator().next();
-        assertEquals(false, existingDomain.isVerified());
-
-        // now replace the internet domain for a different one.
-        orgDomain.setName("acme.com");
-        try (Response response = organization.update(expected)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
-        }
-        existing = organization.toRepresentation();
-        assertEquals(1, existing.getDomains().size());
-        existingDomain = existing.getDomains().iterator().next();
-        assertEquals("acme.com", existingDomain.getName());
-        assertEquals(false, existingDomain.isVerified());
-
-        // create another org and attempt to set the same internet domain during update - should not be possible.
-        OrganizationRepresentation anotherOrg = createOrganization("another-org");
-        anotherOrg.addDomain(orgDomain);
-
-        organization = testRealm().organizations().get(anotherOrg.getId());
-        try (Response response = organization.update(anotherOrg)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        }
-
-        // finally, attempt to create a new org with an existing internet domain in the representation - should not be possible.
-        OrganizationRepresentation newOrg = new OrganizationRepresentation();
-        newOrg.setName("new-org");
-        newOrg.addDomain(orgDomain);
-        try (Response response = testRealm().organizations().create(newOrg)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        }
     }
 
     @Test
@@ -147,7 +99,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertEquals(1, orgRep.getDomains().size());
         OrganizationDomainRepresentation domainRep = orgRep.getDomains().iterator().next();
         assertEquals("testorg2.org", domainRep.getName());
-        assertTrue(domainRep.isVerified());
+        assertFalse(domainRep.isVerified());
 
         // search for an organization with an non-existent domain.
         existing = testRealm().organizations().getAll("someother.org");
@@ -207,5 +159,76 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         updated = organization.toRepresentation();
         assertEquals(0, updated.getAttributes().size());
+    }
+
+    @Test
+    public void testDomains() {
+        // test create org with default domain settings
+        OrganizationRepresentation expected = createOrganization();
+        OrganizationDomainRepresentation expectedNewOrgDomain = expected.getDomains().iterator().next();
+        OrganizationResource organization = testRealm().organizations().get(expected.getId());
+        OrganizationRepresentation existing = organization.toRepresentation();
+        assertEquals(1, existing.getDomains().size());
+        OrganizationDomainRepresentation existingNewOrgDomain = existing.getDomain("neworg.org");
+        assertEquals(expectedNewOrgDomain.getName(), existingNewOrgDomain.getName());
+        assertFalse(existingNewOrgDomain.isVerified());
+
+        // create a second domain with verified true
+        OrganizationDomainRepresentation expectedNewOrgBrDomain = new OrganizationDomainRepresentation();
+        expectedNewOrgBrDomain.setName("neworg.org.br");
+        expectedNewOrgBrDomain.setVerified(true);
+        expected.addDomain(expectedNewOrgBrDomain);
+        try (Response response = organization.update(expected)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        existing = organization.toRepresentation();
+        assertEquals(2, existing.getDomains().size());
+        OrganizationDomainRepresentation existingNewOrgBrDomain = existing.getDomain("neworg.org.br");
+        assertEquals(expectedNewOrgBrDomain.getName(), existingNewOrgBrDomain.getName());
+        assertEquals(expectedNewOrgBrDomain.isVerified(), existingNewOrgBrDomain.isVerified());
+
+        // now test updating an existing internet domain (change verified to false and check the model was updated).
+        expectedNewOrgDomain.setVerified(true);
+        try (Response response = organization.update(expected)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        existing = organization.toRepresentation();
+        existingNewOrgDomain = existing.getDomain("neworg.org");
+        assertEquals(expectedNewOrgDomain.isVerified(), existingNewOrgDomain.isVerified());
+        existingNewOrgBrDomain = existing.getDomain("neworg.org.br");
+        assertNotNull(existingNewOrgBrDomain);
+        assertEquals(expectedNewOrgBrDomain.isVerified(), existingNewOrgBrDomain.isVerified());
+
+        // now replace the internet domain for a different one.
+        expectedNewOrgBrDomain.setName("acme.com");
+        expectedNewOrgBrDomain.setVerified(false);
+        try (Response response = organization.update(expected)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        existing = organization.toRepresentation();
+        assertEquals(2, existing.getDomains().size());
+        existingNewOrgBrDomain = existing.getDomain("acme.com");
+        assertNotNull(existingNewOrgBrDomain);
+        assertEquals(expectedNewOrgBrDomain.getName(), existingNewOrgBrDomain.getName());
+        assertEquals(expectedNewOrgBrDomain.isVerified(), existingNewOrgBrDomain.isVerified());
+
+        // create another org and attempt to set the same internet domain during update - should not be possible.
+        OrganizationRepresentation anotherOrg = createOrganization("another-org");
+        anotherOrg.addDomain(expectedNewOrgDomain);
+        organization = testRealm().organizations().get(anotherOrg.getId());
+        try (Response response = organization.update(anotherOrg)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // try to remove a domain
+        organization = testRealm().organizations().get(existing.getId());
+        existing.removeDomain(existingNewOrgDomain);
+        try (Response response = organization.update(existing)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        existing = organization.toRepresentation();
+        assertFalse(existing.getDomains().isEmpty());
+        assertEquals(1, existing.getDomains().size());
+        assertNotNull(existing.getDomain("acme.com"));
     }
 }

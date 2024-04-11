@@ -44,7 +44,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected OrganizationRepresentation createOrganization(String name) {
-        return createOrganization(name, null);
+        return createOrganization(name, name + ".org");
     }
 
     protected OrganizationRepresentation createOrganization(String name, String orgDomain) {
@@ -54,12 +54,9 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
         String id;
 
-        if (orgDomain != null) {
-            OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
-            domainRep.setName(orgDomain);
-            domainRep.setVerified(true);
-            org.addDomain(domainRep);
-        }
+        OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
+        domainRep.setName(orgDomain);
+        org.addDomain(domainRep);
 
         try (Response response = testRealm().organizations().create(org)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
