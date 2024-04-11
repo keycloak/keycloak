@@ -236,8 +236,8 @@ importers:
         specifier: ^6.4.2
         version: 6.4.2(vitest@1.4.0)
       '@testing-library/react':
-        specifier: ^14.3.0
-        version: 14.3.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^15.0.0
+        version: 15.0.0(react-dom@18.2.0)(react@18.2.0)
       '@types/dagre':
         specifier: ^0.7.52
         version: 0.7.52
@@ -2261,6 +2261,20 @@ packages:
       cypress: 13.7.2
     dev: true
 
+  /@testing-library/dom@10.0.0:
+    resolution: {integrity: sha512-PmJPnogldqoVFf+EwbHvbBJ98MmqASV8kLrBYgsDNxQcFMeIS7JFL48sfyXvuMtgmWO/wMhh25odr+8VhDmn4g==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@babel/code-frame': 7.24.2
+      '@babel/runtime': 7.24.4
+      '@types/aria-query': 5.0.4
+      aria-query: 5.3.0
+      chalk: 4.1.2
+      dom-accessibility-api: 0.5.16
+      lz-string: 1.5.0
+      pretty-format: 27.5.1
+    dev: true
+
   /@testing-library/dom@9.3.4:
     resolution: {integrity: sha512-FlS4ZWlp97iiNWig0Muq8p+3rVDjRiYE+YKGbAqXOu9nwJFFOdL00kFpz42M+4huzYi86vAK1sOOfyOG45muIQ==}
     engines: {node: '>=14'}
@@ -2307,15 +2321,15 @@ packages:
       vitest: 1.4.0(@types/node@20.12.7)(jsdom@24.0.0)(lightningcss@1.24.1)
     dev: true
 
-  /@testing-library/react@14.3.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-AYJGvNFMbCa5vt1UtDCa/dcaABrXq8gph6VN+cffIx0UeA0qiGqS+sT60+sb+Gjc8tGXdECWYQgaF0khf8b+Lg==}
-    engines: {node: '>=14'}
+  /@testing-library/react@15.0.0(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-Nb2Sq8MoSvGVdOGGppRqXeafLtvXCOwiOQtcbqCfkpVNZZNUqIjeSOwrfJ59zBfmZbAn8PitnWEzUKD1YwMrCg==}
+    engines: {node: '>=18'}
     peerDependencies:
       react: ^18.0.0
       react-dom: ^18.0.0
     dependencies:
       '@babel/runtime': 7.24.4
-      '@testing-library/dom': 9.3.4
+      '@testing-library/dom': 10.0.0
       '@types/react-dom': 18.2.24
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
