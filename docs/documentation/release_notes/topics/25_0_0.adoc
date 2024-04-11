@@ -28,7 +28,7 @@ some OpenID Connect / OAuth 2.0 flows.
 
 == Removing KC_AUTH_STATE cookie
 
-The cookie `KC_AUTH_STATE` was removed and it is not set anymore by {project_name} server as server does not need this cookie anymore.
+The cookie `KC_AUTH_STATE` is removed and it is no longer set by the {project_name} server as this server no longer needs this cookie.
 
 = Deprecated cookie methods removed
 
@@ -40,10 +40,10 @@ The following methods for setting custom cookies have been removed:
 
 = Addressed 'You are already logged in' for expired authentication sessions
 
-In Keycloak 23 release, there was improvement added for the case when user authenticated in parallel in multiple browser tabs. However it did not handled well the case when authentication session
-expired. Now for the case when user is already logged-in in one browser tab and authentication session expired in other browser tabs, {project_name} is able to redirect back to the client
-application with some OIDC/SAML error, so client application can immediately retry authentication, which should usually automatically login the application because of the SSO session. More
-details in the link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions chapter].
+The Keycloak 23 release provided improvements for when a user is authenticated in parallel in multiple browser tabs. However, this improvement did not address the case when an authentication session
+expired. Now for the case when user is already logged-in in one browser tab and an authentication session expired in other browser tabs, {project_name} is able to redirect back to the client
+application with an OIDC/SAML error, so the client application can immediately retry authentication, which should usually automatically log in the application because of the SSO session. For more
+details, see link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions].
 
 = Password policy for check if password contains Username
 

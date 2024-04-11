@@ -2,7 +2,7 @@
 [[_saml-errors]]
 === {project_name} specific errors
 
-{project_name} server can send error to the client application in the SAML response, which may contain SAML status like this:
+{project_name} server can send an error to the client application in the SAML response, which may contain a SAML status such as:
 
 [source,xml]
 ----
@@ -14,7 +14,7 @@
 </samlp:Status>
 ----
 
-{project_name} sends this error when user is authenticated and has SSO session, but authentication session expired in current browser tab and hence {project_name} server cannot automatically do SSO
+{project_name} sends this error when a user is authenticated and has an SSO session, but the authentication session expired in the current browser tab and hence {project_name} server cannot automatically do SSO
 re-authentication of the user and redirect back to client with successful response. When client application receives such error, it is ideal to retry authentication immediately and send new
 SAML request to {project_name} server, which should typically always automatically authenticate user due the SSO session and redirect back. More details in
 the link:{adminguide_link}#_authentication-sessions[{adminguide_name}].
