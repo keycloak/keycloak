@@ -451,14 +451,13 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
                 .update()
         ) {
+            assertAdminEvents.poll(); // realm update
             IdentityProviderRepresentation representation = createRep(UUID.randomUUID().toString(), "oidc");
 
             representation.getConfig().put("clientId", "clientId");
             representation.getConfig().put("clientSecret", "some secret value");
 
-            try (Response response = realm.identityProviders().create(representation)) {
-                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-            }
+            create(representation);
 
             IdentityProviderResource resource = this.realm.identityProviders().get(representation.getAlias());
             representation = resource.toRepresentation();
