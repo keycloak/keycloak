@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -182,26 +184,18 @@ public class OrganizationResource {
         }
 
         model.setName(rep.getName());
+        model.setAttributes(rep.getAttributes());
+        model.setDomains(Optional.ofNullable(rep.getDomains()).orElse(Set.of()).stream()
+                .filter(this::validateDomainRepresentation)
+                .peek(domainRep -> {
+                    OrganizationModel orgModel = provider.getByDomainName(domainRep.getName());
+                    if (orgModel != null && !Objects.equals(model.getId(), orgModel.getId())) {
+                        throw ErrorResponse.error("Domain " + domainRep.getName() + " is already linked to another organization", Response.Status.BAD_REQUEST);
+                    }
+                })
+                .map(this::toModel)
+                .collect(Collectors.toSet()));
 
-        if (rep.getAttributes() != null) {
-            Set<String> attrsToRemove = model.getAttributes().keySet();
-            attrsToRemove.removeAll(rep.getAttributes().keySet());
-            attrsToRemove.forEach(model::removeAttribute);
-
-            rep.getAttributes().entrySet().forEach(entry -> model.setAttribute(entry.getKey(), entry.getValue()));
-        }
-
-        if (rep.getDomains() != null) {
-            model.setDomains(rep.getDomains().stream().filter(this::validateDomainRepresentation)
-                    .peek(domainRep -> {
-                        OrganizationModel orgModel = provider.getByDomainName(domainRep.getName());
-                        if (orgModel != null && !Objects.equals(model.getId(), orgModel.getId())) {
-                            throw ErrorResponse.error("Domain " + domainRep.getName() + " is already linked to another organization", Response.Status.BAD_REQUEST);
-                        }
-                    })
-                    .map(this::toModel)
-                    .collect(Collectors.toSet()));
-        }
         return model;
     }
 

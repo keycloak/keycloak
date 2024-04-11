@@ -20,6 +20,7 @@ package org.keycloak.organization.jpa;
 import org.keycloak.models.GroupModel;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,28 +69,14 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
-    public void setSingleAttribute(String name, String value) {
-        getGroup().setSingleAttribute(name, value);
-    }
-
-    @Override
-    public void setAttribute(String name, List<String> values) {
-        getGroup().setAttribute(name, values);
-    }
-
-    @Override
-    public void removeAttribute(String name) {
-        getGroup().removeAttribute(name);
-    }
-
-    @Override
-    public String getFirstAttribute(String name) {
-        return getGroup().getFirstAttribute(name);
-    }
-
-    @Override
-    public Stream<String> getAttributeStream(String name) {
-        return getGroup().getAttributeStream(name);
+    public void setAttributes(Map<String, List<String>> attributes) {
+        if (attributes == null) {
+            return;
+        }
+        Set<String> attrsToRemove = getAttributes().keySet();
+        attrsToRemove.removeAll(attributes.keySet());
+        attrsToRemove.forEach(group::removeAttribute);
+        attributes.forEach(group::setAttribute);
     }
 
     @Override
