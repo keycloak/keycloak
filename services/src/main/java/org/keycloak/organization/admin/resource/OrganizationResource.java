@@ -187,6 +187,7 @@ public class OrganizationResource {
         model.setName(rep.getName());
         model.setAttributes(rep.getAttributes());
         model.setDomains(Optional.ofNullable(rep.getDomains()).orElse(Set.of()).stream()
+                    .filter(Objects::nonNull)
                     .map(this::toModel)
                     .collect(Collectors.toSet()));
 

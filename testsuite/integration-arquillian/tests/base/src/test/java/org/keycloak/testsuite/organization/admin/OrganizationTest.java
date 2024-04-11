@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -211,6 +210,13 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertNotNull(existingNewOrgBrDomain);
         assertEquals(expectedNewOrgBrDomain.getName(), existingNewOrgBrDomain.getName());
         assertEquals(expectedNewOrgBrDomain.isVerified(), existingNewOrgBrDomain.isVerified());
+
+        // attempt to set the internet domain to an invalid domain.
+        expectedNewOrgBrDomain.setName("_invalid.domain.3com");
+        try (Response response = organization.update(expected)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+        expectedNewOrgBrDomain.setName("acme.com");
 
         // create another org and attempt to set the same internet domain during update - should not be possible.
         OrganizationRepresentation anotherOrg = createOrganization("another-org");

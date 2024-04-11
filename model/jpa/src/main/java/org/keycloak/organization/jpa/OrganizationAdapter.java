@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,6 +35,7 @@ import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.utils.EmailValidationUtil;
 
 import java.util.List;
 
@@ -103,7 +103,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
 
         Map<String, OrganizationDomainModel> modelMap = domains.stream()
-                .peek(this::isDomainInUse)
+                .peek(this::validateDomainRepresentation)
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
 
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
@@ -153,10 +153,23 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         return new OrganizationDomainModel(entity.getName(), entity.isVerified());
     }
 
-    private void isDomainInUse(OrganizationDomainModel domainRep) {
-        OrganizationModel orgModel = provider.getByDomainName(domainRep.getName());
+    /**
+     * Validates the domain representation. Specifically, the method first checks if the specified domain is valid,
+     * and then checks if the domain is not already linked to a different organization.
+     *
+     * @param domainModel the {@link OrganizationDomainModel} representing the domain being added.
+     * @throws {@link ModelValidationException} if the domain is invalid or is already linked to a different organization.
+     */
+    private void validateDomainRepresentation(OrganizationDomainModel domainModel) {
+        String domainName = domainModel.getName();
+
+        // we rely on the same validation util used by the EmailValidator to ensure the domain part is consistently validated.
+        if(domainName == null || domainName.isEmpty() || !EmailValidationUtil.isValidEmail("nouser@" + domainName)) {
+            throw new ModelValidationException("The specified domain is invalid: " + domainName);
+        }
+        OrganizationModel orgModel = provider.getByDomainName(domainName);
         if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
-            throw new ModelValidationException("Domain " + domainRep.getName() + " is already linked to another organization");
+            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization");
         }
     }
 
