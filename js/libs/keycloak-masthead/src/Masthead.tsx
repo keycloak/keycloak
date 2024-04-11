@@ -66,7 +66,7 @@ const KeycloakMasthead = ({
     );
   }
 
-  const picture = keycloak.tokenParsed?.picture;
+  const picture = keycloak.idTokenParsed?.picture;
   return (
     <PageHeader
       {...rest}
@@ -101,7 +101,7 @@ const KeycloakMasthead = ({
                 dropDownItems={[...dropdownItems, extraItems]}
                 title={
                   hasUsername
-                    ? loggedInUserName(keycloak.tokenParsed, t)
+                    ? loggedInUserName(keycloak.idTokenParsed, t)
                     : undefined
                 }
               />
