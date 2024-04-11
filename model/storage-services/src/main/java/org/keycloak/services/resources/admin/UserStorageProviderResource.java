@@ -163,7 +163,7 @@ public class UserStorageProviderResource {
                 String errorMsg = getErrorCode(e);
                 throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
             }
-        } else if (action == null || action == "") {
+        } else if (action == null || action.isEmpty()) {
             logger.debug("Missing action");
             throw new BadRequestException("Missing action");
         } else {
