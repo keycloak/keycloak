@@ -22,10 +22,11 @@ import java.util.List;
 import java.util.Objects;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ImpersonationSessionNote;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
 
@@ -48,6 +49,9 @@ public class UserSessionCrossDCManager {
         return kcSession.sessions().getUserSessionWithPredicate(realm, id, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
     }
 
+    public UserSessionModel getUserSessionWithImpersonatorClient(RealmModel realm, String id, boolean offline, String clientUUID) {
+       return kcSession.sessions().getUserSessionWithPredicate(realm, id, offline, userSession -> clientUUID.equals(userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_CLIENT.toString())));
+    }
 
     // get userSession if it has "authenticatedClientSession" of specified client attached to it. Otherwise download it from remoteCache
     // TODO Probably remove this method once AuthenticatedClientSession.getAction is removed and information is moved to OAuth code JWT instead
