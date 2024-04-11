@@ -30,8 +30,8 @@ importers:
         specifier: ^7.4.0
         version: 7.4.0(eslint@8.57.0)
       eslint-plugin-mocha:
-        specifier: ^10.4.1
-        version: 10.4.1(eslint@8.57.0)
+        specifier: ^10.4.2
+        version: 10.4.2(eslint@8.57.0)
       eslint-plugin-prettier:
         specifier: ^5.1.3
         version: 5.1.3(eslint-config-prettier@9.1.0)(eslint@8.57.0)(prettier@3.2.5)
@@ -4893,8 +4893,8 @@ packages:
       lodash: 4.17.21
     dev: true
 
-  /eslint-plugin-mocha@10.4.1(eslint@8.57.0):
-    resolution: {integrity: sha512-G85ALUgKaLzuEuHhoW3HVRgPTmia6njQC3qCG6CEvA8/Ja9PDZnRZOuzekMki+HaViEQXINuYsmhp5WR5/4MfA==}
+  /eslint-plugin-mocha@10.4.2(eslint@8.57.0):
+    resolution: {integrity: sha512-cur4dVYnSEWTBwdqIBQFxa/9siAhesu0TX+lbJ4ClE9j0eNMNe6BSx3vkFFNz6tGoveyMyELFXa30f3fvuAVDg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       eslint: '>=7.0.0'
