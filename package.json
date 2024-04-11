@@ -2,7 +2,7 @@
   "name": "root",
   "type": "module",
   "scripts": {
-    "prepare": "cd .. && husky js/.husky"
+    "prepare": "husky js/.husky"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",
@@ -24,8 +24,5 @@
     "typescript-eslint": "^7.6.0",
     "wireit": "^0.14.4"
   },
-  "packageManager": "pnpm@8.15.5",
-  "lint-staged": {
-    "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
-  }
+  "packageManager": "pnpm@8.15.5"
 }
