@@ -43,7 +43,7 @@ public class OrganizationDomainModel implements Serializable {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = name != null ? name.trim() : null;
     }
 
     public boolean getVerified() {
