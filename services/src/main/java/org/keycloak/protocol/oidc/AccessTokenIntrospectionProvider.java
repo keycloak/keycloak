@@ -126,27 +126,11 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
-        AccessToken smallToken = getAccessTokenFromStoredData(token, userSession);
+        AccessToken smallToken = getAccessTokenFromStoredData(token);
         return tokenManager.transformIntrospectionAccessToken(session, smallToken, userSession, clientSessionCtx);
     }
 
-    public AccessToken transformAccessToken(AccessToken token) {
-        if (token == null) {
-            return null;
-        }
-
-        EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection())
-                .event(EventType.INTROSPECT_TOKEN)
-                .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
-        UserSessionModel userSession = tokenManager.getValidUserSessionIfTokenIsValid(session, realm, token, eventBuilder);
-
-        if(userSession == null) {
-            return token;
-        }
-        return transformAccessToken(token, userSession);
-    }
-
-    private AccessToken getAccessTokenFromStoredData(AccessToken token, UserSessionModel userSession) {
+    private AccessToken getAccessTokenFromStoredData(AccessToken token) {
         // Copy just "basic" claims from the initial token. The same like filled in TokenManager.initToken. The rest should be possibly added by protocol mappers (only if configured for introspection response)
         AccessToken newToken = new AccessToken();
         newToken.id(token.getId());
