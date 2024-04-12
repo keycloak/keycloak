@@ -20,9 +20,11 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
+import org.apache.commons.io.IOUtils;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpecBuilder;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,7 +53,7 @@ public class CacheTest extends BaseOperatorTest {
 
     @Test
     public void testCreateCacheConfigMapFileAfterDeployment() {
-        var kc = getTestKeycloakDeployment(true);
+        var kc = getTestKeycloakDeployment(false);
         var deploymentName = kc.getMetadata().getName();
         kc.getSpec().setCacheSpec(new CacheSpecBuilder().withNewConfigMapFile("file", CONFIGMAP_NAME, false).build());
 
@@ -61,14 +65,34 @@ public class CacheTest extends BaseOperatorTest {
         Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
         Resource<Keycloak> keycloakResource = k8sclient.resources(Keycloak.class).withName(deploymentName);
         // expect no errors and not ready, which means we'll keep reconciling
-        Awaitility.await().ignoreExceptions().atMost(2, TimeUnit.MINUTES).untilAsserted(() -> {
-            assertThat(stsResource.get()).isNotNull();
-            Keycloak keycloak = keycloakResource.get();
-            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
-            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.READY, false);
+        Awaitility.await().ignoreExceptions().atMost(2, TimeUnit.MINUTES).during(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    StatefulSet deployment = stsResource.get();
+                    assertThat(deployment).isNotNull();
+                    Keycloak keycloak = keycloakResource.get();
+                    CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
+                    CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.READY, false);
+                    var pod = k8sclient.pods().withLabelSelector(deployment.getSpec().getSelector()).list().getItems()
+                            .get(0);
+                    assertThat(pod.getStatus().getPhase()).isEqualTo("Pending");
+                });
+
+        // should allow the deployment to proceed, but it won't become ready
+        Log.info("Checking Operator has picked up a bad configmap");
+        createCacheConfigMap(false);
+
+        Awaitility.await().ignoreExceptions().atMost(3, TimeUnit.MINUTES).untilAsserted(() -> {
+            StatefulSet deployment = stsResource.get();
+            assertThat(deployment).isNotNull();
+            // check the pod directly - it takes longer for us to update our Keycloak status
+            // with an error
+            var pod = k8sclient.pods().withLabelSelector(deployment.getSpec().getSelector()).list().getItems().get(0);
+            assertThat(Serialization.asYaml(pod.getStatus().getContainerStatuses().get(0))).contains("terminated");
         });
 
-        createCacheConfigMap();
+        // should become fully ready
+        Log.info("Checking Operator has picked up a valid configmap");
+        createCacheConfigMap(true);
 
         K8sUtils.waitForKeycloakToBeReady(k8sclient, kc);
     }
@@ -78,28 +102,23 @@ public class CacheTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setCacheSpec(new CacheSpecBuilder().withNewConfigMapFile("file", CONFIGMAP_NAME, false).build());
 
-        createCacheConfigMap();
+        createCacheConfigMap(true);
+
+        // should immediately seem ready because probes are disabled
         deployKeycloak(k8sclient, kc, true);
     }
 
-    private void createCacheConfigMap() {
-        k8sclient.configMaps()
-                .resource(new ConfigMapBuilder().withNewMetadata().withName(CONFIGMAP_NAME).endMetadata()
-                        .addToData("file",
-                                """
-                                        <infinispan
-                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                                                xsi:schemaLocation="urn:infinispan:config:14.0 http://www.infinispan.org/schemas/infinispan-config-14.0.xsd"
-                                                xmlns="urn:infinispan:config:14.0">
-
-                                            <cache-container name="keycloak">
-                                                <local-cache name="default">
-                                                    <transaction transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"/>
-                                                </local-cache>
-                                            </cache-contianer>
-                                        </infinispan>""")
-                        .build())
-                .create();
+    private void createCacheConfigMap(boolean valid) {
+        try {
+            K8sUtils.set(k8sclient,
+                    new ConfigMapBuilder().withNewMetadata().withName(CONFIGMAP_NAME).endMetadata()
+                            .addToData("file",
+                                    valid ? IOUtils.resourceToString("/cache-ispn.xml", StandardCharsets.UTF_8)
+                                            : "this isn't right")
+                            .build());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
