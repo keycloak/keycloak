@@ -40,9 +40,12 @@
 # UI (@keycloak/ui-maintainers)
 ###################################################################################################
 
+/eslint.config.js                                           @keycloak/ui-maintainers
 /package.json                                               @keycloak/ui-maintainers
 /pnpm-lock.yaml                                             @keycloak/ui-maintainers
 /pnpm-workspace.yaml                                        @keycloak/ui-maintainers
+/tsconfig.eslint.json                                       @keycloak/ui-maintainers
+/tsconfig.json                                              @keycloak/ui-maintainers
 /themes/                                                    @keycloak/ui-maintainers @keycloak/maintainers
 /js/                                                        @keycloak/ui-maintainers
 /adapters/oidc/js/                                          @keycloak/ui-maintainers
