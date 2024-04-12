@@ -57,6 +57,6 @@ public final class AdminExtResource {
 
     @Path("/users")
     public UsersResource users() {
-        return new UsersResource(session);
+        return new UsersResource(session, auth);
     }
 }
