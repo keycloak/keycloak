@@ -110,7 +110,7 @@
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
         <resteasy.version>6.2.7.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
-        <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
+        <owasp.html.sanitizer.version>20240325.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.saaj.version>2.0.1</sun.saaj.version>
@@ -531,6 +531,16 @@
             <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
                 <artifactId>owasp-java-html-sanitizer</artifactId>
+                <version>${owasp.html.sanitizer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>java8-shim</artifactId>
+                <version>${owasp.html.sanitizer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>java10-shim</artifactId>
                 <version>${owasp.html.sanitizer.version}</version>
             </dependency>
             <dependency>
