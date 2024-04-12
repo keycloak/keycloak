@@ -115,7 +115,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
             } catch(ClientTypeException cte) {
                 logger.errorf("Could not augment client, %s, due to client type exception: %s",
                         client, cte);
-                return client;
+                throw cte;
             }
         }
     }
