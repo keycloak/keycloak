@@ -63,12 +63,6 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
         </dependency>
-        <dependency>
-            <!-- Included here as it provides Nonnull from com.google.code.findbugs:jsr305.
-            That is used in annotations in FilesPlainTextVaultProvider -->
-            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
-            <artifactId>owasp-java-html-sanitizer</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

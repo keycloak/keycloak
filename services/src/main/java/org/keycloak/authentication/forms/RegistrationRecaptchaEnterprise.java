@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.google.common.base.Strings;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -38,6 +37,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptcha {
     public static final String PROVIDER_ID = "registration-recaptcha-enterprise";
@@ -67,7 +67,7 @@ public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptc
     @Override
     protected boolean validateConfig(Map<String, String> config) {
         return !(Stream.of(PROJECT_ID, SITE_KEY, API_KEY, ACTION)
-                .anyMatch(key -> Strings.isNullOrEmpty(config.get(key)))
+                .anyMatch(key -> StringUtil.isNullOrEmpty(config.get(key)))
                 || parseDoubleFromConfig(config, SCORE_THRESHOLD) == null);
     }
 
