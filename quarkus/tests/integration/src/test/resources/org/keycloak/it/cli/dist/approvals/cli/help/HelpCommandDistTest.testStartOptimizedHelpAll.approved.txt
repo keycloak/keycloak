@@ -18,6 +18,14 @@ Options:
 
 Cache:
 
+--cache <type>       Defines the cache mechanism for high-availability. By default in production
+                       mode, a 'ispn' cache is used to create a cluster between multiple server
+                       nodes. By default in development mode, a 'local' cache disables clustering
+                       and is intended for development and testing purposes. Possible values are:
+                       ispn, local. Default: ispn.
+--cache-config-file <file>
+                     Defines the file from which cache configuration should be loaded from. The
+                       configuration file is relative to the 'conf/' directory.
 --cache-embedded-mtls-enabled <true|false>
                      Encrypts the network communication between Keycloak servers. Default: false.
 --cache-embedded-mtls-key-store-file <file>
@@ -57,6 +65,10 @@ Cache:
                        specified via XML file (see 'cache-config-file' option.). If the option is
                        specified, 'cache-remote-host' and 'cache-remote-password' are required as
                        well and the related configuration in XML file should not be present.
+--cache-stack <stack>
+                     Define the default stack to use for cluster communication and node discovery.
+                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+                       Built-in values include: tcp, udp, kubernetes, ec2, azure, google
 
 Config:
 

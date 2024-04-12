@@ -103,3 +103,10 @@ It utilizes the protocol defined in https://datatracker.ietf.org/doc/html/rfc542
 By default, the syslog handler is disabled, but when enabled, it sends all log events to a remote syslog server.
 
 For more information, see the https://www.keycloak.org/server/logging[Configuring logging] guide.
+
+= All `cache` options are runtime
+
+It is now possible to specify the `cache`, `cache-stack`, and `cache-config-file` options during runtime.
+This eliminates the need to execute the build phase and rebuild your image due to them.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].

@@ -90,10 +90,10 @@ class BuildCommandDistTest {
     @RawDistOnly(reason = "Containers are immutable")
     void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) {
         distribution.setProperty("proxy", "edge");
-        distribution.run("build", "--cache=local");
+        distribution.run("build");
         distribution.removeProperty("proxy");
 
-        CLIResult result = distribution.run("start", "--hostname=mykeycloak", OPTIMIZED_BUILD_OPTION_LONG);
+        CLIResult result = distribution.run("start", "--hostname=mykeycloak", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG);
         result.assertError("Key material not provided to setup HTTPS");
     }
 
