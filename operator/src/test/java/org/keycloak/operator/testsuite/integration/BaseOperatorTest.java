@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -166,6 +167,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
         if (obj instanceof ClusterRoleBinding) {
             ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
+        } else if (obj instanceof RoleBinding && "keycloak-operator-view".equals(((RoleBinding)obj).getMetadata().getName())) {
+            return null; // exclude this role since it's not present in olm
         }
         return obj;
     });
