@@ -335,6 +335,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     private String createOfflineClientSession(String offlineUserSessionId, String clientId) {
         return withRealm(realmId, (session, realm) -> {
             UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, offlineUserSessionId);
+            assertThat("Can't retrieve offline session for " + offlineUserSessionId, offlineUserSession, Matchers.notNullValue());
             ClientModel client = session.clients().getClientById(realm, clientId);
             AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, offlineUserSession);
             return session.sessions().createOfflineClientSession(clientSession, offlineUserSession).getId();

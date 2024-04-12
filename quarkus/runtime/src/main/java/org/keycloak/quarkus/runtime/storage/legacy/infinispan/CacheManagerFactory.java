@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Metrics;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -41,6 +42,7 @@ import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
 import org.jgroups.util.TLS;
 import org.jgroups.util.TLSClientAuth;
+import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import javax.net.ssl.SSLContext;
@@ -55,7 +57,10 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
@@ -103,10 +108,21 @@ public class CacheManagerFactory {
     private DefaultCacheManager startCacheManager() {
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
-        if (builder.getNamedConfigurationBuilders().get(USER_SESSION_CACHE_NAME).clustering().cacheMode().isClustered()) {
+        if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
             configureTransportStack(builder);
             configureRemoteStores(builder);
         }
+
+        DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+            if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
+                (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+                ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
+                if (configurationBuilder.memory().maxSize() == null && configurationBuilder.memory().maxCount() == -1) {
+                    logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries", cacheName);
+                    configurationBuilder.memory().maxCount(10000);
+                }
+            }
+        });
 
         if (metricsEnabled) {
             builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
@@ -223,6 +239,11 @@ public class CacheManagerFactory {
             }
 
             DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) &&
+                    (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+                    return;
+                }
+
                 PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
 
                 //if specified via command line -> cannot be defined in the xml file

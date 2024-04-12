@@ -20,3 +20,7 @@ RefreshTokenTest
 OfflineTokenTest
 AccessTokenTest
 LogoutTest
+ClientStorageTest
+UserInfoTest
+LightWeightAccessTokenTest
+TokenIntrospectionTest

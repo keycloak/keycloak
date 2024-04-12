@@ -309,6 +309,10 @@ jobs:
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    strategy:
+      matrix:
+        variant: ["persistent-user-sessions,persistent-user-sessions-no-cache", "persistent-user-sessions"]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
@@ -316,11 +320,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - name: Run base tests
+      - name: Run base tests without cache
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.features=persistent-user-sessions,persistent-user-sessions-no-cache -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.features=${{ matrix.variant }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
