@@ -104,9 +104,10 @@ public class PersistentSessionsWorker {
             Collection<PersistentDeferredElement<K, V>> batch = new ArrayList<>();
             PersistentDeferredElement<K, V> polled = queue.poll(100, TimeUnit.MILLISECONDS);
             if (polled != null) {
-                queue.add(polled);
+                batch.add(polled);
                 queue.drainTo(batch, 99);
                 try {
+                    LOG.debugf("Processing %d deferred session updates.", batch.size());
                     KeycloakModelUtils.runJobInTransaction(factory,
                             session -> adapter.run(((PersistentUserSessionProvider) session.getProvider(UserSessionProvider.class)), batch, offline));
                 } catch (RuntimeException ex) {
