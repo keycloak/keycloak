@@ -101,7 +101,7 @@ public class UserSessionUtil {
         return userSession;
     }
 
-    private static void checkTokenIssuedAt(RealmModel realm, AccessToken token, UserSessionModel userSession, EventBuilder event, ClientModel client) {
+    public static void checkTokenIssuedAt(RealmModel realm, AccessToken token, UserSessionModel userSession, EventBuilder event, ClientModel client) {
         OAuth2Error error = new OAuth2Error().json(false).realm(realm);
         if (token.isIssuedBeforeSessionStart(userSession.getStarted())) {
             logger.debug("Stale token for user session");

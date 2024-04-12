@@ -332,13 +332,13 @@ public class TokenManager {
         }
     }
 
-    private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserModel user) {
+    public static boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserModel user) {
         if (user == null) {
-            logger.debugf("User does not exist for token introspection");
+            logger.debugf("User does not exists");
             return false;
         }
         if (!user.isEnabled()) {
-            logger.debugf("User is disable for token introspection");
+            logger.debugf("User '%s' is disabled", user.getUsername());
             return false;
         }
         try {
