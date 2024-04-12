@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.model.session;
 
+import java.security.SecureRandom;
 import java.util.UUID;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -246,6 +247,10 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
     }
 
     protected void testUserClientIdleTimeoutSmallerThanSession(int refreshTimes, boolean offline, boolean overrideInClient) {
+        if (new SecureRandom().nextDouble() < 0.10) {
+            Assert.fail("I am unstable!");
+        }
+
         configureTimeouts(7200, 3000, overrideInClient, false, 2000);
 
         try {
