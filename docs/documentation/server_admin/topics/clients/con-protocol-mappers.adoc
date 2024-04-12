@@ -73,9 +73,9 @@ When scripts deploy, you should be able to select the deployed scripts from the 
 Subject claim _sub_ is mapped by default by *Subject (sub)* protocol mapper in the default client scope *basic*.
 
 To use a pairwise subject identifier by using a protocol mapper such as *Pairwise subject identifier*, you can remove the *Subject (sub)* protocol mapper from the *basic* client scope.
-However it is not strictly needed as the *Subject (sub)* protocol mapper is executed before *Pairwise subject identifier* mapper and hence the pairwise value will override the value added
-by the Subject mapper. This is due the <<_protocol-mappers_priority, priority>> of the Subject mapper. So the only advantage of removing built-in *Subject (sub)* mapper might be to
-save a little bit of performance by avoid using protocol mapper, which may not have any effect.
+However it is not strictly needed as the *Subject (sub)* protocol mapper is executed before the *Pairwise subject identifier* mapper and hence the pairwise value will override the value added
+by the Subject mapper. This is due to the <<_protocol-mappers_priority, priority>> of the Subject mapper. So the only advantage of removing the built-in *Subject (sub)* mapper might be to
+save a little bit of performance by avoiding the use of the protocol mapper, which may not have any effect.
 
 [[_using_lightweight_access_token]]
 == Using lightweight access token
