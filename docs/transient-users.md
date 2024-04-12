@@ -34,6 +34,9 @@ When using transient users, you should be aware of the following:
 
 - Roles and groups can be assigned to the transient users only by
   identity provider mappers of the respective identity provider.
+  This is especially important for the `default-roles-{realm}` realm role,
+  which is added to regular users automatically, but has to be assigned
+  to transient users also through a mapper (e.g. the `Hardcoded Role` mapper type).
 
 - Since every transient user is created afresh, mappers always
   work in the `Import` sync mode.
