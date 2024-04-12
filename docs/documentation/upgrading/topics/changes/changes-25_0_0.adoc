@@ -98,7 +98,9 @@ The `sub` claim, which was always added to the access token, is now added by def
 
 The `Subject (sub)` mapper is configured by default in the `basic` client scope. Therefore, no extra configuration is required after upgrading to this version.
 
-Only in the case you are using `Pairwise subject identifier` mapper to map `sub` claim for access token you should disable or remove `Subject (sub)` mapper.
+Only in the case you are using `Pairwise subject identifier` mapper to map `sub` claim for access token you can consider disable or remove `Subject (sub)` mapper, however it is not strictly needed
+as the `Subject (sub)` protocol mapper is executed before `Pairwise subject identifier` mapper and hence the `pairwise` value will override the value added by `Subject (sub)` mapper.
+This may apply also to other custom protocol mapper implementations, which override `sub` claim, as `Subject (sub)` mapper is currently executed as first protocol mapper.
 
 You can use the `Subject (sub)` mapper to configure the `sub` claim only for access token, lightweight access token, and introspection response. IDToken and Userinfo always contain `sub` claim.
 

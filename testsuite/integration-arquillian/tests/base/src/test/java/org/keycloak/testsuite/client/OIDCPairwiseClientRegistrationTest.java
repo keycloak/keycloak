@@ -91,7 +91,10 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setSubjectType("pairwise");
         OIDCClientRepresentation pairwiseClient = reg.oidc().create(clientRep);
-        removeDefaultBasicClientScope(pairwiseClient.getClientId());
+
+        // No need to remove default sub mapper. As the pairwise sub mapper should be executed after the default one.
+        //removeDefaultBasicClientScope(pairwiseClient.getClientId());
+
         return pairwiseClient;
     }
 

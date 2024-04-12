@@ -22,6 +22,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
@@ -77,6 +78,11 @@ public class SubMapper extends AbstractOIDCProtocolMapper implements OIDCAccessT
         if (userSession != null && userSession.getUser() != null) {
             token.subject(userSession.getUser().getId());
         }
+    }
+
+    @Override
+    public int getPriority() {
+        return ProtocolMapperUtils.SUB_MAPPER;
     }
 
     public static ProtocolMapperModel create(String name, boolean accessToken, boolean introspectionEndpoint) {
