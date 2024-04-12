@@ -12,7 +12,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -28,6 +27,9 @@ public class UserSessionUtil {
 
     private static final Logger logger = Logger.getLogger(UserSessionUtil.class);
 
+
+
+
     public static UserSessionModel findValidSession(KeycloakSession session, RealmModel realm, AccessToken token, EventBuilder event, ClientModel client) {
         OAuth2Error error = new OAuth2Error().json(false).realm(realm);
         return findValidSession(session, realm, token, event, client, error);
@@ -35,18 +37,23 @@ public class UserSessionUtil {
 
     public static UserSessionModel findValidSession(KeycloakSession session, RealmModel realm,
             AccessToken token, EventBuilder event, ClientModel client, OAuth2Error error) {
-        if (token.getSessionState() == null) {
+        if (token.getSessionId() == null) {
             return createTransientSessionForClient(session, realm, token, client, event);
         }
 
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionId(), false, client.getId());
+        if (userSession == null) {
+            // also try to resolve sessions created during token exchange when the user is impersonated
+            userSession = new UserSessionCrossDCManager(session).getUserSessionWithImpersonatorClient(realm, token.getSessionId(), false, client.getId());
+        }
+
         UserSessionModel offlineUserSession = null;
         if (AuthenticationManager.isSessionValid(realm, userSession)) {
             checkTokenIssuedAt(realm, token, userSession, event, client);
             event.session(userSession);
             return userSession;
         } else {
-            offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
+            offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionId(), true, client.getId());
             if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
                 checkTokenIssuedAt(realm, token, offlineUserSession, event, client);
                 event.session(offlineUserSession);
@@ -94,7 +101,7 @@ public class UserSessionUtil {
         return userSession;
     }
 
-    private static void checkTokenIssuedAt(RealmModel realm, AccessToken token, UserSessionModel userSession, EventBuilder event, ClientModel client) {
+    public static void checkTokenIssuedAt(RealmModel realm, AccessToken token, UserSessionModel userSession, EventBuilder event, ClientModel client) {
         OAuth2Error error = new OAuth2Error().json(false).realm(realm);
         if (token.isIssuedBeforeSessionStart(userSession.getStarted())) {
             logger.debug("Stale token for user session");
@@ -103,7 +110,7 @@ public class UserSessionUtil {
         }
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-        if (token.isIssuedBeforeSessionStart(clientSession.getStarted())) {
+        if (clientSession != null && token.isIssuedBeforeSessionStart(clientSession.getStarted())) {
             logger.debug("Stale token for client session");
             event.error(Errors.INVALID_TOKEN);
             throw error.invalidToken("Stale token");

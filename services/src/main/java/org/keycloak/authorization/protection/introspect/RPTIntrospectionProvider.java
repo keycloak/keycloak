@@ -31,7 +31,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.representations.AccessToken;
@@ -56,8 +55,7 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
     public Response introspect(String token, EventBuilder eventBuilder) {
         LOGGER.debug("Introspecting requesting party token");
         try {
-            AccessToken accessToken = verifyAccessToken(token, eventBuilder);
-
+            AccessToken accessToken = verifyAccessToken(token, eventBuilder, true);
             ObjectNode tokenMetadata;
 
             if (accessToken != null) {
