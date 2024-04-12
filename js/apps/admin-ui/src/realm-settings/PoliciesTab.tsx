@@ -7,7 +7,6 @@ import {
   Divider,
   Flex,
   FlexItem,
-  Label,
   PageSection,
   Radio,
   Switch,
@@ -15,7 +14,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -111,53 +110,6 @@ export const PoliciesTab = () => {
     } catch (error) {
       addError("updateClientPolicyError", error);
     }
-  };
-
-  const ClientPolicyDetailLink = (row: ClientPolicy) => (
-    <Link to={toEditClientPolicy({ realm, policyName: row.name! })}>
-      {row.name} {row.global && <Label color="blue">{t("global")}</Label>}
-    </Link>
-  );
-
-  const SwitchRenderer = ({ clientPolicy }: { clientPolicy: ClientPolicy }) => {
-    const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-      titleKey: "disablePolicyConfirmTitle",
-      messageKey: "disablePolicyConfirm",
-      continueButtonLabel: "disable",
-      onConfirm: () => {
-        form.setValue(clientPolicy.name!, false);
-        saveStatus();
-      },
-    });
-
-    return (
-      <>
-        <DisableConfirm />
-        <Controller
-          name={clientPolicy.name!}
-          data-testid={`${clientPolicy.name!}-switch`}
-          defaultValue={clientPolicy.enabled}
-          control={form.control}
-          render={({ field }) => (
-            <Switch
-              label={t("enabled")}
-              labelOff={t("disabled")}
-              isChecked={field.value}
-              isDisabled={clientPolicy.global}
-              onChange={(_event, value) => {
-                if (!value) {
-                  toggleDisableDialog();
-                } else {
-                  field.onChange(value);
-                  saveStatus();
-                }
-              }}
-              aria-label={clientPolicy.name!}
-            />
-          )}
-        />
-      </>
-    );
   };
 
   const save = async () => {
@@ -291,13 +243,25 @@ export const PoliciesTab = () => {
           columns={[
             {
               name: "name",
-              cellRenderer: ClientPolicyDetailLink,
+              cellRenderer: ({ name }: ClientPolicyRepresentation) => (
+                <Link to={toEditClientPolicy({ realm, policyName: name! })}>
+                  {name}
+                </Link>
+              ),
             },
             {
               name: "enabled",
               displayKey: "status",
               cellRenderer: (clientPolicy) => (
-                <SwitchRenderer clientPolicy={clientPolicy} />
+                <SwitchRenderer
+                  clientPolicy={clientPolicy}
+                  form={form}
+                  saveStatus={saveStatus}
+                  onConfirm={() => {
+                    form.setValue(clientPolicy.name!, false);
+                    saveStatus();
+                  }}
+                />
               ),
             },
             {
@@ -339,6 +303,57 @@ export const PoliciesTab = () => {
           </div>
         </>
       )}
+    </>
+  );
+};
+
+type SwitchRendererProps = {
+  clientPolicy: ClientPolicy;
+  form: UseFormReturn<Record<string, boolean>>;
+  saveStatus: () => void;
+  onConfirm: () => void;
+};
+
+const SwitchRenderer = ({
+  clientPolicy,
+  form,
+  saveStatus,
+  onConfirm,
+}: SwitchRendererProps) => {
+  const { t } = useTranslation();
+  const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
+    titleKey: "disablePolicyConfirmTitle",
+    messageKey: "disablePolicyConfirm",
+    continueButtonLabel: "disable",
+    onConfirm,
+  });
+
+  return (
+    <>
+      <DisableConfirm />
+      <Controller
+        name={clientPolicy.name!}
+        data-testid={`${clientPolicy.name!}-switch`}
+        defaultValue={clientPolicy.enabled}
+        control={form.control}
+        render={({ field }) => (
+          <Switch
+            label={t("enabled")}
+            labelOff={t("disabled")}
+            isChecked={field.value}
+            isDisabled={clientPolicy.global}
+            onChange={(_event, value) => {
+              if (!value) {
+                toggleDisableDialog();
+              } else {
+                field.onChange(value);
+                saveStatus();
+              }
+            }}
+            aria-label={clientPolicy.name!}
+          />
+        )}
+      />
     </>
   );
 };
