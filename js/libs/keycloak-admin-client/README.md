@@ -53,7 +53,7 @@ const groups = await kcAdminClient.groups.find();
 
 // Set a `realm` property to override the realm for only a single operation.
 // For example, creating a user in another realm:
-await this.kcAdminClient.users.create({
+await kcAdminClient.users.create({
   realm: 'a-third-realm',
   username: 'username',
   email: 'user@example.com',
