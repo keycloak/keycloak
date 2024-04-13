@@ -202,11 +202,8 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
                 InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
                         new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, maxErrors,
                         getStalledTimeoutInSeconds(defaultStateTransferTimeout));
-
-                initializer.initCache();
                 initializer.loadSessions();
             }
-
         });
 
         log.debugf("Pre-loading login failures from remote cache '%s' finished", cacheName);

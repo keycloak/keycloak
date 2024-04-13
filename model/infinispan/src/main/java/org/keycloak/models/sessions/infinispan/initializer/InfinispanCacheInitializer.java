@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.infinispan.Cache;
-import org.infinispan.factories.ComponentRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -26,9 +25,9 @@ import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.io.Serializable;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Startup initialization for reading persistent userSessions to be filled into infinispan/memory.
@@ -50,18 +49,6 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
         super(sessionFactory, workCache, sessionLoader, stateKeySuffix);
         this.maxErrors = maxErrors;
         this.stalledTimeoutInSeconds = stalledTimeoutInSeconds;
-    }
-
-
-    public void initCache() {
-        // due to lazy initialization, this might be called from multiple threads simultaneously, therefore, synchronize
-        synchronized (workCache) {
-            final ComponentRegistry cr = this.workCache.getAdvancedCache().getComponentRegistry();
-            // first check if already set, as Infinispan would otherwise throw a RuntimeException
-            if (cr.getComponent(KeycloakSessionFactory.class) != sessionFactory) {
-                cr.registerComponent(sessionFactory, KeycloakSessionFactory.class);
-            }
-        }
     }
 
 
@@ -102,7 +89,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
     }
 
     protected void startLoadingImpl(InitializerState state, SessionLoader.LoaderContext loaderCtx) {
-        int errors = 0;
+        final int errors = 0;
         int segmentToLoad = 0;
 
         int distributedWorkersCount = 1;
@@ -117,7 +104,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
                 log.trace("unfinished segments for this iteration: " + segments);
             }
 
-            final Queue<SessionLoader.WorkerResult> results = new ConcurrentLinkedQueue<>();
+            Queue<SessionLoader.WorkerResult> results = new ConcurrentLinkedQueue<>();
 
             for (Integer segment : segments) {
                 SessionLoader.WorkerContext workerCtx = sessionLoader.computeWorkerContext(segment);

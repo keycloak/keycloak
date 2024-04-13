@@ -17,11 +17,6 @@
 
 package org.keycloak.connections.infinispan;
 
-import java.time.Instant;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -34,7 +29,7 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.eviction.EvictionType;
+import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.factories.impl.BasicComponentRegistry;
 import org.infinispan.factories.impl.ComponentRef;
@@ -48,6 +43,11 @@ import org.jgroups.JChannel;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 
+import java.time.Instant;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -58,12 +58,12 @@ public class InfinispanUtil {
     public static final int MAXIMUM_REPLACE_RETRIES = 25;
 
     // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
-    public static Set<RemoteStore> getRemoteStores(Cache ispnCache) {
-        return ispnCache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class);
+    public static Set<RemoteStore> getRemoteStores(Cache<?, ?> ispnCache) {
+        return ComponentRegistry.componentOf(ispnCache, PersistenceManager.class).getStores(RemoteStore.class);
     }
 
 
-    public static RemoteCache getRemoteCache(Cache ispnCache) {
+    public static RemoteCache getRemoteCache(Cache<?, ?> ispnCache) {
         Set<RemoteStore> remoteStores = getRemoteStores(ispnCache);
         if (remoteStores.isEmpty()) {
             return null;
@@ -88,10 +88,9 @@ public class InfinispanUtil {
      * @param lifespanOrigMs
      * @return
      */
-    public static long toHotrodTimeMs(BasicCache ispnCache, long lifespanOrigMs) {
-        if (ispnCache instanceof RemoteCache && lifespanOrigMs > 2592000000L) {
-            RemoteCache remoteCache = (RemoteCache) ispnCache;
-            ProtocolVersion protocolVersion = remoteCache.getRemoteCacheManager().getConfiguration().version();
+    public static long toHotrodTimeMs(BasicCache<?, ?> ispnCache, long lifespanOrigMs) {
+        if (ispnCache instanceof RemoteCache<?, ?> remoteCache && lifespanOrigMs > 2592000000L) {
+            ProtocolVersion protocolVersion = remoteCache.getRemoteCacheContainer().getConfiguration().version();
             if (ProtocolVersion.PROTOCOL_VERSION_30.compareTo(protocolVersion) > 0) {
                 return Time.currentTimeMillis() + lifespanOrigMs;
             }
@@ -103,7 +102,7 @@ public class InfinispanUtil {
     private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
 
     public static void configureTransport(GlobalConfigurationBuilder gcb, String nodeName, String siteName, String jgroupsUdpMcastAddr,
-                                      String jgroupsConfigPath) {
+                                          String jgroupsConfigPath) {
         if (nodeName == null) {
             gcb.transport().defaultTransport();
         } else {
@@ -166,9 +165,8 @@ public class InfinispanUtil {
         ConfigurationBuilder cb = createCacheConfigurationBuilder();
 
         cb.memory()
-                .evictionStrategy(EvictionStrategy.NONE)
-                .evictionType(EvictionType.COUNT)
-                .size(InfinispanConnectionProvider.ACTION_TOKEN_CACHE_DEFAULT_MAX);
+                .whenFull(EvictionStrategy.MANUAL)
+                .maxCount(InfinispanConnectionProvider.ACTION_TOKEN_CACHE_DEFAULT_MAX);
         cb.expiration()
                 .maxIdle(InfinispanConnectionProvider.ACTION_TOKEN_MAX_IDLE_SECONDS, TimeUnit.SECONDS)
                 .wakeUpInterval(InfinispanConnectionProvider.ACTION_TOKEN_WAKE_UP_INTERVAL_SECONDS, TimeUnit.SECONDS);
@@ -209,7 +207,7 @@ public class InfinispanUtil {
      * @return the original component that was replaced
      */
     private static <T> T replaceComponent(EmbeddedCacheManager cacheMgr, Class<T> componentType, T replacementComponent, boolean rewire) {
-        GlobalComponentRegistry cr = cacheMgr.getGlobalComponentRegistry();
+        GlobalComponentRegistry cr = GlobalComponentRegistry.of(cacheMgr);
         BasicComponentRegistry bcr = cr.getComponent(BasicComponentRegistry.class);
         ComponentRef<T> old = bcr.getComponent(componentType);
         bcr.replaceComponent(componentType.getName(), replacementComponent, true);
