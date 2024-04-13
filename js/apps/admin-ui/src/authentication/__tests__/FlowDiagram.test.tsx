@@ -178,15 +178,6 @@ describe("<FlowDiagram />", () => {
     const { container } = render(<FlowDiagram executionList={executionList} />);
 
     const testHelper = reactFlowTester(container);
-    const expectedEdges = [
-      "Edge from start to requiredElement",
-      "Edge from requiredElement to subflow",
-      "Edge from subflow to subElement",
-      "Edge from subElement to flow-end-subflow",
-      "Edge from flow-end-subflow to end",
-    ];
-    testHelper.expectEdgeLabels(expectedEdges);
-
     const expectedNodes = [
       "start",
       "requiredElement",
@@ -196,6 +187,15 @@ describe("<FlowDiagram />", () => {
       "end",
     ];
     testHelper.expectNodeIds(expectedNodes);
+
+    const expectedEdges = [
+      "Edge from start to requiredElement",
+      "Edge from requiredElement to subflow",
+      "Edge from subflow to subElement",
+      "Edge from subElement to flow-end-subflow",
+      "Edge from flow-end-subflow to end",
+    ];
+    testHelper.expectEdgeLabels(expectedEdges);
   });
 
   it("should render a flow with a subflow with alternative steps", () => {
@@ -357,6 +357,17 @@ describe("<FlowDiagram />", () => {
     const { container } = render(<FlowDiagram executionList={executionList} />);
 
     const testHelper = reactFlowTester(container);
+    const expectedNodes = [
+      "start",
+      "chooseUser",
+      "sendReset",
+      "conditionOtpConfigured",
+      "otpForm",
+      "resetPassword",
+      "end",
+    ];
+    testHelper.expectNodeIds(expectedNodes);
+
     const expectedEdges = [
       "Edge from start to chooseUser",
       "Edge from chooseUser to sendReset",
@@ -437,6 +448,22 @@ describe("<FlowDiagram />", () => {
     const { container } = render(<FlowDiagram executionList={executionList} />);
 
     const testHelper = reactFlowTester(container);
+
+    const expectedNodes = [
+      "start",
+      "exampleForms",
+      "usernamePasswordForm",
+      "conditionUserConfigured",
+      "conditionUserAttribute",
+      "otpForm",
+      "confirmLink",
+      "flow-end-exampleForms",
+      "conditionLoa",
+      "reviewProfile",
+      "end",
+    ];
+    testHelper.expectNodeIds(expectedNodes);
+
     const expectedEdges = [
       "Edge from start to exampleForms",
       "Edge from exampleForms to usernamePasswordForm",
@@ -454,20 +481,5 @@ describe("<FlowDiagram />", () => {
       "Edge from reviewProfile to end",
     ];
     testHelper.expectEdgeLabels(expectedEdges);
-
-    const expectedNodes = [
-      "start",
-      "exampleForms",
-      "usernamePasswordForm",
-      "conditionUserConfigured",
-      "conditionUserAttribute",
-      "otpForm",
-      "confirmLink",
-      "flow-end-exampleForms",
-      "conditionLoa",
-      "reviewProfile",
-      "end",
-    ];
-    testHelper.expectNodeIds(expectedNodes);
   });
 });
