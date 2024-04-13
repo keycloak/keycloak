@@ -9,9 +9,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlertProvider, Help } from "@keycloak/keycloak-ui-shared";
-import { Environment } from "../environment";
+import { AlertProvider } from "../alerts/Alerts";
 import { ErrorPage } from "./ErrorPage";
+import { Help } from "./HelpContext";
+import { Environment } from "./environment";
 
 export type KeycloakContext = KeycloakContextProps & {
   keycloak: Keycloak;

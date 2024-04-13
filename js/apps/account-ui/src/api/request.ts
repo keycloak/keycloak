@@ -1,8 +1,7 @@
-import { Environment } from "../environment";
+import { Environment, KeycloakContext } from "@keycloak/keycloak-ui-shared";
 import Keycloak from "keycloak-js";
-import { CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON } from "./constants";
 import { joinPath } from "../utils/joinPath";
-import { KeycloakContext } from "../root/KeycloakContext";
+import { CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON } from "./constants";
 
 export type RequestOptions = {
   signal?: AbortSignal;

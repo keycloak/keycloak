@@ -1,3 +1,4 @@
+import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type {
@@ -17,18 +18,16 @@ import {
   useFormContext,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { Link, useNavigate } from "react-router-dom";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
-import { toPolicyDetails } from "../routes/PolicyDetails";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { toCreatePolicy } from "../routes/NewPolicy";
-import { NewPolicyDialog } from "./NewPolicyDialog";
 import useToggle from "../../utils/useToggle";
-import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { toCreatePolicy } from "../routes/NewPolicy";
+import { toPolicyDetails } from "../routes/PolicyDetails";
 import { toResourceDetails } from "../routes/Resource";
+import { NewPolicyDialog } from "./NewPolicyDialog";
 
 type Type = "resources" | "policies";
 
@@ -76,6 +75,8 @@ export const ResourcesPolicySelect = ({
   preSelected,
   isRequired = false,
 }: ResourcesPolicySelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const navigate = useNavigate();

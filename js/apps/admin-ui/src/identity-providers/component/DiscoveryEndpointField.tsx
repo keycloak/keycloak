@@ -4,8 +4,7 @@ import { ReactNode, useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 
 type DiscoveryEndpointFieldProps = {
   id: string;
@@ -18,6 +17,8 @@ export const DiscoveryEndpointField = ({
   fileUpload,
   children,
 }: DiscoveryEndpointFieldProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const {
     setValue,

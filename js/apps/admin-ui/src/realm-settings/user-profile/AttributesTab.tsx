@@ -18,17 +18,17 @@ import { uniqBy } from "lodash-es";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { useAdminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { DEFAULT_LOCALE } from "../../i18n/i18n";
+import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toAddAttribute } from "../routes/AddAttribute";
 import { toAttribute } from "../routes/Attribute";
 import { useUserProfile } from "./UserProfileContext";
-import { useFetch } from "../../utils/useFetch";
-import { adminClient } from "../../admin-client";
-import { DEFAULT_LOCALE } from "../../i18n/i18n";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
 
@@ -41,6 +41,8 @@ type AttributesTabProps = {
 };
 
 export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { config, save } = useUserProfile();
   const { realm: realmName } = useRealm();
   const { t } = useTranslation();

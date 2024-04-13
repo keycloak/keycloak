@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
@@ -35,6 +35,8 @@ export type FormFields = Omit<
 >;
 
 export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [resource, setResource] = useState<ResourceServerRepresentation>();
   const [importDialog, toggleImportDialog] = useToggle();

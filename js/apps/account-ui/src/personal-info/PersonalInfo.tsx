@@ -18,6 +18,7 @@ import { TFunction } from "i18next";
 import { useState } from "react";
 import { ErrorOption, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+  useEnvironment,
 
 import {
   getPersonalInfo,
@@ -31,7 +32,6 @@ import {
 import { Page } from "../components/page/Page";
 import { environment } from "../environment";
 import { TFuncKey, i18n } from "../i18n";
-import { useEnvironment } from "../root/KeycloakContext";
 import { usePromise } from "../utils/usePromise";
 
 export const PersonalInfo = () => {

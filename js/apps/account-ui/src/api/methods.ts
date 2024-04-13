@@ -1,4 +1,4 @@
-import { KeycloakContext } from "../root/KeycloakContext";
+import { KeycloakContext } from "@keycloak/keycloak-ui-shared";
 import { joinPath } from "../utils/joinPath";
 import { parseResponse } from "./parse-response";
 import {

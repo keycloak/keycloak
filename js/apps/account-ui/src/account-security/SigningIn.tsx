@@ -18,6 +18,7 @@ import {
 import { EllipsisVIcon } from "@patternfly/react-icons";
 import { CSSProperties, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { getCredentials } from "../api/methods";
 import {
   CredentialContainer,
@@ -26,7 +27,6 @@ import {
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
-import { useEnvironment } from "../root/KeycloakContext";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 

@@ -7,8 +7,7 @@ import {
 import { useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 
 type ScopeSelectProps = {
@@ -22,6 +21,8 @@ export const ScopeSelect = ({
   resourceId,
   preSelected,
 }: ScopeSelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const {

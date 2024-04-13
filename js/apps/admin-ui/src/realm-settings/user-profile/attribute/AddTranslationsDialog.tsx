@@ -13,19 +13,18 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { SearchIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../../admin-client";
+import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
+import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
-import { adminClient } from "../../../admin-client";
-import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
-import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import { useFetch } from "../../../utils/useFetch";
-import { localeToDisplayName } from "../../../util";
 import { DEFAULT_LOCALE } from "../../../i18n/i18n";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { localeToDisplayName } from "../../../util";
+import { useFetch } from "../../../utils/useFetch";
 
 type TranslationForm = {
   locale: string;
@@ -52,6 +51,8 @@ export const AddTranslationsDialog = ({
   toggleDialog,
   onTranslationsAdded,
 }: AddTranslationsDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();

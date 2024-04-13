@@ -1,16 +1,16 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
-import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import {
   createNamedContext,
-  useRequiredContext,
   label,
+  useEnvironment,
+  useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
-
-import { keycloak } from "../keycloak";
-import { useFetch } from "../utils/useFetch";
-import { fetchAdminUI } from "./auth/admin-ui-endpoint";
-import useLocaleSort from "../utils/useLocaleSort";
+import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAdminClient } from "../admin-client";
+import { useFetch } from "../utils/useFetch";
+import useLocaleSort from "../utils/useLocaleSort";
+import { fetchAdminUI } from "./auth/admin-ui-endpoint";
 
 type RealmsContextProps = {
   /** A list of all the realms. */
@@ -30,6 +30,9 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 );
 
 export const RealmsProvider = ({ children }: PropsWithChildren) => {
+  const { keycloak } = useEnvironment();
+  const { adminClient } = useAdminClient();
+
   const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
   const [refreshCount, setRefreshCount] = useState(0);
   const localeSort = useLocaleSort();
@@ -43,6 +46,7 @@ export const RealmsProvider = ({ children }: PropsWithChildren) => {
     async () => {
       try {
         return await fetchAdminUI<RealmNameRepresentation[]>(
+          adminClient,
           "ui-ext/realms/names",
           {},
         );

@@ -17,8 +17,7 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import {
   ClientRoleParams,
@@ -56,6 +55,8 @@ import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
 
 export default function RealmRoleTabs() {
+  const { adminClient } = useAdminClient();
+
   const isFeatureEnabled = useIsFeatureEnabled();
   const { t } = useTranslation();
   const form = useForm<AttributeForm>({

@@ -8,8 +8,7 @@ import {
   HelpItem,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
@@ -23,6 +22,8 @@ type FormFields = IdentityProviderRepresentation & {
 };
 
 export const SamlConnectSettings = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const id = "saml";
 

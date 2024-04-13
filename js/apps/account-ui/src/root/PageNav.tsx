@@ -4,8 +4,8 @@ import {
   NavItem,
   NavList,
   PageSidebar,
-  Spinner,
   PageSidebarBody,
+  Spinner,
 } from "@patternfly/react-core";
 import {
   PropsWithChildren,
@@ -22,11 +22,14 @@ import {
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
+import {
+  environment,
+  useEnvironment,
+  type Feature,
+} from "@keycloak/keycloak-ui-shared";
 import fetchContentJson from "../content/fetchContent";
-import { environment, type Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
-import { useEnvironment } from "./KeycloakContext";
 
 type RootMenuItem = {
   label: TFuncKey;

@@ -11,8 +11,7 @@ import { useCallback, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import type { ComponentProps } from "../dynamic/components";
@@ -30,6 +29,8 @@ export const UserSelect = ({
   isRequired,
   variant = SelectVariant.typeaheadMulti,
 }: UserSelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const {
     control,

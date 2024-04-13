@@ -22,8 +22,7 @@ import { pickBy } from "lodash-es";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
@@ -57,6 +56,8 @@ export const EffectiveMessageBundles = ({
   defaultSupportedLocales,
   defaultLocales,
 }: EffectiveMessageBundlesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();

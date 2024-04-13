@@ -9,8 +9,7 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
@@ -21,6 +20,8 @@ import { Header } from "./shared/Header";
 import { SettingsCache } from "./shared/SettingsCache";
 
 export default function UserFederationKerberosSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
   const navigate = useNavigate();
