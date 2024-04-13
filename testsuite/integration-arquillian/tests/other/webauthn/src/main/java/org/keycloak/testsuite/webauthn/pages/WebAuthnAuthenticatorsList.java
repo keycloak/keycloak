@@ -37,17 +37,17 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElementOrNull;
  */
 public class WebAuthnAuthenticatorsList {
 
-    @FindBy(id = "kc-webauthn-authenticator")
+    @FindBy(className = "kc-webauthn-authenticator")
     private List<WebElement> authenticators;
 
     public List<WebAuthnAuthenticatorItem> getItems() {
         try {
             List<WebAuthnAuthenticatorItem> items = new ArrayList<>();
             for (WebElement auth : authenticators) {
-                String name = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-label")));
-                String createdAt = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-created")));
-                String createdAtLabel = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-created-label")));
-                String transport = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-transport")));
+                String name = getTextFromElementOrNull(() -> auth.findElement(By.className("kc-webauthn-authenticator-label")));
+                String createdAt = getTextFromElementOrNull(() -> auth.findElement(By.className("kc-webauthn-authenticator-created")));
+                String createdAtLabel = getTextFromElementOrNull(() -> auth.findElement(By.className("kc-webauthn-authenticator-created-label")));
+                String transport = getTextFromElementOrNull(() -> auth.findElement(By.className("kc-webauthn-authenticator-transport")));
                 items.add(new WebAuthnAuthenticatorItem(name, createdAt, createdAtLabel, transport));
             }
             return items;
