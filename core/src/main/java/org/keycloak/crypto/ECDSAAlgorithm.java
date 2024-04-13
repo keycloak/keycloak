@@ -26,7 +26,8 @@ import org.keycloak.common.crypto.CryptoIntegration;
 public enum ECDSAAlgorithm {
     ES256(64),
     ES384(96),
-    ES512(132);
+    ES512(132),
+    ES256K(64);
 
     private final int signatureLength;
 

@@ -62,8 +62,6 @@ import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
-import org.keycloak.crypto.JavaAlgorithm;
-
 
 /**
  * Integration based on FIPS 140-2
@@ -221,8 +219,7 @@ public class FIPS1402Provider implements CryptoProvider {
     
     @Override
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
-        return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
-            
+        return Signature.getInstance(sigAlgName, BouncyIntegration.PROVIDER);
     }
 
     @Override
