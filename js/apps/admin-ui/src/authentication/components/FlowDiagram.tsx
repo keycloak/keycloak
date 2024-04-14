@@ -58,7 +58,6 @@ type IntermediateFlowResult = {
 
 const isBypassable = (execution: ExpandableExecution) =>
   execution.requirement === "ALTERNATIVE" ||
-  execution.requirement === "DISABLED" ||
   execution.requirement === "CONDITIONAL";
 
 const createEdge = (
@@ -220,9 +219,12 @@ const edgeTypes: ButtonEdges = {
 };
 
 function renderGraph(executionList: ExpandableExecution[]): [Node[], Edge[]] {
+  const executionListNoDisabled = executionList.filter(
+    (e) => e.requirement !== "DISABLED",
+  );
   const groupings = [
     [borderStep(createNode({ id: "start", displayName: "Start" }, "input"))],
-    ...createConcurrentGroupings(executionList),
+    ...createConcurrentGroupings(executionListNoDisabled),
     [
       borderStep(
         createNode({ id: "end", displayName: "End" }, "output"),

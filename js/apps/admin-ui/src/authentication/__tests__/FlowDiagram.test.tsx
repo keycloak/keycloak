@@ -571,4 +571,67 @@ describe("<FlowDiagram />", () => {
     ];
     testHelper.expectEdgeLabels(expectedEdges);
   });
+
+  it("should hide disabled steps", () => {
+    const executionList = new ExecutionList([
+      {
+        id: "disabled",
+        displayName: "Disabled",
+        requirement: "DISABLED",
+      },
+      {
+        id: "required",
+        displayName: "Required",
+        requirement: "REQUIRED",
+      },
+    ]);
+
+    const { container } = render(<FlowDiagram executionList={executionList} />);
+
+    const testHelper = reactFlowTester(container);
+
+    const expectedNodes = ["start", "required", "end"];
+    testHelper.expectNodeIds(expectedNodes);
+
+    const expectedEdges = [
+      "Edge from start to required",
+      "Edge from required to end",
+    ];
+    testHelper.expectEdgeLabels(expectedEdges);
+  });
+
+  it("should hide disabled subflow", () => {
+    const executionList = new ExecutionList([
+      {
+        id: "required",
+        displayName: "Required",
+        requirement: "REQUIRED",
+        level: 0,
+      },
+      {
+        id: "subflow",
+        displayName: "Subflow",
+        requirement: "DISABLED",
+        level: 0,
+      },
+      {
+        id: "subElement",
+        displayName: "Sub Element",
+        requirement: "REQUIRED",
+        level: 1,
+      },
+    ]);
+
+    const { container } = render(<FlowDiagram executionList={executionList} />);
+
+    const testHelper = reactFlowTester(container);
+    const expectedNodes = ["start", "required", "end"];
+    testHelper.expectNodeIds(expectedNodes);
+
+    const expectedEdges = [
+      "Edge from start to required",
+      "Edge from required to end",
+    ];
+    testHelper.expectEdgeLabels(expectedEdges);
+  });
 });
