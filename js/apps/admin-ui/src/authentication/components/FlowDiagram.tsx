@@ -29,7 +29,7 @@ type FlowDiagramProps = {
   executionList: ExecutionList;
 };
 
-type ConditionLabel = "true" | "false";
+type ConditionLabel = "true" | "false" | "success" | "attempted";
 
 const nodeTypes = {
   conditional: ConditionalNode,
@@ -50,11 +50,19 @@ type NodeType =
   | "output";
 
 type IntermediateFlowResult = {
-  startIds: string[];
+  startId: string;
   nodes: Node[];
   edges: Edge[];
   nextLinkFns: ((id: string) => Edge)[];
 };
+
+function pairwise<T, U>(fn: (x: T, y: T) => U, arr: T[]): U[] {
+  const result: U[] = [];
+  for (let index = 0; index < arr.length - 1; index++) {
+    result.push(fn(arr[index], arr[index + 1]));
+  }
+  return result;
+}
 
 const isBypassable = (execution: ExpandableExecution) =>
   execution.requirement === "ALTERNATIVE" ||
@@ -114,7 +122,7 @@ const borderStep = (
   node: Node,
   continuing: boolean = true,
 ): IntermediateFlowResult => ({
-  startIds: [node.id],
+  startId: node.id,
   nodes: [node],
   edges: [],
   nextLinkFns: continuing ? [(id: string) => createEdge(node.id, id)] : [],
@@ -133,10 +141,7 @@ const renderSubFlow = (
       .filter((e) => providerConditionFilter(e))
       .map((e) => (id: string) => createEdge(e.id!, id, "false")),
   );
-  return {
-    ...graph,
-    startIds: graph.startIds,
-  };
+  return graph;
 };
 
 const groupConcurrentSteps = (
@@ -163,14 +168,20 @@ const createConcurrentSteps = (
     }
 
     const isConditional = providerConditionFilter(execution);
+    const edgeLabel = (() => {
+      if (isConditional) {
+        return "true";
+      }
+      if (execution.requirement === "ALTERNATIVE") {
+        return "success";
+      }
+    })();
+
     return {
-      startIds: [execution.id!],
+      startId: execution.id!,
       nodes: [createNode(execution, isConditional ? "conditional" : undefined)],
       edges: [],
-      nextLinkFns: [
-        (id: string) =>
-          createEdge(execution.id!, id, isConditional ? "true" : undefined),
-      ],
+      nextLinkFns: [(id: string) => createEdge(execution.id!, id, edgeLabel)],
     };
   });
 };
@@ -199,15 +210,18 @@ const createGraph = (
     nodes.push(...group.flatMap((g) => g.nodes));
     edges.push(
       ...group.flatMap((g) => g.edges),
-      ...nextLinkFns.flatMap((fn) =>
-        group.flatMap((g) => g.startIds.map((id) => fn(id))),
+      ...nextLinkFns.map((fn) => fn(group[0].startId)),
+      ...pairwise(
+        (prev, current) =>
+          createEdge(prev.startId, current.startId, "attempted"),
+        group,
       ),
     );
     nextLinkFns = group.flatMap((g) => g.nextLinkFns);
   }
 
   return {
-    startIds: groupings[0]?.flatMap((g) => g.startIds) || [],
+    startId: groupings[0][0].startId,
     nodes,
     edges,
     nextLinkFns,

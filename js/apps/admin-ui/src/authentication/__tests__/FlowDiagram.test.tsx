@@ -144,7 +144,7 @@ describe("<FlowDiagram />", () => {
     const expectedEdges = [
       "Edge from start to alt1",
       "Edge from alt1 to end",
-      "Edge from start to alt2",
+      "Edge from alt1 to alt2",
       "Edge from alt2 to end",
     ];
     testHelper.expectEdgeLabels(expectedEdges);
@@ -224,7 +224,7 @@ describe("<FlowDiagram />", () => {
       "Edge from start to requiredElement",
       "Edge from requiredElement to subElement1",
       "Edge from subElement1 to end",
-      "Edge from requiredElement to subElement2",
+      "Edge from subElement1 to subElement2",
       "Edge from subElement2 to end",
     ];
     testHelper.expectEdgeLabels(expectedEdges);
@@ -280,7 +280,7 @@ describe("<FlowDiagram />", () => {
       "Edge from start to requiredElement",
       "Edge from requiredElement to subElement1",
       "Edge from subElement1 to finalStep",
-      "Edge from requiredElement to subElement2",
+      "Edge from subElement1 to subElement2",
       "Edge from subElement2 to finalStep",
       "Edge from finalStep to end",
     ];
@@ -454,7 +454,7 @@ describe("<FlowDiagram />", () => {
       "Edge from conditionUserAttribute to end",
       "Edge from otpForm to confirmLink",
       "Edge from confirmLink to end",
-      "Edge from start to conditionLoa",
+      "Edge from usernamePasswordForm to conditionLoa",
       "Edge from conditionLoa to reviewProfile",
       "Edge from conditionLoa to end",
       "Edge from reviewProfile to end",
@@ -559,10 +559,10 @@ describe("<FlowDiagram />", () => {
     const expectedEdges = [
       "Edge from start to reviewProfile",
       "Edge from reviewProfile to createUnique",
-      "Edge from reviewProfile to confirmLink",
+      "Edge from createUnique to confirmLink",
       "Edge from createUnique to end",
       "Edge from confirmLink to emailVerify",
-      "Edge from confirmLink to usernamePassword",
+      "Edge from emailVerify to usernamePassword",
       "Edge from usernamePassword to conditionUserConfigured",
       "Edge from conditionUserConfigured to otpForm",
       "Edge from conditionUserConfigured to end",
