@@ -50,7 +50,7 @@ type NodeType =
   | "output";
 
 type IntermediateFlowResult = {
-  startId: string;
+  startIds: string[];
   nodes: Node[];
   edges: Edge[];
   nextLinkFns: ((id: string) => Edge)[];
@@ -115,7 +115,7 @@ const borderStep = (
   node: Node,
   continuing: boolean = true,
 ): IntermediateFlowResult => ({
-  startId: node.id,
+  startIds: [node.id],
   nodes: [node],
   edges: [],
   nextLinkFns: continuing ? [(id: string) => createEdge(node.id, id)] : [],
@@ -127,46 +127,17 @@ const renderSubFlow = (
   if (!execution.executionList)
     throw new Error("Execution list is required for subflow");
 
-  if (
-    execution.requirement === "CONDITIONAL" &&
-    execution.executionList.length > 0 &&
-    providerConditionFilter(execution.executionList[0])
-  ) {
-    const graph = createGraph(
-      createConcurrentGroupings(execution.executionList),
-    );
+  const graph = createGraph(createConcurrentGroupings(execution.executionList));
 
-    graph.nextLinkFns.push(
-      ...execution.executionList
-        .filter((e) => providerConditionFilter(e))
-        .map((e) => (id: string) => createEdge(e.id!, id, "false")),
-    );
-    return {
-      ...graph,
-      startId: graph.startIds[0],
-    };
-  } else {
-    const groupings = [
-      [borderStep(createNode(execution, "startSubFlow"))],
-      ...createConcurrentGroupings(execution.executionList),
-      [
-        borderStep(
-          createNode(
-            {
-              id: `flow-end-${execution.id}`,
-              displayName: execution.displayName!,
-            },
-            "endSubFlow",
-          ),
-        ),
-      ],
-    ];
-
-    return {
-      ...createGraph(groupings),
-      startId: execution.id!,
-    };
-  }
+  graph.nextLinkFns.push(
+    ...execution.executionList
+      .filter((e) => providerConditionFilter(e))
+      .map((e) => (id: string) => createEdge(e.id!, id, "false")),
+  );
+  return {
+    ...graph,
+    startIds: graph.startIds,
+  };
 };
 
 const groupConcurrentSteps = (
@@ -194,7 +165,7 @@ const createConcurrentSteps = (
 
     const isConditional = providerConditionFilter(execution);
     return {
-      startId: execution.id!,
+      startIds: [execution.id!],
       nodes: [createNode(execution, isConditional ? "conditional" : undefined)],
       edges: [],
       nextLinkFns: [
@@ -220,12 +191,7 @@ const createConcurrentGroupings = (
 
 const createGraph = (
   groupings: IntermediateFlowResult[][],
-): {
-  startIds: string[];
-  nodes: Node[];
-  edges: Edge[];
-  nextLinkFns: ((id: string) => Edge)[];
-} => {
+): IntermediateFlowResult => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
   let nextLinkFns: ((id: string) => Edge)[] = [];
@@ -234,13 +200,15 @@ const createGraph = (
     nodes.push(...group.flatMap((g) => g.nodes));
     edges.push(
       ...group.flatMap((g) => g.edges),
-      ...nextLinkFns.flatMap((fn) => group.map((g) => fn(g.startId))),
+      ...nextLinkFns.flatMap((fn) =>
+        group.flatMap((g) => g.startIds.map((id) => fn(id))),
+      ),
     );
     nextLinkFns = group.flatMap((g) => g.nextLinkFns);
   }
 
   return {
-    startIds: groupings[0]?.map((g) => g.startId) || [],
+    startIds: groupings[0]?.flatMap((g) => g.startIds) || [],
     nodes,
     edges,
     nextLinkFns,
