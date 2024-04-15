@@ -43,7 +43,7 @@
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@patternfly/react-core": "^5.2.3",
     "@patternfly/react-icons": "^5.2.1",
-    "i18next": "^23.11.1",
+    "i18next": "^23.11.2",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
