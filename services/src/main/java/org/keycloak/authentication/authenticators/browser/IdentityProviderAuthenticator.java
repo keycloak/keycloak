@@ -74,7 +74,7 @@ public class IdentityProviderAuthenticator implements Authenticator {
         }
     }
 
-    private void redirect(AuthenticationFlowContext context, String providerId) {
+    protected void redirect(AuthenticationFlowContext context, String providerId) {
         Optional<IdentityProviderModel> idp = context.getRealm().getIdentityProvidersStream()
                 .filter(IdentityProviderModel::isEnabled)
                 .filter(identityProvider -> Objects.equals(providerId, identityProvider.getAlias()))

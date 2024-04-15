@@ -132,4 +132,11 @@ public interface OrganizationProvider extends Provider {
      * @return {@code true} if the link was removed, {@code false} otherwise
      */
     boolean removeIdentityProvider(OrganizationModel organization);
+
+    /**
+     * Indicates if the current realm supports organization.
+     *
+     * @return {@code true} if organization is supported. Otherwise, returns {@code false}
+     */
+    boolean isEnabled();
 }

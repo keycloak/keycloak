@@ -20,15 +20,20 @@ package org.keycloak.testsuite.organization.admin;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.List;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
+import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -38,6 +43,52 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected String organizationName = "neworg";
     protected String memberEmail = "jdoe@neworg.org";
     protected String memberPassword = "password";
+
+    protected KcOidcBrokerConfiguration bc = new KcOidcBrokerConfiguration() {
+        @Override
+        public String consumerRealmName() {
+            return TEST_REALM_NAME;
+        }
+
+        @Override
+        public RealmRepresentation createProviderRealm() {
+            RealmRepresentation providerRealm = super.createProviderRealm();
+
+            providerRealm.setClients(createProviderClients());
+            providerRealm.setUsers(List.of(
+                    UserBuilder.create()
+                    .username(getUserLogin())
+                    .email(getUserEmail())
+                    .password(getUserPassword())
+                    .enabled(true).build())
+            );
+
+            return providerRealm;
+        }
+
+        @Override
+        public String getUserEmail() {
+            return getUserLogin() + "@" + organizationName + ".org";
+        }
+
+        @Override
+        public String getIDPAlias() {
+            return "org-identity-provider";
+        }
+    };
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.getClients().addAll(bc.createConsumerClients());
+        testRealm.setSmtpServer(null);
+        super.configureTestRealm(testRealm);
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        testRealms.add(bc.createProviderRealm());
+        super.addTestRealms(testRealms);
+    }
 
     protected OrganizationRepresentation createOrganization() {
         return createOrganization(organizationName);
@@ -63,7 +114,10 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             id = ApiUtil.getCreatedId(response);
         }
 
-        org.setId(id);
+        testRealm().organizations().get(id).identityProvider().create(bc.setUpIdentityProvider()).close();
+
+        org = testRealm().organizations().get(id).toRepresentation();
+
         getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
 
         return org;
