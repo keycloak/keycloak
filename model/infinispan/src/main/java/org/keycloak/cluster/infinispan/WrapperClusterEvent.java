@@ -80,7 +80,7 @@ public class WrapperClusterEvent implements ClusterEvent {
         return eventKey;
     }
 
-    Collection<? extends ClusterEvent> getDelegateEvents() {
+    public Collection<? extends ClusterEvent> getDelegateEvents() {
         return events;
     }
 

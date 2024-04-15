@@ -17,10 +17,20 @@
 
 package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import io.micrometer.core.instrument.Metrics;
-import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.DefaultTemplate;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.commons.api.Lifecycle;
+import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
@@ -40,18 +50,10 @@ import org.jgroups.util.TLSClientAuth;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import javax.net.ssl.SSLContext;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY;
@@ -61,11 +63,13 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 public class CacheManagerFactory {
@@ -73,18 +77,39 @@ public class CacheManagerFactory {
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
 
     private final CompletableFuture<DefaultCacheManager> cacheManagerFuture;
+    private final CompletableFuture<RemoteCacheManager> remoteCacheManagerFuture;
 
     public CacheManagerFactory(String config) {
         this.cacheManagerFuture = startEmbeddedCacheManager(config);
+        if (isCrossSiteEnabled() && isRemoteCacheEnabled()) {
+            logger.debug("Remote Cache feature is enabled");
+            this.remoteCacheManagerFuture = CompletableFuture.supplyAsync(this::startRemoteCacheManager);
+        } else {
+            logger.debug("Remote Cache feature is disabled");
+            this.remoteCacheManagerFuture = CompletableFutures.completedNull();
+        }
     }
 
     public DefaultCacheManager getOrCreateEmbeddedCacheManager() {
         return join(cacheManagerFuture);
     }
 
+    public RemoteCacheManager getOrCreateRemoteCacheManager() {
+        return join(remoteCacheManagerFuture);
+    }
+
     public void shutdown() {
-        logger.debug("Shutdown embedded cache manager");
+        logger.debug("Shutdown embedded and remote cache managers");
         cacheManagerFuture.thenAccept(CacheManagerFactory::close);
+        remoteCacheManagerFuture.thenAccept(CacheManagerFactory::close);
+    }
+
+    private static boolean isCrossSiteEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE);
+    }
+
+    private static boolean isRemoteCacheEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
     }
 
     private static <T> T join(Future<T> future) {
@@ -102,6 +127,54 @@ public class CacheManagerFactory {
         if (lifecycle != null) {
             lifecycle.stop();
         }
+    }
+
+    private RemoteCacheManager startRemoteCacheManager() {
+        String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
+        Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
+                .map(Integer::parseInt)
+                .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
+        String cacheRemoteUsername = requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY);
+        String cacheRemotePassword = requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY);
+
+        org.infinispan.client.hotrod.configuration.ConfigurationBuilder builder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
+        builder.addServer().host(cacheRemoteHost).port(cacheRemotePort);
+        builder.connectionPool().maxActive(16).exhaustedAction(org.infinispan.client.hotrod.configuration.ExhaustedAction.CREATE_NEW);
+
+        if (isRemoteTLSEnabled()) {
+            builder.security().ssl()
+                    .enable()
+                    .sslContext(createSSLContext())
+                    .sniHostName(cacheRemoteHost);
+        }
+
+        if (isRemoteAuthenticationEnabled()) {
+            builder.security().authentication()
+                    .enable()
+                    .username(cacheRemoteUsername)
+                    .password(cacheRemotePassword)
+                    .realm("default")
+                    .saslMechanism(SCRAM_SHA_512);
+        }
+
+        Marshalling.configure(builder);
+
+        if (createRemoteCaches()) {
+            // fall back for distributed caches if not defined
+            logger.warn("Creating remote cache in external Infinispan server. It should not be used in production!");
+            for (String name : DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+
+                builder.remoteCache(name).templateName(DefaultTemplate.DIST_SYNC);
+            }
+        }
+
+        RemoteCacheManager remoteCacheManager = new RemoteCacheManager(builder.build());
+
+        // establish connection to all caches
+        if (isStartEagerly()) {
+            DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(remoteCacheManager::getCache);
+        }
+        return remoteCacheManager;
     }
 
     private CompletableFuture<DefaultCacheManager> startEmbeddedCacheManager(String config) {
@@ -149,17 +222,31 @@ public class CacheManagerFactory {
         }
 
         Marshalling.configure(builder.getGlobalConfigurationBuilder());
+        if (isCrossSiteEnabled() && isRemoteCacheEnabled()) {
+            var builders = builder.getNamedConfigurationBuilders();
+            // remove all distributed caches
+            logger.debug("Removing all distributed caches.");
+            // TODO [pruivo] remove all distributed caches after all of them are converted
+            //DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(builders::remove);
+            builders.remove(WORK_CACHE_NAME);
+            builders.remove(AUTHENTICATION_SESSIONS_CACHE_NAME);
+        }
+
         var start = isStartEagerly();
         return CompletableFuture.supplyAsync(() -> new DefaultCacheManager(builder, start));
     }
 
     private static boolean isRemoteTLSEnabled() {
-        return Configuration.isTrue(CachingOptions.CACHE_REMOTE_TLS_ENABLED);
+        return Boolean.parseBoolean(System.getProperty("kc.cache-remote-tls-enabled", Boolean.TRUE.toString()));
     }
 
     private static boolean isRemoteAuthenticationEnabled() {
         return Configuration.getOptionalKcValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
                 Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent();
+    }
+
+    private static boolean createRemoteCaches() {
+        return Boolean.parseBoolean(System.getProperty("kc.cache-remote-create-caches", Boolean.FALSE.toString()));
     }
 
     private static SSLContext createSSLContext() {
@@ -205,6 +292,12 @@ public class CacheManagerFactory {
             transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
             Logger.getLogger(CacheManagerFactory.class).info("MTLS enabled for communications for embedded caches");
         }
+
+        //TODO [pruivo] disable JGroups after all distributed caches are converted
+//        if (isCrossSiteEnabled() && isRemoteCacheEnabled()) {
+//            logger.debug("Disabling JGroups between Keycloak nodes");
+//            builder.getGlobalConfigurationBuilder().nonClusteredDefault();
+//        }
     }
 
     private void validateTlsAvailable(GlobalConfiguration config) {
