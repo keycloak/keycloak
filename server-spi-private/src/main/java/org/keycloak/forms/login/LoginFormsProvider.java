@@ -28,6 +28,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -162,4 +164,6 @@ public interface LoginFormsProvider extends Provider {
     LoginFormsProvider setExecution(String execution);
 
     LoginFormsProvider setAuthContext(AuthenticationFlowContext context);
+
+    LoginFormsProvider setAttributeMapper(Function<Map<String, Object>, Map<String, Object>> configurer);
 }

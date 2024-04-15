@@ -27,6 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
@@ -126,6 +127,11 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             domainEntity.setOrganization(this.entity);
             this.entity.addDomain(domainEntity);
         }
+    }
+
+    @Override
+    public IdentityProviderModel getIdentityProvider() {
+        return provider.getIdentityProvider(this);
     }
 
     @Override

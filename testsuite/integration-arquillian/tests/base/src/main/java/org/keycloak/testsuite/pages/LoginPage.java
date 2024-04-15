@@ -87,6 +87,12 @@ public class LoginPage extends LanguageComboboxAwarePage {
         clickLink(submitButton);
     }
 
+    public void loginUsername(String username) {
+        clearUsernameInputAndWaitIfNecessary();
+        usernameInput.sendKeys(username);
+        clickLink(submitButton);
+    }
+
     private void clearUsernameInputAndWaitIfNecessary() {
         try {
             usernameInput.clear();
@@ -143,6 +149,10 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public String getPassword() {
         return passwordInput.getAttribute("value");
+    }
+
+    public boolean isPasswordInputPresent() {
+        return !driver.findElements(By.id("password")).isEmpty();
     }
 
     public void cancel() {

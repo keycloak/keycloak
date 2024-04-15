@@ -28,6 +28,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -70,7 +72,7 @@ public class OrganizationIdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addIdentityProvider(IdentityProviderRepresentation providerRep) {
 
-        IdentityProviderModel identityProvider = organizationProvider.getIdentityProvider(organization);
+        IdentityProviderModel identityProvider = organization.getIdentityProvider();
         if (identityProvider != null) {
             throw ErrorResponse.error("Organization already assigned with an identity provider.", Status.BAD_REQUEST);
         }
@@ -101,8 +103,7 @@ public class OrganizationIdentityProviderResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderRepresentation getIdentityProvider() {
-        IdentityProviderModel identityProvider = organizationProvider.getIdentityProvider(organization);
-        return identityProvider == null ? null : toRepresentation(identityProvider);
+        return Optional.ofNullable(organization.getIdentityProvider()).map(this::toRepresentation).orElse(null);
     }
 
     @DELETE
@@ -130,17 +131,21 @@ public class OrganizationIdentityProviderResource {
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response update(IdentityProviderRepresentation providerRep) {
+    public Response update(IdentityProviderRepresentation rep) {
         IdentityProviderModel identityProvider = getIdentityProviderModel();
 
-        Response response = getIdentityProviderResource(identityProvider).update(providerRep);
+        if (!rep.getAlias().equals(identityProvider.getAlias())) {
+            throw ErrorResponse.error("Identity provider not assigned to the organization.", Status.NOT_FOUND);
+        }
+
+        Response response = getIdentityProviderResource(identityProvider).update(rep);
 
         //update link between IdP and the organization if the update of IdP was successful and the IdP alias differs
         if (Status.NO_CONTENT.getStatusCode() == response.getStatus() && 
-                ! Objects.equals(identityProvider.getAlias(), providerRep.getAlias())) {
+                ! Objects.equals(identityProvider.getAlias(), rep.getAlias())) {
 
             //get the updated IdP from session
-            identityProvider = realm.getIdentityProviderByAlias(providerRep.getAlias());
+            identityProvider = realm.getIdentityProviderByAlias(rep.getAlias());
 
             String errorMessage;
             try {
@@ -167,10 +172,12 @@ public class OrganizationIdentityProviderResource {
     }
 
     private IdentityProviderModel getIdentityProviderModel() {
-        IdentityProviderModel identityProvider = organizationProvider.getIdentityProvider(organization);
+        IdentityProviderModel identityProvider = organization.getIdentityProvider();
+
         if (identityProvider == null) {
             throw ErrorResponse.error("Organization doesn't have assigned an identity provider.", Status.NOT_FOUND);
         }
+
         return identityProvider;
     }
 }

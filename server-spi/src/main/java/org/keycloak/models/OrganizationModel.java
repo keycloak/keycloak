@@ -39,4 +39,6 @@ public interface OrganizationModel {
     Stream<OrganizationDomainModel> getDomains();
 
     void setDomains(Set<OrganizationDomainModel> domains);
+
+    IdentityProviderModel getIdentityProvider();
 }
