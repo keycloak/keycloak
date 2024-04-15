@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.console.page.fragment;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -39,7 +38,6 @@ import static org.openqa.selenium.By.xpath;
  */
 public class DataTable {
 
-    @Drone
     protected WebDriver driver;
 
     @FindBy(css = "input[class*='search']")
@@ -135,5 +133,4 @@ public class DataTable {
             return false;
         }
     }
-    
 }

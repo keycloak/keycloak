@@ -18,12 +18,13 @@ package org.keycloak.testsuite.actions;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.events.Details;
@@ -47,7 +48,7 @@ import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
-import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 
 import java.util.LinkedList;
@@ -68,8 +69,8 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
     }
 
-    @Drone
-    @SecondBrowser
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
     private WebDriver driver2;
 
     @Rule
@@ -90,9 +91,20 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
 
+    @BeforeClass
+    public void setupDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
     @After
     public void after() {
         ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+    }
+
+    @AfterClass
+    public void localDriverCleanup(){
+        this.secondBrowser.stopBrowser();
     }
 
     @Test

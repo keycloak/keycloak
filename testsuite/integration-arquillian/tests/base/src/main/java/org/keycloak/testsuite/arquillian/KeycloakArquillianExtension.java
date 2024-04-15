@@ -39,9 +39,6 @@ import org.keycloak.testsuite.arquillian.provider.OAuthClientProvider;
 import org.keycloak.testsuite.arquillian.provider.SuiteContextProvider;
 import org.keycloak.testsuite.arquillian.provider.TestContextProvider;
 import org.keycloak.testsuite.arquillian.provider.URLProvider;
-import org.keycloak.testsuite.drone.HtmlUnitScreenshots;
-import org.keycloak.testsuite.drone.KeycloakDronePostSetup;
-import org.keycloak.testsuite.drone.KeycloakWebDriverConfigurator;
 import org.keycloak.testsuite.utils.arquillian.fuse.KeycloakOSGiApplicationArchiveProcessor;
 
 /**
@@ -81,13 +78,6 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class)
                 .override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, KeycloakOSGiApplicationArchiveProcessor.class)
                 .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class);
-
-        builder
-                .observer(KeycloakWebDriverConfigurator.class)
-                .observer(HtmlUnitScreenshots.class)
-                .observer(KeycloakDronePostSetup.class);
-
-
     }
 
 }

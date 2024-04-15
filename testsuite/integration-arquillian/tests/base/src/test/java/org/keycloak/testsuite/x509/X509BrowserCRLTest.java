@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.x509;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assert;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -29,7 +30,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.Matchers.containsString;
@@ -45,16 +46,25 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
     @ClassRule
     public static CRLRule crlRule = new CRLRule();
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    private final JSBrowser jsBrowser = new JSBrowser();
 
+    private WebDriver jsDriver;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
+    }
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(jsDriver);
     }
 
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
+    }
 
     @Test
     public void loginSuccessWithEmptyRevocationListFromFile() {

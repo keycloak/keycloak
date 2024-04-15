@@ -228,7 +228,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         driver.navigate().to(loginFormUrl);
         appPage.assertCurrent();
         //KEYCLOAK-12783
-        Assert.assertEquals("/auth/realms/master/app/auth", new URL(DroneUtils.getCurrentDriver().getCurrentUrl()).getPath());
+        Assert.assertEquals("/auth/realms/master/app/auth", new URL(WebDriverUtils.getCurrentDriver().getCurrentUrl()).getPath());
 
         // Remove test client
         ApiUtil.findClientByClientId(realm, "test-app").remove();

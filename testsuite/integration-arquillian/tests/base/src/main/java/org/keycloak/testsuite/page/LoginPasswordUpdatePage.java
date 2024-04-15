@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.page;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assert;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.openqa.selenium.WebDriver;
@@ -31,7 +30,6 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  */
 public class LoginPasswordUpdatePage {
 
-    @Drone
     protected WebDriver driver;
 
     @FindBy(id = "password-new")
@@ -68,5 +66,4 @@ public class LoginPasswordUpdatePage {
     public String getError() {
         return loginErrorMessage != null ? getTextFromElement(loginErrorMessage) : null;
     }
-
 }

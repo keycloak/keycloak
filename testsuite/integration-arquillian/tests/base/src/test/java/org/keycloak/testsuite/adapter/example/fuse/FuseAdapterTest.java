@@ -16,13 +16,14 @@
  */
 package org.keycloak.testsuite.adapter.example.fuse;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
@@ -36,11 +37,11 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.utils.fuse.FuseUtils.Result;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -78,38 +79,28 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
 public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
+    private final JSBrowser jsBrowser = new JSBrowser();
 
-    @Drone
-    @JavascriptBrowser
     protected WebDriver jsDriver;
 
     @Page
-    @JavascriptBrowser
     private HawtioPage hawtioPage;
     @Page
-    @JavascriptBrowser
     private Hawtio2Page hawtio2Page;
     @Page
-    @JavascriptBrowser
     private OIDCLogin testRealmLoginPageFuse;
     @Page
-    @JavascriptBrowser
     private AuthRealm loginPageFuse;
     @Page
-    @JavascriptBrowser
     protected CustomerPortalFuseExample customerPortal;
     @Page
-    @JavascriptBrowser
     protected CustomerListing customerListing;
     @Page
-    @JavascriptBrowser
     protected AdminInterface adminInterface;
     @Page
-    @JavascriptBrowser
     protected ProductPortalFuseExample productPortal;
 
     @Page
-    @JavascriptBrowser
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Override
@@ -127,9 +118,20 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         loginPageFuse.setAuthRealm(DEMO);
     }
 
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
+    }
+
     @Before
     public void addJsDriver() {
-        DroneUtils.addWebDriver(jsDriver);
+        WebDriverUtils.addWebDriver(jsDriver);
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
     }
 
     @Override
@@ -154,7 +156,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                         .build("demo").toString();
-        DroneUtils.getCurrentDriver().navigate().to(logoutUri);
+        WebDriverUtils.getCurrentDriver().navigate().to(logoutUri);
         WaitUtils.waitForPageToLoad();
         logoutConfirmPage.confirmLogout();
 
@@ -163,7 +165,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         log.debug("logging in as mary");
         testRealmLoginPageFuse.form().login("mary", "password");
         log.debug("Previous WARN waitForPageToLoad time exceeded! is expected");
-        assertThat(DroneUtils.getCurrentDriver().getCurrentUrl(), not(containsString("welcome")));
+        assertThat(WebDriverUtils.getCurrentDriver().getCurrentUrl(), not(containsString("welcome")));
     }
 
     @Test
@@ -202,7 +204,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         log.debug("logging in as mary");
         testRealmLoginPageFuse.form().login("mary", "password");
-        log.debug("Current URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
+        log.debug("Current URL: " + WebDriverUtils.getCurrentDriver().getCurrentUrl());
         assertCurrentUrlStartsWith(hawtio2Page.toString());
         
         assertHawtio2Page("camel", false);
@@ -212,7 +214,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     }
 
     private void assertHawtio2Page(String urlFragment, boolean expectedSuccess) {
-        DroneUtils.getCurrentDriver().navigate().to(hawtio2Page.getUrl() + "/" + urlFragment);
+        WebDriverUtils.getCurrentDriver().navigate().to(hawtio2Page.getUrl() + "/" + urlFragment);
         WaitUtils.waitForPageToLoad();
         WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console'] | //img[@ng-src='img/fuse-logo.svg']")).is().present();
         if (expectedSuccess) {
@@ -338,7 +340,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         testRealmLoginPageFuse.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(customerListing);
 
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), allOf(
+        assertThat(WebDriverUtils.getCurrentDriver().getPageSource(), allOf(
             containsString("Username: bburke@redhat.com"),
             containsString("Bill Burke")
         ));
@@ -346,7 +348,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         // account mgmt
         customerListing.clickAccountManagement();
 
-        DroneUtils.getCurrentDriver().navigate().back();
+        WebDriverUtils.getCurrentDriver().navigate().back();
         customerListing.clickLogOut();
 
         logoutConfirmPage.confirmLogout();
@@ -370,8 +372,8 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         testRealmLoginPageFuse.form().login("admin", "password");
         assertCurrentUrlStartsWith(adminInterface);
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Hello admin!"));
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("This second sentence is returned from a Camel RestDSL endpoint"));
+        assertThat(WebDriverUtils.getCurrentDriver().getPageSource(), containsString("Hello admin!"));
+        assertThat(WebDriverUtils.getCurrentDriver().getPageSource(), containsString("This second sentence is returned from a Camel RestDSL endpoint"));
 
         customerListing.navigateTo();
         WaitUtils.waitForPageToLoad();
@@ -388,7 +390,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         testRealmLoginPageFuse.form().login("bburke@redhat.com", "password");
         assertCurrentUrlStartsWith(adminInterface);
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Status code is 403"));
+        assertThat(WebDriverUtils.getCurrentDriver().getPageSource(), containsString("Status code is 403"));
     }
 
     @Test

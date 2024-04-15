@@ -3,7 +3,7 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -82,7 +82,7 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     @Override
     public boolean isCurrent() {
         // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Sign in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
+        if (!WebDriverUtils.getCurrentDriver().getTitle().startsWith("Sign in to ") && !WebDriverUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
             return false;
         }
         // Check the authenticators-choice available

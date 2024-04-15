@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.webauthn.pages.fragments;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -33,7 +32,6 @@ import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 public class ContinueCancelModal {
     public static final String ROOT_XPATH = "//div[@role='dialog']";
 
-    @Drone
     private WebDriver driver;
 
     @FindBy(xpath = ROOT_XPATH)
@@ -41,6 +39,7 @@ public class ContinueCancelModal {
 
     @FindBy(xpath = ROOT_XPATH + "//*[@id='modal-confirm']")
     private WebElement confirmBtn;
+
     @FindBy(xpath = ROOT_XPATH + "//*[@id='modal-cancel']")
     private WebElement cancelBtn;
 

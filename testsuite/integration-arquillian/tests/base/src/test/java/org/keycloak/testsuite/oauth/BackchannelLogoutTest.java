@@ -9,8 +9,9 @@ import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,7 +40,7 @@ import org.keycloak.testsuite.util.LogoutTokenUtil;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
-import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
@@ -73,13 +74,14 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Drone
-    @SecondBrowser
-    WebDriver driver2;
+    private final SecondBrowser secondBrowser = new SecondBrowser();
 
-    @Override
-    protected NestedBrokerConfiguration getNestedBrokerConfiguration() {
-        return OidcBackchannelLogoutBrokerConfiguration.INSTANCE;
+    protected WebDriver driver2;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
     }
 
     @Before
@@ -131,6 +133,16 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     public void createNewRsaKeyForProviderRealm() {
         providerRealmManager = RealmManager.realm(adminClient.realm(nbc.providerRealmName()));
         providerId = providerRealmManager.generateNewRsaKey(KEY_PAIR, "rsa-test-2");
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
+
+    @Override
+    protected NestedBrokerConfiguration getNestedBrokerConfiguration() {
+        return OidcBackchannelLogoutBrokerConfiguration.INSTANCE;
     }
 
     @Test

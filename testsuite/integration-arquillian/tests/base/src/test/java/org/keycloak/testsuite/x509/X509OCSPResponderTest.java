@@ -19,10 +19,11 @@
 package org.keycloak.testsuite.x509;
 
 import com.google.common.base.Charsets;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.common.util.PemUtils;
@@ -44,7 +45,7 @@ import java.nio.file.Paths;
 import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -64,13 +65,24 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
 
     private Undertow ocspResponder;
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    private final JSBrowser jsBrowser = new JSBrowser();
+
+    private WebDriver jsDriver;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
+    }
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(jsDriver);
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
     }
 
     @Test

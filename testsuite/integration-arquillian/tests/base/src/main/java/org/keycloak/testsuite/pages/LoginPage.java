@@ -19,7 +19,7 @@ package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
@@ -197,12 +197,12 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public boolean isCurrent(String realm) {
-        return DroneUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
+        return WebDriverUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || WebDriverUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
     }
 
     public void assertCurrent(String realm) {
         String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
+        Assert.assertTrue("Expected " + name + " but was " + WebDriverUtils.getCurrentDriver().getTitle() + " (" + WebDriverUtils.getCurrentDriver().getCurrentUrl() + ")",
                 isCurrent(realm));
     }
 
@@ -217,12 +217,12 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public WebElement findSocialButton(String alias) {
         String id = "social-" + alias;
-        return DroneUtils.getCurrentDriver().findElement(By.id(id));
+        return WebDriverUtils.getCurrentDriver().findElement(By.id(id));
     }
 
     public boolean isSocialButtonPresent(String alias) {
         String id = "social-" + alias;
-        return !DroneUtils.getCurrentDriver().findElements(By.id(id)).isEmpty();
+        return !WebDriverUtils.getCurrentDriver().findElements(By.id(id)).isEmpty();
     }
 
     public void resetPassword() {

@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import io.appium.java_client.android.AndroidDriver;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
@@ -12,15 +11,15 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+import static org.keycloak.testsuite.util.WebDriverUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.log;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -45,7 +44,7 @@ public final class UIUtils {
 
     public static boolean currentTitleEquals(String url) {
         try {
-            (new WebDriverWait(getCurrentDriver(), 5)).until(ExpectedConditions.titleIs(url));
+            (new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(5))).until(ExpectedConditions.titleIs(url));
         }
         catch (TimeoutException e) {
             return false;
@@ -74,13 +73,7 @@ public final class UIUtils {
 
         waitUntilElement(element).is().clickable();
 
-        if (driver instanceof SafariDriver && !element.isDisplayed()) { // Safari sometimes thinks an element is not visible
-                                                                        // even though it is. In this case we just move the cursor and click.
-            performOperationWithPageReload(() -> new Actions(driver).click(element).perform());
-        }
-        else {
-            performOperationWithPageReload(element::click);
-        }
+        performOperationWithPageReload(element::click);
     }
 
     /**
@@ -143,10 +136,6 @@ public final class UIUtils {
         }
 
         WebDriver driver = getCurrentDriver();
-        if (driver instanceof AndroidDriver) {
-            AndroidDriver androidDriver = (AndroidDriver) driver;
-            androidDriver.hideKeyboard(); // stability improvement
-        }
     }
 
     /**
@@ -156,17 +145,7 @@ public final class UIUtils {
      * @return
      */
     public static String getTextFromElement(WebElement element) {
-        String text = element.getText();
-        if (getCurrentDriver() instanceof SafariDriver) {
-            try {
-                // Safari on macOS doesn't comply with WebDriver specs yet again - getText() retrieves hidden text by CSS.
-                text = element.findElement(By.xpath("./span[not(contains(@class,'ng-hide'))]")).getText();
-            } catch (NoSuchElementException e) {
-                // no op
-            }
-            return text.trim(); // Safari on macOS sometimes for no obvious reason surrounds the text with spaces
-        }
-        return text;
+        return element.getText();
     }
 
     /**

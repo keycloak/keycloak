@@ -18,12 +18,13 @@
 package org.keycloak.testsuite.welcomepage;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -32,8 +33,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.WebDriverUtils;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 import java.net.InetAddress;
@@ -52,22 +53,20 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RestartContainer(initializeDatabase = true, intializeDatabaseWait = 0, withoutKeycloakAddUserFile = true)
 public class WelcomePageTest extends AbstractKeycloakTest {
+    private final JSBrowser jsBrowser = new JSBrowser();
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    private WebDriver jsDriver;
 
     @Page
-    @PhantomJSBrowser
     protected OIDCLogin loginPage;
 
     @Page
-    @PhantomJSBrowser
     protected WelcomePage welcomePage;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        // no operation
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
     }
 
     /*
@@ -80,14 +79,24 @@ public class WelcomePageTest extends AbstractKeycloakTest {
         Assume.assumeThat("Test skipped",
                 suiteContext.getAuthServerInfo().isJBossBased(),
                 Matchers.is(true));
-        DroneUtils.replaceDefaultWebDriver(this, phantomJS);
+        WebDriverUtils.replaceDefaultWebDriver(this, jsDriver);
         setDefaultPageUriParameters();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
     }
 
     @After
     @Override
     public void afterAbstractKeycloakTest() {
         // no need for this either
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        // no operation
     }
 
     /**
@@ -134,7 +143,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
     public void test_3_LocalAccessWithAdmin() throws Exception {
         welcomePage.navigateTo();
         welcomePage.setPassword("admin", "admin");
-        Assert.assertTrue(driver.getPageSource().contains("User created"));
+        Assert.assertTrue(jsDriver.getPageSource().contains("User created"));
 
         welcomePage.navigateTo();
         Assert.assertTrue("Welcome page asked to set admin password.", welcomePage.isPasswordSet());
@@ -151,7 +160,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
         welcomePage.navigateTo();
         welcomePage.navigateToAdminConsole();
         // TODO PhantomJS is not loading the new admin console for some reason, so is not redirecting to the login page. It works with Chrome though.
-        Assert.assertEquals("Keycloak Administration Console", phantomJS.getTitle());
+        Assert.assertEquals("Keycloak Administration Console", jsDriver.getTitle());
     }
 
     @Test

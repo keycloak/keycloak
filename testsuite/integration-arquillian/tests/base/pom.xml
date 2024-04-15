@@ -183,6 +183,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>htmlunit3-driver</artifactId>
+            <version>${selenium.version}</version>
+        </dependency>
+
         <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
         <dependency>
             <groupId>org.jboss.threads</groupId>
@@ -207,6 +213,12 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <version>1.8.0</version>
         </dependency>
     </dependencies>
     

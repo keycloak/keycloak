@@ -66,7 +66,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -96,44 +96,12 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
  */
 public class LoginTest extends AbstractTestRealmKeycloakTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        UserRepresentation user = UserBuilder.create()
-                                             .username("login-test")
-                                             .email("login@test.com")
-                                             .enabled(true)
-                                             .password("password")
-                                             .build();
-
-        UserRepresentation user2 = UserBuilder.create()
-                                              .username("login-test2")
-                                              .email("login2@test.com")
-                                              .enabled(true)
-                                              .password("password")
-                                              .build();
-
-        UserRepresentation admin = UserBuilder.create()
-                .username("admin")
-                .password("admin")
-                .enabled(true)
-                .build();
-        HashMap<String, List<String>> clientRoles = new HashMap<>();
-        clientRoles.put("realm-management", Arrays.asList("realm-admin"));
-        admin.setClientRoles(clientRoles);
-
-        RealmBuilder.edit(testRealm)
-                    .user(user)
-                    .user(user2)
-                    .user(admin);
-    }
-
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
     @Page
     protected AppPage appPage;
 
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -151,6 +119,37 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     private static String userId;
 
     private static String user2Id;
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        UserRepresentation user = UserBuilder.create()
+                .username("login-test")
+                .email("login@test.com")
+                .enabled(true)
+                .password("password")
+                .build();
+
+        UserRepresentation user2 = UserBuilder.create()
+                .username("login-test2")
+                .email("login2@test.com")
+                .enabled(true)
+                .password("password")
+                .build();
+
+        UserRepresentation admin = UserBuilder.create()
+                .username("admin")
+                .password("admin")
+                .enabled(true)
+                .build();
+        HashMap<String, List<String>> clientRoles = new HashMap<>();
+        clientRoles.put("realm-management", Arrays.asList("realm-admin"));
+        admin.setClientRoles(clientRoles);
+
+        RealmBuilder.edit(testRealm)
+                .user(user)
+                .user(user2)
+                .user(admin);
+    }
 
     @Override
     public void importTestRealms() {
@@ -226,7 +225,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             String longRedirectUri = oauth.getRedirectUri() + "?longQueryParameterValue=" + randomLongString;
             UriBuilder longLoginUri = UriBuilder.fromUri(oauth.getLoginFormUrl()).replaceQueryParam(OAuth2Constants.REDIRECT_URI, longRedirectUri);
 
-            DroneUtils.getCurrentDriver().navigate().to(longLoginUri.build().toString());
+            WebDriverUtils.getCurrentDriver().navigate().to(longLoginUri.build().toString());
 
             loginPage.assertCurrent();
             loginPage.login("login-test", "password");

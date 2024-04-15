@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.page;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -34,8 +33,7 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
 public class Form {
 
     protected final Logger log = Logger.getLogger(this.getClass());
-    
-    @Drone
+
     protected WebDriver driver;
 
     public static final String ACTIVE_DIV_XPATH = ".//div[not(contains(@class,'ng-hide'))]";

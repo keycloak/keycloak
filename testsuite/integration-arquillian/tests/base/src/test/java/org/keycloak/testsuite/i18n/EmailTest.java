@@ -41,7 +41,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -162,15 +162,15 @@ public class EmailTest extends AbstractI18NTest {
         // Make sure kc_locale added to link doesn't set locale
         link += "&kc_locale=de";
         
-        DroneUtils.getCurrentDriver().navigate().to(link);
+        WebDriverUtils.getCurrentDriver().navigate().to(link);
         WaitUtils.waitForPageToLoad();
         
-        Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
+        Assert.assertTrue("Expected to be on InfoPage, but it was on " + WebDriverUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
         assertThat(infoPage.getLanguageDropdownText(), is(equalTo("English")));
         
         infoPage.openLanguage("Deutsch");
 
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Passwort aktualisieren"));
+        assertThat(WebDriverUtils.getCurrentDriver().getPageSource(), containsString("Passwort aktualisieren"));
         
         infoPage.clickToContinueDe();
         
@@ -178,7 +178,7 @@ public class EmailTest extends AbstractI18NTest {
         loginPasswordUpdatePage.changePassword("pass", "pass");
         WaitUtils.waitForPageToLoad();
         
-        Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
+        Assert.assertTrue("Expected to be on InfoPage, but it was on " + WebDriverUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
 
         // Change language again when on final info page with the message about updated account (authSession removed already at this point)

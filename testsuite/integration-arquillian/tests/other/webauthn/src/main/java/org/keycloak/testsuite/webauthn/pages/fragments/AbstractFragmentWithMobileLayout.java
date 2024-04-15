@@ -17,14 +17,12 @@
 
 package org.keycloak.testsuite.webauthn.pages.fragments;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public abstract class AbstractFragmentWithMobileLayout {
-    @Drone
     private WebDriver driver;
 
     private Boolean mobileLayout = null;

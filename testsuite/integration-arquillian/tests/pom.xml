@@ -207,33 +207,15 @@
         <examples.version.suffix>${project.version}</examples.version.suffix>
         <skip.copy.example.wars>false</skip.copy.example.wars>
 
-        <browser>htmlUnit</browser>
+        <browser>htmlunit</browser>
+        <browserVersion/>
         <browser.strict.cookies>false</browser.strict.cookies>
-        <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
-        <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
+        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
+        <firefoxArguments>-headless</firefoxArguments>
+        <firefoxUserPreferences/>
+
         <github.username/>
         <github.secretToken/>
-        <ieDriverArch>Win32</ieDriverArch>
-        <ieDriverVersion/>
-        <js.browser>chrome</js.browser>
-        <js.chromeArguments>--headless</js.chromeArguments>
-        <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
-        <firefox_binary/> <!-- the path is set automatically based on the OS -->
-        <firefoxLegacyDriver>false</firefoxLegacyDriver>
-        <firefoxDriverVersion/>
-        <firefoxUserPreferences/>
-        <firefoxHeadless>true</firefoxHeadless>
-        <chromeBinary/>
-        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
-        <chromeDriverVersion/>
-
-        <appium.platformName/>
-        <appium.deviceName/>
-        <appium.browserName/>
-        <appium.avd/>
-        <appium.automationName/>
-        <appium.noReset/>
-        <appium.fullReset/>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
@@ -583,34 +565,12 @@
 
                             <browser>${browser}</browser>
                             <browser.strict.cookies>${browser.strict.cookies}</browser.strict.cookies>
-                            <js.browser>${js.browser}</js.browser>
-                            <js.chromeArguments>${js.chromeArguments}</js.chromeArguments>
-                            <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
-                            <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
-                            <droneInstantiationTimeoutInSeconds>${droneInstantiationTimeoutInSeconds}</droneInstantiationTimeoutInSeconds>
 
                             <github.username>${github.username}</github.username>
                             <github.secretToken>${github.secretToken}</github.secretToken>
-                            <ieDriverArch>${ieDriverArch}</ieDriverArch>
-                            <ieDriverVersion>${ieDriverVersion}</ieDriverVersion>
 
-                            <firefox_binary>${firefox_binary}</firefox_binary>
-                            <chromeBinary>${chromeBinary}</chromeBinary>
                             <chromeArguments>${chromeArguments}</chromeArguments>
-                            <chromeDriverVersion>${chromeDriverVersion}</chromeDriverVersion>
-
-                            <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
-                            <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
-                            <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
-                            <firefoxHeadless>${firefoxHeadless}</firefoxHeadless>
-
-                            <appium.platformName>${appium.platformName}</appium.platformName>
-                            <appium.deviceName>${appium.deviceName}</appium.deviceName>
-                            <appium.browserName>${appium.browserName}</appium.browserName>
-                            <appium.avd>${appium.avd}</appium.avd>
-                            <appium.automationName>${appium.automationName}</appium.automationName>
-                            <appium.noReset>${appium.noReset}</appium.noReset>
-                            <appium.fullReset>${appium.fullReset}</appium.fullReset>
+                            <firefoxArguments>${firefoxArguments}</firefoxArguments>
 
                             <project.version>${project.version}</project.version>
 
@@ -1649,12 +1609,6 @@
                     </exclusions>
                 </dependency>
 
-                <dependency>
-                    <groupId>io.appium</groupId>
-                    <artifactId>java-client</artifactId>
-                    <version>${appium.client.version}</version>
-                </dependency>
-
                 <!--
                     httpclient and httpcore are here to ensure we use the same version
                     as in keycloak/pom.xml and to prevent the other versions beeing present
@@ -1871,17 +1825,6 @@
 
             </dependencies>
 
-            <dependencyManagement>
-                <dependencies>
-                    <!-- we need to specify the correct version because of conflict in arquillian-drone-webdriver-depchain -->
-                    <dependency>
-                        <groupId>org.seleniumhq.selenium</groupId>
-                        <artifactId>htmlunit-driver</artifactId>
-                        <version>2.27</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-
             <build>
                 <plugins>
                     <plugin>
@@ -2084,9 +2027,7 @@
             <id>firefox-strict-cookies</id>
             <properties>
                 <browser>firefox</browser>
-                <js.browser>firefox</js.browser>
                 <firefoxUserPreferences>${project.build.directory}/dependency/firefox-cookies-prefs.js</firefoxUserPreferences>
-                <firefoxHeadless>true</firefoxHeadless>
                 <browser.strict.cookies>true</browser.strict.cookies>
             </properties>
         </profile>

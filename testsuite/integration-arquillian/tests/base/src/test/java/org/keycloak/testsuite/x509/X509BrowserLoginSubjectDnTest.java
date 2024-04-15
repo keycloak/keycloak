@@ -21,13 +21,13 @@ import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assume;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -37,13 +37,14 @@ import org.openqa.selenium.WebDriver;
 
 public class X509BrowserLoginSubjectDnTest extends AbstractX509AuthenticationTest {
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    private final JSBrowser jsBrowser = new JSBrowser();
 
-    @Before
-    public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+    private WebDriver jsDriver;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
     }
 
     @BeforeClass
@@ -60,6 +61,16 @@ public class X509BrowserLoginSubjectDnTest extends AbstractX509AuthenticationTes
     public static void onBeforeTestClass() {
         configurePhantomJS("/ca.crt", "/certs/clients/test-user-san@localhost.cert.pem",
                            "/certs/clients/test-user@localhost.key.pem", "password");
+    }
+
+    @Before
+    public void replaceTheDefaultDriver() {
+        replaceDefaultWebDriver(jsDriver);
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
     }
 
     private String setup(boolean canonicalDnEnabled) throws Exception {

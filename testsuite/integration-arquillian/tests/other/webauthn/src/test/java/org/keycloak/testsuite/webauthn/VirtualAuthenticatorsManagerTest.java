@@ -17,11 +17,12 @@
 package org.keycloak.testsuite.webauthn;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.KcVirtualAuthenticator;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
@@ -42,9 +43,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @IgnoreBrowserDriver(FirefoxDriver.class)
 public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTest {
 
-    @Drone
-    @SecondBrowser
-    WebDriver driver2;
+
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
+    protected WebDriver driver2;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
 
     @Test
     public void addVirtualAuthenticator() {

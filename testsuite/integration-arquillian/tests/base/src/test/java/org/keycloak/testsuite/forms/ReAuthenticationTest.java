@@ -24,9 +24,10 @@ import java.util.List;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
@@ -52,6 +53,7 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.webdriver.MainBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -71,7 +73,8 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
     @ArquillianResource
     protected OAuthClient oauth;
 
-    @Drone
+    private final MainBrowser mainBrowser = new MainBrowser();
+
     protected WebDriver driver;
 
     @Page
@@ -94,6 +97,17 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected AppPage appPage;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.mainBrowser.startBrowser();
+        this.driver = this.mainBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.mainBrowser.stopBrowser();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter.servlet.cluster;
 
+package org.keycloak.testsuite.adapter.servlet.cluster;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -25,6 +25,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -51,7 +52,7 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
@@ -61,18 +62,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6_CLUSTER)
 public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
-
-    @TargetsContainer(value = TARGET_CONTAINER_NODE_1)
-    @Deployment(name = SessionPortalDistributable.DEPLOYMENT_NAME, managed = false)
-    protected static WebArchive sessionPortalNode1() {
-        return servletDeployment(SessionPortalDistributable.DEPLOYMENT_NAME, "keycloak.json", SessionServlet.class);
-    }
-
-    @TargetsContainer(value = TARGET_CONTAINER_NODE_2)
-    @Deployment(name = SessionPortalDistributable.DEPLOYMENT_NAME + "_2", managed = false)
-    protected static WebArchive sessionPortalNode2() {
-        return servletDeployment(SessionPortalDistributable.DEPLOYMENT_NAME, "keycloak.json", SessionServlet.class);
-    }
 
     @Page
     protected OIDCLogin loginPage;
@@ -85,6 +74,23 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
 
     @Page
     protected SessionPortalDistributable sessionPortalPage;
+
+    @Before
+    public void onBefore() {
+        loginPage.setAuthRealm(AuthRealm.DEMO);
+    }
+
+    @TargetsContainer(value = TARGET_CONTAINER_NODE_1)
+    @Deployment(name = SessionPortalDistributable.DEPLOYMENT_NAME, managed = false)
+    protected static WebArchive sessionPortalNode1() {
+        return servletDeployment(SessionPortalDistributable.DEPLOYMENT_NAME, "keycloak.json", SessionServlet.class);
+    }
+
+    @TargetsContainer(value = TARGET_CONTAINER_NODE_2)
+    @Deployment(name = SessionPortalDistributable.DEPLOYMENT_NAME + "_2", managed = false)
+    protected static WebArchive sessionPortalNode2() {
+        return servletDeployment(SessionPortalDistributable.DEPLOYMENT_NAME, "keycloak.json", SessionServlet.class);
+    }
 
     @Override
     public void setDefaultPageUriParameters() {
@@ -125,11 +131,6 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
     protected void undeploy() {
         deployer.undeploy(SessionPortalDistributable.DEPLOYMENT_NAME);
         deployer.undeploy(SessionPortalDistributable.DEPLOYMENT_NAME + "_2");
-    }
-
-    @Before
-    public void onBefore() {
-        loginPage.setAuthRealm(AuthRealm.DEMO);
     }
 
     @Test
@@ -179,7 +180,7 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
     }
 
     private void waitForCacheReplication(String appUrl, int expectedCount) {
-        new WebDriverWait(DroneUtils.getCurrentDriver(), 5) // Check every 500ms of 5 seconds
+        new WebDriverWait(WebDriverUtils.getCurrentDriver(), Duration.ofSeconds(5)) // Check every 500ms of 5 seconds
                 .until((driver) -> {
                     driver.navigate().to(appUrl + "/donotincrease");
                     waitForPageToLoad();

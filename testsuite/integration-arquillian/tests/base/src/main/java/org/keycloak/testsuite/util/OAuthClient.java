@@ -36,7 +36,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -85,7 +84,7 @@ import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -2257,10 +2256,10 @@ public class OAuthClient {
     }
 
     public void setBrowserHeader(String name, String value) {
-        if (driver instanceof DroneHtmlUnitDriver) {
-            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) this.driver;
-            droneDriver.getWebClient().removeRequestHeader(name);
-            droneDriver.getWebClient().addRequestHeader(name, value);
+        if (driver instanceof HtmlUnitDriver) {
+            HtmlUnitDriver htmlUnitDriver = (HtmlUnitDriver) this.driver;
+            htmlUnitDriver.getWebClient().removeRequestHeader(name);
+            htmlUnitDriver.getWebClient().addRequestHeader(name, value);
         }
     }
 
@@ -2270,7 +2269,7 @@ public class OAuthClient {
 
     private WebElement findSocialButton(String alias) {
         String id = "social-" + alias;
-        return DroneUtils.getCurrentDriver().findElement(By.id(id));
+        return WebDriverUtils.getCurrentDriver().findElement(By.id(id));
     }
 
     private interface StateParamProvider {

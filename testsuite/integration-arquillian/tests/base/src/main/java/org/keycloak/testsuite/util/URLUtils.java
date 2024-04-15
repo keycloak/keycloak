@@ -9,12 +9,13 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+import static org.keycloak.testsuite.util.WebDriverUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
@@ -90,7 +91,7 @@ public final class URLUtils {
         WebDriver driver = getCurrentDriver();
 
         try {
-            (new WebDriverWait(driver, 5, 100)).until(condition);
+            (new WebDriverWait(driver, Duration.ofSeconds(5), Duration.ofSeconds(100))).until(condition);
         } catch (TimeoutException e) {
             return false;
         }

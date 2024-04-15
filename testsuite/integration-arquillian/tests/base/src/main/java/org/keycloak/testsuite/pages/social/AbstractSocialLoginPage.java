@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.pages.social;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.WebDriver;
 
@@ -25,7 +24,6 @@ import org.openqa.selenium.WebDriver;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public abstract class AbstractSocialLoginPage {
-    @Drone
     protected WebDriver driver;
     protected Logger log = Logger.getLogger(this.getClass());
 

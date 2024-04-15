@@ -16,10 +16,10 @@
  */
 package org.keycloak.testsuite.webauthn;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -83,9 +83,13 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     @Page
     WebAuthnRegisterPage webAuthnRegisterPage;
 
-    @Drone
     @SecondBrowser
     private WebDriver driver2;
+
+    @BeforeClass
+    public void setupDriver() {
+        driver2 = new ChromeDriver();
+    }
 
     @Before
     @Override

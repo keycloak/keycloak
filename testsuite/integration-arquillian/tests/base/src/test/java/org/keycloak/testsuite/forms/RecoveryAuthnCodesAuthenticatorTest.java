@@ -2,9 +2,10 @@ package org.keycloak.testsuite.forms;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,7 +43,7 @@ import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -90,12 +91,23 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
     @Page
     protected AppPage appPage;
 
-    @Drone
-    @SecondBrowser
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
     private WebDriver driver2;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

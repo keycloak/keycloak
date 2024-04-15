@@ -31,7 +31,7 @@ import java.util.Queue;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public final class DroneUtils {
+public final class WebDriverUtils {
     private static Queue<WebDriver> driverQueue = new LinkedList<>();
 
     public static WebDriver getCurrentDriver() {
@@ -64,7 +64,7 @@ public final class DroneUtils {
      * @param driver the new {@code WebDriver}
      */
     public static void replaceDefaultWebDriver(Object target, WebDriver driver) {
-        DroneUtils.addWebDriver(driver);
+        WebDriverUtils.addWebDriver(driver);
         List<Field> allFields = new ArrayList<>();
         // Add all fields of this class and superclasses
         Class<?> targetClass = target.getClass();
@@ -109,7 +109,7 @@ public final class DroneUtils {
                 }
             }
         }
-        DroneUtils.removeWebDriver();
+        WebDriverUtils.removeWebDriver();
     }
 
 }

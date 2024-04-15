@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -49,7 +49,7 @@ public class InfoPage extends LanguageComboboxAwarePage {
 
     @Override
     public boolean isCurrent() {
-        return DroneUtils.getCurrentDriver().getPageSource().contains("kc-info-message");
+        return WebDriverUtils.getCurrentDriver().getPageSource().contains("kc-info-message");
     }
 
     @Override

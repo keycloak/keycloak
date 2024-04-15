@@ -363,7 +363,7 @@ mvn -f testsuite/integration-arquillian/tests/other/pom.xml clean test \
 If you try to run WebAuthn tests with Chrome browser and you see error like:
 
 ```
-Caused by: java.lang.RuntimeException: Unable to instantiate Drone via org.openqa.selenium.chrome.ChromeDriver(Capabilities):
+Caused by: java.lang.RuntimeException: Unable to instantiate WebDriver via org.openqa.selenium.chrome.ChromeDriver(Capabilities):
   org.openqa.selenium.SessionNotCreatedException: session not created: This version of ChromeDriver only supports Chrome version 78
 ```
 
@@ -441,29 +441,9 @@ Although technically they can be run with almost every test in the testsuite, th
 * **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) that corresponds with your version of the browser
 * **Run with:** `-Dbrowser=chrome -Dwebdriver.chrome.driver=path/to/chromedriver`
 
-#### [DEPRECATED] Mozilla Firefox with legacy driver
-* **Supported test modules:** `console`
-* **Supported version:** [52 ESR](http://ftp.mozilla.org/pub/firefox/releases/52.9.0esr/) ([Extended Support Release](https://www.mozilla.org/en-US/firefox/organizations/))
-* **Driver download required:** no
-* **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=true -Dfirefox_binary=path/to/firefox-52-esr/binary`
-
 #### Automatic driver downloads
-You can rely on automatic driver downloads which is provided by [Arquillian Drone](http://arquillian.org/arquillian-extension-drone/#_automatic_download). To do so just omit the `-Dwebdriver.{browser}.driver` CLI argument when running the tests.
-By default latest driver version is always downloaded. To download a specific version, add `-DfirefoxDriverVersion` or `-DchromeDriverVersion` CLI argument.
-
-#### Mobile browsers
-The support for testing with the mobile browsers is implemented using the [Appium](http://appium.io/) project.
-This means the tests can be run with a real mobile browser in a real mobile OS. However, only emulators/simulators of mobile devices are supported at the moment (no physical devices) in our testsuite.
-
-First, you need to install the Appium server. If you have Node.js and npm installed on your machine, you can do that with: `npm install -g appium`. For further details and requirements please refer to the [official Appium documentation](http://appium.io/docs/en/about-appium/intro/).
-The tests will try to start the Appium server automatically but you can do it manually as well (just by executing `appium`).
-
-To use a mobile browser you need to create a virtual device. The most convenient way to do so is to install the desired platform's IDE - either [Android Studio](https://developer.android.com/studio/) (for Android devices) or [Xcode](https://developer.apple.com/xcode/) (for iOS devices) - then you can create a device (smartphone/tablet) there. For details please refer to documentation of those IDEs.
-
-**Tips & tricks:**
-* If the AVD name contains any spaces, you need to replace them with underscores when specifying the `-Dappium.avd=...`.
-* It's probable that a freshly created device will contain an outdated Chrome version. To update to the latest version (without using the Play Store) you need to download an `.apk` for Chrome and install it with `adb install -r path/to/chrome.apk`.
-* Chrome on Android uses ChromeDriver similarly to regular desktop Chrome. The ChromeDriver is bundled with the Appium server. To use a newer ChromeDriver please follow the [Appium documentation](http://appium.io/docs/en/writing-running-appium/web/chromedriver/).
+You can rely on automatic driver downloads which is provided by [Selenium WebDriver Manager](https://www.selenium.dev/documentation/selenium_manager/).
+The latest driver version is always downloaded by default. To download a specific version, add `-DbrowserVersion` CLI argument.
 
 ## Disabling TLS (SSL) in the tests
 

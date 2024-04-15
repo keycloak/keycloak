@@ -31,7 +31,6 @@ import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.*;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -63,7 +62,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.oauth.RefreshTokenTest;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.MutualTLSUtils;
@@ -71,6 +69,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
@@ -79,11 +78,33 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
 
-    @Drone
-    @Different
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
     protected WebDriver driver2;
 
     private static final List<String> CLIENT_LIST = Arrays.asList("test-app", "named-test-app", "service-account-client");
+
+    @Rule
+    public HoKAssertEvents events = new HoKAssertEvents(this);
+
+    @BeforeClass
+    public void setupHokTestClass() {
+        this.secondBrowser.startBrowser();
+        this.driver = this.secondBrowser.getBrowser();
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+    }
+
+    // enable HoK Token as default
+    @Before
+    public void enableHoKToken() {
+        // Enable MTLS HoK Token
+        for (String clientId : CLIENT_LIST) enableHoKToken(clientId);
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
 
     public static class HoKAssertEvents extends AssertEvents {
 
@@ -106,9 +127,6 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    @Rule
-    public HoKAssertEvents events = new HoKAssertEvents(this);
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         // override due to effects caused by enabling TLS
@@ -116,11 +134,6 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         // for token introspection
         configTestRealmForTokenIntrospection(testRealm);
-    }
-
-    @BeforeClass
-    public static void checkIfTLSIsTurnedOn() {
-        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
     }
 
     private void addRedirectUrlForTls(RealmRepresentation testRealm, String clientId) {
@@ -160,13 +173,6 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         realmRoles.add("user");
         user.setRealmRoles(realmRoles);
         testRealm.getUsers().add(user);
-    }
-
-    // enable HoK Token as default
-    @Before
-    public void enableHoKToken() {
-        // Enable MTLS HoK Token
-        for (String clientId : CLIENT_LIST) enableHoKToken(clientId);
     }
 
     private void enableHoKToken(String clientId) {

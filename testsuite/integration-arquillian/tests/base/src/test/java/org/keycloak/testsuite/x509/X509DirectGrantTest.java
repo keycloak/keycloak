@@ -18,10 +18,10 @@
 
 package org.keycloak.testsuite.x509;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -32,11 +32,10 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.core.Response;
@@ -57,13 +56,24 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 
 public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    private final JSBrowser jsBrowser = new JSBrowser();
+
+    private WebDriver jsDriver;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = jsBrowser.getBrowser();
+    }
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(jsDriver);
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
     }
 
     @Test

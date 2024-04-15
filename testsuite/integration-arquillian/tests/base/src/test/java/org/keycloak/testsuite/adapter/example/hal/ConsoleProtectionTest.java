@@ -23,23 +23,23 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.JavascriptBrowser;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.pages.AppServerWelcomePage;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -61,18 +61,17 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
     @Page
     protected AppPage appPage;
 
-    // Javascript browser needed KEYCLOAK-4703
-    @Drone
-    @JavascriptBrowser
+    private final JSBrowser jsBrowser = new JSBrowser();
+
     protected WebDriver jsDriver;
 
     @Page
-    @JavascriptBrowser
     protected AppServerWelcomePage appServerWelcomePage;
 
-    @Override
-    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/wildfly-integration/wildfly-management-realm.json"));
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
     }
 
     @Before
@@ -111,8 +110,18 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
             throw new RuntimeException("Failed to configure app server", cause);
         }
 
-        DroneUtils.addWebDriver(jsDriver);
+        WebDriverUtils.addWebDriver(jsDriver);
         log.debug("Added jsDriver");
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
+    }
+
+    @Override
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
+        testRealms.add(loadRealm("/wildfly-integration/wildfly-management-realm.json"));
     }
 
     @Test

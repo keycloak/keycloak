@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.x509;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -32,13 +32,24 @@ import org.openqa.selenium.WebDriver;
 
 public class X509BrowserLoginSubjectAltNameTest extends AbstractX509AuthenticationTest {
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    private final JSBrowser jsBrowser = new JSBrowser();
+
+    private WebDriver jsDriver;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
+    }
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(jsDriver);
     }
 
     @BeforeClass

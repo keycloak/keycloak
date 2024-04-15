@@ -16,17 +16,18 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.CustomerPortal;
 import org.keycloak.testsuite.adapter.spi.TestSessionIdMapper;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
@@ -44,12 +45,23 @@ import static org.junit.Assert.assertTrue;
         idMapper = "org.keycloak.testsuite.adapter.spi.TestSessionIdMapper")
 public class DemoFilterServletAdapterTestForCustomizedIdMapper extends AbstractServletsAdapterTest {
 
-    @Drone
-    @JavascriptBrowser
+    private final JSBrowser jsBrowser = new JSBrowser();
+
     protected WebDriver jsDriver;
 
     @Page
     protected CustomerPortal customerPortal;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
+    }
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {

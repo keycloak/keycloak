@@ -30,10 +30,10 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
@@ -42,9 +42,9 @@ import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.ThirdBrowser;
 import org.keycloak.testsuite.util.TokenUtil;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
+import org.keycloak.testsuite.webdriver.ThirdBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -52,13 +52,27 @@ import org.openqa.selenium.WebDriver;
  */
 public class SessionRestServiceTest extends AbstractRestServiceTest {
 
-    @Drone
-    @SecondBrowser
+    private final SecondBrowser browser2 = new SecondBrowser();
+
     protected WebDriver secondBrowser;
 
-    @Drone
-    @ThirdBrowser
+    private final ThirdBrowser browser3 = new ThirdBrowser();
+
     protected WebDriver thirdBrowser;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.browser2.startBrowser();
+        this.secondBrowser = this.browser2.getBrowser();
+        this.browser3.startBrowser();
+        this.thirdBrowser = this.browser3.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.browser2.stopBrowser();
+        this.browser3.stopBrowser();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

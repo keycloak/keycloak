@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.javascript;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -15,12 +15,12 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.ResponseValidator;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
@@ -53,33 +53,31 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     }
 
     public static final String JS_APP_HOST = AUTH_SERVER_HOST2;
+
     public static final String CLIENT_ID = "js-console";
+
     public static final String REALM_NAME = "test";
     public static final String SPACE_REALM_NAME = "Example realm";
     public static final String JAVASCRIPT_URL = "/auth/realms/" + REALM_NAME + "/testing/javascript";
     public static final String JAVASCRIPT_ENCODED_SPACE_URL = "/auth/realms/Example%20realm/testing/javascript";
     public static final String JAVASCRIPT_SPACE_URL = "/auth/realms/Example realm/testing/javascript";
     public static int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
-    public static final String USER_PASSWORD = "password";
 
+    public static final String USER_PASSWORD = "password";
 
     protected JavascriptExecutor jsExecutor;
 
-    // Javascript browser needed KEYCLOAK-4703
-    @Drone
-    @JavascriptBrowser
+    private final JSBrowser jsBrowser = new JSBrowser();
+
     protected WebDriver jsDriver;
 
     @Page
-    @JavascriptBrowser
     protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @FindBy(id = "output")
-    @JavascriptBrowser
     protected WebElement outputArea;
 
     @FindBy(id = "events")
-    @JavascriptBrowser
     protected WebElement eventsArea;
 
     public static final UserRepresentation testUser;
@@ -91,8 +89,15 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     }
 
     @BeforeClass
-    public static void enabledOnlyWithSSL() {
+    public void setupAbstractJavascriptTest() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
         ContainerAssume.assumeAuthServerSSL();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
     }
 
     @Before

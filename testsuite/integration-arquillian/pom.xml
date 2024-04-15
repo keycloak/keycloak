@@ -44,8 +44,7 @@
         <arquillian-core.version>1.8.0.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.2.1</shrinkwrap-resolver.version>
-        <selenium.version>3.14.0</selenium.version>
-        <arquillian-drone.version>2.5.5</arquillian-drone.version>
+        <selenium.version>4.20.0</selenium.version>
         <arquillian-graphene.version>3.0.0-alpha.3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
@@ -57,7 +56,6 @@
         <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
-        <appium.client.version>6.1.0</appium.client.version>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
         <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
 
@@ -93,22 +91,10 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Selenium Server -->
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-server</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-
             <!-- Selenium dependencies -->
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-api</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-java</artifactId>
                 <version>${selenium.version}</version>
             </dependency>
             <dependency>
@@ -118,16 +104,9 @@
             </dependency>
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-leg-rc</artifactId>
+                <artifactId>selenium-java</artifactId>
                 <version>${selenium.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>lift</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-
-            <!-- Drivers -->
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-chrome-driver</artifactId>
@@ -140,27 +119,7 @@
             </dependency>
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-ie-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-edge-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-safari-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-remote-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-opera-driver</artifactId>
+                <artifactId>htmlunit3-driver</artifactId>
                 <version>${selenium.version}</version>
             </dependency>
 
@@ -175,13 +134,6 @@
                 <groupId>org.jboss.shrinkwrap.resolver</groupId>
                 <artifactId>shrinkwrap-resolver-bom</artifactId>
                 <version>${shrinkwrap-resolver.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.extension</groupId>
-                <artifactId>arquillian-drone-bom</artifactId>
-                <version>${arquillian-drone.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

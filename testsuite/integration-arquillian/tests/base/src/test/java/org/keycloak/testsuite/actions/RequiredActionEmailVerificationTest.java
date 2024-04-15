@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.actions;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.jboss.arquillian.graphene.page.Page;
@@ -24,6 +23,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
+import org.junit.Assume;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
@@ -54,7 +56,6 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.TestAppHelper;
@@ -73,7 +74,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.hamcrest.Matchers;
-import org.junit.Assume;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -122,14 +123,14 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     private String testUserId;
 
-    @Drone
-    @SecondBrowser
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
     protected WebDriver driver2;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.setVerifyEmail(Boolean.TRUE);
-        ActionUtil.findUserInRealmRep(testRealm, "test-user@localhost").setEmailVerified(Boolean.FALSE);
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
     }
 
     @Before
@@ -139,6 +140,17 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .username("test-user@localhost")
                 .email("test-user@localhost").build();
         testUserId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+    }
+
+    @AfterClass
+    public void localDriverCleanup(){
+        this.secondBrowser.stopBrowser();
+    }
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifyEmail(Boolean.TRUE);
+        ActionUtil.findUserInRealmRep(testRealm, "test-user@localhost").setEmailVerified(Boolean.FALSE);
     }
 
     /**

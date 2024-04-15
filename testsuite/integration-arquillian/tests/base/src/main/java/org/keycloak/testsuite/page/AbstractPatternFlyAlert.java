@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.page;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -27,10 +26,12 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+import static org.keycloak.testsuite.util.WebDriverUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.UIUtils.doesElementClassContain;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
@@ -48,7 +49,6 @@ public abstract class AbstractPatternFlyAlert {
     @FindBy(className = ALERT_CLASS_NAME)
     protected WebElement alertRoot;
 
-    @Drone
     protected WebDriver driver;
 
     public boolean isDisplayed() {
@@ -66,7 +66,7 @@ public abstract class AbstractPatternFlyAlert {
     private static void waitUntilDisplayedOrHidden(boolean displayed) {
         ExpectedCondition condition = ExpectedConditions.visibilityOfElementLocated(By.className(ALERT_CLASS_NAME));
         condition = displayed ? condition : ExpectedConditions.not(condition);
-        new WebDriverWait(getCurrentDriver(), PAGELOAD_TIMEOUT_MILLIS / 1000).until(condition);
+        new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(PAGELOAD_TIMEOUT_MILLIS / 1000)).until(condition);
     }
 
     public String getText() {

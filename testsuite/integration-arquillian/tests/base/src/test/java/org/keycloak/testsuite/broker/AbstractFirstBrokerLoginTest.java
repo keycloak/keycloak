@@ -8,7 +8,8 @@ import jakarta.ws.rs.core.Response;
 import com.google.common.collect.ImmutableMap;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -33,13 +34,12 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.keycloak.userprofile.UserProfileContext;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -69,13 +69,23 @@ import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
  */
 public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBaseBrokerTest {
 
-    @Drone
-    @SecondBrowser
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
     protected WebDriver driver2;
     
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOn

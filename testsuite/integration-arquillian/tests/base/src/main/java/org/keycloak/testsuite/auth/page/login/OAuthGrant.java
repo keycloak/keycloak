@@ -18,7 +18,7 @@ package org.keycloak.testsuite.auth.page.login;
 
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -58,9 +58,9 @@ public class OAuthGrant extends RequiredActions {
     }
 
     public boolean isCurrent(WebDriver driver1) {
-        DroneUtils.addWebDriver(driver1);
+        WebDriverUtils.addWebDriver(driver1);
         boolean ret = super.isCurrent();
-        DroneUtils.removeWebDriver();
+        WebDriverUtils.removeWebDriver();
         return ret;
     }
 

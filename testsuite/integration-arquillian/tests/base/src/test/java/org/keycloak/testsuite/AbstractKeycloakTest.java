@@ -16,17 +16,17 @@
  */
 package org.keycloak.testsuite;
 
-import io.appium.java_client.AppiumDriver;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.model.TestTimedOutException;
@@ -57,10 +57,11 @@ import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.CryptoInitRule;
-import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
+import org.keycloak.testsuite.util.WebDriverUtils;
+import org.keycloak.testsuite.webdriver.MainBrowser;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.NotFoundException;
@@ -130,7 +131,8 @@ public abstract class AbstractKeycloakTest {
 
     protected List<RealmRepresentation> testRealmReps;
 
-    @Drone
+    private final MainBrowser mainBrowser = new MainBrowser();
+
     protected WebDriver driver;
 
     @Page
@@ -156,6 +158,12 @@ public abstract class AbstractKeycloakTest {
     private PropertiesConfiguration constantsProperties;
 
     private boolean resetTimeOffset;
+
+    @BeforeClass
+    public void setupDriver() {
+        this.mainBrowser.startBrowser();
+        this.driver = this.mainBrowser.getBrowser();
+    }
 
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -188,6 +196,11 @@ public abstract class AbstractKeycloakTest {
         }
 
         oauth.init(driver);
+    }
+
+    @AfterClass
+    public void driverCleanup() {
+        this.mainBrowser.stopBrowser();
     }
 
     public void reconnectAdminClient() throws Exception {
@@ -250,7 +263,7 @@ public abstract class AbstractKeycloakTest {
         postAfterAbstractKeycloak();
 
         // Remove all browsers from queue
-        DroneUtils.resetQueue();
+        WebDriverUtils.resetQueue();
     }
 
     protected TestCleanup getCleanup(String realmName) {
@@ -302,24 +315,6 @@ public abstract class AbstractKeycloakTest {
 
     protected void resetRealmSession(String realmName) {
         deleteAllCookiesForRealm(realmName);
-
-        if (driver instanceof AppiumDriver) { // smartphone drivers don't support cookies deletion
-            try {
-                log.info("resetting realm session");
-
-                final RealmRepresentation realmRep = adminClient.realm(realmName).toRepresentation();
-
-                deleteAllSessionsInRealm(realmName); // logout users
-
-                if (realmRep.isInternationalizationEnabled()) { // reset the locale
-                    String locale = getDefaultLocaleName(realmRep.getRealm());
-                    loginPage.localeDropdown().selectByText(locale);
-                    log.info("locale reset to " + locale);
-                }
-            } catch (NotFoundException e) {
-                log.warn("realm not found");
-            }
-        }
     }
 
     protected String getDefaultLocaleName(String realmName) {

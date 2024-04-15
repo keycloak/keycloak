@@ -24,7 +24,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +39,6 @@ public class Sidebar extends AbstractFragmentWithMobileLayout {
     public static int MOBILE_WIDTH = 767; // if the page width is less or equal than this, we expect the sidebar to be collapsed by default
     public static final String NAV_ITEM_ID_PREFIX = "nav-link-";
 
-    @Drone
     protected WebDriver driver;
 
     @Root

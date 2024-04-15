@@ -22,8 +22,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -34,7 +33,6 @@ import org.openqa.selenium.support.FindBy;
 public class AppServerWelcomePage extends AppServerContextRoot {
 
     @Page
-    @JavascriptBrowser
     protected OIDCLogin loginPage;
 
     @FindBy(xpath = "//span[text() = 'Access Control']")
@@ -48,7 +46,7 @@ public class AppServerWelcomePage extends AppServerContextRoot {
 
     @Override
     public boolean isCurrent() {
-        return DroneUtils.getCurrentDriver().getPageSource().contains("Access Control");
+        return WebDriverUtils.getCurrentDriver().getPageSource().contains("Access Control");
     }
 
     public void navigateToConsole() {

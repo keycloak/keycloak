@@ -18,8 +18,9 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -35,6 +36,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.webdriver.MainBrowser;
 import org.openqa.selenium.WebDriver;
 
 import java.util.List;
@@ -51,11 +53,23 @@ public class DirectGrantFlowTest extends AbstractTestRealmKeycloakTest {
     @ArquillianResource
     protected OAuthClient oauth;
 
-    @Drone
+    private final MainBrowser mainBrowser = new MainBrowser();
+
     protected WebDriver driver;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.mainBrowser.startBrowser();
+        this.driver = this.mainBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.mainBrowser.stopBrowser();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

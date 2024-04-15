@@ -21,7 +21,7 @@ import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 
 /**
  *
@@ -55,7 +55,7 @@ public abstract class AbstractFuseExample extends AppServerContextRoot {
     public void navigateTo() {
         super.navigateTo();
         
-        if (DroneUtils.getCurrentDriver().getPageSource().contains("<html><head></head><body></body></html>")) {
+        if (WebDriverUtils.getCurrentDriver().getPageSource().contains("<html><head></head><body></body></html>")) {
             log.debug("Page wasn't properly loaded - redirecting.");
             super.navigateTo();
         }

@@ -18,12 +18,8 @@ package org.keycloak.testsuite.actions;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
@@ -52,8 +48,8 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -71,6 +67,56 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected AppPage appPage;
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected LoginTotpPage loginTotpPage;
+
+    @Page
+    protected LoginConfigTotpPage totpPage;
+
+    @Page
+    protected RegisterPage registerPage;
+
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
+    private WebDriver driver2;
+
+    protected TimeBasedOTP totp = new TimeBasedOTP();
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
+    @Before
+    public void setOTPAuthRequired() {
+
+        setOTPAuthRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+
+        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = UserBuilder.create().enabled(true)
+                .username("test-user@localhost")
+                .email("test-user@localhost")
+                .firstName("Tom")
+                .lastName("Brady")
+                .build();
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -102,46 +148,6 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         userRepresentation.setRequiredActions(Arrays.asList(actions));
         userResource.update(userRepresentation);
     }
-
-    @Before
-    public void setOTPAuthRequired() {
-
-        setOTPAuthRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
-        UserRepresentation user = UserBuilder.create().enabled(true)
-                .username("test-user@localhost")
-                .email("test-user@localhost")
-                .firstName("Tom")
-                .lastName("Brady")
-                .build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
-    }
-
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected LoginTotpPage loginTotpPage;
-
-    @Page
-    protected LoginConfigTotpPage totpPage;
-
-    @Page
-    protected RegisterPage registerPage;
-
-    @Drone
-    @SecondBrowser
-    private WebDriver driver2;
-
-    protected TimeBasedOTP totp = new TimeBasedOTP();
 
     @Test
     public void setupTotpRegister() {

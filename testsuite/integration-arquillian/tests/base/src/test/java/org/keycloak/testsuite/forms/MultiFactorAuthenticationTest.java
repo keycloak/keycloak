@@ -21,10 +21,11 @@ package org.keycloak.testsuite.forms;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -47,6 +48,7 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.webdriver.MainBrowser;
 import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -62,7 +64,8 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
     @ArquillianResource
     protected OAuthClient oauth;
 
-    @Drone
+    private final MainBrowser mainBrowser = new MainBrowser();
+
     protected WebDriver driver;
 
     @Page
@@ -85,6 +88,17 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.mainBrowser.startBrowser();
+        this.driver = this.mainBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.mainBrowser.stopBrowser();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

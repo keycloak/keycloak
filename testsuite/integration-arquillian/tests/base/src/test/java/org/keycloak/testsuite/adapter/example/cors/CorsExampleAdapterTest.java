@@ -19,22 +19,23 @@ package org.keycloak.testsuite.adapter.example.cors;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -44,7 +45,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static junit.framework.TestCase.assertNotNull;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -72,18 +73,39 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @ArquillianResource
     private Deployer deployer;
 
-    // Javascript browser needed, but not PhantomJS
-    @Drone
-    @JavascriptBrowser
+    private final JSBrowser jsBrowser = new JSBrowser();
+
     protected WebDriver jsDriver;
 
     @Page
-    @JavascriptBrowser
     protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @Page
-    @JavascriptBrowser
     private AngularCorsProductTestApp jsDriverAngularCorsProductPage;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
+    }
+
+    @Before
+    public void onBefore() {
+        WebDriverUtils.addWebDriver(driver);
+        deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
+        deployer.deploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
+    }
+
+    @After
+    public void onAfter() {
+        deployer.undeploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
+        deployer.undeploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
+    }
 
     @Deployment(name = AngularCorsProductTestApp.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive angularCorsProductExample() throws IOException {
@@ -100,20 +122,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
         testRealms.add(
                 loadRealm(new File(TEST_APPS_HOME_DIR + "/cors/cors-realm.json")));
     }
-
-    @Before
-    public void onBefore() {
-        DroneUtils.addWebDriver(jsDriver);
-        deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
-        deployer.deploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
-    }
-
-    @After
-    public void onAfter() {
-        deployer.undeploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
-        deployer.undeploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
-    }
-
 
     @Override
     public void setDefaultPageUriParameters() {
@@ -166,7 +174,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Nullable
     private String getAuthServerVersion() {
-        DroneUtils.getCurrentDriver().navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
+        WebDriverUtils.getCurrentDriver().navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/master/info");
         jsDriverTestRealmLoginPage.form().login("admin", "admin");
         // just get the first list description which is the version

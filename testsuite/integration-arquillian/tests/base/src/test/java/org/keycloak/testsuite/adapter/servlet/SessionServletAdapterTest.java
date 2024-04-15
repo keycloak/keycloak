@@ -19,10 +19,11 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -38,7 +39,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
-import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -71,6 +72,27 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     @Page
     protected InfoPage infoPage;
 
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
+    protected WebDriver driver2;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
+    @After
+    public void afterSessionServletAdapterTest() {
+        sessionPortalPage.navigateTo();
+        driver.manage().deleteAllCookies();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
+
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
@@ -81,16 +103,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     protected static WebArchive sessionPortal() {
         return servletDeployment(SessionPortal.DEPLOYMENT_NAME, "keycloak.json", SessionServlet.class);
     }
-
-    @After
-    public void afterSessionServletAdapterTest() {
-        sessionPortalPage.navigateTo();
-        driver.manage().deleteAllCookies();
-    }
-
-    @Drone
-    @SecondBrowser
-    protected WebDriver driver2;
 
     //KEYCLOAK-732
     @Test

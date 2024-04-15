@@ -5,7 +5,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import jakarta.ws.rs.core.UriBuilder;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -28,12 +27,10 @@ public class Hawtio2Page extends AbstractPage {
 
     // First variant for Fuse 7.1, 7.2, the second variant for Fuse 7.3
     @FindBy(xpath = "//a[@id ='userDropdownMenu'] | //button[@id ='userDropdownMenu']")
-    @JavascriptBrowser
     private WebElement dropDownMenu;
 
     // First variant for Fuse 7.1, 7.2, the second variant for Fuse 7.3
     @FindBy(xpath = "//a[@ng-click='userDetails.logout()'] | //a[@ng-focus='authService.logout()']")
-    @JavascriptBrowser
     private WebElement logoutButton;
 
     public void logout() {

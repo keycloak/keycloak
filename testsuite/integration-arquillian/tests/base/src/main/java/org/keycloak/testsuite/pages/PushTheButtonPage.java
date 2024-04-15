@@ -18,7 +18,7 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -40,7 +40,7 @@ public class PushTheButtonPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return DroneUtils.getCurrentDriver().getTitle().equals("PushTheButton")
+        return WebDriverUtils.getCurrentDriver().getTitle().equals("PushTheButton")
                 && !driver.findElements(By.name("submit1")).isEmpty();
     }
 

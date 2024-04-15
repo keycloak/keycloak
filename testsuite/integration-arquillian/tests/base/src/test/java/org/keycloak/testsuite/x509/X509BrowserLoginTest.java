@@ -18,12 +18,13 @@
 
 package org.keycloak.testsuite.x509;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.events.Details;
@@ -47,7 +48,8 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -58,17 +60,25 @@ import org.openqa.selenium.WebDriver;
 
 public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
+    private final JSBrowser jsBrowser = new JSBrowser();
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    private WebDriver jsDriver;
 
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
+    }
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(jsDriver);
     }
 
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
+    }
 
     @Test
     public void loginAsUserFromCertSubjectEmail() throws Exception {
@@ -555,7 +565,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginConfirmationPage.openLanguage("Deutsch");
         log.debug("check if locale is DE");
         assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("Deutsch")));
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("X509 Client Zertifikat:"));
+        assertThat(WebDriverUtils.getCurrentDriver().getPageSource(), containsString("X509 Client Zertifikat:"));
 
         log.debug("confirm cert");
         loginConfirmationPage.confirm();

@@ -96,8 +96,8 @@ and the URL hierarchy is modeled by the class inheritance hierarchy (subclasses/
 ### Browsers
 
 The default browser for UI testing is `htmlunit` which is used for fast "headless" testing.
-Other browsers can be selected with the `-Dbrowser` property, for example `firefox`.
-See [HOW-TO-RUN.md](HOW-TO-RUN.md) and Arquillian Drone documentation for more details.
+Other browsers can be selected with the `-Dbrowser` property, for example `chrome` or `firefox`.
+See [HOW-TO-RUN.md](HOW-TO-RUN.md) and Selenium WebDriver documentation for more details.
 
 ### Utils classes
 UI testing is sometimes very tricky due to different demands and behaviours of different browsers and their drivers. So there are some very useful Utils classes which are already dealing with some common stability issues while testing. See `UIUtils`, `URLUtils` and `WaitUtils` classes in the Base Testsuite.

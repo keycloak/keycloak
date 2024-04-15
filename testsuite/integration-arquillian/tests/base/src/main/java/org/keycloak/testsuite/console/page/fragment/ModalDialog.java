@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.console.page.fragment;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -35,7 +34,6 @@ public class ModalDialog {
     @Root
     private WebElement root;
 
-    @Drone
     private WebDriver driver;
 
     @FindBy(xpath = ".//button[text()='Cancel']")

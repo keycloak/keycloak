@@ -17,9 +17,10 @@
 package org.keycloak.testsuite.forms;
 
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -32,13 +33,13 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
@@ -54,8 +55,8 @@ import jakarta.ws.rs.core.Response;
  */
 public class SSOTest extends AbstractTestRealmKeycloakTest {
 
-    @Drone
-    @Different
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
     protected WebDriver driver2;
 
     @Page
@@ -69,6 +70,18 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

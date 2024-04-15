@@ -17,8 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
-import com.gargoylesoftware.htmlunit.WebClient;
-import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
+import org.htmlunit.WebClient;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -54,7 +53,7 @@ public class BrowserTabUtil implements AutoCloseable {
         // HtmlUnit doesn't work very well with JS and it's recommended to use this settings.
         // HtmlUnit validates all scripts and then fails. It turned off the validation.
         if (driver instanceof HtmlUnitDriver) {
-            WebClient client = ((DroneHtmlUnitDriver) driver).getWebClient();
+            WebClient client = ((HtmlUnitDriver) driver).getWebClient();
             client.getOptions().setThrowExceptionOnScriptError(false);
             client.getOptions().setThrowExceptionOnFailingStatusCode(false);
         }

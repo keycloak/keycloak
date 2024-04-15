@@ -24,7 +24,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 
@@ -231,9 +231,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                 .queryParam(AdapterActionsFilter.TIME_OFFSET_PARAM, timeOffset)
                 .build().toString();
 
-        DroneUtils.getCurrentDriver().navigate().to(timeOffsetUri);
+        WebDriverUtils.getCurrentDriver().navigate().to(timeOffsetUri);
         waitForPageToLoad();
-        String pageSource = DroneUtils.getCurrentDriver().getPageSource();
+        String pageSource = WebDriverUtils.getCurrentDriver().getPageSource();
         assertThat(pageSource, containsString("Offset set successfully"));
     }
 

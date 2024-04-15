@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
-import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+import static org.keycloak.testsuite.util.WebDriverUtils.getCurrentDriver;
 import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
@@ -78,7 +78,7 @@ public final class WaitUtils {
     }
 
     public static void waitUntilElementClassContains(WebElement element, String value) {
-        new WebDriverWait(getCurrentDriver(), 1).until(
+        new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(1)).until(
                 ExpectedConditions.attributeContains(element, "class", value)
         );
     }
@@ -105,7 +105,7 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        WebDriverWait wait = new WebDriverWait(driver, PAGELOAD_TIMEOUT_MILLIS / 1000);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(PAGELOAD_TIMEOUT_MILLIS / 1000));
 
         try {
             wait

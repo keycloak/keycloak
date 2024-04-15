@@ -18,7 +18,6 @@ package org.keycloak.testsuite.forms;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
@@ -58,7 +57,6 @@ import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -76,6 +74,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -98,30 +97,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
-    @Drone
-    @SecondBrowser
+    private final SecondBrowser secondBrowser = new SecondBrowser();
+
     protected WebDriver driver2;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        RealmBuilder.edit(testRealm)
-                .client(org.keycloak.testsuite.util.ClientBuilder.create().clientId("client-user").serviceAccount());
-    }
-
-    @Before
-    public void setup() {
-        log.info("Adding login-test user");
-        defaultUser = UserBuilder.create()
-                .username("login-test")
-                .email("login@test.com")
-                .enabled(true)
-                .build();
-
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, "password");
-        defaultUser.setId(userId);
-        expectedMessagesCount = 0;
-        getCleanup().addUserId(userId);
-    }
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
@@ -154,6 +132,38 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public AssertEvents events = new AssertEvents(this);
 
     private int expectedMessagesCount;
+
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.secondBrowser.startBrowser();
+        this.driver2 = this.secondBrowser.getBrowser();
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.secondBrowser.stopBrowser();
+    }
+
+    @Before
+    public void setup() {
+        log.info("Adding login-test user");
+        defaultUser = UserBuilder.create()
+                .username("login-test")
+                .email("login@test.com")
+                .enabled(true)
+                .build();
+
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, "password");
+        defaultUser.setId(userId);
+        expectedMessagesCount = 0;
+        getCleanup().addUserId(userId);
+    }
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        RealmBuilder.edit(testRealm)
+                .client(org.keycloak.testsuite.util.ClientBuilder.create().clientId("client-user").serviceAccount());
+    }
 
     @Test
     public void resetPasswordLink() throws IOException, MessagingException {

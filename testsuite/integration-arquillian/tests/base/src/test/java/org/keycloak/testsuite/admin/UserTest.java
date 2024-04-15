@@ -19,13 +19,14 @@ package org.keycloak.testsuite.admin;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
@@ -40,12 +41,10 @@ import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -96,6 +95,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.webdriver.MainBrowser;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 import org.keycloak.util.JsonSerialization;
@@ -108,6 +108,7 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -155,7 +156,8 @@ public class UserTest extends AbstractAdminTest {
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @Drone
+    private final MainBrowser mainBrowser = new MainBrowser();
+
     protected WebDriver driver;
 
     @Page
@@ -195,6 +197,12 @@ public class UserTest extends AbstractAdminTest {
         }
     }
 
+    @BeforeClass
+    public void setupLocalDriver() {
+        this.mainBrowser.startBrowser();
+        this.driver = this.mainBrowser.getBrowser();
+    }
+
     @Before
     public void beforeUserTest() throws IOException {
         createAppClientInRealm(REALM_NAME);
@@ -218,6 +226,11 @@ public class UserTest extends AbstractAdminTest {
 
         realm.groups().groups()
                 .forEach(g -> realm.groups().group(g.getId()).remove());
+    }
+
+    @AfterClass
+    public void localDriverCleanup() {
+        this.mainBrowser.stopBrowser();
     }
 
     public String createUser() {

@@ -17,9 +17,8 @@
 
 package org.keycloak.testsuite.page;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.WebDriver;
 
@@ -39,7 +38,6 @@ public abstract class AbstractPage {
     
     private final Map<String, Object> uriParameters = new HashMap<>();
 
-    @Drone
     protected WebDriver driver;
 
     private UriBuilder builder;
@@ -106,7 +104,7 @@ public abstract class AbstractPage {
 
     public void assertCurrent() {
         String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
+        Assert.assertTrue("Expected " + name + " but was " + WebDriverUtils.getCurrentDriver().getTitle() + " (" + WebDriverUtils.getCurrentDriver().getCurrentUrl() + ")",
                 isCurrent());
     }
 }

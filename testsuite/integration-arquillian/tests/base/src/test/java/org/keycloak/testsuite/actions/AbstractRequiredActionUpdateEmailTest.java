@@ -20,12 +20,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
@@ -39,8 +40,8 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.webdriver.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 
 @EnableFeature(Profile.Feature.UPDATE_EMAIL)
@@ -58,9 +59,15 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	@Page
 	protected AppPage appPage;
 
-        @Drone
-        @SecondBrowser
-        protected WebDriver driver2;
+	private final SecondBrowser secondBrowser = new SecondBrowser();
+
+	protected WebDriver driver2;
+
+	@BeforeClass
+	public void setupLocalDriver() {
+		this.secondBrowser.startBrowser();
+		this.driver2 = this.secondBrowser.getBrowser();
+	}
 
 	@Before
 	public void beforeTest() {
@@ -83,6 +90,11 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
 		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+	}
+
+	@AfterClass
+	public void localDriverCleanup() {
+		this.secondBrowser.stopBrowser();
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {

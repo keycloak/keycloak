@@ -24,14 +24,9 @@ import java.io.IOException;
 import java.util.List;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
@@ -39,13 +34,13 @@ import org.keycloak.testsuite.adapter.page.HawtioPage;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
 
+import org.keycloak.testsuite.webdriver.JSBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -57,25 +52,20 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     @ArquillianResource
     private ContainerController controller;
 
-    @Drone
-    @JavascriptBrowser
+    private final JSBrowser jsBrowser = new JSBrowser();
+
     protected WebDriver jsDriver;
 
     @Page
-    @JavascriptBrowser
     private HawtioPage hawtioPage;
 
     @Page
-    @JavascriptBrowser
     private OIDCLogin testRealmLoginPageFuse;
 
-    @Override
-    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/adapter-test/hawtio-realm/demorealm.json"));
-    }
-
     @BeforeClass
-    public static void enabled() {
+    public void setupEAP6Fuse6HawtioAdapterTest() {
+        this.jsBrowser.startBrowser();
+        this.jsDriver = this.jsBrowser.getBrowser();
         Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
         ContainerAssume.assumeNotAppServerSSL();
         ContainerAssume.assumeAuthServerSSL();
@@ -83,7 +73,7 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
 
     @Before
     public void addJSDriver() {
-        DroneUtils.addWebDriver(jsDriver);
+        WebDriverUtils.addWebDriver(jsDriver);
     }
 
     @Before
@@ -98,10 +88,20 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
         controller.start(testContext.getAppServerInfo().getQualifier());
     }
 
+    @AfterClass
+    public void localDriverCleanup() {
+        this.jsBrowser.stopBrowser();
+    }
+
     @After
     @Override
     public void stopServer() {
         controller.stop(testContext.getAppServerInfo().getQualifier());
+    }
+
+    @Override
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
+        testRealms.add(loadRealm("/adapter-test/hawtio-realm/demorealm.json"));
     }
 
     @Test

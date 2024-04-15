@@ -24,7 +24,6 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -78,11 +77,9 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    @JavascriptBrowser
     private OAuthGrant oAuthGrantPage;
 
     @Page
-    @JavascriptBrowser
     private UpdatePassword updatePasswordPage;
 
     @Override
@@ -114,7 +111,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         setStandardFlowForClient();
 
         //tests cleanup
-        oauth.setDriver(driver);
+        oauth.setDriver(jsDriver);
         setTimeOffset(0);
     }
 
@@ -344,7 +341,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
             testExecutor.init(defaultArguments(), this::assertInitAuth);
 
-            driver.navigate().to(oauth.getLoginFormUrl());
+            jsDriver.navigate().to(oauth.getLoginFormUrl());
             events.expectCodeToToken(codeId, loginEvent.getSessionId()).client(CLIENT_ID).assertEvent();
 
             AccountHelper.revokeConsents(adminClient.realm(REALM_NAME), testUser.getUsername(),CLIENT_ID);
@@ -419,7 +416,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 setImplicitFlowForClient();
 
                 testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertInitAuth);
-                assertThat(driver.getPageSource(), not(containsString("Access token expired")));
+                assertThat(jsDriver.getPageSource(), not(containsString("Access token expired")));
 
                 // Here we can't move in time because we are waiting for onTokenExpired execution which is already
                 //   scheduled by setTimeout method, so we can't make it execute sooner

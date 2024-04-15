@@ -9,7 +9,6 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 
 import jakarta.ws.rs.core.UriBuilder;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,15 +33,12 @@ public class HawtioPage extends AbstractPage {
     }
 
     @FindBy(xpath = "//a[@class='dropdown-toggle' and @data-original-title='Preferences and log out']")
-    @JavascriptBrowser
     private WebElement dropDownMenu;
 
     @FindBy(xpath = "//a[@ng-click='logout()']")
-    @JavascriptBrowser
     private WebElement logoutButton;
 
     @FindBy(xpath = "//input[@type='submit' and @value='Yes']")
-    @JavascriptBrowser
     private WebElement modal;
 
     public void logout(WebDriver jsDriver) {

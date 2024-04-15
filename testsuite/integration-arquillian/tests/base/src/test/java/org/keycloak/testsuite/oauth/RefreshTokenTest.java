@@ -17,10 +17,9 @@
 package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.gargoylesoftware.htmlunit.WebClient;
+import org.htmlunit.WebClient;
 import java.io.Closeable;
 import org.hamcrest.CoreMatchers;
-import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -88,6 +87,8 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -457,7 +458,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             oauth.fillLoginForm("alice", "alice");
 
             String aliceCode = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            WebClient webClient = DroneHtmlUnitDriver.class.cast(driver).getWebClient();
+            HtmlUnitDriver htmlUnitDriver = (HtmlUnitDriver) driver;
+            WebClient webClient = htmlUnitDriver.getWebClient();
             webClient.getCookieManager().clearCookies();
             oauth.openLoginForm();
             driver.manage().addCookie(authSessionCookie);

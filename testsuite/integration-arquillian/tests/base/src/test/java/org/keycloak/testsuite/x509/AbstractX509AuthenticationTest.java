@@ -61,10 +61,9 @@ import org.keycloak.testsuite.updaters.SetSystemProperty;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WebDriverUtils;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.openqa.selenium.WebDriver;
 
@@ -134,15 +133,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Page
-    @PhantomJSBrowser
     protected AppPage appPage;
 
     @Page
-    @PhantomJSBrowser
     protected X509IdentityConfirmationPage loginConfirmationPage;
 
     @Page
-    @PhantomJSBrowser
     protected LoginPage loginPage;
 
 
@@ -532,7 +528,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     public void replaceDefaultWebDriver(WebDriver driver) {
         this.driver = driver;
-        DroneUtils.addWebDriver(driver);
+        WebDriverUtils.addWebDriver(driver);
 
         List<Field> allFields = new ArrayList<>();
 
