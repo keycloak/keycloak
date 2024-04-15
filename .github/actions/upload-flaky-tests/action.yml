@@ -47,7 +47,7 @@ runs:
           echo "EOF" >> $GITHUB_OUTPUT
         fi
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: ${{ steps.flaky-tests.outputs.flakes }}
       with:
         name: flaky-tests-${{ github.job }}-${{ join(matrix.*, '-') }}

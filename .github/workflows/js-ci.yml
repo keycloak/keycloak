@@ -57,7 +57,7 @@ jobs:
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: keycloak
           path: keycloak-999.0.0-SNAPSHOT.tar.gz
@@ -175,7 +175,7 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - name: Download Keycloak server
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: keycloak
 
@@ -201,7 +201,7 @@ jobs:
         env:
           KEYCLOAK_SERVER: http://localhost:8080
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: account-ui-playwright-report
@@ -210,7 +210,7 @@ jobs:
 
       - name: Upload server logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: account-ui-server-log
           path: ~/server.log
@@ -253,7 +253,7 @@ jobs:
         run: pnpm --filter @keycloak/keycloak-admin-client build
 
       - name: Download Keycloak server
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: keycloak
 
@@ -289,13 +289,13 @@ jobs:
 
       - name: Upload server logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
       - name: Upload Cypress videos
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always() && github.repository != 'keycloak/keycloak-private'
         with:
           name: cypress-videos-${{ matrix.container }}-${{ matrix.browser }}
