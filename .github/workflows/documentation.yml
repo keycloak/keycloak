@@ -60,7 +60,7 @@ jobs:
 
       - id: upload-keycloak-documentation
         name: Upload Keycloak documentation
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: keycloak-documentation
           path: docs/documentation/dist/target/*.zip
