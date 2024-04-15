@@ -134,7 +134,7 @@ export const Group = () => {
                           name="extendChildren"
                           isChecked={field.value}
                           onChange={field.onChange}
-                          isDisabled={group.subGroups?.length === 0}
+                          isDisabled={group.subGroupCount === 0}
                         />
                       )}
                     />
