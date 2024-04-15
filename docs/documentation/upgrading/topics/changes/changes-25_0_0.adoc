@@ -69,6 +69,8 @@ Options `cache`, `cache-stack`, and `cache-config-file` are no longer build opti
 This eliminates the need to execute the build phase and rebuild your image due to them.
 Be aware that they will not be recognized during the `build` phase, so you need to remove them.
 
+= kcadm and kcreg changes
+
 How kcadm and kcreg parse and handle options and parameters has changed. Error messages from usage errors, the wrong option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
 
 = Removing custom user attribute indexes
