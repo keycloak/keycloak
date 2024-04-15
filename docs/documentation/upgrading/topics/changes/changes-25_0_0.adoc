@@ -247,3 +247,7 @@ bin/kc.[sh|bat] start --spi-group-jpa-escape-slashes-in-group-path=true
 The escape char is the tilde character `~`. The previous example results in the path `/top/group~/slash`. The escape marks the last slash is part of the name and not a hierarchy separator.
 
 The escaping is currently disabled by default because it represents a change in behavior. Nevertheless enabling escaping is recommended and it can be the default in future versions.
+
+= Removal of the deprecated LinkedIn provider
+
+In version 22.0.2 the OAuh 2.0 social provider for LinkedIn was replaced by a new OpenId Connect implementation. The legacy provider was deprecated but not removed, just in case it was still functional in some existing realms. {project_name} 25.0.0 is definitely removing the old provider and its associated `linkedin-oauth` feature. From now on, the default `LinkedIn` social provider is the only option available.
