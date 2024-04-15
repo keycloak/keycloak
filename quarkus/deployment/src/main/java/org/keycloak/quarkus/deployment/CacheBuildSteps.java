@@ -17,10 +17,6 @@
 
 package org.keycloak.quarkus.deployment;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import org.keycloak.quarkus.runtime.KeycloakRecorder;
-import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
-
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -28,9 +24,13 @@ import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.keycloak.quarkus.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
 
 public class CacheBuildSteps {
 
+    @Consume(ProfileBuildItem.class)
     @Consume(ConfigBuildItem.class)
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep

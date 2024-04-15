@@ -18,6 +18,7 @@
 package org.keycloak.connections.infinispan;
 
 import org.infinispan.client.hotrod.ProtocolVersion;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
@@ -37,6 +38,8 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -72,6 +75,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
 import static org.keycloak.connections.infinispan.InfinispanUtil.getActionTokenCacheConfig;
@@ -97,9 +101,15 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private volatile TopologyInfo topologyInfo;
 
+    private volatile RemoteCacheManager remoteCacheManager;
+
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
         lazyInit();
+
+        if (Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+            return new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo);
+        }
 
         return new DefaultInfinispanConnectionProvider(cacheManager, remoteCacheProvider, topologyInfo);
     }
@@ -142,12 +152,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public void close() {
+        logger.debug("Closing provider");
         runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null && !containerManaged) {
                 cacheManager.stop();
             }
             if (remoteCacheProvider != null) {
                 remoteCacheProvider.stop();
+            }
+            if (remoteCacheManager != null && !containerManaged) {
+                remoteCacheManager.stop();
             }
         });
     }
@@ -176,6 +190,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             synchronized (this) {
                 if (cacheManager == null) {
                     EmbeddedCacheManager managedCacheManager = null;
+                    RemoteCacheManager rcm = null;
                     Iterator<ManagedCacheManagerProvider> providers = ServiceLoader.load(ManagedCacheManagerProvider.class, DefaultInfinispanConnectionProvider.class.getClassLoader())
                             .iterator();
 
@@ -187,6 +202,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                         }
                         
                         managedCacheManager = provider.getEmbeddedCacheManager(config);
+                        if (Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+                            rcm = provider.getRemoteCacheManager(config);
+                        }
                     }
 
                     // store it in a locale variable first, so it is not visible to the outside, yet
@@ -196,6 +214,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                             throw new RuntimeException("No " + ManagedCacheManagerProvider.class.getName() + " found. If running in embedded mode set the [embedded] property to this provider.");
                         }
                         localCacheManager = initEmbedded();
+                        if (Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+                            rcm = initRemote();
+                        }
                     } else {
                         localCacheManager = initContainerManaged(managedCacheManager);
                     }
@@ -205,9 +226,29 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     remoteCacheProvider = new RemoteCacheProvider(config, localCacheManager);
                     // only set the cache manager attribute at the very end to avoid passing a half-initialized entry callers
                     cacheManager = localCacheManager;
+                    remoteCacheManager = rcm;
                 }
             }
         }
+    }
+
+    private RemoteCacheManager initRemote() {
+        var host = config.get("remoteStoreHost", "127.0.0.1");
+        var port = config.getInt("remoteStorePort", 11222);
+
+        org.infinispan.client.hotrod.configuration.ConfigurationBuilder builder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
+        builder.addServer().host(host).port(port);
+        builder.connectionPool().maxActive(16).exhaustedAction(org.infinispan.client.hotrod.configuration.ExhaustedAction.CREATE_NEW);
+
+        // TODO replace with protostream
+        builder.marshaller(new JBossUserMarshaller());
+
+        RemoteCacheManager remoteCacheManager = new RemoteCacheManager(builder.build());
+
+        // establish connection to all caches
+        DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(remoteCacheManager::getCache);
+        return remoteCacheManager;
+
     }
 
     protected EmbeddedCacheManager initContainerManaged(EmbeddedCacheManager cacheManager) {
@@ -217,9 +258,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         defineRevisionCache(cacheManager, USER_CACHE_NAME, USER_REVISIONS_CACHE_NAME, USER_REVISIONS_CACHE_DEFAULT_MAX);
         defineRevisionCache(cacheManager, AUTHORIZATION_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX);
 
-        cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
-        cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, false, getId());
 
@@ -251,6 +290,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
         // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
         gcb.serialization().marshaller(new JBossUserMarshaller());
+
+        //TODO [pruivo] disable JGroups after all distributed caches are in the external infinispan
 
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
         if (useKeycloakTimeService) {
@@ -314,15 +355,18 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
         defineClusteredCache(cacheManager, ACTION_TOKEN_CACHE, actionTokenBuilder.build());
 
-        defineClusteredCache(cacheManager, AUTHENTICATION_SESSIONS_CACHE_NAME, clusteredConfiguration);
 
-        var workBuilder = createCacheConfigurationBuilder()
-                .expiration().enableReaper().wakeUpInterval(15, TimeUnit.SECONDS);
-        if (clustered) {
-            workBuilder.simpleCache(false);
-            workBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
+        if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+            defineClusteredCache(cacheManager, AUTHENTICATION_SESSIONS_CACHE_NAME, clusteredConfiguration);
+
+            var workBuilder = createCacheConfigurationBuilder()
+                    .expiration().enableReaper().wakeUpInterval(15, TimeUnit.SECONDS);
+            if (clustered) {
+                workBuilder.simpleCache(false);
+                workBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
+            }
+            defineClusteredCache(cacheManager, WORK_CACHE_NAME, builder.build());
         }
-        defineClusteredCache(cacheManager, WORK_CACHE_NAME, builder.build());
 
         return cacheManager;
     }

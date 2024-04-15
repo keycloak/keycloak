@@ -183,7 +183,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                         checkRemoteCaches(session);
                         loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
                         registerClusterListeners(session);
-                        loadSessionsFromRemoteCaches(session);
+                        // TODO [pruivo] to remove: workaround to run the testsuite.
+                        if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+                            loadSessionsFromRemoteCaches(session);
+                        }
 
                     }, preloadTransactionTimeout);
 

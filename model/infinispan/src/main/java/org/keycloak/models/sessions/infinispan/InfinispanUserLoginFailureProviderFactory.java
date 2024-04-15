@@ -22,14 +22,16 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -43,7 +45,6 @@ import org.keycloak.models.sessions.infinispan.initializer.InfinispanCacheInitia
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -93,7 +94,10 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
                 KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
                     checkRemoteCaches(session);
                     registerClusterListeners(session);
-                    loadLoginFailuresFromRemoteCaches(session);
+                    // TODO [pruivo] to remove: workaround to run the testsuite.
+                    if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+                        loadLoginFailuresFromRemoteCaches(session);
+                    }
                 });
             } else if (event instanceof UserModel.UserRemovedEvent) {
                 UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
