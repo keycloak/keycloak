@@ -57,6 +57,7 @@ export const KeycloakProvider = ({
       return;
     }
 
+    keycloak.onAuthLogout = () => keycloak.login();
     const init = () => {
       return keycloak.init({
         onLoad: "check-sso",
