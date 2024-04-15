@@ -195,7 +195,6 @@ export default function IdentityProvidersSection() {
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (
                     <ClickableCard
-                      id={provider.id}
                       key={provider.id}
                       data-testid={`${provider.id}-card`}
                       onClick={() => navigateToCreate(provider.id)}
