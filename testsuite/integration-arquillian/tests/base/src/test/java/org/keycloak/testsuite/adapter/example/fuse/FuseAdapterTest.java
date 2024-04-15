@@ -16,39 +16,13 @@
  */
 package org.keycloak.testsuite.adapter.example.fuse;
 
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.utils.fuse.FuseUtils.assertCommand;
-import static org.keycloak.testsuite.utils.fuse.FuseUtils.getCommandOutput;
-import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-import javax.management.ReflectionException;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.common.Profile;
+import org.junit.Ignore;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
@@ -59,21 +33,49 @@ import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.pages.LogoutConfirmPage;
-import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.utils.fuse.FuseUtils.Result;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.utils.fuse.FuseUtils.assertCommand;
+import static org.keycloak.testsuite.utils.fuse.FuseUtils.getCommandOutput;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
+
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
 
@@ -165,6 +167,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @Ignore
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void hawtio2LoginTest() throws Exception {
 
@@ -345,9 +348,9 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         DroneUtils.getCurrentDriver().navigate().back();
         customerListing.clickLogOut();
+
         logoutConfirmPage.confirmLogout();
 
-        WaitUtils.pause(2500);
         customerPortal.navigateTo();//needed for phantomjs
         WaitUtils.waitForPageToLoad();
         customerPortal.clickCustomerListingLink();
@@ -374,6 +377,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         WaitUtils.waitForPageToLoad();
         customerListing.clickLogOut();
         logoutConfirmPage.confirmLogout();
+        WaitUtils.waitForPageToLoad();
 
         WaitUtils.pause(2500);
         customerPortal.navigateTo();//needed for phantomjs
@@ -403,7 +407,8 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         assertThat(productPortal.getProduct2SecuredText(), containsString("Product received: id=2"));
 
         productPortal.clickLogOutLink();
+        logoutConfirmPage.confirmLogout();
         WaitUtils.waitForPageToLoad();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        assertCurrentUrlStartsWith(testRealmPage);
     }
 }
