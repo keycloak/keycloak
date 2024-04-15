@@ -214,7 +214,10 @@
         ]
       },
       "annotations": {
-        "inputType": "html5-email"
+        "inputType": "html5-email",
+        "inputHelperTextBefore": "${locale_es}",
+        "inputHelperTextAfter": "${locale_fr}",
+        "inputTypePlaceholder": "${locale_de}"
       },
       "validations": {
         "email": {}
