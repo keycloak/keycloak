@@ -17,9 +17,13 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.util.concurrent.Executor;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.util.concurrent.BlockingManager;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,6 +53,11 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     @Override
     public TopologyInfo getTopologyInfo() {
         return topologyInfo;
+    }
+
+    @Override
+    public Executor getExecutor(String name) {
+        return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class).asExecutor(name);
     }
 
     @Override

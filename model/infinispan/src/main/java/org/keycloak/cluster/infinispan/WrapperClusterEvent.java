@@ -26,6 +26,7 @@ import java.util.Objects;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
+import org.keycloak.cluster.ClusterListener;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -86,6 +87,11 @@ public class WrapperClusterEvent implements ClusterEvent {
 
     public void setDelegateEvent(ClusterEvent delegateEvent) {
         this.delegateEvent = delegateEvent;
+    }
+
+    @Override
+    public void accept(ClusterListener clusterListener) {
+        delegateEvent.accept(clusterListener);
     }
 
     @Override

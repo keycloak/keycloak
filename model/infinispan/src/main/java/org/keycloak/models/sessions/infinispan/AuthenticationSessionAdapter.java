@@ -19,20 +19,21 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
@@ -46,7 +47,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     private final KeycloakSession session;
     private final RootAuthenticationSessionAdapter parent;
     private final String tabId;
-    private AuthenticationSessionEntity entity;
+    private final AuthenticationSessionEntity entity;
 
     public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionAdapter parent, String tabId, AuthenticationSessionEntity entity) {
         this.session = session;
@@ -105,7 +106,9 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public Set<String> getClientScopes() {
-        if (entity.getClientScopes() == null || entity.getClientScopes().isEmpty()) return Collections.emptySet();
+        if (entity.getClientScopes() == null || entity.getClientScopes().isEmpty()) {
+            return Collections.emptySet();
+        }
         return new HashSet<>(entity.getClientScopes());
     }
 
@@ -156,10 +159,10 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public Map<String, String> getClientNotes() {
-        if (entity.getClientNotes() == null || entity.getClientNotes().isEmpty()) return Collections.emptyMap();
-        Map<String, String> copy = new ConcurrentHashMap<>();
-        copy.putAll(entity.getClientNotes());
-        return copy;
+        if (entity.getClientNotes() == null || entity.getClientNotes().isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return new ConcurrentHashMap<>(entity.getClientNotes());
     }
 
     @Override
@@ -221,11 +224,9 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     @Override
     public Map<String, String> getUserSessionNotes() {
         if (entity.getUserSessionNotes() == null) {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
-        ConcurrentHashMap<String, String> copy = new ConcurrentHashMap<>();
-        copy.putAll(entity.getUserSessionNotes());
-        return copy;
+        return new ConcurrentHashMap<>(entity.getUserSessionNotes());
     }
 
     @Override
@@ -237,9 +238,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public Set<String> getRequiredActions() {
-        Set<String> copy = new HashSet<>();
-        copy.addAll(entity.getRequiredActions());
-        return copy;
+        return new HashSet<>(entity.getRequiredActions());
     }
 
     @Override
@@ -335,11 +334,8 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !(o instanceof AuthenticationSessionModel)) return false;
+        return this == o || o instanceof AuthenticationSessionModel that && that.getTabId().equals(getTabId());
 
-        AuthenticationSessionModel that = (AuthenticationSessionModel) o;
-        return that.getTabId().equals(getTabId());
     }
 
     @Override
