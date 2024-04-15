@@ -35,7 +35,7 @@ runs:
 
     - id: download-keycloak
       name: Download Keycloak Maven artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: m2-keycloak.tzts
 
