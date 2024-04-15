@@ -95,9 +95,6 @@ public class Profile {
 
         DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
 
-        @Deprecated
-        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
-
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
