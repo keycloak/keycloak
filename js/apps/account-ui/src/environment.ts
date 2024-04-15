@@ -34,10 +34,10 @@ export type Environment = {
   locale: string;
   /** Feature flags */
   features: Feature;
-  /** Client id of the application to add back link */
-  referrer?: string;
-  /** URI to the referrer application in the back link */
-  referrer_uri?: string;
+  /** Name of the referrer application in the back link */
+  referrerName?: string;
+  /** UR to the referrer application in the back link */
+  referrerUrl?: string;
 };
 
 // Detect the current realm from the URL.
@@ -92,14 +92,6 @@ function getInjectedEnvironment(): Record<string, string | number | boolean> {
     }
   } catch (error) {
     console.error("Unable to parse environment variables.");
-  }
-
-  const searchParams = new URLSearchParams(location.search);
-  if (searchParams.has("referrer_uri")) {
-    env["referrer_uri"] = searchParams.get("referrer_uri")!;
-  }
-  if (searchParams.has("referrer")) {
-    env["referrer"] = searchParams.get("referrer")!;
   }
 
   // Otherwise, return an empty record.
