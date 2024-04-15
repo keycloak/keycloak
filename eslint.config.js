@@ -37,6 +37,11 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    settings: {
+      react: {
+        version: "18",
+      },
+    },
     rules: {
       // ## Rules overwriting config, disabled for now, but will have to be evaluated. ##
       "no-undef": "off",
@@ -143,5 +148,5 @@ export default tseslint.config(
       "mocha/no-mocha-arrows": "off",
       "mocha/no-setup-in-describe": "off",
     },
-  }
+  },
 );
