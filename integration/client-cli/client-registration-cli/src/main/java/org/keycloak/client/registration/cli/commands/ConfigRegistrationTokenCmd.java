@@ -1,91 +1,40 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.console.command.Command;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.keycloak.client.registration.cli.config.RealmConfigData;
 import org.keycloak.client.registration.cli.util.IoUtil;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
 import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "registration-token", description = "[--server SERVER] --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]")
-public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implements Command {
+@Command(name = "registration-token", description = "[--server SERVER] --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]")
+public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd {
 
-    private ConfigCmd parent;
-
+    @Option(names = {"-d", "--delete"}, description = "Indicates that initial access token should be removed")
     private boolean delete;
 
-
-    protected void initFromParent(ConfigCmd parent) {
-        this.parent = parent;
-        super.initFromParent(parent);
-    }
-
-    @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            return process(commandInvocation);
-
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
-        }
-    }
+    @Parameters(arity = "0..1")
+    private String token;
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && parent.args.size() == 1;
+        return noOptions() && token == null && !delete;
     }
 
-    public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-
-        List<String> args = new ArrayList<>();
-
-        Iterator<String> it = parent.args.iterator();
-        // skip the first argument 'registration-token'
-        it.next();
-
-        while (it.hasNext()) {
-            String arg = it.next();
-            switch (arg) {
-                case "-d":
-                case "--delete": {
-                    delete = true;
-                    break;
-                }
-                default: {
-                    args.add(arg);
-                }
-            }
-        }
-
-        if (args.size() > 1) {
-            throw new IllegalArgumentException("Invalid option: " + args.get(1));
-        }
-
-        String token = args.size() == 1 ? args.get(0) : null;
-
+    @Override
+    protected void process() {
         if (server == null) {
             throw new IllegalArgumentException("Required option not specified: --server");
         }
@@ -112,11 +61,10 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
 
 
         if (!delete && token == null) {
-            token = IoUtil.readSecret("Enter Registration Access Token: ", commandInvocation);
+            token = IoUtil.readSecret("Enter Registration Access Token: ");
         }
 
         // now update the config
-        processGlobalOptions();
 
         String registrationToken = token;
         saveMergeConfig(config -> {
@@ -129,14 +77,9 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
                 config.ensureRealmConfigData(server, realm).getClients().put(clientId, registrationToken);
             }
         });
-
-        return CommandResult.SUCCESS;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help config registration-token' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }

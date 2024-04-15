@@ -6,6 +6,7 @@ import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.FileConfigHandler;
 import org.keycloak.client.registration.cli.util.OsUtil;
 import org.keycloak.testsuite.cli.KcRegExec;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TempFileResource;
 
 import java.io.File;
@@ -29,9 +30,9 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
         KcRegExec exe = execute("config truststore --no-config '" + truststore.getAbsolutePath() + "'");
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " help config truststore' for more information", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
 
         // only run the rest of this test if ssl protected keycloak server is available
         if (!AUTH_SERVER_SSL_REQUIRED) {
@@ -39,9 +40,9 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
             return;
         }
 
-        FileConfigHandler handler = initCustomConfigFile();
+        initCustomConfigFile();
 
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
             if (runIntermittentlyFailingTests()) {
                 // configure truststore
@@ -52,7 +53,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
                 // perform authentication against server - asks for password, then for truststore password
                 exe = KcRegExec.newBuilder()
-                        .argsLine("config credentials --server " + oauth.AUTH_SERVER_ROOT + " --realm test --user user1" +
+                        .argsLine("config credentials --server " + OAuthClient.AUTH_SERVER_ROOT + " --realm test --user user1" +
                                 " --config '" + configFile.getName() + "'")
                         .executeAsync();
 
@@ -72,7 +73,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
                 // perform authentication against server - asks for password, then for truststore password
                 exe = KcRegExec.newBuilder()
-                        .argsLine("config credentials --server " + oauth.AUTH_SERVER_ROOT + " --realm test --user user1" +
+                        .argsLine("config credentials --server " + OAuthClient.AUTH_SERVER_ROOT + " --realm test --user user1" +
                                 " --config '" + configFile.getName() + "'")
                         .executeAsync();
 
@@ -99,17 +100,17 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
         assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
         exe = execute("config truststore --delete '" + truststore.getAbsolutePath() + "'");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("incompatible", "Option --delete is mutually exclusive with specifying a TRUSTSTORE", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " help config truststore' for more information", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
 
         exe = execute("config truststore --delete --trustpass secret");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("no truststore error", "Options --trustpass and --delete are mutually exclusive", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " help config truststore' for more information", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
 
         FileConfigHandler cfghandler = new FileConfigHandler();
-        cfghandler.setConfigFile(DEFAULT_CONFIG_FILE_PATH);
+        FileConfigHandler.setConfigFile(DEFAULT_CONFIG_FILE_PATH);
         ConfigData config = cfghandler.loadConfig();
         Assert.assertNull("truststore null", config.getTruststore());
         Assert.assertNull("trustpass null", config.getTrustpass());

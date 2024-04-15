@@ -17,80 +17,36 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.GroupCommandDefinition;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.Command;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.List;
+
+import picocli.CommandLine.Command;
 
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@GroupCommandDefinition(name = "config", description = "COMMAND [ARGUMENTS]", groupCommands = {ConfigCredentialsCmd.class} )
-public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
+@Command(name = "config", description = "COMMAND [ARGUMENTS]", subcommands = {
+        ConfigCredentialsCmd.class,
+        ConfigInitialTokenCmd.class,
+        ConfigRegistrationTokenCmd.class,
+        ConfigTruststoreCmd.class
+})
+public class ConfigCmd extends AbstractAuthOptionsCmd {
 
-    @Arguments
-    protected List<String> args;
+    @Override
+    protected void process() {
 
-
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (args != null && args.size() > 0) {
-                String cmd = args.get(0);
-                switch (cmd) {
-                    case "credentials": {
-                        ConfigCredentialsCmd command = new ConfigCredentialsCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    case "truststore": {
-                        ConfigTruststoreCmd command = new ConfigTruststoreCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    case "initial-token": {
-                        ConfigInitialTokenCmd command = new ConfigInitialTokenCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    case "registration-token": {
-                        ConfigRegistrationTokenCmd command = new ConfigRegistrationTokenCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    default: {
-                        if (printHelp()) {
-                            return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-                        }
-                        throw new IllegalArgumentException("Unknown sub-command: " + cmd + suggestHelp());
-                    }
-                }
-            }
-
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            throw new IllegalArgumentException("Sub-command required by '" + CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'");
-
-        } finally {
-            commandInvocation.stop();
-        }
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help config' for more information";
+    @Override
+    protected boolean nothingToDo() {
+        return true;
     }
 
+    @Override
     protected String help() {
         return usage();
     }

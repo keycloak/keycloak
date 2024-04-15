@@ -17,12 +17,6 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.common.EndpointType;
 import org.keycloak.client.registration.cli.util.ParseUtil;
@@ -35,7 +29,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.List;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
 import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
@@ -51,142 +48,118 @@ import static org.keycloak.client.registration.cli.util.IoUtil.warnfErr;
 import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
 import static org.keycloak.client.registration.cli.util.IoUtil.readFully;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "get", description = "[ARGUMENTS]")
+@Command(name = "get", description = "[ARGUMENTS]")
 public class GetCmd extends AbstractAuthOptionsCmd {
 
-    @Option(shortName = 'c', name = "compressed", description = "Print full stack trace when exiting with error", hasValue = false)
+    @Option(names = {"-c", "--compressed"}, description = "Print full stack trace when exiting with error")
     private boolean compressed = false;
 
-    @Option(shortName = 'e', name = "endpoint", description = "Endpoint type to use", hasValue = true)
+    @Option(names = {"-e", "--endpoint"}, description = "Endpoint type to use")
     private String endpoint;
 
-    @Arguments
-    private List<String> args;
+    @Parameters(arity = "0..1")
+    String clientId;
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
+    protected void process() {
+        if (clientId == null) {
+            throw new IllegalArgumentException("CLIENT not specified");
+        }
+
+        EndpointType regType = endpoint != null ? EndpointType.of(endpoint) : EndpointType.DEFAULT;
+
+
+        if (clientId.startsWith("-")) {
+            warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
+        }
+
+        ConfigData config = loadConfig();
+        config = copyWithServerInfo(config);
+
+        if (token == null) {
+            // if registration access token is not set via -t, try use the one from configuration
+            token = getRegistrationToken(config.sessionRealmConfigData(), clientId);
+        }
+
+        setupTruststore(config);
+
+        String auth = token;
+        if (auth == null) {
+            config = ensureAuthInfo(config);
+            config = copyWithServerInfo(config);
+            if (credentialsAvailable(config)) {
+                auth = ensureToken(config);
+            }
+        }
+
+        auth = auth != null ? "Bearer " + auth : null;
+
+
+        final String server = config.getServerUrl();
+        final String realm = config.getRealm();
+
+        InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
+                APPLICATION_JSON, auth);
 
         try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
+            String json = readFully(response);
+            Object result = null;
 
-            processGlobalOptions();
+            switch (regType) {
+                case DEFAULT: {
+                    ClientRepresentation client = JsonSerialization.readValue(json, ClientRepresentation.class);
+                    result = client;
 
-            if (args == null || args.isEmpty()) {
-                throw new IllegalArgumentException("CLIENT not specified");
-            }
+                    saveMergeConfig(cfg -> {
+                        setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
+                    });
+                    break;
+                }
+                case OIDC: {
+                    OIDCClientRepresentation client = JsonSerialization.readValue(json, OIDCClientRepresentation.class);
+                    result = client;
 
-            if (args.size() > 1) {
-                throw new IllegalArgumentException("Invalid option: " + args.get(1));
-            }
-
-            String clientId = args.get(0);
-            EndpointType regType = endpoint != null ? EndpointType.of(endpoint) : EndpointType.DEFAULT;
-
-
-            if (clientId.startsWith("-")) {
-                warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
-            }
-
-            ConfigData config = loadConfig();
-            config = copyWithServerInfo(config);
-
-            if (token == null) {
-                // if registration access token is not set via -t, try use the one from configuration
-                token = getRegistrationToken(config.sessionRealmConfigData(), clientId);
-            }
-
-            setupTruststore(config, commandInvocation);
-
-            String auth = token;
-            if (auth == null) {
-                config = ensureAuthInfo(config, commandInvocation);
-                config = copyWithServerInfo(config);
-                if (credentialsAvailable(config)) {
-                    auth = ensureToken(config);
+                    saveMergeConfig(cfg -> {
+                        setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
+                    });
+                    break;
+                }
+                case INSTALL: {
+                    result = JsonSerialization.readValue(json, AdapterConfig.class);
+                    break;
+                }
+                case SAML2: {
+                    break;
+                }
+                default: {
+                    throw new RuntimeException("Unexpected type: " + regType);
                 }
             }
 
-            auth = auth != null ? "Bearer " + auth : null;
-
-
-            final String server = config.getServerUrl();
-            final String realm = config.getRealm();
-
-            InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
-                    APPLICATION_JSON, auth);
-
-            try {
-                String json = readFully(response);
-                Object result = null;
-
-                switch (regType) {
-                    case DEFAULT: {
-                        ClientRepresentation client = JsonSerialization.readValue(json, ClientRepresentation.class);
-                        result = client;
-
-                        saveMergeConfig(cfg -> {
-                            setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
-                        });
-                        break;
-                    }
-                    case OIDC: {
-                        OIDCClientRepresentation client = JsonSerialization.readValue(json, OIDCClientRepresentation.class);
-                        result = client;
-
-                        saveMergeConfig(cfg -> {
-                            setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
-                        });
-                        break;
-                    }
-                    case INSTALL: {
-                        result = JsonSerialization.readValue(json, AdapterConfig.class);
-                        break;
-                    }
-                    case SAML2: {
-                        break;
-                    }
-                    default: {
-                        throw new RuntimeException("Unexpected type: " + regType);
-                    }
-                }
-
-                if (!compressed && result != null) {
-                    json = JsonSerialization.writeValueAsPrettyString(result);
-                }
-
-                printOut(json);
-
-            //} catch (UnrecognizedPropertyException e) {
-            //    throw new RuntimeException("Failed to parse returned JSON - " + e.getMessage(), e);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to process HTTP response", e);
+            if (!compressed && result != null) {
+                json = JsonSerialization.writeValueAsPrettyString(result);
             }
-            return CommandResult.SUCCESS;
 
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
+            printOut(json);
+
+        //} catch (UnrecognizedPropertyException e) {
+        //    throw new RuntimeException("Failed to parse returned JSON - " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to process HTTP response", e);
         }
     }
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && endpoint == null && (args == null || args.size() == 0);
+        return noOptions() && endpoint == null && clientId == null;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help get' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }
