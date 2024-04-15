@@ -37,7 +37,7 @@
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@playwright/test": "^1.43.1",
     "@types/lodash-es": "^4.17.12",
-    "@types/react": "^18.2.77",
+    "@types/react": "^18.2.78",
     "@types/react-dom": "^18.2.25",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "lightningcss": "^1.24.1",
