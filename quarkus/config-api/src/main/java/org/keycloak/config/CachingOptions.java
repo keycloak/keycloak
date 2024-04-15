@@ -21,6 +21,7 @@ public class CachingOptions {
     public static final String CACHE_REMOTE_PORT_PROPERTY = CACHE_REMOTE_PREFIX + "-port";
     public static final String CACHE_REMOTE_USERNAME_PROPERTY = CACHE_REMOTE_PREFIX + "-username";
     public static final String CACHE_REMOTE_PASSWORD_PROPERTY = CACHE_REMOTE_PREFIX + "-password";
+    public static final String CACHE_REMOTE_TLS_ENABLED_PROPERTY = CACHE_REMOTE_PREFIX + "-tls-enabled";
 
     private static final String CACHE_METRICS_PREFIX = "cache-metrics";
     public static final String CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY = CACHE_METRICS_PREFIX + "-histograms-enabled";
@@ -44,7 +45,7 @@ public class CachingOptions {
         kubernetes,
         ec2,
         azure,
-        google;
+        google
     }
 
     public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
@@ -126,4 +127,9 @@ public class CachingOptions {
             .description("Enable histograms for metrics for the embedded caches.")
             .build();
 
+    public static final Option<Boolean> CACHE_REMOTE_TLS_ENABLED = new OptionBuilder<>(CACHE_REMOTE_TLS_ENABLED_PROPERTY, Boolean.class)
+            .category(OptionCategory.CACHE)
+            .description("Enable SSL support to communication with a secure remote Infinispan server. It is not recommended to disable in production!")
+            .defaultValue(Boolean.TRUE)
+            .build();
 }

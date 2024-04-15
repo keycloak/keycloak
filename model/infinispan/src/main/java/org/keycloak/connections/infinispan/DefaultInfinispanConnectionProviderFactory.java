@@ -186,7 +186,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                             throw new RuntimeException("Multiple " + org.keycloak.cluster.ManagedCacheManagerProvider.class + " providers found.");
                         }
                         
-                        managedCacheManager = provider.getCacheManager(config);
+                        managedCacheManager = provider.getEmbeddedCacheManager(config);
                     }
 
                     // store it in a locale variable first, so it is not visible to the outside, yet
