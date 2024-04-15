@@ -17,6 +17,7 @@
 
 package org.keycloak.marshalling;
 
+import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 
 /**
@@ -149,6 +150,10 @@ public final class Marshalling {
     public static void configure(GlobalConfigurationBuilder builder) {
         builder.serialization()
                 .addContextInitializer(KeycloakModelSchema.INSTANCE);
+    }
+
+    public static void configure(ConfigurationBuilder builder) {
+        builder.addContextInitializer(KeycloakModelSchema.INSTANCE);
     }
 
 

@@ -17,6 +17,8 @@
 package org.keycloak.testsuite.model.session;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -416,20 +418,10 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
     private void allowXSiteReplication(boolean offline) {
         HotRodServerRule hotRodServer = getParameters(HotRodServerRule.class).findFirst().orElse(null);
         if (hotRodServer != null) {
-            String cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-            while (hotRodServer.getHotRodCacheManager().getCache(cacheName).size() != hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()) {
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.errorf("Interrupted while waiting. Cache: %s, Cache sizes: %d vs %d",
-                            cacheName,
-                            hotRodServer.getHotRodCacheManager().getCache(cacheName).size(),
-                            hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()
-                    );
-                    throw new RuntimeException(e);
-                }
-            }
+            var cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+            var cache1 = hotRodServer.getHotRodCacheManager().getCache(cacheName);
+            var cache2 = hotRodServer.getHotRodCacheManager2().getCache(cacheName);
+            eventually(null, () -> cache1.size() == cache2.size(), 10000, 10, TimeUnit.MILLISECONDS);
         }
     }
 }

@@ -29,6 +29,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
@@ -185,6 +186,11 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return !Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
     }
 
     @Listener

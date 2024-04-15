@@ -18,13 +18,16 @@
 package org.keycloak.connections.infinispan;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
+import org.infinispan.util.concurrent.BlockingManager;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -75,6 +78,11 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
                 .map(DefaultInfinispanConnectionProvider::clearPersistenceManager)
                 .forEach(stage::dependsOn);
         return stage.freeze();
+    }
+
+    @Override
+    public Executor getExecutor(String name) {
+        return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class).asExecutor(name);
     }
 
     @Override
