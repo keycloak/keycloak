@@ -9,6 +9,7 @@ export const keycloak = new Keycloak({
 });
 
 export async function initKeycloak() {
+  keycloak.onAuthLogout = () => keycloak.login();
   const authenticated = await keycloak.init({
     onLoad: "check-sso",
   });
