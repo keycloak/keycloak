@@ -365,7 +365,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             log.debug("Joining the cluster");
             inComittedTransaction(session -> {
                 InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-                Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+                Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
                 while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete()) {
                     sleep(1000);
                 }
