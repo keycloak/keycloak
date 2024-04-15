@@ -11,6 +11,7 @@ import {
   UserFormFields,
   fieldName,
   isRequiredAttribute,
+  label,
   labelAttribute,
 } from "./utils";
 
@@ -28,7 +29,10 @@ export const UserProfileGroup = ({
   renderer,
   children,
 }: PropsWithChildren<UserProfileGroupProps>) => {
-  const helpText = attribute.annotations?.["inputHelperTextBefore"] as string;
+  const helpText = label(
+    t,
+    attribute.annotations?.["inputHelperTextBefore"] as string,
+  );
   const {
     formState: { errors },
   } = form;
