@@ -27,6 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -51,8 +52,11 @@ import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.mail.internet.MimeMessage;
+
 import java.net.MalformedURLException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -400,6 +404,77 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearAllUserFailures();
         loginSuccess();
+    }
+
+    @Test
+    public void testFailureResetForTemporaryLockout() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        try {
+            realm.setMaxDeltaTimeSeconds(5);
+            testRealm().update(realm);
+            long numExecutors = getNumExecutors();
+            loginInvalidPassword();
+
+            //Wait for brute force executor to process the login and then wait for delta time
+            waitForExecutors(numExecutors+1);
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
+
+            loginInvalidPassword();
+            loginSuccess();
+        } finally {
+            realm.setMaxDeltaTimeSeconds(20);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
+    public void testNoFailureResetForPermanentLockout() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        try {
+            realm.setMaxDeltaTimeSeconds(5);
+            realm.setPermanentLockout(true);
+            testRealm().update(realm);
+            long numExecutors = getNumExecutors();
+            loginInvalidPassword();
+
+            //Wait for brute force executor to process the login and then wait for delta time
+            waitForExecutors(numExecutors+1);
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
+
+            loginInvalidPassword();
+            expectPermanentlyDisabled();
+        } finally {
+            realm.setPermanentLockout(false);
+            realm.setMaxDeltaTimeSeconds(20);
+            testRealm().update(realm);
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
+    private long getNumExecutors() {
+        String numExecutors = testingClient.server().fetchString(session -> {
+            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
+            ExecutorService executor = provider.getExecutor("bruteforce");
+            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
+            return threadPoolExecutor.getTaskCount();
+        });
+        return Long.valueOf(numExecutors);
+    }
+
+    private void waitForExecutors(long numExecutors) {
+        testingClient.server().run(session -> {
+            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
+            ExecutorService executor = provider.getExecutor("bruteforce");
+            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
+            while(!threadPoolExecutor.getQueue().isEmpty()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {}
+            }
+            assertEquals(numExecutors, threadPoolExecutor.getCompletedTaskCount());
+        });
     }
 
     @Test

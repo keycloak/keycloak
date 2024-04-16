@@ -70,7 +70,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         }
         userLoginFailure.setLastFailure(failureTime);
 
-        if (deltaTime > 0) {
+        if (!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) && deltaTime > 0) {
             // if last failure was more than MAX_DELTA clear failures
             if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
                 userLoginFailure.clearFailures();
