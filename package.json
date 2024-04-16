@@ -1,7 +1,7 @@
 {
   "name": "root",
   "type": "module",
-  "packageManager": "pnpm@8.15.5",
+  "packageManager": "pnpm@9.0.1",
   "scripts": {
     "prepare": "husky js/.husky"
   },
