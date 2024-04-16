@@ -238,17 +238,25 @@ The `-XX:MaxRAMPercentage` option represents the maximum heap size as 70% of the
 The `-XX:InitialRAMPercentage` option represents the initial heap size as 50% of the total container memory.
 These values were chosen based on a deeper analysis of {project_name} memory management.
 
+As the heap size is dynamically calculated based on the total container memory, you should *always set the memory limit* for the container.
+Previously, the maximum heap size was set to 512 MB, and in order to approach similar values, you should set the memory limit to at least 750 MB.
+For smaller production-ready deployments, the recommended memory limit is 2 GB.
+
 The JVM options related to the heap might be overridden by setting the environment variable `JAVA_OPTS_KC_HEAP`.
 You can find the default values of the `JAVA_OPTS_KC_HEAP` in the source code of the `kc.sh`, or `kc.bat` script.
-For example, you can specify the environment variable as follows:
+
+For example, you can specify the environment variable and memory limit as follows:
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name mykeycloak -p 8080:8080 \
+podman|docker run --name mykeycloak -p 8080:8080 -m 1g \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         -e JAVA_OPTS_KC_HEAP="-XX:MaxHeapFreeRatio=30 -XX:MaxRAMPercentage=65" \
         quay.io/keycloak/keycloak:{containerlabel} \
         start-dev
 ----
+
+WARNING: If the memory limit is not set, the memory consumption rapidly increases as the heap size can grow up to 70% of the total container memory.
+Once the JVM allocates the memory, it is returned to the OS reluctantly with the current {project_name} GC settings.
 
 </@tmpl.guide>
