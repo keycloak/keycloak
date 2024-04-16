@@ -363,7 +363,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         return persister.loadUserSessionsStream(realm, user, offline, 0, null)
                 .map(persistentUserSession -> getUserSessionEntityFromCacheOrImportIfNecessary(realm, offline, persistentUserSession))
                 .filter(Objects::nonNull)
-                .map(userSessionEntity -> wrap(realm, userSessionEntity, offline));
+                .map(userSessionEntity -> (UserSessionModel) wrap(realm, userSessionEntity, offline))
+                .filter(Objects::nonNull);
     }
 
 
@@ -480,11 +481,14 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     protected Stream<UserSessionModel> getUserSessionsStream(final RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults, final boolean offline) {
-
         if (offline) {
             // fetch the actual offline user session count from the database
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.loadUserSessionsStream(realm, client, true, firstResult, maxResults);
+            return persister.loadUserSessionsStream(realm, client, true, firstResult, maxResults)
+                    .map(persistentUserSession -> getUserSessionEntityFromCacheOrImportIfNecessary(realm, offline, persistentUserSession))
+                    .filter(Objects::nonNull)
+                    .map(userSessionEntity -> (UserSessionModel) wrap(realm, userSessionEntity, offline))
+                    .filter(Objects::nonNull);
         }
 
         UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).client(client.getId());
@@ -773,6 +777,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         user = session.users().getUserById(realm, entity.getUser());
 
         if (user == null) {
+            // remove orphaned user session from the cache and from persister if the session is offline; also removes associated client sessions
+            removeUserSession(entity, offline);
+            if (offline) {
+                session.getProvider(UserSessionPersisterProvider.class).removeUserSession(entity.getId(), true);
+            }
             return null;
         }
 
