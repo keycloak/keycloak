@@ -205,40 +205,45 @@ public class AccountConsole implements AccountResourceProvider {
 
         return propertyValue;
     }
-    
+
     @GET
     @Path("index.html")
     public Response getIndexHtmlRedirect() {
         return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("../").build()).build();
     }
 
-
     private String[] getReferrer() {
         String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
+
         if (referrer == null) {
+            return null;
+        }
+
+        ClientModel referrerClient = realm.getClientByClientId(referrer);
+
+        if (referrerClient == null) {
             return null;
         }
 
         String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
 
-        ClientModel referrerClient = realm.getClientByClientId(referrer);
-        if (referrerClient != null) {
-            if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
-            } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(session, referrerClient.getRootUrl(), referrerClient.getBaseUrl());
-            }
-            
-            if (referrerUri != null) {
-                String referrerName = referrerClient.getName();
-                if (Validation.isBlank(referrerName)) {
-                    referrerName = referrer;
-                }
-                return new String[]{referrer, referrerName, referrerUri};
-            }
+        if (referrerUri != null) {
+            referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
+        } else {
+            referrerUri = ResolveRelative.resolveRelativeUri(session, referrerClient.getRootUrl(), referrerClient.getBaseUrl());
         }
 
-        return null;
+        if (referrerUri == null) {
+            return null;
+        }
+
+        String referrerName = referrerClient.getName();
+
+        if (Validation.isBlank(referrerName)) {
+            referrerName = referrer;
+        }
+
+        return new String[]{referrer, referrerName, referrerUri};
     }
 
 }

@@ -166,7 +166,9 @@
             "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
             "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
             "isViewGroupsEnabled": ${isViewGroupsEnabled?c}
-        }
+        },
+        "referrerName": "${referrerName!""}",
+        "referrerUrl": "${referrer_uri!""}"
     }
   </script>
 </body>
