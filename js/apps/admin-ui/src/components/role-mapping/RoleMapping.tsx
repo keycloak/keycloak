@@ -258,6 +258,15 @@ export const RoleMapping = ({
             instructions={t(`noRolesInstructions-${type}`)}
             primaryActionText={t("assignRole")}
             onPrimaryAction={() => setShowAssign(true)}
+            secondaryActions={[
+              {
+                text: t("showInheritedRoles"),
+                onClick: () => {
+                  setHide(false);
+                  refresh();
+                },
+              },
+            ]}
           />
         }
       />

@@ -16,6 +16,20 @@
  */
 package org.keycloak.services;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -37,20 +51,6 @@ import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.DefaultThemeManagerFactory;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, ProviderManagerDeployer {
 
@@ -139,8 +139,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = new HashMap<>();
         for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : factoriesMap.entrySet()) {
-            Map<String, ProviderFactory> valCopy = new HashMap<>();
-            valCopy.putAll(entry.getValue());
+            Map<String, ProviderFactory> valCopy = new HashMap<>(entry.getValue());
             copy.put(entry.getKey(), valCopy);
         }
         return copy;
@@ -162,7 +161,9 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
                 for (ProviderFactory f : entry.getValue().values()) {
                     deployed.add(f);
                     ProviderFactory old = current.remove(f.getId());
-                    if (old != null) undeployed.add(old);
+                    if (old != null) {
+                        undeployed.add(old);
+                    }
                 }
                 current.putAll(entry.getValue());
             }
@@ -279,7 +280,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
 
         for (Spi spi : spiList) {
 
-            Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
+            Map<String, ProviderFactory> factories = new HashMap<>();
             factoryMap.put(spi.getProviderClass(), factories);
 
             String provider = Config.getProvider(spi.getName());
@@ -327,7 +328,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
             return false;
         }
         if (factory instanceof EnvironmentDependentProviderFactory) {
-            return ((EnvironmentDependentProviderFactory) factory).isSupported();
+            return ((EnvironmentDependentProviderFactory) factory).isSupported(scope);
         }
         return true;
     }
@@ -340,7 +341,9 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     @Override
     public Spi getSpi(Class<? extends Provider> providerClass) {
         for (Spi spi : spis) {
-            if (spi.getProviderClass().equals(providerClass)) return spi;
+            if (spi.getProviderClass().equals(providerClass)) {
+                return spi;
+            }
         }
         return null;
     }
@@ -378,9 +381,13 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
 
     @Override
     public Stream<ProviderFactory> getProviderFactoriesStream(Class<? extends Provider> clazz) {
-        if (factoriesMap == null) return Stream.empty();
+        if (factoriesMap == null) {
+            return Stream.empty();
+        }
         Map<String, ProviderFactory> providerFactoryMap = factoriesMap.get(clazz);
-        if (providerFactoryMap == null) return Stream.empty();
+        if (providerFactoryMap == null) {
+            return Stream.empty();
+        }
         return providerFactoryMap.values().stream();
     }
 
