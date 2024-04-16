@@ -64,7 +64,7 @@ public class UseLightweightAccessTokenExecutorFactory implements ClientPolicyExe
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return true;
     }
 }

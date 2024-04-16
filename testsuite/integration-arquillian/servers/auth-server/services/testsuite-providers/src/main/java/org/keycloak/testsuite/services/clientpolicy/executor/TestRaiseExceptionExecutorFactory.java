@@ -20,6 +20,7 @@ package org.keycloak.testsuite.services.clientpolicy.executor;
 import java.util.Collections;
 import java.util.List;
 
+import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -64,7 +65,7 @@ public class TestRaiseExceptionExecutorFactory implements ClientPolicyExecutorPr
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return true;
     }
 }

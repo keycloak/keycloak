@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.par.endpoints;
 
 import jakarta.ws.rs.Path;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
@@ -58,7 +59,7 @@ public class ParRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory,
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.PAR);
     }
 

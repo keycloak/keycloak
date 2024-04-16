@@ -102,7 +102,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2);
     }
 }

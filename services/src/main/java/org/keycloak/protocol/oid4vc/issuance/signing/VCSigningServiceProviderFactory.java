@@ -77,11 +77,6 @@ public interface VCSigningServiceProviderFactory extends ComponentFactory<Verifi
         return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
     }
 
-    @Override
-    default boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
-    }
-
     /**
      * Should validate potential implementation specific configuration of the factory.
      */

@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.theme;
 
+import org.keycloak.Config;
 import org.keycloak.platform.Platform;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
@@ -16,7 +17,7 @@ public class TestThemeResourceProvider extends ClasspathThemeResourceProviderFac
      * @return true if platform is Undertow
      */
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Platform.getPlatform().name().equals("Undertow");
     }
 }

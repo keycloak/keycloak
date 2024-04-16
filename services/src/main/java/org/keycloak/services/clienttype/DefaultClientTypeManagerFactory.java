@@ -68,7 +68,7 @@ public class DefaultClientTypeManagerFactory implements ClientTypeManagerFactory
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES);
     }
 

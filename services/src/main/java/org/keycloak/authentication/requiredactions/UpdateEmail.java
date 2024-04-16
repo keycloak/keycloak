@@ -200,7 +200,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
     }
 }

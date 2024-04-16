@@ -45,7 +45,7 @@ public class CibaGrantTypeFactory implements OAuth2GrantTypeFactory, Environment
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CIBA);
     }
 

@@ -119,6 +119,12 @@ By default, the syslog handler is disabled, but when enabled, it sends all log e
 
 For more information, see the https://www.keycloak.org/server/logging[Configuring logging] guide.
 
+= Change to class `EnvironmentDependentProviderFactory`
+
+The method `EnvironmentDependentProviderFactory.isSupported()` was deprecated for several releases and has now been removed.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = All `cache` options are runtime
 
 It is now possible to specify the `cache`, `cache-stack`, and `cache-config-file` options during runtime.

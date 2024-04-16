@@ -113,7 +113,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
     }
 }
