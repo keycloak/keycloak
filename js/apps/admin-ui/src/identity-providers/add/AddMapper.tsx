@@ -152,7 +152,7 @@ export default function AddMapper() {
 
       setMapperTypes(mappers);
     },
-    [],
+    [id],
   );
 
   const setupForm = (mapper: IdentityProviderMapperRepresentation) => {
