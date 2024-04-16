@@ -430,13 +430,14 @@ mappers would never be used. The supported options were updated to only include 
 - `urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`
 - `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`
 
-= Different JVM memory settings when running in container
+= Different JVM memory settings when running in a container
 
 Instead of specifying hardcoded values for the initial and maximum heap size, {project_name} uses relative values to the total memory of a container.
-The JVM options `-Xms`, and `-Xmx` were replaced by `-XX:InitialRAMPercentage`, and `-XX:MaxRAMPercentage`.
+The JVM options `-Xms` and `-Xmx` were replaced by `-XX:InitialRAMPercentage` and `-XX:MaxRAMPercentage`.
 
-For more details, see the 
-https://www.keycloak.org/server/containers[Running Keycloak in a container] guide.
+WARNING: It can significantly impact memory consumption, so executing particular actions might be required.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 ifeval::[{project_community}==true]
 = GELF log handler has been deprecated
