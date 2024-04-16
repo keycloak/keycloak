@@ -72,7 +72,7 @@ public class InfinispanMultiSiteLoadBalancerCheckProviderFactory implements Load
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE);
     }
 }

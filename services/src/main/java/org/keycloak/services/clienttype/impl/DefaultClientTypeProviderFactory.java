@@ -97,7 +97,7 @@ public class DefaultClientTypeProviderFactory implements ClientTypeProviderFacto
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES);
     }
 }

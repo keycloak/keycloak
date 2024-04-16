@@ -359,7 +359,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Feature.HOSTNAME_V1);
     }
 }
