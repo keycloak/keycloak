@@ -403,6 +403,47 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testFailureResetForTemporaryLockout() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        try {
+            realm.setMaxDeltaTimeSeconds(5);
+            testRealm().update(realm);
+            loginInvalidPassword();
+
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
+
+            loginInvalidPassword();
+            loginSuccess();
+        } finally {
+            realm.setMaxDeltaTimeSeconds(20);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
+    public void testNoFailureResetForPermanentLockout() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        try {
+            realm.setMaxDeltaTimeSeconds(5);
+            realm.setPermanentLockout(true);
+            testRealm().update(realm);
+            loginInvalidPassword();
+
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(5)));
+
+            loginInvalidPassword();
+            expectPermanentlyDisabled();
+        } finally {
+            realm.setPermanentLockout(false);
+            realm.setMaxDeltaTimeSeconds(20);
+            testRealm().update(realm);
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
+    @Test
     public void testWait() throws Exception {
         loginSuccess();
         loginInvalidPassword();
