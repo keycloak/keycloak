@@ -35,17 +35,17 @@ export type TimeSelectorProps = Omit<
     className?: string;
   };
 
-export const getTimeUnit = (value: number | undefined = 0) =>
-  allTimes.reduce(
+const getTimeUnit = (units: TimeUnit[], value = 0) =>
+  units.reduce(
     (v, time) =>
       value % time.multiplier === 0 && v.multiplier < time.multiplier
         ? time
         : v,
-    allTimes[0],
+    units[0],
   );
 
 export const toHumanFormat = (value: number, locale: string) => {
-  const timeUnit = getTimeUnit(value);
+  const timeUnit = getTimeUnit(allTimes, value);
   const formatter = new Intl.NumberFormat(locale, {
     style: "unit",
     unit: timeUnit.unit,
@@ -90,7 +90,7 @@ export const TimeSelector = ({
   }, [units, multiplier]);
 
   useEffect(() => {
-    const multiplier = getTimeUnit(value).multiplier;
+    const multiplier = getTimeUnit(times, value).multiplier;
 
     if (value) {
       setMultiplier(multiplier);
