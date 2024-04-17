@@ -132,10 +132,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     offlineSessionsCache,
                     clientSessionCache,
                     offlineClientSessionsCache,
-                    serializerSession,
-                    serializerOfflineSession,
-                    serializerClientSession,
-                    serializerOfflineClientSession,
                     asyncQueuePersistentUpdate
             );
         }

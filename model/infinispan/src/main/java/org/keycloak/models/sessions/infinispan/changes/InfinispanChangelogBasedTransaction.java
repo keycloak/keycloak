@@ -44,7 +44,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> extends AbstractKeycloakTransaction {
+public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> extends AbstractKeycloakTransaction implements SessionsChangelogBasedTransaction<K, V> {
 
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
 
@@ -71,6 +71,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     }
 
 
+    @Override
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {

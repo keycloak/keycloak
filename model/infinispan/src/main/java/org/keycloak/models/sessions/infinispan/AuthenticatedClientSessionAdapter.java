@@ -27,10 +27,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshChecker;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -46,13 +46,13 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     private final SessionRefreshStore provider;
     private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
-    private final InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
+    private final SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
     private boolean offline;
 
     public AuthenticatedClientSessionAdapter(KeycloakSession kcSession, SessionRefreshStore provider,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
-                                             InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
+                                             SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
         if (userSession == null) {
             throw new NullPointerException("userSession must not be null");
         }
@@ -85,7 +85,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         // as nonexistent in org.keycloak.models.sessions.infinispan.UserSessionAdapter.getAuthenticatedClientSessions()
         this.userSession = null;
 
-        SessionUpdateTask<AuthenticatedClientSessionEntity> removeTask = Tasks.removeSync();
+        SessionUpdateTask<AuthenticatedClientSessionEntity> removeTask = Tasks.removeSync(offline);
 
         clientSessionUpdateTx.addTask(entity.getId(), removeTask);
     }
@@ -109,6 +109,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
                 entity.setRedirectUri(uri);
             }
 
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
         };
 
         update(task);
@@ -157,6 +161,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             }
 
             @Override
+            public boolean isOffline() {
+                return offline;
+            }
+
+            @Override
             public String toString() {
                 return "setTimestamp(" + timestamp + ')';
             }
@@ -179,6 +188,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
             }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
         };
 
         update(task);
@@ -197,6 +211,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setCurrentRefreshToken(currentRefreshToken);
             }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
         };
 
         update(task);
@@ -214,6 +233,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             @Override
             public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setAction(action);
+            }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
             }
 
         };
@@ -235,6 +259,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
                 entity.setAuthMethod(method);
             }
 
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
+
         };
 
         update(task);
@@ -254,6 +283,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
                 entity.getNotes().put(name, value);
             }
 
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
         };
 
         update(task);
@@ -266,6 +299,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             @Override
             public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.getNotes().remove(name);
+            }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
             }
 
         };

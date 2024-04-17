@@ -31,32 +31,35 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
-import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
-
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 public class UserSessionPersistentChangelogBasedTransaction extends PersistentSessionsChangelogBasedTransaction<String, UserSessionEntity> {
 
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
-    public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<UserSessionEntity> lifespanMsLoader, SessionFunction<UserSessionEntity> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<String> serializer,
+
+    public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
+                                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> cache,
+                                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineCache,
+                                                          RemoteCacheInvoker remoteCacheInvoker,
+                                                          SessionFunction<UserSessionEntity> lifespanMsLoader,
+                                                          SessionFunction<UserSessionEntity> maxIdleTimeMsLoader,
+                                                          SessionFunction<UserSessionEntity> offlineLifespanMsLoader,
+                                                          SessionFunction<UserSessionEntity> offlineMaxIdleTimeMsLoader,
                                                           ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
-        super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offline, serializer, batchingQueue);
+        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue);
     }
 
-    public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key) {
-        SessionUpdatesList<UserSessionEntity> myUpdates = updates.get(key);
+    public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, boolean offline) {
+        SessionUpdatesList<UserSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
-            if (!((Objects.equals(cache.getName(), USER_SESSION_CACHE_NAME) || Objects.equals(cache.getName(), CLIENT_SESSION_CACHE_NAME) || Objects.equals(cache.getName(), OFFLINE_USER_SESSION_CACHE_NAME) || Objects.equals(cache.getName(), OFFLINE_CLIENT_SESSION_CACHE_NAME)) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE))) {
-                wrappedEntity = cache.get(key);
+            if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
+                wrappedEntity = getCache(offline).get(key);
             }
+
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
-                wrappedEntity = getSessionEntityFromPersister(realm, key);
+                wrappedEntity = getSessionEntityFromPersister(realm, key, offline);
             } else {
                 LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
             }
@@ -66,6 +69,9 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 return null;
             }
 
+            // Cache does not contain the offline flag value so adding it
+            wrappedEntity.getEntity().setOffline(offline);
+
             RealmModel realmFromSession = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
             if (!realmFromSession.getId().equals(realm.getId())) {
                 LOG.warnf("Realm mismatch for session %s. Expected realm %s, but found realm %s", wrappedEntity.getEntity(), realm.getId(), realmFromSession.getId());
@@ -73,7 +79,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
             }
 
             myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-            updates.put(key, myUpdates);
+            getUpdates(offline).put(key, myUpdates);
 
             return wrappedEntity;
         } else {
@@ -90,7 +96,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         }
     }
 
-    public SessionEntityWrapper<UserSessionEntity> getSessionEntityFromPersister(RealmModel realm, String key) {
+    private SessionEntityWrapper<UserSessionEntity> getSessionEntityFromPersister(RealmModel realm, String key, boolean offline) {
         UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
         UserSessionModel persistentUserSession = persister.loadUserSession(realm, key, offline);
 
@@ -101,24 +107,20 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         return importUserSession(persistentUserSession);
     }
 
-    private void removeSessionEntityFromPersister(String key) {
-        UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
-        persister.removeUserSession(key, offline);
-    }
-
     private SessionEntityWrapper<UserSessionEntity> importUserSession(UserSessionModel persistentUserSession) {
         String sessionId = persistentUserSession.getId();
+        boolean offline = persistentUserSession.isOffline();
 
-        if (isScheduledForRemove(sessionId)) {
+        if (isScheduledForRemove(sessionId, offline)) {
             return null;
         }
 
-        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
             return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).wrapPersistentEntity(persistentUserSession.getRealm(), offline, persistentUserSession);
         }
 
         LOG.debugf("Attempting to import user-session for sessionId=%s offline=%s", sessionId, offline);
-        SessionEntityWrapper<UserSessionEntity> ispnUserSessionEntity = ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).importUserSession(persistentUserSession, offline);;
+        SessionEntityWrapper<UserSessionEntity> ispnUserSessionEntity = ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).importUserSession(persistentUserSession, offline);
 
         if (ispnUserSessionEntity != null) {
             LOG.debugf("user-session found after import for sessionId=%s offline=%s", sessionId, offline);
@@ -128,8 +130,9 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         LOG.debugf("user-session could not be found after import for sessionId=%s offline=%s", sessionId, offline);
         return null;
     }
-    public boolean isScheduledForRemove(String key) {
-        return isScheduledForRemove(updates.get(key));
+
+    public boolean isScheduledForRemove(String key, boolean offline) {
+        return isScheduledForRemove(getUpdates(offline).get(key));
     }
 
     private static <V extends SessionEntity> boolean isScheduledForRemove(SessionUpdatesList<V> myUpdates) {
