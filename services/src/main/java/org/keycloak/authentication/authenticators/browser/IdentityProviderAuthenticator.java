@@ -75,6 +75,10 @@ public class IdentityProviderAuthenticator implements Authenticator {
     }
 
     protected void redirect(AuthenticationFlowContext context, String providerId) {
+        redirect(context, providerId, null);
+    }
+
+    protected void redirect(AuthenticationFlowContext context, String providerId, String loginHint) {
         Optional<IdentityProviderModel> idp = context.getRealm().getIdentityProvidersStream()
                 .filter(IdentityProviderModel::isEnabled)
                 .filter(identityProvider -> Objects.equals(providerId, identityProvider.getAlias()))
@@ -84,7 +88,7 @@ public class IdentityProviderAuthenticator implements Authenticator {
             String clientId = context.getAuthenticationSession().getClient().getClientId();
             String tabId = context.getAuthenticationSession().getTabId();
             String clientData = AuthenticationProcessor.getClientData(context.getSession(), context.getAuthenticationSession());
-            URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId, clientData);
+            URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId, clientData, loginHint);
             Response response = Response.seeOther(location)
                     .build();
             // will forward the request to the IDP with prompt=none if the IDP accepts forwards with prompt=none.
