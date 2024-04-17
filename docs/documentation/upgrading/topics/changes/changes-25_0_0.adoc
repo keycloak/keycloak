@@ -1,3 +1,85 @@
+= New Hostname options
+
+Hostname v2 options are supported by default, as the old hostname options are deprecated and will be removed in the following releases.
+New options are activated by default, so {project_name} will not recognize the old options.
+
+List of necessary migrations:
+
+[%autowidth,cols="a,a"]
+|===
+| Old options | New options
+
+|`hostname <hostname>` +
+`hostname-url <url>` +
+`hostname-path <path>` +
+`hostname-port <port>`
+|`hostname <hostname/url>`
+|`hostname-admin <hostname>` +
+`hostname-admin-url <url>`
+|`hostname-admin <url>`
+|`hostname-strict-backchannel <true/false>`
+|`hostname-backchannel-dynamic <true/false>`
+|===
+
+As you can see, the `*-url` suffixes were removed for `hostname` and `hostname-admin` options.
+Option `hostname` accepts both hostname and URL, but `hostname-admin` accepts only full URL now.
+
+Additionally, there is no way to set `path` or `port` separately.
+You can achieve it by providing the full URL for the `hostname` and `hostname-admin` options.
+
+If the port is not part of the URL, it is dynamically resolved from the incoming request headers.
+
+HTTPS is no longer enforced unless it is part of `hostname` and `hostname-admin` URLs.
+If not specified, the used protocol (`http/https`) is dynamically resolved from the incoming request.
+The `hostname-strict-https` option is removed.
+
+[%autowidth,cols="a"]
+|===
+| Removed options
+
+|`hostname-url`
+|`hostname-admin-url`
+|`hostname-path`
+|`hostname-port`
+|`hostname-strict-backchannel`
+|`hostname-strict-https`
+|===
+
+NOTE: In order to use the old hostname options to have more time for migration, turn on the feature `hostname:v1`, e.g. `features=hostname:v1`.
+Be aware, that either `hostname:v1` or `hostname:v2` can be enabled, not both at the same time.
+
+== Examples
+
+.Simplified notation
+[source,bash]
+----
+# Hostname v1
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --https-port=8543 --hostname-path=/auth --hostname-strict-https=true
+
+# Hostname v2
+bin/kc.[sh|bat] start --hostname=https://mykeycloak.org:8543/auth
+----
+As you can see in the example, all the parts of a URL can be now specified via single `hostname` option, which simplifies the hostname setup process.
+Notice that HTTPS is not enforced by the `hostname-strict-https` option, but by specifying it in the hostname URL.
+
+.Backchannel setting
+[source,bash]
+----
+# Hostname v1
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --hostname-strict-backchannel=true
+
+# Hostname v2
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --hostname-backchannel-dynamic=false
+----
+Be aware that there is a change in behavior if the same URL is to be used for both backend and frontend endpoints.
+Previously, in hostname v1, the backchannel URL was dynamically resolved from request headers.
+Therefore, to achieve the required results, you had to specify the `hostname-strict-backchannel=true`.
+
+For hostname v2, the backchannel URLs are already the same as the frontend ones.
+In order to dynamically resolve it from request headers, you need to set the `hostname-backchannel-dynamic=true` and provide a full URL for the `hostname` option.
+
+For more details and more comprehensive scenarios, see https://www.keycloak.org/server/hostname[Configuring the hostname (v2)].
+
 = Metrics for embedded caches enabled by default
 
 Metrics for the embedded caches are now enabled by default.
