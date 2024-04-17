@@ -27,8 +27,8 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -68,12 +68,8 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
                     Response.Status.BAD_REQUEST);
         }
         AuthenticatedClientSessionModel clientSession = result.getClientSession();
-        DefaultClientSessionContext sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
+        ClientSessionContext sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
                 OAuth2Constants.SCOPE_OPENID, session);
-
-
-        // set the client as retrieved from the pre-authorized session
-        session.getContext().setClient(result.getClientSession().getClient());
 
 
         // set the client as retrieved from the pre-authorized session
@@ -121,7 +117,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
      *
      * @param session                    - keycloak session to be used
      * @param authenticatedClientSession - client session to be persisted
-     * @param expirationTime             - expiration time of the code, the code should be short-lifed
+     * @param expirationTime             - expiration time of the code, the code should be short-lived
      * @return the pre-authorized code
      */
     public static String getPreAuthorizedCode(KeycloakSession session, AuthenticatedClientSessionModel authenticatedClientSession, int expirationTime) {
