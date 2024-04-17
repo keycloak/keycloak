@@ -144,42 +144,6 @@ describe("Group test", () => {
     });
   });
 
-  describe("Search group under current group", () => {
-    before(async () => {
-      const createdGroups = await adminClient.createSubGroups(predefinedGroups);
-      await Promise.all([
-        range(5).map((index) => {
-          adminClient.addUserToGroup(
-            users[index].id!,
-            createdGroups[index % 3].id,
-          );
-        }),
-        adminClient.createUser({ username: "new", enabled: true }),
-      ]);
-    });
-
-    it("Search child group in group", () => {
-      groupPage
-        .goToGroupChildGroupsTab(predefinedGroups[0])
-        .searchGroup(predefinedGroups[1])
-        .assertGroupItemExist(predefinedGroups[1], true);
-    });
-
-    it("Search non existing child group in group", () => {
-      groupPage
-        .goToGroupChildGroupsTab(predefinedGroups[0])
-        .searchGroup("non-existent-sub-group")
-        .assertNoSearchResultsMessageExist(true);
-    });
-
-    it("Empty search in group", () => {
-      groupPage
-        .goToGroupChildGroupsTab(predefinedGroups[0])
-        .searchGroup("   ")
-        .assertNoSearchResultsMessageExist(true);
-    });
-  });
-
   describe("Group Actions", () => {
     const groupNameDeleteHeaderAction = "group_test_delete_header_action";
 

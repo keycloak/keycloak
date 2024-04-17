@@ -122,7 +122,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
         isSearching={!!search}
         toolbarItem={
           <>
-            {id ? undefined : (
+            {!id && (
               <ToolbarItem>
                 <SearchInput
                   data-testid="group-search"
