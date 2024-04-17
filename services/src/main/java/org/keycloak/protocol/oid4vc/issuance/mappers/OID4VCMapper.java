@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -38,7 +39,7 @@ import java.util.stream.Stream;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public abstract class OID4VCMapper implements ProtocolMapper {
+public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentProviderFactory {
 
     protected static final String SUPPORTED_CREDENTIALS_KEY = "supportedCredentialTypes";
 
