@@ -207,15 +207,37 @@ export default function NewAttributeSettings() {
                 selectedLocale,
               });
 
-            const translationObject: any = {
-              key: Object.keys(translations)[0],
-              translations: Object.entries(translations).map(([value]) => ({
-                locale: selectedLocale,
+            const formData = form.getValues();
+            const formattedKey = formData.displayName?.substring(
+              2,
+              formData.displayName.length - 1,
+            );
+            const filteredTranslations: Array<{
+              locale: string;
+              value: string;
+            }> = [];
+            const allTranslations = Object.entries(translations).map(
+              ([key, value]) => ({
+                key,
                 value,
-              })),
+              }),
+            );
+
+            allTranslations.forEach((translation) => {
+              if (translation.key === formattedKey) {
+                filteredTranslations.push({
+                  locale: selectedLocale,
+                  value: translation.value,
+                });
+              }
+            });
+
+            const translationToSave: any = {
+              key: formattedKey,
+              translations: filteredTranslations,
             };
 
-            translationsToSave.push(translationObject);
+            translationsToSave.push(translationToSave);
           } catch (error) {
             console.error(
               `Error fetching translations for ${selectedLocale}:`,
@@ -226,14 +248,18 @@ export default function NewAttributeSettings() {
       );
       return translationsToSave;
     },
-    (toSaveTranslations) => {
+    (translationsToSaveData) => {
       setTranslationsData(() => ({
-        key: toSaveTranslations[0].key,
-        translations: toSaveTranslations.flatMap((trans) => trans.translations),
+        key: translationsToSaveData[0].key,
+        translations: translationsToSaveData.flatMap(
+          (translationData) => translationData.translations,
+        ),
       }));
     },
     [combinedLocales],
   );
+
+  console.log(">>> translationsData", translationsData);
 
   useFetch(
     () => adminClient.users.getProfile(),
