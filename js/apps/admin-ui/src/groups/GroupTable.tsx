@@ -122,21 +122,23 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
         isSearching={!!search}
         toolbarItem={
           <>
-            <ToolbarItem>
-              <SearchInput
-                data-testid="group-search"
-                placeholder={t("filterGroups")}
-                value={search}
-                onChange={(_, value) => {
-                  setSearch(value);
-                }}
-                onSearch={refresh}
-                onClear={() => {
-                  setSearch("");
-                  refresh();
-                }}
-              />
-            </ToolbarItem>
+            {id ? undefined : (
+              <ToolbarItem>
+                <SearchInput
+                  data-testid="group-search"
+                  placeholder={t("filterGroups")}
+                  value={search}
+                  onChange={(_, value) => {
+                    setSearch(value);
+                  }}
+                  onSearch={refresh}
+                  onClear={() => {
+                    setSearch("");
+                    refresh();
+                  }}
+                />
+              </ToolbarItem>
+            )}
             <GroupToolbar
               toggleCreate={toggleCreateOpen}
               toggleDelete={toggleShowDelete}
