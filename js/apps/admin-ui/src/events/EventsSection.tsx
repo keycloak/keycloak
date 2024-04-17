@@ -78,7 +78,7 @@ const StatusRow = (event: EventRepresentation) =>
     <span>
       <Icon status="success">
         <CheckCircleIcon />
-      </Icon>{" "}
+      </Icon>
       {event.type}
     </span>
   ) : (
@@ -86,7 +86,7 @@ const StatusRow = (event: EventRepresentation) =>
       <span>
         <Icon status="warning">
           <WarningTriangleIcon />
-        </Icon>{" "}
+        </Icon>
         {event.type}
       </span>
     </Tooltip>
