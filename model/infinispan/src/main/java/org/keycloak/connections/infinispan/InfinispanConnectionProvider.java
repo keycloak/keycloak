@@ -17,9 +17,11 @@
 
 package org.keycloak.connections.infinispan;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Stream;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -72,26 +74,19 @@ public interface InfinispanConnectionProvider extends Provider {
     // Constant used as the prefix of the current node if "jboss.node.name" is not configured
     String NODE_PREFIX = "node_";
 
-    String[] ALL_CACHES_NAME = {
+    // list of cache name for local caches (not replicated)
+    String[] LOCAL_CACHE_NAMES = {
             REALM_CACHE_NAME,
             REALM_REVISIONS_CACHE_NAME,
             USER_CACHE_NAME,
             USER_REVISIONS_CACHE_NAME,
-            USER_SESSION_CACHE_NAME,
-            CLIENT_SESSION_CACHE_NAME,
-            OFFLINE_USER_SESSION_CACHE_NAME,
-            OFFLINE_CLIENT_SESSION_CACHE_NAME,
-            LOGIN_FAILURE_CACHE_NAME,
-            AUTHENTICATION_SESSIONS_CACHE_NAME,
-            WORK_CACHE_NAME,
             AUTHORIZATION_CACHE_NAME,
             AUTHORIZATION_REVISIONS_CACHE_NAME,
-            ACTION_TOKEN_CACHE,
             KEYS_CACHE_NAME
     };
 
     // list of cache name which could be defined as distributed or replicated
-    public static List<String> DISTRIBUTED_REPLICATED_CACHE_NAMES = List.of(
+    String[] CLUSTERED_CACHE_NAMES = {
             USER_SESSION_CACHE_NAME,
             CLIENT_SESSION_CACHE_NAME,
             OFFLINE_USER_SESSION_CACHE_NAME,
@@ -99,7 +94,10 @@ public interface InfinispanConnectionProvider extends Provider {
             LOGIN_FAILURE_CACHE_NAME,
             AUTHENTICATION_SESSIONS_CACHE_NAME,
             ACTION_TOKEN_CACHE,
-            WORK_CACHE_NAME);
+            WORK_CACHE_NAME
+    };
+
+    String[] ALL_CACHES_NAME = Stream.concat(Arrays.stream(LOCAL_CACHE_NAMES), Arrays.stream(CLUSTERED_CACHE_NAMES)).toArray(String[]::new);
 
     /**
      *
@@ -149,6 +147,11 @@ public interface InfinispanConnectionProvider extends Provider {
      * @return The Infinispan blocking {@link Executor}.
      */
     Executor getExecutor(String name);
+
+    /**
+     * @return The Infinispan {@link ScheduledExecutorService}. Long or blocking operations must not be executed directly.
+     */
+    ScheduledExecutorService getScheduledExecutor();
 
     /**
      * Syntactic sugar to get a {@link RemoteCache}.
