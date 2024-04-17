@@ -10,7 +10,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { flatten } from "flat";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -29,6 +29,7 @@ import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotati
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
+import { DEFAULT_LOCALE } from "../i18n/i18n";
 
 import "./realm-settings-section.css";
 
@@ -169,9 +170,137 @@ export default function NewAttributeSettings() {
   const [generatedDisplayName, setGeneratedDisplayName] = useState<string>("");
   const [realm, setRealm] = useState<RealmRepresentation>();
 
+  const defaultSupportedLocales = useMemo(() => {
+    return realm?.supportedLocales!.length
+      ? realm.supportedLocales
+      : [DEFAULT_LOCALE];
+  }, [realm]);
+
+  const defaultLocales = useMemo(() => {
+    return realm?.defaultLocale!.length ? [realm.defaultLocale] : [];
+  }, [realm]);
+
+  const combinedLocales = useMemo(() => {
+    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
+  }, [defaultLocales, defaultSupportedLocales]);
+
+  // const fetchTranslations = async () => {
+  //   const translationResults: any[] = [];
+  //   const translationsToSave: any[] = [];
+  //   await Promise.all(
+  //     combinedLocales.map(async (selectedLocale) => {
+  //       try {
+  //         const translations =
+  //           await adminClient.realms.getRealmLocalizationTexts({
+  //             realm: realmName,
+  //             selectedLocale,
+  //           });
+
+  //         const translationsFormatted = Object.entries(translations).map(
+  //           ([key, value]) => ({
+  //             key,
+  //             value,
+  //           }),
+  //         );
+
+  //         translationResults.push(...translationsFormatted);
+
+  //         const translationObject: any = {
+  //           key: translationsFormatted[0].key,
+  //           translations: translationsFormatted.map((trans) => ({
+  //             locale: selectedLocale,
+  //             value: trans.value,
+  //           })),
+  //         };
+
+  //         translationsToSave.push(translationObject);
+  //         console.log(">>> translationsToSave ", translationsToSave);
+  //       } catch (error) {
+  //         console.error(
+  //           `Error fetching translations for ${selectedLocale}:`,
+  //           error,
+  //         );
+  //       }
+  //     }),
+  //   );
+  //   return translationsToSave;
+  // };
+
+  // fetchTranslations()
+  //   .then((translationsToSave) => {
+  //     console.log(">>>> translationsToSave ", translationsToSave);
+  //     translationsToSave.forEach((translation) => {
+  //       console.log(">>> translation ", translation);
+  //       setTranslationsData({
+  //         key: translation.key,
+  //         translations: translation.translations,
+  //       });
+  //     });
+  //   })
+  //   .catch((error) => {
+  //     console.error("Error in fetching translations:", error);
+  //   });
+
+  useFetch(
+    async () => {
+      const translationResults: any[] = [];
+      const translationsToSave: any[] = [];
+      await Promise.all(
+        combinedLocales.map(async (selectedLocale) => {
+          try {
+            const translations =
+              await adminClient.realms.getRealmLocalizationTexts({
+                realm: realmName,
+                selectedLocale,
+              });
+
+            const translationsFormatted = Object.entries(translations).map(
+              ([key, value]) => ({
+                key,
+                value,
+              }),
+            );
+
+            translationResults.push(...translationsFormatted);
+
+            const translationObject: any = {
+              key: translationsFormatted[0].key,
+              translations: translationsFormatted.map((trans) => ({
+                locale: selectedLocale,
+                value: trans.value,
+              })),
+            };
+
+            translationsToSave.push(translationObject);
+            console.log(">>> translationsToSave ", translationsToSave);
+          } catch (error) {
+            console.error(
+              `Error fetching translations for ${selectedLocale}:`,
+              error,
+            );
+          }
+        }),
+      );
+      return translationsToSave;
+    },
+    (translationsToSave) => {
+      console.log(">>>> translationsToSave ", translationsToSave);
+      translationsToSave.forEach((translation) => {
+        console.log(">>> translation ", translation);
+        setTranslationsData({
+          key: translation.key,
+          translations: translation.translations,
+        });
+      });
+    },
+    [],
+  );
+
+  console.log("translationsData ", translationsData);
+
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
+    async (realm) => {
       if (!realm) {
         throw new Error(t("notFound"));
       }
@@ -225,6 +354,8 @@ export default function NewAttributeSettings() {
     },
     [],
   );
+
+  // console.log(translationsData.translations);
 
   const saveTranslations = async () => {
     try {
