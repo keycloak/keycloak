@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,21 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * Marker interface for tasks that update persistent sessions
  */
-public abstract class ClientSessionUpdateTask implements PersistentSessionUpdateTask<AuthenticatedClientSessionEntity> {
-
-    @Override
-    public CacheOperation getOperation(AuthenticatedClientSessionEntity session) {
-        return CacheOperation.REPLACE;
-    }
-
-    @Override
-    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper) {
-        return CrossDCMessageStatus.SYNC;
-    }
-
+public interface PersistentSessionUpdateTask<S extends SessionEntity> extends SessionUpdateTask<S> {
+    boolean isOffline();
 }

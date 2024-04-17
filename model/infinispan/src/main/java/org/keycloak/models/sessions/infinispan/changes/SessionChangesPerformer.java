@@ -22,11 +22,11 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import java.util.Map;
 
 public interface SessionChangesPerformer<K, V extends SessionEntity> {
-    void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged);
-
-    default boolean benefitsFromBatching() {
-        return false;
+    default boolean shouldConsumeChange(V entity) {
+        return true;
     }
+
+    void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged);
 
     void applyChanges();
 }
