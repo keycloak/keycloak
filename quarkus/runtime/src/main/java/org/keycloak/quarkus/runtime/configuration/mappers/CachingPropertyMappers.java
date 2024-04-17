@@ -7,6 +7,7 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.io.File;

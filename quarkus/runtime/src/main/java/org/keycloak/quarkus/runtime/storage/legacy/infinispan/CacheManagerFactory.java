@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -51,6 +52,7 @@ import org.jgroups.util.TLSClientAuth;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
@@ -64,9 +66,10 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
@@ -82,7 +85,7 @@ public class CacheManagerFactory {
 
     public CacheManagerFactory(String config) {
         this.cacheManagerFuture = startEmbeddedCacheManager(config);
-        if (isCrossSiteEnabled() && isRemoteCacheEnabled()) {
+        if (InfinispanUtils.isRemoteInfinispan()) {
             logger.debug("Remote Cache feature is enabled");
             this.remoteCacheManagerFuture = CompletableFuture.supplyAsync(this::startRemoteCacheManager);
         } else {
@@ -103,14 +106,6 @@ public class CacheManagerFactory {
         logger.debug("Shutdown embedded and remote cache managers");
         cacheManagerFuture.thenAccept(CacheManagerFactory::close);
         remoteCacheManagerFuture.thenAccept(CacheManagerFactory::close);
-    }
-
-    private static boolean isCrossSiteEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE);
-    }
-
-    private static boolean isRemoteCacheEnabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
     }
 
     private static <T> T join(Future<T> future) {
@@ -164,7 +159,7 @@ public class CacheManagerFactory {
         if (createRemoteCaches()) {
             // fall back for distributed caches if not defined
             logger.warn("Creating remote cache in external Infinispan server. It should not be used in production!");
-            for (String name : DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+            for (String name : CLUSTERED_CACHE_NAMES) {
                 builder.remoteCache(name).templateName(DefaultTemplate.DIST_SYNC);
             }
         }
@@ -173,7 +168,7 @@ public class CacheManagerFactory {
 
         // establish connection to all caches
         if (isStartEagerly()) {
-            DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(remoteCacheManager::getCache);
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(remoteCacheManager::getCache);
         }
         return remoteCacheManager;
     }
@@ -186,7 +181,7 @@ public class CacheManagerFactory {
             configureRemoteStores(builder);
         }
 
-        DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+        Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
             if (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
                 ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
                 if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
@@ -223,7 +218,7 @@ public class CacheManagerFactory {
         }
 
         Marshalling.configure(builder.getGlobalConfigurationBuilder());
-        if (isCrossSiteEnabled() && isRemoteCacheEnabled()) {
+        if (InfinispanUtils.isRemoteInfinispan()) {
             var builders = builder.getNamedConfigurationBuilders();
             // remove all distributed caches
             logger.debug("Removing all distributed caches.");
@@ -231,6 +226,7 @@ public class CacheManagerFactory {
             //DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(builders::remove);
             builders.remove(WORK_CACHE_NAME);
             builders.remove(AUTHENTICATION_SESSIONS_CACHE_NAME);
+            builders.remove(ACTION_TOKEN_CACHE);
         }
 
         var start = isStartEagerly();
@@ -330,7 +326,7 @@ public class CacheManagerFactory {
 
             SSLContext sslContext = createSSLContext();
 
-            DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
                 PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
 
                 //if specified via command line -> cannot be defined in the xml file

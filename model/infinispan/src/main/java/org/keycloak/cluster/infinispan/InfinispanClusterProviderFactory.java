@@ -29,13 +29,13 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.connections.infinispan.TopologyInfo;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -54,8 +54,6 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InfinispanClusterProviderFactory implements ClusterProviderFactory {
-
-    public static final String PROVIDER_ID = "infinispan";
 
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
@@ -186,12 +184,12 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return !Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 
     @Listener

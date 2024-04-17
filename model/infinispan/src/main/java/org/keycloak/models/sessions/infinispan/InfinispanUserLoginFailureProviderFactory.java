@@ -22,10 +22,10 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -52,16 +52,12 @@ import org.keycloak.models.utils.PostMigrationEvent;
 import java.io.Serializable;
 import java.util.Set;
 
-import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
-
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserLoginFailureProviderFactory.class);
-
-    public static final String PROVIDER_ID = "infinispan";
 
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
 
@@ -95,7 +91,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
                     checkRemoteCaches(session);
                     registerClusterListeners(session);
                     // TODO [pruivo] to remove: workaround to run the testsuite.
-                    if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+                    if (InfinispanUtils.isEmbeddedInfinispan()) {
                         loadLoginFailuresFromRemoteCaches(session);
                     }
                 });
@@ -220,11 +216,11 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        return PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
     }
 }
