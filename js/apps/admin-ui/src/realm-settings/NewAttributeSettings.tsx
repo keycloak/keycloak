@@ -259,8 +259,6 @@ export default function NewAttributeSettings() {
     [combinedLocales],
   );
 
-  console.log(">>> translationsData", translationsData);
-
   useFetch(
     () => adminClient.users.getProfile(),
     (config) => {
