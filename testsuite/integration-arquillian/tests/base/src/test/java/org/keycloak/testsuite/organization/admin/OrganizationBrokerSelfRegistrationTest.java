@@ -26,6 +26,8 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -57,6 +59,29 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
     }
 
     @Test
+    public void testLoginHint() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProvider().toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.LOGIN_HINT, "true");
+        organization.identityProvider().update(idp).close();
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        log.debug("Logging in");
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        loginPage.loginUsername(bc.getUserEmail());
+
+        // user automatically redirected to the organization identity provider
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        // check if the username is automatically filled
+        Assert.assertEquals(bc.getUserEmail(), loginPage.getUsername());
+    }
+
+
+    @Test
     public void testDefaultAuthenticationMechanismIfNotOrganizationMember() {
         testRealm().organizations().get(createOrganization().getId());
         oauth.clientId("broker-app");
@@ -66,6 +91,22 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         log.debug("Logging in");
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("user@noorg.org");
+
+        // check if the login page is shown
+        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testTryLoginWithUsernameNotAnEmail() {
+        testRealm().organizations().get(createOrganization().getId());
+        oauth.clientId("broker-app");
+
+        // login with email only
+        loginPage.open(bc.consumerRealmName());
+        log.debug("Logging in");
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        loginPage.loginUsername("user");
 
         // check if the login page is shown
         Assert.assertTrue(loginPage.isUsernameInputPresent());
@@ -154,7 +195,6 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-
         // login to the organization identity provider and run the configured first broker login flow
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
         waitForPage(driver, "update account information", false);

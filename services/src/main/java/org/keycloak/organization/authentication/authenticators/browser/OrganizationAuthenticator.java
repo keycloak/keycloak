@@ -59,6 +59,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         String domain = getEmailDomain(username);
+
+        if (domain == null) {
+            context.attempted();
+            return;
+        }
+
         OrganizationProvider provider = getOrganizationProvider();
         OrganizationModel organization = provider.getByDomainName(domain);
 
@@ -74,7 +80,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
-        redirect(context, identityProvider.getAlias());
+        redirect(context, identityProvider.getAlias(), username);
     }
 
     private OrganizationProvider getOrganizationProvider() {

@@ -52,7 +52,7 @@ public class Urls {
                 .build(realmName, providerAlias);
     }
 
-    public static URI identityProviderAuthnRequest(URI baseUri, String providerAlias, String realmName, String accessCode, String clientId, String tabId, String clientData) {
+    public static URI identityProviderAuthnRequest(URI baseUri, String providerAlias, String realmName, String accessCode, String clientId, String tabId, String clientData, String loginHint) {
         UriBuilder uriBuilder = realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "performLogin");
 
@@ -67,6 +67,9 @@ public class Urls {
         }
         if (clientData != null) {
             uriBuilder.replaceQueryParam(Constants.CLIENT_DATA, clientData);
+        }
+        if (loginHint != null) {
+            uriBuilder.replaceQueryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
 
         return uriBuilder.build(realmName, providerAlias);
@@ -87,7 +90,7 @@ public class Urls {
     }
 
     public static URI identityProviderAuthnRequest(URI baseURI, String providerAlias, String realmName) {
-        return identityProviderAuthnRequest(baseURI, providerAlias, realmName, null, null, null, null);
+        return identityProviderAuthnRequest(baseURI, providerAlias, realmName, null, null, null, null, null);
     }
 
     public static URI identityProviderAfterFirstBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId, String clientData) {
