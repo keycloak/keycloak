@@ -6,7 +6,7 @@ import java.util.List;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
@@ -22,14 +22,13 @@ import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSe
 public class RemoteInfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<RemoteInfinispanAuthenticationSessionProvider> {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
-    public static final String PROVIDER_ID = "remote-infinispan";
 
     private int authSessionsLimit;
-    private RemoteCache<String, RootAuthenticationSessionEntity> cache;
+    private volatile RemoteCache<String, RootAuthenticationSessionEntity> cache;
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
+        return InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override
@@ -67,13 +66,12 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.REMOTE_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        // use the same priority as the embedded based one
-        return InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
     }
 
     public int getAuthSessionsLimit() {

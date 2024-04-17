@@ -93,14 +93,14 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
     private void clearSessionCaches(KeycloakSession s) {
         InfinispanConnectionProvider provider = s.getProvider(InfinispanConnectionProvider.class);
         if (provider != null) {
-            for (String cache : InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+            for (String cache : InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES) {
                 provider.getCache(cache).clear();
             }
         }
 
         HotRodServerRule hotRodServer = getParameters(HotRodServerRule.class).findFirst().orElse(null);
         if (hotRodServer != null) {
-           for (String cache : InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+           for (String cache : InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES) {
                hotRodServer.getHotRodCacheManager().getCache(cache).clear();
                hotRodServer.getHotRodCacheManager2().getCache(cache).clear();
            }
