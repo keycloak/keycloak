@@ -75,7 +75,7 @@ public class RemoteInfinispanKeycloakTransaction<K, V> implements KeycloakTransa
         return active;
     }
 
-    public void put(K key, V value, int lifespan, TimeUnit timeUnit) {
+    public void put(K key, V value, long lifespan, TimeUnit timeUnit) {
         logger.tracef("Adding %s.put(%S)", cache.getName(), key);
 
         if (tasks.containsKey(key)) {
@@ -163,7 +163,7 @@ public class RemoteInfinispanKeycloakTransaction<K, V> implements KeycloakTransa
         }
     }
 
-    private record PutOperation<K, V>(K key, V value, int lifespan, TimeUnit timeUnit) implements Operation<K, V> {
+    private record PutOperation<K, V>(K key, V value, long lifespan, TimeUnit timeUnit) implements Operation<K, V> {
 
         @Override
         public CompletionStage<?> execute(RemoteCache<K, V> cache) {
@@ -194,7 +194,7 @@ public class RemoteInfinispanKeycloakTransaction<K, V> implements KeycloakTransa
 
     }
 
-    private record ReplaceOperation<K, V>(K key, V value, int lifespan, TimeUnit timeUnit) implements Operation<K, V> {
+    private record ReplaceOperation<K, V>(K key, V value, long lifespan, TimeUnit timeUnit) implements Operation<K, V> {
 
         @Override
         public CompletionStage<?> execute(RemoteCache<K, V> cache) {

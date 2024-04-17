@@ -20,9 +20,12 @@ import com.google.common.collect.ImmutableSet;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.cluster.infinispan.remote.RemoteInfinispanClusterProviderFactory;
+import org.keycloak.connections.infinispan.remote.RemoteLoadBalancerCheckProviderFactory;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProviderFactory;
+import org.keycloak.models.sessions.infinispan.remote.RemoteStickySessionEncoderProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.HotRodServerRule;
@@ -53,6 +56,9 @@ public class RemoteInfinispan extends KeycloakModelParameters {
             .addAll(Infinispan.ALLOWED_FACTORIES)
             .add(RemoteInfinispanClusterProviderFactory.class)
             .add(RemoteInfinispanAuthenticationSessionProviderFactory.class)
+            .add(RemoteInfinispanSingleUseObjectProviderFactory.class)
+            .add(RemoteStickySessionEncoderProviderFactory.class)
+            .add(RemoteLoadBalancerCheckProviderFactory.class)
             .build();
 
     @Override
@@ -71,7 +77,7 @@ public class RemoteInfinispan extends KeycloakModelParameters {
                     .config("remoteStorePort", siteName(NODE_COUNTER.get()).equals("site-2") ? "11333" : "11222")
                     .config("jgroupsUdpMcastAddr", mcastAddr(NODE_COUNTER.get()))
                     .spi(UserSessionSpi.NAME)
-                    .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
+                    .provider(InfinispanUtils.EMBEDDED_PROVIDER_ID)
                     .config("offlineSessionCacheEntryLifespanOverride", "43200")
                     .config("offlineClientSessionCacheEntryLifespanOverride", "43200");
         }
