@@ -22,8 +22,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
@@ -51,15 +51,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<InfinispanAuthenticationSessionProvider> {
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
-    public static final int PROVIDER_PRIORITY = 1;
 
     private InfinispanKeyGenerator keyGenerator;
 
     private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
 
     private int authSessionsLimit;
-
-    public static final String PROVIDER_ID = "infinispan";
 
     public static final String AUTH_SESSIONS_LIMIT = "authSessionsLimit";
 
@@ -191,16 +188,16 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        return PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
     }
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return !Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 }

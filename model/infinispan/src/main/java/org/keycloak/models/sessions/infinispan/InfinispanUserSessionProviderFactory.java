@@ -27,6 +27,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -69,13 +70,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
-
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserSessionProviderFactory.class);
-
-    public static final String PROVIDER_ID = "infinispan";
 
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
 
@@ -172,7 +169,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                         loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
                         registerClusterListeners(session);
                         // TODO [pruivo] to remove: workaround to run the testsuite.
-                        if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) || !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE)) {
+                        if (InfinispanUtils.isEmbeddedInfinispan()) {
                             loadSessionsFromRemoteCaches(session);
                         }
 
@@ -426,12 +423,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        return PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
     }
 
     @Override

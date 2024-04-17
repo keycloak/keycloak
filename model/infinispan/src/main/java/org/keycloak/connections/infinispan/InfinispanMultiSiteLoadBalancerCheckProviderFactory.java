@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -26,15 +27,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
 
 
 public class InfinispanMultiSiteLoadBalancerCheckProviderFactory implements LoadBalancerCheckProviderFactory, EnvironmentDependentProviderFactory {
 
     private LoadBalancerCheckProvider loadBalancerCheckProvider;
-    private static final LoadBalancerCheckProvider ALWAYS_HEALTHY = new LoadBalancerCheckProvider() {
-        @Override public boolean isDown() { return false; }
-        @Override public void close() {}
-    };
+    public static final LoadBalancerCheckProvider ALWAYS_HEALTHY = () -> false;
     private static final Logger LOG = Logger.getLogger(InfinispanMultiSiteLoadBalancerCheckProviderFactory.class);
 
     @Override
@@ -45,7 +44,7 @@ public class InfinispanMultiSiteLoadBalancerCheckProviderFactory implements Load
                 LOG.warn("InfinispanConnectionProvider is not available. Load balancer check will be always healthy for Infinispan.");
                 loadBalancerCheckProvider = ALWAYS_HEALTHY;
             } else {
-                loadBalancerCheckProvider = new InfinispanMultiSiteLoadBalancerCheckProvider(infinispanConnectionProvider);
+                loadBalancerCheckProvider = () -> isEmbeddedCachesDown(infinispanConnectionProvider);
             }
         }
         return loadBalancerCheckProvider;
@@ -72,7 +71,33 @@ public class InfinispanMultiSiteLoadBalancerCheckProviderFactory implements Load
     }
 
     @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE);
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) && !Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
+    }
+
+    private boolean isEmbeddedCachesDown(InfinispanConnectionProvider provider) {
+        return isAnyEmbeddedCachesDown(provider, ALL_CACHES_NAME, LOG);
+    }
+
+    public static boolean isAnyEmbeddedCachesDown(InfinispanConnectionProvider connectionProvider, String[] cacheNames, Logger logger) {
+        for (var name : cacheNames) {
+            var cache = connectionProvider.getCache(name, false);
+
+            // check if cache is started
+            if (cache == null || !cache.getStatus().allowInvocations()) {
+                logger.debugf("Cache '%s' is not started yet.", name);
+                return true; // no need to check other caches
+            }
+
+            var persistenceManager = cache.getAdvancedCache()
+                    .getComponentRegistry()
+                    .getComponent(PersistenceManager.class);
+
+            if (persistenceManager != null && !persistenceManager.isAvailable()) {
+                logger.debugf("Persistence for embedded cache '%s' is down.", name);
+                return true; // no need to check other caches
+            }
+        }
+        return false;
     }
 }

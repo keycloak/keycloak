@@ -19,10 +19,12 @@ package org.keycloak.connections.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.factories.KnownComponentNames;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.util.concurrent.BlockingManager;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,6 +59,11 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     @Override
     public Executor getExecutor(String name) {
         return cacheManager.getGlobalComponentRegistry().getComponent(BlockingManager.class).asExecutor(name);
+    }
+
+    @Override
+    public ScheduledExecutorService getScheduledExecutor() {
+        return cacheManager.getGlobalComponentRegistry().getComponent(ScheduledExecutorService.class, KnownComponentNames.TIMEOUT_SCHEDULE_EXECUTOR);
     }
 
     @Override
