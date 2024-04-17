@@ -9,11 +9,11 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
 import org.keycloak.cluster.infinispan.InfinispanClusterProvider;
 import org.keycloak.cluster.infinispan.LockEntry;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -26,13 +26,12 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.W
 
 public class RemoteInfinispanClusterProviderFactory implements ClusterProviderFactory {
 
-    public static final String PROVIDER_ID = "remote-infinispan";
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
-    private RemoteCache<String, LockEntry> workCache;
-    private int clusterStartupTime;
-    private RemoteInfinispanNotificationManager notificationManager;
-    private Executor executor;
+    private volatile RemoteCache<String, LockEntry> workCache;
+    private volatile int clusterStartupTime;
+    private volatile RemoteInfinispanNotificationManager notificationManager;
+    private volatile Executor executor;
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
@@ -75,13 +74,12 @@ public class RemoteInfinispanClusterProviderFactory implements ClusterProviderFa
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.REMOTE_PROVIDER_ID;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE);
+    public boolean isSupported(Config.Scope config) {
+        return InfinispanUtils.isRemoteInfinispan();
     }
 
     private static TopologyInfo getTopologyInfo(KeycloakSessionFactory factory) {

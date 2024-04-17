@@ -3,6 +3,7 @@ package org.keycloak.connections.infinispan.remote;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.factories.KnownComponentNames;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -10,6 +11,7 @@ import org.keycloak.connections.infinispan.TopologyInfo;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
 public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCacheManager,
                                                  RemoteCacheManager remoteCacheManager,
@@ -40,6 +42,12 @@ public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCa
     public Executor getExecutor(String name) {
         //noinspection removal
         return embeddedCacheManager.getGlobalComponentRegistry().getComponent(BlockingManager.class).asExecutor(name);
+    }
+
+    @Override
+    public ScheduledExecutorService getScheduledExecutor() {
+        //noinspection removal
+        return embeddedCacheManager.getGlobalComponentRegistry().getComponent(ScheduledExecutorService.class, KnownComponentNames.TIMEOUT_SCHEDULE_EXECUTOR);
     }
 
     @Override
