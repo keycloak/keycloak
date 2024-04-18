@@ -7,19 +7,38 @@ import {
   PageHeaderToolsGroup,
   PageHeaderToolsItem,
 } from "@patternfly/react-core/deprecated";
+import { TFunction } from "i18next";
+import Keycloak, { type KeycloakTokenParsed } from "keycloak-js";
 import { ReactNode } from "react";
-
-import { KeycloakDropdown } from "./KeycloakDropdown";
-import { useTranslation } from "./translation/useTranslation";
-import { loggedInUserName } from "./util";
+import { useTranslation } from "react-i18next";
 import { DefaultAvatar } from "./DefaultAvatar";
-import { useKeycloak } from "./KeycloakContext";
+import { KeycloakDropdown } from "./KeycloakDropdown";
+
+function loggedInUserName(
+  token: KeycloakTokenParsed | undefined,
+  t: TFunction,
+) {
+  if (!token) {
+    return t("unknownUser");
+  }
+
+  const givenName = token.given_name;
+  const familyName = token.family_name;
+  const preferredUsername = token.preferred_username;
+
+  if (givenName && familyName) {
+    return t("fullName", { givenName, familyName });
+  }
+
+  return givenName || familyName || preferredUsername || t("unknownUser");
+}
 
 type BrandLogo = BrandProps & {
   href: string;
 };
 
 type KeycloakMastheadProps = PageHeaderProps & {
+  keycloak: Keycloak;
   brand: BrandLogo;
   avatar?: AvatarProps;
   features?: {
@@ -33,6 +52,7 @@ type KeycloakMastheadProps = PageHeaderProps & {
 };
 
 const KeycloakMasthead = ({
+  keycloak,
   brand: { href: brandHref, ...brandProps },
   avatar,
   features: {
@@ -46,7 +66,6 @@ const KeycloakMasthead = ({
   ...rest
 }: KeycloakMastheadProps) => {
   const { t } = useTranslation();
-  const { keycloak } = useKeycloak()!;
   const extraItems = [];
   if (hasManageAccount) {
     extraItems.push(

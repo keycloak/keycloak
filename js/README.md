@@ -10,9 +10,7 @@ This directory contains the UIs and related libraries of the Keycloak project wr
     │   └── keycloak-server            # Keycloak server for local development of UIs
     ├── libs
     │   ├── keycloak-admin-client      # Keycloak Admin Client library for Keycloak REST API
-    │   ├── keycloak-js                # Keycloak JS library for securing HTML5/JavaScript applications
-    │   └── keycloak-masthead          # Keycloak Masthead library for an easy way to bring applications into the Keycloak ecosystem, allow users to access
-    │                                  # and manage security for those applications and manage authorization of resources
+    │   └── keycloak-js                # Keycloak JS library for securing HTML5/JavaScript applications
     ├── ...
 
 ## Data processing
