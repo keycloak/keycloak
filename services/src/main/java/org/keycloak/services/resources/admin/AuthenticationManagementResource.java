@@ -1070,6 +1070,11 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         String providerId = data.get("providerId");
+
+        if (providerId == null || session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, providerId) == null) {
+            throw new BadRequestException("Required Action Provider with given providerId not found");
+        }
+
         String name = data.get("name");
         RequiredActionProviderModel requiredAction = new RequiredActionProviderModel();
         requiredAction.setAlias(providerId);
