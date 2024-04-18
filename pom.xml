@@ -45,8 +45,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.10.Final</quarkus.version>
-        <quarkus.build.version>3.2.10.Final</quarkus.build.version>
+        <quarkus.version>3.2.12.Final</quarkus.version>
+        <quarkus.build.version>3.2.12.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -156,7 +156,7 @@
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
-        <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
+        <mysql-jdbc.version>8.2.0</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
         <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
@@ -858,7 +858,7 @@
             </dependency>
             <!-- Needed for picketlink perf test -->
             <dependency>
-                <groupId>mysql</groupId>
+                <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
                 <scope>test</scope>
