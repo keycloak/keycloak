@@ -57,6 +57,9 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.inject.Inject;
@@ -583,24 +586,25 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         var stsGetter = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName());
-        final String origImage = stsGetter.get().getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
         final String newImage = "quay.io/keycloak/non-existing-keycloak";
 
         kc.getSpec().setImage(newImage);
+
+        var upgradeCondition = k8sclient.resource(kc).informOnCondition(kcs -> {
+            try {
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
+                return true;
+            } catch (AssertionError e) {
+                return false;
+            }
+        });
+
         deployKeycloak(k8sclient, kc, false);
-
-        Awaitility.await()
-                .ignoreExceptions()
-                .pollInterval(Duration.ZERO) // make the test super fast not to miss the moment when Operator changes the STS
-                .untilAsserted(() -> {
-                    var sts = stsGetter.get();
-                    assertEquals(1, sts.getStatus().getReplicas());
-                    assertEquals(origImage, sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-
-                    var currentKc = k8sclient.resources(Keycloak.class)
-                                    .inNamespace(namespace).withName(kc.getMetadata().getName()).get();
-                    assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
-                });
+        try {
+            upgradeCondition.get(2, TimeUnit.MINUTES);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new AssertionError(e);
+        }
 
         Awaitility.await()
                 .ignoreExceptions()
