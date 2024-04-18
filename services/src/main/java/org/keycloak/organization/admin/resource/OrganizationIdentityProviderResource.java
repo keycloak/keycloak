@@ -134,7 +134,7 @@ public class OrganizationIdentityProviderResource {
     public Response update(IdentityProviderRepresentation rep) {
         IdentityProviderModel identityProvider = getIdentityProviderModel();
 
-        if (!rep.getAlias().equals(identityProvider.getAlias())) {
+        if (!rep.getAlias().equals(identityProvider.getAlias()) || (rep.getInternalId() != null && !Objects.equals(rep.getInternalId(), identityProvider.getInternalId()))) {
             throw ErrorResponse.error("Identity provider not assigned to the organization.", Status.NOT_FOUND);
         }
 

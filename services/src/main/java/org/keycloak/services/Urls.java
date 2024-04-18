@@ -30,6 +30,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 
+import org.keycloak.utils.StringUtil;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 
@@ -130,11 +131,14 @@ public class Urls {
     }
 
     public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString, String clientId, String tabId, String clientData) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
-                .queryParam(Constants.KEY, tokenString)
-                .queryParam(Constants.CLIENT_ID, clientId)
-                .queryParam(Constants.TAB_ID, tabId)
-                .queryParam(Constants.CLIENT_DATA, clientData);
+        UriBuilder res = loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
+          .queryParam(Constants.KEY, tokenString)
+          .queryParam(Constants.CLIENT_ID, clientId)
+          .queryParam(Constants.TAB_ID, tabId);
+        if (StringUtil.isNotBlank(clientData)) {
+            res = res.queryParam(Constants.CLIENT_DATA, clientData);
+        }
+        return res;
 
     }
 
