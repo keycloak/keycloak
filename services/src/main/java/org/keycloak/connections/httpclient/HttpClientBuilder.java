@@ -250,8 +250,8 @@ public class HttpClientBuilder {
             }
 
             RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout((int) establishConnectionTimeout)
-                    .setSocketTimeout((int) socketTimeout)
+                    .setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(establishConnectionTimeout, establishConnectionTimeoutUnits))
+                    .setSocketTimeout((int) TimeUnit.MILLISECONDS.convert(socketTimeout, socketTimeoutUnits))
                     .setExpectContinueEnabled(expectContinueEnabled).build();
 
             org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
