@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkAuthenticator;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -711,7 +712,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
 
             // Add federated identity link here
-            if (! (federatedUser instanceof LightweightUserAdapter)) {
+            if (!(federatedUser instanceof LightweightUserAdapter)) {
+                checkOverrideLink(authSession, federatedUser, providerAlias);
+
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getUsername(), context.getToken());
                 session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
@@ -758,6 +761,25 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
     }
 
+    private void checkOverrideLink(AuthenticationSessionModel authSession, UserModel federatedUser, String providerAlias) {
+        String isOverride = authSession.getAuthNote(IdpConfirmOverrideLinkAuthenticator.OVERRIDE_LINK);
+        if (!Boolean.parseBoolean(isOverride)) {
+            return;
+        }
+
+        FederatedIdentityModel previous = session.users()
+                .getFederatedIdentity(realmModel, federatedUser, providerAlias);
+        if (previous == null) {
+            return;
+        }
+
+        session.users().removeFederatedIdentity(realmModel, federatedUser, providerAlias);
+
+        event.clone()
+                .event(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previous.getUserName())
+                .success();
+    }
 
     private Response finishOrRedirectToPostBrokerLogin(AuthenticationSessionModel authSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
         String postBrokerLoginFlowId = context.getIdpConfig().getPostBrokerLoginFlowId();
