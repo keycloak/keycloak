@@ -60,12 +60,15 @@ import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -85,6 +88,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String CLIENT_REMOVED_SESSION_EVENT = "CLIENT_REMOVED_SESSION_SESSIONS";
 
     public static final String REMOVE_USER_SESSIONS_EVENT = "REMOVE_USER_SESSIONS_EVENT";
+    public static final String CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE = "offlineSessionCacheEntryLifespanOverride";
+    public static final String CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE = "offlineClientSessionCacheEntryLifespanOverride";
+    public static final String CONFIG_BATCH_ALL_WRITES = "batchAllWrites";
+    public static final String CONFIG_MAX_BATCH_SIZE = "maxBatchSize";
+    public static final boolean DEFAULT_BATCH_ALL_WRITES = true;
+    public static final int DEFAULT_MAX_BATCH_SIZE = 100;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
@@ -106,6 +115,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientSessions = new ArrayBlockingQueue<>(1000);
     ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientOfflineSessions = new ArrayBlockingQueue<>(1000);
     private PersistentSessionsWorker persistentSessionsWorker;
+    private boolean batchAllWrites;
+    private int maxBatchSize;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -136,7 +147,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     asyncQueueUserSessions,
                     asyncQueueUserOfflineSessions,
                     asyncQueueClientSessions,
-                    asyncQueueClientOfflineSessions
+                    asyncQueueClientOfflineSessions,
+                    batchAllWrites
             );
         }
         return new InfinispanUserSessionProvider(
@@ -162,8 +174,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public void init(Config.Scope config) {
         this.config = config;
-        offlineSessionCacheEntryLifespanOverride = config.getInt("offlineSessionCacheEntryLifespanOverride", -1);
-        offlineClientSessionCacheEntryLifespanOverride = config.getInt("offlineClientSessionCacheEntryLifespanOverride", -1);
+        offlineSessionCacheEntryLifespanOverride = config.getInt(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, -1);
+        offlineClientSessionCacheEntryLifespanOverride = config.getInt(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, -1);
+        batchAllWrites = config.getBoolean(CONFIG_BATCH_ALL_WRITES, DEFAULT_BATCH_ALL_WRITES);
+        maxBatchSize = config.getInt(CONFIG_MAX_BATCH_SIZE, DEFAULT_MAX_BATCH_SIZE);
     }
 
     @Override
@@ -215,7 +229,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         persistentSessionsWorker = new PersistentSessionsWorker(factory, asyncQueueUserSessions,
                 asyncQueueUserOfflineSessions,
                 asyncQueueClientSessions,
-                asyncQueueClientOfflineSessions);
+                asyncQueueClientOfflineSessions,
+                maxBatchSize);
         persistentSessionsWorker.start();
     }
 
@@ -246,7 +261,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             @Override
             public void run(KeycloakSession session) {
                 // Initialize persister for periodically doing bulk DB updates of lastSessionRefresh timestamps of refreshed sessions
-                persisterLastSessionRefreshStore = new PersisterLastSessionRefreshStoreFactory().createAndInit(session, true);
+                persisterLastSessionRefreshStore = new PersisterLastSessionRefreshStoreFactory().createAndInit(session, DEFAULT_BATCH_ALL_WRITES);
             }
 
         });
@@ -332,7 +347,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         }, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
 
         if (offlineSessionsRemoteCache != null) {
-            offlineLastSessionRefreshStore = new CrossDCLastSessionRefreshStoreFactory().createAndInit(session, offlineSessionsCache, true);
+            offlineLastSessionRefreshStore = new CrossDCLastSessionRefreshStoreFactory().createAndInit(session, offlineSessionsCache, DEFAULT_BATCH_ALL_WRITES);
         }
 
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
@@ -452,9 +467,45 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public Map<String, String> getOperationalInfo() {
         Map<String, String> info = new HashMap<>();
-        info.put("offlineSessionCacheEntryLifespanOverride", Long.toString(offlineSessionCacheEntryLifespanOverride));
-        info.put("offlineClientSessionCacheEntryLifespanOverride", Long.toString(offlineClientSessionCacheEntryLifespanOverride));
+        info.put(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, Long.toString(offlineSessionCacheEntryLifespanOverride));
+        info.put(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, Long.toString(offlineClientSessionCacheEntryLifespanOverride));
+        info.put(CONFIG_BATCH_ALL_WRITES, Boolean.toString(batchAllWrites));
+        info.put(CONFIG_MAX_BATCH_SIZE, Integer.toString(maxBatchSize));
         return info;
     }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+
+        builder.property()
+                .name(CONFIG_BATCH_ALL_WRITES)
+                .type("boolean")
+                .helpText("Batch all writes, not only updates to lifespans (only applicable to persistent sessions")
+                .defaultValue(DEFAULT_BATCH_ALL_WRITES)
+                .add();
+
+        builder.property()
+                .name(CONFIG_MAX_BATCH_SIZE)
+                .type("int")
+                .helpText("Maximum size of a batch size (only applicable to persistent sessions")
+                .defaultValue(DEFAULT_MAX_BATCH_SIZE)
+                .add();
+
+        builder.property()
+                .name(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
+                .type("int")
+                .helpText("Override how long offline client sessions should be kept in memory")
+                .add();
+
+        builder.property()
+                .name(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
+                .type("int")
+                .helpText("Override how long offline user sessions should be kept in memory")
+                .add();
+
+        return builder.build();
+    }
+
 }
 

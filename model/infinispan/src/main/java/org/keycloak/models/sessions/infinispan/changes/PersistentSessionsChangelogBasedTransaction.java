@@ -30,7 +30,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -42,12 +45,14 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
     private final List<SessionChangesPerformer<K, V>> changesPerformers;
     protected final boolean offline;
     private final ArrayBlockingQueue<PersistentDeferredElement<K, V>> asyncQueue;
+    private final boolean batchAllWrites;
     private Collection<PersistentDeferredElement<K, V>> batch;
 
-    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<K> serializer, ArrayBlockingQueue<PersistentDeferredElement<K, V>> asyncQueue) {
+    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<K> serializer, ArrayBlockingQueue<PersistentDeferredElement<K, V>> asyncQueue, boolean batchAllWrites) {
         super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, serializer);
         this.offline = offline;
         this.asyncQueue = asyncQueue;
+        this.batchAllWrites = batchAllWrites;
 
         if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
             throw new IllegalStateException("Persistent user sessions are not enabled");
@@ -69,6 +74,7 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
     @Override
     protected void commitImpl() {
+        List<Future<Void>> futures = new ArrayList<>(updates.size());
         for (Map.Entry<K, SessionUpdatesList<V>> entry : updates.entrySet()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
             SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
@@ -85,7 +91,13 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
             if (merged != null) {
                 if (merged.isDeferrable()) {
-                    asyncQueue.add(new PersistentDeferredElement<>(entry, merged));
+                    // This is deferrable, no need to memorize the future
+                    addEntryToQueue(entry, merged);
+                } else if (batchAllWrites) {
+                    // We will batch the updates, important to memorize the future first before adding it to the queue,
+                    // as the future will only be created only when necessary.
+                    futures.add(merged.result());
+                    addEntryToQueue(entry, merged);
                 } else {
                     changesPerformers.forEach(p -> p.registerChange(entry, merged));
                 }
@@ -99,6 +111,39 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
         }
 
         changesPerformers.forEach(SessionChangesPerformer::applyChanges);
+
+        // If we enqueued any items that we wait for in the background tasks, this is now the moment
+        List<Exception> exceptions = futures.stream().map(future -> {
+            try {
+                future.get();
+                return null;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return e;
+            } catch (ExecutionException e) {
+                return e;
+            }
+        }).filter(Objects::nonNull).toList();
+
+        // If any of those futures has failed, add the exceptions as suppressed exceptions to our runtime exception
+        if (!exceptions.isEmpty()) {
+            RuntimeException ex = new RuntimeException("unable to complete the session updates");
+            exceptions.forEach(ex::addSuppressed);
+            throw ex;
+        }
+    }
+
+    private void addEntryToQueue(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
+        if (!asyncQueue.offer(new PersistentDeferredElement<>(entry, merged))) {
+            logger.warnf("Queue for cache %s is full, will block", cache.getName());
+            try {
+                // this will block until there is a free spot in the queue
+                asyncQueue.put(new PersistentDeferredElement<>(entry, merged));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Override

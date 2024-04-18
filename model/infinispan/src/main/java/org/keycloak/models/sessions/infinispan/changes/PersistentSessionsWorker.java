@@ -46,15 +46,18 @@ public class PersistentSessionsWorker {
     private final ArrayBlockingQueue<PersistentDeferredElement<String, UserSessionEntity>> asyncQueueUserOfflineSessions;
     private final ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientSessions;
     private final ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientOfflineSessions;
+    private final int maxBatchSize;
     private final List<Thread> threads = new ArrayList<>();
     private volatile boolean stop;
 
-    public PersistentSessionsWorker(KeycloakSessionFactory factory, ArrayBlockingQueue<PersistentDeferredElement<String, UserSessionEntity>> asyncQueueUserSessions, ArrayBlockingQueue<PersistentDeferredElement<String, UserSessionEntity>> asyncQueueUserOfflineSessions, ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientSessions, ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientOfflineSessions) {
+    public PersistentSessionsWorker(KeycloakSessionFactory factory, ArrayBlockingQueue<PersistentDeferredElement<String, UserSessionEntity>> asyncQueueUserSessions, ArrayBlockingQueue<PersistentDeferredElement<String, UserSessionEntity>> asyncQueueUserOfflineSessions, ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientSessions, ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientOfflineSessions,
+                                    int maxBatchSize) {
         this.factory = factory;
         this.asyncQueueUserSessions = asyncQueueUserSessions;
         this.asyncQueueUserOfflineSessions = asyncQueueUserOfflineSessions;
         this.asyncQueueClientSessions = asyncQueueClientSessions;
         this.asyncQueueClientOfflineSessions = asyncQueueClientOfflineSessions;
+        this.maxBatchSize = maxBatchSize;
     }
 
     public void start() {
@@ -105,13 +108,15 @@ public class PersistentSessionsWorker {
             PersistentDeferredElement<K, V> polled = queue.poll(100, TimeUnit.MILLISECONDS);
             if (polled != null) {
                 batch.add(polled);
-                queue.drainTo(batch, 99);
+                queue.drainTo(batch, maxBatchSize - 1);
                 try {
                     LOG.debugf("Processing %d deferred session updates.", batch.size());
                     KeycloakModelUtils.runJobInTransaction(factory,
                             session -> adapter.run(((PersistentUserSessionProvider) session.getProvider(UserSessionProvider.class)), batch, offline));
+                    batch.forEach(o -> o.getMerged().complete());
                 } catch (RuntimeException ex) {
-                    LOG.warnf(ex, "Unable to write %d deferred session updates", queue.size());
+                    batch.forEach(o -> o.getMerged().fail(ex));
+                    LOG.warnf(ex, "Unable to write %d deferred session updates", batch.size());
                 }
             }
         }
