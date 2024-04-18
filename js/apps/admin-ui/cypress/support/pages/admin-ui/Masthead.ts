@@ -11,7 +11,7 @@ export default class Masthead extends CommonElements {
   #globalAlerts = "global-alerts";
   #documentationLink = "#link";
   #backToAdminConsoleLink = "referrer-link";
-  #userDrpdwnItem = ".pf-v5-c-dropdown__menu-item";
+  #userDrpdwnItem = ".pf-v5-c-menu__item";
 
   #getAlertsContainer() {
     return cy.findByTestId(this.#globalAlerts);
