@@ -13,6 +13,7 @@ public class SessionRepresentation {
     private String ipAddress;
     private long start;
     private long lastAccess;
+    private boolean transientUser;
 
     private SessionType type;
     private Map<String, String> clients = new HashMap<>();
@@ -79,6 +80,14 @@ public class SessionRepresentation {
 
     public void setClients(Map<String, String> clients) {
         this.clients = clients;
+    }
+
+    public boolean isTransientUser() {
+        return transientUser;
+    }
+
+    public void setTransientUser(boolean transientUser) {
+        this.transientUser = transientUser;
     }
 
     @Override

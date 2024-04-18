@@ -1,12 +1,14 @@
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
 import {
   Button,
+  Label,
   List,
   ListItem,
   ListVariant,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
-import { CubesIcon } from "@patternfly/react-icons";
+import { CubesIcon, InfoCircleIcon } from "@patternfly/react-icons";
 import { MouseEvent, ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
@@ -50,9 +52,24 @@ export type SessionsTableProps = {
 
 const UsernameCell = (row: UserSessionRepresentation) => {
   const { realm } = useRealm();
+  const { t } = useTranslation();
   return (
     <Link to={toUser({ realm, id: row.userId!, tab: "sessions" })}>
       {row.username}
+      {row.transientUser && (
+        <>
+          {" "}
+          <Tooltip content={t("transientUserTooltip")}>
+            <Label
+              data-testid="user-details-label-transient-user"
+              icon={<InfoCircleIcon />}
+              isCompact
+            >
+              {t("transientUser")}
+            </Label>
+          </Tooltip>
+        </>
+      )}
     </Link>
   );
 };
