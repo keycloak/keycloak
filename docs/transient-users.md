@@ -60,4 +60,11 @@ When using transient users, you should be aware of the following:
 - Technically, transient user data is stored as part
   of the user session. It thus increases the session size.
 
+- The transient user login uses the `first broker login` authentication-flow for each authentication causing
+  a profile review for each authenticated user each time a user authenticates. To prevent this behaviour
+  copy the `first broker login` authentication-flow, disable the `Review Profile` step and assign the new
+  authentication-flow to the `Identity Provider` configuration by selecting it in the `First login flow`
+  selection-box of the `Identity Provider` configuration.
+  
+
 </@tmpl.guide>
