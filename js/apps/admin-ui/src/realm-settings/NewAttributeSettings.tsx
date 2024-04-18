@@ -10,7 +10,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { flatten } from "flat";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -29,6 +29,7 @@ import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotati
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
+import { DEFAULT_LOCALE } from "../i18n/i18n";
 
 import "./realm-settings-section.css";
 
@@ -169,6 +170,20 @@ export default function NewAttributeSettings() {
   const [generatedDisplayName, setGeneratedDisplayName] = useState<string>("");
   const [realm, setRealm] = useState<RealmRepresentation>();
 
+  const defaultSupportedLocales = useMemo(() => {
+    return realm?.supportedLocales?.length
+      ? realm.supportedLocales
+      : [DEFAULT_LOCALE];
+  }, [realm]);
+
+  const defaultLocales = useMemo(() => {
+    return realm?.defaultLocale?.length ? [realm.defaultLocale] : [];
+  }, [realm]);
+
+  const combinedLocales = useMemo(() => {
+    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
+  }, [defaultLocales, defaultSupportedLocales]);
+
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
     (realm) => {
@@ -178,6 +193,70 @@ export default function NewAttributeSettings() {
       setRealm(realm);
     },
     [],
+  );
+
+  useFetch(
+    async () => {
+      const translationsToSave: any[] = [];
+      await Promise.all(
+        combinedLocales.map(async (selectedLocale) => {
+          try {
+            const translations =
+              await adminClient.realms.getRealmLocalizationTexts({
+                realm: realmName,
+                selectedLocale,
+              });
+
+            const formData = form.getValues();
+            const formattedKey = formData.displayName?.substring(
+              2,
+              formData.displayName.length - 1,
+            );
+            const filteredTranslations: Array<{
+              locale: string;
+              value: string;
+            }> = [];
+            const allTranslations = Object.entries(translations).map(
+              ([key, value]) => ({
+                key,
+                value,
+              }),
+            );
+
+            allTranslations.forEach((translation) => {
+              if (translation.key === formattedKey) {
+                filteredTranslations.push({
+                  locale: selectedLocale,
+                  value: translation.value,
+                });
+              }
+            });
+
+            const translationToSave: any = {
+              key: formattedKey,
+              translations: filteredTranslations,
+            };
+
+            translationsToSave.push(translationToSave);
+          } catch (error) {
+            console.error(
+              `Error fetching translations for ${selectedLocale}:`,
+              error,
+            );
+          }
+        }),
+      );
+      return translationsToSave;
+    },
+    (translationsToSaveData) => {
+      setTranslationsData(() => ({
+        key: translationsToSaveData[0].key,
+        translations: translationsToSaveData.flatMap(
+          (translationData) => translationData.translations,
+        ),
+      }));
+    },
+    [combinedLocales],
   );
 
   useFetch(
@@ -228,9 +307,8 @@ export default function NewAttributeSettings() {
 
   const saveTranslations = async () => {
     try {
-      const nonEmptyTranslations = translationsData.translations
-        .filter((translation) => translation.value.trim() !== "")
-        .map(async (translation) => {
+      const nonEmptyTranslations = translationsData.translations.map(
+        async (translation) => {
           try {
             await adminClient.realms.addLocalization(
               {
@@ -243,7 +321,8 @@ export default function NewAttributeSettings() {
           } catch (error) {
             console.error(`Error saving translation for ${translation.locale}`);
           }
-        });
+        },
+      );
       await Promise.all(nonEmptyTranslations);
     } catch (error) {
       console.error(`Error saving translations: ${error}`);
