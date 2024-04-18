@@ -72,7 +72,9 @@ export const SelectControl = <
     const lowercasePrefix = prefix.toLowerCase();
     return options
       .filter((option) =>
-        option.toString().toLowerCase().startsWith(lowercasePrefix),
+        (isString(option) ? option : option.value)
+          .toLowerCase()
+          .startsWith(lowercasePrefix),
       )
       .map((option) => (
         <SelectOption key={key(option)} value={key(option)}>

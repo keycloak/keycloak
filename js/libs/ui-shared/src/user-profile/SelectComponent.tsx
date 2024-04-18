@@ -48,8 +48,6 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
           <Select
             toggleId={attribute.name}
             onToggle={(_event, b) => setOpen(b)}
-            isCreatable
-            onCreateOption={(value) => setValue(value, field)}
             onSelect={(_, value) => {
               const option = value.toString();
               setValue(option, field);
@@ -60,7 +58,13 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
             selections={
               field.value ? field.value : isMultiValue ? [] : t("choose")
             }
-            variant={isMultiValue ? "typeaheadmulti" : "single"}
+            variant={
+              isMultiValue
+                ? "typeaheadmulti"
+                : options.length >= 10
+                  ? "typeahead"
+                  : "single"
+            }
             aria-label={t("selectOne")}
             isOpen={open}
             isDisabled={attribute.readOnly}

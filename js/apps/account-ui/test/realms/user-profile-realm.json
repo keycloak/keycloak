@@ -200,5 +200,34 @@
       }
     }
   ],
-  "identityFederationEnabled": true
+  "identityFederationEnabled": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de",
+    "no",
+    "fi",
+    "ru",
+    "lt",
+    "lv",
+    "fr",
+    "hu",
+    "zh-CN",
+    "sk",
+    "ca",
+    "sv",
+    "pt-BR",
+    "el",
+    "en",
+    "it",
+    "es",
+    "cs",
+    "ar",
+    "ja",
+    "fa",
+    "pl",
+    "da",
+    "nl",
+    "tr"
+  ],
+  "defaultLocale": "en"
 }
