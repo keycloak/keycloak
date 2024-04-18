@@ -125,6 +125,26 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         }
     }
 
+    @Test
+    public void tryUpdateIdPWithValidAliasInvalidInternalId() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        OrganizationIdentityProviderResource orgIdPResource = orgResource.identityProvider();
+
+        IdentityProviderRepresentation idpRepresentation = createRep("some-broker", "oidc");
+        //create IdP in realm not bound to Org and get created internalId
+        testRealm().identityProviders().create(idpRepresentation).close();
+        String internalId = testRealm().identityProviders().get("some-broker").toRepresentation().getInternalId();
+
+        IdentityProviderRepresentation orgIdPRep = orgIdPResource.toRepresentation();
+        orgIdPRep.setInternalId(internalId);
+
+        try (Response response = orgIdPResource.update(orgIdPRep)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NOT_FOUND.getStatusCode()));
+        }
+    }
+
     private IdentityProviderRepresentation createRep(String alias, String providerId) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
