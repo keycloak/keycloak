@@ -24,7 +24,6 @@
     "i18next": "^23.11.2",
     "i18next-http-backend": "^2.5.0",
     "keycloak-js": "workspace:*",
-    "keycloak-masthead": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -50,7 +49,6 @@
       "command": "vite --host",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
@@ -59,7 +57,6 @@
       "command": "vite preview",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
@@ -68,7 +65,6 @@
       "command": "vite build",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
@@ -77,7 +73,6 @@
       "command": "eslint .",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]

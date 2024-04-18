@@ -37,3 +37,4 @@ export { createNamedContext } from "./utils/createNamedContext";
 export { isDefined } from "./utils/isDefined";
 export { useRequiredContext } from "./utils/useRequiredContext";
 export { useStoredState } from "./utils/useStoredState";
+export { default as KeycloakMasthead } from "./masthead/Masthead";
