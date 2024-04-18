@@ -307,9 +307,8 @@ export default function NewAttributeSettings() {
 
   const saveTranslations = async () => {
     try {
-      const nonEmptyTranslations = translationsData.translations
-        .filter((translation) => translation.value.trim() !== "")
-        .map(async (translation) => {
+      const nonEmptyTranslations = translationsData.translations.map(
+        async (translation) => {
           try {
             await adminClient.realms.addLocalization(
               {
@@ -322,7 +321,8 @@ export default function NewAttributeSettings() {
           } catch (error) {
             console.error(`Error saving translation for ${translation.locale}`);
           }
-        });
+        },
+      );
       await Promise.all(nonEmptyTranslations);
     } catch (error) {
       console.error(`Error saving translations: ${error}`);
