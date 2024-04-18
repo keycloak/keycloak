@@ -11,6 +11,16 @@ import java.util.concurrent.TimeUnit;
 public class HttpClientBuilderTest {
 
     @Test
+    public void testDefaultBuilder() throws NoSuchFieldException, IllegalAccessException {
+        CloseableHttpClient httpClient = new HttpClientBuilder().build();
+
+        RequestConfig requestConfig = getRequestConfig(httpClient);
+
+        Assert.assertEquals("Default socket timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getSocketTimeout());
+        Assert.assertEquals("Default connect timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getConnectTimeout());
+    }
+
+    @Test
     public void testTimeUnitSeconds() throws NoSuchFieldException, IllegalAccessException {
         HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
         httpClientBuilder
