@@ -163,6 +163,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         openResetPasswordUrlAndDoFlow(resetUri, "account", oauth.AUTH_SERVER_ROOT + "/realms/test/account/");
 
         AccountHelper.logout(testRealm(), username);
+        WaitUtils.waitForPageToLoad();
 
         TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
         testAppHelper.login(username, "resetPassword");
