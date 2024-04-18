@@ -102,6 +102,8 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +111,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1032,45 +1035,40 @@ public class AuthenticationManager {
         return redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, authSession);
     }
 
-    // Return null if action is not required. Or the name of the requiredAction in case it is required.
+    // Return null if action is not required. Or the alias of the requiredAction in case it is required.
     public static String nextRequiredAction(final KeycloakSession session, final AuthenticationSessionModel authSession,
-                                            final HttpRequest request, final EventBuilder event) {
-        final RealmModel realm = authSession.getRealm();
-        final UserModel user = authSession.getAuthenticatedUser();
-        final ClientModel client = authSession.getClient();
+            final HttpRequest request, final EventBuilder event) {
+        final var realm = authSession.getRealm();
+        final var user = authSession.getAuthenticatedUser();
 
         evaluateRequiredActionTriggers(session, authSession, request, event, realm, user);
 
-        Optional<String> reqAction = user.getRequiredActionsStream().findFirst();
-        if (reqAction.isPresent()) {
-            return reqAction.get();
-        }
-        if (!authSession.getRequiredActions().isEmpty()) {
-            return authSession.getRequiredActions().iterator().next();
-        }
-
-        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
-        if (kcAction != null) {
-            return kcAction;
+        final var kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        final var nextApplicableAction =
+                getFirstApplicableRequiredAction(realm, authSession, user, kcAction);
+        if (nextApplicableAction != null) {
+            return nextApplicableAction.getAlias();
         }
 
+        final var client = authSession.getClient();
         if (client.isConsentRequired() || isOAuth2DeviceVerificationFlow(authSession)) {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
             // See if any clientScopes need to be approved on consent screen
-            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
+            List<AuthorizationDetails> clientScopesToApprove =
+                    getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
             if (!clientScopesToApprove.isEmpty()) {
                 return CommonClientSessionModel.Action.OAUTH_GRANT.name();
             }
 
-            String consentDetail = (grantedConsent != null) ? Details.CONSENT_VALUE_PERSISTED_CONSENT : Details.CONSENT_VALUE_NO_CONSENT_REQUIRED;
+            String consentDetail = (grantedConsent != null) ? Details.CONSENT_VALUE_PERSISTED_CONSENT
+                    : Details.CONSENT_VALUE_NO_CONSENT_REQUIRED;
             event.detail(Details.CONSENT, consentDetail);
         } else {
             event.detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED);
         }
         return null;
-
     }
 
 
@@ -1097,24 +1095,21 @@ public class AuthenticationManager {
 
 
     public static Response actionRequired(final KeycloakSession session, final AuthenticationSessionModel authSession,
-                                                         final HttpRequest request, final EventBuilder event) {
-        final RealmModel realm = authSession.getRealm();
-        final UserModel user = authSession.getAuthenticatedUser();
-        final ClientModel client = authSession.getClient();
+            final HttpRequest request, final EventBuilder event) {
+        final var realm = authSession.getRealm();
+        final var user = authSession.getAuthenticatedUser();
 
         evaluateRequiredActionTriggers(session, authSession, request, event, realm, user);
 
-        logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
-
         event.detail(Details.CODE_ID, authSession.getParentSession().getId());
 
-        Stream<String> requiredActions = user.getRequiredActionsStream();
-        Response action = executionActions(session, authSession, request, event, realm, user, requiredActions);
-        if (action != null) return action;
+        final var actionResponse = executionActions(session, authSession, request, event, realm, user);
+        if (actionResponse != null) {
+            return actionResponse;
+        }
 
-        // executionActions() method should remove any duplicate actions that might be in the clientSession
-        action = executionActions(session, authSession, request, event, realm, user, authSession.getRequiredActions().stream());
-        if (action != null) return action;
+        final var client = authSession.getClient();
+        logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
         // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-5.4
         // The spec says "The authorization server SHOULD display information about the device",
@@ -1123,13 +1118,15 @@ public class AuthenticationManager {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
-            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
+            List<AuthorizationDetails> clientScopesToApprove =
+                    getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
 
             // Skip grant screen if everything was already approved by this user
             if (clientScopesToApprove.size() > 0) {
                 String execution = AuthenticatedClientSessionModel.Action.OAUTH_GRANT.name();
 
-                ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, realm, authSession);
+                ClientSessionCode<AuthenticationSessionModel> accessCode =
+                        new ClientSessionCode<>(session, realm, authSession);
                 accessCode.setAction(AuthenticatedClientSessionModel.Action.REQUIRED_ACTIONS.name());
                 authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution);
 
@@ -1140,7 +1137,8 @@ public class AuthenticationManager {
                         .setAccessRequest(clientScopesToApprove)
                         .createOAuthGrant();
             } else {
-                String consentDetail = (grantedConsent != null) ? Details.CONSENT_VALUE_PERSISTED_CONSENT : Details.CONSENT_VALUE_NO_CONSENT_REQUIRED;
+                String consentDetail = (grantedConsent != null) ? Details.CONSENT_VALUE_PERSISTED_CONSENT
+                        : Details.CONSENT_VALUE_NO_CONSENT_REQUIRED;
                 event.detail(Details.CONSENT, consentDetail);
             }
         } else {
@@ -1220,26 +1218,14 @@ public class AuthenticationManager {
 
 
     protected static Response executionActions(KeycloakSession session, AuthenticationSessionModel authSession,
-                                               HttpRequest request, EventBuilder event, RealmModel realm, UserModel user,
-                                               Stream<String> requiredActions) {
+            HttpRequest request, EventBuilder event, RealmModel realm, UserModel user) {
+        final var kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        final var firstApplicableRequiredAction =
+                getFirstApplicableRequiredAction(realm, authSession, user, kcAction);
 
-        Optional<Response> response = sortRequiredActionsByPriority(realm, requiredActions)
-                .map(model -> executeAction(session, authSession, model, request, event, realm, user, false))
-                .filter(Objects::nonNull).findFirst();
-        if (response.isPresent())
-            return response.get();
-
-        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
-        if (kcAction != null) {
-            Optional<RequiredActionProviderModel> requiredAction = realm.getRequiredActionProvidersStream()
-                    .filter(m -> Objects.equals(m.getProviderId(), kcAction))
-                    .findFirst();
-            if (requiredAction.isPresent()) {
-                return executeAction(session, authSession, requiredAction.get(), request, event, realm, user, true);
-            }
-
-            logger.debugv("Requested action {0} not configured for realm", kcAction);
-            setKcActionStatus(kcAction, RequiredActionContext.KcActionStatus.ERROR, authSession);
+        if (firstApplicableRequiredAction != null) {
+            return executeAction(session, authSession, firstApplicableRequiredAction, request, event, realm, user,
+                    kcAction != null);
         }
 
         return null;
@@ -1304,17 +1290,81 @@ public class AuthenticationManager {
         return null;
     }
 
-    private static Stream<RequiredActionProviderModel> sortRequiredActionsByPriority(RealmModel realm, Stream<String> requiredActions) {
-        return requiredActions.map(action -> {
-                    RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
-                    if (model == null) {
-                        logger.warnv("Could not find configuration for Required Action {0}, did you forget to register it?", action);
-                    }
-                    return model;
-                })
+    private static RequiredActionProviderModel getFirstApplicableRequiredAction(final RealmModel realm,
+            final AuthenticationSessionModel authSession, final UserModel user, final String kcAction) {
+        final var applicableRequiredActionsSorted =
+                getApplicableRequiredActionsSorted(realm, authSession, user, kcAction);
+
+        final RequiredActionProviderModel firstApplicableRequiredAction;
+        if (applicableRequiredActionsSorted.isEmpty()) {
+            firstApplicableRequiredAction = null;
+            logger.debugv("Did not find applicable required action");
+        } else {
+            firstApplicableRequiredAction = applicableRequiredActionsSorted.iterator().next();
+            logger.debugv("first applicable required action: {0}", firstApplicableRequiredAction.getAlias());
+        }
+
+        return firstApplicableRequiredAction;
+    }
+
+    private static List<RequiredActionProviderModel> getApplicableRequiredActionsSorted(final RealmModel realm,
+            final AuthenticationSessionModel authSession, final UserModel user, final String kcActionAlias) {
+        final Set<String> nonInitiatedActionAliases = new HashSet<>();
+        nonInitiatedActionAliases.addAll(user.getRequiredActionsStream().toList());
+        nonInitiatedActionAliases.addAll(authSession.getRequiredActions());
+
+        final var applicableNonInitiatedActions = nonInitiatedActionAliases.stream()
+                .map(alias -> getApplicableRequiredAction(realm, alias))
                 .filter(Objects::nonNull)
-                .filter(RequiredActionProviderModel::isEnabled)
-                .sorted(RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
+                .collect(Collectors.toMap(RequiredActionProviderModel::getAlias, Function.identity()));
+
+        RequiredActionProviderModel kcAction = null;
+        if (kcActionAlias != null) {
+            kcAction = getApplicableRequiredAction(realm, kcActionAlias);
+            if (kcAction == null) {
+                logger.debugv("Requested action {0} not configured for realm", kcActionAlias);
+                setKcActionStatus(kcActionAlias, RequiredActionContext.KcActionStatus.ERROR, authSession);
+            } else {
+                if (applicableNonInitiatedActions.containsKey(kcActionAlias)) {
+                    setKcActionToEnforced(kcActionAlias, authSession);
+                }
+            }
+        }
+
+        final Map<String, RequiredActionProviderModel> applicableActions;
+        if (kcAction != null) {
+            applicableActions = new HashMap<>(applicableNonInitiatedActions);
+            applicableActions.put(kcAction.getAlias(), kcAction);
+        } else {
+            applicableActions = applicableNonInitiatedActions;
+        }
+
+        final var applicableActionsSorted = applicableActions.values().stream()
+                .sorted(RequiredActionProviderModel.RequiredActionComparator.SINGLETON)
+                .toList();
+
+        if (logger.isDebugEnabled()) {
+            logger.debugv("applicable required actions (sorted): {0}",
+                    applicableActionsSorted.stream().map(RequiredActionProviderModel::getAlias).toList());
+        }
+
+        return applicableActionsSorted;
+    }
+
+    private static RequiredActionProviderModel getApplicableRequiredAction(final RealmModel realm, final String alias) {
+        final var model = realm.getRequiredActionProviderByAlias(alias);
+        if (model == null) {
+            logger.warnv(
+                    "Could not find configuration for Required Action {0}, did you forget to register it?",
+                    alias);
+            return null;
+        }
+
+        if (!model.isEnabled()) {
+            return null;
+        }
+
+        return model;
     }
 
     public static void evaluateRequiredActionTriggers(final KeycloakSession session, final AuthenticationSessionModel authSession,
@@ -1521,6 +1571,12 @@ public class AuthenticationManager {
             authSession.setClientNote(Constants.KC_ACTION_STATUS, status.name().toLowerCase());
             authSession.removeClientNote(Constants.KC_ACTION);
             authSession.removeClientNote(Constants.KC_ACTION_EXECUTING);
+        }
+    }
+
+    public static void setKcActionToEnforced(String executedProviderId, AuthenticationSessionModel authSession) {
+        if (executedProviderId.equals(authSession.getClientNote(Constants.KC_ACTION))) {
+            authSession.setClientNote(Constants.KC_ACTION_ENFORCED, Boolean.TRUE.toString());
         }
     }
 

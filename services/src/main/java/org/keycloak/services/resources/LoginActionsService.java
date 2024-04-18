@@ -1190,7 +1190,8 @@ public class LoginActionsService {
     }
     
     private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
-        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))) {
+        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
+                && !Boolean.TRUE.toString().equals(authSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
             boolean userRequestedCancelAIA = formData.getFirst(CANCEL_AIA) != null;
             return userRequestedCancelAIA;
