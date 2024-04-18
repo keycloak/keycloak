@@ -227,11 +227,18 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             webAuthnRegisterPage.assertCurrent();
             webAuthnRegisterPage.clickRegister();
-            webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
+            webAuthnRegisterPage.registerWebAuthnCredential(WEBAUTHN_LABEL);
 
             webAuthnRegisterPage.assertCurrent();
+
+            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
+                    .user(userId)
+                    .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)
+                    .assertEvent();
+
             webAuthnRegisterPage.clickRegister();
-            webAuthnRegisterPage.registerWebAuthnCredential(WEBAUTHN_LABEL);
+            webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
 
             appPage.assertCurrent();
 
@@ -239,12 +246,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL)
-                    .assertEvent();
-
-            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
-                    .user(userId)
-                    .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
-                    .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)
                     .assertEvent();
 
             final String sessionID = events.expectLogin()
