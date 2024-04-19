@@ -28,8 +28,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import java.util.Map;
 
@@ -38,9 +36,6 @@ import java.util.Map;
  */
 @Entity
 @Table(name="IDENTITY_PROVIDER")
-@NamedQueries({
-        @NamedQuery(name="findIdentityProviderByAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias")
-})
 public class IdentityProviderEntity {
 
     @Id

@@ -1,5 +1,9 @@
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -85,7 +89,7 @@ export const ScopeSelect = ({
         <Select
           toggleId="scopes"
           variant={SelectVariant.typeaheadMulti}
-          onToggle={setOpen}
+          onToggle={(_event, val) => setOpen(val)}
           onFilter={(_, filter) => {
             setSearch(filter);
             return toSelectOptions(scopes);

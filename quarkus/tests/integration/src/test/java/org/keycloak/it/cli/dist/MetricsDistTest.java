@@ -30,7 +30,9 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 
-@DistributionTest(keepAlive =true)
+@DistributionTest(keepAlive = true,
+        requestPort = 9000,
+        containerExposedPorts = {8080, 9000})
 public class MetricsDistTest {
 
     @Test
@@ -57,17 +59,24 @@ public class MetricsDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--metrics-enabled=true", "--cache-metrics-histograms-enabled=true" })
+    @Launch({ "start-dev", "--metrics-enabled=true", "--cache-metrics-histograms-enabled=true", "--http-metrics-slos=5,10,25,50,250,500", "--http-metrics-histograms-enabled=true" })
     void testMetricsEndpointWithCacheMetricsHistograms() {
         when().get("/metrics").then()
                 .statusCode(200)
                 .body(containsString("vendor_statistics_miss_times_seconds_bucket"));
+
+        // histograms are only available at the second request as they then contain the metrics of the first request
+        when().get("/metrics").then()
+                .statusCode(200)
+                .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005\"}"))
+                .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005592405\"}"));
+
     }
 
     @Test
     void testUsingRelativePath(KeycloakDistribution distribution) {
         for (String relativePath : List.of("/auth", "/auth/", "auth")) {
-            distribution.run("start-dev", "--metrics-enabled=true", "--http-relative-path=" + relativePath);
+            distribution.run("start-dev", "--metrics-enabled=true", "--http-management-relative-path=" + relativePath);
             if (!relativePath.endsWith("/")) {
                 relativePath = relativePath + "/";
             }
@@ -79,8 +88,8 @@ public class MetricsDistTest {
     @Test
     void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
         for (String relativePath : List.of("/", "/auth/", "auth")) {
-            distribution.run("start-dev", "--metrics-enabled=true", "--http-relative-path=" + relativePath);
-            CompletableFuture future = CompletableFuture.completedFuture(null);
+            distribution.run("start-dev", "--metrics-enabled=true", "--http-management-relative-path=" + relativePath);
+            CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
 
             for (int i = 0; i < 3; i++) {
                 future = CompletableFuture.allOf(CompletableFuture.runAsync(new Runnable() {

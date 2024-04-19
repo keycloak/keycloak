@@ -21,7 +21,7 @@ import java.io.StringWriter;
 
 import picocli.CommandLine.Command;
 
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 
 
 /**

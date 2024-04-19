@@ -18,6 +18,14 @@ Options:
 
 Cache:
 
+--cache <type>       Defines the cache mechanism for high-availability. By default in production
+                       mode, a 'ispn' cache is used to create a cluster between multiple server
+                       nodes. By default in development mode, a 'local' cache disables clustering
+                       and is intended for development and testing purposes. Possible values are:
+                       ispn, local. Default: ispn.
+--cache-config-file <file>
+                     Defines the file from which cache configuration should be loaded from. The
+                       configuration file is relative to the 'conf/' directory.
 --cache-embedded-mtls-enabled <true|false>
                      Encrypts the network communication between Keycloak servers. Default: false.
 --cache-embedded-mtls-key-store-file <file>
@@ -57,6 +65,19 @@ Cache:
                        specified via XML file (see 'cache-config-file' option.). If the option is
                        specified, 'cache-remote-host' and 'cache-remote-password' are required as
                        well and the related configuration in XML file should not be present.
+--cache-stack <stack>
+                     Define the default stack to use for cluster communication and node discovery.
+                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+                       Built-in values include: tcp, udp, kubernetes, ec2, azure, google
+
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
 
 Database:
 
@@ -88,34 +109,73 @@ Database:
 --db-username <username>
                      The username of the database user.
 
-Hostname:
+Hostname v2:
 
---hostname <hostname>
-                     Hostname for the Keycloak server.
---hostname-admin <hostname>
-                     The hostname for accessing the administration console. Use this option if you
-                       are exposing the administration console using a hostname other than the
-                       value set to the 'hostname' option.
---hostname-admin-url <url>
-                     Set the base URL for accessing the administration console, including scheme,
-                       host, port and path
+--hostname <hostname|URL>
+                     Address at which is the server exposed. Can be a full URL, or just a hostname.
+                       When only hostname is provided, scheme, port and context path are resolved
+                       from the request. Available only when hostname:v2 feature is enabled.
+--hostname-admin <URL>
+                     Address for accessing the administration console. Use this option if you are
+                       exposing the administration console using a reverse proxy on a different
+                       address than specified in the 'hostname' option. Available only when
+                       hostname:v2 feature is enabled.
+--hostname-backchannel-dynamic <true|false>
+                     Enables dynamic resolving of backchannel URLs, including hostname, scheme,
+                       port and context path. Set to true if your application accesses Keycloak via
+                       a private network. If set to true, 'hostname' option needs to be specified
+                       as a full URL. Default: false. Available only when hostname:v2 feature is
+                       enabled.
 --hostname-debug <true|false>
-                     Toggle the hostname debug page that is accessible at
-                       /realms/master/hostname-debug Default: false.
---hostname-path <path>
-                     This should be set if proxy uses a different context-path for Keycloak.
---hostname-port <port>
-                     The port used by the proxy when exposing the hostname. Set this option if the
-                       proxy uses a port other than the default HTTP and HTTPS ports. Default: -1.
+                     Toggles the hostname debug page that is accessible at
+                       /realms/master/hostname-debug. Default: false. Available only when hostname:
+                       v2 feature is enabled.
 --hostname-strict <true|false>
                      Disables dynamically resolving the hostname from request headers. Should
-                       always be set to true in production, unless proxy verifies the Host header.
-                       Default: true.
+                       always be set to true in production, unless your reverse proxy overwrites
+                       the Host header. If enabled, the 'hostname' option needs to be specified.
+                       Default: true. Available only when hostname:v2 feature is enabled.
+
+Hostname v1 (Deprecated):
+
+--hostname <hostname>
+                     DEPRECATED. Hostname for the Keycloak server. Available only when hostname:v1
+                       feature is enabled.
+--hostname-admin <hostname>
+                     DEPRECATED. The hostname for accessing the administration console. Use this
+                       option if you are exposing the administration console using a hostname other
+                       than the value set to the 'hostname' option. Available only when hostname:v1
+                       feature is enabled.
+--hostname-admin-url <url>
+                     DEPRECATED. Set the base URL for accessing the administration console,
+                       including scheme, host, port and path Available only when hostname:v1
+                       feature is enabled.
+--hostname-debug <true|false>
+                     DEPRECATED. Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false. Available only when hostname:
+                       v1 feature is enabled.
+--hostname-path <path>
+                     DEPRECATED. This should be set if proxy uses a different context-path for
+                       Keycloak. Available only when hostname:v1 feature is enabled.
+--hostname-port <port>
+                     DEPRECATED. The port used by the proxy when exposing the hostname. Set this
+                       option if the proxy uses a port other than the default HTTP and HTTPS ports.
+                       Default: -1. Available only when hostname:v1 feature is enabled.
+--hostname-strict <true|false>
+                     DEPRECATED. Disables dynamically resolving the hostname from request headers.
+                       Should always be set to true in production, unless proxy verifies the Host
+                       header. Default: true. Available only when hostname:v1 feature is enabled.
 --hostname-strict-backchannel <true|false>
-                     By default backchannel URLs are dynamically resolved from request headers to
-                       allow internal and external applications. If all applications use the public
-                       URL this option should be enabled. Default: false.
---hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
+                     DEPRECATED. By default backchannel URLs are dynamically resolved from request
+                       headers to allow internal and external applications. If all applications use
+                       the public URL this option should be enabled. Default: false. Available only
+                       when hostname:v1 feature is enabled.
+--hostname-strict-https <true|false>
+                     DEPRECATED. Forces frontend URLs to use the 'https' scheme. If set to false,
+                       the HTTP scheme is inferred from requests. Default: true. Available only
+                       when hostname:v1 feature is enabled.
+--hostname-url <url> DEPRECATED. Set the base URL for frontend URLs, including scheme, host, port
+                       and path. Available only when hostname:v1 feature is enabled.
 
 HTTP(S):
 
@@ -125,11 +185,20 @@ HTTP(S):
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
+--http-metrics-histograms-enabled <true|false>
+                     Enables a histogram with default buckets for the duration of HTTP server
+                       requests. Default: false. Available only when metrics are enabled.
+--http-metrics-slos <list of buckets>
+                     Service level objectives for HTTP server requests. Use this instead of the
+                       default histogram, or use it in combination to add additional buckets.
+                       Specify a list of comma-separated values defined in milliseconds. Example
+                       with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000
+                       Available only when metrics are enabled.
 --http-pool-max-threads <threads>
                      The maximum number of threads. If this is not specified then it will be
-                       automatically sized to the greatest of 8 * the number of available
-                       processors and 200. For example if there are 4 processors the max threads
-                       will be 200. If there are 48 processors it will be 384.
+                       automatically sized to the greater of 4 * the number of available processors
+                       and 50. For example if there are 4 processors the max threads will be 50. If
+                       there are 48 processors it will be 192.
 --http-port <port>   The used HTTP port. Default: 8080.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
@@ -162,14 +231,28 @@ HTTP(S):
                        'strict' and no value is set, it defaults to 'BCFKS'. Use the System
                        Truststore instead, see the docs for details.
 
-Config:
+Management:
 
---config-keystore <config-keystore>
-                     Specifies a path to the KeyStore Configuration Source.
---config-keystore-password <config-keystore-password>
-                     Specifies a password to the KeyStore Configuration Source.
---config-keystore-type <config-keystore-type>
-                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+--http-management-port <port>
+                     Port of the management interface. Default: 9000. Available only when
+                       Management interface is enabled.
+--https-management-certificate-file <file>
+                     The file path to a server certificate or certificate chain in PEM format for
+                       the management server. If not given, the value is inherited from HTTP
+                       options. Available only when Management interface is enabled.
+--https-management-certificate-key-file <file>
+                     The file path to a private key in PEM format for the management server. If not
+                       given, the value is inherited from HTTP options. Available only when
+                       Management interface is enabled.
+--https-management-key-store-file <file>
+                     The key store which holds the certificate information instead of specifying
+                       separate files for the management server. If not given, the value is
+                       inherited from HTTP options. Available only when Management interface is
+                       enabled.
+--https-management-key-store-password <password>
+                     The password of the key store file for the management server. If not given,
+                       the value is inherited from HTTP options. Default: password. Available only
+                       when Management interface is enabled.
 
 Proxy:
 
@@ -192,7 +275,7 @@ Vault:
 Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
-                       are: console, file, gelf (deprecated). Default: console.
+                       are: console, file, syslog, gelf (deprecated). Default: console.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false. Available
                        only when Console log handler is activated.
@@ -253,6 +336,22 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+--log-syslog-app-name <name>
+                     The app name used when formatting the message in RFC5424 format. Default:
+                       keycloak. Available only when Syslog is activated.
+--log-syslog-endpoint <host:port>
+                     The IP address and port of the syslog server. Default: localhost:514.
+                       Available only when Syslog is activated.
+--log-syslog-format <format>
+                     Set a format specific to syslog entries. Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n. Available only when Syslog is activated.
+--log-syslog-output <output>
+                     Set the syslog output to JSON or default (plain) unstructured logging.
+                       Possible values are: default, json. Default: default. Available only when
+                       Syslog is activated.
+--log-syslog-protocol <protocol>
+                     Sets the protocol used to connect to the syslog server. Possible values are:
+                       tcp, udp, ssl-tcp. Default: tcp. Available only when Syslog is activated.
 
 Truststore:
 

@@ -250,6 +250,9 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     @Override
     public void setLastSessionRefresh(int seconds) {
+        if (seconds <= getLastSessionRefresh()) {
+            return;
+        }
         model.setLastSessionRefresh(seconds);
     }
 

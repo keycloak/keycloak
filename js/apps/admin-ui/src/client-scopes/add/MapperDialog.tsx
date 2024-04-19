@@ -141,7 +141,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
     >
       {!isBuiltIn && (
         <DataList
-          onSelectDataListItem={(id) => {
+          onSelectDataListItem={(_event, id) => {
             const mapper = protocolMappers.find((mapper) => mapper.id === id);
             props.onConfirm(mapper!);
             props.toggleDialog();

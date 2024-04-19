@@ -35,6 +35,7 @@ providers,4
 runonserver,6
 saml,6
 script,6
+securityprofile,4
 session,6
 sessionlimits,6
 ssl,6

@@ -2,12 +2,12 @@ import PageObject from "../pages/admin-ui/components/PageObject";
 import TablePage from "../pages/admin-ui/components/TablePage";
 
 export default class ModalUtils extends PageObject {
-  #modalDiv = ".pf-c-modal-box";
-  #modalTitle = ".pf-c-modal-box .pf-c-modal-box__title-text";
-  #modalMessage = ".pf-c-modal-box .pf-c-modal-box__body";
+  #modalDiv = ".pf-v5-c-modal-box";
+  #modalTitle = ".pf-v5-c-modal-box .pf-v5-c-modal-box__title-text";
+  #modalMessage = ".pf-v5-c-modal-box .pf-v5-c-modal-box__body";
   #confirmModalBtn = "confirm";
   #cancelModalBtn = "cancel";
-  #closeModalBtn = ".pf-c-modal-box .pf-m-plain";
+  #closeModalBtn = ".pf-v5-c-modal-box .pf-m-plain";
   #copyToClipboardBtn = '[id*="copy-button"]';
   #addModalDropdownBtn = "#add-dropdown > button";
   #addModalDropdownItem = "#add-dropdown [role='menuitem']";

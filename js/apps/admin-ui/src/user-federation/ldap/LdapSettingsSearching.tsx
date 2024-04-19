@@ -1,14 +1,14 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "ui-shared";
+import { FormErrorText, HelpItem, TextControl } from "ui-shared";
+
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
@@ -51,14 +51,6 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-edit-mode"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.editMode?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.editMode?.[0].message
-          }
         >
           <Controller
             name="config.editMode[0]"
@@ -108,6 +100,13 @@ export const LdapSettingsSearching = ({
               </Select>
             )}
           />
+          {(form.formState.errors.config as any)?.editMode?.[0] && (
+            <FormErrorText
+              message={
+                (form.formState.errors.config as any)?.editMode?.[0].message
+              }
+            />
+          )}
         </FormGroup>
         <TextControl
           name="config.usersDn.0"
@@ -230,7 +229,7 @@ export const LdapSettingsSearching = ({
                 id="kc-ui-pagination"
                 data-testid="ui-pagination"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}

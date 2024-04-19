@@ -272,8 +272,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         events.expectRefresh(offlineToken.getId(), newRefreshToken.getSessionState())
                 .client("offline-client")
+                .user((String) null)
                 .error(Errors.INVALID_TOKEN)
-                .user(userId)
                 .clearDetails()
                 .assertEvent();
 
@@ -305,7 +305,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         Assert.assertNotNull(newRefreshToken);
         Assert.assertNotEquals(oldToken.getId(), refreshedToken.getId());
 
-        // scope parameter contains "offline_access" if not filter via scope parameter
+        // scope parameter either does not exist either contains offline_access
         assertTrue(refreshedToken.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
         // Assert refresh token scope parameter contains "offline_access"
         assertTrue(newRefreshTokenFull.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
@@ -401,8 +401,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         Assert.assertEquals(400, response.getStatusCode());
         events.expectRefresh(offlineToken.getId(), token.getSessionState())
                 .client("offline-client")
+                .user((String) null)
                 .error(Errors.INVALID_TOKEN)
-                .user(userId)
                 .clearDetails()
                 .assertEvent();
 
@@ -411,8 +411,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         Assert.assertEquals(400, response2.getStatusCode());
         events.expectRefresh(offlineToken2.getId(), offlineToken2.getSessionState())
                 .client("offline-client")
+                .user((String) null)
                 .error(Errors.INVALID_TOKEN)
-                .user(userId)
                 .clearDetails()
                 .assertEvent();
 
@@ -1050,10 +1050,6 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assert.assertEquals(0, offlineToken.getExpiration());
-
-        //refresh token without sending offline_access scope
-        oauth.scope("phone");
-        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
     }
 
     @Test
@@ -1306,6 +1302,14 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.scope("openid");
             response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
             assertEquals(200, response.getStatusCode());
+
+            AccessToken token = oauth.verifyToken(response.getAccessToken());
+            // access token scope does not contain offline_access due to luck of it in scope request parameter
+            assertFalse(token.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
+            RefreshToken offlineToken = oauth.parseRefreshToken(response.getRefreshToken());
+            // refresh token scope are always equal to original refresh token scope
+            Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+            assertTrue(offlineToken.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
         }
         finally {
             ClientManager.realm(adminClient.realm("test")).clientId("offline-client").fullScopeAllowed(true);

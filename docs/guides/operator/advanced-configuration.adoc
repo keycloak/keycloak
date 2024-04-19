@@ -44,10 +44,10 @@ spec:
     httpsPort: 8543
     tlsSecret: my-tls-secret
   hostname:
-    hostname: my-hostname
-    admin: my-admin-hostname
+    hostname: https://my-hostname.tld
+    admin: https://my-hostname.tld/admin
     strict: false
-    strictBackchannel: false
+    backchannelDynamic: true
   features:
     enabled:
       - docker
@@ -168,7 +168,6 @@ spec:
     httpEnabled: true
   hostname:
     strict: false
-    strictBackchannel: false
 ----
 
 === Resource requirements
@@ -204,6 +203,27 @@ Moreover, the {project_name} container manages the heap size more effectively by
 It is achieved by providing certain JVM options.
 
 For more details, see <@links.server id="containers" />.
+
+== Management Interface
+
+To change the port of the management interface, use the first-class citizen field `httpManagement.port` in the Keycloak CR.
+To change the properties of the management interface, you can do it by providing `additionalOptions` field.
+
+You can specify the `port` and the `additionalOptions` as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  httpManagement:
+    port: 9001
+  additionalOptions:
+    - name: http-management-relative-path
+      value: /management
+----
 
 === Truststores
 

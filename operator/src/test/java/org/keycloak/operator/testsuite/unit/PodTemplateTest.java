@@ -55,6 +55,7 @@ import jakarta.inject.Inject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -341,7 +342,7 @@ public class PodTemplateTest {
     @Test
     public void testRelativePathHealthProbes() {
         final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
-                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-relative-path", path)))
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-relative-path", path)))
                 .getSpec()
                 .getTemplate()
                 .getSpec()
@@ -351,18 +352,22 @@ public class PodTemplateTest {
         var first = setUpRelativePath.apply("/");
         assertEquals("/health/ready", first.getReadinessProbe().getHttpGet().getPath());
         assertEquals("/health/live", first.getLivenessProbe().getHttpGet().getPath());
+        assertEquals("/health/started", first.getStartupProbe().getHttpGet().getPath());
 
         var second = setUpRelativePath.apply("some");
         assertEquals("some/health/ready", second.getReadinessProbe().getHttpGet().getPath());
         assertEquals("some/health/live", second.getLivenessProbe().getHttpGet().getPath());
+        assertEquals("some/health/started", second.getStartupProbe().getHttpGet().getPath());
 
         var third = setUpRelativePath.apply("");
         assertEquals("/health/ready", third.getReadinessProbe().getHttpGet().getPath());
         assertEquals("/health/live", third.getLivenessProbe().getHttpGet().getPath());
+        assertEquals("/health/started", third.getStartupProbe().getHttpGet().getPath());
 
         var fourth = setUpRelativePath.apply("/some/");
         assertEquals("/some/health/ready", fourth.getReadinessProbe().getHttpGet().getPath());
         assertEquals("/some/health/live", fourth.getLivenessProbe().getHttpGet().getPath());
+        assertEquals("/some/health/started", fourth.getStartupProbe().getHttpGet().getPath());
     }
 
     @Test
@@ -372,10 +377,27 @@ public class PodTemplateTest {
 
         // Act
         var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+        var container = podTemplate.getSpec().getContainers().get(0);
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
-        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream().anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)));
+        assertNotNull(container);
+        assertThat(container.getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
+        assertThat(container.getEnv().stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
+
+        var readiness = container.getReadinessProbe().getHttpGet();
+        assertNotNull(readiness);
+        assertThat(readiness.getPath()).isEqualTo("/health/ready");
+        assertThat(readiness.getPort().getIntVal()).isEqualTo(Constants.KEYCLOAK_MANAGEMENT_PORT);
+
+        var liveness = container.getLivenessProbe().getHttpGet();
+        assertNotNull(liveness);
+        assertThat(liveness.getPath()).isEqualTo("/health/live");
+        assertThat(liveness.getPort().getIntVal()).isEqualTo(Constants.KEYCLOAK_MANAGEMENT_PORT);
+
+        var startup = container.getStartupProbe().getHttpGet();
+        assertNotNull(startup);
+        assertThat(startup.getPath()).isEqualTo("/health/started");
+        assertThat(startup.getPort().getIntVal()).isEqualTo(Constants.KEYCLOAK_MANAGEMENT_PORT);
     }
 
     @Test
@@ -399,13 +421,13 @@ public class PodTemplateTest {
 
         // Act
         var podTemplate = getDeployment(additionalPodTemplate, null,
-                s -> s.addToAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS, "/something")))
+                s -> s.addToAdditionalOptions(new ValueOrSecret("truststore-paths", "/something")))
                 .getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream()
+        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
                 .anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)
-                        && envVar.getValue().equals("/something")));
+                        && envVar.getValue().equals("/something"));
     }
 
     @Test
@@ -419,7 +441,7 @@ public class PodTemplateTest {
                 .getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getCommand().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG));
+        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
     }
 
     @Test

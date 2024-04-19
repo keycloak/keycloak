@@ -1,3 +1,85 @@
+= New Hostname options
+
+Hostname v2 options are supported by default, as the old hostname options are deprecated and will be removed in the following releases.
+New options are activated by default, so {project_name} will not recognize the old options.
+
+List of necessary migrations:
+
+[%autowidth,cols="a,a"]
+|===
+| Old options | New options
+
+|`hostname <hostname>` +
+`hostname-url <url>` +
+`hostname-path <path>` +
+`hostname-port <port>`
+|`hostname <hostname/url>`
+|`hostname-admin <hostname>` +
+`hostname-admin-url <url>`
+|`hostname-admin <url>`
+|`hostname-strict-backchannel <true/false>`
+|`hostname-backchannel-dynamic <true/false>`
+|===
+
+As you can see, the `*-url` suffixes were removed for `hostname` and `hostname-admin` options.
+Option `hostname` accepts both hostname and URL, but `hostname-admin` accepts only full URL now.
+
+Additionally, there is no way to set `path` or `port` separately.
+You can achieve it by providing the full URL for the `hostname` and `hostname-admin` options.
+
+If the port is not part of the URL, it is dynamically resolved from the incoming request headers.
+
+HTTPS is no longer enforced unless it is part of `hostname` and `hostname-admin` URLs.
+If not specified, the used protocol (`http/https`) is dynamically resolved from the incoming request.
+The `hostname-strict-https` option is removed.
+
+[%autowidth,cols="a"]
+|===
+| Removed options
+
+|`hostname-url`
+|`hostname-admin-url`
+|`hostname-path`
+|`hostname-port`
+|`hostname-strict-backchannel`
+|`hostname-strict-https`
+|===
+
+NOTE: In order to use the old hostname options to have more time for migration, turn on the feature `hostname:v1`, e.g. `features=hostname:v1`.
+Be aware, that either `hostname:v1` or `hostname:v2` can be enabled, not both at the same time.
+
+== Examples
+
+.Simplified notation
+[source,bash]
+----
+# Hostname v1
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --https-port=8543 --hostname-path=/auth --hostname-strict-https=true
+
+# Hostname v2
+bin/kc.[sh|bat] start --hostname=https://mykeycloak.org:8543/auth
+----
+As you can see in the example, all the parts of a URL can be now specified via single `hostname` option, which simplifies the hostname setup process.
+Notice that HTTPS is not enforced by the `hostname-strict-https` option, but by specifying it in the hostname URL.
+
+.Backchannel setting
+[source,bash]
+----
+# Hostname v1
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --hostname-strict-backchannel=true
+
+# Hostname v2
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --hostname-backchannel-dynamic=false
+----
+Be aware that there is a change in behavior if the same URL is to be used for both backend and frontend endpoints.
+Previously, in hostname v1, the backchannel URL was dynamically resolved from request headers.
+Therefore, to achieve the required results, you had to specify the `hostname-strict-backchannel=true`.
+
+For hostname v2, the backchannel URLs are already the same as the frontend ones.
+In order to dynamically resolve it from request headers, you need to set the `hostname-backchannel-dynamic=true` and provide a full URL for the `hostname` option.
+
+For more details and more comprehensive scenarios, see https://www.keycloak.org/server/hostname[Configuring the hostname (v2)].
+
 = Metrics for embedded caches enabled by default
 
 Metrics for the embedded caches are now enabled by default.
@@ -15,12 +97,8 @@ http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",u
 http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 0.048717142
 ----
 
-
-= Nonce claim is only added to the ID token
-
-The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).
-
-A new `Nonce backwards compatible` mapper is also included in the software that can be assigned to client scopes to revert to the old behavior. For example, the JS adapter checked the returned `nonce` claim in all the tokens before fixing issue https://github.com/keycloak/keycloak/issues/26651[#26651] in version 24.0.0. Therefore, if an old version of the JS adapter is used, the mapper should be added to the required clients by using client scopes.
+Use the new options `http-metrics-histograms-enabled` and `http-metrics-slos` to enable default histogram buckets or specific buckets for service level objectives (SLOs).
+Read more about histograms in the https://prometheus.io/docs/concepts/metric_types/#histogram[Prometheus documentation about histograms] on how to use the additional metrics series provided in `http_server_requests_seconds_bucket`.
 
 = Limiting memory usage when consuming HTTP responses
 
@@ -48,6 +126,12 @@ Behavior supported by STRICT, that is not supported by DEFAULT:
 
 It is not expected that you should be relying upon these behaviors from the WILDCARD or STRICT options.
 
+= Addressed 'You are already logged in' for expired authentication sessions
+
+{project_name} now does not display the message _You are already logged in_ to the end user when an authentication session expires and user is already logged-in. Instead it redirects the error
+about the expired authentication session to the client application, so the client can act on it and restart authentication as described in the link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions chapter].
+You may consider updating your applications to being able to handle this error.
+
 = Removed a model module
 
 The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previous release and is removed in this release. Use the `org.keycloak:keycloak-model-storage` module instead.
@@ -61,10 +145,109 @@ The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previ
 
 The old behavior to preload offline sessions at startup is now removed after it has been deprecated in the previous release.
 
-= kcadm Changes
+= Specify `cache` options at runtime
 
-How kcadm parses and handles options and parameters has changed. Error messages from usage errors, the wrong option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
+Options `cache`, `cache-stack`, and `cache-config-file` are no longer build options, and they can be specified only during runtime.
+This eliminates the need to execute the build phase and rebuild your image due to them.
+Be aware that they will not be recognized during the `build` phase, so you need to remove them.
+
+= kcadm and kcreg changes
+
+How kcadm and kcreg parse and handle options and parameters has changed. Error messages from usage errors, the wrong option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
 
 = Removing custom user attribute indexes
 
 When searching for users by user attribute, Keycloak no longer searches for user attribute names forcing lower case comparisons. This means Keycloak's native index on the user attribute table will now be used when searching. If you have created your own index based on `lower(name)`to speed up searches, you can now remove it.
+
+= New default client scope `basic`
+
+The new client scope named `basic` is added as a realm "default" client scope and hence will be added to all newly created clients. The client scope is also automatically added to all existing clients during migration.
+
+This scope contains preconfigured protocol mappers for the following claims:
+
+ * `sub` (See the details below in the dedicated section)
+ * `auth_time`
+
+This provides additional help to reduce the number of claims in a lightweight access token, but also gives the chance to configure claims that were always added automatically.
+
+= Removed `session_state` claim
+
+The `session_state` claim, which contains the same value as the `sid` claim, is now removed from all tokens as it is not required according to the OpenID Connect Front-Channel Logout and OpenID Connect Back-Channel Logout specifications. The `session_state` claim remains present in the Access Token Response in accordance with OpenID Connect Session Management specification.
+
+Note that the `setSessionState()` method is also removed from the `IDToken` class in favor of the `setSessionId()` method, and the `getSessionState()` method is now deprecated.
+
+A new `Session State (session_state)` mapper is also included and can be assigned to client scopes (for instance `basic` client scope) to revert to the old behavior.
+
+If an old version of the JS adapter is used, the `Session State (session_state)` mapper should also be used by using client scopes as described above.
+
+= `sub` claim is added to access token via protocol mapper
+
+The `sub` claim, which was always added to the access token, is now added by default but using a new `Subject (sub)` protocol mapper.
+
+The `Subject (sub)` mapper is configured by default in the `basic` client scope. Therefore, no extra configuration is required after upgrading to this version.
+
+If you are using the `Pairwise subject identifier` mapper to map a `sub` claim for an access token, you can consider disabling or removing the `Subject (sub)` mapper, however it is not strictly needed
+as the `Subject (sub)` protocol mapper is executed before the `Pairwise subject identifier` mapper and hence the `pairwise` value will override the value added by `Subject (sub)` mapper.
+This may apply also to other custom protocol mapper implementations, which override the `sub` claim, as the `Subject (sub)` mapper is currently executed as first protocol mapper.
+
+You can use the `Subject (sub)` mapper to configure the `sub` claim only for access token, lightweight access token, and introspection response. IDToken and Userinfo always contain `sub` claim.
+
+The mapper has no effects for service accounts, because no user session exists, and the `sub` claim is always added to the access token.
+
+= Nonce claim is only added to the ID token
+
+The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).
+
+A new `Nonce backwards compatible` mapper is also included in the software that can be assigned to client scopes to revert to the old behavior. For example, the JS adapter checked the returned `nonce` claim in all the tokens before fixing issue https://github.com/keycloak/keycloak/issues/26651[#26651] in version 24.0.0. Therefore, if an old version of the JS adapter is used, the mapper should be added to the required clients by using client scopes.
+
+= Changed `userId` for events related to refresh token
+
+The `userId` in the `REFRESH_TOKEN` event is now always taken from user session instead of `sub` claim in the refresh token. The `userId` in the `REFRESH_TOKEN_ERROR` event is now always null.
+The reason for this change is that the value of the `sub` claim in the refresh token may be null with the introduction of the optional `sub` claim or even different from the real user id when using pairwise subject identifiers or other ways to override the `sub` claim.
+
+However a `refresh_token_sub` detail is now added as backwards compatibility to have info about the user in the case of missing userId in the `REFRESH_TOKEN_ERROR` event.
+
+= Using older javascript adapter
+
+If you use the latest {project_name} server with older versions of the javascript adapter in your applications, you may be affected by the token changes mentioned above as previous
+versions of javascript adapter rely on the claims, which were added by {project_name}, but not supported by the OIDC specification. This includes:
+
+* Adding the `Session State (session_state)` mapper in case of using the Keycloak Javascript adapter 24.0.3 or older
+* Adding the `Nonce backwards compatible` mapper in case of using a Keycloak Javascript adapter that is older than Keycloak 24
+
+You can add the protocol mappers directly to the corresponding client or to some client scope, which can be used by your client applications relying on older versions of the Keycloak Javascript adapter.
+Some more details are in the previous sections dedicated to `session_state` and `nonce` claims.
+
+= Default `http-pool-max-threads` reduced
+
+`http-pool-max-threads` if left unset will default to the greater of 50 or 4 x (available processors). Previously it defaulted to the greater of 200 or 8 x (available processors). Reducing the number or task threads for most usage scenarios will result in slightly higher performance due to less context switching among active threads.
+
+= Management port for metrics and health endpoints
+
+The `/health` and `/metrics` endpoints are accessible on the management port `9000`, which is turned on by default.
+That means these endpoints are no longer exposed to the standard Keycloak ports `8080` and `8443`.
+
+In order to reflect the old behavior, use the property `--legacy-observability-interface=true`, which will not expose these endpoints on the management port.
+However, this property is deprecated and will be removed in future releases, so it is recommended not to use it.
+
+The management interface uses a different HTTP server than the default {project_name} HTTP server, and it is possible to configure them separately.
+Beware, if no values are supplied for the management interface properties, they are inherited from the default {project_name} HTTP server.
+
+For more details, see https://www.keycloak.org/server/management-interface[Configuring the Management Interface].
+
+= Escaping slashes in group paths
+
+{project_name} has never escaped slashes in the group paths. Because of that, a group named `group/slash` child of `top` uses the full path `/top/group/slash`, which is clearly misleading. Starting with this version, the server can be started to perform escaping of those slashes in the name:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-group-jpa-escape-slashes-in-group-path=true
+----
+
+The escape char is the tilde character `~`. The previous example results in the path `/top/group~/slash`. The escape marks the last slash is part of the name and not a hierarchy separator.
+
+The escaping is currently disabled by default because it represents a change in behavior. Nevertheless enabling escaping is recommended and it can be the default in future versions.
+
+= Removal of the deprecated LinkedIn provider
+
+In version 22.0.2 the OAuh 2.0 social provider for LinkedIn was replaced by a new OpenId Connect implementation. The legacy provider was deprecated but not removed, just in case it was still functional in some existing realms. {project_name} 25.0.0 is definitely removing the old provider and its associated `linkedin-oauth` feature. From now on, the default `LinkedIn` social provider is the only option available.

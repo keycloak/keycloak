@@ -17,114 +17,86 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.util.ParseUtil;
+import org.keycloak.client.registration.cli.KcRegMain;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.registration.cli.CmdStdinContext;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.List;
 
-import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.credentialsAvailable;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.getRegistrationToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doDelete;
-import static org.keycloak.client.registration.cli.util.HttpUtil.urlencode;
-import static org.keycloak.client.registration.cli.util.IoUtil.warnfErr;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
+
+import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
+import static org.keycloak.client.cli.util.ConfigUtil.getRegistrationToken;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
+import static org.keycloak.client.cli.util.HttpUtil.doDelete;
+import static org.keycloak.client.cli.util.HttpUtil.urlencode;
+import static org.keycloak.client.cli.util.IoUtil.warnfErr;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "delete", description = "CLIENT [GLOBAL_OPTIONS]")
+@Command(name = "delete", description = "CLIENT [GLOBAL_OPTIONS]")
 public class DeleteCmd extends AbstractAuthOptionsCmd {
 
-    @Arguments
-    private List<String> args;
+    @Parameters(arity = "0..1")
+    String clientId;
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            processGlobalOptions();
-
-            if (args == null || args.isEmpty()) {
-                throw new IllegalArgumentException("CLIENT not specified");
-            }
-
-            if (args.size() > 1) {
-                throw new IllegalArgumentException("Invalid option: " + args.get(1));
-            }
-
-            String clientId = args.get(0);
-
-            if (clientId.startsWith("-")) {
-                warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
-            }
-
-            String regType = "default";
-
-            ConfigData config = loadConfig();
-            config = copyWithServerInfo(config);
-
-            if (token == null) {
-                // if registration access token is not set via -t, try use the one from configuration
-                token = getRegistrationToken(config.sessionRealmConfigData(), clientId);
-            }
-
-            setupTruststore(config, commandInvocation);
-
-            String auth = token;
-            if (auth == null) {
-                config = ensureAuthInfo(config, commandInvocation);
-                config = copyWithServerInfo(config);
-                if (credentialsAvailable(config)) {
-                    auth = ensureToken(config);
-                }
-            }
-
-            auth = auth != null ? "Bearer " + auth : null;
-
-
-            final String server = config.getServerUrl();
-            final String realm = config.getRealm();
-
-            doDelete(server + "/realms/" + realm + "/clients-registrations/" + regType + "/" + urlencode(clientId), auth);
-
-            saveMergeConfig(cfg -> {
-                cfg.ensureRealmConfigData(server, realm).getClients().remove(clientId);
-            });
-            return CommandResult.SUCCESS;
-
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
+    protected void process() {
+        if (clientId == null) {
+            throw new IllegalArgumentException("CLIENT not specified");
         }
+
+        if (clientId.startsWith("-")) {
+            warnfErr(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
+        }
+
+        String regType = "default";
+
+        ConfigData config = loadConfig();
+        config = copyWithServerInfo(config);
+
+        if (externalToken == null) {
+            // if registration access token is not set via -t, try use the one from configuration
+            externalToken = getRegistrationToken(config.sessionRealmConfigData(), clientId);
+        }
+
+        setupTruststore(config);
+
+        String auth = externalToken;
+        if (auth == null) {
+            config = ensureAuthInfo(config);
+            config = copyWithServerInfo(config);
+            if (credentialsAvailable(config)) {
+                auth = ensureToken(config);
+            }
+        }
+
+        auth = auth != null ? "Bearer " + auth : null;
+
+
+        final String server = config.getServerUrl();
+        final String realm = config.getRealm();
+
+        doDelete(server + "/realms/" + realm + "/clients-registrations/" + regType + "/" + urlencode(clientId), auth);
+
+        saveMergeConfig(cfg -> {
+            cfg.ensureRealmConfigData(server, realm).getClients().remove(clientId);
+        });
     }
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && (args == null || args.size() == 0);
+        return super.nothingToDo() && clientId == null;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help delete' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }
@@ -141,7 +113,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");

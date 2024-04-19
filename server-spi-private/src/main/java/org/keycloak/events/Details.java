@@ -51,6 +51,7 @@ public interface Details {
     String TOKEN_ID = "token_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
+    String REFRESH_TOKEN_SUB = "refresh_token_sub";
     String VALIDATE_ACCESS_TOKEN = "validate_access_token";
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";
@@ -63,6 +64,8 @@ public interface Details {
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
+    String REDIRECTED_TO_CLIENT = "redirected_to_client";
+    String LOGIN_RETRY = "login_retry";
 
     String CONSENT = "consent";
     String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client

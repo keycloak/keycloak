@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.HttpMethod;
@@ -366,7 +365,7 @@ public class AuthorizationTokenService {
 
         if (accessToken.getSessionState() == null) {
             // Skip generating refresh token for accessToken without sessionState claim. This is "stateless" accessToken not pointing to any real persistent userSession
-            rpt.setSessionState(null);
+            rpt.setSessionId(null);
         } else {
             if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
                 responseBuilder.generateRefreshToken();

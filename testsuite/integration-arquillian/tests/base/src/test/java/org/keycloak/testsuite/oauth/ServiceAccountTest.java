@@ -240,7 +240,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
                 .client("service-account-cl-refresh-on")
-                .user(userIdClRefreshOn)
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
                 .error(Errors.INVALID_TOKEN).assertEvent();

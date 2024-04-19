@@ -1,8 +1,9 @@
-import { Grid, GridItem, Select, SelectOption } from "@patternfly/react-core";
+import { Grid, GridItem, TextInput } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { KeycloakTextInput } from "ui-shared";
+
 import useToggle from "../../utils/useToggle";
 import { DefaultValue } from "./KeyValueInput";
 
@@ -47,7 +48,7 @@ export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
       </GridItem>
       {custom && (
         <GridItem lg={10}>
-          <KeycloakTextInput
+          <TextInput
             id="customValue"
             data-testid={rest.name}
             placeholder={t("keyPlaceholder")}

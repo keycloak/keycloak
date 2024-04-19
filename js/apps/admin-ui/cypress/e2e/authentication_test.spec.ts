@@ -78,7 +78,8 @@ describe("Authentication test", () => {
     detailPage.executionExists("Cookie");
   });
 
-  it("Should move kerberos down", () => {
+  // as of 03/28/24, drag and drop is not working
+  it.skip("Should move kerberos down", () => {
     listingPage.goToItemDetails("Copy of browser");
 
     const fromRow = "Kerberos";

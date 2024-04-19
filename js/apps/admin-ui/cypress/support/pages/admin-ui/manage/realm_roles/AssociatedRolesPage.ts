@@ -41,7 +41,7 @@ export default class AssociatedRolesPage {
       cy.findByTestId(this.#filterTypeDropdownItem).click();
     }
 
-    cy.findByTestId(".pf-c-spinner__tail-ball").should("not.exist");
+    cy.findByTestId(".pf-v5-c-spinner__tail-ball").should("not.exist");
 
     cy.get(this.#addRoleTable)
       .contains(roleName)
@@ -63,7 +63,7 @@ export default class AssociatedRolesPage {
 
     cy.findByTestId(this.#filterTypeDropdownItem).click();
 
-    cy.findByTestId(".pf-c-spinner__tail-ball").should("not.exist");
+    cy.findByTestId(".pf-v5-c-spinner__tail-ball").should("not.exist");
 
     cy.get(this.#addRoleTable)
       .contains(roleName)

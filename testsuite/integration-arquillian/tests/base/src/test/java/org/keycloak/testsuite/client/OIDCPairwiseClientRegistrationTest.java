@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -90,6 +91,10 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setSubjectType("pairwise");
         OIDCClientRepresentation pairwiseClient = reg.oidc().create(clientRep);
+
+        // No need to remove default sub mapper. As the pairwise sub mapper should be executed after the default one.
+        //removeDefaultBasicClientScope(pairwiseClient.getClientId());
+
         return pairwiseClient;
     }
 
@@ -327,11 +332,8 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         Assert.assertEquals(user.getId(), tokenUserId);
 
         // Create pairwise client
-        OIDCClientRepresentation clientRep = createRep();
-        clientRep.setSubjectType("pairwise");
-        OIDCClientRepresentation pairwiseClient = reg.oidc().create(clientRep);
+        OIDCClientRepresentation pairwiseClient = createPairwise();
         Assert.assertEquals("pairwise", pairwiseClient.getSubjectType());
-
         // Login to pairwise client
         oauth.clientId(pairwiseClient.getClientId());
         oauth.openLoginForm();
@@ -371,7 +373,6 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     public void refreshPairwiseToken() throws Exception {
         // Create pairwise client
         OIDCClientRepresentation pairwiseClient = createPairwise();
-
         // Login to pairwise client
         OAuthClient.AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
 
@@ -486,5 +487,25 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     private String getPayload(String token) {
         String payloadBase64 = token.split("\\.")[1];
         return new String(Base64.getDecoder().decode(payloadBase64));
+    }
+
+    public void addDefaultBasicClientScope(String clientId) {
+        realmsResouce().realm(REALM_NAME).getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).addDefaultClientScope(scope.getId());
+                });
+    }
+
+    public void removeDefaultBasicClientScope(String clientId) {
+        realmsResouce().realm(REALM_NAME).getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).removeDefaultClientScope(scope.getId());
+                });
     }
 }

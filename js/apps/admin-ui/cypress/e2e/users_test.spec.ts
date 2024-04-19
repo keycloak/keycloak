@@ -127,7 +127,7 @@ describe("User creation", () => {
 
   it("Search non-existing user test", () => {
     listingPage.searchItem("user_DNE");
-    cy.findByTestId(listingPage.emptyState).should("exist");
+    listingPage.assertNoResults();
   });
 
   it("User details test", () => {
@@ -171,7 +171,7 @@ describe("User creation", () => {
 
     masthead.checkNotificationMessage("The user has not been saved: ");
 
-    cy.get(".pf-c-helper-text__item-text")
+    cy.get(".pf-v5-c-helper-text__item-text")
       .filter(':contains("Update of read-only attribute rejected")')
       .should("have.length", 2);
 
@@ -435,7 +435,12 @@ describe("User creation", () => {
     credentialsPage.goToCredentialsTab();
 
     cy.wait(2000);
-    listingPage.deleteItem(itemCredential);
+    cy.get("table")
+      .contains(itemCredential)
+      .parentsUntil("tbody")
+      .find(".pf-v5-c-dropdown__toggle")
+      .click();
+    cy.get("table").contains("Delete").click();
     modalUtils.checkModalTitle("Delete credentials?").confirmModal();
 
     masthead.checkNotificationMessage(

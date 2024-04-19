@@ -49,9 +49,12 @@ describe("Realm settings general tab tests", () => {
     sidebarPage.waitForPageLoad();
 
     // Disable realm
-    realmSettingsPage.toggleSwitch(`${realmName}-switch`);
+    const loadName = `load-disabled-${uuid()}`;
+    cy.intercept({ path: "/admin/realms/*", times: 1 }).as(loadName);
+    realmSettingsPage.toggleSwitch(`${realmName}-switch`, false);
     realmSettingsPage.disableRealm();
     masthead.checkNotificationMessage("Realm successfully updated", true);
+    cy.wait(`@${loadName}`);
     sidebarPage.waitForPageLoad();
 
     // Re-enable realm
@@ -63,7 +66,7 @@ describe("Realm settings general tab tests", () => {
     sidebarPage.goToRealmSettings();
     realmSettingsPage.clearRealmId();
     realmSettingsPage.saveGeneral();
-    cy.get("#kc-realm-id-helper").should("have.text", "Required field");
+    cy.findByTestId("realm-id-error").should("have.text", "Required field");
   });
 
   it("Modify Display name", () => {

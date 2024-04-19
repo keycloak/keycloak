@@ -4,6 +4,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
@@ -16,6 +17,10 @@ public interface ClientPoliciesPoliciesResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     ClientPoliciesRepresentation getPolicies();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientPoliciesRepresentation getPolicies(@QueryParam("include-global-policies") Boolean includeGlobalPolicies);
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)

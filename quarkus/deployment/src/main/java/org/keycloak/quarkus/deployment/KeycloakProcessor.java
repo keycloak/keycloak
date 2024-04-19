@@ -45,6 +45,8 @@ import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
+import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.smallrye.config.ConfigValue;
 import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
@@ -69,6 +71,7 @@ import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
@@ -112,9 +115,6 @@ import org.keycloak.theme.FolderThemeProviderFactory;
 import org.keycloak.theme.JarThemeProviderFactory;
 import org.keycloak.theme.ThemeResourceSpi;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
-import org.keycloak.url.DefaultHostnameProviderFactory;
-import org.keycloak.url.FixedHostnameProviderFactory;
-import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
@@ -131,7 +131,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -176,9 +175,6 @@ class KeycloakProcessor {
             DefaultLiquibaseConnectionProvider.class,
             FolderThemeProviderFactory.class,
             LiquibaseJpaUpdaterProviderFactory.class,
-            DefaultHostnameProviderFactory.class,
-            FixedHostnameProviderFactory.class,
-            RequestHostnameProviderFactory.class,
             FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
@@ -230,6 +226,21 @@ class KeycloakProcessor {
 
         // record the features so that they are not calculated again at runtime
         recorder.configureProfile(profile.getName(), profile.getFeatures());
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep(onlyIf = IsManagementEnabled.class)
+    @Consume(ConfigBuildItem.class)
+    void configureManagementInterface(BuildProducer<RouteBuildItem> routes,
+                                      NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
+                                      KeycloakRecorder recorder) {
+        final var path = Configuration.getOptionalKcValue(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH.getKey()).orElse("/");
+
+        routes.produce(nonApplicationRootPathBuildItem.routeBuilder()
+                .management()
+                .route(path)
+                .handler(recorder.getManagementHandler())
+                .build());
     }
 
     @Record(ExecutionTime.STATIC_INIT)

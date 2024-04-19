@@ -86,6 +86,7 @@
 
         <!-- Organization -->
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationDomainEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

@@ -1,10 +1,10 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -12,7 +12,6 @@ import { HelpItem, TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
@@ -108,18 +107,18 @@ export const LdapSettingsGeneral = ({
       )}
       <FormAccess role="manage-realm" isHorizontal>
         {/* These hidden fields are required so data object written back matches data retrieved */}
-        <KeycloakTextInput
-          hidden
+        <input
+          type="hidden"
           defaultValue="ldap"
           {...form.register("providerId")}
         />
-        <KeycloakTextInput
-          hidden
+        <input
+          type="hidden"
           defaultValue="org.keycloak.storage.UserStorageProvider"
           {...form.register("providerType")}
         />
-        <KeycloakTextInput
-          hidden
+        <input
+          type="hidden"
           defaultValue={realm}
           {...form.register("parentId")}
         />

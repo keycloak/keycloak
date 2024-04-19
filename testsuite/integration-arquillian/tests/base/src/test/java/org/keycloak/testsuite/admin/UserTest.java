@@ -243,7 +243,7 @@ public class UserTest extends AbstractAdminTest {
             createdId = ApiUtil.getCreatedId(response);
         }
 
-        StripSecretsUtils.strip(userRep);
+        StripSecretsUtils.stripSecrets(null, userRep);
 
         if (assertAdminEvent) {
             assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep,
@@ -258,7 +258,7 @@ public class UserTest extends AbstractAdminTest {
     private void updateUser(UserResource user, UserRepresentation userRep) {
         user.update(userRep);
         List<CredentialRepresentation> credentials = userRep.getCredentials();
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(userRep.getId()), StripSecretsUtils.strip(userRep), ResourceType.USER);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(userRep.getId()), StripSecretsUtils.stripSecrets(null, userRep), ResourceType.USER);
         userRep.setCredentials(credentials);
     }
 
@@ -1096,6 +1096,31 @@ public class UserTest extends AbstractAdminTest {
 
         List<UserRepresentation> searchInvalidSizeAndDisabled = realm.users().search(null, null, null, null, 10, 20, null, false);
         assertEquals(0, searchInvalidSizeAndDisabled.size());
+    }
+
+    @Test
+    public void searchWithFilterAndEnabledAttribute() {
+        createUser();
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user3");
+        user.setFirstName("user3First");
+        user.setLastName("user3Last");
+        user.setEmail("user3@localhost");
+        user.setRequiredActions(Collections.emptyList());
+        user.setEnabled(false);
+        createUser(user);
+
+        List<UserRepresentation> searchFilterUserNameAndDisabled = realm.users().search("user3", false, 0, 5);
+        assertEquals(1, searchFilterUserNameAndDisabled.size());
+        assertEquals(user.getUsername(), searchFilterUserNameAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchFilterMailAndDisabled = realm.users().search("user3@localhost", false, 0, 5);
+        assertEquals(1, searchFilterMailAndDisabled.size());
+        assertEquals(user.getUsername(), searchFilterMailAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchFilterLastNameAndEnabled = realm.users().search("user3Last", true, 0, 5);
+        assertEquals(0, searchFilterLastNameAndEnabled.size());
     }
 
     @Test

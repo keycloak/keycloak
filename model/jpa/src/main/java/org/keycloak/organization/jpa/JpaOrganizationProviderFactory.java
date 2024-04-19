@@ -18,9 +18,14 @@
 package org.keycloak.organization.jpa;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.organization.authentication.authenticators.broker.IdpOrganizationAuthenticatorFactory;
+import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmModel.RealmPostCreateEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.OrganizationProviderFactory;
@@ -40,7 +45,7 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(this::handleRealmRemovedEvent);
+        factory.register(this::handleEvents);
     }
 
     @Override
@@ -53,12 +58,66 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
         return "jpa";
     }
 
-    private void handleRealmRemovedEvent(ProviderEvent event) {
+    private void handleEvents(ProviderEvent event) {
+        if (event instanceof RealmPostCreateEvent) {
+            RealmModel realm = ((RealmPostCreateEvent) event).getCreatedRealm();
+            configureAuthenticationFlows(realm);
+        }
         if (event instanceof RealmRemovedEvent) {
             KeycloakSession session = ((RealmRemovedEvent) event).getKeycloakSession();
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            RealmModel realm = ((RealmRemovedEvent) event).getRealm();
-            provider.removeOrganizations(realm);
+            provider.removeAll();
         }
+    }
+
+    private void configureAuthenticationFlows(RealmModel realm) {
+        addOrganizationFirstBrokerFlowStep(realm);
+        addOrganizationBrowserFlowStep(realm);
+    }
+
+    private void addOrganizationFirstBrokerFlowStep(RealmModel realm) {
+        AuthenticationFlowModel firstBrokerLoginFlow = realm.getFirstBrokerLoginFlow();
+
+        if (firstBrokerLoginFlow == null) {
+            return;
+        }
+
+        if (realm.getAuthenticationExecutionsStream(firstBrokerLoginFlow.getId())
+                .map(AuthenticationExecutionModel::getAuthenticator)
+                .anyMatch(IdpOrganizationAuthenticatorFactory.ID::equals)) {
+            return;
+        }
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(firstBrokerLoginFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator(IdpOrganizationAuthenticatorFactory.ID);
+        execution.setPriority(50);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+    }
+
+    public void addOrganizationBrowserFlowStep(RealmModel realm) {
+        AuthenticationFlowModel browserFlow = realm.getBrowserFlow();
+
+        if (browserFlow == null) {
+            return;
+        }
+
+        if (realm.getAuthenticationExecutionsStream(browserFlow.getId())
+                .map(AuthenticationExecutionModel::getAuthenticator)
+                .anyMatch(OrganizationAuthenticatorFactory.ID::equals)) {
+            return;
+        }
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+
+        execution.setParentFlow(browserFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator(OrganizationAuthenticatorFactory.ID);
+        execution.setPriority(26);
+        execution.setAuthenticatorFlow(false);
+
+        realm.addAuthenticatorExecution(execution);
     }
 }

@@ -608,16 +608,19 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
-            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "registerUserNotContainsUsername", "registerUserNotContainsUsername", "registerUserNotContainsUsername");
-
+            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "Bob123", "Bob123");
             assertTrue(registerPage.isCurrent());
             assertEquals("Invalid password: Can not contains the username.", registerPage.getInputPasswordErrors().getPasswordError());
 
-            try (Response response = adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotContainsUsername").build())) {
+            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "123Bob", "123Bob");
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Invalid password: Can not contains the username.", registerPage.getInputPasswordErrors().getPasswordError());
+
+            try (Response response = adminClient.realm("test").users().create(UserBuilder.create().username("Bob").build())) {
                 assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
             }
 
-            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "registerUserNotContainsUsername", "registerUserNotContainsUsername", "registerUserNotContainsUsername");
+            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "registerUserNotContainsUsername", "registerUserNotContainsUsername");
 
             assertTrue(registerPage.isCurrent());
             assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());

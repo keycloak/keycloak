@@ -9,20 +9,19 @@
     "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.1.0",
     "@patternfly/patternfly": "^4.224.5",
     "@patternfly/react-core": "^4.278.1",
-    "alpinejs": "^3.13.7",
+    "alpinejs": "^3.13.8",
     "jquery": "^3.7.1",
     "patternfly": "^3.59.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rfc4648": "^1.5.3"
   },
-  "packageManager": "pnpm@8.10.0",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.5",
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.13.1",
+    "rollup": "^4.14.3",
     "shx": "^0.3.4"
   }
 }

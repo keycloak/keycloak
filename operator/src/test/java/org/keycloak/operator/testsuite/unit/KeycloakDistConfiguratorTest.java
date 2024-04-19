@@ -116,6 +116,7 @@ public class KeycloakDistConfiguratorTest {
                 "hostname-admin-url", "https://www.my-admin-hostname.org:8448/something",
                 "hostname-strict", "true",
                 "hostname-strict-backchannel", "true",
+                "hostname-backchannel-dynamic", "true",
                 "hostname-admin", "my-admin-hostname"
         );
 
@@ -133,6 +134,7 @@ public class KeycloakDistConfiguratorTest {
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_ADMIN_URL");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT_BACKCHANNEL");
+        assertEnvVarNotPresent(envVars, "KC_HOSTNAME_BACKCHANNEL_DYNAMIC");
     }
 
     @Test
@@ -140,6 +142,15 @@ public class KeycloakDistConfiguratorTest {
         final Map<String, String> expectedValues = Map.of(
                 "proxy-headers", "forwarded"
         );
+
+        testFirstClassCitizen(expectedValues);
+    }
+
+    @Test
+    public void management() {
+        final Map<String, String> expectedValues = new HashMap<>(Map.of(
+                "http-management-port", "9003"
+        ));
 
         testFirstClassCitizen(expectedValues);
     }

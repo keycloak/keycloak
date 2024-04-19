@@ -124,6 +124,10 @@ public class OptionBuilder<T> {
 
 
     public Option<T> build() {
+        if (deprecatedMetadata == null && category.getSupportLevel() == ConfigSupportLevel.DEPRECATED) {
+            deprecated();
+        }
+
         return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, deprecatedMetadata);
     }
 

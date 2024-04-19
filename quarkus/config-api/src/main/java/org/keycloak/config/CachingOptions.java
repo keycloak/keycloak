@@ -1,6 +1,9 @@
 package org.keycloak.config;
 
 import java.io.File;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CachingOptions {
 
@@ -33,7 +36,6 @@ public class CachingOptions {
                     + "By default in production mode, a 'ispn' cache is used to create a cluster between multiple server nodes. "
                     + "By default in development mode, a 'local' cache disables clustering and is intended for development and testing purposes.")
             .defaultValue(Mechanism.ispn)
-            .buildTime(true)
             .build();
 
     public enum Stack {
@@ -47,16 +49,15 @@ public class CachingOptions {
 
     public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
             .category(OptionCategory.CACHE)
+            .expectedValues(List.of())
             .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect "
-                    + "if 'cache' is set to 'ispn'. Default: udp.")
-            .buildTime(true)
+                    + "if 'cache' is set to 'ispn'. Default: udp. Built-in values include: " + Stream.of(Stack.values()).map(Stack::name).collect(Collectors.joining(", ")))
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)
             .category(OptionCategory.CACHE)
             .description("Defines the file from which cache configuration should be loaded from. "
                     + "The configuration file is relative to the 'conf/' directory.")
-            .buildTime(true)
             .build();
 
     public static final Option<Boolean> CACHE_EMBEDDED_MTLS_ENABLED = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY, Boolean.class)
@@ -92,14 +93,14 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description(String.format("The hostname of the remote server for the remote store configuration. "
                     + "It replaces the 'host' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
+                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.",
                     CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
             .build();
 
     public static final Option<Integer> CACHE_REMOTE_PORT = new OptionBuilder<>(CACHE_REMOTE_PORT_PROPERTY, Integer.class)
             .category(OptionCategory.CACHE)
             .description(String.format("The port of the remote server for the remote store configuration. "
-                    + "It replaces the 'port' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.).", 
+                    + "It replaces the 'port' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.).",
                     CACHE_CONFIG_FILE_PROPERTY))
             .defaultValue(11222)
             .build();
@@ -108,7 +109,7 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description(String.format("The username for the authentication to the remote server for the remote store. "
                     + "It replaces the 'username' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
+                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.",
                     CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
             .build();
 
@@ -116,7 +117,7 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description(String.format("The password for the authentication to the remote server for the remote store. "
                     + "It replaces the 'password' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
+                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.",
                     CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY))
             .build();
 

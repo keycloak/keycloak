@@ -31,11 +31,16 @@ type FlowDiagramProps = {
   executionList: ExecutionList;
 };
 
-const createEdge = (fromNode: string, toNode: string): Edge => ({
+const createEdge = (
+  fromNode: string,
+  toNode: string,
+  label?: string,
+): Edge => ({
   id: `edge-${fromNode}-to-${toNode}`,
   type: "buttonEdge",
   source: fromNode,
   target: toNode,
+  label: label,
   data: {
     onEdgeClick: (
       evt: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
@@ -49,9 +54,6 @@ const createEdge = (fromNode: string, toNode: string): Edge => ({
 
 const createNode = (ex: ExpandableExecution): Node => {
   let nodeType: string | undefined = undefined;
-  if (ex.executionList) {
-    nodeType = "startSubFlow";
-  }
   if (providerConditionFilter(ex)) {
     nodeType = "conditional";
   }
@@ -73,10 +75,13 @@ const renderParallelEdges = (
   start: AuthenticationExecutionInfoRepresentation,
   execution: ExpandableExecution,
   end: AuthenticationExecutionInfoRepresentation,
-): Edge[] => [
-  createEdge(start.id!, execution.id!),
-  createEdge(execution.id!, end.id!),
-];
+): Edge[] => {
+  const falseConditionLabel = providerConditionFilter(execution) ? "false" : "";
+  return [
+    createEdge(start.id!, execution.id!),
+    createEdge(execution.id!, end.id!, falseConditionLabel),
+  ];
+};
 
 const renderSequentialNodes = (execution: ExpandableExecution): Node[] => [
   createNode(execution),
@@ -95,14 +100,44 @@ const renderSequentialEdges = (
   if (isFirst) {
     edges.push(createEdge(start.id!, execution.id!));
   } else {
-    edges.push(createEdge(prefExecution.id!, execution.id!));
+    const trueConditionLabel = providerConditionFilter(prefExecution)
+      ? "true"
+      : "";
+    edges.push(
+      createEdge(prefExecution.id!, execution.id!, trueConditionLabel),
+    );
   }
 
-  if (isLast) {
-    edges.push(createEdge(execution.id!, end.id!));
+  if (isLast || providerConditionFilter(execution)) {
+    const falseConditionLabel = providerConditionFilter(execution)
+      ? "false"
+      : "";
+    edges.push(createEdge(execution.id!, end.id!, falseConditionLabel));
   }
 
   return edges;
+};
+
+const renderConditionalSubFlowNodes = (
+  execution: ExpandableExecution,
+): Node[] => renderFlowNodes(execution.executionList || []);
+
+const renderConditionalSubFlowEdges = (
+  execution: ExpandableExecution,
+  start: AuthenticationExecutionInfoRepresentation,
+  end: AuthenticationExecutionInfoRepresentation,
+  prefExecution?: ExpandableExecution,
+): Edge[] => {
+  const conditionalSubFlowStart =
+    prefExecution && prefExecution.requirement !== "ALTERNATIVE"
+      ? prefExecution
+      : start!;
+
+  return renderFlowEdges(
+    conditionalSubFlowStart,
+    execution.executionList || [],
+    end,
+  );
 };
 
 const renderSubFlowNodes = (execution: ExpandableExecution): Node[] => {
@@ -165,7 +200,11 @@ const renderFlowNodes = (executionList: ExpandableExecution[]): Node[] => {
   for (let index = 0; index < executionList.length; index++) {
     const execution = executionList[index];
     if (execution.executionList) {
-      elements = elements.concat(renderSubFlowNodes(execution));
+      if (execution.requirement === "CONDITIONAL") {
+        elements = elements.concat(renderConditionalSubFlowNodes(execution));
+      } else {
+        elements = elements.concat(renderSubFlowNodes(execution));
+      }
     } else {
       if (
         execution.requirement === "ALTERNATIVE" ||
@@ -191,9 +230,20 @@ const renderFlowEdges = (
   for (let index = 0; index < executionList.length; index++) {
     const execution = executionList[index];
     if (execution.executionList) {
-      elements = elements.concat(
-        renderSubFlowEdges(execution, start, end, executionList[index - 1]),
-      );
+      if (execution.requirement === "CONDITIONAL") {
+        elements = elements.concat(
+          renderConditionalSubFlowEdges(
+            execution,
+            start,
+            end,
+            executionList[index - 1],
+          ),
+        );
+      } else {
+        elements = elements.concat(
+          renderSubFlowEdges(execution, start, end, executionList[index - 1]),
+        );
+      }
     } else {
       if (
         execution.requirement === "ALTERNATIVE" ||

@@ -755,7 +755,7 @@ public class AuthenticationManager {
         token.type(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID);
 
         if (session != null) {
-            token.setSessionState(session.getId());
+            token.setSessionId(session.getId());
         }
 
         if (session != null && session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
@@ -979,6 +979,7 @@ public class AuthenticationManager {
 
         uriBuilder.queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId());
         uriBuilder.queryParam(Constants.TAB_ID, authSession.getTabId());
+        uriBuilder.queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession));
 
         if (uriInfo.getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
             uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, authSession.getParentSession().getId());
@@ -1409,14 +1410,14 @@ public class AuthenticationManager {
             UserModel user = null;
             if (token.getSessionState() == null) {
                 user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
-                if (!isUserValid(session, realm, user, token)) {
+                if (!TokenManager.isUserValid(session, realm, token, user)) {
                     return null;
                 }
             } else {
                 userSession = session.sessions().getUserSession(realm, token.getSessionState());
                 if (userSession != null) {
                     user = userSession.getUser();
-                    if (!isUserValid(session, realm, user, token)) {
+                    if (!TokenManager.isUserValid(session, realm, token, user)) {
                         return null;
                     }
                 }
@@ -1479,23 +1480,6 @@ public class AuthenticationManager {
             logger.debugf("Client session for client '%s' not present in user session '%s'", client.getClientId(), userSession.getId());
             return false;
         }
-        return true;
-    }
-
-    private static boolean isUserValid(KeycloakSession session, RealmModel realm, UserModel user, AccessToken token) {
-        if (user == null || !user.isEnabled()) {
-            logger.debug("Unknown user in identity token");
-            return false;
-        }
-
-        if (! isLightweightUser(user)) {
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
-            if (token.getIssuedAt() < userNotBefore) {
-                logger.debug("User notBefore newer than token");
-                return false;
-            }
-        }
-
         return true;
     }
 

@@ -20,7 +20,7 @@ If the primary site fails, the DNS changes will need to propagate to the clients
 Depending on the client's settings, the propagation may take some minutes based on the client's configuration.
 When using mobile connections, some internet providers might not respect the TTL of the DNS entries, which can lead to an extended time before the clients can connect to the new site.
 
-.AWS Global Accelerator Failover
+.AWS Route53 Failover
 image::high-availability/route53-multi-az-failover.svg[]
 
 Two Openshift Routes are exposed on both the Primary and Backup ROSA cluster.

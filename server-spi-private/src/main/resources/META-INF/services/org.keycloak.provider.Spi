@@ -99,3 +99,4 @@ org.keycloak.device.DeviceRepresentationSpi
 org.keycloak.health.LoadBalancerCheckSpi
 org.keycloak.cookie.CookieSpi
 org.keycloak.organization.OrganizationSpi
+org.keycloak.securityprofile.SecurityProfileSpi

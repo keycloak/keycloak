@@ -16,14 +16,15 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
+import org.keycloak.client.admin.cli.KcAdmMain;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import picocli.CommandLine.Command;
 
-import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 
 
 /**
@@ -55,7 +56,7 @@ public class DeleteCmd extends CreateCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + KcAdmMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");

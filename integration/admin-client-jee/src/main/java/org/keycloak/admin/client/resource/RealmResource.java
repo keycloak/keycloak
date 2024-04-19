@@ -292,4 +292,7 @@ public interface RealmResource {
 
     @Path("organizations")
     OrganizationsResource organizations();
+
+    @Path("client-types")
+    ClientTypesResource clientTypes();
 }

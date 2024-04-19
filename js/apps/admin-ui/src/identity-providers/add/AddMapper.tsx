@@ -6,9 +6,9 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -152,7 +152,7 @@ export default function AddMapper() {
 
       setMapperTypes(mappers);
     },
-    [],
+    [id],
   );
 
   const setupForm = (mapper: IdentityProviderMapperRepresentation) => {
@@ -194,7 +194,7 @@ export default function AddMapper() {
         role="manage-identity-providers"
         isHorizontal
         onSubmit={handleSubmit(save)}
-        className="pf-u-mt-lg"
+        className="pf-v5-u-mt-lg"
       >
         <FormProvider {...form}>
           {id && (

@@ -210,13 +210,15 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
               />
             }
           >
-            <ChipGroup data-testid="supportedApplications">
-              {supportedApplications.map((label) => (
-                <Chip key={label} isReadOnly>
-                  {label}
-                </Chip>
-              ))}
-            </ChipGroup>
+            <span data-testid="supportedApplications">
+              <ChipGroup>
+                {supportedApplications.map((label) => (
+                  <Chip key={label} isReadOnly>
+                    {label}
+                  </Chip>
+                ))}
+              </ChipGroup>
+            </span>
           </FormGroup>
 
           {otpType === POLICY_TYPES[0] && (

@@ -182,6 +182,9 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public void setTimestamp(int timestamp) {
+        if (timestamp <= model.getTimestamp()) {
+            return;
+        }
         model.setTimestamp(timestamp);
     }
 

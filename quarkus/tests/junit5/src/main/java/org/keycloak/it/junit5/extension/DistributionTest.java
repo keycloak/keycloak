@@ -64,5 +64,15 @@ public @interface DistributionTest {
      * If any option must be set when starting the server.
      */
     String[] defaultOptions() default {};
+
+    /**
+     * Exposed ports when container is used
+     */
+    int[] containerExposedPorts() default {8080};
+
+    /**
+     * Default port for making HTTP requests with RestAssured
+     */
+    int requestPort() default 8080;
 }
 

@@ -173,4 +173,8 @@ public interface GroupModel extends RoleMapperModel {
      * @param subGroup
      */
     void removeChild(GroupModel subGroup);
+
+    default boolean escapeSlashesInGroupPath() {
+        return GroupProvider.DEFAULT_ESCAPE_SLASHES;
+    }
 }

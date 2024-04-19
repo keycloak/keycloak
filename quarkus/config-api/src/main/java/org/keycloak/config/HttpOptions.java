@@ -127,9 +127,21 @@ public class HttpOptions {
     public static final Option<Integer> HTTP_POOL_MAX_THREADS = new OptionBuilder<>("http-pool-max-threads", Integer.class)
             .category(OptionCategory.HTTP)
             .description("The maximum number of threads. If this is not specified then it will be automatically sized " +
-                         "to the greatest of 8 * the number of available processors and 200. " +
-                         "For example if there are 4 processors the max threads will be 200. " +
-                         "If there are 48 processors it will be 384.")
+                         "to the greater of 4 * the number of available processors and 50. " +
+                         "For example if there are 4 processors the max threads will be 50. " +
+                         "If there are 48 processors it will be 192.")
+            .build();
+
+    public static final Option<Boolean> HTTP_METRICS_HISTOGRAMS_ENABLED = new OptionBuilder<>("http-metrics-histograms-enabled", Boolean.class)
+            .category(OptionCategory.HTTP)
+            .description("Enables a histogram with default buckets for the duration of HTTP server requests.")
+            .defaultValue(Boolean.FALSE)
+            .build();
+
+    public static final Option<String> HTTP_METRICS_SLOS = new OptionBuilder<>("http-metrics-slos", String.class)
+            .category(OptionCategory.HTTP)
+            .description("Service level objectives for HTTP server requests. Use this instead of the default histogram, or use it in combination to add additional buckets. " +
+                    "Specify a list of comma-separated values defined in milliseconds. Example with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000")
             .build();
 
 }

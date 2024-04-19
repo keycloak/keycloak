@@ -132,10 +132,11 @@ function Keycloak (config) {
                 kc.silentCheckSsoFallback = true;
             }
 
-            if (initOptions.pkceMethod) {
-                if (initOptions.pkceMethod !== "S256") {
-                    throw new TypeError(`Invalid value for 'pkceMethod', expected 'S256' but got '${initOptions.pkceMethod}'.`);
+            if (typeof initOptions.pkceMethod !== "undefined") {
+                if (initOptions.pkceMethod !== "S256" && initOptions.pkceMethod !== false) {
+                    throw new TypeError(`Invalid value for pkceMethod', expected 'S256' or false but got ${initOptions.pkceMethod}.`);
                 }
+
                 kc.pkceMethod = initOptions.pkceMethod;
             } else {
                 kc.pkceMethod = "S256";
@@ -408,7 +409,8 @@ function Keycloak (config) {
         var callbackState = {
             state: state,
             nonce: nonce,
-            redirectUri: encodeURIComponent(redirectUri)
+            redirectUri: encodeURIComponent(redirectUri),
+            loginOptions: options
         };
 
         if (options && options.prompt) {
@@ -752,9 +754,13 @@ function Keycloak (config) {
 
         if (error) {
             if (prompt != 'none') {
-                var errorData = { error: error, error_description: oauth.error_description };
-                kc.onAuthError && kc.onAuthError(errorData);
-                promise && promise.setError(errorData);
+                if (oauth.error_description && oauth.error_description === "authentication_expired") {
+                    kc.login(oauth.loginOptions);
+                } else {
+                    var errorData = { error: error, error_description: oauth.error_description };
+                    kc.onAuthError && kc.onAuthError(errorData);
+                    promise && promise.setError(errorData);
+                }
             } else {
                 promise && promise.setSuccess();
             }
@@ -1004,7 +1010,7 @@ function Keycloak (config) {
         if (token) {
             kc.token = token;
             kc.tokenParsed = jwtDecode(token);
-            kc.sessionId = kc.tokenParsed.session_state;
+            kc.sessionId = kc.tokenParsed.sid;
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
             kc.realmAccess = kc.tokenParsed.realm_access;
@@ -1062,6 +1068,7 @@ function Keycloak (config) {
             oauth.storedNonce = oauthState.nonce;
             oauth.prompt = oauthState.prompt;
             oauth.pkceCodeVerifier = oauthState.pkceCodeVerifier;
+            oauth.loginOptions = oauthState.loginOptions;
         }
 
         return oauth;

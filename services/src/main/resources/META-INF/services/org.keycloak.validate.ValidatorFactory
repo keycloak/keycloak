@@ -15,3 +15,4 @@ org.keycloak.userprofile.validator.ImmutableAttributeValidator
 org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator
 org.keycloak.userprofile.validator.PersonNameProhibitedCharactersValidator
 org.keycloak.userprofile.validator.MultiValueValidator
+org.keycloak.organization.validator.OrganizationMemberValidator

@@ -26,6 +26,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import io.restassured.RestAssured;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
@@ -121,6 +122,7 @@ public class QuarkusPropertiesDistTest {
     void testUnknownQuarkusBuildTimePropertyApplied(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
+        RestAssured.port = 9000;
         when().get("/metrics").then().statusCode(200)
                 .body(containsString("jvm_gc_"));
     }

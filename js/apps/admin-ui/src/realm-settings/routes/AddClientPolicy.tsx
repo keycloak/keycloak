@@ -5,11 +5,11 @@ import type { AppRouteObject } from "../../routes";
 
 export type AddClientPolicyParams = { realm: string };
 
-const NewClientPolicyForm = lazy(() => import("../NewClientPolicyForm"));
+const NewClientPolicy = lazy(() => import("../NewClientPolicy"));
 
 export const AddClientPolicyRoute: AppRouteObject = {
   path: "/:realm/realm-settings/client-policies/policies/add-client-policy",
-  element: <NewClientPolicyForm />,
+  element: <NewClientPolicy />,
   breadcrumb: (t) => t("createPolicy"),
   handle: {
     access: "manage-clients",

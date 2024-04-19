@@ -187,6 +187,14 @@ public class LDAPTestUtils {
                 .orElse(null);
     }
 
+    public static ComponentModel getLdapProviderModel(RealmModel realm, String providerName) {
+        return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(component -> Objects.equals(component.getProviderId(), LDAPStorageProviderFactory.PROVIDER_NAME))
+                .filter(component -> providerName == null || component.getName().equals(providerName))
+                .findFirst()
+                .orElse(null);
+    }
+
     public static LDAPStorageProvider getLdapProvider(KeycloakSession keycloakSession, ComponentModel ldapFedModel) {
         return (LDAPStorageProvider)keycloakSession.getProvider(UserStorageProvider.class, ldapFedModel);
     }

@@ -32,6 +32,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
@@ -70,6 +71,7 @@ public class KeycloakDistConfigurator {
         configureDatabase();
         configureCache();
         configureProxy();
+        configureManagement();
     }
 
     /**
@@ -89,7 +91,8 @@ public class KeycloakDistConfigurator {
                 .mapOption("hostname-admin", HostnameSpec::getAdmin)
                 .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
                 .mapOption("hostname-strict", HostnameSpec::isStrict)
-                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel);
+                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel)
+                .mapOption("hostname-backchannel-dynamic", HostnameSpec::isBackchannelDynamic);
     }
 
     void configureFeatures() {
@@ -135,6 +138,11 @@ public class KeycloakDistConfigurator {
     void configureProxy() {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getProxySpec())
                 .mapOption("proxy-headers", ProxySpec::getHeaders);
+    }
+
+    void configureManagement() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getHttpManagementSpec())
+                .mapOption("http-management-port", HttpManagementSpec::getPort);
     }
 
     /* ---------- END of configuration of first-class citizen fields ---------- */

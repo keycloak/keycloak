@@ -69,9 +69,9 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
   };
   return serviceAccount ? (
     <>
-      <PageSection className="pf-u-pb-0">
-        <InfoCircleIcon className="pf-c-alert__icon keycloak--service-account--info-text" />
-        <span className="pf-u-pl-sm">
+      <PageSection className="pf-v5-u-pb-0">
+        <InfoCircleIcon className="pf-v5-c-alert__icon keycloak--service-account--info-text" />
+        <span className="pf-v5-u-pl-sm">
           <Trans i18nKey="manageServiceAccountUser">
             {""}
             <Link

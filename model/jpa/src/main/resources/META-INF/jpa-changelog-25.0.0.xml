@@ -17,7 +17,7 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="25.0.0-xxx">
+    <changeSet author="keycloak" id="25.0.0-28265-tables">
         <addColumn tableName="OFFLINE_USER_SESSION">
             <!-- length(broker_session_id) + length(realm_id) <= 1700 for mssql -->
             <column name="BROKER_SESSION_ID" type="VARCHAR(1024)" />
@@ -26,6 +26,13 @@
         <addColumn tableName="OFFLINE_CLIENT_SESSION">
             <column name="VERSION" type="INT" defaultValueNumeric="0" />
         </addColumn>
+        <modifySql dbms="mssql">
+            <!-- ensure that existing rows also get the new values on mssql -->
+            <!-- https://github.com/liquibase/liquibase/issues/4644 -->
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-creation">
         <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH" >
             <!-- optimize this index for range queries for expire sessions -->
             <!-- it should also distribute hot segments across realms and online/offline -->
@@ -33,17 +40,14 @@
             <column name="OFFLINE_FLAG" />
             <column name="LAST_SESSION_REFRESH" />
         </createIndex>
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-cleanup">
         <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_CREATEDON" />
         <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_PRELOAD" />
         <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_USERSESS" />
         <dropIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_PRELOAD" />
-        <modifySql dbms="mssql">
-            <!-- ensure that existing rows also get the new values on mssql -->
-            <!-- https://github.com/liquibase/liquibase/issues/4644 -->
-            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
-        </modifySql>
     </changeSet>
-    <changeSet author="keycloak" id="25.0.0-xxx-2-mysql">
+    <changeSet author="keycloak" id="25.0.0-28265-index-2-mysql">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <or>
                 <dbms type="mysql"/>
@@ -57,7 +61,7 @@
             <column name="REALM_ID" />
         </createIndex>
     </changeSet>
-    <changeSet author="keycloak" id="25.0.0-xxx-2-not-mysql">
+    <changeSet author="keycloak" id="25.0.0-28265-index-2-not-mysql">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
                 <or>
@@ -75,9 +79,9 @@
     </changeSet>
 
     <changeSet author="keycloak" id="25.0.0-org">
-        <createTable tableName="ORGANIZATION">
+        <createTable tableName="ORG">
             <column name="ID" type="VARCHAR(255)">
-                <constraints nullable="false"/>
+                <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="REALM_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
@@ -85,14 +89,25 @@
             <column name="GROUP_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="IPD_ALIAS" type="VARCHAR(255)" />
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
+        <addUniqueConstraint tableName="ORG" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
 
-        <addPrimaryKey columnNames="ID" tableName="ORGANIZATION"/>
-        <addUniqueConstraint tableName="ORGANIZATION" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
-        <addUniqueConstraint tableName="ORGANIZATION" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
+        <createTable tableName="ORG_DOMAIN">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="VERIFIED" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ORG_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
     </changeSet>
 
     <changeSet author="keycloak" id="unique-consentuser">

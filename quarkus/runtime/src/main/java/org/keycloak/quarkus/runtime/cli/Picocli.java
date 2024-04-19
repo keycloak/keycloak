@@ -23,6 +23,7 @@ import static java.util.stream.StreamSupport.stream;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
+import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
@@ -99,7 +100,6 @@ public final class Picocli {
     private static class IncludeOptions {
         boolean includeRuntime;
         boolean includeBuildTime;
-        boolean includeDisabled;
     }
 
     private Picocli() {
@@ -378,7 +378,7 @@ public final class Picocli {
             }
 
             if (!deprecatedInUse.isEmpty()) {
-                logger.warn("The following used options or option values are DEPRECATED and will be removed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.");
+                logger.warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.");
             }
         } finally {
             DisabledMappersInterceptor.enable(disabledMappersInterceptorEnabled);
@@ -618,7 +618,6 @@ public final class Picocli {
         }
         result.includeRuntime = abstractCommand.includeRuntime();
         result.includeBuildTime = abstractCommand.includeBuildTime();
-        result.includeDisabled = cliArgs.contains(HelpAllMixin.HELP_ALL_OPTION);
 
         if (!result.includeBuildTime && !result.includeRuntime) {
             return result;
@@ -660,32 +659,17 @@ public final class Picocli {
     private static void addOptionsToCli(CommandLine commandLine, IncludeOptions includeOptions) {
         final Map<OptionCategory, List<PropertyMapper<?>>> mappers = new EnumMap<>(OptionCategory.class);
 
+        // Since we can't run sanitizeDisabledMappers sooner, PropertyMappers.getRuntime|BuildTimeMappers() at this point
+        // contain both enabled and disabled mappers. Actual filtering is done later (help command, validations etc.).
         if (includeOptions.includeRuntime) {
             mappers.putAll(PropertyMappers.getRuntimeMappers());
-
-            if (includeOptions.includeDisabled) {
-                appendDisabledMappers(mappers, PropertyMappers.getDisabledRuntimeMappers());
-            }
         }
 
         if (includeOptions.includeBuildTime) {
             combinePropertyMappers(mappers, PropertyMappers.getBuildTimeMappers());
-
-            if (includeOptions.includeDisabled) {
-                appendDisabledMappers(mappers, PropertyMappers.getDisabledBuildTimeMappers());
-            }
         }
 
         addMappedOptionsToArgGroups(commandLine, mappers);
-    }
-
-    private static void appendDisabledMappers(Map<OptionCategory, List<PropertyMapper<?>>> origMappers,
-                                              Map<String, PropertyMapper<?>> additionalMappers) {
-        for (var pm : additionalMappers.values()) {
-            final List<PropertyMapper<?>> result = origMappers.getOrDefault(pm.getCategory(), new ArrayList<>());
-            result.add(pm);
-            origMappers.put(pm.getCategory(), result);
-        }
     }
 
     private static <T extends Map<OptionCategory, List<PropertyMapper<?>>>> void combinePropertyMappers(T origMappers, T additionalMappers) {
@@ -715,6 +699,14 @@ public final class Picocli {
 
             for (PropertyMapper<?> mapper : mappersInCategory) {
                 String name = mapper.getCliFormat();
+                // Picocli doesn't allow to have multiple options with the same name. We need this in help-all which also prints
+                // currently disabled options which might have a duplicate among enabled options. This is to register the disabled
+                // options with a unique name in Picocli. To keep it simple, it adds just a suffix to the options, i.e. there cannot
+                // be more that 1 disabled option with a unique name.
+                if (cSpec.optionsMap().containsKey(name)) {
+                    name = decorateDuplicitOptionName(name);
+                }
+
                 String description = mapper.getDescription();
 
                 if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(OPTION_PART_SEPARATOR) || alreadyPresentArgs.contains(name)) {

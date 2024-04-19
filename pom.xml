@@ -45,8 +45,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.8.3</quarkus.version>
-        <quarkus.build.version>3.8.3</quarkus.build.version>
+        <quarkus.version>3.8.4</quarkus.version>
+        <quarkus.build.version>3.8.4</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -80,7 +80,6 @@
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
 
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
-        <jboss.aesh.version>0.66.19</jboss.aesh.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
 
         <!-- TODO Are these correct versions? -->
@@ -197,7 +196,7 @@
         <osgi.bundle.plugin.version>5.1.8</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.14.2</frontend.plugin.version>
+        <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
@@ -243,9 +242,11 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.18.2</node.version>
-        <pnpm.version>8.10.0</pnpm.version>
+        <node.version>v20.12.2</node.version>
+        <pnpm.version>9.0.1</pnpm.version>
         <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
+        <!-- The clean step is skipped on Windows -->
+        <js.skip.clean>false</js.skip.clean>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -939,11 +940,6 @@
                 <groupId>org.ops4j.pax.web</groupId>
                 <artifactId>pax-web-spi</artifactId>
                 <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.aesh</groupId>
-                <artifactId>aesh</artifactId>
-                <version>${jboss.aesh.version}</version>
             </dependency>
 
             <!-- keycloak -->
@@ -1845,14 +1841,65 @@
                     <version>${osgi.bundle.plugin.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <configuration>
+                        <followSymLinks>false</followSymLinks>
+                        <!-- Skip this step if on windows -->
+                        <skip>${js.skip.clean}</skip>
+                        <filesets>
+                            <fileset>
+                                <directory>${basedir}</directory>
+                                <includes>
+                                    <include>**/.wireit/**</include>
+                                    <include>**/node_modules/**</include>
+                                </includes>
+                            </fileset>
+                            <!-- include all non-maven projects here as well -->
+                            <fileset>
+                                <directory>js/apps/keycloak-server</directory>
+                                <includes>
+                                    <include>server/**</include>
+                                </includes>
+                            </fileset>
+                        </filesets>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${frontend.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>install-node-and-pnpm</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>pnpm-install</id>
+                            <goals>
+                                <goal>pnpm</goal>
+                            </goals>
+                            <configuration>
+                                <arguments>install --prefer-offline --frozen-lockfile --ignore-scripts</arguments>
+                                <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>pnpm-build</id>
+                            <goals>
+                                <goal>pnpm</goal>
+                            </goals>
+                            <configuration>
+                                <arguments>build</arguments>
+                            </configuration>
+                        </execution>
+                    </executions>
                     <configuration>
                         <nodeVersion>${node.version}</nodeVersion>
                         <pnpmVersion>${pnpm.version}</pnpmVersion>
-                        <!-- Warning, this is an undocumented property https://issues.apache.org/jira/browse/MNG-6589. But there is nothing better. -->
                         <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
+                        <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -2083,5 +2130,16 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>clean-when-not-on-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <js.skip.clean>true</js.skip.clean>
+            </properties>
+        </profile>
     </profiles>
 </project>

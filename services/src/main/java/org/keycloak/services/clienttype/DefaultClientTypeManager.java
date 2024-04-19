@@ -34,6 +34,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.representations.idm.ClientTypesRepresentation;
+import org.keycloak.services.clienttype.client.TypeAwareClientModelDelegate;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -66,6 +67,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
             try {
                 // Skip validation here for performance reasons
                 result = JsonSerialization.readValue(asStr, ClientTypesRepresentation.class);
+                result.setGlobalClientTypes(globalClientTypes);
             } catch (IOException ioe) {
                 throw new ClientTypeException("Failed to deserialize client types from JSON string", ioe);
             }
@@ -94,7 +96,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
         ClientTypesRepresentation clientTypes = getClientTypes(realm);
         ClientTypeRepresentation clientType = getClientTypeByName(clientTypes, typeName);
         if (clientType == null) {
-            logger.errorf("Referenced client type '%s' not found");
+            logger.errorf("Referenced client type '%s' not found", typeName);
             throw new ClientTypeException("Client type not found");
         }
 
@@ -104,14 +106,18 @@ public class DefaultClientTypeManager implements ClientTypeManager {
 
     @Override
     public ClientModel augmentClient(ClientModel client) throws ClientTypeException {
-        //TODO:vibrown put the logic back in next Client Type PR
-        return client;
-        /*if (client.getType() == null) {
+        if (client.getType() == null) {
             return client;
         } else {
-            ClientType clientType = getClientType(client.getRealm(), client.getType());
-            return new TypeAwareClientModelDelegate(clientType, () -> client);
-        }*/
+            try {
+                ClientType clientType = getClientType(client.getRealm(), client.getType());
+                return new TypeAwareClientModelDelegate(clientType, () -> client);
+            } catch(ClientTypeException cte) {
+                logger.errorf("Could not augment client, %s, due to client type exception: %s",
+                        client, cte);
+                throw cte;
+            }
+        }
     }
 
     static List<ClientTypeRepresentation> validateAndCastConfiguration(KeycloakSession session, List<ClientTypeRepresentation> clientTypes, List<ClientTypeRepresentation> globalTypes) {
@@ -129,8 +135,8 @@ public class DefaultClientTypeManager implements ClientTypeManager {
     private static ClientTypeRepresentation validateAndCastConfiguration(KeycloakSession session, ClientTypeRepresentation clientType, Set<String> currentNames) {
         ClientTypeProvider clientTypeProvider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
         if (clientTypeProvider == null) {
-            logger.errorf("Did not found client type provider '%s' for the client type '%s'", clientType.getProvider(), clientType.getName());
-            throw new ClientTypeException("Did not found client type provider");
+            logger.errorf("Did not find client type provider '%s' for the client type '%s'", clientType.getProvider(), clientType.getName());
+            throw new ClientTypeException("Did not find client type provider");
         }
 
         // Validate name is not duplicated

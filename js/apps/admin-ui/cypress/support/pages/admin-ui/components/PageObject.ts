@@ -1,19 +1,19 @@
 export default class PageObject {
-  #selectItemSelectedIcon = ".pf-c-select__menu-item-icon";
-  #drpDwnMenuList = ".pf-c-dropdown__menu";
-  #drpDwnMenuItem = ".pf-c-dropdown__menu-item";
-  #drpDwnMenuToggleBtn = ".pf-c-dropdown__toggle";
-  #selectMenuList = ".pf-c-select__menu";
-  #selectMenuItem = ".pf-c-select__menu-item";
-  #selectMenuToggleBtn = ".pf-c-select__toggle";
-  #switchInput = ".pf-c-switch__input";
-  #formLabel = ".pf-c-form__label";
-  #chipGroup = ".pf-c-chip-group";
-  #chipGroupCloseBtn = ".pf-c-chip-group__close";
-  #chipItem = ".pf-c-chip-group__list-item";
-  #emptyStateDiv = ".pf-c-empty-state:visible";
-  #toolbarActionsButton = ".pf-c-toolbar button[aria-label='Actions']";
-  #breadcrumbItem = ".pf-c-breadcrumb .pf-c-breadcrumb__item";
+  #selectItemSelectedIcon = ".pf-v5-c-select__menu-item-icon";
+  #drpDwnMenuList = ".pf-v5-c-dropdown__menu";
+  #drpDwnMenuItem = ".pf-v5-c-dropdown__menu-item";
+  #drpDwnMenuToggleBtn = ".pf-v5-c-select__toggle";
+  #selectMenuList = ".pf-v5-c-select__menu";
+  #selectMenuItem = ".pf-v5-c-select__menu-item";
+  #selectMenuToggleBtn = ".pf-v5-c-select__toggle";
+  #switchInput = ".pf-v5-c-switch__input";
+  #formLabel = ".pf-v5-c-form__label";
+  #chipGroup = ".pf-v5-c-chip-group";
+  #chipGroupCloseBtn = ".pf-v5-c-chip-group__close";
+  #chipItem = ".pf-v5-c-chip-group__list-item";
+  #emptyStateDiv = ".pf-v5-c-empty-state:visible";
+  #toolbarActionsButton = ".pf-v5-c-toolbar button[aria-label='Actions']";
+  #breadcrumbItem = ".pf-v5-c-breadcrumb .pf-v5-c-breadcrumb__item";
 
   protected assertExist(element: Cypress.Chainable<JQuery>, exist: boolean) {
     element.should((!exist ? "not." : "") + "exist");

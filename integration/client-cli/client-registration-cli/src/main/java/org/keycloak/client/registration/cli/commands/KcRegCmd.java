@@ -16,44 +16,50 @@
  */
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.GroupCommandDefinition;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+import org.keycloak.client.registration.cli.KcRegMain;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
+import picocli.CommandLine.Command;
+
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@GroupCommandDefinition(name = "kcreg", description = "COMMAND [ARGUMENTS]", groupCommands = {
-    HelpCmd.class, ConfigCmd.class, CreateCmd.class, UpdateCmd.class, GetCmd.class, DeleteCmd.class, AttrsCmd.class, UpdateTokenCmd.class} )
-public class KcRegCmd extends AbstractGlobalOptionsCmd {
-
-    //@Arguments
-    //private List<String> args;
+@Command(name = "kcreg",
+header = {
+        "Keycloak - Open Source Identity and Access Management",
+        "",
+        "Find more information at: https://www.keycloak.org/docs/latest"
+},
+description = {
+        "%nCOMMAND [ARGUMENTS]"
+},
+subcommands = {
+        HelpCmd.class,
+        ConfigCmd.class,
+        CreateCmd.class,
+        GetCmd.class,
+        UpdateCmd.class,
+        DeleteCmd.class,
+        AttrsCmd.class,
+        UpdateTokenCmd.class
+})
+public class KcRegCmd extends BaseGlobalOptionsCmd {
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            // if --help was requested then status is SUCCESS
-            // if not we print help anyway, but status is FAILURE
-            if (printHelp()) {
-                return CommandResult.SUCCESS;
-            } else {
-                printOut(usage());
-                return CommandResult.FAILURE;
-            }
-        } finally {
-            commandInvocation.stop();
-        }
+    protected boolean nothingToDo() {
+        return true;
+    }
+
+    @Override
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {
@@ -93,7 +99,7 @@ public class KcRegCmd extends AbstractGlobalOptionsCmd {
         out.println("Global options:");
         out.println("  -x            Print full stack trace when exiting with error");
         out.println("  --help        Print help for specific command");
-        out.println("  --config      Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("  --config      Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("  --no-config   Don't use config file - no authentication info is loaded or saved");
         out.println();
         out.println("Commands: ");

@@ -6,13 +6,13 @@ import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmR
 import {
   AlertVariant,
   ButtonVariant,
-  DropdownItem,
   Label,
   PageSection,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { TFunction } from "i18next";
 import { useState } from "react";
@@ -298,7 +298,7 @@ export default function EditUser() {
         isEnabled={user.enabled}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <UserProfileProvider>
           <FormProvider {...form}>
             <RoutableTabs

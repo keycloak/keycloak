@@ -29,7 +29,7 @@
                     challenge : '${challenge}',
                     userid : '${userid}',
                     username : '${username}',
-                    signatureAlgorithms : [<#list signatureAlgorithms as sigAlg>${sigAlg},</#list>],
+                    signatureAlgorithms : [<#list signatureAlgorithms as sigAlg>${sigAlg?c},</#list>],
                     rpEntityName : '${rpEntityName}',
                     rpId : '${rpId}',
                     attestationConveyancePreference : '${attestationConveyancePreference}',

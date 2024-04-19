@@ -11,6 +11,7 @@ import {
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { KeyboardEvent, useMemo, useState } from "react";
@@ -161,23 +162,29 @@ export const KeysProvidersTab = ({
           <ToolbarGroup className="providers-toolbar">
             <ToolbarItem>
               <InputGroup>
-                <TextInput
-                  name={"inputGroupName"}
-                  id={"inputGroupName"}
-                  data-testid="provider-search-input"
-                  type="search"
-                  aria-label={t("search")}
-                  placeholder={t("search")}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                />
-                <Button
-                  variant={ButtonVariant.control}
-                  aria-label={t("search")}
-                  onClick={onSearch}
-                >
-                  <SearchIcon />
-                </Button>
+                <InputGroupItem isFill>
+                  <TextInput
+                    name={"inputGroupName"}
+                    id={"inputGroupName"}
+                    data-testid="provider-search-input"
+                    type="search"
+                    aria-label={t("search")}
+                    placeholder={t("search")}
+                    onChange={(_event, value: string) =>
+                      handleInputChange(value)
+                    }
+                    onKeyDown={handleKeyDown}
+                  />
+                </InputGroupItem>
+                <InputGroupItem>
+                  <Button
+                    variant={ButtonVariant.control}
+                    aria-label={t("search")}
+                    onClick={onSearch}
+                  >
+                    <SearchIcon />
+                  </Button>
+                </InputGroupItem>
               </InputGroup>
             </ToolbarItem>
             <ToolbarItem>

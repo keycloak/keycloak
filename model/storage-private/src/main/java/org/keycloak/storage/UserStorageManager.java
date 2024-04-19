@@ -21,6 +21,8 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -71,6 +73,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 
@@ -857,10 +860,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
-        for (UserProfileDecorator decorator : getEnabledStorageProviders(session.getContext().getRealm(), UserProfileDecorator.class)
-                .collect(Collectors.toList())) {
-            decorator.decorateUserProfile(realm, metadata);
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
+        RealmModel realm = session.getContext().getRealm();
+        UserStorageProviderModel providerModel = getStorageProviderModel(realm, providerId);
+
+        if (providerModel != null) {
+            UserProfileDecorator decorator = getStorageProviderInstance(providerModel, UserProfileDecorator.class);
+
+            if (decorator != null) {
+                return decorator.decorateUserProfile(providerId, metadata);
+            }
         }
+
+        return Collections.emptyList();
     }
 }

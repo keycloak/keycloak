@@ -1,13 +1,15 @@
 import { v4 as uuid } from "uuid";
-import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+
+import FormValidation from "../support/forms/FormValidation";
 import LoginPage from "../support/pages/LoginPage";
-import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
-import { keycloakBefore } from "../support/util/keycloak_hooks";
-import adminClient from "../support/util/AdminClient";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import KeysTab from "../support/pages/admin-ui/manage/realm_settings/KeysTab";
-import ModalUtils from "../support/util/ModalUtils";
+import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
 import UserRegistration from "../support/pages/admin-ui/manage/realm_settings/UserRegistration";
+import adminClient from "../support/util/AdminClient";
+import ModalUtils from "../support/util/ModalUtils";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
@@ -101,10 +103,12 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.fillReplyToEmail("replyTo@email.com");
     realmSettingsPage.fillPort("10");
     cy.findByTestId("email-tab-save").click();
-    cy.get("#smtpServer\\.from-helper").contains(
+
+    FormValidation.assertMessage(
+      realmSettingsPage.getFromInput(),
       "You must enter a valid email.",
     );
-    cy.get("#smtpServer\\.host-helper").contains("Required field");
+    FormValidation.assertRequired(realmSettingsPage.getHostInput());
 
     cy.findByTestId("email-tab-revert").click();
     cy.findByTestId("smtpServer.from").should("be.empty");
@@ -204,7 +208,7 @@ describe("Realm settings tabs tests", () => {
 
       cy.get(realmSettingsPage.supportedLocalesTypeahead)
         .click()
-        .get(".pf-c-select__menu-item")
+        .get(".pf-v5-c-select__menu-item")
         .contains("Danish")
         .click();
       cy.get("#kc-l-supported-locales").click();
@@ -234,7 +238,7 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "123")
         .should("be.visible");
 
-      cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
+      cy.get(".pf-v5-c-table__action button").click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
       masthead.checkNotificationMessage("Successfully removed translation(s).");
@@ -281,7 +285,7 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "def")
         .should("be.visible");
 
-      cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
+      cy.get(".pf-v5-c-table__action button").click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
 

@@ -18,13 +18,13 @@
 package org.keycloak.client.registration.cli.commands;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.util.ParseUtil;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
+
+import org.keycloak.client.registration.cli.KcRegMain;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -34,116 +34,91 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 
-import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.setRegistrationToken;
-import static org.keycloak.client.registration.cli.util.HttpUtil.APPLICATION_JSON;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doGet;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doPost;
-import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
-import static org.keycloak.client.registration.cli.util.IoUtil.warnfOut;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.setRegistrationToken;
+import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
+import static org.keycloak.client.cli.util.HttpUtil.doGet;
+import static org.keycloak.client.cli.util.HttpUtil.doPost;
+import static org.keycloak.client.cli.util.IoUtil.printOut;
+import static org.keycloak.client.cli.util.IoUtil.warnfOut;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "update-token", description = "CLIENT [ARGUMENTS]")
+@Command(name = "update-token", description = "CLIENT [ARGUMENTS]")
 public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
 
-    @Arguments
-    private List<String> args;
+    @Parameters(arity = "0..1")
+    String clientId;
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
+    protected void process() {
+        if (clientId == null) {
+            throw new IllegalArgumentException("CLIENT not specified");
+        }
+
+        if (clientId.startsWith("-")) {
+            warnfOut(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
+        }
+
+        ConfigData config = loadConfig();
+        config = copyWithServerInfo(config);
+        setupTruststore(config);
+
+        config = ensureAuthInfo(config);
+        String auth = ensureToken(config);
+
+        String cid = null;
+
+        final String server = config.getServerUrl();
+        final String realm = config.getRealm();
+
+        // first we need to get id of the client with client_id == clientId
+        InputStream response = doGet(server + "/admin/realms/" + realm + "/clients", APPLICATION_JSON, "Bearer " + auth);
+        try {
+            List<ClientRepresentation> clients = JsonSerialization.readValue(response, new TypeReference<List<ClientRepresentation>>() {});
+            for (ClientRepresentation client: clients) {
+                if (clientId.equals(client.getClientId())) {
+                    cid = client.getId();
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to process response from server", e);
+        }
+
+        if (cid == null) {
+            throw new RuntimeException("No client found for: " + clientId);
+        }
+
+        response = doPost(server + "/admin/realms/" + realm + "/clients/" + cid + "/registration-access-token",
+                APPLICATION_JSON, APPLICATION_JSON, null, "Bearer " + auth);
 
         try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
+            ClientRepresentation client = JsonSerialization.readValue(response, ClientRepresentation.class);
+
+            if (noconfig) {
+                // output to stdout
+                printOut(client.getRegistrationAccessToken());
+            } else {
+                saveMergeConfig(cfg -> {
+                    setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
+                });
             }
-
-            processGlobalOptions();
-
-            if (args == null || args.isEmpty()) {
-                throw new IllegalArgumentException("CLIENT not specified");
-            }
-
-            String clientId = args.get(0);
-
-            if (clientId.startsWith("-")) {
-                warnfOut(ParseUtil.CLIENT_OPTION_WARN, clientId);
-            }
-
-            ConfigData config = loadConfig();
-            config = copyWithServerInfo(config);
-            setupTruststore(config, commandInvocation);
-
-            config = ensureAuthInfo(config, commandInvocation);
-            String auth = ensureToken(config);
-
-            String cid = null;
-
-            final String server = config.getServerUrl();
-            final String realm = config.getRealm();
-
-            // first we need to get id of the client with client_id == clientId
-            InputStream response = doGet(server + "/admin/realms/" + realm + "/clients", APPLICATION_JSON, "Bearer " + auth);
-            try {
-                List<ClientRepresentation> clients = JsonSerialization.readValue(response, new TypeReference<List<ClientRepresentation>>() {});
-                for (ClientRepresentation client: clients) {
-                    if (clientId.equals(client.getClientId())) {
-                        cid = client.getId();
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to process response from server", e);
-            }
-
-            if (cid == null) {
-                throw new RuntimeException("No client found for: " + clientId);
-            }
-
-            response = doPost(server + "/admin/realms/" + realm + "/clients/" + cid + "/registration-access-token",
-                    APPLICATION_JSON, APPLICATION_JSON, null, "Bearer " + auth);
-
-            try {
-                ClientRepresentation client = JsonSerialization.readValue(response, ClientRepresentation.class);
-
-                if (noconfig) {
-                    // output to stdout
-                    printOut(client.getRegistrationAccessToken());
-                } else {
-                    saveMergeConfig(cfg -> {
-                        setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
-                    });
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to process response from server", e);
-            }
-
-            //System.out.println("Token updated for client " + clientId);
-            return CommandResult.SUCCESS;
-
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to process response from server", e);
         }
     }
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && (args == null || args.size() == 0);
+        return super.nothingToDo() && clientId == null;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help update-token' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }
@@ -160,7 +135,7 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");

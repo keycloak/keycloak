@@ -36,6 +36,21 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
     private final static Logger log = Logger.getLogger(InfinispanKeycloakTransaction.class);
 
+    /**
+     * Tombstone to mark an entry as already removed for the current session.
+     */
+    private static final CacheTask TOMBSTONE = new CacheTask() {
+        @Override
+        public void execute() {
+            // noop
+        }
+
+        @Override
+        public String toString() {
+            return "Tombstone after removal";
+        }
+    };
+
     public enum CacheOperation {
         ADD, ADD_WITH_LIFESPAN, REMOVE, REPLACE, ADD_IF_ABSENT // ADD_IF_ABSENT throws an exception if there is existing value
     }
@@ -205,7 +220,10 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         CacheTask current = tasks.get(taskKey);
         if (current != null) {
             if (current instanceof CacheTaskWithValue && ((CacheTaskWithValue<?>) current).getOperation() == Operation.PUT) {
-                tasks.remove(taskKey);
+                tasks.put(taskKey, TOMBSTONE);
+                return;
+            }
+            if (current == TOMBSTONE) {
                 return;
             }
         }

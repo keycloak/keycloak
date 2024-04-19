@@ -1,14 +1,21 @@
+import { CodeEditor, Language } from "@patternfly/react-code-editor";
+import {
+  Button,
+  FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+  Modal,
+  ModalVariant,
+} from "@patternfly/react-core";
 import {
   ChangeEvent,
   DragEvent as ReactDragEvent,
   MouseEvent as ReactMouseEvent,
   useState,
 } from "react";
-import { FormGroup, Modal, ModalVariant, Button } from "@patternfly/react-core";
 import { DropEvent } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
-
 import { FileUpload, FileUploadProps } from "./patternfly/FileUpload";
 
 type FileUploadType = {
@@ -121,11 +128,7 @@ export const FileUploadForm = ({
         />
       )}
       {!unWrap && (
-        <FormGroup
-          label={t("resourceFile")}
-          fieldId={id}
-          helperText={t(helpText)}
-        >
+        <FormGroup label={t("resourceFile")} fieldId={id}>
           <FileUpload
             data-testid={id}
             id={id}
@@ -157,6 +160,11 @@ export const FileUploadForm = ({
               />
             )}
           </FileUpload>
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem>{t(helpText)}</HelperTextItem>
+            </HelperText>
+          </FormHelperText>
         </FormGroup>
       )}
     </>

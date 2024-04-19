@@ -1,11 +1,16 @@
+import FormValidation from "../../forms/FormValidation";
+
 export default class CreateRealmPage {
-  #clearBtn = ".pf-c-file-upload__file-select button:last-child";
   #modalClearBtn = "clear-button";
   #realmNameInput = "realm";
-  #enabledSwitch = ".pf-c-toolbar .pf-c-switch__toggle";
-  #createBtn = '.pf-c-form__group:last-child button[type="submit"]';
-  #cancelBtn = '.pf-c-form__group:last-child button[type="button"]';
-  #codeEditor = ".pf-c-code-editor__code";
+  #enabledSwitch = ".pf-v5-c-toolbar .pf-v5-c-switch__toggle";
+  #createBtn = '.pf-v5-c-form__group:last-child button[type="submit"]';
+  #cancelBtn = '.pf-v5-c-form__group:last-child button[type="button"]';
+  #codeEditor = ".pf-v5-c-code-editor__code";
+
+  #getClearBtn() {
+    return cy.findByText("Clear");
+  }
 
   fillRealmName(realmName: string) {
     cy.findByTestId(this.#realmNameInput).clear().type(realmName);
@@ -38,17 +43,14 @@ export default class CreateRealmPage {
   }
 
   clearTextField() {
-    cy.get(this.#clearBtn).click();
+    this.#getClearBtn().click();
     cy.findByTestId(this.#modalClearBtn).click();
 
     return this;
   }
 
   verifyRealmNameFieldInvalid() {
-    cy.findByTestId(this.#realmNameInput)
-      .next("div")
-      .contains("Required field")
-      .should("have.class", "pf-m-error");
+    FormValidation.assertRequired(cy.findByTestId(this.#realmNameInput));
 
     return this;
   }

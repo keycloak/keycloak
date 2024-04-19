@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
@@ -37,6 +38,8 @@ import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
@@ -55,22 +58,24 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
     protected final SessionFunction<V> lifespanMsLoader;
     protected final SessionFunction<V> maxIdleTimeMsLoader;
+    private final SerializeExecutionsByKey<K> serializer;
 
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker,
-                                               SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
+                                               SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, SerializeExecutionsByKey<K> serializer) {
         this.kcSession = kcSession;
         this.cacheName = cache.getName();
         this.cache = cache;
         this.remoteCacheInvoker = remoteCacheInvoker;
         this.lifespanMsLoader = lifespanMsLoader;
         this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
+        this.serializer = serializer;
     }
 
 
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, CLIENT_SESSION_CACHE_NAME))) {
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, CLIENT_SESSION_CACHE_NAME) || Objects.equals(cacheName, OFFLINE_USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
                 throw new IllegalStateException("Can't load from cache");
             }
 
@@ -231,49 +236,62 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
     }
 
-
     private void replace(K key, MergedUpdate<V> task, SessionEntityWrapper<V> oldVersionEntity, long lifespanMs, long maxIdleTimeMs) {
-        boolean replaced = false;
-        int iteration = 0;
-        V session = oldVersionEntity.getEntity();
+        serializer.runSerialized(key, () -> {
+            SessionEntityWrapper<V> oldVersion = oldVersionEntity;
+            boolean replaced = false;
+            int iteration = 0;
+            V session = oldVersion.getEntity();
 
-        while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
-            iteration++;
+            while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+                iteration++;
 
-            SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersionEntity.getLocalMetadata());
+                SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
 
-            // Atomic cluster-aware replace
-            replaced = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).replace(key, oldVersionEntity, newVersionEntity, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+                // Atomic cluster-aware replace
+                replaced = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).replace(key, oldVersion, newVersionEntity, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
-            // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
-            if (!replaced) {
-                if (logger.isDebugEnabled()) {
-                    logger.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
-                }
+                // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
+                if (!replaced) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersion.getVersion(), newVersionEntity.getVersion());
+                    }
+                    backoff(iteration);
 
-                oldVersionEntity = cache.get(key);
+                    oldVersion = cache.get(key);
 
-                if (oldVersionEntity == null) {
-                    logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
-                    return;
-                }
+                    if (oldVersion == null) {
+                        logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
+                        return;
+                    }
 
-                session = oldVersionEntity.getEntity();
+                    session = oldVersion.getEntity();
 
-                task.runUpdate(session);
-            } else {
-                if (logger.isTraceEnabled()) {
-                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                    task.runUpdate(session);
+                } else {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                    }
                 }
             }
-        }
 
-        if (!replaced) {
-            logger.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
-        }
-
+            if (!replaced) {
+                logger.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
+            }
+        });
     }
 
+    /**
+     * Wait a random amount of time to avoid a conflict with other concurrent actors on the next attempt.
+     */
+    private static void backoff(int iteration) {
+        try {
+            Thread.sleep(new Random().nextInt(iteration));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     protected void rollbackImpl() {

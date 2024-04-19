@@ -3,20 +3,23 @@ import {
   Button,
   ButtonVariant,
   Divider,
-  Dropdown,
-  DropdownItem,
   Form,
   FormGroup,
+  TextContent,
+  Text,
+  ToolbarItem,
+  TextVariants,
+  TextInput,
+} from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
   KebabToggle,
   Select,
   SelectGroup,
   SelectOption,
   SelectVariant,
-  TextContent,
-  Text,
-  ToolbarItem,
-  TextVariants,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import {
   CheckIcon,
   PencilAltIcon,
@@ -27,23 +30,22 @@ import {
   ActionsColumn,
   IRow,
   IRowCell,
-  Table,
   Tbody,
   Td,
   Th,
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { Table } from "@patternfly/react-table/deprecated";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeyValueType } from "../../components/key-value-form/key-value-convert";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -333,7 +335,10 @@ export const RealmOverrides = ({
         />
       )}
       <TextContent>
-        <Text className="pf-u-mt-lg pf-u-ml-md" component={TextVariants.p}>
+        <Text
+          className="pf-v5-u-mt-lg pf-v5-u-ml-md"
+          component={TextVariants.p}
+        >
           {t("realmOverridesDescription")}
         </Text>
       </TextContent>
@@ -402,7 +407,9 @@ export const RealmOverrides = ({
               className="kc-filter-by-locale-select"
               variant={SelectVariant.single}
               isDisabled={!internationalizationEnabled}
-              onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
+              onToggle={(_event, isExpanded) =>
+                setFilterDropdownOpen(isExpanded)
+              }
               onSelect={(_, value) => {
                 setSelectMenuLocale(value.toString());
                 setSelectMenuValueSelected(true);
@@ -446,7 +453,7 @@ export const RealmOverrides = ({
           >
             <Thead>
               <Tr>
-                <Th className="pf-u-px-lg">
+                <Th className="pf-v5-u-px-lg">
                   <input
                     type="checkbox"
                     aria-label={t("selectAll")}
@@ -455,8 +462,8 @@ export const RealmOverrides = ({
                     data-testid="selectAll"
                   />
                 </Th>
-                <Th className="pf-u-py-lg">{t("key")}</Th>
-                <Th className="pf-u-py-lg">{t("value")}</Th>
+                <Th className="pf-v5-u-py-lg">{t("key")}</Th>
+                <Th className="pf-v5-u-py-lg">{t("value")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
@@ -464,7 +471,7 @@ export const RealmOverrides = ({
               {tableRows.map((row, rowIndex) => (
                 <Tr key={(row.cells?.[0] as IRowCell).props.value}>
                   <Td
-                    className="pf-u-px-lg"
+                    className="pf-v5-u-px-lg"
                     select={{
                       rowIndex,
                       onSelect: (event) =>
@@ -477,11 +484,11 @@ export const RealmOverrides = ({
                       ),
                     }}
                   />
-                  <Td className="pf-m-sm pf-u-px-sm" dataLabel={t("key")}>
+                  <Td className="pf-m-sm pf-v5-u-px-sm" dataLabel={t("key")}>
                     {(row.cells?.[0] as IRowCell).props.value}
                   </Td>
                   <Td
-                    className="pf-m-sm pf-u-px-sm"
+                    className="pf-m-sm pf-v5-u-px-sm"
                     dataLabel={t("value")}
                     key={rowIndex}
                   >
@@ -494,20 +501,21 @@ export const RealmOverrides = ({
                     >
                       <FormGroup
                         fieldId="kc-translationValue"
-                        className="pf-u-display-inline-block"
+                        className="pf-v5-u-display-inline-block"
                       >
                         {editStates[rowIndex] ? (
                           <>
-                            <KeycloakTextInput
+                            <TextInput
                               aria-label={t("editTranslationValue")}
                               type="text"
-                              className="pf-u-w-initial"
+                              className="pf-v5-u-w-initial"
                               data-testid={`editTranslationValueInput-${rowIndex}`}
                               value={formValue}
                               onChange={(
-                                event: ChangeEvent<HTMLInputElement>,
+                                event: FormEvent<HTMLInputElement>,
+                                value: string,
                               ) => {
-                                setFormValue(event.target.value);
+                                setFormValue(value);
                               }}
                               key={`edit-input-${rowIndex}`}
                             />

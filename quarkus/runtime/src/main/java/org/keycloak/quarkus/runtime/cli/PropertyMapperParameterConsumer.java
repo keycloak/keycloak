@@ -67,16 +67,11 @@ public final class PropertyMapperParameterConsumer implements CommandLine.IParam
                 getExpectedValuesMessage(argSpec.completionCandidates(), option.completionCandidates()));
     }
 
-    public static String getErrorMessage(String name, String value, Iterable<String> expected) {
-        return String.format("Invalid value for option '%s': %s.%s", name, value,
-                getExpectedValuesMessage(expected, expected));
-    }
-
     private boolean isOptionValue(String arg) {
         return !(arg.startsWith(ARG_PREFIX) || arg.startsWith(Picocli.ARG_SHORT_PREFIX));
     }
 
-    static String getExpectedValuesMessage(Iterable<String> specCandidates, Iterable<String> optionCandidates) {
+    public static String getExpectedValuesMessage(Iterable<String> specCandidates, Iterable<String> optionCandidates) {
         return optionCandidates.iterator().hasNext() ? " Expected values are: " + String.join(", ", specCandidates) : "";
     }
 

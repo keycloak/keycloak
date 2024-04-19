@@ -70,6 +70,10 @@
                 <td>${realmUrl}</td>
             </tr>
         </#if>
+        <tr>
+            <td>Hostname SPI implementation</td>
+            <td>${implVersion}</td>
+        </tr>
 
         <tr>
             <th>Configuration property</th>

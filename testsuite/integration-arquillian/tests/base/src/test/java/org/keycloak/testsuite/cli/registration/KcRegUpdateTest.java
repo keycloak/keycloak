@@ -2,7 +2,7 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
@@ -12,7 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
@@ -26,7 +26,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
         FileConfigHandler handler = initCustomConfigFile();
 
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
             final String realm = "test";
 
@@ -91,9 +91,9 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
             // check that using an invalid attribute key is not ignored
             exe = execute("update my_client --nonexisting --config '" + configFile.getName() + "'");
 
-            assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-            Assert.assertEquals("error message", "Unsupported option: --nonexisting", exe.stderrLines().get(0));
-            Assert.assertEquals("try help", "Try '" + CMD + " help update' for more information", exe.stderrLines().get(1));
+            assertExitCodeAndStreamSizes(exe, 2, 0, 3);
+            Assert.assertEquals("error message", "Unknown option: '--nonexisting'", exe.stderrLines().get(0));
+            Assert.assertEquals("try help", "Try '" + CMD + " update --help' for more information on the available options.", exe.stderrLines().get(2));
 
 
             // try use incompatible endpoint

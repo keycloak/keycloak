@@ -124,7 +124,12 @@ public class IdentityProvidersResource {
         String providerId = formDataMap.getFirst("providerId").asString();
         String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
         IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
-        return providerFactory.parseConfig(session, config);
+        final Map<String, String> parsedConfig = providerFactory.parseConfig(session, config);
+        String syncMode = parsedConfig.get(IdentityProviderModel.SYNC_MODE);
+        if (syncMode == null) {
+            parsedConfig.put(IdentityProviderModel.SYNC_MODE, "LEGACY");
+        }
+        return parsedConfig;
     }
 
     /**
@@ -186,7 +191,7 @@ public class IdentityProvidersResource {
 
         Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
-                : m -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, m));
+                : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, m));
 
         Stream<IdentityProviderModel> stream = realm.getIdentityProvidersStream().sorted(new IdPComparator());
         if (!StringUtil.isBlank(search)) {
@@ -235,7 +240,7 @@ public class IdentityProvidersResource {
 
             representation.setInternalId(identityProvider.getInternalId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
-                    .representation(StripSecretsUtils.strip(representation)).success();
+                    .representation(StripSecretsUtils.stripSecrets(session, representation)).success();
             
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (IllegalArgumentException e) {

@@ -6,6 +6,9 @@ public enum CookieScope {
     // Internal cookies are only available for direct requests to Keycloak
     INTERNAL(NewCookie.SameSite.STRICT, true),
 
+    // Internal cookies that are also available from JavaScript
+    INTERNAL_JS(NewCookie.SameSite.STRICT, false),
+
     // Federation cookies are available after redirect from applications, and are also available in an iframe context
     // unless the browser blocks third-party cookies
     FEDERATION(NewCookie.SameSite.NONE, true),

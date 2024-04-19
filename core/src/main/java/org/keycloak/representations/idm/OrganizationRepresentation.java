@@ -17,10 +17,19 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+
 public class OrganizationRepresentation {
 
     private String id;
     private String name;
+    private Map<String, List<String>> attributes;
+    private Set<OrganizationDomainRepresentation> domains;
 
     public String getId() {
         return id;
@@ -36,6 +45,48 @@ public class OrganizationRepresentation {
 
     public String getName() {
         return name;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>>  attributes) {
+        this.attributes = attributes;
+    }
+
+    public OrganizationRepresentation singleAttribute(String name, String value) {
+        if (this.attributes == null) attributes = new HashMap<>();
+        attributes.put(name, Arrays.asList(value));
+        return this;
+    }
+
+    public Set<OrganizationDomainRepresentation> getDomains() {
+        return domains;
+    }
+
+    public OrganizationDomainRepresentation getDomain(String name) {
+        if (domains == null) {
+            return null;
+        }
+        return domains.stream()
+                .filter(organizationDomainRepresentation -> name.equals(organizationDomainRepresentation.getName()))
+                .findAny()
+                .orElse(null);
+    }
+
+    public void addDomain(OrganizationDomainRepresentation domain) {
+        if (domains == null) {
+            domains = new HashSet<>();
+        }
+        domains.add(domain);
+    }
+
+    public void removeDomain(OrganizationDomainRepresentation domain) {
+        if (domains == null) {
+            return;
+        }
+        getDomains().remove(domain);
     }
 
     @Override

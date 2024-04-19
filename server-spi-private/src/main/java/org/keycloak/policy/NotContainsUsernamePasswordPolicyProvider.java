@@ -36,7 +36,7 @@ public class NotContainsUsernamePasswordPolicyProvider implements PasswordPolicy
         if (username == null) {
             return null;
         }
-        return username.contains(password) ? new PolicyError(ERROR_MESSAGE) : null;
+        return password.contains(username) ? new PolicyError(ERROR_MESSAGE) : null;
     }
 
     @Override

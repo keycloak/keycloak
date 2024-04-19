@@ -3,7 +3,7 @@ import { FormGroup } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
@@ -48,14 +48,13 @@ export const UserProfileAttributeListComponent = ({
       isRequired={required}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={label!} />}
       fieldId={convertedName!}
-      validated={errors[convertedName!] ? "error" : "default"}
-      helperTextInvalid={t("required")}
     >
       <KeySelect
         name={convertedName}
         rules={required ? { required: true } : {}}
         selectItems={convert(config)}
       />
+      {errors[convertedName!] && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

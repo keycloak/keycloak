@@ -35,6 +35,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
+import org.keycloak.models.sessions.infinispan.changes.PersistentDeferredElement;
+import org.keycloak.models.sessions.infinispan.changes.PersistentSessionsWorker;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
@@ -66,6 +69,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
@@ -93,6 +97,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private InfinispanKeyGenerator keyGenerator;
+    SerializeExecutionsByKey<String> serializerSession = new SerializeExecutionsByKey<>();
+    SerializeExecutionsByKey<String> serializerOfflineSession = new SerializeExecutionsByKey<>();
+    SerializeExecutionsByKey<UUID> serializerClientSession = new SerializeExecutionsByKey<>();
+    SerializeExecutionsByKey<UUID> serializerOfflineClientSession = new SerializeExecutionsByKey<>();
+    ArrayBlockingQueue<PersistentDeferredElement<String, UserSessionEntity>> asyncQueueUserSessions = new ArrayBlockingQueue<>(1000);
+    ArrayBlockingQueue<PersistentDeferredElement<String, UserSessionEntity>> asyncQueueUserOfflineSessions = new ArrayBlockingQueue<>(1000);
+    ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientSessions = new ArrayBlockingQueue<>(1000);
+    ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueueClientOfflineSessions = new ArrayBlockingQueue<>(1000);
+    private PersistentSessionsWorker persistentSessionsWorker;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -115,7 +128,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     clientSessionCache,
                     offlineClientSessionsCache,
                     this::deriveOfflineSessionCacheEntryLifespanMs,
-                    this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
+                    this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs,
+                    serializerSession,
+                    serializerOfflineSession,
+                    serializerClientSession,
+                    serializerOfflineClientSession,
+                    asyncQueueUserSessions,
+                    asyncQueueUserOfflineSessions,
+                    asyncQueueClientSessions,
+                    asyncQueueClientOfflineSessions
             );
         }
         return new InfinispanUserSessionProvider(
@@ -130,7 +151,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 clientSessionCache,
                 offlineClientSessionsCache,
                 this::deriveOfflineSessionCacheEntryLifespanMs,
-                this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
+                this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs,
+                serializerSession,
+                serializerOfflineSession,
+                serializerClientSession,
+                serializerOfflineClientSession
         );
     }
 
@@ -187,6 +212,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 }
             }
         });
+        persistentSessionsWorker = new PersistentSessionsWorker(factory, asyncQueueUserSessions,
+                asyncQueueUserOfflineSessions,
+                asyncQueueClientSessions,
+                asyncQueueClientOfflineSessions);
+        persistentSessionsWorker.start();
     }
 
     // Max count of worker errors. Initialization will end with exception when this number is reached
@@ -406,6 +436,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public void close() {
+        persistentSessionsWorker.stop();
     }
 
     @Override

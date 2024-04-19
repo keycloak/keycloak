@@ -2,7 +2,6 @@ package org.keycloak.testsuite.cli.admin;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.admin.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.TempFileResource;
@@ -18,6 +17,7 @@ import static org.hamcrest.Matchers.is;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import static org.hamcrest.MatcherAssert.assertThat;

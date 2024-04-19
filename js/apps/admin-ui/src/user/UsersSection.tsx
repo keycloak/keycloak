@@ -47,7 +47,7 @@ export default function UsersSection() {
       <PageSection
         data-testid="users-page"
         variant="light"
-        className="pf-u-p-0"
+        className="pf-v5-u-p-0"
       >
         <RoutableTabs
           data-testid="user-tabs"

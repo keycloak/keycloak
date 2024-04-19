@@ -61,7 +61,6 @@
                 <targetPath>theme/keycloak.v2/admin/resources</targetPath>
                 <excludes>
                     <exclude>index.html</exclude>
-                    <exclude>locales/**</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -70,31 +69,6 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>install-node-and-pnpm</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>pnpm-install</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>${pnpm.args.install}</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>run-build</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>com.google.code.maven-replacer-plugin</groupId>

@@ -1,10 +1,10 @@
+import { ValidatedOptions } from "@patternfly/react-core";
 import {
   Select,
   SelectOption,
   SelectProps,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import {
   Controller,
@@ -72,7 +72,9 @@ export const SelectControl = <
     const lowercasePrefix = prefix.toLowerCase();
     return options
       .filter((option) =>
-        option.toString().toLowerCase().startsWith(lowercasePrefix),
+        (isString(option) ? option : option.value)
+          .toLowerCase()
+          .startsWith(lowercasePrefix),
       )
       .map((option) => (
         <SelectOption key={key(option)} value={key(option)}>
@@ -99,7 +101,7 @@ export const SelectControl = <
           <Select
             {...rest}
             toggleId={name.slice(name.lastIndexOf(".") + 1)}
-            onToggle={(isOpen) => setOpen(isOpen)}
+            onToggle={(_event, isOpen) => setOpen(isOpen)}
             selections={
               isSelectBasedOptions(options)
                 ? options

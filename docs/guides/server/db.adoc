@@ -252,7 +252,6 @@ See the <@links.server id="containers" /> {section} for details on how to build 
 . Configure {project_name} to run with the following parameters:
 `db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
 `db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
-`transaction-xa-enabled`:: Set to `false`, as the Amazon Web Services JDBC Driver does not support XA transactions.
 
 == Preparing for MySQL server
 

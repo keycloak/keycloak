@@ -5,6 +5,7 @@ import {
   ChipGroup,
   FormGroup,
   InputGroup,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -59,21 +60,25 @@ export const GroupComponent = ({
             isRequired={required}
           >
             <InputGroup>
-              <ChipGroup>
-                {field.value && (
-                  <Chip onClick={() => field.onChange(undefined)}>
-                    {field.value}
-                  </Chip>
-                )}
-              </ChipGroup>
-              <Button
-                id="kc-join-groups-button"
-                onClick={() => setOpen(!open)}
-                variant="secondary"
-                data-testid="join-groups-button"
-              >
-                {t("selectGroup")}
-              </Button>
+              <InputGroupItem>
+                <ChipGroup>
+                  {field.value && (
+                    <Chip onClick={() => field.onChange(undefined)}>
+                      {field.value}
+                    </Chip>
+                  )}
+                </ChipGroup>
+              </InputGroupItem>
+              <InputGroupItem>
+                <Button
+                  id="kc-join-groups-button"
+                  onClick={() => setOpen(!open)}
+                  variant="secondary"
+                  data-testid="join-groups-button"
+                >
+                  {t("selectGroup")}
+                </Button>
+              </InputGroupItem>
             </InputGroup>
           </FormGroup>
         </>

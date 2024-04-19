@@ -5,8 +5,8 @@ import {
   ButtonVariant,
   Form,
   Modal,
-  SelectVariant,
 } from "@patternfly/react-core";
+import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SelectControl } from "ui-shared";
@@ -53,7 +53,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
     <Modal
       title={t("bindFlow")}
       variant="small"
-      onClose={onClose}
+      onClose={() => onClose()}
       actions={[
         <Button key="confirm" data-testid="save" type="submit" form="bind-form">
           {t("save")}

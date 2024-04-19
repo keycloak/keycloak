@@ -54,7 +54,36 @@ test.describe("Personal info with userprofile enabled", async () => {
 
     await expect(page.locator("#select")).toBeVisible();
     await expect(page.getByTestId("help-label-select")).toBeVisible();
-    expect(page.getByText("Alternative email")).toBeDefined();
+    expect(page.getByText("Alternative email")).toHaveCount(1);
+    expect(page.getByPlaceholder("Deutsch")).toHaveCount(1);
+    page.getByTestId("help-label-email2").click();
+    await expect(page.getByText("Español")).toHaveCount(1);
+  });
+
+  test("render long select options as typeahead", async ({ page }) => {
+    await login(page, user, "jdoe", realm);
+
+    await page.getByText("Alternate Language").click();
+    await page.waitForSelector("text=Italiano");
+
+    await page.locator("*:focus").press("Control+A");
+    await page.locator("*:focus").pressSequentially("S");
+    await expect(page.getByText("Italiano")).toHaveCount(0);
+    expect(page.getByText("Suomi")).toBeVisible();
+    expect(page.getByText('Create "S"')).not.toBeVisible();
+  });
+
+  test("render long list of locales as typeahead", async ({ page }) => {
+    await login(page, user, "jdoe", realm);
+
+    await page.locator("#locale").click();
+    await page.waitForSelector("text=Italiano");
+
+    await page.locator("*:focus").press("Control+A");
+    await page.locator("*:focus").pressSequentially("S");
+    await expect(page.getByText("Italiano")).toHaveCount(0);
+    expect(page.getByText("Suomi")).toBeVisible();
+    expect(page.getByText('Create "S"')).not.toBeVisible();
   });
 
   test("save user profile", async ({ page }) => {
@@ -68,7 +97,7 @@ test.describe("Personal info with userprofile enabled", async () => {
       "Could not update account due to validation errors",
     );
 
-    await expect(page.locator("#email2-helper")).toHaveText(
+    await expect(page.getByTestId("email2-helper")).toHaveText(
       "Invalid email address.",
     );
 

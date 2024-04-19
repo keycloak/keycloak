@@ -104,7 +104,7 @@ export const KeyProviderForm = ({
           name="name"
           defaultValue={providerType}
           label={t("name")}
-          labelIcon={t("mapperNameHelp")}
+          labelIcon={t("keyProviderMapperNameHelp")}
           rules={{
             required: t("required"),
           }}

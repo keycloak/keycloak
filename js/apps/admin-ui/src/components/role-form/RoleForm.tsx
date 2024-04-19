@@ -38,7 +38,7 @@ export const RoleForm = ({
           isHorizontal
           onSubmit={handleSubmit(onSubmit)}
           role={role}
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
         >
           <TextControl
             name="name"
@@ -51,7 +51,7 @@ export const RoleForm = ({
                 }
               },
             }}
-            readOnly={editMode}
+            isDisabled={editMode}
           />
           <TextAreaControl
             name="description"

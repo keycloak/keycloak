@@ -20,38 +20,56 @@ package org.keycloak.organization.jpa;
 import static org.keycloak.models.OrganizationModel.USER_ORGANIZATION_ATTRIBUTE;
 import static org.keycloak.utils.StreamsUtil.closing;
 
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.utils.StringUtil;
 
 public class JpaOrganizationProvider implements OrganizationProvider {
 
     private final EntityManager em;
     private final GroupProvider groupProvider;
     private final UserProvider userProvider;
+    private final RealmModel realm;
 
     public JpaOrganizationProvider(KeycloakSession session) {
         em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         groupProvider = session.groups();
         userProvider = session.users();
+        realm = session.getContext().getRealm();
+        if (realm == null) {
+            throw new IllegalArgumentException("Session not bound to a realm");
+        }
     }
 
     @Override
-    public OrganizationModel createOrganization(RealmModel realm, String name) {
-        GroupModel group = createOrganizationGroup(realm, name);
+    public OrganizationModel create(String name, Set<String> domains) {
+        if (StringUtil.isBlank(name)) {
+            throw new ModelValidationException("Name can not be null");
+        }
+
+        GroupModel group = createOrganizationGroup(name);
         OrganizationEntity entity = new OrganizationEntity();
 
         entity.setId(KeycloakModelUtils.generateId());
@@ -61,38 +79,43 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         em.persist(entity);
 
-        return new OrganizationAdapter(realm, entity);
+        OrganizationAdapter adapter = new OrganizationAdapter(realm, entity, this);
+
+        adapter.setDomains(domains.stream().map(OrganizationDomainModel::new).collect(Collectors.toSet()));
+
+        return adapter;
     }
 
     @Override
-    public boolean removeOrganization(RealmModel realm, OrganizationModel organization) {
-        GroupModel group = getOrganizationGroup(realm, organization);
+    public boolean remove(OrganizationModel organization) {
+        OrganizationEntity entity = getEntity(organization.getId());
+
+        GroupModel group = getOrganizationGroup(organization);
 
         //TODO: won't scale, requires a better mechanism for bulk deleting users
         userProvider.getGroupMembersStream(realm, group).forEach(userModel -> userProvider.removeUser(realm, userModel));
         groupProvider.removeGroup(realm, group);
 
-        OrganizationAdapter adapter = getAdapter(realm, organization.getId());
+        realm.removeIdentityProviderByAlias(entity.getIdpAlias());
 
-        em.remove(adapter.getEntity());
+        em.remove(entity);
 
         return true;
     }
 
     @Override
-    public void removeOrganizations(RealmModel realm) {
+    public void removeAll() {
         //TODO: won't scale, requires a better mechanism for bulk deleting organizations within a realm
-        getOrganizationsStream(realm).forEach(organization -> removeOrganization(realm, organization));
+        getAllStream().forEach(this::remove);
     }
 
     @Override
-    public boolean addOrganizationMember(RealmModel realm, OrganizationModel organization, UserModel user) {
-        throwExceptionIfOrganizationIsNull(organization);
-        if (user == null) {
-            throw new ModelException("User can not be null");
-        }
-        OrganizationAdapter adapter = getAdapter(realm, organization.getId());
-        GroupModel group = groupProvider.getGroupById(realm, adapter.getGroupId());
+    public boolean addMember(OrganizationModel organization, UserModel user) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(user, "User");
+
+        OrganizationEntity entity = getEntity(organization.getId());
+        GroupModel group = groupProvider.getGroupById(realm, entity.getGroupId());
 
         if (user.isMemberOf(group)) {
             return false;
@@ -103,39 +126,49 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         user.joinGroup(group);
-        user.setSingleAttribute(USER_ORGANIZATION_ATTRIBUTE, adapter.getId());
+        user.setSingleAttribute(USER_ORGANIZATION_ATTRIBUTE, entity.getId());
 
         return true;
     }
 
     @Override
-    public OrganizationModel getOrganizationById(RealmModel realm, String id) {
-        return getAdapter(realm, id, false);
+    public OrganizationModel getById(String id) {
+        OrganizationEntity entity = getEntity(id, false);
+        return entity == null ? null : new OrganizationAdapter(realm, entity, this);
     }
 
     @Override
-    public Stream<OrganizationModel> getOrganizationsStream(RealmModel realm) {
-        throwExceptionIfRealmIsNull(realm);
+    public OrganizationModel getByDomainName(String domain) {
+        TypedQuery<OrganizationDomainEntity> query = em.createNamedQuery("getByName", OrganizationDomainEntity.class);
+        query.setParameter("name", domain.toLowerCase());
+        try {
+            OrganizationDomainEntity entity = query.getSingleResult();
+            return new OrganizationAdapter(realm, entity.getOrganization(), this);
+        } catch (NoResultException nre) {
+            return null;
+        }
+    }
+
+    @Override
+    public Stream<OrganizationModel> getAllStream() {
         TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByRealm", OrganizationEntity.class);
 
         query.setParameter("realmId", realm.getId());
 
-        return closing(query.getResultStream().map(entity -> new OrganizationAdapter(realm, entity)));
+        return closing(query.getResultStream().map(entity -> new OrganizationAdapter(realm, entity, this)));
     }
 
     @Override
-    public Stream<UserModel> getMembersStream(RealmModel realm, OrganizationModel organization) {
-        throwExceptionIfOrganizationIsNull(organization);
-        OrganizationAdapter adapter = getAdapter(realm, organization.getId());
-        GroupModel group = getOrganizationGroup(realm, adapter);
+    public Stream<UserModel> getMembersStream(OrganizationModel organization) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        GroupModel group = getOrganizationGroup(organization);
 
         return userProvider.getGroupMembersStream(realm, group);
     }
 
     @Override
-    public UserModel getMemberById(RealmModel realm, OrganizationModel organization, String id) {
-        throwExceptionIfRealmIsNull(realm);
-        throwExceptionIfOrganizationIsNull(organization);
+    public UserModel getMemberById(OrganizationModel organization, String id) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
         UserModel user = userProvider.getUserById(realm, id);
 
         if (user == null) {
@@ -152,11 +185,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel getOrganizationByMember(RealmModel realm, UserModel member) {
-        throwExceptionIfRealmIsNull(realm);
-        if (member == null) {
-            throw new ModelException("User can not be null");
-        }
+    public OrganizationModel getByMember(UserModel member) {
+        throwExceptionIfObjectIsNull(member, "User");
 
         String orgId = member.getFirstAttribute(USER_ORGANIZATION_ATTRIBUTE);
 
@@ -164,20 +194,55 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return null;
         }
 
-        return getOrganizationById(realm, orgId);
+        return getById(orgId);
+    }
+
+    @Override
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+        organizationEntity.setIdpAlias(identityProvider.getAlias());
+        return true;
+    }
+
+    @Override
+    public IdentityProviderModel getIdentityProvider(OrganizationModel organization) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(organization.getId(), "Organization ID");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+        // realm and its IDPs are cached
+        return realm.getIdentityProviderByAlias(organizationEntity.getIdpAlias());
+    }
+
+    @Override
+    public boolean removeIdentityProvider(OrganizationModel organization) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+
+        OrganizationEntity organizationEntity = getEntity(organization.getId());
+        organizationEntity.setIdpAlias(null);
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return getAllStream().findAny().isPresent();
     }
 
     @Override
     public void close() {
-
     }
 
-    private OrganizationAdapter getAdapter(RealmModel realm, String id) {
-        return getAdapter(realm, id, true);
+    /**
+     * @throws ModelException if there is no entity with given {@code id}
+     */
+    private OrganizationEntity getEntity(String id) {
+        return getEntity(id, true);
     }
 
-    private OrganizationAdapter getAdapter(RealmModel realm, String id, boolean failIfNotFound) {
-        throwExceptionIfRealmIsNull(realm);
+    private OrganizationEntity getEntity(String id, boolean failIfNotFound) {
         OrganizationEntity entity = em.find(OrganizationEntity.class, id);
 
         if (entity == null) {
@@ -191,20 +256,17 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelException("Organization [" + entity.getId() + " does not belong to realm [" + realm.getId() + "]");
         }
 
-        return new OrganizationAdapter(realm, entity);
+        return entity;
     }
-
-    private GroupModel createOrganizationGroup(RealmModel realm, String name) {
-        throwExceptionIfRealmIsNull(realm);
-        if (name == null) {
-            throw new ModelException("name can not be null");
-        }
+ 
+    private GroupModel createOrganizationGroup(String name) {
+        throwExceptionIfObjectIsNull(name, "Name of the group");
 
         String groupName = getCanonicalGroupName(name);
         GroupModel group = groupProvider.getGroupByName(realm, null, name);
 
         if (group != null) {
-            throw new ModelException("A group with the same name already exist and it is bound to different organization");
+            throw new ModelDuplicateException("A group with the same name already exist and it is bound to different organization");
         }
 
         return groupProvider.createGroup(realm, groupName);
@@ -214,28 +276,22 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return "kc.org." + name;
     }
 
-    private GroupModel getOrganizationGroup(RealmModel realm, OrganizationModel organization) {
-        throwExceptionIfOrganizationIsNull(organization);
-        OrganizationAdapter adapter = getAdapter(realm, organization.getId());
+    private GroupModel getOrganizationGroup(OrganizationModel organization) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        OrganizationEntity entity = getEntity(organization.getId());
 
-        GroupModel group = groupProvider.getGroupById(realm, adapter.getGroupId());
+        GroupModel group = groupProvider.getGroupById(realm, entity.getGroupId());
 
         if (group == null) {
-            throw new ModelException("Organization group " + adapter.getGroupId() + " not found");
+            throw new ModelException("Organization group " + entity.getGroupId() + " not found");
         }
 
         return group;
     }
 
-    private void throwExceptionIfOrganizationIsNull(OrganizationModel organization) {
-        if (organization == null) {
-            throw new ModelException("organization can not be null");
-        }
-    }
-
-    private void throwExceptionIfRealmIsNull(RealmModel realm) {
-        if (realm == null) {
-            throw new ModelException("realm can not be null");
+    private void throwExceptionIfObjectIsNull(Object object, String objectName) {
+        if (object == null) {
+            throw new ModelException(String.format("%s cannot be null", objectName));
         }
     }
 }

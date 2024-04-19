@@ -17,16 +17,25 @@
 
 package org.keycloak.models.jpa.entities;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
-@Table(name="ORGANIZATION")
+@Table(name="ORG")
 @Entity
 @NamedQueries({
         @NamedQuery(name="getByRealm", query="select o from OrganizationEntity o where o.realmId = :realmId")
@@ -34,9 +43,12 @@ import jakarta.persistence.Table;
 public class OrganizationEntity {
 
     @Id
-    @Column(name="ID", length = 36)
+    @Column(name = "ID", length = 36)
     @Access(AccessType.PROPERTY)
-    protected String id;
+    private String id;
+
+    @Column(name = "NAME")
+    private String name;
 
     @Column(name = "REALM_ID")
     private String realmId;
@@ -44,8 +56,13 @@ public class OrganizationEntity {
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @Column(name="NAME")
-    protected String name;
+    @Column(name = "IPD_ALIAS")
+    private String idpAlias;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
+    protected Set<OrganizationDomainEntity> domains = new HashSet<>();
 
     public String getId() {
         return id;
@@ -53,6 +70,10 @@ public class OrganizationEntity {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getRealmId() {
@@ -75,8 +96,27 @@ public class OrganizationEntity {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getIdpAlias() {
+        return idpAlias;
+    }
+
+    public void setIdpAlias(String idpAlias) {
+        this.idpAlias = idpAlias;
+    }
+
+    public Collection<OrganizationDomainEntity> getDomains() {
+        if (this.domains == null) {
+            this.domains = new HashSet<>();
+        }
+        return this.domains;
+    }
+
+    public void addDomain(OrganizationDomainEntity domainEntity) {
+        this.domains.add(domainEntity);
+    }
+
+    public void removeDomain(OrganizationDomainEntity domainEntity) {
+        this.domains.remove(domainEntity);
     }
 
     @Override

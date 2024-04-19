@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -263,6 +264,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
             for (int i = 0; i < refreshTimes; i++) {
                 offset += 1500;
                 setTimeOffset(offset);
+                int time = Time.currentTime();
                 withRealm(realmId, (session, realm) -> {
                     // refresh sessions before user session expires => both session should exist
                     ClientModel client = realm.getClientByClientId("test-app");
@@ -270,10 +272,24 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                     Assert.assertNotNull(userSession);
                     AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                     Assert.assertNotNull(clientSession);
-                    userSession.setLastSessionRefresh(Time.currentTime());
-                    clientSession.setTimestamp(Time.currentTime());
+                    userSession.setLastSessionRefresh(time);
+                    clientSession.setTimestamp(time);
                     return null;
                 });
+                // The persistent session will write the update data asynchronously, wait for it to arrive.
+                Retry.executeWithBackoff(iteration -> {
+                    withRealm(realmId, (session, realm) -> {
+                        // refresh sessions before user session expires => both session should exist
+                        ClientModel client = realm.getClientByClientId("test-app");
+                        UserSessionModel userSession = getUserSession(session, realm, sessions[0], offline);
+                        Assert.assertNotNull(userSession);
+                        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+                        Assert.assertNotNull(clientSession);
+                        Assert.assertEquals(userSession.getLastSessionRefresh(), time);
+                        Assert.assertEquals(clientSession.getTimestamp(), time);
+                        return null;
+                    });
+                }, 10, 10);
             }
 
             offset += 2100;

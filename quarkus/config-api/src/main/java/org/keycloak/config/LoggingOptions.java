@@ -12,6 +12,7 @@ public class LoggingOptions {
     public static final Handler DEFAULT_LOG_HANDLER = Handler.console;
     public static final Level DEFAULT_LOG_LEVEL = Level.INFO;
     public static final Output DEFAULT_CONSOLE_OUTPUT = Output.DEFAULT;
+    public static final Output DEFAULT_SYSLOG_OUTPUT = Output.DEFAULT;
     public static final String DEFAULT_LOG_FILENAME = "keycloak.log";
     public static final String DEFAULT_LOG_PATH = "data" + File.separator + "log" + File.separator + DEFAULT_LOG_FILENAME;
     public static final Boolean GELF_ACTIVATED = isGelfActivated();
@@ -19,6 +20,7 @@ public class LoggingOptions {
     public enum Handler {
         console,
         file,
+        syslog,
         gelf
     }
 
@@ -78,6 +80,8 @@ public class LoggingOptions {
             return super.toString().toLowerCase(Locale.ROOT);
         }
     }
+
+    // Console
     public static final Option<Output> LOG_CONSOLE_OUTPUT = new OptionBuilder<>("log-console-output", Output.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_CONSOLE_OUTPUT)
@@ -101,6 +105,7 @@ public class LoggingOptions {
             .hidden()
             .build();
 
+    // File
     public static final Option<Boolean> LOG_FILE_ENABLED = new OptionBuilder<>("log-file-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
             .hidden()
@@ -124,7 +129,45 @@ public class LoggingOptions {
             .description("Set the log output to JSON or default (plain) unstructured logging.")
             .build();
 
+    // Syslog
+    public static final Option<Boolean> LOG_SYSLOG_ENABLED = new OptionBuilder<>("log-syslog-enabled", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .hidden()
+            .build();
 
+    public static final Option<String> LOG_SYSLOG_ENDPOINT = new OptionBuilder<>("log-syslog-endpoint", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("The IP address and port of the syslog server.")
+            .defaultValue("localhost:514")
+            .build();
+
+    public static final Option<String> LOG_SYSLOG_APP_NAME = new OptionBuilder<>("log-syslog-app-name", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("The app name used when formatting the message in RFC5424 format.")
+            .defaultValue("keycloak")
+            .hidden()
+            .build();
+
+    public static final Option<String> LOG_SYSLOG_PROTOCOL = new OptionBuilder<>("log-syslog-protocol", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Sets the protocol used to connect to the syslog server.")
+            .defaultValue("tcp")
+            .expectedValues("tcp", "udp", "ssl-tcp")
+            .build();
+
+    public static final Option<String> LOG_SYSLOG_FORMAT = new OptionBuilder<>("log-syslog-format", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Set a format specific to syslog entries.")
+            .defaultValue("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
+            .build();
+
+    public static final Option<Output> LOG_SYSLOG_OUTPUT = new OptionBuilder<>("log-syslog-output", Output.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(DEFAULT_SYSLOG_OUTPUT)
+            .description("Set the syslog output to JSON or default (plain) unstructured logging.")
+            .build();
+
+    // GELF
     public static final Option<Boolean> LOG_GELF_ENABLED = new OptionBuilder<>("log-gelf-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
             .hidden()

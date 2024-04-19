@@ -109,6 +109,17 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
             // Expected
         }
 
+        // Try to register required action with fake providerId
+        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setName("not-existent");
+        requiredAction.setProviderId("not-existent");
+        try {
+            authMgmtResource.registerRequiredAction(requiredAction);
+            Assert.fail("Didn't expect to register requiredAction with providerId: 'not-existent'");
+        } catch (Exception ex) {
+            // Expected
+        }
+
         // Try to find not-existent action - should fail
         try {
             authMgmtResource.getRequiredAction("not-existent");

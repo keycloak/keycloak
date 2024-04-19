@@ -39,10 +39,14 @@ final class ServerOptions extends ArrayList<String> {
             .or("-h"::equals)
             .or(ShowConfig.NAME::equals);
 
+    private boolean isBuildPhase = false;
+
     ServerOptions(Storage storageConfig, WithDatabase withDatabase, List<String> rawOptions) {
         if (rawOptions.isEmpty()) {
             return;
         }
+
+        this.isBuildPhase = rawOptions.contains("build");
 
         for (Map.Entry<String, Predicate<String>> entry : getDefaultOptions(storageConfig, withDatabase).entrySet()) {
             if (contains(entry.getKey())) {
@@ -60,7 +64,9 @@ final class ServerOptions extends ArrayList<String> {
     private Map<String, Predicate<String>> getDefaultOptions(Storage storageConfig, WithDatabase withDatabase) {
         Map<String, Predicate<String>> defaultOptions = new HashMap<>();
 
-        defaultOptions.put("--cache=local", ignoreCacheLocal(storageConfig));
+        if (!isBuildPhase) {
+            defaultOptions.put("--cache=local", ignoreCacheLocal(storageConfig));
+        }
 
         return defaultOptions;
     }

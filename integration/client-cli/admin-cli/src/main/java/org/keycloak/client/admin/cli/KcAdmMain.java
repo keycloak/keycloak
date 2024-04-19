@@ -17,45 +17,37 @@
 package org.keycloak.client.admin.cli;
 
 import org.keycloak.client.admin.cli.commands.KcAdmCmd;
-import org.keycloak.client.admin.cli.util.ClassLoaderUtil;
-import org.keycloak.client.admin.cli.util.OsUtil;
-import org.keycloak.common.crypto.CryptoIntegration;
-
-import java.io.PrintWriter;
-
-import picocli.CommandLine;
-import picocli.CommandLine.Model.CommandSpec;
+import org.keycloak.client.cli.common.CommandState;
+import org.keycloak.client.cli.common.Globals;
+import org.keycloak.client.cli.util.OsUtil;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class KcAdmMain {
 
-    public static void main(String [] args) {
-        String libDir = System.getProperty("kc.lib.dir");
-        if (libDir == null) {
-            throw new RuntimeException("System property kc.lib.dir needs to be set");
+    public static final String DEFAULT_CONFIG_FILE_PATH = System.getProperty("user.home") + "/.keycloak/kcadm.config";
+
+    public static final String DEFAULT_CONFIG_FILE_STRING = OsUtil.OS_ARCH.isWindows() ? "%HOMEDRIVE%%HOMEPATH%\\.keycloak\\kcadm.config" : "~/.keycloak/kcadm.config";
+
+    public static final String CMD = OsUtil.OS_ARCH.isWindows() ? "kcadm.bat" : "kcadm.sh";
+
+    public static final CommandState COMMAND_STATE = new CommandState() {
+
+        @Override
+        public String getCommand() {
+            return CMD;
         }
-        ClassLoader cl = ClassLoaderUtil.resolveClassLoader(libDir);
-        Thread.currentThread().setContextClassLoader(cl);
 
-        CryptoIntegration.init(cl);
+        @Override
+        public String getDefaultConfigFilePath() {
+            return DEFAULT_CONFIG_FILE_PATH;
+        }
 
-        CommandLine cli = createCommandLine();
-        int exitCode = cli.execute(args);
-        System.exit(exitCode);
-    }
+    };
 
-    public static CommandLine createCommandLine() {
-        CommandSpec spec = CommandSpec.forAnnotatedObject(new KcAdmCmd()).name(OsUtil.CMD);
-
-        CommandLine cmd = new CommandLine(spec);
-
-        cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
-        cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
-        cmd.setErr(new PrintWriter(System.err, true));
-
-        return cmd;
+    public static void main(String [] args) {
+        Globals.main(args, new KcAdmCmd(), CMD, DEFAULT_CONFIG_FILE_STRING);
     }
 
 }

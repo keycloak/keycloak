@@ -9,6 +9,7 @@ summary="Learn how to enable and use {project_name} health checks"
 includedOptions="health-enabled">
 
 {project_name} has built in support for health checks. This {section} describes how to enable and use the {project_name} health checks.
+The {project_name} health checks are exposed on the management port `9000` by default. For more details, see <@links.server id="management-interface" />
 
 == {project_name} health check endpoints
 
@@ -67,7 +68,7 @@ If {project_name} is deployed in a container, you must run this command from out
 
 [source, bash]
 ----
-curl --head -fsS http://localhost:8080/health/ready
+curl --head -fsS http://localhost:9000/health/ready
 ----
 
 If the command returns with status 0, then {project_name} is `+live+` or `+ready+`, depending on which endpoint you called. Otherwise there is a problem.

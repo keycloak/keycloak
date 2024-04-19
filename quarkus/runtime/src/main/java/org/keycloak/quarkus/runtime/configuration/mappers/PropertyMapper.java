@@ -39,6 +39,8 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.PropertyMapperParameterConsumer;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.utils.StringUtil;
@@ -353,11 +355,9 @@ public class PropertyMapper<T> {
 
         String[] values = multiValued ? value.split(",") : new String[] { value };
         for (String v : values) {
-            boolean cli = isCliOption(configValue);
             if (multiValued && !v.trim().equals(v)) {
-                throw new PropertyException("Invalid value for multivalued option '" + (cli ? this.getCliFormat() : getFrom())
-                        + "': list value '" + v + "' should not have leading nor trailing whitespace"
-                        + getConfigSourceMessage(configValue, cli));
+                throw new PropertyException("Invalid value for multivalued option " + getOptionAndSourceMessage(configValue)
+                        + ": list value '" + v + "' should not have leading nor trailing whitespace");
             }
             singleValidator.accept(configValue, v);
         }
@@ -367,18 +367,28 @@ public class PropertyMapper<T> {
         return Optional.ofNullable(configValue.getConfigSourceName()).filter(name -> name.contains(ConfigArgsConfigSource.NAME)).isPresent();
     }
 
+    public static boolean isEnvOption(ConfigValue configValue) {
+        return Optional.ofNullable(configValue.getConfigSourceName()).filter(name -> name.contains(KcEnvConfigSource.NAME)).isPresent();
+    }
+
     void validateSingleValue(ConfigValue configValue, String v) {
         List<String> expectedValues = getExpectedValues();
         if (!expectedValues.isEmpty() && !expectedValues.contains(v)) {
-            boolean cli = isCliOption(configValue);
             throw new PropertyException(
-                    PropertyMapperParameterConsumer.getErrorMessage(cli ? this.getCliFormat() : getFrom(), v,
-                            expectedValues) + getConfigSourceMessage(configValue, cli));
+                    String.format("Invalid value for option %s: %s.%s", getOptionAndSourceMessage(configValue), v,
+                            PropertyMapperParameterConsumer.getExpectedValuesMessage(expectedValues, expectedValues)));
         }
     }
 
-    String getConfigSourceMessage(ConfigValue configValue, boolean cli) {
-        return cli ? "" : ". From ConfigSource " + configValue.getConfigSourceName();
+    String getOptionAndSourceMessage(ConfigValue configValue) {
+        if (isCliOption(configValue)) {
+            return String.format("'%s'", this.getCliFormat());
+        }
+        if (isEnvOption(configValue)) {
+            return String.format("'%s'", this.getEnvVarFormat());
+        }
+        return String.format("'%s' in %s", getFrom(),
+                KeycloakConfigSourceProvider.getConfigSourceDisplayName(configValue.getConfigSourceName()));
     }
 
 }

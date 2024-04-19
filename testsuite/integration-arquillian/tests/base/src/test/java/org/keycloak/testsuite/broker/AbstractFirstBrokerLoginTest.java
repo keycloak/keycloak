@@ -359,20 +359,23 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Click browser 'back' and then 'forward' and then continue
         driver.navigate().back();
-        assertTrue(driver.getPageSource().contains("You are already logged in."));
+        loginExpiredPage.assertCurrent();
         driver.navigate().forward(); // here a new execution ID is added to the URL using JS, see below
         idpConfirmLinkPage.assertCurrent();
 
         // Click browser 'back' on review profile page
         idpConfirmLinkPage.clickReviewProfile();
+        // Need to confirm again with htmlUnit due the JS not working correctly
+        if (driver instanceof HtmlUnitDriver) {
+            idpConfirmLinkPage.assertCurrent();
+            idpConfirmLinkPage.clickReviewProfile();
+        }
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         driver.navigate().back();
-        // JS-capable browsers (i.e. all except HtmlUnit) add a new execution ID to the URL which then causes the login expire page to appear (because the old ID and new ID don't match)
-        if (!(driver instanceof HtmlUnitDriver)) {
-            loginExpiredPage.assertCurrent();
-            loginExpiredPage.clickLoginContinueLink();
-        }
+
+        loginExpiredPage.assertCurrent();
+        loginExpiredPage.clickLoginContinueLink();
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), "FirstName", "LastName");

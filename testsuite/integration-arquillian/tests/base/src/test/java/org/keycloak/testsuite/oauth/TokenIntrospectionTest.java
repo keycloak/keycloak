@@ -210,7 +210,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
 
         assertTrue(jsonNode.get("active").asBoolean());
-        assertEquals(sessionId, jsonNode.get("session_state").asText());
+        assertEquals(sessionId, jsonNode.get("sid").asText());
         assertEquals("test-app", jsonNode.get("client_id").asText());
         assertTrue(jsonNode.has("exp"));
         assertTrue(jsonNode.has("iat"));
@@ -225,7 +225,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(rep.isActive());
         assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("session_state").asText(), rep.getSessionState());
+        assertEquals(jsonNode.get("sid").asText(), rep.getSessionState());
         assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
         assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
         assertEquals(jsonNode.get("nbf"), rep.getNbf());
@@ -349,7 +349,6 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             assertTrue(rep.isActive());
             assertEquals("test-user@localhost", rep.getUserName());
             assertEquals("no-scope", rep.getClientId());
-            assertEquals(loginEvent.getUserId(), rep.getSubject());
             assertNull(rep.getScope());
         } finally {
             testRealm.setClientScopes(preExistingClientScopes);

@@ -22,7 +22,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.forms.login.freemarker.AuthenticationStateCookie;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -177,7 +176,6 @@ public class AuthenticationSessionManager {
         // expire restart cookie
         if (expireRestartCookie) {
             RestartLoginCookie.expireRestartCookie(session);
-            AuthenticationStateCookie.expireCookie(session);
 
             // With browser session, this makes sure that info/error pages will be rendered correctly when locale is changed on them
             session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
@@ -225,8 +223,6 @@ public class AuthenticationSessionManager {
             rootAuthSession.setTimestamp(authSessionExpirationTime);
 
             log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session. Root authentication session will expire in %d seconds", rootAuthSession.getId(), authSession.getTabId(), authSessionExpiresIn);
-
-            AuthenticationStateCookie.generateAndSetCookie(session, rootAuthSession, authSessionExpiresIn);
         }
     }
 

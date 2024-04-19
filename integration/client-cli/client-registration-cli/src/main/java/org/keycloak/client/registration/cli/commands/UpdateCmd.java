@@ -18,19 +18,19 @@
 package org.keycloak.client.registration.cli.commands;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.client.registration.cli.aesh.EndpointTypeConverter;
-import org.keycloak.client.registration.cli.common.AttributeOperation;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.common.CmdStdinContext;
-import org.keycloak.client.registration.cli.common.EndpointType;
-import org.keycloak.client.registration.cli.util.ParseUtil;
-import org.keycloak.client.registration.cli.util.ReflectionUtil;
+
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import org.keycloak.client.registration.cli.CmdStdinContext;
+import org.keycloak.client.registration.cli.EndpointType;
+import org.keycloak.client.registration.cli.EndpointTypeConverter;
+import org.keycloak.client.registration.cli.ReflectionUtil;
+import org.keycloak.client.registration.cli.KcRegMain;
+import org.keycloak.client.cli.common.AttributeOperation;
+import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -39,290 +39,258 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.keycloak.client.registration.cli.common.AttributeOperation.Type.DELETE;
-import static org.keycloak.client.registration.cli.common.AttributeOperation.Type.SET;
-import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.credentialsAvailable;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.getRegistrationToken;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
-import static org.keycloak.client.registration.cli.util.ConfigUtil.setRegistrationToken;
-import static org.keycloak.client.registration.cli.common.EndpointType.DEFAULT;
-import static org.keycloak.client.registration.cli.common.EndpointType.OIDC;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doGet;
-import static org.keycloak.client.registration.cli.util.HttpUtil.doPut;
-import static org.keycloak.client.registration.cli.util.HttpUtil.urlencode;
-import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
-import static org.keycloak.client.registration.cli.util.IoUtil.warnfErr;
-import static org.keycloak.client.registration.cli.util.IoUtil.readFully;
-import static org.keycloak.client.registration.cli.util.HttpUtil.APPLICATION_JSON;
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
-import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
-import static org.keycloak.client.registration.cli.util.ParseUtil.mergeAttributes;
-import static org.keycloak.client.registration.cli.util.ParseUtil.parseFileOrStdin;
-import static org.keycloak.client.registration.cli.util.ParseUtil.parseKeyVal;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.DELETE;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.SET;
+import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
+import static org.keycloak.client.cli.util.ConfigUtil.getRegistrationToken;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
+import static org.keycloak.client.cli.util.ConfigUtil.setRegistrationToken;
+import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
+import static org.keycloak.client.cli.util.HttpUtil.doGet;
+import static org.keycloak.client.cli.util.HttpUtil.doPut;
+import static org.keycloak.client.cli.util.HttpUtil.urlencode;
+import static org.keycloak.client.cli.util.IoUtil.printOut;
+import static org.keycloak.client.cli.util.IoUtil.readFully;
+import static org.keycloak.client.cli.util.IoUtil.warnfErr;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
+import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
+import static org.keycloak.client.registration.cli.EndpointType.DEFAULT;
+import static org.keycloak.client.registration.cli.EndpointType.OIDC;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "update", description = "CLIENT_ID [ARGUMENTS]")
+@Command(name = "update", description = "CLIENT_ID [ARGUMENTS]")
 public class UpdateCmd extends AbstractAuthOptionsCmd {
 
-    @Option(shortName = 'e', name = "endpoint", description = "Endpoint type to use - one of: 'default', 'oidc'", hasValue = true, converter = EndpointTypeConverter.class)
+    @Option(names = {"-e", "--endpoint"}, description = "Endpoint type to use - one of: 'default', 'oidc'", converter = EndpointTypeConverter.class)
     private EndpointType regType = null;
 
-    //@GroupOption(shortName = 's', name = "set", description = "Set specific attribute to a specified value", hasValue = true)
-    //private List<String> attributes = new ArrayList<>();
-
-    @Option(shortName = 'f', name = "file", description = "Use the file or standard input if '-' is specified", hasValue = true)
+    @Option(names = {"-f", "--file"}, description = "Use the file or standard input if '-' is specified")
     private String file = null;
 
-    @Option(shortName = 'm', name = "merge", description = "Merge new values with existing configuration on the server", hasValue = false)
-    private boolean mergeMode = true;
+    @Option(names = {"-m", "--merge"}, description = "Merge new values with existing configuration on the server")
+    private boolean mergeMode = false;
 
-    @Option(shortName = 'o', name = "output", description = "After update output the new client configuration", hasValue = false)
+    @Option(names = {"-o", "--output"}, description = "After update output the new client configuration")
     private boolean outputClient = false;
 
-    @Option(shortName = 'c', name = "compressed", description = "Don't pretty print the output", hasValue = false)
+    @Option(names = {"-c", "--compressed"}, description = "Don't pretty print the output")
     private boolean compressed = false;
 
-    @Arguments
-    private List<String> args;
+    @Parameters(arity = "0..1")
+    String clientId;
 
+    // to maintain relative positions of set and delete operations
+    static class AttributeOperations {
+        @Option(names = {"-s", "--set"}, required = true) String set;
+        @Option(names = {"-d", "--delete"}, required = true) String delete;
+    }
+
+    @ArgGroup(exclusive = true, multiplicity = "0..*")
+    List<AttributeOperations> rawAttributeOperations = new ArrayList<>();
+
+    List<AttributeOperation> attrs = new LinkedList<>();
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
+    protected void processOptions() {
+        super.processOptions();
 
-        List<AttributeOperation> attrs = new LinkedList<>();
-
-        try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
+        for (AttributeOperations entry : rawAttributeOperations) {
+            if (entry.delete != null) {
+                attrs.add(new AttributeOperation(DELETE, entry.delete));
+            } else {
+                String[] keyVal = parseKeyVal(entry.set);
+                attrs.add(new AttributeOperation(SET, keyVal[0], keyVal[1]));
             }
+        }
+    }
 
-            processGlobalOptions();
+    @Override
+    protected void process() {
+        if (clientId == null) {
+            throw new IllegalArgumentException("CLIENT_ID not specified");
+        }
 
-            String clientId = null;
+        if (clientId.startsWith("-")) {
+            warnfErr(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
+        }
 
-            if (args != null) {
-                Iterator<String> it = args.iterator();
-                if (!it.hasNext()) {
-                    throw new IllegalArgumentException("CLIENT_ID not specified");
-                }
+        if (file == null && attrs.size() == 0) {
+            throw new IllegalArgumentException("No file nor attribute values specified");
+        }
 
-                clientId = it.next();
+        // We have several options for update:
+        //
+        // A) if a file is specified, then we can overwrite server state with that file
+        //   (that's the normal flow - get and save locally, edit, post to server)
+        //
+        //   update my_client -f new_client.json
+        //
+        // B) if a file is specified, and overrides are specified, then we override the file values with those from command line
+        //   (that allows us to have a local file as a template, it's also batch job friendly)
+        //
+        //   update my_client -s public=true -s enableDirectGrants=false -f new_client.json
+        //
+        // C) if no file is specified, then we can fetch the client definition from server, apply changes to it, and post it back
+        //   (again a batch job friendly mode)
+        //
+        //   update my_client -s public=true -s enableDirectGrants=false
+        //
+        //   This is merge mode by default - if --merge is additionally specified, it is ignored
+        //
+        // D) if a file is specified, then we can merge the file with current state on the server
+        //   (that is similar to previous mode except that the overrides are also taken from a file)
+        //
+        //   update my_client --merge -f new_client.json
+        //   update my_client --merge -s public=true -s enableDirectGrants=false -f new_client.json
+        //
+        // We could also support environment variables in input file, and apply them before parsing it.
+        //
+        // One problem - what if it is SAML XML? No problem as we don't support update for SAML - only create.
+        //
+        if (file == null && attrs.size() > 0) {
+            mergeMode = true;
+        }
 
-                if (clientId.startsWith("-")) {
-                    warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
-                }
+        CmdStdinContext ctx = new CmdStdinContext();
+        if (file != null) {
+            ctx = CmdStdinContext.parseFileOrStdin(file, regType);
+            regType = ctx.getEndpointType();
+        }
 
-                while (it.hasNext()) {
-                    String option = it.next();
-                    switch (option) {
-                        case "-s":
-                        case "--set": {
-                            if (!it.hasNext()) {
-                                throw new IllegalArgumentException("Option " + option + " requires a value");
-                            }
-                            String[] keyVal = parseKeyVal(it.next());
-                            attrs.add(new AttributeOperation(SET, keyVal[0], keyVal[1]));
-                            break;
-                        }
-                        case "-d":
-                        case "--delete": {
-                            attrs.add(new AttributeOperation(DELETE, it.next()));
-                            break;
-                        }
-                        default: {
-                            throw new IllegalArgumentException("Unsupported option: " + option);
-                        }
+        if (regType == null) {
+            regType = DEFAULT;
+            ctx.setEndpointType(regType);
+        } else if (regType != DEFAULT && regType != OIDC) {
+            throw new RuntimeException("Update not supported for endpoint type: " + regType.getEndpoint());
+        }
+
+        // initialize config only after reading from stdin,
+        // to allow proper operation when piping 'get' - which consumes the old
+        // registration access token, and saves the new one to the config
+        ConfigData config = loadConfig();
+        config = copyWithServerInfo(config);
+
+        final String server = config.getServerUrl();
+        final String realm = config.getRealm();
+
+        if (externalToken == null) {
+            // if registration access token is not set via --token, see if it's in the body of any input file
+            // but first see if it's overridden by --set, or maybe deliberately muted via -d registrationAccessToken
+            boolean processed = false;
+            for (AttributeOperation op: attrs) {
+                if ("registrationAccessToken".equals(op.getKey().toString())) {
+                    processed = true;
+                    if (op.getType() == AttributeOperation.Type.SET) {
+                        externalToken = op.getValue();
                     }
+                    // otherwise it's delete - meaning it should stay null
+                    break;
                 }
             }
-
-            if (file == null && attrs.size() == 0) {
-                throw new IllegalArgumentException("No file nor attribute values specified");
+            if (!processed) {
+                externalToken = ctx.getRegistrationAccessToken();
             }
+        }
 
-            // We have several options for update:
-            //
-            // A) if a file is specified, then we can overwrite server state with that file
-            //   (that's the normal flow - get and save locally, edit, post to server)
-            //
-            //   update my_client -f new_client.json
-            //
-            // B) if a file is specified, and overrides are specified, then we override the file values with those from command line
-            //   (that allows us to have a local file as a template, it's also batch job friendly)
-            //
-            //   update my_client -s public=true -s enableDirectGrants=false -f new_client.json
-            //
-            // C) if no file is specified, then we can fetch the client definition from server, apply changes to it, and post it back
-            //   (again a batch job friendly mode)
-            //
-            //   update my_client -s public=true -s enableDirectGrants=false
-            //
-            //   This is merge mode by default - if --merge is additionally specified, it is ignored
-            //
-            // D) if a file is specified, then we can merge the file with current state on the server
-            //   (that is similar to previous mode except that the overrides are also taken from a file)
-            //
-            //   update my_client --merge -f new_client.json
-            //   update my_client --merge -s public=true -s enableDirectGrants=false -f new_client.json
-            //
-            // We could also support environment variables in input file, and apply them before parsing it.
-            //
-            // One problem - what if it is SAML XML? No problem as we don't support update for SAML - only create.
-            //
-            if (file == null && attrs.size() > 0) {
-                mergeMode = true;
-            }
+        if (externalToken == null) {
+            // if registration access token is not set, try use the one from configuration
+            externalToken = getRegistrationToken(config.sessionRealmConfigData(), clientId);
+        }
 
-            CmdStdinContext ctx = new CmdStdinContext();
-            if (file != null) {
-                ctx = parseFileOrStdin(file, regType);
-                regType = ctx.getEndpointType();
-            }
+        setupTruststore(config);
 
-            if (regType == null) {
-                regType = DEFAULT;
-                ctx.setEndpointType(regType);
-            } else if (regType != DEFAULT && regType != OIDC) {
-                throw new RuntimeException("Update not supported for endpoint type: " + regType.getEndpoint());
-            }
-
-            // initialize config only after reading from stdin,
-            // to allow proper operation when piping 'get' - which consumes the old
-            // registration access token, and saves the new one to the config
-            ConfigData config = loadConfig();
+        String auth = externalToken;
+        if (auth == null) {
+            config = ensureAuthInfo(config);
             config = copyWithServerInfo(config);
-
-            final String server = config.getServerUrl();
-            final String realm = config.getRealm();
-
-            if (token == null) {
-                // if registration access token is not set via --token, see if it's in the body of any input file
-                // but first see if it's overridden by --set, or maybe deliberately muted via -d registrationAccessToken
-                boolean processed = false;
-                for (AttributeOperation op: attrs) {
-                    if ("registrationAccessToken".equals(op.getKey().toString())) {
-                        processed = true;
-                        if (op.getType() == AttributeOperation.Type.SET) {
-                            token = op.getValue();
-                        }
-                        // otherwise it's delete - meaning it should stay null
-                        break;
-                    }
-                }
-                if (!processed) {
-                    token = ctx.getRegistrationAccessToken();
-                }
+            if (credentialsAvailable(config)) {
+                auth = ensureToken(config);
             }
+        }
 
-            if (token == null) {
-                // if registration access token is not set, try use the one from configuration
-                token = getRegistrationToken(config.sessionRealmConfigData(), clientId);
-            }
-
-            setupTruststore(config, commandInvocation);
-
-            String auth = token;
-            if (auth == null) {
-                config = ensureAuthInfo(config, commandInvocation);
-                config = copyWithServerInfo(config);
-                if (credentialsAvailable(config)) {
-                    auth = ensureToken(config);
-                }
-            }
-
-            auth = auth != null ? "Bearer " + auth : null;
+        auth = auth != null ? "Bearer " + auth : null;
 
 
-            if (mergeMode) {
-                InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
-                        APPLICATION_JSON, auth);
+        if (mergeMode) {
+            InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
+                    APPLICATION_JSON, auth);
 
-                String json = readFully(response);
+            String json = readFully(response);
 
-                CmdStdinContext ctxremote = new CmdStdinContext();
-                ctxremote.setContent(json);
-                ctxremote.setEndpointType(regType);
-                try {
-
-                    if (regType == DEFAULT) {
-                        ctxremote.setClient(JsonSerialization.readValue(json, ClientRepresentation.class));
-                        token = ctxremote.getClient().getRegistrationAccessToken();
-                    } else if (regType == OIDC) {
-                        ctxremote.setOidcClient(JsonSerialization.readValue(json, OIDCClientRepresentation.class));
-                        token = ctxremote.getOidcClient().getRegistrationAccessToken();
-                    }
-                } catch (JsonParseException e) {
-                    throw new RuntimeException("Not a valid JSON document. " + e.getMessage(), e);
-                } catch (IOException e) {
-                    throw new RuntimeException("Not a valid JSON document", e);
-                }
-
-                // we have to use registration access token retrieved from previous operation
-                // that ensures optimistic locking semantics
-                if (token != null) {
-                    // we use auth with doPost later
-                    auth = "Bearer " + token;
-
-                    String newToken = token;
-                    String clientToUpdate = clientId;
-                    saveMergeConfig(cfg -> {
-                        setRegistrationToken(cfg.ensureRealmConfigData(server, realm), clientToUpdate, newToken);
-                    });
-                }
-
-                // merge local representation over remote one
-                if (ctx.getClient() != null) {
-                    ReflectionUtil.merge(ctx.getClient(), ctxremote.getClient());
-                } else if (ctx.getOidcClient() != null) {
-                    ReflectionUtil.merge(ctx.getOidcClient(), ctxremote.getOidcClient());
-                }
-                ctx = ctxremote;
-            }
-
-            if (attrs.size() > 0) {
-                ctx = mergeAttributes(ctx, attrs);
-            }
-
-            // now update
-            InputStream response = doPut(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
-                    APPLICATION_JSON, APPLICATION_JSON, ctx.getContent(), auth);
+            CmdStdinContext ctxremote = new CmdStdinContext();
+            ctxremote.setContent(json);
+            ctxremote.setEndpointType(regType);
             try {
-                if (regType == DEFAULT) {
-                    ClientRepresentation clirep = JsonSerialization.readValue(response, ClientRepresentation.class);
-                    outputResult(clirep);
-                    token = clirep.getRegistrationAccessToken();
-                } else if (regType == OIDC) {
-                    OIDCClientRepresentation clirep = JsonSerialization.readValue(response, OIDCClientRepresentation.class);
-                    outputResult(clirep);
-                    token = clirep.getRegistrationAccessToken();
-                }
 
-                String newToken = token;
+                if (regType == DEFAULT) {
+                    ctxremote.setClient(JsonSerialization.readValue(json, ClientRepresentation.class));
+                    externalToken = ctxremote.getClient().getRegistrationAccessToken();
+                } else if (regType == OIDC) {
+                    ctxremote.setOidcClient(JsonSerialization.readValue(json, OIDCClientRepresentation.class));
+                    externalToken = ctxremote.getOidcClient().getRegistrationAccessToken();
+                }
+            } catch (JsonParseException e) {
+                throw new RuntimeException("Not a valid JSON document. " + e.getMessage(), e);
+            } catch (IOException e) {
+                throw new RuntimeException("Not a valid JSON document", e);
+            }
+
+            // we have to use registration access token retrieved from previous operation
+            // that ensures optimistic locking semantics
+            if (externalToken != null) {
+                // we use auth with doPost later
+                auth = "Bearer " + externalToken;
+
+                String newToken = externalToken;
                 String clientToUpdate = clientId;
                 saveMergeConfig(cfg -> {
                     setRegistrationToken(cfg.ensureRealmConfigData(server, realm), clientToUpdate, newToken);
                 });
-
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to process HTTP response", e);
             }
 
-            return CommandResult.SUCCESS;
+            // merge local representation over remote one
+            if (ctx.getClient() != null) {
+                ReflectionUtil.merge(ctx.getClient(), ctxremote.getClient());
+            } else if (ctx.getOidcClient() != null) {
+                ReflectionUtil.merge(ctx.getOidcClient(), ctxremote.getOidcClient());
+            }
+            ctx = ctxremote;
+        }
 
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
+        if (attrs.size() > 0) {
+            ctx = CmdStdinContext.mergeAttributes(ctx, attrs);
+        }
+
+        // now update
+        InputStream response = doPut(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
+                APPLICATION_JSON, APPLICATION_JSON, ctx.getContent(), auth);
+        try {
+            if (regType == DEFAULT) {
+                ClientRepresentation clirep = JsonSerialization.readValue(response, ClientRepresentation.class);
+                outputResult(clirep);
+                externalToken = clirep.getRegistrationAccessToken();
+            } else if (regType == OIDC) {
+                OIDCClientRepresentation clirep = JsonSerialization.readValue(response, OIDCClientRepresentation.class);
+                outputResult(clirep);
+                externalToken = clirep.getRegistrationAccessToken();
+            }
+
+            String newToken = externalToken;
+            String clientToUpdate = clientId;
+            saveMergeConfig(cfg -> {
+                setRegistrationToken(cfg.ensureRealmConfigData(server, realm), clientToUpdate, newToken);
+            });
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to process HTTP response", e);
         }
     }
 
@@ -338,13 +306,10 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && regType == null && file == null && (args == null || args.size() == 0);
+        return super.nothingToDo() && regType == null && file == null && rawAttributeOperations.isEmpty() && clientId == null;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help update' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }
@@ -363,7 +328,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");

@@ -488,6 +488,17 @@ For custom extensions there may be some changes needed:
 
 The algorithm that {project_name} uses to sign internal tokens (a JWT which is consumed by {project_name} itself, for example a refresh or action token) is being changed from `HS256` to the more secure `HS512`. A new key provider named `hmac-generated-hs512` is now added for realms. Note that in migrated realms the old `hmac-generated` provider and the old `HS256` key are maintained and still validate tokens issued before the upgrade. The `HS256` provider can be manually deleted when no more old tokens exist following the {adminguide_link}#rotating-keys[rotating keys guidelines].
 
+= Different JVM memory settings when running in a container
+
+The JVM options `-Xms` and `-Xmx` were replaced by `-XX:InitialRAMPercentage` and `-XX:MaxRAMPercentage` when running in a container.
+Instead of the static maximum heap size settings, {project_name} specifies the maximum as 70% of the total container memory.
+
+As the heap size is dynamically calculated based on the total container memory, you should *always set the memory limit* for the container.
+
+WARNING: If the memory limit is not set, the memory consumption rapidly increases as the maximum heap size grows up to 70% of the total container memory.
+
+For more details, see the https://www.keycloak.org/server/containers#_specifying_different_memory_settings[Running Keycloak in a container] guide.
+
 ifeval::[{project_community}==true]
 = GELF log handler has been deprecated
 

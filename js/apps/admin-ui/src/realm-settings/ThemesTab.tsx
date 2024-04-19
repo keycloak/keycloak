@@ -4,10 +4,12 @@ import {
   Button,
   FormGroup,
   PageSection,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -46,7 +48,7 @@ export const RealmSettingsThemesTab = ({
       <FormAccess
         isHorizontal
         role="manage-realm"
-        className="pf-u-mt-lg"
+        className="pf-v5-u-mt-lg"
         onSubmit={handleSubmit(save)}
       >
         <FormGroup
