@@ -151,13 +151,7 @@ public final class LoggingPropertyMappers {
     }
 
     private static Optional<String> resolveFileLogLocation(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        String location = value.get();
-
-        if (location.endsWith(File.separator)) {
-            return of(location + LoggingOptions.DEFAULT_LOG_FILENAME);
-        }
-
-        return value;
+        return value.map(location -> location.endsWith(File.separator) ? location + LoggingOptions.DEFAULT_LOG_FILENAME : location);
     }
 
     private static Level toLevel(String categoryLevel) throws IllegalArgumentException {
