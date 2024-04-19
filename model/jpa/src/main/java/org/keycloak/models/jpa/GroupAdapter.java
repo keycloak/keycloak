@@ -144,7 +144,6 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
                 .map(realm::getGroupById)
                 // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
                 .filter(Objects::nonNull)
-                .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 
