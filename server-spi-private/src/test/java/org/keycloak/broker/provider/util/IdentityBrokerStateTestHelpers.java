@@ -669,6 +669,14 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public boolean isTransparentUserMessage() { return false; }
+
+        @Override
+        public void setTransparentUserMessage(boolean value) {
+
+        }
+
+        @Override
         public boolean isPermanentLockout() {
             return false;
         }

@@ -73,6 +73,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean editUsernameAllowed;
     //--- brute force settings
     protected boolean bruteForceProtected;
+    protected boolean transparentUserMessage;
     protected boolean permanentLockout;
     protected int maxTemporaryLockouts;
     protected int maxFailureWaitSeconds;
@@ -194,6 +195,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         editUsernameAllowed = model.isEditUsernameAllowed();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
+        transparentUserMessage = model.isTransparentUserMessage();
         permanentLockout = model.isPermanentLockout();
         maxTemporaryLockouts = model.getMaxTemporaryLockouts();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
@@ -370,6 +372,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isBruteForceProtected() {
         return bruteForceProtected;
+    }
+
+    public boolean isTransparentUserMessage() {
+        return this.transparentUserMessage;
     }
 
     public boolean isPermanentLockout() {

@@ -90,6 +90,7 @@ public class RealmRepresentation {
 
     //--- brute force settings
     protected Boolean bruteForceProtected;
+    protected Boolean transparentUserMessage;
     protected Boolean permanentLockout;
     protected Integer maxTemporaryLockouts;
     protected Integer maxFailureWaitSeconds;
@@ -756,6 +757,14 @@ public class RealmRepresentation {
 
     public void setBruteForceProtected(Boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    public Boolean isTransparentUserMessage() {
+        return transparentUserMessage;
+    }
+
+    public void setTransparentUserMessage(Boolean transparentUserMessage) {
+        this.transparentUserMessage = transparentUserMessage;
     }
 
     public Boolean isPermanentLockout() {

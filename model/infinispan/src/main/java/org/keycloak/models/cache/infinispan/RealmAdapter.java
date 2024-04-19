@@ -232,6 +232,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isTransparentUserMessage() {
+        if (isUpdated()) return updated.isTransparentUserMessage();
+        return cached.isTransparentUserMessage();
+    }
+
+    @Override
+    public void setTransparentUserMessage(boolean value) {
+        getDelegateForUpdate();
+        updated.setTransparentUserMessage(value);
+    }
+
+    @Override
     public boolean isPermanentLockout() {
         if(isUpdated()) return updated.isPermanentLockout();
         return cached.isPermanentLockout();

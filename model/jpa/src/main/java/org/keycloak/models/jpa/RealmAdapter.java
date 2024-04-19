@@ -253,6 +253,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public boolean isTransparentUserMessage() {
+        return getAttribute("lockoutTransparentUserMessage", false);
+    }
+
+    @Override
+    public void setTransparentUserMessage(boolean value) {
+        setAttribute("lockoutTransparentUserMessage", value);
+    }
+
+    @Override
     public boolean isPermanentLockout() {
         return getAttribute("permanentLockout", false);
     }

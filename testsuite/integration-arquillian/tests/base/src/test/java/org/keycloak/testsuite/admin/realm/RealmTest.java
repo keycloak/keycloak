@@ -277,6 +277,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setDisplayNameHtml("DISPLAY_NAME_HTML");
         rep.setDefaultSignatureAlgorithm("RS256");
         rep.setBruteForceProtected(true);
+        rep.setTransparentUserMessage(true);
         rep.setPermanentLockout(true);
         rep.setMaxFailureWaitSeconds(dummyInt);
         rep.setWaitIncrementSeconds(dummyInt);
@@ -323,6 +324,7 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals("DISPLAY_NAME_HTML", rep.getDisplayNameHtml());
         assertEquals("RS256", rep.getDefaultSignatureAlgorithm());
         assertTrue(rep.isBruteForceProtected());
+        assertTrue(rep.isTransparentUserMessage());
         assertTrue(rep.isPermanentLockout());
         assertEquals(dummyInt, rep.getMaxFailureWaitSeconds());
         assertEquals(dummyInt, rep.getWaitIncrementSeconds());
@@ -767,6 +769,7 @@ public class RealmTest extends AbstractAdminTest {
         }
         if (realm.isEnabled() != null) assertEquals(realm.isEnabled(), storedRealm.isEnabled());
         if (realm.isBruteForceProtected() != null) assertEquals(realm.isBruteForceProtected(), storedRealm.isBruteForceProtected());
+        if (realm.isTransparentUserMessage() != null) assertEquals(realm.isTransparentUserMessage(), storedRealm.isTransparentUserMessage());
         if (realm.getMaxFailureWaitSeconds() != null) assertEquals(realm.getMaxFailureWaitSeconds(), storedRealm.getMaxFailureWaitSeconds());
         if (realm.getMinimumQuickLoginWaitSeconds() != null) assertEquals(realm.getMinimumQuickLoginWaitSeconds(), storedRealm.getMinimumQuickLoginWaitSeconds());
         if (realm.getWaitIncrementSeconds() != null) assertEquals(realm.getWaitIncrementSeconds(), storedRealm.getWaitIncrementSeconds());

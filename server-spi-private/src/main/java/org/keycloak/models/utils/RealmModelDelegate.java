@@ -186,6 +186,16 @@ public class RealmModelDelegate implements RealmModel {
         delegate.setBruteForceProtected(value);
     }
 
+    @Override
+    public boolean isTransparentUserMessage() {
+        return delegate.isTransparentUserMessage();
+    }
+
+    @Override
+    public void setTransparentUserMessage(boolean value) {
+        delegate.setTransparentUserMessage(value);
+    }
+
     public boolean isPermanentLockout() {
         return delegate.isPermanentLockout();
     }

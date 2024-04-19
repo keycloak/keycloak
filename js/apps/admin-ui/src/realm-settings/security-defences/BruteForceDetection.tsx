@@ -8,7 +8,11 @@ import {
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, NumberControl } from "@keycloak/keycloak-ui-shared";
+import {
+  HelpItem,
+  NumberControl,
+  SwitchControl,
+} from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";
@@ -126,6 +130,18 @@ export const BruteForceDetection = ({
         </FormGroup>
         {bruteForceMode !== BruteForceMode.Disabled && (
           <>
+            {(bruteForceMode === BruteForceMode.TemporaryLockout ||
+              bruteForceMode ===
+                BruteForceMode.PermanentAfterTemporaryLockout) && (
+              <SwitchControl
+                name="transparentUserMessage"
+                label={t("transparentUserMessage")}
+                id="kc-transparent-user-message-switch"
+                labelOn={t("on")}
+                labelOff={t("off")}
+              />
+            )}
+
             <NumberControl
               name="failureFactor"
               label={t("failureFactor")}
