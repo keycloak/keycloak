@@ -53,7 +53,7 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         supportedCredentialsConfig.setLabel("Supported Credential Types");
         supportedCredentialsConfig.setDefaultValue("VerifiableCredential");
         supportedCredentialsConfig.setHelpText(
-                "Types of Credentials to apply the mapper. Needs to be a comma-seperated list.");
+                "Types of Credentials to apply the mapper. Needs to be a comma-separated list.");
         supportedCredentialsConfig.setName(SUPPORTED_CREDENTIALS_KEY);
         OID4VC_CONFIG_PROPERTIES.clear();
         OID4VC_CONFIG_PROPERTIES.add(supportedCredentialsConfig);

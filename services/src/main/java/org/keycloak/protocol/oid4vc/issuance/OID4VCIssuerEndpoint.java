@@ -222,7 +222,7 @@ public class OID4VCIssuerEndpoint {
                 .orElseThrow(
                         () -> {
                             LOGGER.debugf("Unsupported credential %s was requested.", requestedCredential);
-                            throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
+                            return new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
                         });
 
         if (!supportedCredentialConfiguration.getFormat().equals(requestedFormat)) {

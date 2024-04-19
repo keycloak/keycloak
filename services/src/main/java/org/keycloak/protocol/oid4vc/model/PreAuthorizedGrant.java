@@ -19,10 +19,12 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 
 /**
  * Container for the pre-authorized code to be used in a Credential Offer
- *
+ * <p>
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
@@ -30,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PreAuthorizedGrant {
 
-    @JsonProperty("urn:ietf:params:oauth:grant-type:pre-authorized_code")
+    @JsonProperty(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)
     private PreAuthorizedCode preAuthorizedCode;
 
     public PreAuthorizedCode getPreAuthorizedCode() {

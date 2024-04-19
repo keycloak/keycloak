@@ -35,14 +35,14 @@ import java.util.Optional;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SupportedCredentialConfiguration {
 
-    private static final String DOT_SEPERATOR = ".";
+    private static final String DOT_SEPARATOR = ".";
 
     @JsonIgnore
     private static final String FORMAT_KEY = "format";
     @JsonIgnore
     private static final String SCOPE_KEY = "scope";
     @JsonIgnore
-    private static final String CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY = "cryptographic_binding_methods_supported";
+    private static final String CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY = " credential_signing_alg_values_supported";
     @JsonIgnore
     private static final String CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY = "cryptographic_suites_supported";
     @JsonIgnore
@@ -137,46 +137,46 @@ public class SupportedCredentialConfiguration {
 
     public Map<String, String> toDotNotation() {
         Map<String, String> dotNotation = new HashMap<>();
-        Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPERATOR + FORMAT_KEY, format.toString()));
-        Optional.ofNullable(scope).ifPresent(scope -> dotNotation.put(id + DOT_SEPERATOR + SCOPE_KEY, scope));
+        Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPARATOR + FORMAT_KEY, format.toString()));
+        Optional.ofNullable(scope).ifPresent(scope -> dotNotation.put(id + DOT_SEPARATOR + SCOPE_KEY, scope));
         Optional.ofNullable(cryptographicBindingMethodsSupported).ifPresent(types ->
-                dotNotation.put(id + DOT_SEPERATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY, String.join(",", cryptographicBindingMethodsSupported)));
+                dotNotation.put(id + DOT_SEPARATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY, String.join(",", cryptographicBindingMethodsSupported)));
         Optional.ofNullable(cryptographicSuitesSupported).ifPresent(types ->
-                dotNotation.put(id + DOT_SEPERATOR + CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY, String.join(",", cryptographicSuitesSupported)));
+                dotNotation.put(id + DOT_SEPARATOR + CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY, String.join(",", cryptographicSuitesSupported)));
         Optional.ofNullable(cryptographicSuitesSupported).ifPresent(types ->
-                dotNotation.put(id + DOT_SEPERATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY, String.join(",", credentialSigningAlgValuesSupported)));
+                dotNotation.put(id + DOT_SEPARATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY, String.join(",", credentialSigningAlgValuesSupported)));
 
         Map<String, String> dotNotatedDisplay = Optional.ofNullable(display)
                 .map(DisplayObject::toDotNotation)
                 .orElse(Map.of());
         dotNotatedDisplay.entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
-                .forEach(entry -> dotNotation.put(id + DOT_SEPERATOR + DISPLAY_KEY + "." + entry.getKey(), entry.getValue()));
+                .forEach(entry -> dotNotation.put(id + DOT_SEPARATOR + DISPLAY_KEY + "." + entry.getKey(), entry.getValue()));
         return dotNotation;
     }
 
     public static SupportedCredentialConfiguration fromDotNotation(String credentialId, Map<String, String> dotNotated) {
 
         SupportedCredentialConfiguration supportedCredentialConfiguration = new SupportedCredentialConfiguration().setId(credentialId);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredentialConfiguration::setFormat);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + SCOPE_KEY)).ifPresent(supportedCredentialConfiguration::setScope);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY))
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredentialConfiguration::setFormat);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + SCOPE_KEY)).ifPresent(supportedCredentialConfiguration::setScope);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY))
                 .map(cbms -> cbms.split(","))
                 .map(Arrays::asList)
                 .ifPresent(supportedCredentialConfiguration::setCryptographicBindingMethodsSupported);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY))
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY))
                 .map(css -> css.split(","))
                 .map(Arrays::asList)
                 .ifPresent(supportedCredentialConfiguration::setCryptographicSuitesSupported);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY))
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY))
                 .map(css -> css.split(","))
                 .map(Arrays::asList)
                 .ifPresent(supportedCredentialConfiguration::setCredentialSigningAlgValuesSupported);
         Map<String, String> displayMap = new HashMap<>();
         dotNotated.entrySet().forEach(entry -> {
             String key = entry.getKey();
-            if (key.startsWith(credentialId + DOT_SEPERATOR + DISPLAY_KEY)) {
-                displayMap.put(key.substring((credentialId + DOT_SEPERATOR + DISPLAY_KEY).length() + 1), entry.getValue());
+            if (key.startsWith(credentialId + DOT_SEPARATOR + DISPLAY_KEY)) {
+                displayMap.put(key.substring((credentialId + DOT_SEPARATOR + DISPLAY_KEY).length() + 1), entry.getValue());
             }
         });
         if (!displayMap.isEmpty()) {
