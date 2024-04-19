@@ -61,6 +61,7 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -738,8 +739,9 @@ public class UserTest extends AbstractAdminTest {
 
         try (Response response = realm.users().create(user)) {
             assertEquals(400, response.getStatus());
-            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("Password policy not met", error.getErrorMessage());
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            Assert.assertEquals("invalidPasswordMinLengthMessage", error.getError());
+            Assert.assertEquals("Invalid password: minimum length 8.", error.getErrorDescription());
             rep.setPasswordPolicy(passwordPolicy);
             assertAdminEvents.assertEmpty();
             realm.update(rep);
