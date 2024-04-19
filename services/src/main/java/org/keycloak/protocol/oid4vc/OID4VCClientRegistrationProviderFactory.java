@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * Implementation of the {@link ClientRegistrationProviderFactory} to integrate the OID4VC protocols with
- * Keycloaks client-registration.
+ * Keycloak's client-registration.
  * <p>
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html}
  *

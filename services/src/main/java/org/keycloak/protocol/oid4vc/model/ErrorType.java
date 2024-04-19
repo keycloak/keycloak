@@ -26,11 +26,12 @@ package org.keycloak.protocol.oid4vc.model;
  */
 public enum ErrorType {
 
-    INVALID_REQUEST("invalid_request"),
+    INVALID_CREDENTIAL_REQUEST("invalid_credential_request"),
     INVALID_TOKEN("invalid_token"),
     UNSUPPORTED_CREDENTIAL_TYPE("unsupported_credential_type"),
     UNSUPPORTED_CREDENTIAL_FORMAT("unsupported_credential_format"),
-    INVALID_OR_MISSING_PROOF("invalid_or_missing_proof");
+    INVALID_PROOF("invalid_proof"),
+    INVALID_ENCRYPTION_PARAMETER("invalid_encryption_parameters");
 
     private final String value;
 

@@ -55,7 +55,6 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.utils.MediaType;
@@ -68,7 +67,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -125,7 +123,7 @@ public class OID4VCIssuerEndpoint {
         if (!credentialsMap.containsKey(vcId)) {
             LOGGER.debugf("No credential with id %s exists.", vcId);
             LOGGER.debugf("Supported credentials are %s.", credentialsMap);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
         SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
         Format format = supportedCredentialConfiguration.getFormat();
@@ -141,7 +139,7 @@ public class OID4VCIssuerEndpoint {
             clientSession.setNote(nonce, objectMapper.writeValueAsString(supportedCredentialConfiguration));
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert Supported Credential POJO to JSON: %s", e.getMessage());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
 
         CredentialOfferURI credentialOfferURI = new CredentialOfferURI()
@@ -162,14 +160,14 @@ public class OID4VCIssuerEndpoint {
     @Path(CREDENTIAL_OFFER_PATH + "{nonce}")
     public Response getCredentialOffer(@PathParam("nonce") String nonce) {
         if (nonce == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
 
         String note = clientSession.getNote(nonce);
         if (note == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
 
         SupportedCredentialConfiguration offeredCredential;
@@ -181,7 +179,7 @@ public class OID4VCIssuerEndpoint {
             clientSession.removeNote(nonce);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert SupportedCredential JSON to POJO: %s", e);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
 
         String preAuthorizedCode = generateAuthorizationCodeForClientSession(clientSession);
