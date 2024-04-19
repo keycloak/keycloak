@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -221,6 +221,8 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
             return Collections.emptySet();
         }
 
-        return new HashSet<>(Arrays.asList(JsonSerialization.readValue(groups, GroupPolicyRepresentation.GroupDefinition[].class)));
+        return Arrays.stream(JsonSerialization.readValue(groups, GroupPolicyRepresentation.GroupDefinition[].class))
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

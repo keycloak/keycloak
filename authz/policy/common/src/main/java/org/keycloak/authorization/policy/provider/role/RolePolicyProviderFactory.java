@@ -38,8 +38,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -191,9 +193,10 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
     private Set<RoleDefinition> getRoles(String rawRoles, RealmModel realm) {
         if (rawRoles != null) {
             try {
-                Set<RoleDefinition> roles = new HashSet<>(Arrays.asList(JsonSerialization.readValue(rawRoles, RoleDefinition[].class)));
-                roles.removeIf(definition -> getRole(definition, realm) == null);
-                return roles;
+                return Arrays.stream(JsonSerialization.readValue(rawRoles, RoleDefinition[].class))
+                        .filter(definition -> getRole(definition, realm) != null)
+                        .sorted()
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
             } catch (IOException e) {
                 throw new RuntimeException("Could not parse roles from config: [" + rawRoles + "]", e);
             }
