@@ -110,16 +110,16 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description(String.format("The username for the authentication to the remote server for the remote store. "
                     + "It replaces the 'username' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.",
-                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
+                    + "If the option is specified, '%s' is required as well and the related configuration in XML file should not be present.",
+                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
             .build();
 
     public static final Option<String> CACHE_REMOTE_PASSWORD = new OptionBuilder<>(CACHE_REMOTE_PASSWORD_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
             .description(String.format("The password for the authentication to the remote server for the remote store. "
                     + "It replaces the 'password' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.",
-                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY))
+                    + "If the option is specified, '%s' is required as well and the related configuration in XML file should not be present.",
+                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY))
             .build();
 
     public static final Option<Boolean> CACHE_METRICS_HISTOGRAMS_ENABLED = new OptionBuilder<>(CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY, Boolean.class)
@@ -129,7 +129,7 @@ public class CachingOptions {
 
     public static final Option<Boolean> CACHE_REMOTE_TLS_ENABLED = new OptionBuilder<>(CACHE_REMOTE_TLS_ENABLED_PROPERTY, Boolean.class)
             .category(OptionCategory.CACHE)
-            .description("Enable SSL support to communication with a secure remote Infinispan server. It is not recommended to disable in production!")
+            .description("Enable TLS support to communicate with a secured remote Infinispan server. Recommended to be enabled in production.")
             .defaultValue(Boolean.TRUE)
             .build();
 }

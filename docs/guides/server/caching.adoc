@@ -155,8 +155,8 @@ Once any of declared CLI parameters are present, it is expected there is no conf
 
 WARNING: Disabling security is not recommended in production!
 
-In development or test environment, it is easier to start an unsecured Infinispan server.
-For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (SSL) between {project_name} and Infinispan.
+In a development or test environment, it is easier to start an unsecured Infinispan server.
+For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (TLS) between {project_name} and Infinispan.
 {project_name} will fail to start if the Infinispan server is configured to accept only encrypted connections.
 
 The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the Infinispan server without presenting any credentials.
