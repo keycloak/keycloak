@@ -73,9 +73,9 @@ public class JwtSigningServiceTest extends OID4VCTest {
                             new JwtSigningService(
                                     session,
                                     getKeyFromSession(session).getKid(),
-                                    "did:web:test.org",
-                                    "JWT",
                                     "unsupported-algorithm",
+                                    "JWT",
+                                    "did:web:test.org",
                                     new StaticTimeProvider(1000)));
         } catch (RunOnServerException ros) {
             throw ros.getCause();
