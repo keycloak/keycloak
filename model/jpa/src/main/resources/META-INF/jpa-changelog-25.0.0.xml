@@ -133,5 +133,12 @@
         <addUniqueConstraint columnNames="CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_EXTERNAL_CONSENT" tableName="USER_CONSENT"/>
     </changeSet>
 
-
+    <changeSet author="keycloak" id="25.0.0-28861-index-creation">
+        <createIndex tableName="RESOURCE_SERVER_PERM_TICKET" indexName="IDX_PERM_TICKET_REQUESTER">
+            <column name="REQUESTER"/>
+        </createIndex>
+        <createIndex tableName="RESOURCE_SERVER_PERM_TICKET" indexName="IDX_PERM_TICKET_OWNER">
+            <column name="OWNER"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>
