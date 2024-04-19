@@ -59,6 +59,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -222,6 +223,12 @@ public class UserResource {
         } catch (ReadOnlyException re) {
             session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+        } catch (PasswordPolicyNotMetException e) {
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            session.getTransactionManager().setRollbackOnly();
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
             session.getTransactionManager().setRollbackOnly();
@@ -684,6 +691,11 @@ public class UserResource {
             throw new BadRequestException("Resetting to N old passwords is not allowed.");
         } catch (ReadOnlyException mre) {
             throw new BadRequestException("Can't reset password as account is read only");
+        } catch (PasswordPolicyNotMetException e) {
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Status.BAD_REQUEST);
         } catch (ModelException e) {
             logger.warn("Could not update user password.", e);
             Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());

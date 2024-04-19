@@ -756,7 +756,9 @@ public class RepresentationToModel {
                         session.getContext().setRealm(realm);
                         user.credentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));
                     } catch (ModelException ex) {
-                        throw new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
+                        PasswordPolicyNotMetException passwordPolicyNotMetException = new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
+                        passwordPolicyNotMetException.setParameters(ex.getParameters());
+                        throw passwordPolicyNotMetException;
                     } finally {
                         session.getContext().setRealm(origRealm);
                     }

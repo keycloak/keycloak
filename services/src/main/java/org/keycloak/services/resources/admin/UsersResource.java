@@ -40,6 +40,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
@@ -59,12 +60,15 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -156,7 +160,10 @@ public class UsersResource {
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("User exists with same username or email");
         } catch (PasswordPolicyNotMetException e) {
-            throw ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Response.Status.BAD_REQUEST);
         } catch (ModelException me){
             logger.warn("Could not create user", me);
             throw ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
