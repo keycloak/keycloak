@@ -63,8 +63,7 @@ public class RemoteCacheSessionsLoaderTest {
 
             for (int i=0 ; i<COUNT ; i++) {
                 // Create initial item
-                UserSessionEntity session = new UserSessionEntity();
-                session.setId("loader-key-" + i);
+                UserSessionEntity session = new UserSessionEntity("loader-key-" + i);
                 session.setRealmId("master");
                 session.setBrokerSessionId("!23123123");
                 session.setBrokerUserId(null);

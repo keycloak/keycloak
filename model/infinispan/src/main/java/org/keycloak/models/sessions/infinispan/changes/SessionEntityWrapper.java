@@ -91,10 +91,6 @@ public class SessionEntityWrapper<S extends SessionEntity> {
         return version;
     }
 
-    public void setVersion(UUID version) {
-        this.version = version;
-    }
-
     public S getEntity() {
         return entity;
     }

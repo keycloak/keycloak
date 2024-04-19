@@ -78,8 +78,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm, String id) {
-        RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity();
-        entity.setId(id);
+        RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity(id);
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
