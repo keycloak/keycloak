@@ -238,8 +238,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             id = keyGenerator.generateKeyString(session, sessionCache);
         }
 
-        UserSessionEntity entity = new UserSessionEntity();
-        entity.setId(id);
+        UserSessionEntity entity = new UserSessionEntity(id);
         updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
         SessionUpdateTask<UserSessionEntity> createSessionTask = Tasks.addIfAbsentSync();
@@ -852,8 +851,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     private UserSessionEntity createUserSessionEntityInstance(UserSessionModel userSession) {
-        UserSessionEntity entity = new UserSessionEntity();
-        entity.setId(userSession.getId());
+        UserSessionEntity entity = new UserSessionEntity(userSession.getId());
         entity.setRealmId(userSession.getRealm().getId());
 
         entity.setAuthMethod(userSession.getAuthMethod());
