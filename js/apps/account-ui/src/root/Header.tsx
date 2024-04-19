@@ -2,7 +2,7 @@ import { Button } from "@patternfly/react-core";
 import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { useHref } from "react-router-dom";
-import { KeycloakMasthead, label } from "ui-shared";
+import { KeycloakMasthead, label } from "@keycloak/keycloak-ui-shared";
 
 import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";

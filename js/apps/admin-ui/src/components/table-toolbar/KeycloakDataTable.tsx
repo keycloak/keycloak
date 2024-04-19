@@ -28,7 +28,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useStoredState } from "ui-shared";
+import { useStoredState } from "@keycloak/keycloak-ui-shared";
 import { useFetch } from "../../utils/useFetch";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";

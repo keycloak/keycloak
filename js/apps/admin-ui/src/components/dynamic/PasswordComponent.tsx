@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { PasswordControl } from "ui-shared";
+import { PasswordControl } from "@keycloak/keycloak-ui-shared";
 import { convertToName } from "./DynamicComponents";
 import type { ComponentProps } from "./components";
 

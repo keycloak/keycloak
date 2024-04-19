@@ -22,7 +22,7 @@ import { ReactNode, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
-import { label } from "ui-shared";
+import { label } from "@keycloak/keycloak-ui-shared";
 
 import { useAlerts } from "../alert/Alerts";
 import { UserAttribute } from "./UserDataTable";

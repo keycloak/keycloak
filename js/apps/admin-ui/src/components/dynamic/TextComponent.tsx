@@ -1,8 +1,8 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, KeycloakTextArea } from "ui-shared";
 
+import { KeycloakTextArea, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { convertToName } from "./DynamicComponents";
 import type { ComponentProps } from "./components";
 

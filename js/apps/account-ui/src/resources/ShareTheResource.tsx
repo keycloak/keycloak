@@ -18,8 +18,11 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, SelectControl, useAlerts } from "ui-shared";
-
+import {
+  FormErrorText,
+  SelectControl,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
 import { useEnvironment } from "../root/KeycloakContext";

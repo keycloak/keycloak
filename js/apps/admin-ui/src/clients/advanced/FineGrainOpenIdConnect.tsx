@@ -1,7 +1,7 @@
 import { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem, SelectControl } from "ui-shared";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";

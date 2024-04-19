@@ -9,7 +9,11 @@ import {
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, SelectControl, TextControl } from "ui-shared";
+import {
+  HelpItem,
+  SelectControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 
 type AddMapperFormProps = {

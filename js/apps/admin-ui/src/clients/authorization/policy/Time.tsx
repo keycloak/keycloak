@@ -10,9 +10,9 @@ import {
   TimePicker,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "ui-shared";
+import { Controller, useFormContext } from "react-hook-form";
 
 const DATE_TIME_FORMAT = /(\d\d\d\d-\d\d-\d\d)? (\d\d?):(\d\d?)/;
 const padDateSegment = (value: number) => value.toString().padStart(2, "0");

@@ -4,7 +4,7 @@ import {
   createNamedContext,
   useRequiredContext,
   useStoredState,
-} from "ui-shared";
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "./realm-context/RealmContext";
 import { RealmNameRepresentation, useRealms } from "./RealmsContext";
 

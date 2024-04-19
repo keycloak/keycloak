@@ -1,6 +1,6 @@
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextAreaControl } from "ui-shared";
+import { SelectControl, TextAreaControl } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";

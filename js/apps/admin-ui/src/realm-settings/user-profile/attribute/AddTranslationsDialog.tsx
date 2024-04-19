@@ -26,7 +26,7 @@ import { ListEmptyState } from "../../../components/list-empty-state/ListEmptySt
 import { useFetch } from "../../../utils/useFetch";
 import { localeToDisplayName } from "../../../util";
 import { DEFAULT_LOCALE } from "../../../i18n/i18n";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 
 type TranslationForm = {
   locale: string;

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { TextAreaControl, TextControl } from "ui-shared";
+import { TextAreaControl, TextControl } from "@keycloak/keycloak-ui-shared";
 
 type NameDescriptionProps = {
   isDisabled: boolean;

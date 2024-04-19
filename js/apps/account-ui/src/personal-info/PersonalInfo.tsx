@@ -17,7 +17,7 @@ import {
   debeerify,
   setUserProfileServerError,
   useAlerts,
-} from "ui-shared";
+} from "@keycloak/keycloak-ui-shared";
 
 import {
   getPersonalInfo,

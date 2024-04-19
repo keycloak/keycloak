@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
   }
   const lib = env.LIB
     ? {
+        outDir: "lib",
         lib: {
           entry: path.resolve(__dirname, "src/index.ts"),
           formats: ["es"],
@@ -37,7 +38,7 @@ export default defineConfig(({ mode }) => {
       modulePreload: false,
       cssMinify: "lightningcss",
       rollupOptions: {
-        external: external,
+        external,
       },
     },
     plugins,

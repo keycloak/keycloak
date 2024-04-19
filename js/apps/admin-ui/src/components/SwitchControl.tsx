@@ -1,7 +1,7 @@
 import { FieldPath, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import type { SwitchControlProps } from "ui-shared";
-import { SwitchControl } from "ui-shared";
+import type { SwitchControlProps } from "@keycloak/keycloak-ui-shared";
+import { SwitchControl } from "@keycloak/keycloak-ui-shared";
 
 export type DefaultSwitchControlProps<
   T extends FieldValues,

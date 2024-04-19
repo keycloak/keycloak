@@ -65,6 +65,9 @@ importers:
 
   js/apps/account-ui:
     dependencies:
+      '@keycloak/keycloak-ui-shared':
+        specifier: workspace:*
+        version: link:../../libs/ui-shared
       '@patternfly/patternfly':
         specifier: ^5.2.1
         version: 5.2.1
@@ -104,9 +107,6 @@ importers:
       react-router-dom:
         specifier: ^6.22.3
         version: 6.22.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      ui-shared:
-        specifier: workspace:*
-        version: link:../../libs/ui-shared
     devDependencies:
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
@@ -144,6 +144,9 @@ importers:
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
+      '@keycloak/keycloak-ui-shared':
+        specifier: workspace:*
+        version: link:../../libs/ui-shared
       '@patternfly/patternfly':
         specifier: ^5.2.1
         version: 5.2.1
@@ -216,9 +219,6 @@ importers:
       reactflow:
         specifier: ^11.11.1
         version: 11.11.1(@types/react@18.2.79)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      ui-shared:
-        specifier: workspace:*
-        version: link:../../libs/ui-shared
       use-react-router-breadcrumbs:
         specifier: ^4.0.1
         version: 4.0.1(react-router-dom@6.22.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
@@ -6637,6 +6637,7 @@ snapshots:
   admin-ui@file:js/apps/admin-ui(@types/react@18.2.79):
     dependencies:
       '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
+      '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
       '@patternfly/patternfly': 5.2.1
       '@patternfly/react-code-editor': 5.2.3(monaco-editor@0.47.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@patternfly/react-core': 5.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -6660,7 +6661,6 @@ snapshots:
       react-i18next: 14.1.0(i18next@23.11.2)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react-router-dom: 6.22.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       reactflow: 11.11.1(@types/react@18.2.79)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      ui-shared: link:js/libs/ui-shared
       use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.22.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'

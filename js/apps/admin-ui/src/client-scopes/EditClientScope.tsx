@@ -14,7 +14,7 @@ import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useHelp } from "ui-shared";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
