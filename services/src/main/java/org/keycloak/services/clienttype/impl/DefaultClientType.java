@@ -18,7 +18,6 @@
 
 package org.keycloak.services.clienttype.impl;
 
-import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
@@ -34,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -83,6 +81,11 @@ public class DefaultClientType implements ClientType {
     }
 
     @Override
+    public Map<String, ClientTypeRepresentation.PropertyConfig> getConfiguration() {
+        return clientType.getConfig();
+    }
+
+    @Override
     public void onCreate(ClientRepresentation createdClient) throws ClientTypeException {
         // Create empty client augmented with the applicable default client type values.
         ClientRepresentation defaultClientRep = augmentClient(new ClientRepresentation());
@@ -102,9 +105,9 @@ public class DefaultClientType implements ClientType {
         List<String> validationErrors = clientType.getConfig().entrySet().stream()
                 .filter(property -> clientPropertyHasInvalidChangeRequested(currentClient, newClient, property.getKey(), property.getValue()))
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .toList();
 
-        if (validationErrors.size() > 0) {
+        if (!validationErrors.isEmpty()) {
             throw new ClientTypeException(
                     "Cannot change property of client as it is not allowed by the specified client type.",
                     validationErrors.toArray());
@@ -112,8 +115,7 @@ public class DefaultClientType implements ClientType {
     }
 
     protected ClientRepresentation augmentClient(ClientRepresentation client) {
-        clientType.getConfig().entrySet()
-                .forEach(property -> setClientProperty(client, property.getKey(), property.getValue()));
+        clientType.getConfig().forEach((key, value) -> setClientProperty(client, key, value));
         return client;
     }
 

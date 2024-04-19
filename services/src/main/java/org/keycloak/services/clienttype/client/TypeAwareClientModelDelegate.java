@@ -20,6 +20,7 @@ package org.keycloak.services.clienttype.client;
 
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
@@ -153,7 +154,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public void setAttribute(String name, String value) {
-        TypedClientAttribute attribute = TypedClientAttribute.getAttributeByName(name);
+        ExtendedTypedClientAttribute attribute = ExtendedTypedClientAttribute.getAttributesByName().get(name);
         if (attribute != null) {
             attribute.setClientAttribute(clientType, value, (newValue) -> super.setAttribute(name, newValue), String.class);
         } else {
@@ -163,7 +164,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public void removeAttribute(String name) {
-        TypedClientAttribute attribute = TypedClientAttribute.getAttributeByName(name);
+        ExtendedTypedClientAttribute attribute = ExtendedTypedClientAttribute.getAttributesByName().get(name);
         if (attribute != null) {
             attribute.setClientAttribute(clientType, null, (val) -> super.removeAttribute(name), String.class);
         } else {
@@ -173,7 +174,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public String getAttribute(String name) {
-        TypedClientAttribute attribute = TypedClientAttribute.getAttributeByName(name);
+        ExtendedTypedClientAttribute attribute = ExtendedTypedClientAttribute.getAttributesByName().get(name);
         if (attribute != null) {
             return attribute.getClientAttribute(clientType, () -> super.getAttribute(name), String.class);
         } else {
@@ -183,7 +184,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public Map<String, String> getAttributes() {
-        // TODO: Determine how to augment defined client type config attributes here.
-        return super.getAttributes();
+        return clientType.getConfiguration().entrySet().stream()
+                .filter(entry -> TypedClientAttribute.getAttributesByName().containsKey(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> getAttribute(entry.getKey())));
     }
 }
