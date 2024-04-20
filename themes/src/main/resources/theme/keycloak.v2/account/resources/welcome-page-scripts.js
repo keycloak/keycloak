@@ -1,3 +1,4 @@
+"use strict";
 /*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
@@ -13,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var isWelcomePage = function () {
+function isWelcomePage() {
     var winHash = window.location.hash;
     return winHash === '#/';
 };
@@ -42,15 +43,15 @@ var toggleReact = function () {
 };
 
 function loggedInUserName() {
-    let userName = l18nMsg['unknownUser'];
+    var userName = l18nMsg['unknownUser'];
     if (keycloak.tokenParsed) {
-        const givenName = keycloak.tokenParsed.given_name;
-        const familyName = keycloak.tokenParsed.family_name;
-        const preferredUsername = keycloak.tokenParsed.preferred_username;
+        var givenName = keycloak.tokenParsed.given_name;
+        var familyName = keycloak.tokenParsed.family_name;
+        var preferredUsername = keycloak.tokenParsed.preferred_username;
         if (givenName && familyName) {
-            userName = [givenName, familyName].reduce((acc, value, index) =>
-                acc.replace('{{param_'+ index + '}}', value), l18nMsg['fullName']
-            );
+            userName = [givenName, familyName].reduce(function (acc, value, index) {
+                return acc.replace('{{param_' + index + '}}', value);
+            }, l18nMsg['fullName']);
         } else {
             userName = (givenName || familyName) || preferredUsername || userName;
         }
@@ -59,12 +60,12 @@ function loggedInUserName() {
 }
 
 function sanitize(dirtyString) {
-    let element = document.createElement("span");
+    var element = document.createElement("span");
     element.textContent = dirtyString;
     return element.innerHTML;
 }
 
-var toggleMobileDropdown = function () {	
+function toggleMobileDropdown() {
     var mobileDropdown = document.getElementById("landingMobileDropdown");
     var mobileKebab = document.getElementById("landingMobileKebab");
     var mobileKebabButton = document.getElementById("landingMobileKebabButton");
@@ -79,11 +80,11 @@ var toggleMobileDropdown = function () {
     }
 }
 
-var loadjs = function (url, loadListener) {
-    const script = document.createElement("script");
+function loadjs(url, loadListener) {
+    var script = document.createElement("script");
     script.src = resourceUrl + url;
     script.type = "module";
     if (loadListener)
         script.addEventListener("load", loadListener);
     document.head.appendChild(script);
-};
+}
