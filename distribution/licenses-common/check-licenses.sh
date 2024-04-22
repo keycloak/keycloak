@@ -11,7 +11,7 @@ for i in `find $MODULES -name '*.jar'`; do
 		if [ ! -f $LICENSES/$groupId\,$artifactId\,$version,* ]; then	
 			echo "Missing: "
 			echo "group: $groupId"
-			echo "artifcat: $artifactId"
+			echo "artifact: $artifactId"
 			echo "version: $version"
 			echo "---------------------"
 		fi
