@@ -42,12 +42,17 @@ export const KeycloakProvider = ({
   const [init, setInit] = useState(false);
   const [error, setError] = useState<unknown>();
   const keycloak = useMemo(
-    () =>
-      new Keycloak({
+    () => {
+      const keycloak = new Keycloak({
         url: environment.authUrl,
         realm: environment.realm,
         clientId: environment.clientId,
-      }),
+      });
+
+      keycloak.onAuthLogout = () => keycloak.login();
+
+      return keycloak;
+    },
     [environment],
   );
 
@@ -57,14 +62,11 @@ export const KeycloakProvider = ({
       return;
     }
 
-    keycloak.onAuthLogout = () => keycloak.login();
-    const init = () => {
-      return keycloak.init({
-        onLoad: "check-sso",
-        pkceMethod: "S256",
-        responseMode: "query",
-      });
-    };
+    const init = () => keycloak.init({
+      onLoad: "check-sso",
+      pkceMethod: "S256",
+      responseMode: "query",
+    });
 
     init()
       .then(() => setInit(true))

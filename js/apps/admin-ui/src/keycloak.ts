@@ -8,8 +8,9 @@ export const keycloak = new Keycloak({
   clientId: environment.clientId,
 });
 
+keycloak.onAuthLogout = () => keycloak.login();
+
 export async function initKeycloak() {
-  keycloak.onAuthLogout = () => keycloak.login();
   const authenticated = await keycloak.init({
     onLoad: "check-sso",
   });
