@@ -34,7 +34,6 @@ import org.keycloak.sdjwt.SdJwtUtils;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.StringJoiner;
 import java.util.stream.IntStream;
 
 /**

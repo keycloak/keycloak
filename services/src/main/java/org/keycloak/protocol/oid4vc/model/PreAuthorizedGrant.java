@@ -17,37 +17,30 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 
 /**
- * Pojo to represent a CredentialSubject for internal handling
+ * Container for the pre-authorized code to be used in a Credential Offer
+ * <p>
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CredentialSubject {
+public class PreAuthorizedGrant {
 
-    @JsonIgnore
-    private Map<String, Object> claims = new HashMap<>();
+    @JsonProperty(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)
+    private PreAuthorizedCode preAuthorizedCode;
 
-    @JsonAnyGetter
-    public Map<String, Object> getClaims() {
-        return claims;
+    public PreAuthorizedCode getPreAuthorizedCode() {
+        return preAuthorizedCode;
     }
 
-    @JsonAnySetter
-    public void setClaims(String name, Object claim) {
-        claims.put(name, claim);
-    }
-
-    public CredentialSubject setClaims(Map<String, Object> claims) {
-        this.claims = claims;
+    public PreAuthorizedGrant setPreAuthorizedCode(PreAuthorizedCode preAuthorizedCode) {
+        this.preAuthorizedCode = preAuthorizedCode;
         return this;
     }
 }

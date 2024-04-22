@@ -17,37 +17,29 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Pojo to represent a CredentialSubject for internal handling
+ * Enum to handle potential errors in issuing credentials with the error types defined in OID4VCI
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class CredentialSubject {
+public enum ErrorType {
 
-    @JsonIgnore
-    private Map<String, Object> claims = new HashMap<>();
+    INVALID_CREDENTIAL_REQUEST("invalid_credential_request"),
+    INVALID_TOKEN("invalid_token"),
+    UNSUPPORTED_CREDENTIAL_TYPE("unsupported_credential_type"),
+    UNSUPPORTED_CREDENTIAL_FORMAT("unsupported_credential_format"),
+    INVALID_PROOF("invalid_proof"),
+    INVALID_ENCRYPTION_PARAMETER("invalid_encryption_parameters");
 
-    @JsonAnyGetter
-    public Map<String, Object> getClaims() {
-        return claims;
+    private final String value;
+
+    ErrorType(String value) {
+        this.value = value;
     }
 
-    @JsonAnySetter
-    public void setClaims(String name, Object claim) {
-        claims.put(name, claim);
-    }
-
-    public CredentialSubject setClaims(Map<String, Object> claims) {
-        this.claims = claims;
-        return this;
+    public String getValue() {
+        return value;
     }
 }
