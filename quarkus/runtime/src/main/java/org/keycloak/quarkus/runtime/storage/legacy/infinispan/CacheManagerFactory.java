@@ -147,8 +147,8 @@ public class CacheManagerFactory {
     }
 
     private static boolean isRemoteAuthenticationEnabled() {
-        return Configuration.getOptionalValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
-                Configuration.getOptionalValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent();
+        return Configuration.getOptionalKcValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
+                Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent();
     }
 
     private static SSLContext createSSLContext() {

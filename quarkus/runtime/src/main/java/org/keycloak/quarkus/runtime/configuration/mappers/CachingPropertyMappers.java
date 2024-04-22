@@ -6,7 +6,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static java.util.Optional.of;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.io.File;
@@ -79,7 +79,7 @@ final class CachingPropertyMappers {
     }
 
     private static boolean remoteHostSet() {
-        return getOptionalValue(CachingOptions.CACHE_REMOTE_HOST_PROPERTY).isPresent();
+        return getOptionalKcValue(CachingOptions.CACHE_REMOTE_HOST_PROPERTY).isPresent();
     }
 
     private static Optional<String> resolveConfigFile(Optional<String> value, ConfigSourceInterceptorContext context) {
