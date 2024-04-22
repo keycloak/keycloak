@@ -48,7 +48,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * 
  * Warning: in orther to produce the same disclosure strings and hashes like in
  * the spect, i had to produce
- * the same print. This is by no way reliable enougth to be used to test
+ * the same print. This is by no way reliable enough to be used to test
  * conformity to the spec.
  * 
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
