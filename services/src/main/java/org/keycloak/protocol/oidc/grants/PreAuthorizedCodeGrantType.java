@@ -40,7 +40,7 @@ import org.keycloak.utils.MediaType;
 
 import java.util.UUID;
 
-public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
+public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger LOGGER = Logger.getLogger(PreAuthorizedCodeGrantType.class);
 
@@ -94,12 +94,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
         event.success();
 
         return cors.allowAllOrigins().builder(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE)).build();
-    }
-
-
-    @Override
-    public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
     }
 
     @Override

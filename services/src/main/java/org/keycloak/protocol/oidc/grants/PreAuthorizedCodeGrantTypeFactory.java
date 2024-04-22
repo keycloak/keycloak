@@ -18,15 +18,17 @@
 package org.keycloak.protocol.oidc.grants;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * Factory for Pre-Authorized Code Grant
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory {
+public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
 
     public static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:pre-authorized_code";
 
@@ -50,6 +52,11 @@ public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory
     @Override
     public String getId() {
         return GRANT_TYPE;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
     }
 
 }
