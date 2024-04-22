@@ -235,7 +235,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, sid);
 
         assertNull(token.getNbf());
-        assertEquals(Long.valueOf(0), token.getNbf());
 
         assertNotNull(token.getIat());
 

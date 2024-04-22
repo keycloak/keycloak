@@ -1251,8 +1251,9 @@ public class TokenManager {
             if (refreshToken != null) {
                 String encodedToken = session.tokens().encode(refreshToken);
                 res.setRefreshToken(encodedToken);
-                if (refreshToken.getExp() != 0) {
-                    res.setRefreshExpiresIn(refreshToken.getExp() - Time.currentTime());
+                Long exp = refreshToken.getExp();
+                if (exp != null && exp > 0) {
+                    res.setRefreshExpiresIn(exp - Time.currentTime());
                 }
             }
 

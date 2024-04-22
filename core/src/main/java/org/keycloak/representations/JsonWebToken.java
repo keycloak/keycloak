@@ -74,7 +74,7 @@ public class JsonWebToken implements Serializable, Token {
     }
 
     public Long getExp() {
-        return (exp != null) ? exp : 0;
+        return exp;
     }
 
     public JsonWebToken exp(Long exp) {

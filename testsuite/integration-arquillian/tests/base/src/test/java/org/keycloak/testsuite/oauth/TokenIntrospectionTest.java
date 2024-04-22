@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -172,7 +173,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", rep.getClientId());
         assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
         assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
-        assertEquals(Long.valueOf(jsonNode.get("nbf").asLong()), rep.getNbf());
+        assertEquals(Optional.ofNullable(jsonNode.get("nbf")).map(JsonNode::asLong).orElse(null), rep.getNbf());
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
 
         List<String> audiences = new ArrayList<>();
@@ -228,7 +229,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(jsonNode.get("sid").asText(), rep.getSessionState());
         assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
         assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
-        assertEquals(Long.valueOf(jsonNode.get("nbf").asLong()), rep.getNbf());
+        assertEquals(Optional.ofNullable(jsonNode.get("nbf")).map(JsonNode::asLong).orElse(null), rep.getNbf());
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
         assertEquals(jsonNode.get("typ").asText(), "Refresh");

@@ -291,6 +291,9 @@ The following methods were removed from the `JsonWebToken` class:
 * `notBefore`. Use the `nbf` method instead.
 * `issuedAt`. Use the `iat` method instead.
 
+You should also expect both `exp` and `nbf` claims not set in tokens as they are optional. Previously, these claims were
+being set with a value of `0` what does not make mush sense because their value should be a valid `NumericDate`.
+
 = Method `getExp` added to `SingleUseObjectKeyModel`
 
 As a consequence of the removal of deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken`,
