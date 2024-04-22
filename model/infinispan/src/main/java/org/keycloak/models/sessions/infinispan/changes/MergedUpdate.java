@@ -20,7 +20,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -40,6 +39,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     private final long maxIdleTimeMs;
     private boolean isDeferrable;
     private CompletableFuture<Void> completed;
+    private int tasks = 0;
 
     @Override
     public boolean isDeferrable() {
@@ -143,21 +143,27 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
 
     public void complete() {
         if (completed != null) {
-            completed.complete(null);
+            -- tasks;
+            if (tasks == 0) {
+                completed.complete(null);
+            }
         }
     }
 
-    public void fail(Exception ex) {
+    public void fail(Throwable t) {
         if (completed != null) {
-            completed.completeExceptionally(ex);
+            completed.completeExceptionally(t);
         }
     }
 
-    public Future<Void> result() {
+    public CompletableFuture<Void> result() {
         if (completed == null) {
             completed = new CompletableFuture<>();
         }
         return completed;
     }
 
+    public void enqueue() {
+        ++tasks;
+    }
 }

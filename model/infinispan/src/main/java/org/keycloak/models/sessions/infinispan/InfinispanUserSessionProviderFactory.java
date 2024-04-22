@@ -93,7 +93,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String CONFIG_BATCH_ALL_WRITES = "batchAllWrites";
     public static final String CONFIG_MAX_BATCH_SIZE = "maxBatchSize";
     public static final boolean DEFAULT_BATCH_ALL_WRITES = true;
-    public static final int DEFAULT_MAX_BATCH_SIZE = 100;
+    public static final int DEFAULT_MAX_BATCH_SIZE = Math.max(Runtime.getRuntime().availableProcessors(), 2);
 
     private long offlineSessionCacheEntryLifespanOverride;
 

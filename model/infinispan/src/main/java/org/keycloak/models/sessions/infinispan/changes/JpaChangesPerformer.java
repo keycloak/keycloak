@@ -63,6 +63,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
     private final String cacheName;
     private final boolean offline;
     private final List<Consumer<KeycloakSession>> changes = new LinkedList<>();
+    private final List<MergedUpdate<V>> tasks = new LinkedList<>();
     private final TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor;
 
     public JpaChangesPerformer(KeycloakSession session, String cacheName, boolean offline) {
@@ -74,6 +75,8 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     @Override
     public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
+        merged.enqueue();
+        tasks.add(merged);
         changes.add(innerSession -> processor.accept(innerSession, entry, merged));
     }
 
@@ -88,33 +91,38 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
     @Override
     public void applyChanges() {
         if (!changes.isEmpty()) {
-            Retry.executeWithBackoff(iteration -> {
-                        if (iteration < 2) {
-                            // attempt to write whole batch in the first two attempts
-                            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
-                                    innerSession -> changes.forEach(c -> c.accept(innerSession)));
-                        } else {
-                            LOG.warnf("Running single changes in iteration %d for %d entries", iteration, changes.size());
-                            ArrayList<Consumer<KeycloakSession>> performedChanges = new ArrayList<>();
-                            List<Exception> exceptions = new ArrayList<>();
-                            changes.forEach(change -> {
-                                try {
-                                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
-                                            change::accept);
-                                    performedChanges.add(change);
-                                } catch (RuntimeException ex) {
-                                    exceptions.add(ex);
+            try {
+                Retry.executeWithBackoff(iteration -> {
+                            if (iteration < 2) {
+                                // attempt to write whole batch in the first two attempts
+                                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                                        innerSession -> changes.forEach(c -> c.accept(innerSession)));
+                            } else {
+                                LOG.warnf("Running single changes in iteration %d for %d entries", iteration, changes.size());
+                                ArrayList<Consumer<KeycloakSession>> performedChanges = new ArrayList<>();
+                                List<Throwable> throwables = new ArrayList<>();
+                                changes.forEach(change -> {
+                                    try {
+                                        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                                                change::accept);
+                                        performedChanges.add(change);
+                                    } catch (Throwable ex) {
+                                        throwables.add(ex);
+                                    }
+                                });
+                                changes.removeAll(performedChanges);
+                                if (!throwables.isEmpty()) {
+                                    RuntimeException ex = new RuntimeException("unable to complete some changes");
+                                    throwables.forEach(ex::addSuppressed);
+                                    throw ex;
                                 }
-                            });
-                            changes.removeAll(performedChanges);
-                            if (!exceptions.isEmpty()) {
-                                RuntimeException ex = new RuntimeException("unable to complete some changes");
-                                exceptions.forEach(ex::addSuppressed);
-                                throw ex;
                             }
-                        }
-                    },
-                    Duration.of(10, ChronoUnit.SECONDS), 0);
+                        },
+                        Duration.of(10, ChronoUnit.SECONDS), 0);
+                tasks.forEach(MergedUpdate::complete);
+            } catch (Throwable t) {
+                tasks.forEach(merged -> merged.fail(t));
+            }
         }
     }
 

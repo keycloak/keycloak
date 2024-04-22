@@ -30,10 +30,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -74,7 +72,7 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
     @Override
     protected void commitImpl() {
-        List<Future<Void>> futures = new ArrayList<>(updates.size());
+        List<CompletableFuture<Void>> futures = new ArrayList<>(updates.size());
         for (Map.Entry<K, SessionUpdatesList<V>> entry : updates.entrySet()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
             SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
@@ -90,9 +88,8 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                if (batchAllWrites &&
-                    merged.getOperation(sessionWrapper.getEntity()) != SessionUpdateTask.CacheOperation.REMOVE) {
-                    // We will batch the inserts and updates, as deletes will access the other table as well and lead to deadlocks.
+                if (batchAllWrites) {
+                    // We will batch the inserts and updates and deletes (although deletes have shown deadlocks if there are concurrent updates).
                     // We'll also wait for all deferrable items, as doing so will reduce the likelihood of concurrent requests later
                     // which might lead to deadlocks.
                     // Important to memorize the future first before adding it to the queue,
@@ -117,23 +114,18 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
         changesPerformers.forEach(SessionChangesPerformer::applyChanges);
 
         // If we enqueued any items that we wait for in the background tasks, this is now the moment
-        List<Exception> exceptions = futures.stream().map(future -> {
-            try {
-                future.get();
+        if (!futures.isEmpty()) {
+            List<Throwable> exceptions = new ArrayList<>();
+            CompletableFuture.allOf(futures.stream().map(f -> f.exceptionally(throwable -> {
+                exceptions.add(throwable);
                 return null;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return e;
-            } catch (ExecutionException e) {
-                return e;
+            })).toArray(CompletableFuture[]::new)).join();
+            // If any of those futures has failed, add the exceptions as suppressed exceptions to our runtime exception
+            if (!exceptions.isEmpty()) {
+                RuntimeException ex = new RuntimeException("unable to complete the session updates");
+                exceptions.forEach(ex::addSuppressed);
+                throw ex;
             }
-        }).filter(Objects::nonNull).toList();
-
-        // If any of those futures has failed, add the exceptions as suppressed exceptions to our runtime exception
-        if (!exceptions.isEmpty()) {
-            RuntimeException ex = new RuntimeException("unable to complete the session updates");
-            exceptions.forEach(ex::addSuppressed);
-            throw ex;
         }
     }
 

@@ -117,7 +117,6 @@ public class PersistentSessionsWorker {
                     LOG.debugf("Processing %d deferred session updates.", batch.size());
                     KeycloakModelUtils.runJobInTransaction(factory,
                             session -> adapter.run(((PersistentUserSessionProvider) session.getProvider(UserSessionProvider.class)), batch, offline));
-                    batch.forEach(o -> o.getMerged().complete());
                 } catch (RuntimeException ex) {
                     batch.forEach(o -> o.getMerged().fail(ex));
                     LOG.warnf(ex, "Unable to write %d deferred session updates", batch.size());
