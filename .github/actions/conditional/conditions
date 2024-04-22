@@ -30,6 +30,7 @@ docs/guides/                                guides
 docs/documentation/                         documentation
 
 js/                                         js
+rest/admin-ui-ext/                          js
 
 *.java                                      codeql-java
 themes/                                     codeql-themes
