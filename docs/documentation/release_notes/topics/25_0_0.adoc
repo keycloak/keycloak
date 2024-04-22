@@ -131,3 +131,20 @@ It is now possible to specify the `cache`, `cache-stack`, and `cache-config-file
 This eliminates the need to execute the build phase and rebuild your image due to them.
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Removing deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken` classes
+
+In this release, we are finally removing deprecated methods from the following classes:
+
+* `AccessToken`
+* `IDToken`
+* `JsonWebToken`
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Method `getExp` added to `SingleUseObjectKeyModel`
+
+As a consequence of the removal of deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken`,
+the `SingleUseObjectKeyModel` also changed to keep consistency with the method names related to expiration values.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
