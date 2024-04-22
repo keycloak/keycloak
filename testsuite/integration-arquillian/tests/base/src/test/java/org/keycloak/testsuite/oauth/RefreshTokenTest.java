@@ -50,6 +50,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -537,7 +538,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             oauth.scope(optionalScope);
             OAuthClient.AccessTokenResponse response1 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
-            AbstractOIDCScopeTest.assertScopes("openid email phone address profile",  refreshToken1.getScope());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile address phone",  refreshToken1.getScope());
 
             setTimeOffset(2);
 
@@ -548,7 +549,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             AbstractOIDCScopeTest.assertScopes("openid email phone profile",  response2.getScope());
             RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
             assertNotNull(refreshToken2);
-            AbstractOIDCScopeTest.assertScopes("openid email phone address profile",  refreshToken2.getScope());
+            AbstractOIDCScopeTest.assertScopes("openid acr roles phone address email profile basic web-origins",  refreshToken2.getScope());
 
         } finally {
             setTimeOffset(0);
@@ -566,7 +567,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
-            AbstractOIDCScopeTest.assertScopes("openid email profile",  refreshToken1.getScope());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile",  refreshToken1.getScope());
 
             setTimeOffset(2);
 
@@ -579,6 +580,48 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         } finally {
             setTimeOffset(0);
             oauth.scope(null);
+        }
+    }
+
+    @Test
+    public void refreshWithOptionalClientScopeWithIncludeInTokenScopeDisabled() throws Exception {
+        //set roles client scope as optional
+        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(adminClient.realm("test"), OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).removeClientScope(rolesScope.getId(),true);
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(rolesScope.getId(),false);
+
+        try {
+            oauth.scope("roles");
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+            AbstractOIDCScopeTest.assertScopes("openid email profile",  accessToken.getScope());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile",  refreshToken.getScope());
+
+            Assert.assertNotNull(accessToken.getRealmAccess());
+            Assert.assertNotNull(accessToken.getResourceAccess());
+
+            oauth.scope(null);
+
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+            AbstractOIDCScopeTest.assertScopes("openid email profile",  accessToken.getScope());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile",  refreshToken.getScope());
+
+            Assert.assertNotNull(accessToken.getRealmAccess());
+            Assert.assertNotNull(accessToken.getResourceAccess());
+
+        } finally {
+            ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).removeClientScope(rolesScope.getId(),false);
+            ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(rolesScope.getId(),true);
         }
     }
 
