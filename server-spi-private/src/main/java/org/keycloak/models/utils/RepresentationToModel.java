@@ -18,6 +18,7 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,9 +27,13 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -50,8 +55,12 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -62,6 +71,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
@@ -317,76 +327,95 @@ public class RepresentationToModel {
         logger.debugv("Create client: {0}", resourceRep.getClientId());
 
         ClientModel client = resourceRep.getId() != null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
-        if (resourceRep.getName() != null) client.setName(resourceRep.getName());
-        if (resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
-        if (resourceRep.getType() != null) client.setType(resourceRep.getType());
-        if (resourceRep.isEnabled() != null) client.setEnabled(resourceRep.isEnabled());
-        if (resourceRep.isAlwaysDisplayInConsole() != null) client.setAlwaysDisplayInConsole(resourceRep.isAlwaysDisplayInConsole());
-        client.setManagementUrl(resourceRep.getAdminUrl());
-        if (resourceRep.isSurrogateAuthRequired() != null)
-            client.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
-        if (resourceRep.getRootUrl() != null) client.setRootUrl(resourceRep.getRootUrl());
-        if (resourceRep.getBaseUrl() != null) client.setBaseUrl(resourceRep.getBaseUrl());
-        if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
-        if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
+
+        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && resourceRep.getType() != null) {
+            ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
+            ClientType clientType = mgr.getClientType(realm, resourceRep.getType());
+            client = clientType.augment(client);
+        }
+
+        return updateClientProperties(realm, client, resourceRep, mappedFlows);
+    }
+
+    public static ClientModel updateClientProperties(RealmModel realm, ClientModel client, ClientRepresentation resourceRep, Map<String, String> mappedFlows) {
+        List<Supplier<ClientTypeException>> clientAttrMapper = new ArrayList<Supplier<ClientTypeException>>() {{
+            add(() -> updateProperty(client::setName, resourceRep::getName));
+            add(() -> updateProperty(client::setDescription, resourceRep::getDescription));
+            add(() -> updateProperty(client::setType, resourceRep::getType));
+            add(() -> updateProperty(client::setEnabled, resourceRep::isEnabled));
+            add(() -> updateProperty(client::setAlwaysDisplayInConsole, resourceRep::isAlwaysDisplayInConsole));
+            add(() -> updateProperty(client::setManagementUrl, resourceRep::getAdminUrl));
+            add(() -> updateProperty(client::setSurrogateAuthRequired, resourceRep::isSurrogateAuthRequired));
+            add(() -> updateProperty(client::setRootUrl, resourceRep::getRootUrl));
+            add(() -> updateProperty(client::setBaseUrl, resourceRep::getBaseUrl));
+            add(() -> updateProperty(client::setBearerOnly, resourceRep::isBearerOnly));
+            add(() -> updateProperty(client::setConsentRequired, resourceRep::isConsentRequired));
+            add(() -> updateProperty(client::setStandardFlowEnabled, resourceRep::isStandardFlowEnabled));
+            add(() -> updateProperty(client::setImplicitFlowEnabled, resourceRep::isImplicitFlowEnabled));
+            add(() -> updateProperty(client::setDirectAccessGrantsEnabled, resourceRep::isDirectAccessGrantsEnabled));
+            add(() -> updateProperty(client::setServiceAccountsEnabled, resourceRep::isServiceAccountsEnabled));
+            add(() -> updateProperty(client::setPublicClient, resourceRep::isPublicClient));
+            add(() -> updateProperty(client::setFrontchannelLogout, resourceRep::isFrontchannelLogout));
+            add(() -> updateProperty(client::setNotBefore, resourceRep::getNotBefore));
+            // Fields with defaults if not initially provided
+            add(() -> updatePropertyWithDefault(client::setProtocol, resourceRep::getProtocol, client::getProtocol, () -> OIDC));
+            add(() -> updatePropertyWithDefault(client::setNodeReRegistrationTimeout, resourceRep::getNodeReRegistrationTimeout, client::getNodeReRegistrationTimeout, () -> -1));
+            add(() -> updatePropertyWithDefault(client::setClientAuthenticatorType, resourceRep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
+            // Client Secret
+            add(() -> updatePropertyWithDefault(client::setSecret, resourceRep::getSecret, client::getSecret, () -> {
+                if (client.isPublicClient() || client.isBearerOnly()) {
+                    return null;
+                }
+                // adding secret if the client isn't public nor bearer only
+                String currentSecret = client.getSecret();
+                String newSecret = resourceRep.getSecret();
+
+                if (newSecret == null && currentSecret == null) {
+                    return KeycloakModelUtils.generateSecret(client);
+                } else if (newSecret != null) {
+                    resourceRep.setSecret(newSecret);
+                    return newSecret;
+                }
+                return currentSecret;
+            }));
+            // Redirect uris / Web origins
+            add(() -> updateProperty(client::setRedirectUris, () -> resourceRep.getRedirectUris().stream().collect(Collectors.toSet())));
+            add(() -> updatePropertyWithDefault(uris -> uris.forEach(client::addWebOrigin), resourceRep::getWebOrigins, client::getWebOrigins, () -> {
+                if (!client.getWebOrigins().isEmpty()) {
+                    return client.getWebOrigins();
+                }
+                return Optional.ofNullable(resourceRep.getWebOrigins()).orElseGet(() -> resourceRep.getWebOrigins()
+                        .stream()
+                        .filter(uri -> uri.startsWith("http"))
+                        .map(UriUtils::getOrigin)
+                        .distinct()
+                        .collect(Collectors.toList()));
+            }));
+        }};
+
+        if (resourceRep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : removeEmptyString(resourceRep.getAttributes()).entrySet()) {
+                clientAttrMapper.add(() -> updateProperty(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
+            }
+        }
+
+        List<ClientTypeException> validationExceptions = clientAttrMapper
+                .stream()
+                .map(Supplier::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (validationExceptions.size() > 0) {
+            throw new ClientTypeException(
+                    "Cannot change property of client as it is not allowed by the specified client type.",
+                    validationExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
+        }
 
         // Backwards compatibility only
         if (resourceRep.isDirectGrantsOnly() != null) {
             logger.warn("Using deprecated 'directGrantsOnly' configuration in JSON representation. It will be removed in future versions");
             client.setStandardFlowEnabled(!resourceRep.isDirectGrantsOnly());
             client.setDirectAccessGrantsEnabled(resourceRep.isDirectGrantsOnly());
-        }
-
-        if (resourceRep.isStandardFlowEnabled() != null)
-            client.setStandardFlowEnabled(resourceRep.isStandardFlowEnabled());
-        if (resourceRep.isImplicitFlowEnabled() != null)
-            client.setImplicitFlowEnabled(resourceRep.isImplicitFlowEnabled());
-        if (resourceRep.isDirectAccessGrantsEnabled() != null)
-            client.setDirectAccessGrantsEnabled(resourceRep.isDirectAccessGrantsEnabled());
-        if (resourceRep.isServiceAccountsEnabled() != null)
-            client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
-
-        if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
-        if (resourceRep.isFrontchannelLogout() != null)
-            client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
-
-        // set defaults to openid-connect if no protocol specified
-        if (resourceRep.getProtocol() != null) {
-            client.setProtocol(resourceRep.getProtocol());
-        } else {
-            client.setProtocol(OIDC);
-        }
-        if (resourceRep.getNodeReRegistrationTimeout() != null) {
-            client.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());
-        } else {
-            client.setNodeReRegistrationTimeout(-1);
-        }
-
-        if (resourceRep.getNotBefore() != null) {
-            client.setNotBefore(resourceRep.getNotBefore());
-        }
-
-        if (resourceRep.getClientAuthenticatorType() != null) {
-            client.setClientAuthenticatorType(resourceRep.getClientAuthenticatorType());
-        } else {
-            client.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
-        }
-
-        // adding secret if the client isn't public nor bearer only
-        if (Objects.nonNull(resourceRep.getSecret())) {
-            client.setSecret(resourceRep.getSecret());
-        } else {
-            if (client.isPublicClient() || client.isBearerOnly()) {
-                client.setSecret(null);
-            } else {
-                KeycloakModelUtils.generateSecret(client);
-            }
-        }
-
-        if (resourceRep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
-                client.setAttribute(entry.getKey(), entry.getValue());
-            }
         }
 
         if ("saml".equals(resourceRep.getProtocol())
@@ -413,12 +442,6 @@ public class RepresentationToModel {
             }
         }
 
-
-        if (resourceRep.getRedirectUris() != null) {
-            for (String redirectUri : resourceRep.getRedirectUris()) {
-                client.addRedirectUri(redirectUri);
-            }
-        }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
                 logger.debugv("Client: {0} webOrigin: {1}", resourceRep.getClientId(), webOrigin);
@@ -489,6 +512,19 @@ public class RepresentationToModel {
     }
 
     public static void updateClient(ClientRepresentation rep, ClientModel resource, KeycloakSession session) {
+
+        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
+            if (!ObjectUtil.isEqualOrBothNull(rep.getType(), rep.getType())) {
+                throw new ClientTypeException("Not supported to change client type");
+            }
+            if (rep.getType() != null) {
+                RealmModel realm = session.getContext().getRealm();
+                ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
+                ClientType clientType = mgr.getClientType(realm, rep.getType());
+                resource = clientType.augment(resource);
+            }
+        }
+
         String newClientId = rep.getClientId();
         String previousClientId = resource.getClientId();
         if (newClientId != null) resource.setClientId(newClientId);
@@ -584,10 +620,11 @@ public class RepresentationToModel {
         resource.updateClient();
 
         if (!Objects.equals(newClientId, previousClientId)) {
+            ClientModel finalResource = resource;
             ClientModel.ClientIdChangeEvent event = new ClientModel.ClientIdChangeEvent() {
                 @Override
                 public ClientModel getUpdatedClient() {
-                    return resource;
+                    return finalResource;
                 }
 
                 @Override
@@ -662,6 +699,47 @@ public class RepresentationToModel {
             }
         }
     }
+
+    /**
+     * Update property, if not null. Captures {@link ClientTypeException} if thrown by the setter.
+     * @param modelSetter setter to call.
+     * @param representationGetter getter supplying the property update.
+     * @return Whether a {@link ClientTypeException} was thrown.
+     * @param <T> Type of property.
+     */
+    private static <T> ClientTypeException updateProperty(Consumer<T> modelSetter, Supplier<T> representationGetter) {
+        T value = representationGetter.get();
+        if (value != null) {
+            try {
+                modelSetter.accept(value);
+            }
+            catch (ClientTypeException cte) {
+                return cte;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Update property with values supplied by the methods provided. The first non-null value will be used to set the
+     * property.
+     * @param modelSetter The setter to call with the property updates.
+     * @param representationGetter First getter of the representation to query for a non-null value.
+     * @param modelGetter Second getter corresponding to the value current assigned for the property.
+     * @param defaultSupplier If no other non-null value is found, this value shall be used.
+     * @return Whether a {@link ClientTypeException} was thrown.
+     * @param <T> Type of property.
+     */
+    private static <T> ClientTypeException updatePropertyWithDefault(Consumer<T> modelSetter, Supplier<T> representationGetter, Supplier<T> modelGetter, Supplier<T> defaultSupplier) {
+        return updateProperty(modelSetter, () -> Stream.of(representationGetter, modelGetter, defaultSupplier)
+                .map(Supplier::get)
+                .map(Optional::ofNullable)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElse(null));
+    }
+
 
     private static String generateProtocolNameKey(String protocol, String name) {
         return String.format("%s%%%s", protocol, name);

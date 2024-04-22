@@ -18,13 +18,16 @@
 
 package org.keycloak.services.clienttype.client;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.representations.idm.ClientTypeRepresentation;
 
 /**
  * Delegates to client-type and underlying delegate
@@ -153,8 +156,32 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     }
 
     @Override
+    public Set<String> getRedirectUris() {
+        return TypedClientAttribute.REDIRECT_URIS
+                .getClientAttribute(clientType, super::getRedirectUris, Set.class);
+    }
+
+    @Override
+    public void setRedirectUris(Set<String> redirectUris) {
+        TypedClientAttribute.REDIRECT_URIS
+                .setClientAttribute(clientType, redirectUris, super::setRedirectUris, Set.class);
+    }
+
+    @Override
+    public void addRedirectUri(String redirectUri) {
+        TypedClientAttribute.REDIRECT_URIS
+                .setClientAttribute(clientType, redirectUri, super::addRedirectUri, String.class);
+    }
+
+    @Override
+    public void removeRedirectUri(String redirectUri) {
+        TypedClientAttribute.REDIRECT_URIS
+            .setClientAttribute(clientType, null, (val) -> super.removeAttribute(redirectUri), String.class);
+    }
+
+    @Override
     public void setAttribute(String name, String value) {
-        ExtendedTypedClientAttribute attribute = ExtendedTypedClientAttribute.getAttributesByName().get(name);
+        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
         if (attribute != null) {
             attribute.setClientAttribute(clientType, value, (newValue) -> super.setAttribute(name, newValue), String.class);
         } else {
@@ -164,7 +191,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public void removeAttribute(String name) {
-        ExtendedTypedClientAttribute attribute = ExtendedTypedClientAttribute.getAttributesByName().get(name);
+        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
         if (attribute != null) {
             attribute.setClientAttribute(clientType, null, (val) -> super.removeAttribute(name), String.class);
         } else {
@@ -174,7 +201,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public String getAttribute(String name) {
-        ExtendedTypedClientAttribute attribute = ExtendedTypedClientAttribute.getAttributesByName().get(name);
+        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
         if (attribute != null) {
             return attribute.getClientAttribute(clientType, () -> super.getAttribute(name), String.class);
         } else {
@@ -184,8 +211,21 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public Map<String, String> getAttributes() {
-        return clientType.getConfiguration().entrySet().stream()
-                .filter(entry -> TypedClientAttribute.getAttributesByName().containsKey(entry.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> getAttribute(entry.getKey())));
+        // Start with attributes set on the delegate.
+        Map<String, String> attributes = new HashMap<>(super.getAttributes());
+
+        // Get extended client type attributes and values from the client type configuration.
+        Set<String> extendedClientTypeAttributes =
+                clientType.getConfiguration().entrySet().stream()
+                .map(Map.Entry::getKey)
+                .filter(entry -> TypedClientExtendedAttribute.getAttributesByName().containsKey(entry))
+                .collect(Collectors.toSet());
+
+        // Augment client type attributes on top of attributes on the delegate.
+        for (String entry : extendedClientTypeAttributes) {
+            attributes.put(entry, getAttribute(entry));
+        }
+
+        return attributes;
     }
 }

@@ -42,8 +42,6 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.client.clienttype.ClientType;
-import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 
 import java.net.URI;
@@ -82,11 +80,6 @@ public class ClientManager {
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep) {
-        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && rep.getType() != null) {
-            ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
-            ClientType clientType = mgr.getClientType(realm, rep.getType());
-            clientType.onCreate(rep);
-        }
 
         ClientModel client = RepresentationToModel.createClient(session, realm, rep);
 

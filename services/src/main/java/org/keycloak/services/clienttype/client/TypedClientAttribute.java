@@ -1,77 +1,18 @@
 package org.keycloak.services.clienttype.client;
 
+import org.jboss.logging.Logger;
 import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.util.ObjectUtil;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-
-enum ExtendedTypedClientAttribute implements TypedClientAttributeInterface {
-    // Extended Client Type attributes defined as client attribute entities.
-    DEVICE_AUTHORIZATION_GRANT_ENABLED("oauth2.device.authorization.grant.enabled", "false"),
-    CIBA_GRANT_ENABLED("oidc.ciba.grant.enabled", "false");
-
-    private static final Map<String, ExtendedTypedClientAttribute> attributesByName = new HashMap<>();
-
-    static {
-        Arrays.stream(ExtendedTypedClientAttribute.values())
-                .forEach(attribute -> attributesByName.put(attribute.getPropertyName(), attribute));
-    }
-
-    private final String propertyName;
-    private final Object nonApplicableValue;
-
-    ExtendedTypedClientAttribute(String propertyName, Object nonApplicableValue) {
-        this.propertyName = propertyName;
-        this.nonApplicableValue = nonApplicableValue;
-    }
-
-    @Override
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    @Override
-    public Object getNonApplicableValue() {
-        return nonApplicableValue;
-    }
-
-    public static Map<String, ExtendedTypedClientAttribute> getAttributesByName() {
-        return attributesByName;
-    }
-}
-
-enum TypedClientRepresentationAttribute implements TypedClientAttributeInterface {
-    // Client type attributes specific to client representations.
-    AUTHORIZATION_SERVICES_ENABLED("authorizationServicesEnabled", false),
-    LOGIN_THEME("login_theme", ""),
-    LOGO_URI("logoUri", null),
-    POLICY_URI("policyUri", null);
-
-    private final String propertyName;
-    private final Object nonApplicableValue;
-
-     TypedClientRepresentationAttribute(String propertyName, Object nonApplicableValue) {
-        this.propertyName = propertyName;
-        this.nonApplicableValue = nonApplicableValue;
-    }
-
-    @Override
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    @Override
-    public Object getNonApplicableValue() {
-        return nonApplicableValue;
-    }
-}
 
 enum TypedClientAttribute implements TypedClientAttributeInterface {
     // Client Type attributes shared by client model and representation.
@@ -84,17 +25,10 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     IMPLICIT_FLOW_ENABLED("implicitFlowEnabled", false),
     PROTOCOL("protocol", null),
     PUBLIC_CLIENT("publicClient", false),
-    REDIRECT_URIS("redirectUris", false);
+    REDIRECT_URIS("redirectUris", Set.of());
 
     private final String propertyName;
     private final Object nonApplicableValue;
-
-    private static final Map<String, TypedClientAttribute> attributesByName = new HashMap<>();
-
-    static {
-        Arrays.stream(TypedClientAttribute.values())
-                .forEach(attribute -> attributesByName.put(attribute.getPropertyName(), attribute));
-    }
 
     TypedClientAttribute(String propertyName, Object nonApplicableValue) {
         this.propertyName = propertyName;
@@ -110,13 +44,48 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     public Object getNonApplicableValue() {
         return nonApplicableValue;
     }
+}
 
-    public static Map<String, TypedClientAttribute> getAttributesByName() {
+enum TypedClientExtendedAttribute implements TypedClientAttributeInterface {
+    // Extended Client Type attributes defined as client attribute entities.
+    DEVICE_AUTHORIZATION_GRANT_ENABLED("oauth2.device.authorization.grant.enabled", "false"),
+    CIBA_GRANT_ENABLED("oidc.ciba.grant.enabled", "false"),
+    LOGIN_THEME("login_theme", ""),
+    LOGO_URI("logoUri", null),
+    POLICY_URI("policyUri", null);
+
+    private static final Map<String, TypedClientExtendedAttribute> attributesByName = new HashMap<>();
+
+    static {
+        Arrays.stream(TypedClientExtendedAttribute.values())
+                .forEach(attribute -> attributesByName.put(attribute.getPropertyName(), attribute));
+    }
+
+    private final String propertyName;
+    private final Object nonApplicableValue;
+
+    TypedClientExtendedAttribute(String propertyName, Object nonApplicableValue) {
+        this.propertyName = propertyName;
+        this.nonApplicableValue = nonApplicableValue;
+    }
+
+    @Override
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    @Override
+    public Object getNonApplicableValue() {
+        return nonApplicableValue;
+    }
+
+    public static Map<String, TypedClientExtendedAttribute> getAttributesByName() {
         return attributesByName;
     }
 }
 
 interface TypedClientAttributeInterface {
+    Logger logger = Logger.getLogger(TypedClientAttributeInterface.class);
 
     default <T> T getClientAttribute(ClientType clientType, Supplier<T> clientGetter, Class<T> tClass) {
         String propertyName = getPropertyName();
@@ -124,7 +93,12 @@ interface TypedClientAttributeInterface {
 
         // Check if clientType supports the feature.
         if (!clientType.isApplicable(propertyName)) {
-            return tClass.cast(nonApplicableValue);
+            try {
+                return tClass.cast(nonApplicableValue);
+            } catch (ClassCastException e) {
+                logger.error("Could not apply client type property %s: %s", propertyName, e);
+                throw e;
+            }
         }
 
         //  Check if this is read-only. If yes, then we just directly delegate to return stuff from the clientType rather than from client

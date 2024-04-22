@@ -19,7 +19,6 @@
 package org.keycloak.client.clienttype;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 
 import java.util.Map;
@@ -47,9 +46,5 @@ public interface ClientType {
     Map<String, ClientTypeRepresentation.PropertyConfig> getConfiguration();
 
     // Augment at the client type
-    // Augment particular client on creation of client  (TODO:client-types Should it be clientModel or clientRepresentation? Or something else?)
-    void onCreate(ClientRepresentation newClient) throws ClientTypeException;
-
-    // Augment particular client on update of client (TODO:client-types Should it be clientModel or clientRepresentation? Or something else?)
-    void onUpdate(ClientModel currentClient, ClientRepresentation clientToUpdate) throws ClientTypeException;
+    ClientModel augment(ClientModel client);
 }
