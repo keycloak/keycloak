@@ -103,11 +103,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
     }
 
     @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.CODE_TO_TOKEN;
     }

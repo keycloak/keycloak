@@ -31,8 +31,4 @@ public interface OID4VCEnvironmentProviderFactory extends EnvironmentDependentPr
         return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
     }
 
-    @Override
-    default boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
-    }
 }
