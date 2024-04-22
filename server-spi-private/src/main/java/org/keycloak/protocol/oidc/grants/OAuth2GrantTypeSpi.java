@@ -28,7 +28,7 @@ import org.keycloak.provider.Spi;
  */
 public class OAuth2GrantTypeSpi implements Spi {
 
-    private static final String SPI_NAME = "oauth2-grant-type";
+    public static final String SPI_NAME = "oauth2-grant-type";
 
     @Override
     public boolean isInternal() {
