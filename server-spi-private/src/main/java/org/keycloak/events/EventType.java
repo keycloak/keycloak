@@ -164,7 +164,10 @@ public enum EventType implements EnumWithStableIndex {
     USER_DISABLED_BY_TEMPORARY_LOCKOUT_ERROR(0x10000 + USER_DISABLED_BY_TEMPORARY_LOCKOUT.getStableIndex(), false),
 
     OAUTH2_EXTENSION_GRANT(54, true),
-    OAUTH2_EXTENSION_GRANT_ERROR(0x10000 + OAUTH2_EXTENSION_GRANT.getStableIndex(), true);
+    OAUTH2_EXTENSION_GRANT_ERROR(0x10000 + OAUTH2_EXTENSION_GRANT.getStableIndex(), true),
+
+    FEDERATED_IDENTITY_OVERRIDE_LINK(55, true),
+    FEDERATED_IDENTITY_OVERRIDE_LINK_ERROR(0x10000 + FEDERATED_IDENTITY_OVERRIDE_LINK.getStableIndex(), true);
 
     private final int stableIndex;
     private final boolean saveByDefault;

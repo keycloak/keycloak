@@ -34,6 +34,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
+import org.keycloak.testsuite.pages.IdpConfirmOverrideLinkPage;
 import org.keycloak.testsuite.pages.IdpLinkEmailPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -90,6 +91,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected IdpConfirmLinkPage idpConfirmLinkPage;
+
+    @Page
+    protected IdpConfirmOverrideLinkPage idpConfirmOverrideLinkPage;
 
     @Page
     protected ProceedPage proceedPage;

@@ -173,6 +173,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "idp-auto-link", "Automatically set existing user", "Automatically set existing user to authentication context without any verification");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
                 "to link identity provider with existing account or rather edit user profile data retrieved from identity provider to avoid conflict");
+        addProviderInfo(result, "idp-confirm-override-link", "Confirm override existing link", "Confirm override the link if there is an existing broker user linked to the account.");
         addProviderInfo(result, "idp-create-user-if-unique", "Create User If Unique", "Detect if there is existing Keycloak account " +
                 "with same email like identity provider. If no, create new user");
         addProviderInfo(result, "idp-email-verification", "Verify existing account by Email", "Email verification of existing Keycloak " +

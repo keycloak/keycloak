@@ -205,6 +205,15 @@ public class AssertEvents implements TestRule {
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
     }
 
+    public ExpectedEvent expectIdentityProviderFirstLogin(RealmRepresentation realm, String identityProvider, String idpUsername) {
+        return expect(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .client("broker-app")
+                .realm(realm)
+                .user((String)null)
+                .detail(Details.IDENTITY_PROVIDER, identityProvider)
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, idpUsername);
+    }
+
     public ExpectedEvent expectRegisterError(String username, String email) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER_ERROR)

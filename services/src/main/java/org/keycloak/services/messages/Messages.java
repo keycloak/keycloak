@@ -89,6 +89,8 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_CONFIRM_LINK_MESSAGE = "federatedIdentityConfirmLinkMessage";
 
+    public static final String FEDERATED_IDENTITY_CONFIRM_OVERRIDE_MESSAGE = "federatedIdentityConfirmOverrideMessage";
+
     public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE = "federatedIdentityConfirmReauthenticateMessage";
 
     public static final String NESTED_FIRST_BROKER_FLOW_MESSAGE = "nestedFirstBrokerFlowMessage";
