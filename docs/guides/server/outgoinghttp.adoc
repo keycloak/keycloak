@@ -85,7 +85,9 @@ For example, consider the following regex:
 
 You apply a regex-based hostname pattern by entering this command:
 
-<@kc.start parameters="--spi-connections-http-client-default-proxy-mappings=\"\'*\\\\\\.(google|googleapis)\\\\\\.com;http://www-proxy.acme.com:8080\'\""/>
+<@kc.start parameters="--spi-connections-http-client-default-proxy-mappings=\'.*\\\\.(google|googleapis)\\\\.com;http://www-proxy.acme.com:8080\'"/>
+
+The backslash character `\` is escaped again because micro-profile config is used to parse the array of mappings.
 
 To determine the proxy for the outgoing HTTP request, the following occurs:
 
