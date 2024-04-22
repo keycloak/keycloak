@@ -165,13 +165,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         if (sessionEntity != null) {
             em.remove(sessionEntity);
 
-            // Remove userSession if it was last clientSession
-            List<PersistentClientSessionEntity> clientSessions = getClientSessionsByUserSession(sessionEntity.getUserSessionId(), offline);
-            if (clientSessions.size() == 0 && offline) {
-                offlineStr = offlineToString(offline);
-                PersistentUserSessionEntity userSessionEntity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(sessionEntity.getUserSessionId(), offlineStr), LockModeType.PESSIMISTIC_WRITE);
-                if (userSessionEntity != null) {
-                    em.remove(userSessionEntity);
+            if (offline) {
+                // Remove userSession if it was last clientSession
+                List<PersistentClientSessionEntity> clientSessions = getClientSessionsByUserSession(sessionEntity.getUserSessionId(), offline);
+                if (clientSessions.isEmpty()) {
+                    offlineStr = offlineToString(offline);
+                    PersistentUserSessionEntity userSessionEntity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(sessionEntity.getUserSessionId(), offlineStr), LockModeType.PESSIMISTIC_WRITE);
+                    if (userSessionEntity != null) {
+                        em.remove(userSessionEntity);
+                    }
                 }
             }
 

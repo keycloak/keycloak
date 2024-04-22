@@ -28,6 +28,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -80,7 +81,7 @@ public class PersistentSessionsWorker {
         }
     }
 
-    private class Worker<K, V extends SessionEntity> extends Thread {
+    private class Worker<K extends Comparable<K>, V extends SessionEntity> extends Thread {
         private final ArrayBlockingQueue<PersistentDeferredElement<K, V>> queue;
         private final boolean offline;
         private final Adapter<K, V> adapter;
@@ -104,11 +105,14 @@ public class PersistentSessionsWorker {
         }
 
         private void process(ArrayBlockingQueue<PersistentDeferredElement<K, V>> queue, boolean offline) throws InterruptedException {
-            Collection<PersistentDeferredElement<K, V>> batch = new ArrayList<>();
+            ArrayList<PersistentDeferredElement<K, V>> batch = new ArrayList<>();
             PersistentDeferredElement<K, V> polled = queue.poll(100, TimeUnit.MILLISECONDS);
             if (polled != null) {
                 batch.add(polled);
                 queue.drainTo(batch, maxBatchSize - 1);
+                // Sort to avoid a deadlock.
+                // If there are two entries for the same key, they will be executed in the existing order as the sorting in Java is stable.
+                batch.sort(Comparator.comparing(o -> o.getEntry().getKey()));
                 try {
                     LOG.debugf("Processing %d deferred session updates.", batch.size());
                     KeycloakModelUtils.runJobInTransaction(factory,

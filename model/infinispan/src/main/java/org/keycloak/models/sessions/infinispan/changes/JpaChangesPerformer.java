@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.util.function.TriConsumer;
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -38,6 +39,9 @@ import org.keycloak.models.utils.RealmModelDelegate;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.UserSessionModelDelegate;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +57,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.O
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionChangesPerformer<K, V> {
+    private static final Logger LOG = Logger.getLogger(JpaChangesPerformer.class);
 
     private final KeycloakSession session;
     private final String cacheName;
@@ -82,10 +87,34 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     @Override
     public void applyChanges() {
-        if (changes.size() > 0) {
-            Retry.executeWithBackoff(iteration -> KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
-                            innerSession -> changes.forEach(c -> c.accept(innerSession))),
-                    10, 10);
+        if (!changes.isEmpty()) {
+            Retry.executeWithBackoff(iteration -> {
+                        if (iteration < 2) {
+                            // attempt to write whole batch in the first two attempts
+                            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                                    innerSession -> changes.forEach(c -> c.accept(innerSession)));
+                        } else {
+                            LOG.warnf("Running single changes in iteration %d for %d entries", iteration, changes.size());
+                            ArrayList<Consumer<KeycloakSession>> performedChanges = new ArrayList<>();
+                            List<Exception> exceptions = new ArrayList<>();
+                            changes.forEach(change -> {
+                                try {
+                                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                                            change::accept);
+                                    performedChanges.add(change);
+                                } catch (RuntimeException ex) {
+                                    exceptions.add(ex);
+                                }
+                            });
+                            changes.removeAll(performedChanges);
+                            if (!exceptions.isEmpty()) {
+                                RuntimeException ex = new RuntimeException("unable to complete some changes");
+                                exceptions.forEach(ex::addSuppressed);
+                                throw ex;
+                            }
+                        }
+                    },
+                    Duration.of(10, ChronoUnit.SECONDS), 0);
         }
     }
 

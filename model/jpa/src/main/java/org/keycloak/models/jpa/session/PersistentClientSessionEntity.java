@@ -211,5 +211,16 @@ public class PersistentClientSessionEntity {
             result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "PersistentClientSessionEntity$Key[" +
+                   "userSessionId='" + userSessionId + '\'' +
+                   ", clientId='" + clientId + '\'' +
+                   ", clientStorageProvider='" + clientStorageProvider + '\'' +
+                   ", externalClientId='" + externalClientId + '\'' +
+                   ", offline='" + offline + '\'' +
+                   ']';
+        }
     }
 }

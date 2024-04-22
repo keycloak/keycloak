@@ -90,13 +90,17 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                if (merged.isDeferrable()) {
-                    // This is deferrable, no need to memorize the future
-                    addEntryToQueue(entry, merged);
-                } else if (batchAllWrites) {
-                    // We will batch the updates, important to memorize the future first before adding it to the queue,
+                if (batchAllWrites &&
+                    merged.getOperation(sessionWrapper.getEntity()) != SessionUpdateTask.CacheOperation.REMOVE) {
+                    // We will batch the inserts and updates, as deletes will access the other table as well and lead to deadlocks.
+                    // We'll also wait for all deferrable items, as doing so will reduce the likelihood of concurrent requests later
+                    // which might lead to deadlocks.
+                    // Important to memorize the future first before adding it to the queue,
                     // as the future will only be created only when necessary.
                     futures.add(merged.result());
+                    addEntryToQueue(entry, merged);
+                } else if (merged.isDeferrable()) {
+                    // This is deferrable, no need to memorize the future
                     addEntryToQueue(entry, merged);
                 } else {
                     changesPerformers.forEach(p -> p.registerChange(entry, merged));

@@ -201,5 +201,13 @@ public class PersistentUserSessionEntity {
             result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "PersistentUserSessionEntity$Key [" +
+                   "userSessionId='" + userSessionId + '\'' +
+                   ", offline='" + offline + '\'' +
+                   ']';
+        }
     }
 }
