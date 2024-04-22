@@ -23,6 +23,7 @@ import org.keycloak.http.HttpResponse;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.NotAuthorizedException;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Encode;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -170,7 +171,7 @@ public class AdminRoot {
         } catch (JWSInputException e) {
             throw new NotAuthorizedException("Bearer token format error");
         }
-        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        String realmName = Encode.decodePath(token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1));
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
         if (realm == null) {
