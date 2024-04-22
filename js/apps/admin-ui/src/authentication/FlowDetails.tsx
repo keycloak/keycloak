@@ -7,6 +7,7 @@ import {
   ButtonVariant,
   DataList,
   DragDrop,
+  DropdownItem,
   Droppable,
   Label,
   PageSection,
@@ -16,7 +17,6 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DomainIcon, TableIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
