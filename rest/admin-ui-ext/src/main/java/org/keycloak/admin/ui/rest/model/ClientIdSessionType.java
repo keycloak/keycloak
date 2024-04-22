@@ -3,7 +3,11 @@ package org.keycloak.admin.ui.rest.model;
 
 import java.util.Objects;
 
-public class SessionId {
+/**
+ * A tuple containing the clientId and the session type (online/offline).
+ *
+ */
+public class ClientIdSessionType {
 
 
     public enum SessionType {
@@ -13,7 +17,7 @@ public class SessionId {
     private final String clientId;
     private final SessionType type;
 
-    public SessionId(String clientId, SessionType type) {
+    public ClientIdSessionType(String clientId, SessionType type) {
         this.clientId = clientId;
         this.type = type;
     }
@@ -30,8 +34,8 @@ public class SessionId {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SessionId sessionId = (SessionId) o;
-        return Objects.equals(clientId, sessionId.clientId) && type == sessionId.type;
+        ClientIdSessionType clientIdSessionType = (ClientIdSessionType) o;
+        return Objects.equals(clientId, clientIdSessionType.clientId) && type == clientIdSessionType.type;
     }
 
     @Override
