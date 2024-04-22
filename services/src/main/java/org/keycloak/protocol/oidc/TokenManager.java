@@ -1094,6 +1094,7 @@ public class TokenManager {
             ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
             boolean offlineTokenRequested = offlineAccessScope==null ? false : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
             generateRefreshToken(offlineTokenRequested);
+            refreshToken.setScope(clientSessionCtx.getScopeString(true));
             return this;
         }
 
