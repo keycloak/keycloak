@@ -146,7 +146,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
             }
 
             if (errors >= maxErrors) {
-                throw new RuntimeException("Maximum count of worker errors occured. Limit was " + maxErrors + ". See server.log for details");
+                throw new RuntimeException("Maximum count of worker errors occurred. Limit was " + maxErrors + ". See server.log for details");
             }
 
             if (!anyFailure) {
