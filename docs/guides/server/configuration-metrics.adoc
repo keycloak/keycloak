@@ -23,7 +23,7 @@ It is possible to enable metrics using the build time option `metrics-enabled`:
 * `/metrics`
 
 For more information about the management interface, see <@links.server id="management-interface" />.
-The response from the endpoint uses a `application/openmetrics-text` content type and it is based on the Prometheus (OpenMetrics) text format. The snippet bellow
+The response from the endpoint uses a `application/openmetrics-text` content type and it is based on the Prometheus (OpenMetrics) text format. The snippet below
 is an example of a response:
 
 [source]

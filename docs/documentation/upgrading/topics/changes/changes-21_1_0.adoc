@@ -15,7 +15,7 @@ Default `Client ID` mapper of `Service Account Client` has been changed. `Token 
 
 `clientId` userSession note still exists.
 
-= Keycloak JS adapter must be instanciated with the `new` operator
+= Keycloak JS adapter must be instantiated with the `new` operator
 
 Historically it has been possible to create an instance of the Keycloak JS adapter by calling the `Keycloak()` function directly:
 

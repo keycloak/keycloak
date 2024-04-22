@@ -256,9 +256,9 @@ your realm configuration to eliminate the use of the `http challenge` flow befor
 If you use the `http challenge` flow  as `Authentication Flow Binding Override` for any client, the migration would complete, but you could no longer log in to that client.
 After the migration, you would need to re-create the flow and update the configuration of your clients to use the new/differentJson flow.
 
-= Removing thirdparty dependencies
+= Removing third party dependencies
 
-The removal of openshift-integration allows us to remove few thirdparty dependencies from Keycloak distribution. This includes
+The removal of openshift-integration allows us to remove few third party dependencies from Keycloak distribution. This includes
 `openshift-rest-client`, `okio-jvm`, `okhttp`, `commons-lang`, `commons-compress`, `jboss-dmr` and `kotlin-stdlib`. This means that if you use
 any of these libraries as dependencies of your own providers deployed to Keycloak server, you may also need to copy those `jar` files
 explicitly to the Keycloak distribution `providers` directory as well.

@@ -271,7 +271,7 @@ current version, the update is not possible and you will be immediately informed
 The fields `username`, `email`, `firstName` and `lastName` in the `UserModel` are migrated to custom attributes as a preparation for adding more sophisticated user profiles to {project_name} in an upcoming version.
 If a database contains users with custom attributes of that exact name, the custom attributes will need to be migrated before upgrading. This migration does not occur automatically. Otherwise, they will not be read from the database anymore and possibly deleted.
 This situation implies that the `username` can now also be accessed and set via `UserModel.getFirstAttribute(UserModel.USERNAME)`. Similar implications exist for other fields.
-Implementors of SPIs subclassing the `UserModel` directly or indirectly should ensure that the behavior between `setUsername` and `setSingleAttribute(UserModel.USERNAME, ...)` (and similar for the other fields) is consistent.
+Implementers of SPIs subclassing the `UserModel` directly or indirectly should ensure that the behavior between `setUsername` and `setSingleAttribute(UserModel.USERNAME, ...)` (and similar for the other fields) is consistent.
 Users of the policy evaluation feature have to adapt their policies if they use the number of attributes in their evaluations since every user will now have four new attributes by default.
 
 The public API of `UserModel` did not change. No changes to frontend resources or SPIs accessing user data are necessary.
@@ -894,7 +894,7 @@ You also need to update `keycloak-server.json` as it's changed due to this.
 
 ==== Adapter subsystems only bring in dependencies if Keycloak is on
 
-Previously, if you had installed our SAML or OIDC Keycloak subsystem adapters into WildFly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
+Previously, if you had installed our SAML or OIDC Keycloak subsystem adapters into WildFly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application regardless if you were using Keycloak or not.
 These libraries are now only added to your deployment if you have Keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml)
 
 ==== Client Registration service endpoints moved
