@@ -158,7 +158,7 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
         String issuerUri = getIssuer(realm, uri);
 
         this
-          .issuedAt(Time.currentTime())
+          .issuedNow()
           .id(getActionVerificationNonce().toString())
           .issuer(issuerUri)
           .audience(issuerUri);

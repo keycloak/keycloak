@@ -397,11 +397,11 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         Assert.assertEquals(idToken.getSubject(), refreshedRefreshToken.getSubject());
 
         // its iat Claim MUST represent the time that the new ID Token is issued
-        Assert.assertEquals(refreshedIdToken.getIssuedAt(), refreshedRefreshToken.getIssuedAt());
+        Assert.assertEquals(refreshedIdToken.getIat(), refreshedRefreshToken.getIat());
 
         // if the ID Token contains an auth_time Claim, its value MUST represent the time of the original authentication
         // - not the time that the new ID token is issued
-        Assert.assertEquals(idToken.getAuthTime(), refreshedIdToken.getAuthTime());
+        Assert.assertEquals(idToken.getAuth_time(), refreshedIdToken.getAuth_time());
 
         // its azp Claim Value MUST be the same as in the ID Token issued when the original authentication occurred; if
         // no azp Claim was present in the original ID Token, one MUST NOT be present in the new ID Token

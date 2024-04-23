@@ -235,13 +235,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, sid);
 
         assertNull(token.getNbf());
-        assertEquals(0, token.getNotBefore());
 
         assertNotNull(token.getIat());
-        assertEquals(token.getIat().intValue(), token.getIssuedAt());
 
         assertNotNull(token.getExp());
-        assertEquals(token.getExp().intValue(), token.getExpiration());
 
         assertEquals(1, token.getRealmAccess().getRoles().size());
         assertTrue(token.getRealmAccess().isUserInRole("user"));

@@ -759,9 +759,9 @@ public class AuthenticationManager {
         }
 
         if (session != null && session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
-            token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespanRememberMe());
+            token.exp((long) Time.currentTime() + realm.getSsoSessionMaxLifespanRememberMe());
         } else if (realm.getSsoSessionMaxLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespan());
+            token.exp((long) Time.currentTime() + realm.getSsoSessionMaxLifespan());
         }
 
         String stateChecker = (String) keycloakSession.getAttribute("state_checker");
@@ -999,7 +999,7 @@ public class AuthenticationManager {
             SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
             if (actionTokenKey != null) {
                 SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
-                singleUseObjectProvider.put(actionTokenKeyToInvalidate, actionTokenKey.getExpiration() - Time.currentTime(), null); // Token is invalidated
+                singleUseObjectProvider.put(actionTokenKeyToInvalidate, actionTokenKey.getExp() - Time.currentTime(), null); // Token is invalidated
             }
         }
 
@@ -1400,8 +1400,8 @@ public class AuthenticationManager {
 
             AccessToken token = verifier.verify().getToken();
             if (checkActive) {
-                if (!token.isActive() || token.getIssuedAt() < realm.getNotBefore()) {
-                    logger.debugf("Identity cookie expired. Token expiration: %d, Current Time: %d. token issued at: %d, realm not before: %d", token.getExp(), Time.currentTime(), token.getIssuedAt(), realm.getNotBefore());
+                if (!token.isActive() || token.getIat() < realm.getNotBefore()) {
+                    logger.debugf("Identity cookie expired. Token expiration: %d, Current Time: %d. token issued at: %d, realm not before: %d", token.getExp(), Time.currentTime(), token.getIat(), realm.getNotBefore());
                     return null;
                 }
             }
@@ -1467,7 +1467,7 @@ public class AuthenticationManager {
             return false;
         }
 
-        if (token.getIssuedAt() < client.getNotBefore()) {
+        if (token.getIat() < client.getNotBefore()) {
             logger.debug("Client notBefore newer than token");
             return false;
         }

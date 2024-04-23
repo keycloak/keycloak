@@ -524,7 +524,7 @@ public class LogoutEndpoint {
             }
 
             if (userSessionModel != null) {
-                checkTokenIssuedAt(token.getIssuedAt(), userSessionModel);
+                checkTokenIssuedAt(token.getIat(), userSessionModel);
                 logout(userSessionModel, offline);
             }
         } catch (OAuthErrorException e) {
@@ -727,7 +727,7 @@ public class LogoutEndpoint {
         }
     }
 
-    private void checkTokenIssuedAt(int idTokenIssuedAt, UserSessionModel userSession) throws OAuthErrorException {
+    private void checkTokenIssuedAt(long idTokenIssuedAt, UserSessionModel userSession) throws OAuthErrorException {
         if (idTokenIssuedAt + 1 < userSession.getStarted()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Toked issued before the user session started");
         }
