@@ -17,8 +17,6 @@ include::java-adapter-config.adoc[]
 endif::[]
 include::jboss-adapter.adoc[]
 
-include::spring-boot-adapter.adoc[]
-
 ifeval::[{project_community}==true]
 include::spring-security-adapter.adoc[]
 endif::[]

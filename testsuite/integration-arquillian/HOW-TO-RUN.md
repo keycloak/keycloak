@@ -339,19 +339,6 @@ that you need to use property `migration.mode` with the value `manual` .
 
     -Dmigration.mode=manual
 
-## Spring Boot adapter tests
-
-Currently, we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty 9.4`. 
-We are testing with Spring Boot 2.7. The version is specified in [root pom.xml](../../pom.xml) (i.e. see property `spring-boot27.version`).
-To run tests execute following command. Default version of Spring Boot is 2.7.x, there is also a profile `-Pspringboot27`.
-
-```
-mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
-    clean test \
-    -Dadapter.container=[tomcat|undertow|jetty94] \
-    [-Pspringboot27]
-```
-
 ## Disabling features
 Some features in Keycloak can be disabled. To run the testsuite with a specific feature disabled use the `auth.server.feature` system property. For example to run the tests with authorization disabled run:
 ```
