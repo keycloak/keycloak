@@ -20,7 +20,6 @@ include::jboss-adapter.adoc[]
 include::spring-boot-adapter.adoc[]
 
 ifeval::[{project_community}==true]
-include::tomcat-adapter.adoc[]
 include::spring-security-adapter.adoc[]
 endif::[]
 

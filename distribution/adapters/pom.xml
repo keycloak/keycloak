@@ -32,6 +32,5 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>tomcat-adapter-zip</module>
     </modules>
 </project>
