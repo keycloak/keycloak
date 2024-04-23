@@ -65,6 +65,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.LoginProtocol;
@@ -107,10 +108,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 
@@ -175,35 +176,33 @@ public class AuthenticationManager {
             logger.debug("No user session");
             return false;
         }
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTimeMillis();
+        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession.isOffline(),
+                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm);
+        long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(userSession.isOffline(),
+                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()), realm);
 
-        // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
-        int maxIdle = userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-            realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout();
-        int maxLifespan = userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
-
-        boolean sessionIdleOk = maxIdle > currentTime - userSession.getLastSessionRefresh() - SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
-        boolean sessionMaxOk = maxLifespan > currentTime - userSession.getStarted();
+        boolean sessionIdleOk = idle > currentTime - TimeUnit.SECONDS.toMillis(SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+        boolean sessionMaxOk = lifespan == -1L || lifespan > currentTime;
         return sessionIdleOk && sessionMaxOk;
     }
 
-    public static boolean isOfflineSessionValid(RealmModel realm, UserSessionModel userSession) {
-        if (userSession == null) {
-            logger.debug("No offline user session");
+    public static boolean isClientSessionValid(RealmModel realm, ClientModel client,
+            UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+        if (userSession == null || clientSession == null) {
+            logger.debug("No user session");
             return false;
         }
-        int currentTime = Time.currentTime();
-        // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
-        int maxIdle = realm.getOfflineSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+        long currentTime = Time.currentTimeMillis();
+        long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(userSession.isOffline(),
+                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(clientSession.getStarted()),
+                TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm, client);
+        long idle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(userSession.isOffline(),
+                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(clientSession.getTimestamp()), realm, client);
 
-        // KEYCLOAK-7688 Offline Session Max for Offline Token
-        if (realm.isOfflineSessionMaxLifespanEnabled()) {
-            int max = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
-            return userSession.getLastSessionRefresh() + maxIdle > currentTime && max > currentTime;
-        } else {
-            return userSession.getLastSessionRefresh() + maxIdle > currentTime;
-        }
+        boolean sessionIdleOk = idle > currentTime - TimeUnit.SECONDS.toMillis(SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+        boolean sessionMaxOk = lifespan == -1L || lifespan > currentTime;
+        return sessionIdleOk && sessionMaxOk;
     }
 
     public static boolean expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {
@@ -1427,7 +1426,7 @@ public class AuthenticationManager {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
-                    if (isOfflineSessionValid(realm, offlineUserSession)) {
+                    if (isSessionValid(realm, offlineUserSession)) {
                         user = offlineUserSession.getUser();
                         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
                         if (!isClientValid(offlineUserSession, client, token)) {
