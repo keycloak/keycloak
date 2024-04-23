@@ -34,7 +34,6 @@
         <module>core-public</module>
         <module>core</module>
         <module>core-jakarta</module>
-        <module>jetty</module>
         <module>undertow</module>
         <module>wildfly</module>
         <module>servlet-filter</module>
