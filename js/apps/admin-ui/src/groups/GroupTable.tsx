@@ -50,6 +50,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
     let groupsData = undefined;
     if (id) {
       const args: SubGroupQuery = {
+        search: search || "",
         first: first,
         max: max,
         parentId: id,

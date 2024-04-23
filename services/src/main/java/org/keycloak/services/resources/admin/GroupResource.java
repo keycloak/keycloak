@@ -159,15 +159,18 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "Return a paginated list of subgroups that have a parent group corresponding to the group on the URL")
-    public Stream<GroupRepresentation> getSubGroups(@QueryParam("first") @DefaultValue("0") Integer first,
-        @QueryParam("max") @DefaultValue("10") Integer max,
-        @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
+    public Stream<GroupRepresentation> getSubGroups(
+            @Parameter(description = "A String representing either an exact group name or a partial name") @QueryParam("search") String search,
+            @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
+            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
         this.auth.groups().requireView(group);
         boolean canViewGlobal = auth.groups().canView();
-        return paginatedStream(group.getSubGroupsStream(-1, -1)
-                    .filter(g -> canViewGlobal || auth.groups().canView(g))
-                    .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)))
-                , first, max);
+        return paginatedStream(
+            group.getSubGroupsStream(search, exact, -1, -1)
+            .filter(g -> canViewGlobal || auth.groups().canView(g)), first, max)
+            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
     }
 
     /**
