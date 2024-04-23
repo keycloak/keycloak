@@ -31,11 +31,6 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty94-adapter</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
         </dependency>
         <dependency>
