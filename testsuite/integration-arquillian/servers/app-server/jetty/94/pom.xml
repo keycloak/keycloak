@@ -31,10 +31,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty94-adapter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-jetty-embedded-9</artifactId>
             <version>${arquillian-jetty9-container.version}</version>
