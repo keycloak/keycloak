@@ -17,9 +17,12 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import java.util.function.BiFunction;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticator;
+import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,7 +43,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         OrganizationProvider provider = getOrganizationProvider();
 
         if (!provider.isEnabled()) {
-            context.attempted();
+            attempted(context);
             return;
         }
 
@@ -61,7 +64,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         String domain = getEmailDomain(username);
 
         if (domain == null) {
-            context.attempted();
+            attempted(context);
             return;
         }
 
@@ -69,18 +72,31 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         OrganizationModel organization = provider.getByDomainName(domain);
 
         if (organization == null) {
-            context.attempted();
+            attempted(context);
             return;
         }
 
         IdentityProviderModel identityProvider = organization.getIdentityProvider();
 
         if (identityProvider == null) {
-            context.attempted();
+            attempted(context);
             return;
         }
 
         redirect(context, identityProvider.getAlias(), username);
+    }
+
+    private void attempted(AuthenticationFlowContext context) {
+        context.form()
+                .setAttributeMapper(attributes -> {
+                    attributes.computeIfPresent("social", createOrganizationAwareSocialBean());
+                    return attributes;
+                });
+        context.attempted();
+    }
+
+    private BiFunction<String, Object, IdentityProviderBean> createOrganizationAwareSocialBean() {
+        return (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, session);
     }
 
     private OrganizationProvider getOrganizationProvider() {

@@ -79,32 +79,23 @@ public class OrganizationMemberResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addMember(UserRepresentation rep) {
+    public Response addMember(String id) {
         auth.realm().requireManageRealm();
-        if (rep == null || !Objects.equals(rep.getUsername(), rep.getEmail())) {
-            throw ErrorResponse.error("To add a member to the organization it is expected the username and the email is the same.", Status.BAD_REQUEST);
+        UserModel user = session.users().getUserById(realm, id);
+
+        if (user == null) {
+            throw ErrorResponse.error("User does not exist", Status.BAD_REQUEST);
         }
 
-        UsersResource usersResource = new UsersResource(session, auth, adminEvent);
-        Response response = usersResource.createUser(rep);
-
-        if (Status.CREATED.getStatusCode() == response.getStatus()) {
-            
-            UserModel member = session.users().getUserByUsername(realm, rep.getEmail());
-
-            String errorMessage;
-            try {
-                if (provider.addMember(organization, member)) {
-                    return response;
-                }
-                errorMessage = "Assigning the User as member of the organization was not succesful.";
-            } catch (ModelException me) {
-                errorMessage = me.getMessage();
+        try {
+            if (provider.addMember(organization, user)) {
+                return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
             }
-            throw ErrorResponse.error(errorMessage, Status.BAD_REQUEST);
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Status.BAD_REQUEST);
         }
 
-        return response;
+        throw ErrorResponse.error("User is already a member of the organization.", Status.CONFLICT);
     }
 
     @GET
@@ -136,7 +127,11 @@ public class OrganizationMemberResource {
 
         UserModel member = getMember(id);
 
-        return new UserResource(session, member, auth, adminEvent).deleteUser();
+        if (provider.removeMember(organization, member)) {
+            return Response.noContent().build();
+        }
+
+        throw ErrorResponse.error("Not a member of the organization", Status.BAD_REQUEST);
     }
 
     @Path("{id}")
@@ -158,6 +153,11 @@ public class OrganizationMemberResource {
 
         UserModel member = getMember(id);
         OrganizationModel organization = provider.getByMember(member);
+
+        if (organization == null) {
+            throw ErrorResponse.error("Not associated with an organization", Status.NOT_FOUND);
+        }
+
         OrganizationRepresentation rep = new OrganizationRepresentation();
 
         rep.setId(organization.getId());

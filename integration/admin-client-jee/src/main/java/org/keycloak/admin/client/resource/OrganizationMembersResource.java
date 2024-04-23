@@ -34,7 +34,7 @@ public interface OrganizationMembersResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    Response addMember(UserRepresentation member);
+    Response addMember(String userId);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

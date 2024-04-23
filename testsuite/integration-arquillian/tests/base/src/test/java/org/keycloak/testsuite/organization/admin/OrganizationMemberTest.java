@@ -17,12 +17,14 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.models.OrganizationModel.USER_ORGANIZATION_ATTRIBUTE;
+import static org.keycloak.models.OrganizationModel.ORGANIZATION_ATTRIBUTE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,16 +33,19 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(Feature.ORGANIZATION)
@@ -53,14 +58,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         expected.setFirstName("f");
         expected.setLastName("l");
+        expected.setEmail("some@differentthanorg.com");
 
-        OrganizationMemberResource member = organization.members().member(expected.getId());
+        testRealm().users().get(expected.getId()).update(expected);
 
-        try (Response response = member.update(expected)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
-        }
-
-        UserRepresentation existing = member.toRepresentation();
+        UserRepresentation existing = organization.members().member(expected.getId()).toRepresentation();
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getUsername(), existing.getUsername());
         assertEquals(expected.getEmail(), existing.getEmail());
@@ -74,67 +76,44 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         testRealm().users().userProfile().update(upConfig);
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = new UserRepresentation();
+        UserRepresentation expected = addMember(organization);
+        List<String> expectedOrganizations = expected.getAttributes().get(ORGANIZATION_ATTRIBUTE);
 
-        expected.setUsername(expected.getEmail());
-        expected.singleAttribute(USER_ORGANIZATION_ATTRIBUTE, "invalid");
+        expected.singleAttribute(ORGANIZATION_ATTRIBUTE, "invalid");
 
-        try (Response response = organization.members().addMember(expected)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            assertTrue(testRealm().users().search("u@o.org").isEmpty());
+        UserResource userResource = testRealm().users().get(expected.getId());
+
+        try {
+            userResource.update(expected);
+            Assert.fail("The attribute is readonly");
+        } catch (BadRequestException bre) {
+            ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals(ORGANIZATION_ATTRIBUTE, error.getField());
+            assertEquals("error-user-attribute-read-only", error.getErrorMessage());
         }
+
+        // the attribute is readonly, removing it from the rep does not make any difference
+        expected.getAttributes().remove(ORGANIZATION_ATTRIBUTE);
+        userResource.update(expected);
+        expected = userResource.toRepresentation();
+        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+
+        userResource.update(expected);
+        expected = userResource.toRepresentation();
+        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
     }
 
     @Test
-    public void testFailSetEmailDomainOtherThanOrganizationDomain() {
+    public void testUserAlreadyMemberOfOrganization() {
         UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         testRealm().users().userProfile().update(upConfig);
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = new UserRepresentation();
+        UserRepresentation expected = addMember(organization, KeycloakModelUtils.generateId() + "@user.org");
 
-        expected.setUsername(KeycloakModelUtils.generateId() + "@user.org");
-        expected.setEmail(expected.getUsername());
-
-        try (Response response = organization.members().addMember(expected)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            assertTrue(testRealm().users().search(expected.getUsername()).isEmpty());
+        try (Response response = organization.members().addMember(expected.getId())) {
+            assertEquals(Status.CONFLICT.getStatusCode(), response.getStatus());
         }
-
-        expected.setUsername(expected.getUsername().replace("@user.org", "@" + organizationName + ".org"));
-        expected.setEmail(expected.getUsername());
-
-        try (Response response = organization.members().addMember(expected)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            assertFalse(testRealm().users().search(expected.getUsername()).isEmpty());
-        }
-    }
-
-    @Test
-    public void testFailSetEmailDomainOtherThanOrganizationDomainViaUserApi() {
-        RealmRepresentation representation = testRealm().toRepresentation();
-        representation.setEditUsernameAllowed(true);
-        testRealm().update(representation);
-        OrganizationRepresentation organization = createOrganization();
-        UserRepresentation member = addMember(testRealm().organizations().get(organization.getId()));
-
-        member.setUsername(KeycloakModelUtils.generateId() + "@user.org");
-        member.setEmail(member.getUsername());
-        member.setFirstName("f");
-        member.setLastName("l");
-        member.setEnabled(true);
-
-        try {
-            testRealm().users().get(member.getId()).update(member);
-            fail("Should fail because email domain does not match any from organization");
-        } catch (BadRequestException expected) {
-
-        }
-
-        member.setUsername(member.getUsername().replace("@user.org", "@" + organizationName + ".org"));
-        member.setEmail(member.getUsername());
-
-        testRealm().users().get(member.getId()).update(member);
     }
 
     @Test
@@ -182,18 +161,27 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testDelete() {
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation expected = addMember(organization);
+        assertNotNull(expected.getAttributes());
+        assertTrue(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE).contains(organization.toRepresentation().getId()));
         OrganizationMemberResource member = organization.members().member(expected.getId());
 
         try (Response response = member.delete()) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
 
+        // user should exist but no longer an organization member
+        expected = testRealm().users().get(expected.getId()).toRepresentation();
+        assertNull(expected.getAttributes());
         try {
             member.toRepresentation();
-            fail("should be deleted");
-        } catch (NotFoundException ignore) {}
+            fail("should not be an organization member");
+        } catch (NotFoundException ignore) {
+
+        }
     }
 
     @Test
@@ -215,10 +203,17 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         for (UserRepresentation member : expected) {
+            // users should exist as they are not managed by the organization
+            testRealm().users().get(member.getId()).toRepresentation();
+        }
+
+        for (UserRepresentation member : expected) {
             try {
-                testRealm().users().get(member.getId()).toRepresentation();
-                fail("should be deleted");
-            } catch (NotFoundException ignore) {}
+                // user no longer bound to the organization
+                organization.members().getOrganization(member.getId());
+                fail("should not be associated with the organization anymore");
+            } catch (NotFoundException ignore) {
+            }
         }
     }
 

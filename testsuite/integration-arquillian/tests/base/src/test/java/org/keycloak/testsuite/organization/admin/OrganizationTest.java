@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.organization.admin;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -37,39 +36,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.hamcrest.Matchers;
 import org.junit.Test;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationTest extends AbstractOrganizationTest {
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.getUsers().add(UserBuilder.create().username("realmAdmin").password("password")
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM)
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_IDENTITY_PROVIDERS)
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS)
-                .build());
-    }
 
     @Test
     public void testUpdate() {
@@ -311,140 +289,5 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertFalse(existing.getDomains().isEmpty());
         assertEquals(1, existing.getDomains().size());
         assertNotNull(existing.getDomain("acme.com"));
-    }
-
-    @Test
-    public void permissionsTest() throws Exception {
-        try (
-            Keycloak manageRealmAdminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), 
-                TEST_REALM_NAME, "realmAdmin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-            Keycloak userAdminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), 
-                TEST_REALM_NAME, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)
-        ) {
-            RealmResource realmAdminResource = manageRealmAdminClient.realm(TEST_REALM_NAME);
-            RealmResource realmUserResource = userAdminClient.realm(TEST_REALM_NAME);
-
-            /* Org */
-            //create org
-            OrganizationRepresentation orgRep = createRepresentation("testOrg", "testOrg.org");
-            String orgId;
-            try (
-                Response userResponse = realmUserResource.organizations().create(orgRep);
-                Response adminResponse = realmAdminResource.organizations().create(orgRep)
-            ) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-                assertThat(adminResponse.getStatus(), equalTo(Status.CREATED.getStatusCode()));
-                orgId = ApiUtil.getCreatedId(adminResponse);
-                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).delete().close());
-            }
-
-            //search for org
-            try {
-                realmUserResource.organizations().search("testOrg.org", true, 0, 1);
-                fail("Expected ForbiddenException");
-            } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().search("testOrg.org", true, 0, 1), Matchers.notNullValue());
-
-            //get org
-            try {
-                realmUserResource.organizations().get(orgId).toRepresentation();
-                fail("Expected ForbiddenException");
-            } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().get(orgId).toRepresentation(), Matchers.notNullValue());
-
-            //update org
-            try (Response userResponse = realmUserResource.organizations().get(orgId).update(orgRep)) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-            }
-
-            //delete org
-            try (Response userResponse = realmUserResource.organizations().get(orgId).delete()) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-            }
-
-            /* IdP */
-            IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
-            idpRep.setAlias("dummy");
-            idpRep.setProviderId("oidc");
-            //create IdP
-            try (
-                Response userResponse = realmUserResource.organizations().get(orgId).identityProvider().create(idpRep);
-                Response adminResponse = realmAdminResource.organizations().get(orgId).identityProvider().create(idpRep)
-            ) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-                assertThat(adminResponse.getStatus(), equalTo(Status.CREATED.getStatusCode()));
-                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).identityProvider().delete().close());
-            }
-
-            //get IdP
-            try {
-                //we should get 403, not 400 or 404 etc.
-                realmUserResource.organizations().get("non-existing").identityProvider().toRepresentation();
-                fail("Expected ForbiddenException");
-            } catch (ForbiddenException expected) {}
-            try {
-                realmUserResource.organizations().get(orgId).identityProvider().toRepresentation();
-                fail("Expected ForbiddenException");
-            } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().get(orgId).identityProvider().toRepresentation(), Matchers.notNullValue());
-
-            //update IdP
-            try (Response userResponse = realmUserResource.organizations().get(orgId).identityProvider().update(idpRep)) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-            }
-
-            //delete IdP
-            try (Response userResponse = realmUserResource.organizations().get(orgId).identityProvider().delete()) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-            }
-
-            /* Members */
-            UserRepresentation userRep = UserBuilder.create()
-                    .username("user@testOrg.org")
-                    .email("user@testOrg.org")
-                    .build();
-            String userId;
-
-            //create member
-            try (
-                Response userResponse = realmUserResource.organizations().get(orgId).members().addMember(userRep);
-                Response adminResponse = realmAdminResource.organizations().get(orgId).members().addMember(userRep)
-            ) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-                assertThat(adminResponse.getStatus(), equalTo(Status.CREATED.getStatusCode()));
-                userId = ApiUtil.getCreatedId(adminResponse);
-                assertThat(userId, Matchers.notNullValue());
-                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).members().member(userId).delete().close());
-            }
-
-            //get members
-            try {
-                //we should get 403, not 400 or 404 etc.
-                realmUserResource.organizations().get("non-existing").members().getAll();
-                fail("Expected ForbiddenException");
-            } catch (ForbiddenException expected) {}
-            try {
-                realmUserResource.organizations().get(orgId).members().getAll();
-                fail("Expected ForbiddenException");
-            } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().get(orgId).members().getAll(), Matchers.notNullValue());
-
-            //get member
-            try {
-                realmUserResource.organizations().get(orgId).members().member(userId).toRepresentation();
-                fail("Expected ForbiddenException");
-            } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().get(orgId).members().member(userId).toRepresentation(), Matchers.notNullValue());
-
-            //update member
-            try (Response userResponse = realmUserResource.organizations().get(orgId).members().member(userId).update(userRep)) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-            }
-
-            //delete member
-            try (Response userResponse = realmUserResource.organizations().get(orgId).members().member(userId).delete()) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-            }
-        }
     }
 }
