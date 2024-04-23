@@ -25,7 +25,6 @@ include::jboss-adapter/securing_wars.adoc[]
 ifeval::[{project_community}==true]
 endif::[]
 
-include::servlet-filter-adapter.adoc[]
 include::idp-registration.adoc[]
 include::logout.adoc[]
 include::assertion-api.adoc[]

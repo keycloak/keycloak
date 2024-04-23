@@ -14,7 +14,6 @@ ifeval::[{project_community}==true]
 * {quickstartRepo_link}/tree/latest/jakarta/servlet-authz-client[Wildfly Elytron OIDC]
 * {quickstartRepo_link}/tree/latest/spring/rest-authz-resource-server[Spring Boot]
 * <<_jboss_adapter, {project_name} Wildfly Adapter>> (Deprecated)
-* <<_servlet_filter_adapter,{project_name} Servlet Filter>> (Deprecated)
 endif::[]
 
 ===== JavaScript (client-side)
@@ -48,9 +47,6 @@ endif::[]
 * <<_saml_jboss_adapter,JBoss EAP>>
 ifeval::[{project_community}==true]
 * <<_saml_jboss_adapter,WildFly>>
-endif::[]
-ifeval::[{project_community}==true]
-* <<_java-servlet-filter-adapter,Servlet filter>>
 endif::[]
 
 ifeval::[{project_community}==true]
