@@ -153,7 +153,7 @@ public class TokenManager {
             if (userSession != null) {
 
                 // Revoke timeouted offline userSession
-                if (!AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+                if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                     sessionManager.revokeOfflineUserSession(userSession);
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
@@ -196,6 +196,12 @@ public class TokenManager {
             } else {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
             }
+        }
+
+        if (!AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {
+            logger.debug("Client session not active");
+            userSession.removeAuthenticatedClientSessions(Collections.singletonList(client.getId()));
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Client session not active");
         }
 
         if (oldToken.isIssuedBeforeSessionStart(clientSession.getStarted())) {
@@ -567,7 +573,10 @@ public class TokenManager {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-        if (clientSession == null) {
+        if (clientSession != null && !AuthenticationManager.isClientSessionValid(userSession.getRealm(), client, userSession, clientSession)) {
+            // session exists but not active so re-start it
+            clientSession.restartClientSession();
+        } else if (clientSession == null) {
             clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
         }
 
