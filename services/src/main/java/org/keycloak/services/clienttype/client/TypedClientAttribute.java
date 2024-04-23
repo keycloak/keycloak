@@ -26,6 +26,7 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     PUBLIC_CLIENT("publicClient", false),
     REDIRECT_URIS("redirectUris", Set.of()),
     SERVICE_ACCOUNTS_ENABLED("serviceAccountsEnabled", false),
+    WEB_ORIGINS("webOrigins", Set.of()),
     ;
 
     private final String propertyName;

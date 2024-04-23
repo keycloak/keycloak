@@ -482,26 +482,31 @@ public class RepresentationToModel {
         }
     }
 
-    private static ClientModel updateClientProperties(ClientModel client, ClientRepresentation rep) {
+    /**
+     * Update client properties and process client type validation exceptions.
+     * @param client
+     * @param rep
+     */
+    private static void updateClientProperties(ClientModel client, ClientRepresentation rep) {
         List<Supplier<ClientTypeException>> clientAttrUpdates = new ArrayList<Supplier<ClientTypeException>>() {{
-            add(updateProperty(client::setName, rep::getName));
-            add(updateProperty(client::setDescription, rep::getDescription));
-            add(updateProperty(client::setType, rep::getType));
-            add(updateProperty(client::setEnabled, rep::isEnabled));
-            add(updateProperty(client::setAlwaysDisplayInConsole, rep::isAlwaysDisplayInConsole));
-            add(updateProperty(client::setManagementUrl, rep::getAdminUrl));
-            add(updateProperty(client::setSurrogateAuthRequired, rep::isSurrogateAuthRequired));
-            add(updateProperty(client::setRootUrl, rep::getRootUrl));
-            add(updateProperty(client::setBaseUrl, rep::getBaseUrl));
-            add(updateProperty(client::setBearerOnly, rep::isBearerOnly));
-            add(updateProperty(client::setConsentRequired, rep::isConsentRequired));
-            add(updateProperty(client::setStandardFlowEnabled, rep::isStandardFlowEnabled));
-            add(updateProperty(client::setImplicitFlowEnabled, rep::isImplicitFlowEnabled));
-            add(updateProperty(client::setDirectAccessGrantsEnabled, rep::isDirectAccessGrantsEnabled));
-            add(updateProperty(client::setServiceAccountsEnabled, rep::isServiceAccountsEnabled));
-            add(updateProperty(client::setPublicClient, rep::isPublicClient));
-            add(updateProperty(client::setFrontchannelLogout, rep::isFrontchannelLogout));
-            add(updateProperty(client::setNotBefore, rep::getNotBefore));
+            add(updatePropertyWithDefault(client::setName, rep::getName, client::getName));
+            add(updatePropertyWithDefault(client::setDescription, rep::getDescription, client::getDescription));
+            add(updatePropertyWithDefault(client::setType, rep::getType, client::getType));
+            add(updatePropertyWithDefault(client::setEnabled, rep::isEnabled, client::isEnabled));
+            add(updatePropertyWithDefault(client::setAlwaysDisplayInConsole, rep::isAlwaysDisplayInConsole, client::isAlwaysDisplayInConsole));
+            add(updatePropertyWithDefault(client::setManagementUrl, rep::getAdminUrl, client::getManagementUrl));
+            add(updatePropertyWithDefault(client::setSurrogateAuthRequired, rep::isSurrogateAuthRequired, client::isSurrogateAuthRequired));
+            add(updatePropertyWithDefault(client::setRootUrl, rep::getRootUrl, client::getRootUrl));
+            add(updatePropertyWithDefault(client::setBaseUrl, rep::getBaseUrl, client::getBaseUrl));
+            add(updatePropertyWithDefault(client::setBearerOnly, rep::isBearerOnly, client::isBearerOnly));
+            add(updatePropertyWithDefault(client::setConsentRequired, rep::isConsentRequired, client::isConsentRequired));
+            add(updatePropertyWithDefault(client::setStandardFlowEnabled, rep::isStandardFlowEnabled, client::isStandardFlowEnabled));
+            add(updatePropertyWithDefault(client::setImplicitFlowEnabled, rep::isImplicitFlowEnabled, client::isImplicitFlowEnabled));
+            add(updatePropertyWithDefault(client::setDirectAccessGrantsEnabled, rep::isDirectAccessGrantsEnabled, client::isDirectAccessGrantsEnabled));
+            add(updatePropertyWithDefault(client::setServiceAccountsEnabled, rep::isServiceAccountsEnabled, client::isServiceAccountsEnabled));
+            add(updatePropertyWithDefault(client::setPublicClient, rep::isPublicClient, client::isPublicClient));
+            add(updatePropertyWithDefault(client::setFrontchannelLogout, rep::isFrontchannelLogout, client::isFrontchannelLogout));
+            add(updatePropertyWithDefault(client::setNotBefore, rep::getNotBefore, client::getNotBefore));
             // Fields with defaults if not initially provided
             add(updatePropertyWithDefault(client::setProtocol, rep::getProtocol, client::getProtocol, () -> OIDC));
             add(updatePropertyWithDefault(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, client::getNodeReRegistrationTimeout, () -> -1));
@@ -525,7 +530,7 @@ public class RepresentationToModel {
                 return null;
             }));
             // Redirect uris / Web origins
-            add(updateProperty(client::setRedirectUris, () -> Optional.ofNullable(rep.getRedirectUris()).map(HashSet::new).orElse(null)));
+            add(updatePropertyWithDefault(client::setRedirectUris, () -> Optional.ofNullable(rep.getRedirectUris()).map(HashSet::new).orElse(null)));
             add(updatePropertyWithDefault(uris -> uris.forEach(client::addWebOrigin), rep::getWebOrigins, client::getWebOrigins, () -> {
                 // add origins from redirect uris
                 if (rep.getRedirectUris() != null) {
@@ -543,7 +548,8 @@ public class RepresentationToModel {
         // Extended client attributes
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
-                clientAttrUpdates.add(updateProperty(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
+                clientAttrUpdates.add(
+                    updatePropertyWithDefault(val -> client.setAttribute(entry.getKey(), val), entry::getValue, () -> client.getAttribute(entry.getKey())));
             }
         }
 
@@ -558,8 +564,6 @@ public class RepresentationToModel {
                     "Cannot change property of client as it is not allowed by the specified client type.",
                     validationExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
         }
-
-        return client;
     }
 
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
@@ -640,18 +644,16 @@ public class RepresentationToModel {
     }
 
     /**
-     * Supplier to update property with values supplied by the methods provided.
-     * The first non-null value will be used to set the property.
+     * Creates supplier to update property with values supplied by the methods provided in order.
+     * The first non-null value supplied will be used to the property setter.
      *
      * @param modelSetter The setter to call with the property updates.
-     * @param representationGetter First getter of the representation to query for a non-null value.
-     * @param modelGetter Second getter corresponding to the value current assigned for the property.
-     * @param defaultSupplier If no other non-null value is found, this value shall be used.
+     * @param getters Getter to query for a non-null value.
      * @return Whether a {@link ClientTypeException} was thrown.
      * @param <T> Type of property.
      */
-    private static <T> Supplier<ClientTypeException> updatePropertyWithDefault(Consumer<T> modelSetter, Supplier<T> representationGetter, Supplier<T> modelGetter, Supplier<T> defaultSupplier) {
-        return updateProperty(modelSetter, () -> Stream.of(representationGetter, modelGetter, defaultSupplier)
+    private static <T> Supplier<ClientTypeException> updatePropertyWithDefault(Consumer<T> modelSetter, Supplier<T>... getters) {
+        return updateProperty(modelSetter, () -> Stream.of(getters)
                 .map(Supplier::get)
                 .map(Optional::ofNullable)
                 .filter(Optional::isPresent)

@@ -167,6 +167,30 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     }
 
     @Override
+    public Set<String> getWebOrigins() {
+        return TypedClientAttribute.WEB_ORIGINS
+                .getClientAttribute(clientType, super::getWebOrigins, Set.class);
+    }
+
+    @Override
+    public void setWebOrigins(Set<String> webOrigins) {
+        TypedClientAttribute.WEB_ORIGINS
+                .setClientAttribute(clientType, webOrigins, super::setWebOrigins, Set.class);
+    }
+
+    @Override
+    public void addWebOrigin(String webOrigin) {
+        TypedClientAttribute.WEB_ORIGINS
+                .setClientAttribute(clientType, webOrigin, super::addWebOrigin, String.class);
+    }
+
+    @Override
+    public void removeWebOrigin(String webOrigin) {
+        TypedClientAttribute.WEB_ORIGINS
+                .setClientAttribute(clientType, null, (val) -> super.removeWebOrigin(webOrigin), String.class);
+    }
+
+    @Override
     public Set<String> getRedirectUris() {
         return TypedClientAttribute.REDIRECT_URIS
                 .getClientAttribute(clientType, super::getRedirectUris, Set.class);
@@ -187,7 +211,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public void removeRedirectUri(String redirectUri) {
         TypedClientAttribute.REDIRECT_URIS
-            .setClientAttribute(clientType, null, (val) -> super.removeAttribute(redirectUri), String.class);
+            .setClientAttribute(clientType, null, (val) -> super.removeRedirectUri(redirectUri), String.class);
     }
 
     @Override
