@@ -30,10 +30,6 @@
     <artifactId>integration-arquillian-servers-app-server-jetty-common</artifactId>
     <dependencies>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
             <version>${project.version}</version>

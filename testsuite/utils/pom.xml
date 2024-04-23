@@ -188,10 +188,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-servlet-filter-adapter</artifactId>
         </dependency>
         <dependency>
