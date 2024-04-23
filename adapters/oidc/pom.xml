@@ -42,7 +42,6 @@
         <module>spring-boot-adapter-core</module>
         <module>spring-boot-container-bundle</module>
         <module>spring-security</module>
-        <module>tomcat</module>
         <module>undertow</module>
         <module>wildfly</module>
         <module>wildfly-elytron</module>
