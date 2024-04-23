@@ -17,16 +17,16 @@
 
 package org.keycloak.organization.jpa;
 
-import org.keycloak.models.GroupModel;
-
 import java.util.HashSet;
 import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
@@ -37,8 +37,7 @@ import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.utils.EmailValidationUtil;
-
-import java.util.List;
+import org.keycloak.utils.StringUtil;
 
 public final class OrganizationAdapter implements OrganizationModel, JpaModel<OrganizationEntity> {
 
@@ -104,7 +103,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
 
         Map<String, OrganizationDomainModel> modelMap = domains.stream()
-                .peek(this::validateDomainRepresentation)
+                .map(this::validateDomain)
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
 
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
@@ -122,7 +121,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         // create the remaining domains.
         for (OrganizationDomainModel model : modelMap.values()) {
             OrganizationDomainEntity domainEntity = new OrganizationDomainEntity();
-            domainEntity.setName(model.getName().toLowerCase());
+            domainEntity.setName(model.getName());
             domainEntity.setVerified(model.getVerified());
             domainEntity.setOrganization(this.entity);
             this.entity.addDomain(domainEntity);
@@ -160,23 +159,24 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     /**
-     * Validates the domain representation. Specifically, the method first checks if the specified domain is valid,
+     * Validates the domain. Specifically, the method first checks if the specified domain is valid,
      * and then checks if the domain is not already linked to a different organization.
      *
      * @param domainModel the {@link OrganizationDomainModel} representing the domain being added.
      * @throws {@link ModelValidationException} if the domain is invalid or is already linked to a different organization.
      */
-    private void validateDomainRepresentation(OrganizationDomainModel domainModel) {
+    private OrganizationDomainModel validateDomain(OrganizationDomainModel domainModel) {
         String domainName = domainModel.getName();
 
         // we rely on the same validation util used by the EmailValidator to ensure the domain part is consistently validated.
-        if(domainName == null || domainName.isEmpty() || !EmailValidationUtil.isValidEmail("nouser@" + domainName)) {
+        if (StringUtil.isBlank(domainName) || !EmailValidationUtil.isValidEmail("nouser@" + domainName)) {
             throw new ModelValidationException("The specified domain is invalid: " + domainName);
         }
         OrganizationModel orgModel = provider.getByDomainName(domainName);
         if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
             throw new ModelValidationException("Domain " + domainName + " is already linked to another organization");
         }
+        return domainModel;
     }
 
     private GroupModel getGroup() {

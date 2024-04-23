@@ -31,9 +31,6 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
 @Table(name="ORG")
 @Entity
@@ -60,8 +57,6 @@ public class OrganizationEntity {
     private String idpAlias;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
-    @Fetch(FetchMode.SELECT)
-    @BatchSize(size = 20)
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
 
     public String getId() {
