@@ -36,7 +36,6 @@
         <module>core-jakarta</module>
         <module>jetty</module>
         <module>undertow</module>
-        <module>tomcat</module>
         <module>wildfly</module>
         <module>servlet-filter</module>
         <module>jakarta-servlet-filter</module>

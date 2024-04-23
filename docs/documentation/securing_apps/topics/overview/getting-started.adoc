@@ -51,7 +51,6 @@ endif::[]
 * <<_saml_jboss_adapter,JBoss EAP>>
 ifeval::[{project_community}==true]
 * <<_saml_jboss_adapter,WildFly>>
-* <<_saml-tomcat-adapter,Tomcat>>
 endif::[]
 ifeval::[{project_community}==true]
 * <<_java-servlet-filter-adapter,Servlet filter>>

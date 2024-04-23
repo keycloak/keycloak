@@ -37,7 +37,6 @@
         <app.server.tomcat.unpacked.folder.name>apache-tomcat-${tomcat8.version}</app.server.tomcat.unpacked.folder.name>
         
         <app.server.oidc.adapter.artifactId>keycloak-tomcat-adapter-dist</app.server.oidc.adapter.artifactId>
-        <app.server.saml.adapter.artifactId>keycloak-saml-tomcat-adapter-dist</app.server.saml.adapter.artifactId>
         <skip.dependencies.for.tomcat8>false</skip.dependencies.for.tomcat8>
     </properties>
 
