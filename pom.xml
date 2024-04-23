@@ -1154,11 +1154,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1267,11 +1262,6 @@
                 <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -1474,12 +1464,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-feature-pack</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
