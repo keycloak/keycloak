@@ -216,9 +216,6 @@
         <tomcat8.version>8.5.76</tomcat8.version>
         <tomcat9.version>9.0.16</tomcat9.version>
 
-        <!-- Spring Boot versions, used for tests -->
-        <spring-boot27.version>2.7.14</spring-boot27.version>
-
         <!-- webauthn support -->
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
@@ -1100,16 +1097,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-js-adapter-jar</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-spring-boot-adapter-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-spring-boot-2-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

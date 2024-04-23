@@ -143,12 +143,6 @@
             </modules>
         </profile>
         <profile>
-            <id>springboot</id>
-            <modules>
-                <module>springboot-tests</module>
-            </modules>
-        </profile>
-        <profile>
             <id>webauthn</id>
             <modules>
                 <module>webauthn</module>
