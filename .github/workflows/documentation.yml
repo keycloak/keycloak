@@ -6,7 +6,31 @@ on:
       - main
       - dependabot/**
       - quarkus-next
+    paths-ignore:
+      - .idea/**
+      - .mvn/**
+      - .gitattributes
+      - .gitignore
+      - ADOPTERS.md
+      - CONTRIBUTING.md
+      - GOVERNANCE.md
+      - LICENSE.txt
+      - MAINTAINERS.md
+      - PR-CHECKLIST.md
+      - README.md
   pull_request:
+    paths-ignore:
+      - .idea/**
+      - .mvn/**
+      - .gitattributes
+      - .gitignore
+      - ADOPTERS.md
+      - CONTRIBUTING.md
+      - GOVERNANCE.md
+      - LICENSE.txt
+      - MAINTAINERS.md
+      - PR-CHECKLIST.md
+      - README.md
   workflow_dispatch:
 
 env:
@@ -38,7 +62,7 @@ jobs:
 
   build:
     name: Build
-    if: ${{ needs.conditional.outputs.documentation == 'true' }}
+    if: ${{ needs.conditional.outputs.documentation == 'true' && github.repository == 'keycloak/keycloak'}}
     runs-on: ubuntu-latest
     needs: conditional
     steps:

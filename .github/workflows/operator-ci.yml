@@ -5,7 +5,31 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+    paths-ignore:
+      - .idea/**
+      - .mvn/**
+      - .gitattributes
+      - .gitignore
+      - ADOPTERS.md
+      - CONTRIBUTING.md
+      - GOVERNANCE.md
+      - LICENSE.txt
+      - MAINTAINERS.md
+      - PR-CHECKLIST.md
+      - README.md
   pull_request:
+    paths-ignore:
+      - .idea/**
+      - .mvn/**
+      - .gitattributes
+      - .gitignore
+      - ADOPTERS.md
+      - CONTRIBUTING.md
+      - GOVERNANCE.md
+      - LICENSE.txt
+      - MAINTAINERS.md
+      - PR-CHECKLIST.md
+      - README.md
   workflow_dispatch:
 
 env:

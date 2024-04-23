@@ -5,7 +5,31 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+    paths-ignore:
+      - .idea/**
+      - .mvn/**
+      - .gitattributes
+      - .gitignore
+      - ADOPTERS.md
+      - CONTRIBUTING.md
+      - GOVERNANCE.md
+      - LICENSE.txt
+      - MAINTAINERS.md
+      - PR-CHECKLIST.md
+      - README.md
   pull_request:
+    paths-ignore:
+      - .idea/**
+      - .mvn/**
+      - .gitattributes
+      - .gitignore
+      - ADOPTERS.md
+      - CONTRIBUTING.md
+      - GOVERNANCE.md
+      - LICENSE.txt
+      - MAINTAINERS.md
+      - PR-CHECKLIST.md
+      - README.md
   workflow_dispatch:
 
 env:
@@ -119,6 +143,7 @@ jobs:
         uses: ./.github/actions/upload-heapdumps
 
       - uses: ./.github/actions/upload-flaky-tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
@@ -160,6 +185,7 @@ jobs:
         uses: ./.github/actions/upload-heapdumps
 
       - uses: ./.github/actions/upload-flaky-tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
@@ -292,6 +318,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -332,6 +359,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -454,6 +482,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -508,6 +537,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -543,6 +573,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -628,6 +659,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -667,6 +699,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -711,6 +744,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -794,6 +828,7 @@ jobs:
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{github.repository == 'keycloak/keycloak'}}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
