@@ -70,13 +70,21 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
     }
 
     private void validateEmailDomain(String email, String inputHint, ValidationContext context, OrganizationModel organization) {
-        if (UserModel.USERNAME.equals(inputHint) || UserModel.EMAIL.equals(inputHint)) {
+        if (UserModel.EMAIL.equals(inputHint)) {
             if (StringUtil.isBlank(email)) {
                 context.addError(new ValidationError(ID, inputHint, "Email not set"));
                 return;
             }
 
             if (!emailValidator().validate(email, inputHint, context).isValid()) {
+                return;
+            }
+
+            UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
+            AttributeContext attributeContext = upContext.getAttributeContext();
+            UserModel user = attributeContext.getUser();
+
+            if (!organization.isManaged(user)) {
                 return;
             }
 

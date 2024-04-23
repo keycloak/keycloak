@@ -17,40 +17,31 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.List;
 
-import org.jboss.arquillian.graphene.page.Page;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganizationTest {
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected IdpConfirmLinkPage idpConfirmLinkPage;
-
-    @Page
-    protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Test
     public void testBrokerRegistration() {
@@ -78,39 +69,6 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         // check if the username is automatically filled
         Assert.assertEquals(bc.getUserEmail(), loginPage.getUsername());
-    }
-
-
-    @Test
-    public void testDefaultAuthenticationMechanismIfNotOrganizationMember() {
-        testRealm().organizations().get(createOrganization().getId());
-        oauth.clientId("broker-app");
-
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user@noorg.org");
-
-        // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-    }
-
-    @Test
-    public void testTryLoginWithUsernameNotAnEmail() {
-        testRealm().organizations().get(createOrganization().getId());
-        oauth.clientId("broker-app");
-
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user");
-
-        // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -180,6 +138,55 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
         appPage.assertCurrent();
         assertIsMember(bc.getUserEmail(), organization);
+    }
+
+    @Test
+    public void testFailUpdateEmailWithDomainDifferentThanOrganization() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        // add the member for the first time
+        assertBrokerRegistration(organization);
+        UserRepresentation member = getUserRepresentation(bc.getUserEmail());
+
+        member.setEmail(KeycloakModelUtils.generateId() + "@user.org");
+
+        try {
+            // member has a hard link with the organization, and the email must match the domains set to the organization
+            testRealm().users().get(member.getId()).update(member);
+            fail("Should fail because email domain does not match any from organization");
+        } catch (BadRequestException expected) {
+            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals(UserModel.EMAIL, error.getField());
+            assertEquals("Email domain does not match any domain from the organization", error.getErrorMessage());
+        }
+
+        member.setEmail(member.getEmail().replace("@user.org", "@" + organizationName + ".org"));
+        testRealm().users().get(member.getId()).update(member);
+    }
+
+    @Test
+    public void testDelete() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        // add the member for the first time
+        assertBrokerRegistration(organization);
+        UserRepresentation member = getUserRepresentation(bc.getUserEmail());
+        member.setEmail(KeycloakModelUtils.generateId() + "@user.org");
+        OrganizationMemberResource organizationMember = organization.members().member(member.getId());
+
+        organizationMember.delete().close();
+
+        try {
+            testRealm().users().get(member.getId()).toRepresentation();
+            fail("it is managed member should be removed from the realm");
+        } catch (NotFoundException expected) {
+        }
+
+        try {
+            organizationMember.toRepresentation();
+            fail("it is managed member should be removed from the realm");
+        } catch (NotFoundException expected) {
+        }
     }
 
     private void assertBrokerRegistration(OrganizationResource organization) {

@@ -32,6 +32,7 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
@@ -134,6 +135,11 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public boolean isManaged(UserModel user) {
+        return provider.isManagedMember(this, user);
+    }
+
+    @Override
     public OrganizationEntity getEntity() {
         return entity;
     }
@@ -152,6 +158,20 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 .append(",")
                 .append("groupId=")
                 .append(getGroupId()).toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OrganizationModel)) return false;
+
+        OrganizationModel that = (OrganizationModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 
     private OrganizationDomainModel toModel(OrganizationDomainEntity entity) {

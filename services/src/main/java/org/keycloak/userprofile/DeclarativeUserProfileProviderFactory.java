@@ -42,6 +42,7 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -56,6 +57,7 @@ import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueVali
 import org.keycloak.userprofile.validator.DuplicateEmailValidator;
 import org.keycloak.userprofile.validator.DuplicateUsernameValidator;
 import org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator;
+import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
@@ -348,10 +350,20 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
             for (AttributeMetadata attribute : metadata.getAttributes()) {
                 String name = attribute.getName();
 
-                if (UserModel.EMAIL.equals(name) || UserModel.USERNAME.equals(name)) {
+                if (UserModel.EMAIL.equals(name)) {
                     attribute.addValidators(List.of(new AttributeValidatorMetadata(OrganizationMemberValidator.ID)));
                 }
             }
+
+            metadata.addAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE, -1,
+                            new AttributeValidatorMetadata(OrganizationMemberValidator.ID),
+                            new AttributeValidatorMetadata(ImmutableAttributeValidator.ID))
+                    .addWriteCondition(context -> {
+                        // the attribute can only be managed within the scope of the Organization API
+                        // we assume, for now, that if the organization is set as a session attribute, we are operating within the scope if the Organization API
+                        KeycloakSession session = context.getSession();
+                        return session.getAttribute(OrganizationModel.class.getName()) != null;
+                    });
         }
     }
 

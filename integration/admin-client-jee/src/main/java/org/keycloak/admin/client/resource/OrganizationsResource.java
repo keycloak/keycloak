@@ -67,4 +67,14 @@ public interface OrganizationsResource {
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max
     );
+
+    /**
+     * Return all organizations that match the specified filter.
+     *
+     * @param search a {@code String} representing either an organization name or domain.
+     * @return a list containing the matched organizations.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> search(@QueryParam("search") String search);
 }

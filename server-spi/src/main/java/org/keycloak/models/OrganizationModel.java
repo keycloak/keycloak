@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 public interface OrganizationModel {
 
-    String USER_ORGANIZATION_ATTRIBUTE = "kc.org";
+    String ORGANIZATION_ATTRIBUTE = "kc.org";
 
     String getId();
 
@@ -41,4 +41,6 @@ public interface OrganizationModel {
     void setDomains(Set<OrganizationDomainModel> domains);
 
     IdentityProviderModel getIdentityProvider();
+
+    boolean isManaged(UserModel user);
 }

@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -34,6 +35,10 @@ import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
@@ -76,6 +81,18 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             return name + "-identity-provider";
         }
     };
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected IdpConfirmLinkPage idpConfirmLinkPage;
+
+    @Page
+    protected UpdateAccountInformationPage updateAccountInformationPage;
+
+    @Page
+    protected AppPage appPage;
 
     protected KcOidcBrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
 
@@ -141,13 +158,20 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         expected.setEnabled(true);
         Users.setPasswordFor(expected, memberPassword);
 
-        try (Response response = organization.members().addMember(expected)) {
+        try (Response response = testRealm().users().create(expected)) {
+            expected.setId(ApiUtil.getCreatedId(response));
+        }
+
+        getCleanup().addCleanup(() -> testRealm().users().get(expected.getId()).remove());
+
+        String userId = expected.getId();
+
+        try (Response response = organization.members().addMember(userId)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            String id = ApiUtil.getCreatedId(response);
-            UserRepresentation actual = organization.members().member(id).toRepresentation();
+            UserRepresentation actual = organization.members().member(userId).toRepresentation();
 
             assertNotNull(expected);
-            assertEquals(id, actual.getId());
+            assertEquals(userId, actual.getId());
             assertEquals(expected.getUsername(), actual.getUsername());
             assertEquals(expected.getEmail(), actual.getEmail());
 
