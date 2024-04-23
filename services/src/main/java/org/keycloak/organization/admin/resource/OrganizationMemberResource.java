@@ -80,6 +80,7 @@ public class OrganizationMemberResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addMember(UserRepresentation rep) {
+        auth.realm().requireManageRealm();
         if (rep == null || !Objects.equals(rep.getUsername(), rep.getEmail())) {
             throw ErrorResponse.error("To add a member to the organization it is expected the username and the email is the same.", Status.BAD_REQUEST);
         }
@@ -109,6 +110,7 @@ public class OrganizationMemberResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<UserRepresentation> getMembers() {
+        auth.realm().requireManageRealm();
         return provider.getMembersStream(organization).map(this::toRepresentation);
     }
 
@@ -116,6 +118,7 @@ public class OrganizationMemberResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public UserRepresentation get(@PathParam("id") String id) {
+        auth.realm().requireManageRealm();
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
@@ -126,6 +129,7 @@ public class OrganizationMemberResource {
     @Path("{id}")
     @DELETE
     public Response delete(@PathParam("id") String id) {
+        auth.realm().requireManageRealm();
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
@@ -139,6 +143,7 @@ public class OrganizationMemberResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("id") String id, UserRepresentation user) {
+        auth.realm().requireManageRealm();
         return new UserResource(session, getMember(id), auth, adminEvent).updateUser(user);
     }
 
@@ -146,6 +151,7 @@ public class OrganizationMemberResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public OrganizationRepresentation getOrganization(@PathParam("id") String id) {
+        auth.realm().requireManageRealm();
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }

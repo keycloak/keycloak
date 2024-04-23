@@ -26,15 +26,15 @@ import java.io.Serializable;
  */
 public class OrganizationDomainModel implements Serializable {
 
-    private String name;
-    private boolean verified;
+    private final String name;
+    private final boolean verified;
 
     public OrganizationDomainModel(String name) {
         this(name, false);
     }
 
     public OrganizationDomainModel(String name, boolean verified) {
-        this.name = name;
+        this.name = name == null ? null : name.trim().toLowerCase();
         this.verified = verified;
     }
 
@@ -42,16 +42,8 @@ public class OrganizationDomainModel implements Serializable {
         return this.name;
     }
 
-    public void setName(String name) {
-        this.name = name != null ? name.trim() : null;
-    }
-
     public boolean getVerified() {
         return this.verified;
-    }
-
-    public void setVerified(boolean verified) {
-        this.verified = verified;
     }
 
     @Override

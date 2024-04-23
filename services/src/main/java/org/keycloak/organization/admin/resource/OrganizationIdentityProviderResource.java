@@ -72,6 +72,8 @@ public class OrganizationIdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addIdentityProvider(IdentityProviderRepresentation providerRep) {
 
+        auth.realm().requireManageRealm();
+
         IdentityProviderModel identityProvider = organization.getIdentityProvider();
         if (identityProvider != null) {
             throw ErrorResponse.error("Organization already assigned with an identity provider.", Status.BAD_REQUEST);
@@ -103,11 +105,13 @@ public class OrganizationIdentityProviderResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderRepresentation getIdentityProvider() {
+        auth.realm().requireManageRealm();
         return Optional.ofNullable(organization.getIdentityProvider()).map(this::toRepresentation).orElse(null);
     }
 
     @DELETE
     public Response delete() {
+        auth.realm().requireManageRealm();
         IdentityProviderModel identityProvider = getIdentityProviderModel();
 
         Response response = getIdentityProviderResource(identityProvider).delete();
@@ -132,6 +136,7 @@ public class OrganizationIdentityProviderResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(IdentityProviderRepresentation rep) {
+        auth.realm().requireManageRealm();
         IdentityProviderModel identityProvider = getIdentityProviderModel();
 
         if (!rep.getAlias().equals(identityProvider.getAlias()) || (rep.getInternalId() != null && !Objects.equals(rep.getInternalId(), identityProvider.getInternalId()))) {

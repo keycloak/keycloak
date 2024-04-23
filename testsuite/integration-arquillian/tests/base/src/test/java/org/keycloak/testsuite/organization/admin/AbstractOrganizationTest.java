@@ -99,15 +99,9 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected OrganizationRepresentation createOrganization(String name, String orgDomain) {
-        OrganizationRepresentation org = new OrganizationRepresentation();
-
-        org.setName(name);
+        OrganizationRepresentation org = createRepresentation(name, orgDomain);
 
         String id;
-
-        OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
-        domainRep.setName(orgDomain);
-        org.addDomain(domainRep);
 
         try (Response response = testRealm().organizations().create(org)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
@@ -119,6 +113,18 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         org = testRealm().organizations().get(id).toRepresentation();
 
         getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
+
+        return org;
+    }
+
+    protected OrganizationRepresentation createRepresentation(String name, String orgDomain) {
+        OrganizationRepresentation org = new OrganizationRepresentation();
+
+        org.setName(name);
+
+        OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
+        domainRep.setName(orgDomain);
+        org.addDomain(domainRep);
 
         return org;
     }
