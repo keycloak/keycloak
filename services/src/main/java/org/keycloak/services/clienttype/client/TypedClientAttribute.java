@@ -6,7 +6,6 @@ import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.util.ObjectUtil;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -15,7 +14,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 enum TypedClientAttribute implements TypedClientAttributeInterface {
-    // Client Type attributes shared by client model and representation.
+    // Top Level client attributes
     STANDARD_FLOW_ENABLED("standardFlowEnabled", false),
     BEARER_ONLY("bearerOnly", false),
     CONSENT_REQUIRED("consentRequired", false),
@@ -25,7 +24,9 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     IMPLICIT_FLOW_ENABLED("implicitFlowEnabled", false),
     PROTOCOL("protocol", null),
     PUBLIC_CLIENT("publicClient", false),
-    REDIRECT_URIS("redirectUris", Set.of());
+    REDIRECT_URIS("redirectUris", Set.of()),
+    SERVICE_ACCOUNTS_ENABLED("serviceAccountsEnabled", false),
+    ;
 
     private final String propertyName;
     private final Object nonApplicableValue;

@@ -71,7 +71,6 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
@@ -334,82 +333,7 @@ public class RepresentationToModel {
             client = clientType.augment(client);
         }
 
-        return updateClientProperties(realm, client, resourceRep, mappedFlows);
-    }
-
-    public static ClientModel updateClientProperties(RealmModel realm, ClientModel client, ClientRepresentation resourceRep, Map<String, String> mappedFlows) {
-        List<Supplier<ClientTypeException>> clientAttrMapper = new ArrayList<Supplier<ClientTypeException>>() {{
-            add(() -> updateProperty(client::setName, resourceRep::getName));
-            add(() -> updateProperty(client::setDescription, resourceRep::getDescription));
-            add(() -> updateProperty(client::setType, resourceRep::getType));
-            add(() -> updateProperty(client::setEnabled, resourceRep::isEnabled));
-            add(() -> updateProperty(client::setAlwaysDisplayInConsole, resourceRep::isAlwaysDisplayInConsole));
-            add(() -> updateProperty(client::setManagementUrl, resourceRep::getAdminUrl));
-            add(() -> updateProperty(client::setSurrogateAuthRequired, resourceRep::isSurrogateAuthRequired));
-            add(() -> updateProperty(client::setRootUrl, resourceRep::getRootUrl));
-            add(() -> updateProperty(client::setBaseUrl, resourceRep::getBaseUrl));
-            add(() -> updateProperty(client::setBearerOnly, resourceRep::isBearerOnly));
-            add(() -> updateProperty(client::setConsentRequired, resourceRep::isConsentRequired));
-            add(() -> updateProperty(client::setStandardFlowEnabled, resourceRep::isStandardFlowEnabled));
-            add(() -> updateProperty(client::setImplicitFlowEnabled, resourceRep::isImplicitFlowEnabled));
-            add(() -> updateProperty(client::setDirectAccessGrantsEnabled, resourceRep::isDirectAccessGrantsEnabled));
-            add(() -> updateProperty(client::setServiceAccountsEnabled, resourceRep::isServiceAccountsEnabled));
-            add(() -> updateProperty(client::setPublicClient, resourceRep::isPublicClient));
-            add(() -> updateProperty(client::setFrontchannelLogout, resourceRep::isFrontchannelLogout));
-            add(() -> updateProperty(client::setNotBefore, resourceRep::getNotBefore));
-            // Fields with defaults if not initially provided
-            add(() -> updatePropertyWithDefault(client::setProtocol, resourceRep::getProtocol, client::getProtocol, () -> OIDC));
-            add(() -> updatePropertyWithDefault(client::setNodeReRegistrationTimeout, resourceRep::getNodeReRegistrationTimeout, client::getNodeReRegistrationTimeout, () -> -1));
-            add(() -> updatePropertyWithDefault(client::setClientAuthenticatorType, resourceRep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
-            // Client Secret
-            add(() -> updatePropertyWithDefault(client::setSecret, resourceRep::getSecret, client::getSecret, () -> {
-                if (client.isPublicClient() || client.isBearerOnly()) {
-                    return null;
-                }
-                // adding secret if the client isn't public nor bearer only
-                String currentSecret = client.getSecret();
-                String newSecret = resourceRep.getSecret();
-
-                if (newSecret == null && currentSecret == null) {
-                    return KeycloakModelUtils.generateSecret(client);
-                } else if (newSecret != null) {
-                    resourceRep.setSecret(newSecret);
-                    return newSecret;
-                }
-                return currentSecret;
-            }));
-            // Redirect uris / Web origins
-            add(() -> updateProperty(client::setRedirectUris, () -> resourceRep.getRedirectUris().stream().collect(Collectors.toSet())));
-            add(() -> updatePropertyWithDefault(uris -> uris.forEach(client::addWebOrigin), resourceRep::getWebOrigins, client::getWebOrigins, () -> {
-                if (!client.getWebOrigins().isEmpty()) {
-                    return client.getWebOrigins();
-                }
-                return Optional.ofNullable(resourceRep.getWebOrigins()).orElseGet(() -> resourceRep.getWebOrigins()
-                        .stream()
-                        .filter(uri -> uri.startsWith("http"))
-                        .map(UriUtils::getOrigin)
-                        .distinct()
-                        .collect(Collectors.toList()));
-            }));
-        }};
-
-        if (resourceRep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : removeEmptyString(resourceRep.getAttributes()).entrySet()) {
-                clientAttrMapper.add(() -> updateProperty(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
-            }
-        }
-
-        List<ClientTypeException> validationExceptions = clientAttrMapper
-                .stream()
-                .map(Supplier::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        if (validationExceptions.size() > 0) {
-            throw new ClientTypeException(
-                    "Cannot change property of client as it is not allowed by the specified client type.",
-                    validationExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
-        }
+        updateClientProperties(client, resourceRep);
 
         // Backwards compatibility only
         if (resourceRep.isDirectGrantsOnly() != null) {
@@ -420,7 +344,7 @@ public class RepresentationToModel {
 
         if ("saml".equals(resourceRep.getProtocol())
                 && (resourceRep.getAttributes() == null
-                    || !resourceRep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
+                || !resourceRep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
             client.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(resourceRep.getClientId()));
         }
 
@@ -438,29 +362,6 @@ public class RepresentationToModel {
                         throw new RuntimeException("Unable to resolve auth flow binding override for: " + entry.getKey());
                     }
                     client.setAuthenticationFlowBindingOverride(entry.getKey(), flowId);
-                }
-            }
-        }
-
-        if (resourceRep.getWebOrigins() != null) {
-            for (String webOrigin : resourceRep.getWebOrigins()) {
-                logger.debugv("Client: {0} webOrigin: {1}", resourceRep.getClientId(), webOrigin);
-                client.addWebOrigin(webOrigin);
-            }
-        } else {
-            // add origins from redirect uris
-            if (resourceRep.getRedirectUris() != null) {
-                Set<String> origins = new HashSet<String>();
-                for (String redirectUri : resourceRep.getRedirectUris()) {
-                    logger.debugv("add redirect-uri to origin: {0}", redirectUri);
-                    if (redirectUri.startsWith("http")) {
-                        String origin = UriUtils.getOrigin(redirectUri);
-                        logger.debugv("adding default client origin: {0}", origin);
-                        origins.add(origin);
-                    }
-                }
-                if (origins.size() > 0) {
-                    client.setWebOrigins(origins);
                 }
             }
         }
@@ -489,12 +390,6 @@ public class RepresentationToModel {
         }
 
         updateClientScopes(resourceRep, client);
-
-        if (resourceRep.isFullScopeAllowed() != null) {
-            client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
-        } else {
-            client.setFullScopeAllowed(!client.isConsentRequired());
-        }
 
         client.updateClient();
         resourceRep.setId(client.getId());
@@ -527,42 +422,10 @@ public class RepresentationToModel {
 
         String newClientId = rep.getClientId();
         String previousClientId = resource.getClientId();
-        if (newClientId != null) resource.setClientId(newClientId);
-        if (rep.getName() != null) resource.setName(rep.getName());
-        if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
-        if (rep.getType() != null) resource.setType(rep.getType());
-        if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
-        if (rep.isAlwaysDisplayInConsole() != null) resource.setAlwaysDisplayInConsole(rep.isAlwaysDisplayInConsole());
-        if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
-        if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
-        if (rep.isStandardFlowEnabled() != null) resource.setStandardFlowEnabled(rep.isStandardFlowEnabled());
-        if (rep.isImplicitFlowEnabled() != null) resource.setImplicitFlowEnabled(rep.isImplicitFlowEnabled());
-        if (rep.isDirectAccessGrantsEnabled() != null)
-            resource.setDirectAccessGrantsEnabled(rep.isDirectAccessGrantsEnabled());
-        if (rep.isServiceAccountsEnabled() != null) resource.setServiceAccountsEnabled(rep.isServiceAccountsEnabled());
-        if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
-        if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
-        if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());
-        if (rep.getRootUrl() != null) resource.setRootUrl(rep.getRootUrl());
-        if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
-        if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
-        if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
-        if (rep.getNodeReRegistrationTimeout() != null)
-            resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
-        if (rep.getClientAuthenticatorType() != null)
-            resource.setClientAuthenticatorType(rep.getClientAuthenticatorType());
 
-        if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
-                resource.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
-                resource.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
+        if (newClientId != null) resource.setClientId(newClientId);
+
+        updateClientProperties(resource, rep);
 
         if ("saml".equals(rep.getProtocol())
                 && (rep.getAttributes() == null
@@ -584,36 +447,9 @@ public class RepresentationToModel {
             }
         }
 
-        if (rep.getNotBefore() != null) {
-            resource.setNotBefore(rep.getNotBefore());
-        }
-
-        List<String> redirectUris = rep.getRedirectUris();
-        if (redirectUris != null) {
-            resource.setRedirectUris(new HashSet<>(redirectUris));
-        }
-
-        List<String> webOrigins = rep.getWebOrigins();
-        if (webOrigins != null) {
-            resource.setWebOrigins(new HashSet<>(webOrigins));
-        }
-
         if (rep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : rep.getRegisteredNodes().entrySet()) {
                 resource.registerNode(entry.getKey(), entry.getValue());
-            }
-        }
-
-        if (resource.isPublicClient() || resource.isBearerOnly()) {
-            resource.setSecret(null);
-        } else {
-            String currentSecret = resource.getSecret();
-            String newSecret = rep.getSecret();
-
-            if (newSecret == null && currentSecret == null) {
-                KeycloakModelUtils.generateSecret(resource);
-            } else if (newSecret != null) {
-                resource.setSecret(newSecret);
             }
         }
 
@@ -644,6 +480,86 @@ public class RepresentationToModel {
             };
             session.getKeycloakSessionFactory().publish(event);
         }
+    }
+
+    private static ClientModel updateClientProperties(ClientModel client, ClientRepresentation rep) {
+        List<Supplier<ClientTypeException>> clientAttrUpdates = new ArrayList<Supplier<ClientTypeException>>() {{
+            add(updateProperty(client::setName, rep::getName));
+            add(updateProperty(client::setDescription, rep::getDescription));
+            add(updateProperty(client::setType, rep::getType));
+            add(updateProperty(client::setEnabled, rep::isEnabled));
+            add(updateProperty(client::setAlwaysDisplayInConsole, rep::isAlwaysDisplayInConsole));
+            add(updateProperty(client::setManagementUrl, rep::getAdminUrl));
+            add(updateProperty(client::setSurrogateAuthRequired, rep::isSurrogateAuthRequired));
+            add(updateProperty(client::setRootUrl, rep::getRootUrl));
+            add(updateProperty(client::setBaseUrl, rep::getBaseUrl));
+            add(updateProperty(client::setBearerOnly, rep::isBearerOnly));
+            add(updateProperty(client::setConsentRequired, rep::isConsentRequired));
+            add(updateProperty(client::setStandardFlowEnabled, rep::isStandardFlowEnabled));
+            add(updateProperty(client::setImplicitFlowEnabled, rep::isImplicitFlowEnabled));
+            add(updateProperty(client::setDirectAccessGrantsEnabled, rep::isDirectAccessGrantsEnabled));
+            add(updateProperty(client::setServiceAccountsEnabled, rep::isServiceAccountsEnabled));
+            add(updateProperty(client::setPublicClient, rep::isPublicClient));
+            add(updateProperty(client::setFrontchannelLogout, rep::isFrontchannelLogout));
+            add(updateProperty(client::setNotBefore, rep::getNotBefore));
+            // Fields with defaults if not initially provided
+            add(updatePropertyWithDefault(client::setProtocol, rep::getProtocol, client::getProtocol, () -> OIDC));
+            add(updatePropertyWithDefault(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, client::getNodeReRegistrationTimeout, () -> -1));
+            add(updatePropertyWithDefault(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
+            add(updatePropertyWithDefault(client::setFullScopeAllowed, rep::isFullScopeAllowed, client::isFullScopeAllowed, () -> !client.isConsentRequired()));
+            // Client Secret
+            add(updatePropertyWithDefault(client::setSecret, rep::getSecret, client::getSecret, () -> {
+                if (client.isPublicClient() || client.isBearerOnly()) {
+                    return null;
+                }
+                // adding secret if the client isn't public nor bearer only
+                String currentSecret = client.getSecret();
+                String newSecret = rep.getSecret();
+
+                if (newSecret == null && currentSecret == null) {
+                    return KeycloakModelUtils.generateSecret(client);
+                } else if (newSecret != null) {
+                    rep.setSecret(newSecret);
+                    return newSecret;
+                }
+                return null;
+            }));
+            // Redirect uris / Web origins
+            add(updateProperty(client::setRedirectUris, () -> Optional.ofNullable(rep.getRedirectUris()).map(HashSet::new).orElse(null)));
+            add(updatePropertyWithDefault(uris -> uris.forEach(client::addWebOrigin), rep::getWebOrigins, client::getWebOrigins, () -> {
+                // add origins from redirect uris
+                if (rep.getRedirectUris() != null) {
+                    return rep.getRedirectUris()
+                            .stream()
+                            .filter(uri -> uri.startsWith("http"))
+                            .map(UriUtils::getOrigin)
+                            .distinct()
+                            .collect(Collectors.toList());
+                }
+                return null;
+            }));
+        }};
+
+        // Extended client attributes
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
+                clientAttrUpdates.add(updateProperty(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
+            }
+        }
+
+        List<ClientTypeException> validationExceptions = clientAttrUpdates
+                .stream()
+                .map(Supplier::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (validationExceptions.size() > 0) {
+            throw new ClientTypeException(
+                    "Cannot change property of client as it is not allowed by the specified client type.",
+                    validationExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
+        }
+
+        return client;
     }
 
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
@@ -701,28 +617,32 @@ public class RepresentationToModel {
     }
 
     /**
-     * Update property, if not null. Captures {@link ClientTypeException} if thrown by the setter.
+     * Create Supplier to update property, if not null.
+     * Captures {@link ClientTypeException} if thrown by the setter.
+     *
      * @param modelSetter setter to call.
      * @param representationGetter getter supplying the property update.
      * @return Whether a {@link ClientTypeException} was thrown.
      * @param <T> Type of property.
      */
-    private static <T> ClientTypeException updateProperty(Consumer<T> modelSetter, Supplier<T> representationGetter) {
-        T value = representationGetter.get();
-        if (value != null) {
-            try {
-                modelSetter.accept(value);
+    private static <T> Supplier<ClientTypeException> updateProperty(Consumer<T> modelSetter, Supplier<T> representationGetter) {
+        return () -> {
+            T value = representationGetter.get();
+            if (value != null) {
+                try {
+                    modelSetter.accept(value);
+                } catch (ClientTypeException cte) {
+                    return cte;
+                }
             }
-            catch (ClientTypeException cte) {
-                return cte;
-            }
-        }
-        return null;
+            return null;
+        };
     }
 
     /**
-     * Update property with values supplied by the methods provided. The first non-null value will be used to set the
-     * property.
+     * Supplier to update property with values supplied by the methods provided.
+     * The first non-null value will be used to set the property.
+     *
      * @param modelSetter The setter to call with the property updates.
      * @param representationGetter First getter of the representation to query for a non-null value.
      * @param modelGetter Second getter corresponding to the value current assigned for the property.
@@ -730,7 +650,7 @@ public class RepresentationToModel {
      * @return Whether a {@link ClientTypeException} was thrown.
      * @param <T> Type of property.
      */
-    private static <T> ClientTypeException updatePropertyWithDefault(Consumer<T> modelSetter, Supplier<T> representationGetter, Supplier<T> modelGetter, Supplier<T> defaultSupplier) {
+    private static <T> Supplier<ClientTypeException> updatePropertyWithDefault(Consumer<T> modelSetter, Supplier<T> representationGetter, Supplier<T> modelGetter, Supplier<T> defaultSupplier) {
         return updateProperty(modelSetter, () -> Stream.of(representationGetter, modelGetter, defaultSupplier)
                 .map(Supplier::get)
                 .map(Optional::ofNullable)

@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.client.clienttype.ClientType;
-import org.keycloak.representations.idm.ClientTypeRepresentation;
 
 /**
  * Delegates to client-type and underlying delegate
@@ -129,6 +128,18 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
         TypedClientAttribute.IMPLICIT_FLOW_ENABLED
                 .setClientAttribute(clientType, implicitFlowEnabled, super::setImplicitFlowEnabled, Boolean.class);
+    }
+
+    @Override
+    public boolean isServiceAccountsEnabled() {
+        return TypedClientAttribute.SERVICE_ACCOUNTS_ENABLED
+                .getClientAttribute(clientType, super::isServiceAccountsEnabled, Boolean.class);
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean flag) {
+        TypedClientAttribute.SERVICE_ACCOUNTS_ENABLED
+                .setClientAttribute(clientType, flag, super::setServiceAccountsEnabled, Boolean.class);
     }
 
     @Override
