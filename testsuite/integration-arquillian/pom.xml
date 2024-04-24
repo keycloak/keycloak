@@ -68,6 +68,7 @@
         <migration.73.version>4.8.3.Final</migration.73.version>
 
         <!-- By default, skip docker-maven-plugin when running base tests-->
+        <docker.infinispan.skip>true</docker.infinispan.skip>
         <docker.database.skip>true</docker.database.skip>
         <docker.database.postStart>/bin/true</docker.database.postStart>
         <docker.database.wait-for-log-regex>NEVER-MATCHING-REGEX</docker.database.wait-for-log-regex>

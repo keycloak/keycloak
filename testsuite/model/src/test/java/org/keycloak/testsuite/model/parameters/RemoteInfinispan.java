@@ -26,6 +26,7 @@ import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteStickySessionEncoderProviderFactory;
+import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.HotRodServerRule;
@@ -59,6 +60,7 @@ public class RemoteInfinispan extends KeycloakModelParameters {
             .add(RemoteInfinispanSingleUseObjectProviderFactory.class)
             .add(RemoteStickySessionEncoderProviderFactory.class)
             .add(RemoteLoadBalancerCheckProviderFactory.class)
+            .add(RemoteUserLoginFailureProviderFactory.class)
             .build();
 
     @Override

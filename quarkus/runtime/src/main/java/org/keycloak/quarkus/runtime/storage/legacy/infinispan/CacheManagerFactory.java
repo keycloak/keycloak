@@ -17,19 +17,10 @@
 
 package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import io.micrometer.core.instrument.Metrics;
 import org.infinispan.client.hotrod.DefaultTemplate;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
-import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -76,6 +67,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
@@ -134,6 +126,7 @@ public class CacheManagerFactory {
     }
 
     private RemoteCacheManager startRemoteCacheManager() {
+        logger.info("Starting Infinispan remote cache manager (Hot Rod Client)");
         String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
         Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
                 .map(Integer::parseInt)
@@ -182,6 +175,7 @@ public class CacheManagerFactory {
     }
 
     private DefaultCacheManager startEmbeddedCacheManager() {
+        logger.info("Starting Infinispan embedded cache manager");
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
         if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
@@ -225,13 +219,14 @@ public class CacheManagerFactory {
             builders.remove(WORK_CACHE_NAME);
             builders.remove(AUTHENTICATION_SESSIONS_CACHE_NAME);
             builders.remove(ACTION_TOKEN_CACHE);
+            builders.remove(LOGIN_FAILURE_CACHE_NAME);
         }
 
         return new DefaultCacheManager(builder, isStartEagerly());
     }
 
     private static boolean isRemoteTLSEnabled() {
-        return Boolean.parseBoolean(System.getProperty("kc.cache-remote-tls-enabled", Boolean.TRUE.toString()));
+        return Configuration.isTrue(CachingOptions.CACHE_REMOTE_TLS_ENABLED);
     }
 
     private static boolean isRemoteAuthenticationEnabled() {
@@ -240,7 +235,7 @@ public class CacheManagerFactory {
     }
 
     private static boolean createRemoteCaches() {
-        return Boolean.parseBoolean(System.getProperty("kc.cache-remote-create-caches", Boolean.FALSE.toString()));
+        return Boolean.getBoolean("kc.cache-remote-create-caches");
     }
 
     private static SSLContext createSSLContext() {

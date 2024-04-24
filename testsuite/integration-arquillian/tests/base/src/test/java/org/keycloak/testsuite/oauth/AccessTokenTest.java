@@ -28,6 +28,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
@@ -44,6 +46,7 @@ import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -69,6 +72,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -110,6 +114,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.*;
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
@@ -386,6 +391,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenCodeExpired() {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.REMOTE_CACHE);
         getTestingClient().testing().setTestingInfinispanTimeService();
         RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(1);
         oauth.doLogin("test-user@localhost", "password");

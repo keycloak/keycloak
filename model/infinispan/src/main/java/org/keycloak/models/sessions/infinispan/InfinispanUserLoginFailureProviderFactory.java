@@ -48,6 +48,7 @@ import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLo
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -55,7 +56,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory {
+public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<InfinispanUserLoginFailureProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserLoginFailureProviderFactory.class);
 
@@ -69,7 +70,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     SerializeExecutionsByKey<LoginFailureKey> serializer = new SerializeExecutionsByKey<>();
 
     @Override
-    public UserLoginFailureProvider create(KeycloakSession session) {
+    public InfinispanUserLoginFailureProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
 
@@ -90,14 +91,9 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
                 KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
                     checkRemoteCaches(session);
                     registerClusterListeners(session);
-                    // TODO [pruivo] to remove: workaround to run the testsuite.
-                    if (InfinispanUtils.isEmbeddedInfinispan()) {
-                        loadLoginFailuresFromRemoteCaches(session);
-                    }
+                    loadLoginFailuresFromRemoteCaches(session);
                 });
-            } else if (event instanceof UserModel.UserRemovedEvent) {
-                UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
-
+            } else if (event instanceof UserModel.UserRemovedEvent userRemovedEvent) {
                 UserLoginFailureProvider provider = userRemovedEvent.getKeycloakSession().getProvider(UserLoginFailureProvider.class, getId());
                 provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
             }
@@ -225,5 +221,10 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     @Override
     public int order() {
         return InfinispanUtils.PROVIDER_ORDER;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 }
