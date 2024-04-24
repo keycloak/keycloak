@@ -32,7 +32,6 @@
 
     <modules>
         <module>adapter-core</module>
-        <module>installed</module>
         <module>jaxrs-oauth-client</module>
         <module>js</module>
         <module>servlet-filter</module>

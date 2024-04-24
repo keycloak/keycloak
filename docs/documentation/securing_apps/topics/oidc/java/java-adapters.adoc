@@ -23,7 +23,6 @@ endif::[]
 
 ifeval::[{project_community}==true]
 include::jaas.adoc[]
-include::installed-adapter.adoc[]
 endif::[]
 
 ifeval::[{project_community}==true]

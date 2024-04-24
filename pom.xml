@@ -1046,11 +1046,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-installed-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jaxrs-oauth-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
