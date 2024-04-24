@@ -84,27 +84,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         s.sessions().getOfflineUserSessionsStream(realm, user1).forEach(us -> s.sessions().removeOfflineUserSession(realm, us));
         s.realms().removeRealm(realmId);
 
-        // explicitly clear session caches, as removeUserSessions() contains asynchronous processing or might be incomplete due to a previous failure
-        clearSessionCaches(s);
-
         super.cleanEnvironment(s);
-    }
-
-    private void clearSessionCaches(KeycloakSession s) {
-        InfinispanConnectionProvider provider = s.getProvider(InfinispanConnectionProvider.class);
-        if (provider != null) {
-            for (String cache : InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES) {
-                provider.getCache(cache).clear();
-            }
-        }
-
-        HotRodServerRule hotRodServer = getParameters(HotRodServerRule.class).findFirst().orElse(null);
-        if (hotRodServer != null) {
-           for (String cache : InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES) {
-               hotRodServer.getHotRodCacheManager().getCache(cache).clear();
-               hotRodServer.getHotRodCacheManager2().getCache(cache).clear();
-           }
-       }
     }
 
     protected static UserSessionModel createUserSession(KeycloakSession session, RealmModel realm, UserModel user, boolean offline) {

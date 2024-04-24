@@ -17,11 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import java.util.Objects;
+
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
-
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -118,17 +118,10 @@ public class LoginFailureEntity extends SessionEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof LoginFailureEntity that)) {
-            return false;
-        }
-
-        if (!Objects.equals(userId, that.userId)) {
-            return false;
-        }
-        return getRealmId() != null ? getRealmId().equals(that.getRealmId()) : that.getRealmId() == null;
+        if (this == o) return true;
+        if (!(o instanceof LoginFailureEntity that)) return false;
+        return Objects.equals(userId, that.userId) &&
+                Objects.equals(getRealmId(), that.getRealmId());
     }
 
     @Override

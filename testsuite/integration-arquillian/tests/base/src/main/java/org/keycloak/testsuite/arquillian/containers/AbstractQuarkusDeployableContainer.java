@@ -29,6 +29,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,6 +39,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -206,6 +210,16 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         addStorageOptions(storeProvider, commands);
         addFeaturesOption(commands);
+
+        var features = getDefaultFeatures();
+        if (features.contains("remote-cache") && features.contains("multi-site")) {
+            commands.add("--cache-remote-host=localhost");
+            commands.add("--cache-remote-username=keycloak");
+            commands.add("--cache-remote-password=Password1!");
+            commands.add("--cache-remote-tls-enabled=false");
+            commands.add("--spi-connections-infinispan-quarkus-site-name=test");
+            configuration.appendJavaOpts("-Dkc.cache-remote-create-caches=true");
+        }
 
         return commands;
     }
@@ -406,5 +420,13 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         commands.add("--log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE,org.keycloak.truststore:TRACE");
 
         configuration.appendJavaOpts("-Djava.security.properties=" + System.getProperty("auth.server.java.security.file"));
+    }
+
+    private Collection<String> getDefaultFeatures() {
+        var features = configuration.getDefaultFeatures();
+        if (features == null || features.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(features.split(",")).collect(Collectors.toSet());
     }
 }
