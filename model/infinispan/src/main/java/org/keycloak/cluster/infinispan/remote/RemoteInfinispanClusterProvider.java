@@ -1,15 +1,21 @@
-package org.keycloak.cluster.infinispan.remote;
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterListener;
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.cluster.ExecutionResult;
-import org.keycloak.cluster.infinispan.LockEntry;
-import org.keycloak.cluster.infinispan.TaskCallback;
-import org.keycloak.common.util.Retry;
-import org.keycloak.common.util.Time;
+package org.keycloak.cluster.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
@@ -22,27 +28,31 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import org.infinispan.client.hotrod.RemoteCache;
+import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterListener;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.cluster.ExecutionResult;
+import org.keycloak.cluster.infinispan.LockEntry;
+import org.keycloak.cluster.infinispan.TaskCallback;
+import org.keycloak.common.util.Retry;
+
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 import static org.keycloak.cluster.infinispan.remote.RemoteInfinispanClusterProviderFactory.putIfAbsentWithRetries;
 
 public class RemoteInfinispanClusterProvider implements ClusterProvider {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
-    private final int clusterStartupTime;
-    private final RemoteCache<String, LockEntry> cache;
-    private final RemoteInfinispanNotificationManager notificationManager;
-    private final Executor executor;
+    private final SharedData data;
 
-    public RemoteInfinispanClusterProvider(int clusterStartupTime, RemoteCache<String, LockEntry> cache, RemoteInfinispanNotificationManager notificationManager, Executor executor) {
-        this.clusterStartupTime = clusterStartupTime;
-        this.cache = Objects.requireNonNull(cache);
-        this.notificationManager = Objects.requireNonNull(notificationManager);
-        this.executor = Objects.requireNonNull(executor);
+    public RemoteInfinispanClusterProvider(SharedData data) {
+        this.data = Objects.requireNonNull(data);
     }
 
     @Override
     public int getClusterStartupTime() {
-        return clusterStartupTime;
+        return data.clusterStartupTime();
     }
 
     @Override
@@ -70,7 +80,7 @@ public class RemoteInfinispanClusterProvider implements ClusterProvider {
     @Override
     public Future<Boolean> executeIfNotExecutedAsync(String taskKey, int taskTimeoutInSeconds, Callable task) {
         TaskCallback newCallback = new TaskCallback();
-        TaskCallback callback = notificationManager.registerTaskCallback(TASK_KEY_PREFIX + taskKey, newCallback);
+        TaskCallback callback = data.notificationManager().registerTaskCallback(TASK_KEY_PREFIX + taskKey, newCallback);
 
         // We successfully submitted our task
         if (newCallback == callback) {
@@ -89,7 +99,7 @@ public class RemoteInfinispanClusterProvider implements ClusterProvider {
                 return callback.isSuccess();
             };
 
-            callback.setFuture(CompletableFuture.supplyAsync(wrappedTask, executor));
+            callback.setFuture(CompletableFuture.supplyAsync(wrappedTask, data.executor()));
         } else {
             logger.infof("Task already in progress on this cluster node. Will wait until it's finished");
         }
@@ -99,17 +109,17 @@ public class RemoteInfinispanClusterProvider implements ClusterProvider {
 
     @Override
     public void registerListener(String taskKey, ClusterListener task) {
-        notificationManager.registerListener(taskKey, task);
+        data.notificationManager().registerListener(taskKey, task);
     }
 
     @Override
     public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        notificationManager.notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
+        data.notificationManager().notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
     }
 
     @Override
     public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
-        notificationManager.notify(taskKey, events, ignoreSender, dcNotify);
+        data.notificationManager().notify(taskKey, events, ignoreSender, dcNotify);
     }
 
     @Override
@@ -120,7 +130,7 @@ public class RemoteInfinispanClusterProvider implements ClusterProvider {
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
         LockEntry myLock = createLockEntry();
 
-        LockEntry existingLock = putIfAbsentWithRetries(cache, cacheKey, myLock, taskTimeoutInSeconds);
+        LockEntry existingLock = putIfAbsentWithRetries(data.cache(), cacheKey, myLock, taskTimeoutInSeconds);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.node());
@@ -135,16 +145,23 @@ public class RemoteInfinispanClusterProvider implements ClusterProvider {
     }
 
     private LockEntry createLockEntry() {
-        return new LockEntry(notificationManager.getMyNodeName());
+        return new LockEntry(data.notificationManager().getMyNodeName());
     }
 
     private void removeFromCache(String cacheKey) {
         // More attempts to send the message (it may fail if some node fails in the meantime)
         Retry.executeWithBackoff((int iteration) -> {
-            cache.remove(cacheKey);
+            data.cache().remove(cacheKey);
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s removed from the cache", cacheKey);
             }
         }, 10, 10);
+    }
+
+    public interface SharedData {
+        int clusterStartupTime();
+        RemoteCache<String, LockEntry> cache();
+        RemoteInfinispanNotificationManager notificationManager();
+        Executor executor();
     }
 }

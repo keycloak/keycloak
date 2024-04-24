@@ -18,6 +18,8 @@
 package org.keycloak.models.sessions.infinispan;
 
 
+import java.util.function.Supplier;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -31,13 +33,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
-
-import java.util.function.Supplier;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory {
+public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 

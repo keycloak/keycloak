@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,10 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+
 import com.google.common.collect.ImmutableSet;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -26,14 +30,11 @@ import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteStickySessionEncoderProviderFactory;
+import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
-
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 /**
  * Copied from {@link CrossDCInfinispan}.
@@ -59,6 +60,7 @@ public class RemoteInfinispan extends KeycloakModelParameters {
             .add(RemoteInfinispanSingleUseObjectProviderFactory.class)
             .add(RemoteStickySessionEncoderProviderFactory.class)
             .add(RemoteLoadBalancerCheckProviderFactory.class)
+            .add(RemoteUserLoginFailureProviderFactory.class)
             .build();
 
     @Override

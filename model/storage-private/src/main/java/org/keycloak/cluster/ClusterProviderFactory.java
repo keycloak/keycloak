@@ -17,11 +17,10 @@
 
 package org.keycloak.cluster;
 
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface ClusterProviderFactory extends ProviderFactory<ClusterProvider>, EnvironmentDependentProviderFactory {
+public interface ClusterProviderFactory extends ProviderFactory<ClusterProvider> {
 }

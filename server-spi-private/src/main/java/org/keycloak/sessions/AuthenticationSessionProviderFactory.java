@@ -17,11 +17,10 @@
 
 package org.keycloak.sessions;
 
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface AuthenticationSessionProviderFactory<T extends AuthenticationSessionProvider> extends ProviderFactory<T>, EnvironmentDependentProviderFactory {
+public interface AuthenticationSessionProviderFactory<T extends AuthenticationSessionProvider> extends ProviderFactory<T> {
 }
