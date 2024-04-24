@@ -18,21 +18,29 @@
 package org.keycloak.testsuite.organization.admin;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -99,31 +107,77 @@ public class OrganizationTest extends AbstractOrganizationTest {
             expected.add(createOrganization("kc.org." + i));
         }
 
-        List<OrganizationRepresentation> existing = testRealm().organizations().getAll(null);
+        List<OrganizationRepresentation> existing = testRealm().organizations().getAll();
         assertFalse(existing.isEmpty());
         assertThat(expected, containsInAnyOrder(existing.toArray()));
     }
 
     @Test
-    public void testGetByDomain() {
-        // create some organizations with a domain already set.
-        for (int i = 0; i < 5; i++) {
-            createOrganization("test-org-" + i, "testorg" + i + ".org");
-        }
+    public void testSearch() {
+        // create some organizations with different names and domains.
+        createOrganization("acme", "acme.org", "acme.net");
+        createOrganization("Gotham-Bank", "gtbank.com", "gtbank.net");
+        createOrganization("wayne-industries", "wayneind.com", "wayneind-gotham.com");
+        createOrganization("TheWave", "the-wave.br");
 
-        // search for an organization with an existing domain.
-        List<OrganizationRepresentation> existing = testRealm().organizations().getAll("testorg2.org");
-        assertEquals(1, existing.size());
+        // test exact search by name (e.g. 'wayne-industries'), e-mail (e.g. 'gtbank.net'), and no result (e.g. 'nonexistent.com')
+        List<OrganizationRepresentation> existing = testRealm().organizations().search("wayne-industries", true, 0, 10);
+        assertThat(existing, hasSize(1));
         OrganizationRepresentation orgRep = existing.get(0);
-        assertEquals("test-org-2", orgRep.getName());
-        assertEquals(1, orgRep.getDomains().size());
-        OrganizationDomainRepresentation domainRep = orgRep.getDomains().iterator().next();
-        assertEquals("testorg2.org", domainRep.getName());
-        assertFalse(domainRep.isVerified());
+        assertThat(orgRep.getName(), is(equalTo("wayne-industries")));
+        assertThat(orgRep.getDomains(), hasSize(2));
+        assertThat(orgRep.getDomain("wayneind.com"), not(nullValue()));
+        assertThat(orgRep.getDomain("wayneind-gotham.com"), not(nullValue()));
 
-        // search for an organization with an non-existent domain.
-        existing = testRealm().organizations().getAll("someother.org");
-        assertEquals(0, existing.size());
+        existing = testRealm().organizations().search("gtbank.net", true, 0, 10);
+        assertThat(existing, hasSize(1));
+        orgRep = existing.get(0);
+        assertThat(orgRep.getName(), is(equalTo("Gotham-Bank")));
+        assertThat(orgRep.getDomains(), hasSize(2));
+        assertThat(orgRep.getDomain("gtbank.com"), not(nullValue()));
+        assertThat(orgRep.getDomain("gtbank.net"), not(nullValue()));
+
+        existing = testRealm().organizations().search("nonexistent.org", true, 0, 10);
+        assertThat(existing, is(empty()));
+
+        // partial search matching name (e.g. 'wa' matching 'wayne-industries', and 'TheWave')
+        existing = testRealm().organizations().search("wa", false, 0, 10);
+        assertThat(existing, hasSize(2));
+        List<String> orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
+        assertThat(orgNames, containsInAnyOrder("wayne-industries", "TheWave"));
+
+        // partial search matching domain (e.g. '.net', matching acme and gotham-bank)
+        existing = testRealm().organizations().search(".net", false, 0, 10);
+        assertThat(existing, hasSize(2));
+        orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
+        assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "acme"));
+
+        // partial search matching both a domain and org name, on two different orgs (e.g. 'gotham' matching 'Gotham-Bank' by name and 'wayne-industries' by domain)
+        existing = testRealm().organizations().search("gotham", false, 0, 10);
+        assertThat(existing, hasSize(2));
+        orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
+        assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "wayne-industries"));
+
+        // partial search matching no org (e.g. nonexistent)
+        existing = testRealm().organizations().search("nonexistent", false, 0, 10);
+        assertThat(existing, is(empty()));
+
+        // paginated search - create more orgs, try to fetch them all in paginated form.
+        for (int i = 0; i < 10; i++) {
+            createOrganization("ztest-" + i);
+        }
+        existing = testRealm().organizations().search("", false, 0, 10);
+        // first page should have 10 results.
+        assertThat(existing, hasSize(10));
+        orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
+        assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "TheWave", "acme", "wayne-industries", "ztest-0",
+                "ztest-1", "ztest-2", "ztest-3", "ztest-4", "ztest-5"));
+
+        existing = testRealm().organizations().search("", false, 10, 10);
+        // second page should have 4 results.
+        assertThat(existing, hasSize(4));
+        orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
+        assertThat(orgNames, containsInAnyOrder("ztest-6", "ztest-7", "ztest-8", "ztest-9"));
     }
 
     @Test
@@ -286,10 +340,10 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
             //search for org
             try {
-                realmUserResource.organizations().getAll("testOrg.org");
+                realmUserResource.organizations().search("testOrg.org", true, 0, 1);
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().getAll("testOrg.org"), Matchers.notNullValue());
+            assertThat(realmAdminResource.organizations().search("testOrg.org", true, 0, 1), Matchers.notNullValue());
 
             //get org
             try {

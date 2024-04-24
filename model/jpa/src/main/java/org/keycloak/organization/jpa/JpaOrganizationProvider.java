@@ -18,6 +18,7 @@
 package org.keycloak.organization.jpa;
 
 import static org.keycloak.models.OrganizationModel.USER_ORGANIZATION_ATTRIBUTE;
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 import java.util.Set;
@@ -150,12 +151,21 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public Stream<OrganizationModel> getAllStream() {
-        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByRealm", OrganizationEntity.class);
-
+    public Stream<OrganizationModel> getAllStream(String search, Boolean exact, Integer first, Integer max) {
+        TypedQuery<OrganizationEntity> query;
+        if (StringUtil.isBlank(search)) {
+            query = em.createNamedQuery("getByRealm", OrganizationEntity.class);
+        } else if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("getByNameOrDomain", OrganizationEntity.class);
+            query.setParameter("search", search);
+        } else {
+            query = em.createNamedQuery("getByNameOrDomainContained", OrganizationEntity.class);
+            query.setParameter("search", search.toLowerCase());
+        }
         query.setParameter("realmId", realm.getId());
 
-        return closing(query.getResultStream().map(entity -> new OrganizationAdapter(realm, entity, this)));
+        return closing(paginateQuery(query, first, max).getResultStream()
+                .map(entity -> new OrganizationAdapter(realm, entity, this)));
     }
 
     @Override
