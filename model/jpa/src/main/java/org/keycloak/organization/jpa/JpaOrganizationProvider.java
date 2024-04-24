@@ -23,7 +23,6 @@ import static org.keycloak.utils.StreamsUtil.closing;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,10 +72,15 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelValidationException("Name can not be null");
         }
 
-        GroupModel group = createOrganizationGroup(name);
-        OrganizationEntity entity = new OrganizationEntity();
+        if (getByName(name) != null) {
+            throw new ModelDuplicateException("A organization with the same name already exists.");
+        }
 
+        OrganizationEntity entity = new OrganizationEntity();
         entity.setId(KeycloakModelUtils.generateId());
+
+        GroupModel group = createOrganizationGroup(entity.getId());
+
         entity.setGroupId(group.getId());
         entity.setRealmId(realm.getId());
         entity.setName(name);
@@ -335,21 +339,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return entity;
     }
 
-    private GroupModel createOrganizationGroup(String name) {
-        throwExceptionIfObjectIsNull(name, "Name of the group");
+    private GroupModel createOrganizationGroup(String orgId) {
+        GroupModel group = groupProvider.createGroup(realm, null, orgId);
+        group.setSingleAttribute(ORGANIZATION_ATTRIBUTE, orgId);
 
-        String groupName = getCanonicalGroupName(name);
-        GroupModel group = groupProvider.getGroupByName(realm, null, name);
-
-        if (group != null) {
-            throw new ModelDuplicateException("A group with the same name already exist and it is bound to different organization");
-        }
-
-        return groupProvider.createGroup(realm, groupName);
-    }
-
-    private String getCanonicalGroupName(String name) {
-        return "kc.org." + name;
+        return group;
     }
 
     private GroupModel getOrganizationGroup(OrganizationModel organization) {
@@ -368,6 +362,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     private void throwExceptionIfObjectIsNull(Object object, String objectName) {
         if (object == null) {
             throw new ModelException(String.format("%s cannot be null", objectName));
+        }
+    }
+
+    private OrganizationEntity getByName(String name) {
+        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByOrgName", OrganizationEntity.class);
+
+        query.setParameter("name", name);
+        query.setParameter("realmId", realm.getId());
+
+        try {
+            return query.getSingleResult();
+        } catch (NoResultException nre) {
+            return null;
         }
     }
 }

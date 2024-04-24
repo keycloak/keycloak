@@ -128,6 +128,7 @@ import java.util.stream.Stream;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
+import static org.keycloak.utils.OrganizationUtils.checkForOrgRelatedGroupModel;
 
 /**
  * Base resource for managing users
@@ -1017,6 +1018,8 @@ public class UserResource {
         }
         auth.groups().requireManageMembership(group);
 
+        checkForOrgRelatedGroupModel(session, group);
+
         try {
             if (user.isMemberOf(group)){
                 user.leaveGroup(group);
@@ -1044,6 +1047,9 @@ public class UserResource {
             throw new NotFoundException("Group not found");
         }
         auth.groups().requireManageMembership(group);
+
+        checkForOrgRelatedGroupModel(session, group);
+
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
