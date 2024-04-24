@@ -113,7 +113,7 @@ export default class TablePage extends CommonElements {
       (this.#tableInModal ? ".pf-v5-c-modal-box.pf-m-md " : "") +
         this.#tableHeaderRowItem,
     )
-      .find("td:nth-child(" + column + ") " + appendChildren)
+      .find("th:nth-child(" + column + ") " + appendChildren)
       .click();
     return this;
   }
