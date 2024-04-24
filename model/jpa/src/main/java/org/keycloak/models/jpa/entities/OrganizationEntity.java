@@ -53,7 +53,7 @@ public class OrganizationEntity {
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @Column(name = "IPD_ALIAS")
+    @Column(name = "IDP_ALIAS")
     private String idpAlias;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
