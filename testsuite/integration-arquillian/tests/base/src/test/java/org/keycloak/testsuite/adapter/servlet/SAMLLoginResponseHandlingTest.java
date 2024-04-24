@@ -197,6 +197,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
         waitForPageToLoad();
         Assert.assertEquals("", getRawPageSource());
 
+        employee2ServletPage.navigateTo();
         employee2ServletPage.logout();
         checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
 
