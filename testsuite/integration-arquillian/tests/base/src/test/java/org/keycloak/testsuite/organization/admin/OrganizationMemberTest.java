@@ -289,11 +289,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         addMember(organization);
 
-        assertTrue(testRealm().groups().groups().stream().anyMatch(group -> group.getName().startsWith("kc.org.")));
+        assertTrue(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
 
         organization.delete().close();
 
-        assertFalse(testRealm().groups().groups().stream().anyMatch(group -> group.getName().startsWith("kc.org.")));
+        assertFalse(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
     }
 
     @Test

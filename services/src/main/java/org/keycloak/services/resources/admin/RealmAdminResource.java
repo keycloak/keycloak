@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import static org.keycloak.util.JsonSerialization.readValue;
+import static org.keycloak.utils.OrganizationUtils.checkForOrgRelatedGroupModel;
 
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.enterprise.inject.Default;
 import jakarta.ws.rs.DefaultValue;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -49,7 +49,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -94,7 +93,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.ErrorResponseException;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
@@ -1053,6 +1051,9 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
+        checkForOrgRelatedGroupModel(session, group);
+
         realm.addDefaultGroup(group);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -1070,6 +1071,9 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
+        checkForOrgRelatedGroupModel(session, group);
+
         realm.removeDefaultGroup(group);
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();

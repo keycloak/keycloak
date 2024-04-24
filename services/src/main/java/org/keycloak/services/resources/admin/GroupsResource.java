@@ -52,6 +52,8 @@ import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluato
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
+import static org.keycloak.utils.OrganizationUtils.checkForOrgRelatedGroupModel;
+import static org.keycloak.utils.OrganizationUtils.checkForOrgRelatedGroupRep;
 
 
 /**
@@ -125,6 +127,9 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
+
+        checkForOrgRelatedGroupModel(session, group);
+
         return new GroupResource(realm, group, session, this.auth, adminEvent);
     }
 
@@ -175,6 +180,8 @@ public class GroupsResource {
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
+
+        checkForOrgRelatedGroupRep(session, rep);
 
         try {
             if (rep.getId() != null) {

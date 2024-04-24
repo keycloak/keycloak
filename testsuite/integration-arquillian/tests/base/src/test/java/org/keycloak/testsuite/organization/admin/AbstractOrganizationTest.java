@@ -31,6 +31,8 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -244,5 +246,17 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         Assert.assertFalse(reps.isEmpty());
         Assert.assertEquals(1, reps.size());
         return reps.get(0);
+    }
+
+    protected GroupRepresentation createGroup(RealmResource realm, String name) {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(name);
+        try (Response response = realm.groups().add(group)) {
+            String groupId = ApiUtil.getCreatedId(response);
+
+            // Set ID to the original rep
+            group.setId(groupId);
+            return group;
+        }
     }
 }
