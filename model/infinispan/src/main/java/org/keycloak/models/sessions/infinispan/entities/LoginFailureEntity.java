@@ -20,6 +20,8 @@ package org.keycloak.models.sessions.infinispan.entities;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Objects;
+
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -114,15 +116,9 @@ public class LoginFailureEntity extends SessionEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LoginFailureEntity)) return false;
-
-        LoginFailureEntity that = (LoginFailureEntity) o;
-
-        if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-        if (getRealmId() != null ? !getRealmId().equals(that.getRealmId()) : that.getRealmId() != null) return false;
-
-
-        return true;
+        if (!(o instanceof LoginFailureEntity that)) return false;
+        return Objects.equals(userId, that.userId) &&
+                Objects.equals(getRealmId(), that.getRealmId());
     }
 
     @Override
@@ -156,12 +152,10 @@ public class LoginFailureEntity extends SessionEntity {
 
         @Override
         public LoginFailureEntity readObject(ObjectInput input) throws IOException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
+            if (input.readByte() == VERSION_1) {
+                return readObjectVersion1(input);
             }
+            throw new IOException("Unknown version");
         }
 
         public LoginFailureEntity readObjectVersion1(ObjectInput input) throws IOException {
