@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Objects;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -35,6 +37,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
@@ -85,17 +88,15 @@ public class OrganizationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation( summary = "Return a paginated list of organizations filtered according to the specified parameters")
     public Stream<OrganizationRepresentation> search(
-            @Parameter(description = "A String representing an organization internet domain") @QueryParam("domain-name") String domainName
-    ) {
+            @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
+            @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The position of the first result to be returned (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
+            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
+            ) {
         auth.realm().requireManageRealm();
-        if (StringUtil.isBlank(domainName)) {
-            return provider.getAllStream().map(this::toRepresentation);
-        } else {
-            // search for the organization associated with the given domain
-            OrganizationModel org = provider.getByDomainName(domainName.trim());
-            return org == null ? Stream.empty() : Stream.of(toRepresentation(org));
-        }
+        return provider.getAllStream(search, exact, first, max).map(this::toRepresentation);
     }
 
     @Path("{id}")
