@@ -2,6 +2,7 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
+  Alert,
   Button,
   Divider,
   FormGroup,
@@ -10,7 +11,6 @@ import {
   Radio,
   Switch,
   TextInput,
-  Tooltip,
 } from "@patternfly/react-core";
 import {
   Select,
@@ -19,7 +19,7 @@ import {
 } from "@patternfly/react-core/deprecated";
 import { GlobeRouteIcon } from "@patternfly/react-icons";
 import { isEqual } from "lodash-es";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
@@ -65,7 +65,6 @@ export const AttributeGeneralSettings = ({
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useFormContext();
-  const tooltipRef = useRef();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
   const [config, setConfig] = useState<UserProfileConfig>();
@@ -90,12 +89,10 @@ export const AttributeGeneralSettings = ({
     value: string,
   ) => {
     setNewAttributeName(value);
-
     const newDisplayName =
       value !== "" && realm?.internationalizationEnabled
         ? "${profile.attributes." + `${value}}`
         : "";
-
     setGeneratedDisplayName(newDisplayName);
   };
 
@@ -248,11 +245,19 @@ export const AttributeGeneralSettings = ({
                 }
                 {...form.register("displayName")}
               />
+              {generatedDisplayName && (
+                <Alert
+                  className="pf-v5-u-mt-sm"
+                  variant="info"
+                  isInline
+                  isPlain
+                  title={t("addAttributeTranslationInfo")}
+                />
+              )}
             </GridItem>
             {realm?.internationalizationEnabled && (
               <GridItem span={1}>
                 <Button
-                  ref={tooltipRef}
                   variant="link"
                   className="pf-m-plain kc-attribute-display-name-iconBtn"
                   data-testid="addAttributeTranslationBtn"
@@ -262,10 +267,6 @@ export const AttributeGeneralSettings = ({
                     toggleModal();
                   }}
                   icon={<GlobeRouteIcon />}
-                />
-                <Tooltip
-                  content={t("addAttributeTranslationTooltip")}
-                  triggerRef={tooltipRef}
                 />
               </GridItem>
             )}
