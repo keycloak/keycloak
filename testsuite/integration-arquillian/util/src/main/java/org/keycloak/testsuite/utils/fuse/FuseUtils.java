@@ -114,7 +114,7 @@ public class FuseUtils {
             "feature:repo-add mvn:org.keycloak/keycloak-osgi-features/" + fuseAdapterVersion + "/xml/features; " +
             "feature:repo-add mvn:org.keycloak.testsuite/fuse-example-keycloak-features/" + projectVersion + "/xml/features; " +
             "feature:install pax-web-http-undertow; " +
-            "feature:install keycloak-jaas keycloak-pax-http-undertow; " +
+            "feature:install keycloak-pax-http-undertow; " +
             "feature:install keycloak-fuse-7.0-example",
         Result.OK);
 
@@ -135,7 +135,7 @@ public class FuseUtils {
             "system:property -p hawtio.keycloakClientConfig ${karaf.etc}/keycloak-hawtio-client.json; " +
             "system:property -p hawtio.keycloakServerConfig ${karaf.etc}/keycloak-bearer.json; " +
             "system:property -p hawtio.roles admin,manager,viewer,ssh; " +
-            "system:property -p hawtio.rolePrincipalClasses org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal;",
+            "system:property -p hawtio.rolePrincipalClasses org.apache.karaf.jaas.boot.principal.RolePrincipal;",
         Result.EMPTY);
 
         // KEYCLOAK-17873 For older version of Fuse
@@ -189,7 +189,7 @@ public class FuseUtils {
             "system-property -p hawtio.keycloakEnabled true; " +
             "system-property -p hawtio.realm keycloak; " +
             "system-property -p hawtio.keycloakClientConfig file://" + appServerHome + "/etc/keycloak-hawtio-client.json; " +
-            "system-property -p hawtio.rolePrincipalClasses org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal; ",
+            "system-property -p hawtio.rolePrincipalClasses org.apache.karaf.jaas.boot.principal.RolePrincipal; ",
         Result.EMPTY);
 
         String output = getCommandOutput(managementUser, managementPassword, "osgi:list | grep hawtio | grep web;");

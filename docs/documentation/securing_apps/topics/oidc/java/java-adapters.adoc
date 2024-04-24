@@ -22,10 +22,6 @@ include::servlet-filter-adapter.adoc[]
 endif::[]
 
 ifeval::[{project_community}==true]
-include::jaas.adoc[]
-endif::[]
-
-ifeval::[{project_community}==true]
 include::adapter-context.adoc[]
 include::adapter_error_handling.adoc[]
 include::logout.adoc[]
