@@ -46,8 +46,6 @@
             org.apache.http.impl.cookie.*;version=${apache.httpcomponents.fuse.version},
             org.apache.http.impl.execchain.*;version=${apache.httpcomponents.fuse.version},
             org.apache.http.*;version=${apache.httpcomponents.httpcore.fuse.version},
-            org.apache.karaf.jaas.boot.principal;resolution:=optional,
-            org.apache.karaf.jaas.modules;resolution:=optional,
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
