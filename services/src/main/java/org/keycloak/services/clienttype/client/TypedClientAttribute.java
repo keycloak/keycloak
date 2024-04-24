@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -24,9 +23,9 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     IMPLICIT_FLOW_ENABLED("implicitFlowEnabled", false),
     PROTOCOL("protocol", null),
     PUBLIC_CLIENT("publicClient", false),
-    REDIRECT_URIS("redirectUris", Set.of()),
+    REDIRECT_URIS("redirectUris", null),
     SERVICE_ACCOUNTS_ENABLED("serviceAccountsEnabled", false),
-    WEB_ORIGINS("webOrigins", Set.of()),
+    WEB_ORIGINS("webOrigins", null),
     ;
 
     private final String propertyName;
@@ -52,7 +51,7 @@ enum TypedClientExtendedAttribute implements TypedClientAttributeInterface {
     // Extended Client Type attributes defined as client attribute entities.
     DEVICE_AUTHORIZATION_GRANT_ENABLED("oauth2.device.authorization.grant.enabled", "false"),
     CIBA_GRANT_ENABLED("oidc.ciba.grant.enabled", "false"),
-    LOGIN_THEME("login_theme", ""),
+    LOGIN_THEME("login_theme", null),
     LOGO_URI("logoUri", null),
     POLICY_URI("policyUri", null);
 

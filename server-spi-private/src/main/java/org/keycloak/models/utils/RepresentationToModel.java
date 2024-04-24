@@ -19,6 +19,7 @@ package org.keycloak.models.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -381,7 +382,6 @@ public class RepresentationToModel {
             }
 
             MigrationUtils.updateProtocolMappers(client);
-
         }
 
         if (resourceRep.getClientTemplate() != null) {
@@ -483,9 +483,9 @@ public class RepresentationToModel {
     }
 
     /**
-     * Update client properties and process client type validation exceptions.
-     * @param client
-     * @param rep
+     * Update client properties and process any {@link ClientTypeException} validation errors combining into one to be thrown.
+     * @param client New or existing client to update
+     * @param rep Incoming
      */
     private static void updateClientProperties(ClientModel client, ClientRepresentation rep) {
         List<Supplier<ClientTypeException>> clientAttrUpdates = new ArrayList<Supplier<ClientTypeException>>() {{
@@ -513,36 +513,10 @@ public class RepresentationToModel {
             add(updatePropertyWithDefault(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
             add(updatePropertyWithDefault(client::setFullScopeAllowed, rep::isFullScopeAllowed, client::isFullScopeAllowed, () -> !client.isConsentRequired()));
             // Client Secret
-            add(updatePropertyWithDefault(client::setSecret, rep::getSecret, client::getSecret, () -> {
-                if (client.isPublicClient() || client.isBearerOnly()) {
-                    return null;
-                }
-                // adding secret if the client isn't public nor bearer only
-                String currentSecret = client.getSecret();
-                String newSecret = rep.getSecret();
-
-                if (newSecret == null && currentSecret == null) {
-                    return KeycloakModelUtils.generateSecret(client);
-                } else if (newSecret != null) {
-                    rep.setSecret(newSecret);
-                    return newSecret;
-                }
-                return null;
-            }));
+            add(updatePropertyWithDefault(client::setSecret, rep::getSecret, client::getSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
-            add(updatePropertyWithDefault(client::setRedirectUris, () -> Optional.ofNullable(rep.getRedirectUris()).map(HashSet::new).orElse(null)));
-            add(updatePropertyWithDefault(uris -> uris.forEach(client::addWebOrigin), rep::getWebOrigins, client::getWebOrigins, () -> {
-                // add origins from redirect uris
-                if (rep.getRedirectUris() != null) {
-                    return rep.getRedirectUris()
-                            .stream()
-                            .filter(uri -> uri.startsWith("http"))
-                            .map(UriUtils::getOrigin)
-                            .distinct()
-                            .collect(Collectors.toList());
-                }
-                return null;
-            }));
+            add(updatePropertyWithDefault(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris())));
+            add(updatePropertyWithDefault(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), client::getWebOrigins, () -> webOriginsFromRedirectUris(rep)));
         }};
 
         // Extended client attributes
@@ -564,6 +538,38 @@ public class RepresentationToModel {
                     "Cannot change property of client as it is not allowed by the specified client type.",
                     validationExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
         }
+    }
+
+    private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
+        if (client.isPublicClient() || client.isBearerOnly()) {
+            // Clear out the secret with null
+            client.setSecret(null);
+            return null;
+        }
+
+        // adding secret if the client isn't public nor bearer only
+        String currentSecret = client.getSecret();
+        String newSecret = rep.getSecret();
+
+        if (newSecret == null && currentSecret == null) {
+            return KeycloakModelUtils.generateSecret(client);
+        } else if (newSecret != null) {
+            rep.setSecret(newSecret);
+            return newSecret;
+        }
+        // Do not change current secret.
+        return null;
+    }
+
+    private static Set<String> webOriginsFromRedirectUris(ClientRepresentation rep) {
+        if (rep.getRedirectUris() == null) {
+            return null;
+        }
+        return rep.getRedirectUris()
+                .stream()
+                .filter(uri -> uri.startsWith("http"))
+                .map(UriUtils::getOrigin)
+                .collect(Collectors.toSet());
     }
 
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
@@ -626,7 +632,7 @@ public class RepresentationToModel {
      *
      * @param modelSetter setter to call.
      * @param representationGetter getter supplying the property update.
-     * @return Whether a {@link ClientTypeException} was thrown.
+     * @return {@link Supplier<T>} resulting whether a {@link ClientTypeException} was thrown.
      * @param <T> Type of property.
      */
     private static <T> Supplier<ClientTypeException> updateProperty(Consumer<T> modelSetter, Supplier<T> representationGetter) {
@@ -644,22 +650,23 @@ public class RepresentationToModel {
     }
 
     /**
-     * Creates supplier to update property with values supplied by the methods provided in order.
-     * The first non-null value supplied will be used to the property setter.
+     * Update property with the first non-null value supplied in order.
+     * The first non-null value supplied or else null will be sent to the setter.
      *
-     * @param modelSetter The setter to call with the property updates.
-     * @param getters Getter to query for a non-null value.
-     * @return Whether a {@link ClientTypeException} was thrown.
+     * @param modelSetter {@link Consumer<T>} The setter to call.
+     * @param getters {@link Supplier<T>} to query for the first non-null value.
+     * @return {@link Supplier} with results of operation.
      * @param <T> Type of property.
      */
     private static <T> Supplier<ClientTypeException> updatePropertyWithDefault(Consumer<T> modelSetter, Supplier<T>... getters) {
-        return updateProperty(modelSetter, () -> Stream.of(getters)
+        T firstNonNullSupplied = Stream.of(getters)
                 .map(Supplier::get)
                 .map(Optional::ofNullable)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst()
-                .orElse(null));
+                .orElse(null);
+        return updateProperty(modelSetter, () -> firstNonNullSupplied);
     }
 
 
@@ -1606,5 +1613,9 @@ public class RepresentationToModel {
         representation.setClientId(client.getId());
 
         return toModel(representation, authorization, client);
+    }
+
+    private static <T> Set<T> collectionToSet(Collection<T> collection) {
+        return Optional.ofNullable(collection).map(HashSet::new).orElse(null);
     }
 }
