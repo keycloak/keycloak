@@ -1,3 +1,20 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.model.infinispan;
 
 import java.util.Arrays;
@@ -22,6 +39,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
 /**
@@ -51,12 +69,14 @@ public class FeatureEnabledTest extends KeycloakModelTest {
             assertEmbeddedCacheDoesNotExists(clusterProvider, WORK_CACHE_NAME);
             assertEmbeddedCacheDoesNotExists(clusterProvider, AUTHENTICATION_SESSIONS_CACHE_NAME);
             assertEmbeddedCacheDoesNotExists(clusterProvider, ACTION_TOKEN_CACHE);
+            assertEmbeddedCacheDoesNotExists(clusterProvider, LOGIN_FAILURE_CACHE_NAME);
 
             // TODO [pruivo] all caches eventually won't exists in embedded
             Arrays.stream(CLUSTERED_CACHE_NAMES)
                     .filter(Predicate.not(Predicate.isEqual(WORK_CACHE_NAME)))
                     .filter(Predicate.not(Predicate.isEqual(AUTHENTICATION_SESSIONS_CACHE_NAME)))
                     .filter(Predicate.not(Predicate.isEqual(ACTION_TOKEN_CACHE)))
+                    .filter(Predicate.not(Predicate.isEqual(LOGIN_FAILURE_CACHE_NAME)))
                     .forEach(s -> assertEmbeddedCacheExists(clusterProvider, s));
 
             Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertRemoteCacheExists(clusterProvider, s));

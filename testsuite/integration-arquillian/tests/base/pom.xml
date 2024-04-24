@@ -384,9 +384,6 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>${docker.maven.plugin.version}</version>
-                <configuration>
-                    <skip>${docker.database.skip}</skip>
-                </configuration>
                 <executions>
                     <execution>
                         <id>start-db-container</id>
@@ -395,6 +392,7 @@
                             <goal>start</goal>
                         </goals>
                         <configuration>
+                            <skip>${docker.database.skip}</skip>
                             <showLogs>true</showLogs>
                             <images>
                                 <image>
@@ -447,6 +445,9 @@
                         <goals>
                             <goal>stop</goal>
                         </goals>
+                        <configuration>
+                            <skip>${docker.database.skip}</skip>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -763,6 +764,71 @@
                     <version>${byte-buddy.version}</version>
                 </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <id>infinispan-server</id>
+            <properties>
+                <docker.infinispan.skip>false</docker.infinispan.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${docker.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>start-ispn-container</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.infinispan.skip}</skip>
+                                    <showLogs>true</showLogs>
+                                    <images>
+                                        <image>
+                                            <alias>infinispan</alias>
+                                            <name>quay.io/infinispan/server:${infinispan.version}</name>
+                                            <run>
+                                                <ports>
+                                                    <port>11222:11222</port>
+                                                </ports>
+                                                <env>
+                                                    <USER>keycloak</USER>
+                                                    <PASS>Password1!</PASS>
+                                                </env>
+                                                <net>host</net>
+                                                <cmd>-b 127.0.0.1 -k 127.0.0.1</cmd>
+                                                <wait>
+                                                    <log>.*ISPN080001.*</log>
+                                                    <time>2000000</time>
+                                                    <kill>10000</kill>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-ispn-container</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.infinispan.skip}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>${maven-compiler-plugin.version}</version>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
     </profiles>

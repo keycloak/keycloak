@@ -1,4 +1,26 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models.sessions.infinispan.remote;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -15,10 +37,6 @@ import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class RemoteInfinispanAuthenticationSessionProvider implements AuthenticationSessionProvider {
 
@@ -78,15 +96,7 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     @Override
     public void onRealmRemoved(RealmModel realm) {
         // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
-        var cache = transaction.getCache();
-        try (var iterator = cache.retrieveEntries(null, 256)) {
-            while (iterator.hasNext()) {
-                var entry = iterator.next();
-                if (realm.getId().equals(((RootAuthenticationSessionEntity) entry.getValue()).getRealmId())) {
-                    cache.removeAsync(entry.getKey());
-                }
-            }
-        }
+        transaction.removeIf(new RealmFilter(realm.getId()));
     }
 
     @Override
@@ -130,6 +140,14 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
         @Override
         public void onEntityRemoved() {
             transaction.remove(entity.getId());
+        }
+    }
+
+    private record RealmFilter(String realmId) implements Predicate<RootAuthenticationSessionEntity> {
+
+        @Override
+        public boolean test(RootAuthenticationSessionEntity entity) {
+            return Objects.equals(realmId, entity.getRealmId());
         }
     }
 }
