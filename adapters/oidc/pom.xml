@@ -34,7 +34,5 @@
         <module>adapter-core</module>
         <module>js</module>
         <module>undertow</module>
-        <module>wildfly</module>
-        <module>wildfly-elytron</module>
     </modules>
 </project>
