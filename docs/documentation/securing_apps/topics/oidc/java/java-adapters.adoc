@@ -18,10 +18,6 @@ endif::[]
 include::jboss-adapter.adoc[]
 
 ifeval::[{project_community}==true]
-include::servlet-filter-adapter.adoc[]
-endif::[]
-
-ifeval::[{project_community}==true]
 include::adapter-context.adoc[]
 include::adapter_error_handling.adoc[]
 include::logout.adoc[]

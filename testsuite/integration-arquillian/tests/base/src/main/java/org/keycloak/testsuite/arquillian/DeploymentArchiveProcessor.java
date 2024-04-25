@@ -30,7 +30,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenFormatStage;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenResolverSystem;
-import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.io.IOUtil;
@@ -248,10 +247,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 initParam.appendChild(paramValue);
                 filter.appendChild(initParam);
             }
-            
-            appendChildInDocument(webXmlDoc, "web-app", filter);
-            addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.SKIP_PATTERN_PARAM, testClass.getAnnotation(UseServletFilter.class).skipPattern());
-            addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.ID_MAPPER_PARAM, testClass.getAnnotation(UseServletFilter.class).idMapper());
 
             appendChildInDocument(webXmlDoc, "web-app", filter);
 

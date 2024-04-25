@@ -23,7 +23,6 @@ import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.io.IOUtil;
@@ -126,12 +125,6 @@ public class DeploymentArchiveProcessorUtils {
             initParam.appendChild(paramValue);
             filter.appendChild(initParam);
         }
-
-        // Limitation that all deployments of annotated class use same skipPattern. Refactor if 
-        // something more flexible is needed (would require more tricky web.xml parsing though...)
-        addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.SKIP_PATTERN_PARAM, testClass.getAnnotation(UseServletFilter.class).skipPattern());
-        addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.ID_MAPPER_PARAM, testClass.getAnnotation(UseServletFilter.class).idMapper());
-
 
         IOUtil.appendChildInDocument(webXmlDoc, "web-app", filter);
 
