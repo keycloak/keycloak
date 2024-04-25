@@ -9,13 +9,13 @@ import {
 import {
   AlertVariant,
   ButtonVariant,
+  DropdownItem,
   Label,
   PageSection,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { TFunction } from "i18next";
 import { useState } from "react";

@@ -197,7 +197,7 @@ export default class RealmSettingsPage extends CommonPage {
   #jsonEditorSavePoliciesBtn = "jsonEditor-policies-saveBtn";
   #jsonEditorReloadBtn = "jsonEditor-reloadBtn";
   #jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
-  #clientPolicyDrpDwn = '[data-testid="action-dropdown"] button';
+  #clientPolicyDrpDwn = '[data-testid="action-dropdown"]';
   #deleteclientPolicyDrpDwn = "deleteClientPolicyDropdown";
   #clientProfileOne =
     'a[href*="realm-settings/client-policies/Test/edit-profile"]';
@@ -1293,7 +1293,9 @@ export default class RealmSettingsPage extends CommonPage {
 
   deleteClientPolicyFromDetails() {
     cy.get(this.#clientPolicyDrpDwn).click({ force: true });
-    cy.findByTestId(this.#deleteclientPolicyDrpDwn).click({ force: true });
+    cy.findByTestId(this.#deleteclientPolicyDrpDwn)
+      .find("button")
+      .click({ force: true });
     return this;
   }
 
