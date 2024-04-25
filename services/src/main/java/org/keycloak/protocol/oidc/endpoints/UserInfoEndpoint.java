@@ -171,6 +171,7 @@ public class UserInfoEndpoint {
 
         if (tokenForUserInfo.getToken() == null) {
             event.error(Errors.INVALID_TOKEN);
+            event.detail(Details.REASON, "Missing token");
             throw error.unauthorized();
         }
 
@@ -187,7 +188,9 @@ public class UserInfoEndpoint {
 
             if (!TokenUtil.hasScope(token.getScope(), OAuth2Constants.SCOPE_OPENID)) {
                 event.error(Errors.ACCESS_DENIED);
-                throw error.insufficientScope("Missing openid scope");
+                String errorMessage = "Missing openid scope";
+                event.detail(Details.REASON, errorMessage);
+                throw error.insufficientScope(errorMessage);
             }
 
             clientModel = realm.getClientByClientId(token.getIssuedFor());
@@ -206,12 +209,15 @@ public class UserInfoEndpoint {
                 cors.allowAllOrigins();
             }
             event.error(Errors.INVALID_TOKEN);
+            event.detail(Details.REASON, e.getMessage());
             throw error.invalidToken("Token verification failed");
         }
 
         if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             event.error(Errors.INVALID_CLIENT);
-            throw error.invalidToken("Wrong client protocol");
+            String errorMessage = "Wrong client protocol";
+            event.detail(Details.REASON, errorMessage);
+            throw error.invalidToken(errorMessage);
         }
 
         session.getContext().setClient(clientModel);
@@ -244,7 +250,9 @@ public class UserInfoEndpoint {
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
                 event.error(Errors.NOT_ALLOWED);
-                throw error.invalidToken("Client certificate missing, or its thumbprint and one in the refresh token did NOT match");
+                String errorMessage = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
+                event.detail(Details.REASON, errorMessage);
+                throw error.invalidToken(errorMessage);
             }
         }
 
@@ -254,8 +262,10 @@ public class UserInfoEndpoint {
                     DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
                     DPoPUtil.validateBinding(token, dPoP);
                 } catch (VerificationException ex) {
-                    event.detail("detail", ex.getMessage()).error(Errors.NOT_ALLOWED);
-                    throw error.invalidToken("DPoP proof and token binding verification failed");
+                    event.error(Errors.NOT_ALLOWED);
+                    String errorMessage = "DPoP proof and token binding verification failed";
+                    event.detail(Details.REASON, errorMessage + ": " + ex.getMessage());
+                    throw error.invalidToken(errorMessage);
                 }
             }
         }

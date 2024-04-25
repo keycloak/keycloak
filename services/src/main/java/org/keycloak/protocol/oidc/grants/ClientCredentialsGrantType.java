@@ -155,6 +155,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
         } catch (ClientPolicyException cpe) {
             event.error(cpe.getError());
+            event.detail(Details.REASON, cpe.getErrorDetail());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 

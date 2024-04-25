@@ -5,6 +5,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.CorsErrorResponseException;
@@ -99,9 +100,11 @@ public class PkceUtils {
         // check whether code verifier is formatted along with the PKCE specification
 
         if (!isValidPkceCodeVerifier(codeVerifier)) {
-            logger.infof("PKCE invalid code verifier");
+            String errorReason = "Invalid code verifier";
+            String errorMessage = "PKCE code verification failed: " + errorReason;
+            logger.warnf(errorMessage);
             event.error(Errors.INVALID_CODE_VERIFIER);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE invalid code verifier", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
@@ -117,14 +120,20 @@ public class PkceUtils {
                 codeVerifierEncoded = codeVerifier;
             }
         } catch (Exception nae) {
-            logger.infof("PKCE code verification failed, not supported algorithm specified");
+            String errorReason = "Unsupported algorithm specified";
+            String errorMessage = "PKCE code verification failed: " + errorReason;
+            logger.warnf(errorMessage);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verification failed, not supported algorithm specified", Response.Status.BAD_REQUEST);
+            event.detail(Details.REASON, errorReason);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
         if (!codeChallenge.equals(codeVerifierEncoded)) {
-            logger.warnf("PKCE verification failed. authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorReason = "Code mismatch";
+            String errorMessage = "PKCE code verification failed: " + errorReason;
+            logger.warnf(errorMessage + " authUserId = %s, authUsername = %s", authUserId, authUsername);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE verification failed", Response.Status.BAD_REQUEST);
+            event.detail(Details.REASON, errorReason);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         } else {
             logger.debugf("PKCE verification success. codeVerifierEncoded = %s, codeChallenge = %s", codeVerifierEncoded, codeChallenge);
         }

@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -119,8 +120,10 @@ public class AuthorizationEndpointRequestParserProcessor {
         if (clientParam != null && clientParam.size() == 1) {
             return clientParam.get(0);
         } else {
-            logger.warnf("Parameter 'client_id' not present or present multiple times in the HTTP request parameters");
+            String errorMessage = "Parameter 'client_id' not present or present multiple times in the HTTP request parameters";
+            logger.warnf(errorMessage);
             event.error(Errors.INVALID_REQUEST);
+            event.detail(Details.REASON, errorMessage);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
     }

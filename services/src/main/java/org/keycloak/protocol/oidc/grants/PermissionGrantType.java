@@ -137,7 +137,9 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
             AccessToken accessToken = session.tokens().decode(rpt, AccessToken.class);
             if (accessToken == null) {
                 event.error(Errors.INVALID_REQUEST);
-                throw new CorsErrorResponseException(cors, "invalid_rpt", "RPT signature is invalid", Response.Status.FORBIDDEN);
+                String errorMessage = "RPT signature is invalid";
+                event.detail(Details.REASON, errorMessage);
+                throw new CorsErrorResponseException(cors, "invalid_rpt", errorMessage, Response.Status.FORBIDDEN);
             }
 
             authorizationRequest.setRpt(accessToken);
