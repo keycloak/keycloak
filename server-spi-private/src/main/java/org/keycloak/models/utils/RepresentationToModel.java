@@ -513,7 +513,7 @@ public class RepresentationToModel {
             add(updatePropertyWithDefault(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
             add(updatePropertyWithDefault(client::setFullScopeAllowed, rep::isFullScopeAllowed, client::isFullScopeAllowed, () -> !client.isConsentRequired()));
             // Client Secret
-            add(updatePropertyWithDefault(client::setSecret, rep::getSecret, client::getSecret, () -> determineNewSecret(client, rep)));
+            add(updatePropertyWithDefault(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
             add(updatePropertyWithDefault(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris())));
             add(updatePropertyWithDefault(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), client::getWebOrigins, () -> webOriginsFromRedirectUris(rep)));
@@ -541,7 +541,7 @@ public class RepresentationToModel {
     }
 
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
-        if (client.isPublicClient() || client.isBearerOnly()) {
+        if (Boolean.TRUE.equals(rep.isPublicClient()) || Boolean.TRUE.equals(rep.isBearerOnly())) {
             // Clear out the secret with null
             client.setSecret(null);
             return null;
@@ -554,7 +554,6 @@ public class RepresentationToModel {
         if (newSecret == null && currentSecret == null) {
             return KeycloakModelUtils.generateSecret(client);
         } else if (newSecret != null) {
-            rep.setSecret(newSecret);
             return newSecret;
         }
         // Do not change current secret.
@@ -637,13 +636,13 @@ public class RepresentationToModel {
      */
     private static <T> Supplier<ClientTypeException> updateProperty(Consumer<T> modelSetter, Supplier<T> representationGetter) {
         return () -> {
-            T value = representationGetter.get();
-            if (value != null) {
-                try {
-                    modelSetter.accept(value);
-                } catch (ClientTypeException cte) {
-                    return cte;
+            try {
+                T value = representationGetter.get();
+                if (value != null) {
+                        modelSetter.accept(value);
                 }
+            } catch (ClientTypeException cte) {
+                return cte;
             }
             return null;
         };
@@ -659,14 +658,12 @@ public class RepresentationToModel {
      * @param <T> Type of property.
      */
     private static <T> Supplier<ClientTypeException> updatePropertyWithDefault(Consumer<T> modelSetter, Supplier<T>... getters) {
-        T firstNonNullSupplied = Stream.of(getters)
+        Stream<T> firstNonNullSupplied = Stream.of(getters)
                 .map(Supplier::get)
                 .map(Optional::ofNullable)
                 .filter(Optional::isPresent)
-                .map(Optional::get)
-                .findFirst()
-                .orElse(null);
-        return updateProperty(modelSetter, () -> firstNonNullSupplied);
+                .map(Optional::get);
+        return updateProperty(modelSetter, () -> firstNonNullSupplied.findFirst().orElse(null));
     }
 
 
