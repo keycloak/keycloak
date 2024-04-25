@@ -23,13 +23,13 @@ import java.util.function.BiConsumer;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -54,12 +54,12 @@ public interface Cors extends Provider {
     public static final String INCLUDE_REDIRECTS = "+";
 
     public static Cors add(HttpRequest request, ResponseBuilder response) {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         return session.getProvider(Cors.class).request(request).builder(response);
     }
 
     public static Cors add(HttpRequest request) {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         return session.getProvider(Cors.class).request(request);
     }
 

@@ -1,6 +1,5 @@
 package org.keycloak.services.error;
 
-import static org.keycloak.common.util.Resteasy.getContextData;
 import static org.keycloak.services.resources.KeycloakApplication.getSessionFactory;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -26,6 +25,7 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.forms.login.MessageType;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.utils.KeycloakSessionUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
@@ -55,7 +55,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable throwable) {
-        KeycloakSession session = getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
 
         if (session == null) {
             // errors might be thrown when handling errors from JAX-RS before the session is available
