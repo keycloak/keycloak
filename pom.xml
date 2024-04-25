@@ -1046,11 +1046,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jaxrs-oauth-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jboss-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1082,16 +1077,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-jakarta-servlet-filter-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-servlet-filter-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jakarta-servlet-filter-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

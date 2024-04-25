@@ -32,10 +32,7 @@
 
     <modules>
         <module>adapter-core</module>
-        <module>jaxrs-oauth-client</module>
         <module>js</module>
-        <module>servlet-filter</module>
-        <module>jakarta-servlet-filter</module>
         <module>undertow</module>
         <module>wildfly</module>
         <module>wildfly-elytron</module>
