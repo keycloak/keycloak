@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -43,11 +44,20 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.*;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.UserResource;
 import org.keycloak.services.resources.admin.UsersResource;
@@ -101,6 +111,49 @@ public class OrganizationMemberResource {
         }
 
         throw ErrorResponse.error("User is already a member of the organization.", Status.CONFLICT);
+    }
+
+    @POST
+    @Path("invite")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response inviteMember(UserRepresentation rep) {
+        if (rep == null || StringUtil.isBlank(rep.getEmail()) || StringUtil.isBlank(rep.getUsername())) {
+            throw new BadRequestException("To invite a member you need to provide an email and/or username");
+        }
+
+        UserModel user = session.users().getUserByUsername(realm, rep.getEmail());
+
+        InviteOrgActionToken token = null;
+        // TODO not sure if this client id is right or if we should get one from the user somehow...
+        // TODO not really sure if the token is getting signed so we need to figure out where that's happening... maybe in the serialize method?
+        // TODO the expiration is set to a day in seconds but we should probably get this from configuration instead
+        String link = null;
+        if (user != null) {
+           token = new InviteOrgActionToken(user.getId(), 86400, user.getEmail(), session.getContext().getClient().getClientId());
+           link = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
+                   .queryParam("key", token.serialize(session, realm, session.getContext().getUri()))
+                   .build(realm.getName()).toString();
+        } else {
+            // this path lets us invite a user that doesn't exist yet, letting them register into the organization
+            token = new InviteOrgActionToken(null, 86400, rep.getEmail(), session.getContext().getClient().getClientId());
+            link = LoginActionsService.registrationFormProcessor(session.getContext().getUri())
+                    .queryParam(Constants.ORG_TOKEN, token.serialize(session, realm, session.getContext().getUri()))
+                    .build(realm.getName()).toString();
+        }
+        token.setOrgId(organization.getId());
+
+        try {
+            session
+                    .getProvider(EmailTemplateProvider.class)
+                    .setRealm(realm)
+                    .setUser(user)
+                    .sendOrgInviteEmail(link, TimeUnit.SECONDS.toMinutes(token.getExp()));
+        } catch (EmailException e) {
+            ServicesLogger.LOGGER.failedToSendEmail(e);
+            throw ErrorResponse.error("Failed to send invite email", Status.INTERNAL_SERVER_ERROR);
+        }
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        return Response.noContent().build();
     }
 
     @GET
