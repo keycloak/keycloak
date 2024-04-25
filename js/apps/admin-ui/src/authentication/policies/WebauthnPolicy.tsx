@@ -92,7 +92,6 @@ const WebauthnSelect = ({
         key: option,
         value: labelPrefix ? t(`${labelPrefix}.${option}`) : option,
       }))}
-      typeAheadAriaLabel={t(name)}
     />
   );
 };

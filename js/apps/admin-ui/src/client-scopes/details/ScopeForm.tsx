@@ -129,9 +129,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           }}
         />
         <SelectControl
+          id="kc-type"
           name="type"
           label={t("type")}
-          toggleId="kc-type"
           labelIcon={t("scopeTypeHelp")}
           variant={SelectVariant.single}
           controller={{ defaultValue: allClientScopeTypes[0] }}
@@ -142,9 +142,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         />
         {!clientScope && (
           <SelectControl
+            id="kc-protocol"
             name="protocol"
             label={t("protocol")}
-            toggleId="kc-protocol"
             labelIcon={t("protocolHelp")}
             variant={SelectVariant.single}
             controller={{ defaultValue: providers[0] }}

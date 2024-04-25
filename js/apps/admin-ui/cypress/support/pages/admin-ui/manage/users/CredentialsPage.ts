@@ -57,7 +57,7 @@ export default class CredentialsPage {
   }
 
   clickResetModalAction(index: number) {
-    cy.get("[data-testid=credential-reset-modal] .pf-v5-c-select__menu")
+    cy.get("[data-testid=credential-reset-modal] .pf-v5-c-menu__list")
       .contains(this.#resetActions[index])
       .click();
 
