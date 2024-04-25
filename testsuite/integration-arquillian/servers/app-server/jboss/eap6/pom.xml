@@ -41,7 +41,6 @@
         <fuse.installer.artifactId>fuse-eap-installer</fuse.installer.artifactId>
         <fuse.installer.version>${fuse63.version}</fuse.installer.version>
 
-        <app.server.oidc.adapter.artifactId>keycloak-eap6-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-eap6-adapter-dist</app.server.saml.adapter.artifactId>
         <skip.apply.offline.cli>true</skip.apply.offline.cli>
         <skip.configure.clustered.scenario>true</skip.configure.clustered.scenario>
