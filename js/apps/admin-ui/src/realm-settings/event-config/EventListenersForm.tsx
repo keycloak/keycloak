@@ -39,7 +39,6 @@ export const EventListenersForm = ({
         }}
         variant={SelectVariant.typeaheadMulti}
         options={Object.keys(eventListeners!)}
-        typeAheadAriaLabel="Select"
       />
       <ActionGroup>
         <Button

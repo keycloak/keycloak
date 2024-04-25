@@ -27,7 +27,8 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
       controller={{
         defaultValue: "",
       }}
-      maxHeight={200}
+      isScrollable
+      maxMenuHeight="200px"
       options={[
         { key: "", value: t("anyAlgorithm") },
         ...providers.map((option) => ({ key: option, value: option })),

@@ -1,5 +1,5 @@
 import { FormProvider } from "react-hook-form";
-import { SelectControl } from "../controls/SelectControl";
+import { SelectControl } from "../controls/select-control/SelectControl";
 import { UserProfileFieldProps } from "./UserProfileFields";
 
 const localeToDisplayName = (locale: string) => {

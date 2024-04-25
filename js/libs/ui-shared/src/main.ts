@@ -9,8 +9,14 @@ export { HelpItem } from "./controls/HelpItem";
 export { NumberControl } from "./controls/NumberControl";
 export { PasswordControl } from "./controls/PasswordControl";
 export { PasswordInput } from "./controls/PasswordInput";
-export { SelectControl } from "./controls/SelectControl";
-export type { SelectControlOption } from "./controls/SelectControl";
+export {
+  SelectControl,
+  SelectVariant,
+} from "./controls/select-control/SelectControl";
+export type {
+  SelectControlOption,
+  SelectControlProps,
+} from "./controls/select-control/SelectControl";
 export {
   SwitchControl,
   type SwitchControlProps,

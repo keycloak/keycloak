@@ -1,15 +1,13 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { SelectProps, SelectVariant } from "@patternfly/react-core/deprecated";
+import { SelectControl, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
-
 import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import type { ComponentProps } from "../dynamic/components";
 
-type ClientSelectProps = ComponentProps & Pick<SelectProps, "variant">;
+type ClientSelectProps = ComponentProps & { variant?: `${SelectVariant}` };
 
 export const ClientSelect = ({
   name,
@@ -18,7 +16,7 @@ export const ClientSelect = ({
   defaultValue,
   isDisabled = false,
   required = false,
-  variant = SelectVariant.typeahead,
+  variant = "typeahead",
 }: ClientSelectProps) => {
   const { t } = useTranslation();
 
