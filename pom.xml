@@ -125,7 +125,6 @@
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
         <wildfly-elytron.version>2.2.3.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
-        <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
         <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
@@ -148,7 +147,6 @@
         <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
         <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
 
-        <jetty9.version>${jetty94.version}</jetty9.version>
         <liquibase.version>4.25.1</liquibase.version>
         <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
         <osgi.version>6.0.0</osgi.version>
@@ -211,10 +209,6 @@
         <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
         <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
         <surefire.system.args></surefire.system.args>
-
-        <!-- Tomcat versions -->
-        <tomcat8.version>8.5.76</tomcat8.version>
-        <tomcat9.version>9.0.16</tomcat9.version>
 
         <!-- webauthn support -->
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>

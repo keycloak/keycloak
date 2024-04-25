@@ -49,11 +49,8 @@
         <arquillian-graphene.version>3.0.0-alpha.3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
-        <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
         <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
-        <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
-        <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
         <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>

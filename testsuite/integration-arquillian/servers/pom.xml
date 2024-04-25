@@ -48,9 +48,6 @@
         <hotrod.sasl.mechanism>DIGEST-MD5</hotrod.sasl.mechanism>
 
         <jboss.cli.executable>jboss-cli.sh</jboss.cli.executable>
-
-        <!-- Tomcat versions needs to be overwritten to newer versions because of https://issues.redhat.com/browse/KEYCLOAK-14103 -->
-        <tomcat9.version>9.0.29</tomcat9.version>
     </properties>
 
     <modules>

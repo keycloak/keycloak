@@ -161,7 +161,6 @@ integration-arquillian
 │  │
 │  ├──app-server
 │  │  ├──jboss (wildfly/eap/as)
-│  │  ├──tomcat
 │  │  └──karaf
 │  │
 │  └──wildfly-balancer

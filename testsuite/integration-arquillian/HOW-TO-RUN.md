@@ -142,19 +142,6 @@ and add packages manually.
         -Dtest=org.keycloak.testsuite.adapter.**.*Test
         -Papp-server-undertow
 
-### Jetty
-
-At the moment we can run the testsuite with Jetty `9.4`.
-Each version has its corresponding profile:
-
-* Jetty `9.4`: `app-server-jetty94`
-
-Here's how to run the tests with Jetty `9.4`:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-        -Papp-server-jetty94 \
-        -Dtest=org.keycloak.testsuite.adapter.**.*Test
-
 ### Wildfly
 
     # Run tests
@@ -162,19 +149,6 @@ Here's how to run the tests with Jetty `9.4`:
        clean install \
        -Papp-server-wildfly \
        -Dtest=org.keycloak.testsuite.adapter.**
-
-### Tomcat
-
-We run testsuite with Tomcat 7, 8 and 9. For specific versions see properties `${tomcat[7,8,9].version}` in parent [pom.xml](../../pom.xml).
-
-To run tests on Tomcat:
-
-````
-mvn -f testsuite/integration-arquillian/pom.xml \
-       clean install \
-       -Papp-server-tomcat[7,8,9] \
-       -Dtest=org.keycloak.testsuite.adapter.**
-````
 
 ### JBoss Fuse 6.3
 

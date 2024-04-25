@@ -82,8 +82,6 @@ import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_SIGNING_CERTIFI
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SamlSignatureTest extends AbstractAdapterTest {
 
     private static final String REQUIRED_ROLE_NAME = "manager";
