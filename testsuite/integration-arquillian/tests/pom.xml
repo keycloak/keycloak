@@ -133,7 +133,6 @@
         <app.server.keystore>${app.server.keystore.dir}/adapter.jks</app.server.keystore>
         <app.server.keystore.password>secret</app.server.keystore.password>
         <app.server.jvm.args.extra/>
-        <tomcat.javax.net.ssl.properties/>
 
         <cache.server.legacy>false</cache.server.legacy>
         <cache.server.home>${containers.home}/cache-server-${cache.server}</cache.server.home>
@@ -553,7 +552,6 @@
                             <app.server.1.jboss.jvm.debug.args>${app.server.1.jboss.jvm.debug.args}</app.server.1.jboss.jvm.debug.args>
                             <app.server.2.jboss.jvm.debug.args>${app.server.2.jboss.jvm.debug.args}</app.server.2.jboss.jvm.debug.args>
                             <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
-                            <tomcat.javax.net.ssl.properties>${tomcat.javax.net.ssl.properties}</tomcat.javax.net.ssl.properties>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -2091,18 +2089,6 @@
             </properties>
         </profile>
 
-        <profile>
-            <id>set-javax.net.ssl-properties-for-tomcat</id>
-            <activation>
-                <property>
-                    <name>app.server.ssl.required</name>
-                </property>
-            </activation>
-            <properties>
-                <tomcat.javax.net.ssl.properties>-Djavax.net.ssl.trustStore=${app.server.home}/lib/keycloak.truststore -Djavax.net.ssl.trustStorePassword=secret</tomcat.javax.net.ssl.properties>
-            </properties>
-        </profile>
-        
         <profile>
             <id>cache-auth</id>
             <properties>

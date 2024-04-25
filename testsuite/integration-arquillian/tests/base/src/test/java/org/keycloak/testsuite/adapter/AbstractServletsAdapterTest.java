@@ -93,8 +93,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
             deployment.addAsWebInfResource(keycloakJSON, "keycloak.json");
         }
 
-        addContextXml(deployment, name);
-
         return deployment;
     }
 
@@ -154,8 +152,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
             deployment.addAsWebInfResource(keystore, "keystore.jks");
         }
 
-        addContextXml(deployment, name);
-
         if (AppServerTestEnricher.isJBossJakartaAppServer()) {
             DeploymentArchiveProcessorUtils.useJakartaEEServletClass(deployment, "/WEB-INF/web.xml");
         }
@@ -201,8 +197,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         URL keystore2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + keystore2);
         Assert.assertNotNull("keystore2Url should be in " + webInfPath + keystore2, keystore2Url);
         deployment.add(new UrlAsset(keystore2Url), "/WEB-INF/classes/" + keystore2);
-
-        addContextXml(deployment, name);
 
         return deployment;
     }

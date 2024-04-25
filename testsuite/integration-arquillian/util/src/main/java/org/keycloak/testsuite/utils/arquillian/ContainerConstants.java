@@ -35,10 +35,4 @@ public interface ContainerConstants {
 
     String APP_SERVER_FUSE63 = APP_SERVER_PREFIX + "fuse63";
     String APP_SERVER_FUSE7X = APP_SERVER_PREFIX + "fuse7x";
-
-    String APP_SERVER_JETTY94 = APP_SERVER_PREFIX + "jetty94";
-
-    String APP_SERVER_TOMCAT8 = APP_SERVER_PREFIX + "tomcat8";
-    String APP_SERVER_TOMCAT9 = APP_SERVER_PREFIX + "tomcat9";
-
 }
