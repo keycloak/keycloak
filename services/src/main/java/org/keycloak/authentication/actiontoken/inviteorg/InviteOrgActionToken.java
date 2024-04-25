@@ -27,7 +27,7 @@ import org.keycloak.models.Constants;
  */
 public class InviteOrgActionToken extends DefaultActionToken {
 
-    public static final String TOKEN_TYPE = "invite-org";
+    public static final String TOKEN_TYPE = "ORGIVT";
 
     private static final String JSON_FIELD_REDIRECT_URI = "reduri";
     private static final String JSON_ORG_ID = "org_id";

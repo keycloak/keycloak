@@ -133,9 +133,4 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
         return AuthenticationManager.redirectToRequiredActions(session, realm, authSession, uriInfo, nextAction);
     }
-
-    private boolean isVerifyEmailActionSet(UserModel user, AuthenticationSessionModel authSession) {
-        return Stream.concat(user.getRequiredActionsStream(), authSession.getRequiredActions().stream())
-                .anyMatch(RequiredAction.VERIFY_EMAIL.name()::equals);
-    }
 }
