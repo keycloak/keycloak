@@ -25,7 +25,6 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionType;
-import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
@@ -38,6 +37,7 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -46,12 +46,9 @@ import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -254,11 +251,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         }
 
-        // For Infinispan 10, we go with the JBoss marshalling.
-        // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
-        // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
-        gcb.serialization().marshaller(new JBossUserMarshaller());
-
+        Marshalling.configure(gcb);
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
         if (useKeycloakTimeService) {
             setTimeServiceToKeycloakTime(cacheManager);
