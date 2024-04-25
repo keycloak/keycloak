@@ -1,6 +1,11 @@
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import {
+  HelpItem,
+  KeycloakTextArea,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
@@ -11,6 +16,7 @@ import {
   DataListItemCells,
   DataListItemRow,
   Divider,
+  DropdownItem,
   Flex,
   FlexItem,
   FormGroup,
@@ -19,17 +25,11 @@ import {
   Text,
   TextVariants,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  HelpItem,
-  KeycloakTextArea,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";

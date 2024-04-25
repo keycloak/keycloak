@@ -2,7 +2,7 @@ export default class PageObject {
   #selectItemSelectedIcon = ".pf-v5-c-select__menu-item-icon";
   #drpDwnMenuList = ".pf-v5-c-dropdown__menu";
   #drpDwnMenuItem = ".pf-v5-c-dropdown__menu-item";
-  #drpDwnMenuToggleBtn = ".pf-v5-c-select__toggle";
+  #drpDwnMenuToggleBtn = ".pf-v5-c-menu-toggle";
   #selectMenuList = ".pf-v5-c-select__menu";
   #selectMenuItem = ".pf-v5-c-select__menu-item";
   #selectMenuToggleBtn = ".pf-v5-c-select__toggle";
@@ -103,7 +103,12 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy
+        .get(this.#drpDwnMenuToggleBtn)
+        .parent()
+        .contains(itemName)
+        .parent()
+        .parent();
     element.click();
     return this;
   }
@@ -114,7 +119,12 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy
+        .get(this.#drpDwnMenuToggleBtn)
+        .parent()
+        .contains(itemName)
+        .parent()
+        .parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertDropdownMenuIsOpen(true);
     return this;
@@ -126,7 +136,12 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy
+        .get(this.#drpDwnMenuToggleBtn)
+        .parent()
+        .contains(itemName)
+        .parent()
+        .parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertDropdownMenuIsOpen(false);
     return this;

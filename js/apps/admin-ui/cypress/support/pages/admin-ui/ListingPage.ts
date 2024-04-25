@@ -28,14 +28,14 @@ export enum FilterSession {
 }
 
 export default class ListingPage extends CommonElements {
-  #tableToolbar = ".pf-v5-c-toolbar";
+  #tableToolbar = "section .pf-v5-c-toolbar";
   #itemsRows = "table:visible";
   #deleteUserButton = "delete-user-btn";
   #emptyListImg = '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
   #emptyState = "empty-state";
-  #itemRowDrpDwn = ".pf-v5-c-menu-toggle";
-  #itemRowSelect = ".pf-v5-c-select__toggle:nth-child(1)";
-  #itemRowSelectItem = ".pf-v5-c-select__menu-item";
+  #itemRowDrpDwn = ".pf-v5-c-table__action button";
+  #itemRowSelect = "[data-testid='cell-dropdown']";
+  #itemRowSelectItem = ".pf-v5-c-menu__item";
   #itemCheckbox = ".pf-v5-c-table__check";
   public exportBtn = '[role="menuitem"]:nth-child(1)';
   public deleteBtn = '[role="menuitem"]:nth-child(2)';
@@ -52,10 +52,9 @@ export default class ListingPage extends CommonElements {
   public tableRowItem = "tbody tr[data-ouia-component-type]:visible";
   #table = "table[aria-label]";
   #filterSessionDropdownButton = ".pf-v5-c-select button:nth-child(1)";
-  #filterDropdownButton = "[class*='searchtype'] button";
-  #kebabMenu = ".pf-v5-c-dropdown__toggle";
-  #dropdownItem = ".pf-v5-c-dropdown__menu-item";
-  #changeTypeToButton = ".pf-v5-c-select__toggle";
+  #filterDropdownButton = "[class*='searchtype']";
+  #kebabMenu = "[data-testid='kebab']";
+  #dropdownItem = ".pf-v5-c-menu__list-item";
   #toolbarChangeType = "#change-type-dropdown";
   #tableNameColumnPrefix = "name-column-";
   #rowGroup = "table:visible tbody[role='rowgroup']";
@@ -138,7 +137,7 @@ export default class ListingPage extends CommonElements {
   }
 
   clickSearchBarActionButton() {
-    cy.get(this.#tableToolbar).find(this.#kebabMenu).last().click();
+    cy.get(this.#tableToolbar).find(this.#kebabMenu).click();
 
     return this;
   }
@@ -355,14 +354,14 @@ export default class ListingPage extends CommonElements {
     cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(this.#changeTypeToButton)
+      .find(this.#toolbarChangeType)
       .first()
       .click();
 
     cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(this.#changeTypeToButton)
+      .find(this.#toolbarChangeType)
       .contains(assignedType)
       .click();
 
@@ -374,7 +373,7 @@ export default class ListingPage extends CommonElements {
     if (!disabled) {
       condition = "be.enabled";
     }
-    cy.get(this.#changeTypeToButton).first().should(condition);
+    cy.get(this.#toolbarChangeType).first().should(condition);
 
     return this;
   }
@@ -382,7 +381,7 @@ export default class ListingPage extends CommonElements {
   checkDropdownItemIsDisabled(itemName: string, disabled: boolean = true) {
     cy.get(this.#dropdownItem)
       .contains(itemName)
-      .should("have.attr", "aria-disabled", String(disabled));
+      .should((disabled ? "" : "not.") + "be.disabled");
 
     return this;
   }

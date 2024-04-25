@@ -47,7 +47,6 @@ export const AddFlowDropdown = ({
           popperProps={{
             position: "right",
           }}
-          data-testid={`${execution.displayName}-edit-dropdown`}
           isOpen={open}
           toggle={(ref) => (
             <MenuToggle
@@ -55,6 +54,7 @@ export const AddFlowDropdown = ({
               variant="plain"
               onClick={() => setOpen(!open)}
               aria-label={t("add")}
+              data-testid={`${execution.displayName}-edit-dropdown`}
             >
               <PlusIcon />
             </MenuToggle>

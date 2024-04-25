@@ -5,16 +5,13 @@ import {
   Button,
   ButtonVariant,
   Divider,
+  DropdownItem,
   Form,
   PageSection,
   Tab,
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  DropdownItem,
-  DropdownSeparator,
-} from "@patternfly/react-core/deprecated";
 import { useMemo, useState } from "react";
 import {
   Controller,
@@ -208,7 +205,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                   </DropdownItem>,
                 ]
               : []),
-          <DropdownSeparator key="separator" />,
+          <Divider key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("delete")}
           </DropdownItem>,

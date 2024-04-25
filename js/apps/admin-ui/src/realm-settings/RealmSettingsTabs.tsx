@@ -2,15 +2,13 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import {
   AlertVariant,
   ButtonVariant,
+  Divider,
+  DropdownItem,
   PageSection,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
-import {
-  DropdownItem,
-  DropdownSeparator,
-} from "@patternfly/react-core/deprecated";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -150,7 +148,7 @@ const RealmSettingsHeader = ({
           >
             {t("partialExport")}
           </DropdownItem>,
-          <DropdownSeparator key="separator" />,
+          <Divider key="separator" />,
           <DropdownItem
             key="delete"
             isDisabled={!canManageRealm}

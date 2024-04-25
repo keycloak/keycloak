@@ -3,13 +3,13 @@ import {
   AlertVariant,
   ButtonVariant,
   Divider,
+  DropdownItem,
   Label,
   PageSection,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { cloneDeep, sortBy } from "lodash-es";
 import { useMemo, useState } from "react";

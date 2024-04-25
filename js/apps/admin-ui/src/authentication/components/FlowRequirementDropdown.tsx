@@ -31,7 +31,6 @@ export const FlowRequirementDropdown = ({
     <>
       {flow.requirementChoices && flow.requirementChoices.length > 1 && (
         <Select
-          className="keycloak__authentication__requirement-dropdown"
           onOpenChange={(isOpen) => setOpen(isOpen)}
           onSelect={(_event, value) => {
             flow.requirement = value?.toString();
@@ -42,6 +41,7 @@ export const FlowRequirementDropdown = ({
           isOpen={open}
           toggle={(ref) => (
             <MenuToggle
+              className="keycloak__authentication__requirement-dropdown"
               ref={ref}
               onClick={() => setOpen(!open)}
               isExpanded={open}
