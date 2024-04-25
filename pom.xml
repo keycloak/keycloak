@@ -1531,11 +1531,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-client-registration-cli</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-crypto-default</artifactId>
                 <version>${project.version}</version>
             </dependency>
