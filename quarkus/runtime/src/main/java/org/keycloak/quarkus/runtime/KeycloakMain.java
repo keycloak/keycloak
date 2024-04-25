@@ -37,17 +37,11 @@ import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 import org.keycloak.quarkus.runtime.cli.command.Start;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.resources.KeycloakApplication;
 
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -58,9 +52,6 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @QuarkusMain(name = "keycloak")
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
-
-    private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
-    private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION);
@@ -140,10 +131,6 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        if (!isImportExportMode()) {
-            createAdminUser();
-        }
-
         if (isDevProfile()) {
             Logger.getLogger(KeycloakMain.class).warnf("Running the server in development mode. DO NOT use this configuration in production.");
         }
@@ -161,23 +148,4 @@ public class KeycloakMain implements QuarkusApplication {
         return exitCode;
     }
 
-    private void createAdminUser() {
-        String adminUserName = System.getenv(KEYCLOAK_ADMIN_ENV_VAR);
-        String adminPassword = System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
-
-        if ((adminUserName == null || adminUserName.trim().length() == 0)
-                || (adminPassword == null || adminPassword.trim().length() == 0)) {
-            return;
-        }
-
-        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
-
-        try {
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
-                new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
-            });
-        } catch (Throwable t) {
-            ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
-        }
-    }
 }
