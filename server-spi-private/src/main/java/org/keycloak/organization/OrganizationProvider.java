@@ -62,7 +62,7 @@ public interface OrganizationProvider extends Provider {
      * @return a {@link Stream} of the realm's organizations.
      */
     default Stream<OrganizationModel> getAllStream() {
-        return getAllStream("", null, -1, -1);
+        return getAllStream("", null, null, null);
     }
 
     /**
