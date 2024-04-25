@@ -163,6 +163,13 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     @Override
+    public void sendOrgInviteEmail(String link, long expirationInMinutes) throws EmailException {
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
+        addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
+        send("orgInviteSubject", "org-invite.ftl", attributes);
+    }
+
+    @Override
     public void sendEmailUpdateConfirmation(String link, long expirationInMinutes, String newEmail) throws EmailException {
         if (newEmail == null) {
             throw new IllegalArgumentException("The new email is mandatory");

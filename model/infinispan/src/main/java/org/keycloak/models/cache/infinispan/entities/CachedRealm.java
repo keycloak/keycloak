@@ -140,6 +140,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     protected AuthenticationFlowModel browserFlow;
     protected AuthenticationFlowModel registrationFlow;
+    protected AuthenticationFlowModel orgRegistrationFlow;
     protected AuthenticationFlowModel directGrantFlow;
     protected AuthenticationFlowModel resetCredentialsFlow;
     protected AuthenticationFlowModel clientAuthenticationFlow;

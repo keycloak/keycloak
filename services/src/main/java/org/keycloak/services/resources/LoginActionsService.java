@@ -743,10 +743,14 @@ public class LoginActionsService {
     @GET
     public Response registerPage(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                  @QueryParam(SESSION_CODE) String code,
+                                 // TODO this is unused but having it here adds it to openapi. What's the better approach?
+                                 // Should this be pulled off the query params and then injected into the flow processor as its own thing?
+                                 @QueryParam(Constants.ORG_TOKEN) String orgToken,
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
+
         return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
     }
 
@@ -761,6 +765,7 @@ public class LoginActionsService {
     @POST
     public Response processRegister(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                     @QueryParam(SESSION_CODE) String code,
+                                    @QueryParam(Constants.ORG_TOKEN) String orgToken,
                                     @QueryParam(Constants.EXECUTION) String execution,
                                     @QueryParam(Constants.CLIENT_ID) String clientId,
                                     @QueryParam(Constants.CLIENT_DATA) String clientData,
@@ -771,6 +776,9 @@ public class LoginActionsService {
 
     private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, String clientData) {
         event.event(EventType.REGISTER);
+
+        // TODO if we parse the org token here and then pass in the already decoded token we can save ourselves some duplicated work
+
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);

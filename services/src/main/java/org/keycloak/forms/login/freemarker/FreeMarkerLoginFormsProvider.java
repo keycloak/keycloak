@@ -129,6 +129,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected RealmModel realm;
     protected ClientModel client;
     protected UriInfo uriInfo;
+    protected String tokenString;
 
     protected FreeMarkerProvider freeMarker;
 
@@ -144,6 +145,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
         this.uriInfo = session.getContext().getUri();
+        this.tokenString = uriInfo.getQueryParameters().getFirst(Constants.ORG_TOKEN);
     }
 
     @SuppressWarnings("unchecked")
@@ -285,6 +287,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case LOGIN_RESET_OTP:
                 attributes.put("configuredOtpCredentials", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
+            // case ORG_REGISTER:
+                // TODO can consume this attribute to display some information on the organization, but will require more processing than what's here now
+               // attributes.put("org", tokenString);
             case REGISTER:
                 RegisterBean rb = new RegisterBean(formData, session);
                 //legacy bean for static template
@@ -368,6 +373,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             uriBuilder.replaceQuery(null);
         }
 
+        if (tokenString != null) {
+            uriBuilder.queryParam(Constants.ORG_TOKEN, tokenString);
+        }
         if (client != null) {
             uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
         }

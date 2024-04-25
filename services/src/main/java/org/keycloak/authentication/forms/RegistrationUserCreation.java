@@ -19,25 +19,25 @@ package org.keycloak.authentication.forms;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.keycloak.Config;
+import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
 import org.keycloak.authentication.ValidationContext;
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionTokenHandler;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
@@ -72,6 +72,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        MultivaluedMap<String, String> queryParameters = context.getHttpRequest().getUri().getQueryParameters();
+
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
@@ -110,6 +112,27 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             context.validationError(formData, errors);
             return;
         }
+
+        // handle parsing of an organization invite token from the url
+        String tokenFromQuery = queryParameters.getFirst(Constants.ORG_TOKEN);
+        if (tokenFromQuery != null) {
+            TokenVerifier<InviteOrgActionToken> tokenVerifier = TokenVerifier.create(tokenFromQuery, InviteOrgActionToken.class);
+            try {
+                InviteOrgActionToken aToken = tokenVerifier.getToken();
+                if (aToken.isExpired() || !aToken.getActionId().equals(InviteOrgActionToken.TOKEN_TYPE) || !aToken.getEmail().equals(email)) {
+                   throw new VerificationException("The provided token is not valid. It may be expired or issued for a different email");
+                }
+                // TODO probably need to check if string is empty or null
+                if (context.getSession().getProvider(OrganizationProvider.class).getById(aToken.getOrgId()) == null) {
+                   throw new VerificationException("The provided token contains an invalid organization id");
+                }
+            } catch (VerificationException e) {
+                // TODO we can be more specific here just trying to get something working...
+                context.getEvent().detail(Messages.INVALID_ORG_INVITE, tokenFromQuery);
+                context.error(Errors.INVALID_TOKEN);
+                return;
+            }
+        }
         context.success();
     }
 
@@ -123,6 +146,19 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         checkNotOtherUserAuthenticating(context);
 
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        String tokenFromQuery = context.getHttpRequest().getUri().getQueryParameters().getFirst(Constants.ORG_TOKEN);
+
+        DefaultActionTokenKey aToken = null;
+        if(tokenFromQuery != null) {
+            try {
+                TokenVerifier<DefaultActionTokenKey> tokenVerifier = TokenVerifier.create(tokenFromQuery, DefaultActionTokenKey.class);
+                aToken = tokenVerifier.getToken();
+            } catch (VerificationException e) {
+                // TODO in theory this should never happen since we already validated. We should either encapsulate decoding the token somehow (add to context or make new class?)
+                // for now we can panic run this exception if we somehow end up here
+                throw new RuntimeException(e);
+            }
+        }
 
         String email = formData.getFirst(UserModel.EMAIL);
         String username = formData.getFirst(UserModel.USERNAME);
@@ -137,6 +173,16 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
         UserModel user = profile.create();
+
+        // since we already validated the token we can just add the user to the organization
+        if (aToken != null) {
+            String org = aToken.getSubject();
+            KeycloakSession session = context.getSession();
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orgModel = provider.getById(org);
+            provider.addMember(orgModel, user);
+            context.getEvent().detail(Details.ORG_ID, org);
+        }
 
         user.setEnabled(true);
 

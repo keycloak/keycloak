@@ -79,6 +79,8 @@ public final class Constants {
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
+    public static final String ORG_TOKEN = "org_token";
+    public static final String ORG_INVITE = "org_invite";
     public static final String TAB_ID = "tab_id";
     public static final String CLIENT_DATA = "client_data";
 
