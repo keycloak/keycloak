@@ -41,7 +41,7 @@ public interface ClientTypeManager extends Provider {
     // Implementation is supposed also to validate clientTypes before persisting them
     void updateClientTypes(RealmModel realm, ClientTypesRepresentation clientTypes) throws ClientTypeException;
 
-    ClientType getClientType(RealmModel realm, String typeName)  throws ClientTypeException;
+    ClientType getClientType(RealmModel realm, ClientModel rep)  throws ClientTypeException;
 
     // Create client, which delegates to the particular client type
     ClientModel augmentClient(ClientModel client) throws ClientTypeException;

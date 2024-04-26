@@ -92,12 +92,13 @@ public class DefaultClientTypeManager implements ClientTypeManager {
 
 
     @Override
-    public ClientType getClientType(RealmModel realm, String typeName) throws ClientTypeException {
+    public ClientType getClientType(RealmModel realm, ClientModel rep) throws ClientTypeException {
         ClientTypesRepresentation clientTypes = getClientTypes(realm);
-        ClientTypeRepresentation clientType = getClientTypeByName(clientTypes, typeName);
+        ClientTypeRepresentation clientType = getClientTypeByName(clientTypes, rep.getType());
         if (clientType == null) {
-            logger.errorf("Referenced client type '%s' not found", typeName);
-            throw new ClientTypeException("Client type not found");
+            logger.errorf("Referenced client type '%s' not found", rep.getType());
+            rep.setType(null);
+            return null;
         }
 
         ClientTypeProvider provider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
@@ -110,7 +111,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
             return client;
         } else {
             try {
-                ClientType clientType = getClientType(client.getRealm(), client.getType());
+                ClientType clientType = getClientType(client.getRealm(), client);
                 return new TypeAwareClientModelDelegate(clientType, () -> client);
             } catch(ClientTypeException cte) {
                 logger.errorf("Could not augment client, %s, due to client type exception: %s",

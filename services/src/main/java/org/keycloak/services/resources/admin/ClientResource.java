@@ -158,7 +158,7 @@ public class ClientResource {
                 }
                 if (rep.getType() != null) {
                     ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
-                    ClientType clientType = mgr.getClientType(realm, rep.getType());
+                    ClientType clientType = mgr.getClientType(realm, (ClientModel) rep);
                     clientType.onUpdate(client, rep);
                 }
             }

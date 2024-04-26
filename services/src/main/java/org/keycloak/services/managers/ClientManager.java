@@ -84,7 +84,7 @@ public class ClientManager {
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep) {
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && rep.getType() != null) {
             ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
-            ClientType clientType = mgr.getClientType(realm, rep.getType());
+            ClientType clientType = mgr.getClientType(realm, (ClientModel) rep);
             clientType.onCreate(rep);
         }
 
