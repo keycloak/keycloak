@@ -67,11 +67,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>keycloak-undertow-adapter-jakarta</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-testsuite-providers</artifactId>
             <version>${project.version}</version>
         </dependency>
