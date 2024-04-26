@@ -304,4 +304,6 @@ to avoid overflow after 2038.
 
 = Resteasy util class is deprecated
 
-`org.keycloak.common.util.Resteasy` has been deprecated. You should use the `org.keycloak.util.KeycloakSessionUtil` to obtain the `KeycloakSession` if you cannot use a standard mechanism - the `@Context` or `@Inject` annotations
+`org.keycloak.common.util.Resteasy` has been deprecated. You should use the `org.keycloak.util.KeycloakSessionUtil` to obtain the `KeycloakSession` instead.
+
+It is highly recommended to avoid obtaining the `KeycloakSession` by means other than when creating your custom provider.
