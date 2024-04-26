@@ -91,9 +91,9 @@ public class OrganizationResource {
     @Operation( summary = "Return a paginated list of organizations filtered according to the specified parameters")
     public Stream<OrganizationRepresentation> search(
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
-            @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "The position of the first result to be returned (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
-            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
+            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
+            @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
             ) {
         auth.realm().requireManageRealm();
         return provider.getAllStream(search, exact, first, max).map(this::toRepresentation);
