@@ -25,6 +25,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -36,9 +37,34 @@ public interface OrganizationMembersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     Response addMember(String userId);
 
+    /**
+     * Return all members in the organization.
+     *
+     * @return a list containing the organization members.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> getAll();
+
+    /**
+     * Return all organization members that match the specified filters.
+     *
+     * @param search a {@code String} representing either a member's username, e-mail, first name, or last name.
+     * @param exact if {@code true}, the members will be searched using exact match for the {@code search} param - i.e.
+     *              at least one of the username main attributes must match exactly the {@code search} param. If false,
+     *              the method returns all members with at least one main attribute partially matching the {@code search} param.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @return a list containing the matched organization members.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> search(
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max
+    );
 
     @Path("{id}/organization")
     @GET

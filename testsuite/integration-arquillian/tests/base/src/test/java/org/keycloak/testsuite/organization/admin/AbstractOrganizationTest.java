@@ -151,11 +151,17 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected UserRepresentation addMember(OrganizationResource organization, String email) {
+        return addMember(organization, email, null, null);
+    }
+
+    protected UserRepresentation addMember(OrganizationResource organization, String email, String firstName, String lastName) {
         UserRepresentation expected = new UserRepresentation();
 
         expected.setEmail(email);
         expected.setUsername(expected.getEmail());
         expected.setEnabled(true);
+        expected.setFirstName(firstName);
+        expected.setLastName(lastName);
         Users.setPasswordFor(expected, memberPassword);
 
         try (Response response = testRealm().users().create(expected)) {

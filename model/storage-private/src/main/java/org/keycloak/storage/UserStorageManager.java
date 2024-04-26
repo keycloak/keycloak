@@ -65,6 +65,7 @@ import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserBulkUpdateProvider;
@@ -76,6 +77,8 @@ import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.utils.StreamsUtil;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -417,6 +420,36 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 return ((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, firstResultInQuery, maxResultsInQuery).
                         map(id -> getUserById(realm, id));
            }
+            return Stream.empty();
+        }, realm, firstResult, maxResults);
+
+        return importValidation(realm, results);
+    }
+
+    @Override
+    public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, final String search,
+                                                   final Boolean exact, final Integer firstResult, final Integer maxResults) {
+        Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
+            if (provider instanceof UserQueryMethodsProvider) {
+                return ((UserQueryMethodsProvider)provider).getGroupMembersStream(realm, group, search, exact, firstResultInQuery, maxResultsInQuery);
+
+            } else if (provider instanceof UserFederatedStorageProvider) {
+                // modify this if UserGroupMembershipFederatedStorage adds a getMembershipStream variant with search option.
+                return StreamsUtil.paginatedStream(((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, null, null)
+                        .map(id -> getUserById(realm, id))
+                        .filter(user -> {
+                            if (StringUtil.isBlank(search)) return true;
+                            if (Boolean.TRUE.equals(exact)) {
+                                return search.equals(user.getUsername()) || search.equals(user.getEmail())
+                                        || search.equals(user.getFirstName()) || search.equals(user.getLastName());
+                            } else {
+                                return Optional.ofNullable(user.getUsername()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                                        Optional.ofNullable(user.getEmail()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                                        Optional.ofNullable(user.getFirstName()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                                        Optional.ofNullable(user.getLastName()).orElse("").toLowerCase().contains(search.toLowerCase());
+                            }
+                        }), firstResultInQuery, maxResultsInQuery);
+            }
             return Stream.empty();
         }, realm, firstResult, maxResults);
 

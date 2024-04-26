@@ -171,11 +171,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public Stream<UserModel> getMembersStream(OrganizationModel organization) {
+    public Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         GroupModel group = getOrganizationGroup(organization);
 
-        return userProvider.getGroupMembersStream(realm, group);
+        return userProvider.getGroupMembersStream(realm, group, search, exact, first, max);
     }
 
     @Override

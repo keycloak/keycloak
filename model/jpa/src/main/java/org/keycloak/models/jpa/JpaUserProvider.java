@@ -62,6 +62,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.keycloak.storage.jpa.JpaHashUtils;
+import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -708,6 +709,23 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         query.setParameter("groupId", group.getId());
 
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+    }
+
+    @Override
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer first, Integer max) {
+        TypedQuery<UserEntity> query;
+        if (StringUtil.isBlank(search)) {
+            query = em.createNamedQuery("groupMembership", UserEntity.class);
+        } else if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("groupMembershipByUser", UserEntity.class);
+            query.setParameter("search", search);
+        } else {
+            query = em.createNamedQuery("groupMembershipByUserContained", UserEntity.class);
+            query.setParameter("search", search.toLowerCase());
+        }
+        query.setParameter("groupId", group.getId());
+
+        return closing(paginateQuery(query, first, max).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
     }
 
     @Override

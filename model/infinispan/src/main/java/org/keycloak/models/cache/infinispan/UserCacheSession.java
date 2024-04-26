@@ -473,6 +473,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        return getDelegate().getGroupMembersStream(realm, group, search, exact, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
         return getDelegate().getGroupMembersStream(realm, group);
     }

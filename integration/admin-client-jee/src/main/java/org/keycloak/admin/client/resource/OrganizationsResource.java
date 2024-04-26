@@ -55,8 +55,8 @@ public interface OrganizationsResource {
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
      *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
      *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
-     * @param first index of the first element (pagination offset).
-     * @param max the maximum number of results.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return a list containing the matched organizations.
      */
     @GET
