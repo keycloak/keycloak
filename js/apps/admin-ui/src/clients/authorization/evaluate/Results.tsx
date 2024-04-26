@@ -10,12 +10,11 @@ import {
   ToolbarGroup,
   ToolbarItem,
   InputGroupItem,
-} from "@patternfly/react-core";
-import {
   Select,
+  MenuToggle,
+  SelectList,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { Table, Th, Thead, Tr } from "@patternfly/react-table";
 import { KeyboardEvent, useMemo, useState } from "react";
@@ -115,38 +114,46 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
           </ToolbarItem>
           <ToolbarItem>
             <Select
-              width={300}
               data-testid="filter-type-select"
               isOpen={filterDropdownOpen}
               className="kc-filter-type-select"
-              variant={SelectVariant.single}
-              onToggle={toggleFilterDropdown}
+              toggle={(ref) => (
+                <MenuToggle
+                  ref={ref}
+                  onClick={toggleFilterDropdown}
+                  isExpanded={filterDropdownOpen}
+                  style={{ width: "300px" }}
+                >
+                  {filter}
+                </MenuToggle>
+              )}
               onSelect={(_, value) => {
                 setFilter(value as ResultsFilter);
                 toggleFilterDropdown();
                 refresh();
               }}
-              selections={filter}
+              selected={filter}
             >
-              <SelectOption
-                data-testid="all-results-option"
-                value={ResultsFilter.All}
-                isPlaceholder
-              >
-                {t("allResults")}
-              </SelectOption>
-              <SelectOption
-                data-testid="result-permit-option"
-                value={ResultsFilter.StatusPermitted}
-              >
-                {t("resultPermit")}
-              </SelectOption>
-              <SelectOption
-                data-testid="result-deny-option"
-                value={ResultsFilter.StatusDenied}
-              >
-                {t("resultDeny")}
-              </SelectOption>
+              <SelectList>
+                <SelectOption
+                  data-testid="all-results-option"
+                  value={ResultsFilter.All}
+                >
+                  {t("allResults")}
+                </SelectOption>
+                <SelectOption
+                  data-testid="result-permit-option"
+                  value={ResultsFilter.StatusPermitted}
+                >
+                  {t("resultPermit")}
+                </SelectOption>
+                <SelectOption
+                  data-testid="result-deny-option"
+                  value={ResultsFilter.StatusDenied}
+                >
+                  {t("resultDeny")}
+                </SelectOption>
+              </SelectList>
             </Select>
           </ToolbarItem>
         </ToolbarGroup>

@@ -1,15 +1,14 @@
 import {
   Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
   Split,
   SplitItem,
   Switch,
   TextContent,
 } from "@patternfly/react-core";
-import {
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
-} from "@patternfly/react-core/deprecated";
 import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -60,20 +59,23 @@ export const HelpHeader = () => {
   ];
   return (
     <Dropdown
-      position="right"
+      popperProps={{
+        position: "right",
+      }}
       isPlain
       isOpen={open}
-      toggle={
-        <DropdownToggle
-          toggleIndicator={null}
-          onToggle={() => setOpen(!open)}
+      toggle={(ref) => (
+        <MenuToggle
+          ref={ref}
+          onClick={() => setOpen(!open)}
           aria-label="Help"
           id="help"
         >
           <HelpIcon />
-        </DropdownToggle>
-      }
-      dropdownItems={dropdownItems}
-    />
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>{dropdownItems}</DropdownList>
+    </Dropdown>
   );
 };
