@@ -16,8 +16,11 @@ import {
   EmptyStateActions,
   EmptyStateHeader,
   EmptyStateFooter,
+  Select,
+  SelectOption,
+  MenuToggle,
+  SelectList,
 } from "@patternfly/react-core";
-import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -51,21 +54,33 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
 
   return (
     <Select
-      width={300}
+      style={{
+        width: "300px",
+      }}
       onSelect={(_, selection) => {
         onSelect(selection as PasswordPolicyTypeRepresentation);
         setOpen(false);
       }}
-      onToggle={(_event, value) => setOpen(value)}
+      toggle={(ref) => (
+        <MenuToggle
+          ref={ref}
+          onClick={() => setOpen(!open)}
+          isExpanded={open}
+          isDisabled={policies?.length === 0}
+          data-testid="add-policy"
+        >
+          {t("addPolicy")}
+        </MenuToggle>
+      )}
       isOpen={open}
-      selections={t("addPolicy")}
-      isDisabled={policies?.length === 0}
     >
-      {policies?.map((policy) => (
-        <SelectOption key={policy.id} value={policy}>
-          {policy.displayName}
-        </SelectOption>
-      ))}
+      <SelectList>
+        {policies?.map((policy) => (
+          <SelectOption key={policy.id} value={policy}>
+            {policy.displayName}
+          </SelectOption>
+        ))}
+      </SelectList>
     </Select>
   );
 };
