@@ -106,7 +106,7 @@ public class GetCmd extends AbstractRequestCmd {
         out.println("                              realms, users, roles, groups, clients, keys, serverinfo, components ...");
         out.println("                              If it starts with 'http://' then it will be used as target resource url");
         out.println("    -r, --target-realm REALM  Target realm to issue requests against if not the one authenticated against");
-        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
+        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println("    -o, --offset OFFSET       Set paging offset - adds a query parameter 'first' which some endpoints recognize");
         out.println("    -l, --limit LIMIT         Set limit to number of items in result - adds a query parameter 'max' ");
@@ -164,7 +164,7 @@ public class GetCmd extends AbstractRequestCmd {
         out.println("Note: 'users' endpoint knows how to handle --offset and --limit. Most other endpoints don't.");
         out.println();
         out.println("Get all users whose 'username' matches '*test*' pattern, and 'email' matches '*@google.com*':");
-        out.println("  " + PROMPT + " " + CMD + " get users -r demorealm -q username=test -q email=@google.com");
+        out.println("  " + PROMPT + " " + CMD + " get users -r demorealm -q q=\"username:test email:@google.com\"");
         out.println();
         out.println("Note: it is the 'users' endpoint that interprets query parameters 'username', and 'email' in such a way that");
         out.println("it results in the described semantics. Another endpoint may provide a different semantics.");

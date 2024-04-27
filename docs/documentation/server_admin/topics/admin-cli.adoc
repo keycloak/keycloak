@@ -1031,15 +1031,15 @@ You can filter users by `username`, `firstName`, `lastName`, or `email`.
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh get users -r demorealm -q email=google.com
-$ kcadm.sh get users -r demorealm -q username=testuser
+$ kcadm.sh get users -r demorealm -q q=email:google.com
+$ kcadm.sh get users -r demorealm -q q=username:testuser
 ----
 [NOTE]
 ====
 Filtering does not use exact matching. This example matches the value of the `username` attribute against the `\*testuser*` pattern.
 ====
 
-You can filter across multiple attributes by specifying multiple `-q` options. {project_name} returns users that match the condition for all the attributes only.
+For clients, groups, and users you can filter across multiple attributes by specifying a more complex `q` query parameter.  you may use something like -q q="field1:value1 field2:value2". {project_name} returns users that match the condition for all the attributes only.
 
 [discrete]
 ==== Getting a specific user

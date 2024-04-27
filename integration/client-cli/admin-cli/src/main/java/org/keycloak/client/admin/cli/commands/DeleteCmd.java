@@ -74,7 +74,7 @@ public class DeleteCmd extends CreateCmd {
         out.println("    -d, --delete NAME         Remove a specific attribute NAME from JSON request body");
         out.println("    -f, --file FILENAME       Send a body with request - read object from file or standard input if FILENAME is set to '-'");
         out.println("    -b, --body CONTENT        Content to be sent as-is or used as a JSON object template");
-        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
+        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println();
         out.println("    -H, --print-headers       Print response headers");

@@ -117,7 +117,7 @@ public class UpdateCmd extends AbstractRequestCmd {
         out.println("    -d, --delete NAME         Remove a specific attribute NAME from JSON request body");
         out.println("    -f, --file FILENAME       Read object from file or standard input if FILENAME is set to '-'");
         out.println("    -b, --body CONTENT        Content to be sent as-is or used as a JSON object template");
-        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
+        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println("    -m, --merge               Merge new values with existing configuration on the server");
         out.println("                              Merge is automatically enabled unless --file is specified");
