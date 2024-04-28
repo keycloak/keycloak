@@ -223,7 +223,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
         try {
             checkPageNotFound("/auth/realms/master/nosuch");
-            String url = driver.findElement(By.xpath("//a[text()='Deutsch']")).getAttribute("href");
+            String url = driver.findElement(By.xpath("//a[text()[contains(.,'Deutsch')]]")).getAttribute("href");
             driver.navigate().to(url);
             errorPage.assertCurrent();
         } finally {
