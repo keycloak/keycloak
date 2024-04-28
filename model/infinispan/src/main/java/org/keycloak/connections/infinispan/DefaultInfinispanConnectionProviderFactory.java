@@ -43,7 +43,6 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
-import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -387,7 +386,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .segmented(segmented)
                 .rawValues(true)
                 .forceReturnValues(false)
-                .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
                 .protocolVersion(getHotrodVersion())
                 .addServer()
                 .host(jdgServer)

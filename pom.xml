@@ -878,11 +878,6 @@
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
-                <groupId>${ee.maven.groupId}</groupId>
-                <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
-                <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
                 <artifactId>undertow-server</artifactId>
                 <version>${elytron.undertow-server.version}</version>
