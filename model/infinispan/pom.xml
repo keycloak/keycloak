@@ -73,17 +73,6 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-jboss-marshalling</artifactId>
         </dependency>
-        <!--dependency>
-            <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
-        </dependency-->
-
-        <!-- Needed for externalizers in package "org.keycloak.models.sessions.infinispan.entities.wildfly" .
-             Hopefully can be removed once we start to use the protobuf marshalling -->
-        <dependency>
-            <groupId>${ee.maven.groupId}</groupId>
-            <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
