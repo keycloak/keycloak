@@ -89,16 +89,22 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
             if (merged != null) {
                 if (batchAllWrites) {
+                    changesPerformers.stream()
+                            .filter(c -> !c.benefitsFromBatching())
+                            .forEach(p -> p.registerChange(entry, merged));
                     // We will batch the inserts and updates and deletes (although deletes have shown deadlocks if there are concurrent updates).
                     // We'll also wait for all deferrable items, as doing so will reduce the likelihood of concurrent requests later
                     // which might lead to deadlocks.
                     // Important to memorize the future first before adding it to the queue,
                     // as the future will only be created only when necessary.
-                    futures.add(merged.result());
-                    addEntryToQueue(entry, merged);
+                    CompletableFuture<Void> result = merged.result();
+                    futures.add(result);
+                    // Don't include in background batch processing the items that don't benefit from the batching.
+                    // This is usually the communication with the internal and external Infinispan.
+                    addEntryToQueue(entry, merged, true);
                 } else if (merged.isDeferrable()) {
                     // This is deferrable, no need to memorize the future
-                    addEntryToQueue(entry, merged);
+                    addEntryToQueue(entry, merged, false);
                 } else {
                     changesPerformers.forEach(p -> p.registerChange(entry, merged));
                 }
@@ -107,11 +113,11 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
         if (batch != null) {
             batch.forEach(o -> {
-                changesPerformers.forEach(p -> p.registerChange(o.getEntry(), o.getMerged()));
+                changesPerformers.stream()
+                        .filter(p -> !o.isOnlyThoseThatBenefitFromBatching() || p.benefitsFromBatching())
+                        .forEach(p -> p.registerChange(o.getEntry(), o.getMerged()));
             });
         }
-
-        changesPerformers.forEach(SessionChangesPerformer::applyChanges);
 
         // If we enqueued any items that we wait for in the background tasks, this is now the moment
         if (!futures.isEmpty()) {
@@ -127,14 +133,16 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
                 throw ex;
             }
         }
+
+        changesPerformers.forEach(SessionChangesPerformer::applyChanges);
     }
 
-    private void addEntryToQueue(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
-        if (!asyncQueue.offer(new PersistentDeferredElement<>(entry, merged))) {
+    private void addEntryToQueue(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged, boolean onlyThoseThatBenefitFromBatching) {
+        if (!asyncQueue.offer(new PersistentDeferredElement<>(entry, merged, onlyThoseThatBenefitFromBatching))) {
             logger.warnf("Queue for cache %s is full, will block", cache.getName());
             try {
                 // this will block until there is a free spot in the queue
-                asyncQueue.put(new PersistentDeferredElement<>(entry, merged));
+                asyncQueue.put(new PersistentDeferredElement<>(entry, merged, onlyThoseThatBenefitFromBatching));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);

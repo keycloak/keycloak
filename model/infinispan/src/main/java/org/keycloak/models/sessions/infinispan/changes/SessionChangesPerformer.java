@@ -24,5 +24,9 @@ import java.util.Map;
 public interface SessionChangesPerformer<K, V extends SessionEntity> {
     void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged);
 
+    default boolean benefitsFromBatching() {
+        return false;
+    }
+
     void applyChanges();
 }

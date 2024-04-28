@@ -74,6 +74,11 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
     }
 
     @Override
+    public boolean benefitsFromBatching() {
+        return true;
+    }
+
+    @Override
     public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
         merged.enqueue();
         tasks.add(merged);

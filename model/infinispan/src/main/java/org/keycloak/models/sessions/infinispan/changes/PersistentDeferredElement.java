@@ -29,10 +29,12 @@ import java.util.Map;
 public class PersistentDeferredElement<K, V extends SessionEntity> {
     private final Map.Entry<K, SessionUpdatesList<V>> entry;
     private final MergedUpdate<V> merged;
+    private final boolean onlyThoseThatBenefitFromBatching;
 
-    public PersistentDeferredElement(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
+    public PersistentDeferredElement(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged, boolean onlyThoseThatBenefitFromBatching) {
         this.entry = entry;
         this.merged = merged;
+        this.onlyThoseThatBenefitFromBatching = onlyThoseThatBenefitFromBatching;
     }
 
     public Map.Entry<K, SessionUpdatesList<V>> getEntry() {
@@ -41,5 +43,9 @@ public class PersistentDeferredElement<K, V extends SessionEntity> {
 
     public MergedUpdate<V> getMerged() {
         return merged;
+    }
+
+    public boolean isOnlyThoseThatBenefitFromBatching() {
+        return onlyThoseThatBenefitFromBatching;
     }
 }

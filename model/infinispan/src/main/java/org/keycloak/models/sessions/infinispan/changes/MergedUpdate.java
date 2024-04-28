@@ -164,6 +164,8 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     }
 
     public void enqueue() {
-        ++tasks;
+        if (completed != null) {
+            ++tasks;
+        }
     }
 }
