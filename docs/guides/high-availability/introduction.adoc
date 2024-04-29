@@ -6,7 +6,7 @@
 title="Multi-site deployments"
 summary="Connect multiple {project_name} deployments in different sites to increase the overall availability" >
 
-{project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan; load balancers can distribute the load evenly across those instances.
+{project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its Infinispan caches; load balancers can distribute the load evenly across those instances.
 Those setups are intended for a transparent network on a single site.
 
 The {project_name} high-availability guide goes one step further to describe setups across multiple sites.

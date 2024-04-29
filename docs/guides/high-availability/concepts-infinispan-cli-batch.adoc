@@ -49,6 +49,6 @@ NOTE: Modifying a `Batch` CR instance has no effect. Batch operations are "`one-
 
 == Further reading
 
-For more information, see the link:{infinispan-operator-docs}#batch-cr[{jdgserver_name} Operator Batch CR documentation].
+For more information, see the link:{infinispan-operator-docs}#batch-cr[{jdgserver_name} Operator `Batch` CR documentation].
 
 </@tmpl.guide>
