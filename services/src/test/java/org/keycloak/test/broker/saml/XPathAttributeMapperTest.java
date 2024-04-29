@@ -20,6 +20,7 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 
@@ -110,7 +111,7 @@ public class XPathAttributeMapperTest {
         config.put(XPathAttributeMapper.ATTRIBUTE_NAME, attributeNameToSearch);
         config.put(XPathAttributeMapper.USER_ATTRIBUTE, attribute);
         config.put(XPathAttributeMapper.ATTRIBUTE_XPATH, xpath);
-        BrokeredIdentityContext context = new BrokeredIdentityContext("brokeredIdentityContext");
+        BrokeredIdentityContext context = new BrokeredIdentityContext("brokeredIdentityContext", new IdentityProviderModel());
         AssertionType assertion = AssertionUtil.createAssertion("assertionId", NameIDType.deserializeFromString("nameIDType"));
         AttributeStatementType statement = new AttributeStatementType();
         assertion.addStatement(statement);

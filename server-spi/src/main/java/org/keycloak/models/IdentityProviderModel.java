@@ -44,6 +44,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
     public static final String DO_NOT_STORE_USERS = "doNotStoreUsers";
     public static final String METADATA_DESCRIPTOR_URL = "metadataDescriptorUrl";
+    public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
 
     private String internalId;
 
@@ -319,6 +320,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setMetadataDescriptorUrl(String metadataDescriptorUrl) {
         getConfig().put(METADATA_DESCRIPTOR_URL, metadataDescriptorUrl);
+    }
+
+    public boolean isCaseSensitiveOriginalUsername() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.FALSE.toString()));
+    }
+
+    public void setCaseSensitiveOriginalUsername(boolean caseSensitive) {
+        getConfig().put(CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.valueOf(caseSensitive).toString());
     }
 
     @Override

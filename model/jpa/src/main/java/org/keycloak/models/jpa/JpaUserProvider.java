@@ -168,7 +168,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         entity.setRealmId(realm.getId());
         entity.setIdentityProvider(identity.getIdentityProvider());
         entity.setUserId(identity.getUserId());
-        entity.setUserName(identity.getUserName().toLowerCase());
+        entity.setUserName(identity.getUserName());
         entity.setToken(identity.getToken());
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         entity.setUser(userEntity);
