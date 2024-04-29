@@ -57,10 +57,14 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         if (myUpdates == null) {
             SessionEntityWrapper<AuthenticatedClientSessionEntity> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
+                LOG.debugf("client-session not found in cache for sessionId=%s, offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, client, userSession);
+            } else {
+                LOG.debugf("client-session found in cache for sessionId=%s, offline=%s", key, offline);
             }
 
             if (wrappedEntity == null) {
+                LOG.debugf("client-session not found in persister for sessionId=%s, offline=%s", key, offline);
                 return null;
             }
 
@@ -98,6 +102,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
         SessionEntityWrapper<AuthenticatedClientSessionEntity> authenticatedClientSessionEntitySessionEntityWrapper = importClientSession(realm, client, userSession, clientSession);
         if (authenticatedClientSessionEntitySessionEntityWrapper == null) {
+            LOG.debugf("client-session not imported from persister for sessionId=%s, offline=%s, removing from persister.", clientSession.getId(), offline);
             persister.removeClientSession(userSession.getId(), client.getId(), offline);
         }
 

@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -34,6 +35,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.model.HotRodServerRule;
@@ -276,20 +278,25 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                     clientSession.setTimestamp(time);
                     return null;
                 });
-                // The persistent session will write the update data asynchronously, wait for it to arrive.
-                Retry.executeWithBackoff(iteration -> {
-                    withRealm(realmId, (session, realm) -> {
-                        // refresh sessions before user session expires => both session should exist
-                        ClientModel client = realm.getClientByClientId("test-app");
-                        UserSessionModel userSession = getUserSession(session, realm, sessions[0], offline);
-                        Assert.assertNotNull(userSession);
-                        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-                        Assert.assertNotNull(clientSession);
-                        Assert.assertEquals(userSession.getLastSessionRefresh(), time);
-                        Assert.assertEquals(clientSession.getTimestamp(), time);
-                        return null;
-                    });
-                }, 10, 10);
+
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                    // The persistent session will write the update data asynchronously, wait for it to arrive.
+                    Retry.executeWithBackoff(iteration -> {
+                        withRealm(realmId, (session, realm) -> {
+                            UserSessionPersisterProvider provider = session.getProvider(UserSessionPersisterProvider.class);
+                            UserSessionModel userSessionModel = provider.loadUserSession(realm, sessions[0], offline);
+                            Assert.assertNotNull(userSessionModel);
+                            Assert.assertEquals(userSessionModel.getLastSessionRefresh(), time);
+
+                            // refresh sessions before user session expires => both session should exist
+                            ClientModel client = realm.getClientByClientId("test-app");
+                            AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
+                            Assert.assertNotNull(clientSession);
+                            Assert.assertEquals(clientSession.getTimestamp(), time);
+                            return null;
+                        });
+                    }, 10, 10);
+                }
             }
 
             offset += 2100;

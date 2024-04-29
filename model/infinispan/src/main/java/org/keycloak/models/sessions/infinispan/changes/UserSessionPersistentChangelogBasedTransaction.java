@@ -55,10 +55,14 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 wrappedEntity = cache.get(key);
             }
             if (wrappedEntity == null) {
+                LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, key);
+            } else {
+                LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
             }
 
             if (wrappedEntity == null) {
+                LOG.debugf("user-session not found in persister for sessionId=%s offline=%s", key, offline);
                 return null;
             }
 
