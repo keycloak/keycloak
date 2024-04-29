@@ -143,7 +143,7 @@ The {infinispan-operator-docs}#setting-up-xsite[Setting Up Cross-Site] documenta
 +
 A basic example is provided in this {section} using the credentials, tokens, and TLS Keystore/Truststore created by the commands from the previous steps.
 +
-.The {jdgserver_name} CR for `{site-a}`
+.The `Infinispan` CR for `{site-a}`
 [source,yaml]
 ----
 include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
@@ -163,10 +163,10 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <13> The {ocp} API URL for the remote site.
 <14> The secret with the access toke to authenticate into the remote site.
 +
-For `{site-b}`, the {jdgserver_name} CR looks similar to the above.
+For `{site-b}`, the `Infinispan` CR looks similar to the above.
 Note the differences in point 4, 11 and 13.
 +
-.The {jdgserver_name} CR for `{site-b}`
+.The `Infinispan` CR for `{site-b}`
 [source,yaml]
 ----
 include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
@@ -179,7 +179,7 @@ include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
 Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
 The documentation contains more details about the options used by this {section}.
-The following example shows the Cache CR for `{site-a}`.
+The following example shows the `Cache` CR for `{site-a}`.
 +
 .sessions in `{site-a}`
 [source,yaml]
@@ -191,7 +191,7 @@ Set this for the caches `sessions`, `authenticationSessions`, `offlineSessions`,
 <2> The remote site name.
 <3> The cross-site communication, in this case, `SYNC`.
 +
-For `{site-b}`, the Cache CR is similar except in point 2.
+For `{site-b}`, the `Cache` CR is similar except in point 2.
 +
 .session in `{site-b}`
 [source,yaml]
@@ -217,6 +217,6 @@ kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infi
 
 == Next steps
 
-After infinispan is deployed and running, use the procedure in the <@links.ha id="connect-keycloak-to-external-infinispan"/> {section} to connect your {project_name} cluster with the {jdgserver_name} cluster.
+After {jdgserver_name} is deployed and running, use the procedure in the <@links.ha id="connect-keycloak-to-external-infinispan"/> {section} to connect your {project_name} cluster with the {jdgserver_name} cluster.
 
 </@tmpl.guide>
