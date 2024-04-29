@@ -41,7 +41,6 @@ import org.infinispan.factories.impl.ComponentRef;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
-import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.util.EmbeddedTimeService;
 import org.jboss.logging.Logger;
@@ -78,16 +77,6 @@ public class InfinispanUtil {
         return session.getProvider(InfinispanConnectionProvider.class).getTopologyInfo();
     }
 
-
-    /**
-     *
-     * @param cache
-     * @return true if cluster coordinator OR if it's local cache
-     */
-    public static boolean isCoordinator(Cache cache) {
-        Transport transport = cache.getCacheManager().getTransport();
-        return transport == null || transport.isCoordinator();
-    }
 
     /**
      * Convert the given value to the proper value, which can be used when calling operations for the infinispan remoteCache.

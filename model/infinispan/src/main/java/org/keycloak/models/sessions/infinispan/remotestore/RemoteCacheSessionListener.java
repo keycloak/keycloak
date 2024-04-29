@@ -97,7 +97,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
                 // Doesn't work due https://issues.jboss.org/browse/ISPN-9323. Needs to explicitly retrieve and create it
                 //cache.get(key);
 
-                createRemoteEntityInCache(key, event.getVersion());
+                createRemoteEntityInCache(key);
 
             });
         }
@@ -119,7 +119,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     }
 
 
-    protected void createRemoteEntityInCache(K key, long eventVersion) {
+    protected void createRemoteEntityInCache(K key) {
         VersionedValue<SessionEntityWrapper<V>> remoteSessionVersioned = remoteCache.getWithMetadata(key);
 
         // Maybe can happen under some circumstances that remoteCache doesn't yet contain the value sent in the event (maybe just theoretically...)
@@ -248,18 +248,6 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
         return result;
     }
-
-
-
-    @ClientListener(includeCurrentState = true)
-    public static class FetchInitialStateCacheListener extends RemoteCacheSessionListener {
-    }
-
-
-    @ClientListener(includeCurrentState = false)
-    public static class DontFetchInitialStateCacheListener extends RemoteCacheSessionListener {
-    }
-
 
     public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
                                                                                          SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {

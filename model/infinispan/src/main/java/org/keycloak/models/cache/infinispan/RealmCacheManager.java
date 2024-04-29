@@ -102,7 +102,7 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(InGroupPredicate.create().group(groupId), invalidations);
     }
 
-    public void clientAdded(String realmId, String clientUUID, String clientId, Set<String> invalidations) {
+    public void clientAdded(String realmId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getRealmClientsQueryCacheKey(realmId));
     }
 

@@ -17,6 +17,16 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
@@ -39,17 +49,6 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -151,7 +150,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Set<String> eventsListeners;
     protected Set<String> enabledEventTypes;
     protected boolean adminEventsEnabled;
-    protected Set<String> adminEnabledEventOperations = new HashSet<>();
     protected boolean adminEventsDetailsEnabled;
     protected String defaultRoleId;
     private boolean allowUserManagedAccess;
@@ -595,10 +593,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isAdminEventsEnabled() {
         return adminEventsEnabled;
-    }
-
-    public Set<String> getAdminEnabledEventOperations() {
-        return adminEnabledEventOperations;
     }
 
     public boolean isAdminEventsDetailsEnabled() {

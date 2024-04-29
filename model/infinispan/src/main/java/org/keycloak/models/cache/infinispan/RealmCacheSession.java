@@ -122,7 +122,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected Set<String> invalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
 
-    protected boolean clearAll;
     protected final long startupRevision;
     private final StoreManagers datastoreProvider;
 
@@ -133,14 +132,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         this.datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistPrepare(getPrepareTransaction());
         session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
-    }
-
-    public long getStartupRevision() {
-        return startupRevision;
-    }
-
-    public boolean isInvalid(String id) {
-        return invalidations.contains(id);
     }
 
     @Override
@@ -355,9 +346,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             @Override
             public void commit() {
                 try {
-                    if (clearAll) {
-                        cache.clear();
-                    }
                     runInvalidations();
                     transactionActive = false;
                 } finally {
@@ -551,7 +539,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         listInvalidations.add(realm.getId());
 
         invalidationEvents.add(ClientAddedEvent.create(client.getId(), client.getClientId(), realm.getId()));
-        cache.clientAdded(realm.getId(), client.getId(), client.getClientId(), invalidations);
+        cache.clientAdded(realm.getId(), invalidations);
         return client;
     }
 
