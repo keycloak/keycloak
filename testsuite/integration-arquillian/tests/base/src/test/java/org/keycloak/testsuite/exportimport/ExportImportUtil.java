@@ -251,7 +251,7 @@ public class ExportImportUtil {
             } else if ("google1".equals(federatedIdentityRep.getIdentityProvider())) {
                 googleFound = true;
                 Assert.assertEquals("google1", federatedIdentityRep.getUserId());
-                Assert.assertEquals("mysocialuser@gmail.com", federatedIdentityRep.getUserName());
+                Assert.assertEquals("mySocialUser@gmail.com", federatedIdentityRep.getUserName());
             } else if ("twitter1".equals(federatedIdentityRep.getIdentityProvider())) {
                 twitterFound = true;
                 Assert.assertEquals("twitter1", federatedIdentityRep.getUserId());
@@ -259,6 +259,12 @@ public class ExportImportUtil {
             }
         }
         Assert.assertTrue(facebookFound && twitterFound && googleFound);
+
+        // make sure the username format is the same when importing
+        UserResource socialUserLowercase = realmRsc.users().get(findByUsername(realmRsc, "lowercasesocialuser").getId());
+        List<FederatedIdentityRepresentation> socialLowercaseLinks = socialUserLowercase.getFederatedIdentity();
+        Assert.assertEquals(1, socialLowercaseLinks.size());
+        Assert.assertEquals("lowercasesocialuser@gmail.com", socialLowercaseLinks.get(0).getUserName());
 
         UserRepresentation foundSocialUser =  testingClient.testing().getUserByFederatedIdentity(realm.getRealm(), "facebook1", "facebook1", "fbuser1");
         Assert.assertEquals(foundSocialUser.getUsername(), socialUser.toRepresentation().getUsername());
@@ -283,7 +289,7 @@ public class ExportImportUtil {
 
         // Test identity providers
         List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProviders();
-        Assert.assertEquals(3, identityProviders.size());
+        Assert.assertEquals(4, identityProviders.size());
         IdentityProviderRepresentation google = null;
         for (IdentityProviderRepresentation idpRep : identityProviders) {
             if (idpRep.getAlias().equals("google1")) google = idpRep;

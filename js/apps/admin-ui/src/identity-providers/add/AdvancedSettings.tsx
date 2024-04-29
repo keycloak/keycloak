@@ -282,6 +282,10 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
           }}
         />
       )}
+      <SwitchField
+        field="config.caseSensitiveOriginalUsername"
+        label="caseSensitiveOriginalUsername"
+      />
     </>
   );
 };

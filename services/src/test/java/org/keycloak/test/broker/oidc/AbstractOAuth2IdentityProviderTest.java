@@ -147,7 +147,7 @@ public class AbstractOAuth2IdentityProviderTest {
 		}
 
 		protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
-			return new BrokeredIdentityContext(accessToken);
+			return new BrokeredIdentityContext(accessToken, getConfig());
 		};
 
 	};

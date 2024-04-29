@@ -222,7 +222,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                         .build();
                 User twitterUser = twitter.v1().users().verifyCredentials();
 
-                BrokeredIdentityContext identity = new BrokeredIdentityContext(Long.toString(twitterUser.getId()));
+                BrokeredIdentityContext identity = new BrokeredIdentityContext(Long.toString(twitterUser.getId()), providerConfig);
                 identity.setIdp(provider);
 
                 identity.setUsername(twitterUser.getScreenName());
@@ -244,7 +244,6 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 }
                 identity.getContextData().put(IdentityProvider.FEDERATED_ACCESS_TOKEN, token);
 
-                identity.setIdpConfig(providerConfig);
                 identity.setAuthenticationSession(authSession);
 
                 return callback.authenticated(identity);
