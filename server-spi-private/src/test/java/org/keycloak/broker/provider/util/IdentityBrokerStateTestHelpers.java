@@ -1773,6 +1773,14 @@ public class IdentityBrokerStateTestHelpers {
         public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
 
         }
-    }
 
+        @Override
+        public boolean isOrganizationsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        }
+    }
 }

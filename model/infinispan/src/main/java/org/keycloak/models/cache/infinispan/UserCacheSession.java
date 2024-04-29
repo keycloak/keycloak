@@ -340,10 +340,12 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            // check if user is member of a disabled organization.
+            // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
             OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
             OrganizationModel organization = organizationProvider.getByMember(delegate);
-            if (organization != null && organization.isManaged(delegate) && !organization.isEnabled()) {
+
+            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate) && !organization.isEnabled()) || 
+                    (!organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate))) {
                 return new ReadOnlyUserModelDelegate(delegate) {
                     @Override
                     public boolean isEnabled() {

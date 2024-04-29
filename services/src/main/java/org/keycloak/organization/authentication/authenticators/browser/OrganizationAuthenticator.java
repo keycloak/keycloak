@@ -17,11 +17,10 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 import static org.keycloak.organization.utils.Organizations.resolveBroker;
 
 import java.util.List;
-import java.util.Objects;
-
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -30,7 +29,6 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
@@ -56,7 +54,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     public void authenticate(AuthenticationFlowContext context) {
         OrganizationProvider provider = getOrganizationProvider();
 
-        if (!provider.isEnabled()) {
+        if (!isEnabledAndOrganizationsPresent(provider)) {
             context.attempted();
             return;
         }

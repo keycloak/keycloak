@@ -50,6 +50,7 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_IDENTITY_PROVIDERS)
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS)
                 .build());
+        super.configureTestRealm(testRealm);
     }
 
     @Test

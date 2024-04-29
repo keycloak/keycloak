@@ -1120,4 +1120,13 @@ public class RealmModelDelegate implements RealmModel {
         return delegate.searchForRolesStream(search, first, max);
     }
 
+    @Override
+    public boolean isOrganizationsEnabled() {
+        return delegate.isOrganizationsEnabled();
+    }
+
+    @Override
+    public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        delegate.setOrganizationsEnabled(organizationsEnabled);
+    }
 }
