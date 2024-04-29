@@ -516,19 +516,19 @@ public class RepresentationToModel {
             add(updatePropertyAction(client::setNotBefore, rep::getNotBefore, client::getNotBefore));
             // Fields with defaults if not initially provided
             add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> OIDC));
-            add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, client::getNodeReRegistrationTimeout, () -> -1));
+            add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, () -> defaultNodeReRegistraionTimeout(client, isNew)));
             add(updatePropertyAction(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
-            add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed, () -> isNew ? !client.isConsentRequired() : client.isFullScopeAllowed()));
+            add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed, () -> defaultFullScopeAllowed(client, isNew)));
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
             add(updatePropertyAction(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris())));
-            add(updatePropertyAction(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), client::getWebOrigins, () -> webOriginsFromRedirectUris(rep)));
+            add(updatePropertyAction(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
         }};
 
         // Extended client attributes
         if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 clientPropertyUpdates.add(
                     updatePropertyAction(val -> client.setAttribute(entry.getKey(), val), entry::getValue, () -> client.getAttribute(entry.getKey())));
             }
@@ -545,6 +545,17 @@ public class RepresentationToModel {
                     "Cannot change property of client as it is not allowed by the specified client type.",
                     propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
         }
+    }
+
+    private static Boolean defaultFullScopeAllowed(ClientModel client, boolean isNew) {
+         return isNew ? !client.isConsentRequired() : client.isFullScopeAllowed();
+    }
+
+    private static Integer defaultNodeReRegistraionTimeout(ClientModel client, boolean isNew) {
+        if (!ObjectUtil.isEqualOrBothNull(client.getNodeReRegistrationTimeout(), 0) || !isNew) {
+            return client.getNodeReRegistrationTimeout();
+        }
+        return -1;
     }
 
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
@@ -567,11 +578,12 @@ public class RepresentationToModel {
         return null;
     }
 
-    private static Set<String> webOriginsFromRedirectUris(ClientRepresentation rep) {
-        if (rep.getRedirectUris() == null) {
-            return null;
+    private static Set<String> defaultWebOrigins(ClientModel client) {
+        Optional<Set<String>> webOrigins = Optional.of(client.getWebOrigins()).filter(origins -> !origins.isEmpty());
+        if (webOrigins.isPresent()) {
+            return webOrigins.get();
         }
-        return rep.getRedirectUris()
+        return client.getRedirectUris()
                 .stream()
                 .filter(uri -> uri.startsWith("http"))
                 .map(UriUtils::getOrigin)
