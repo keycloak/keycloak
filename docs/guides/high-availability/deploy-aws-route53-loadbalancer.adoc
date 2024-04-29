@@ -217,13 +217,13 @@ For both the Primary and Backup cluster, perform the following steps:
 +
 .. Log in to the ROSA cluster
 +
-.. Ensure the {project_name} CR has the following configuration
+.. Ensure the `Keycloak` CR has the following configuration
 +
 [source,yaml]
 ----
 <#noparse>
 apiVersion: k8s.keycloak.org/v2alpha1
-kind: {project_name}
+kind: Keycloak
 metadata:
   name: keycloak
 spec:

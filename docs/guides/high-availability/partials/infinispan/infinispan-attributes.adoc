@@ -20,6 +20,6 @@
 
 // Other common attributes
 :ocp: OpenShift
-:ispn-operator: Infinispan Operator
+:ispn-operator: {jdgserver_name} Operator
 :site-a: Site-A
 :site-b: Site-B
