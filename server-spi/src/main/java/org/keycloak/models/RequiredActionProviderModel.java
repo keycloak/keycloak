@@ -28,17 +28,11 @@ import java.util.Map;
 */
 public class RequiredActionProviderModel implements Serializable {
 
-    public static class RequiredActionComparator implements Comparator<RequiredActionProviderModel> {
-        public static final RequiredActionComparator SINGLETON = new RequiredActionComparator();
-
-        @Override
-        public int compare(RequiredActionProviderModel o1, RequiredActionProviderModel o2) {
-
-            return Comparator
-                    .comparingInt(RequiredActionProviderModel::getPriority)
-                    .thenComparing(RequiredActionProviderModel::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
-                    .compare(o1, o2);
-        }
+    public interface RequiredActionComparator extends Comparator<RequiredActionProviderModel> {
+        RequiredActionComparator SINGLETON = Comparator
+            .comparingInt(RequiredActionProviderModel::getPriority)
+            .thenComparing(RequiredActionProviderModel::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
+            ::compare;
     }
 
     private String id;
