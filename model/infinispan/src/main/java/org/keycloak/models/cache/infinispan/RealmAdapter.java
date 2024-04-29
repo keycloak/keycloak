@@ -32,6 +32,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.keycloak.common.Profile;
+import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -860,17 +862,32 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        if (isUpdated()) return updated.getIdentityProvidersStream();
-        return cached.getIdentityProviders().stream();
+        if (isUpdated()) return updated.getIdentityProvidersStream().map(this::createOrganizationAwareIdentityProviderModel);
+        return cached.getIdentityProviders().stream().map(this::createOrganizationAwareIdentityProviderModel);
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        if (isUpdated()) return updated.getIdentityProviderByAlias(alias);
+        if (isUpdated()) return createOrganizationAwareIdentityProviderModel(updated.getIdentityProviderByAlias(alias));
         return getIdentityProvidersStream()
                 .filter(model -> Objects.equals(model.getAlias(), alias))
                 .findFirst()
+                .map(this::createOrganizationAwareIdentityProviderModel)
                 .orElse(null);
+    }
+
+    private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
+        return new IdentityProviderModel(idp) {
+            @Override
+            public boolean isEnabled() {
+                // if IdP is bound to an org
+                if (getOrganizationId() != null) {
+                    return session.getProvider(OrganizationProvider.class).isEnabled() && super.isEnabled();
+                }
+                return super.isEnabled();
+            }
+        };
     }
 
     @Override
@@ -1747,5 +1764,22 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
+    }
+
+    @Override
+    public boolean isOrganizationsEnabled() {
+        if (isUpdated()) return featureAwareIsOrganizationsEnabled(updated.isOrganizationsEnabled());
+        return featureAwareIsOrganizationsEnabled(cached.isOrganizationsEnabled());
+    }
+
+    @Override
+    public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        getDelegateForUpdate();
+        updated.setOrganizationsEnabled(organizationsEnabled);
+    }
+
+    private boolean featureAwareIsOrganizationsEnabled(boolean isOrganizationsEnabled) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return false;
+        return isOrganizationsEnabled;
     }
 }

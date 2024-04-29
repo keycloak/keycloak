@@ -114,4 +114,9 @@ public class Organizations {
             }
         };
     }
+
+    public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider organizationProvider) {
+        // todo replace getAllStream().findAny().isPresent() with count query
+        return organizationProvider != null && organizationProvider.isEnabled() && organizationProvider.getAllStream().findAny().isPresent();
+    }
 }

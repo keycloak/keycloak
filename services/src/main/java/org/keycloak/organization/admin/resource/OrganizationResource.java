@@ -89,6 +89,7 @@ public class OrganizationResource {
     @Operation( summary = "Creates a new organization")
     public Response create(OrganizationRepresentation organization) {
         auth.realm().requireManageRealm();
+        checkOrganizationsEnabled();
         if (organization == null) {
             throw ErrorResponse.error("Organization cannot be null.", Response.Status.BAD_REQUEST);
         }
@@ -126,6 +127,7 @@ public class OrganizationResource {
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
             ) {
         auth.realm().requireManageRealm();
+        checkOrganizationsEnabled();
 
         // check if are searching orgs by attribute.
         if(StringUtil.isNotBlank(searchQuery)) {
@@ -150,6 +152,7 @@ public class OrganizationResource {
     @Operation(summary = "Returns the organization associated with the specified id, or null if no organization is found")
     public OrganizationRepresentation get(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
+        checkOrganizationsEnabled();
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("Id cannot be null.", Response.Status.BAD_REQUEST);
         }
@@ -163,6 +166,7 @@ public class OrganizationResource {
     @Operation(summary = "Deletes the organization with the specified id")
     public Response delete(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
+        checkOrganizationsEnabled();
         if (StringUtil.isBlank(id)) {
             throw ErrorResponse.error("Id cannot be null.", Response.Status.BAD_REQUEST);
         }
@@ -179,6 +183,7 @@ public class OrganizationResource {
     @Operation(summary = "Updates the organization with the specified id")
     public Response update(@PathParam("id") String id, OrganizationRepresentation organization) {
         auth.realm().requireManageRealm();
+        checkOrganizationsEnabled();
         OrganizationModel model = getOrganization(id);
         toModel(organization, model);
 
@@ -187,11 +192,13 @@ public class OrganizationResource {
 
     @Path("{id}/members")
     public OrganizationMemberResource members(@PathParam("id") String id) {
+        checkOrganizationsEnabled();
         return new OrganizationMemberResource(session, getOrganization(id), auth, adminEvent);
     }
 
     @Path("{id}/identity-providers")
     public OrganizationIdentityProvidersResource identityProvider(@PathParam("id") String id) {
+        checkOrganizationsEnabled();
         return new OrganizationIdentityProvidersResource(session, getOrganization(id), auth, adminEvent);
     }
     
@@ -258,5 +265,11 @@ public class OrganizationResource {
 
     private OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
         return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+    }
+
+    private void checkOrganizationsEnabled() {
+        if (provider != null && !provider.isEnabled()) {
+            throw ErrorResponse.error("Organizations not enabled for this realm.", Response.Status.NOT_FOUND);
+        }
     }
 }

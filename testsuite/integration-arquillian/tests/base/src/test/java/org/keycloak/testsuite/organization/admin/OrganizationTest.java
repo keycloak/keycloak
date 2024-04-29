@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.io.IOException;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -51,6 +52,7 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 @EnableFeature(Feature.ORGANIZATION)
@@ -374,34 +376,66 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testDisabledOrganizationProvider() throws IOException {
+        OrganizationRepresentation existing = createOrganization("acme", "acme.org", "acme.net");
+        // disable the organization provider and try to access REST endpoints
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+                .setOrganizationEnabled(Boolean.FALSE)
+                .update()) {
+            OrganizationRepresentation org = createRepresentation("some", "some.com");
+
+            try (Response response = testRealm().organizations().create(org)) {
+                assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+            }
+            try {
+                testRealm().organizations().getAll();
+                fail("Expected NotFoundException");
+            } catch (NotFoundException expected) {}
+            try {
+                testRealm().organizations().search("*");
+                fail("Expected NotFoundException");
+            } catch (NotFoundException expected) {}
+            try {
+                testRealm().organizations().get(existing.getId()).toRepresentation();
+                fail("Expected NotFoundException");
+            } catch (NotFoundException expected) {}
+        }
+    }
+
+    @Test
     public void testDeleteRealm() {
-        RealmRepresentation realmRep = RealmBuilder.create().name(KeycloakModelUtils.generateId()).build();
-        RealmResource realm = realmsResouce().realm(realmRep.getRealm());
+        RealmRepresentation realmRep = RealmBuilder.create()
+                .name(KeycloakModelUtils.generateId())
+                .organizationEnabled(true)
+                .build();
+        RealmResource realmRes = realmsResouce().realm(realmRep.getRealm());
 
         try {
             realmRep.setEnabled(true);
             realmsResouce().create(realmRep);
-            realm = realmsResouce().realm(realmRep.getRealm());
-            realm.toRepresentation();
+            realmRes = realmsResouce().realm(realmRep.getRealm());
+            realmRes.toRepresentation();
             OrganizationRepresentation org = new OrganizationRepresentation();
             org.setName("test-org");
             org.addDomain(new OrganizationDomainRepresentation("test.org"));
             org.setEnabled(true);
-            Response response = realm.organizations().create(org);
-            response.close();
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            List<OrganizationRepresentation> orgs = realm.organizations().getAll();
-            assertEquals(1, orgs.size());
+            try (Response response = realmRes.organizations().create(org)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            List<OrganizationRepresentation> orgs = realmRes.organizations().getAll();
+            assertThat(orgs, hasSize(1));
+
             IdentityProviderRepresentation broker = bc.setUpIdentityProvider();
             broker.setAlias(KeycloakModelUtils.generateId());
-            response = realm.identityProviders().create(broker);
-            response.close();
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            response = realm.organizations().get(orgs.get(0).getId()).identityProviders().addIdentityProvider(broker.getAlias());
-            response.close();
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            try (Response response = realmRes.identityProviders().create(broker)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+            try (Response response = realmRes.organizations().get(orgs.get(0).getId()).identityProviders().addIdentityProvider(broker.getAlias())) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
         } finally {
-            realm.remove();
+            realmRes.remove();
         }
     }
 }

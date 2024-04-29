@@ -1174,6 +1174,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public boolean isOrganizationsEnabled() {
+        return getAttribute(RealmAttributes.ORGANIZATIONS_ENABLED, Boolean.FALSE);
+    }
+
+    @Override
+    public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        setAttribute(RealmAttributes.ORGANIZATIONS_ENABLED, organizationsEnabled);
+    }
+
+    @Override
     public ClientModel getMasterAdminClient() {
         String masterAdminClientId = realm.getMasterAdminClient();
         if (masterAdminClientId == null) {

@@ -42,6 +42,8 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
+import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
+
 public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "oidc-organization-membership-mapper";
@@ -77,7 +79,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
         OrganizationProvider provider = keycloakSession.getProvider(OrganizationProvider.class);
 
-        if (!provider.isEnabled()) {
+        if (!isEnabledAndOrganizationsPresent(provider)) {
             return;
         }
 

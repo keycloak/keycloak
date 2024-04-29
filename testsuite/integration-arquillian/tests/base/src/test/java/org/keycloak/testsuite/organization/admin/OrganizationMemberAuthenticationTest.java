@@ -17,14 +17,18 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
+import java.io.IOException;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTest {
@@ -85,5 +89,37 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
         // check if the login page is shown
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testAuthenticateUnmanagedMemberWehnProviderDisabled() throws IOException {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        UserRepresentation member = addMember(organization, "contractor@contractor.org");
+
+        // first try to access login page
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+
+        // disable the organization provider
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+                .setOrganizationEnabled(Boolean.FALSE)
+                .update()) {
+
+            // access the page again, now it should be present username and password fields
+            loginPage.open(bc.consumerRealmName());
+
+            waitForPage(driver, "sign in to", true);
+            assertThat("Driver should be on the consumer realm page right now",
+                    driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assert.assertTrue(loginPage.isPasswordInputPresent());
+            // no idp should be shown because there is only a single idp that is bound to an organization
+            Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+
+            // the member should be able to log in using the credentials
+            loginPage.login(member.getEmail(), memberPassword);
+            appPage.assertCurrent();
+        }
     }
 }

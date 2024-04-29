@@ -105,6 +105,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
 
+    boolean isOrganizationsEnabled();
+
+    void setOrganizationsEnabled(boolean organizationsEnabled);
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
