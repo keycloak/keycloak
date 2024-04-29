@@ -149,12 +149,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
             return wrappedEntity;
         } else {
-            V entity = myUpdates.getEntityWrapper().getEntity();
-
             // If entity is scheduled for remove, we don't return it.
             boolean scheduledForRemove = myUpdates.getUpdateTasks().stream().filter((SessionUpdateTask task) -> {
 
-                return task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE;
+                return task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE;
 
             }).findFirst().isPresent();
 
@@ -190,8 +188,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
 
     private void runOperationInCluster(K key, MergedUpdate<V> task,  SessionEntityWrapper<V> sessionWrapper) {
-        V session = sessionWrapper.getEntity();
-        SessionUpdateTask.CacheOperation operation = task.getOperation(session);
+        SessionUpdateTask.CacheOperation operation = task.getOperation();
 
         // Don't need to run update of underlying entity. Local updates were already run
         //task.runUpdate(session);

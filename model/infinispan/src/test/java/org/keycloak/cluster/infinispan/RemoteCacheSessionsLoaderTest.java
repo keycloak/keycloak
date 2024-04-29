@@ -103,8 +103,7 @@ public class RemoteCacheSessionsLoaderTest {
             // Just to be able to test serializability
             RemoteCacheSessionsLoader loader = new CustomLoader(cacheName, 64, cache2, remoteCache);
 
-            loader.init(null);
-            RemoteCacheSessionsLoaderContext ctx = loader.computeLoaderContext(null);
+            RemoteCacheSessionsLoaderContext ctx = loader.computeLoaderContext();
             Assert.assertEquals(ctx.getSessionsPerSegment(), 64);
 
             int totalCount = 0;
@@ -113,7 +112,7 @@ public class RemoteCacheSessionsLoaderTest {
             Set<String> visitedKeys = new HashSet<>();
             for (int currentSegment=0 ; currentSegment<ctx.getSegmentsCount() ; currentSegment++) {
                 logger.infof("Loading segment %d", currentSegment);
-                loader.loadSessions(null, ctx, new SessionLoader.WorkerContext(currentSegment, currentSegment));
+                loader.loadSessions(null, ctx, new SessionLoader.WorkerContext(currentSegment));
 
                 logger.infof("Loaded %d keys for segment %d", cache2.keySet().size(), currentSegment);
                 totalCount = totalCount + cache2.keySet().size();

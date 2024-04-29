@@ -90,12 +90,11 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
             return wrappedEntity;
         } else {
-            AuthenticatedClientSessionEntity entity = myUpdates.getEntityWrapper().getEntity();
 
             // If entity is scheduled for remove, we don't return it.
             boolean scheduledForRemove = myUpdates.getUpdateTasks().stream().filter((SessionUpdateTask task) -> {
 
-                return task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE;
+                return task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE;
 
             }).findFirst().isPresent();
 
@@ -192,7 +191,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         }
 
         @Override
-        public CacheOperation getOperation(UserSessionEntity session) {
+        public CacheOperation getOperation() {
             return CacheOperation.REPLACE;
         }
 

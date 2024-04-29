@@ -120,7 +120,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return delegate;
     }
 
-    public void registerUserInvalidation(RealmModel realm,CachedUser user) {
+    public void registerUserInvalidation(CachedUser user) {
         cache.userUpdatedInvalidations(user.getId(), user.getUsername(), user.getEmail(), user.getRealm(), invalidations);
         invalidationEvents.add(UserUpdatedEvent.create(user.getId(), user.getUsername(), user.getEmail(), user.getRealm()));
     }
@@ -326,7 +326,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
             // its also hard to test stuff
             if (model.shouldInvalidate(cached)) {
-                registerUserInvalidation(realm, cached);
+                registerUserInvalidation(cached);
                 return getDelegate().getUserById(realm, cached.getId());
             }
         }

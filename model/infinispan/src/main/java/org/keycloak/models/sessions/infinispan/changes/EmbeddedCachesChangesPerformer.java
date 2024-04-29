@@ -40,8 +40,7 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
     }
 
     private void runOperationInCluster(K key, MergedUpdate<V> task,  SessionEntityWrapper<V> sessionWrapper) {
-        V session = sessionWrapper.getEntity();
-        SessionUpdateTask.CacheOperation operation = task.getOperation(session);
+        SessionUpdateTask.CacheOperation operation = task.getOperation();
 
         // Don't need to run update of underlying entity. Local updates were already run
         //task.runUpdate(session);

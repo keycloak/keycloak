@@ -25,7 +25,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 public abstract class UserSessionUpdateTask implements PersistentSessionUpdateTask<UserSessionEntity> {
 
     @Override
-    public CacheOperation getOperation(UserSessionEntity session) {
+    public CacheOperation getOperation() {
         return CacheOperation.REPLACE;
     }
 

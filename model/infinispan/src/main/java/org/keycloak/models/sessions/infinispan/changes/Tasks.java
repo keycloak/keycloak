@@ -32,7 +32,7 @@ public class Tasks {
         }
 
         @Override
-        public CacheOperation getOperation(SessionEntity entity) {
+        public CacheOperation getOperation() {
             return CacheOperation.ADD_IF_ABSENT;
         }
 
@@ -48,7 +48,7 @@ public class Tasks {
         }
 
         @Override
-        public CacheOperation getOperation(SessionEntity entity) {
+        public CacheOperation getOperation() {
             return CacheOperation.REMOVE;
         }
 
@@ -63,13 +63,13 @@ public class Tasks {
         }
     };
 
-    private static final SessionUpdateTask<? extends SessionEntity> OFFLINE_REMOVE_SYNC = new PersistentSessionUpdateTask<SessionEntity>() {
+    private static final SessionUpdateTask<? extends SessionEntity> OFFLINE_REMOVE_SYNC = new PersistentSessionUpdateTask<>() {
         @Override
         public void runUpdate(SessionEntity entity) {
         }
 
         @Override
-        public CacheOperation getOperation(SessionEntity entity) {
+        public CacheOperation getOperation() {
             return CacheOperation.REMOVE;
         }
 
