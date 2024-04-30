@@ -4,7 +4,6 @@ import { environment } from "@keycloak/keycloak-ui-shared";
 import { ErrorPage } from "./root/ErrorPage";
 import { Root } from "./root/Root";
 import { environment } from "./environment";
-import Oid4Vci from "./oid4vci/Oid4Vci";
 
 const DeviceActivity = lazy(() => import("./account-security/DeviceActivity"));
 const LinkedAccounts = lazy(() => import("./account-security/LinkedAccounts"));
@@ -14,6 +13,7 @@ const Groups = lazy(() => import("./groups/Groups"));
 const PersonalInfo = lazy(() => import("./personal-info/PersonalInfo"));
 const Resources = lazy(() => import("./resources/Resources"));
 const ContentComponent = lazy(() => import("./content/ContentComponent"));
+const Oid4Vci = lazy(() => import("./oid4vci/Oid4Vci"));
 
 export const DeviceActivityRoute: RouteObject = {
   path: "account-security/device-activity",
