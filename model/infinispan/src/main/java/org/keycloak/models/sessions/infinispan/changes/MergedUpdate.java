@@ -36,12 +36,6 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     private CrossDCMessageStatus crossDCMessageStatus;
     private final long lifespanMs;
     private final long maxIdleTimeMs;
-    private boolean isDeferrable;
-
-    @Override
-    public boolean isDeferrable() {
-        return isDeferrable;
-    }
 
     private MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus, long lifespanMs, long maxIdleTimeMs) {
         this.operation = operation;
@@ -83,11 +77,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
 
         MergedUpdate<S> result = null;
         S session = sessionWrapper.getEntity();
-        boolean isDeferrable = true;
         for (SessionUpdateTask<S> child : childUpdates) {
-            if (!child.isDeferrable()) {
-                isDeferrable = false;
-            }
             if (result == null) {
                 CacheOperation operation = child.getOperation(session);
 
@@ -123,20 +113,12 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                 result.childUpdates.add(child);
             }
         }
-        if (result != null) {
-            result.setDeferable(isDeferrable);
-        }
         return result;
-    }
-
-    private void setDeferable(boolean isDeferrable) {
-        this.isDeferrable = isDeferrable;
     }
 
     @Override
     public String toString() {
         return "MergedUpdate" + childUpdates;
     }
-
 
 }

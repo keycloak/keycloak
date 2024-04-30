@@ -17,29 +17,38 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.KeycloakSession;
 
-import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Capture information for a deferred update of the session stores.
  *
  * @author Alexander Schwartz
  */
-public class PersistentDeferredElement<K, V extends SessionEntity> {
-    private final Map.Entry<K, SessionUpdatesList<V>> entry;
-    private final MergedUpdate<V> merged;
+public class PersistentUpdate {
 
-    public PersistentDeferredElement(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
-        this.entry = entry;
-        this.merged = merged;
+    private final Consumer<KeycloakSession> task;
+    private final CompletableFuture<Void> future = new CompletableFuture<>();
+
+    public PersistentUpdate(Consumer<KeycloakSession> task) {
+        this.task = task;
     }
 
-    public Map.Entry<K, SessionUpdatesList<V>> getEntry() {
-        return entry;
+    public void perform(KeycloakSession session) {
+        task.accept(session);
     }
 
-    public MergedUpdate<V> getMerged() {
-        return merged;
+    public void complete() {
+        future.complete(null);
+    }
+
+    public void fail(Throwable throwable) {
+        future.completeExceptionally(throwable);
+    }
+
+    public CompletableFuture<Void> future() {
+        return future;
     }
 }

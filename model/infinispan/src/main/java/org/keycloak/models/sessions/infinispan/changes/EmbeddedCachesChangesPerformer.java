@@ -24,25 +24,26 @@ import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implements SessionChangesPerformer<K, V> {
 
     private static final Logger LOG = Logger.getLogger(EmbeddedCachesChangesPerformer.class);
     private final Cache<K, SessionEntityWrapper<V>> cache;
-    private final SerializeExecutionsByKey<K> serializer;
-    private final List<Runnable> changes = new LinkedList<>();
+    private final List<Supplier<CompletableFuture<?>>> changes = new LinkedList<>();
 
-    public EmbeddedCachesChangesPerformer(Cache<K, SessionEntityWrapper<V>> cache, SerializeExecutionsByKey<K> serializer) {
+    public EmbeddedCachesChangesPerformer(Cache<K, SessionEntityWrapper<V>> cache) {
         this.cache = cache;
-        this.serializer = serializer;
     }
 
-    private void runOperationInCluster(K key, MergedUpdate<V> task,  SessionEntityWrapper<V> sessionWrapper) {
+    private CompletableFuture<?> runOperationInCluster(K key, MergedUpdate<V> task, SessionEntityWrapper<V> sessionWrapper) {
         V session = sessionWrapper.getEntity();
         SessionUpdateTask.CacheOperation operation = task.getOperation(session);
 
@@ -52,82 +53,78 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
+                return CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
                         .withFlags(Flag.IGNORE_RETURN_VALUES)
-                        .remove(key);
-                break;
+                        .removeAsyncEntry(key);
             case ADD:
-                CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
+                return CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
                         .withFlags(Flag.IGNORE_RETURN_VALUES)
-                        .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
-
-                LOG.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
-                break;
+                        .putAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
+                        .thenAcceptAsync(v -> LOG.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs()));
             case ADD_IF_ABSENT:
-                SessionEntityWrapper<V> existing = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).putIfAbsent(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
-                if (existing != null) {
-                    LOG.debugf("Existing entity in cache for key: %s . Will update it", key);
+                return CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
+                        .thenAccept(existing -> {
+                            if (existing != null) {
+                                LOG.debugf("Existing entity in cache for key: %s . Will update it", key);
 
-                    // Apply updates on the existing entity and replace it
-                    task.runUpdate(existing.getEntity());
+                                // Apply updates on the existing entity and replace it
+                                task.runUpdate(existing.getEntity());
 
-                    replace(key, task, existing, task.getLifespanMs(), task.getMaxIdleTimeMs());
-                } else {
-                    LOG.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
-                }
-                break;
+                                replace(key, task, existing, task.getLifespanMs(), task.getMaxIdleTimeMs()).join();
+                            } else {
+                                LOG.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                            }
+                        });
             case REPLACE:
-                replace(key, task, sessionWrapper, task.getLifespanMs(), task.getMaxIdleTimeMs());
-                break;
+                return replace(key, task, sessionWrapper, task.getLifespanMs(), task.getMaxIdleTimeMs());
             default:
                 throw new IllegalStateException("Unsupported state " +  operation);
         }
-
     }
 
-    private void replace(K key, MergedUpdate<V> task, SessionEntityWrapper<V> oldVersionEntity, long lifespanMs, long maxIdleTimeMs) {
-        serializer.runSerialized(key, () -> {
-            SessionEntityWrapper<V> oldVersion = oldVersionEntity;
-            boolean replaced = false;
-            int iteration = 0;
-            V session = oldVersion.getEntity();
+    private CompletableFuture<?> replace(K key, MergedUpdate<V> task, SessionEntityWrapper<V> oldVersionEntity, long lifespanMs, long maxIdleTimeMs) {
+        // make one async attempt
+        return CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).replaceAsync(key, oldVersionEntity, generateNewVersionAndWrapEntity(oldVersionEntity.getEntity(), oldVersionEntity.getLocalMetadata()), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS)
+                .thenAccept(replaced -> {
+                    int iteration = 0;
+                    SessionEntityWrapper<V> oldVersion = oldVersionEntity;
+                    while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+                        iteration++;
 
-            while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
-                iteration++;
+                        V session = oldVersion.getEntity();
+                        SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
 
-                SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
+                        // Atomic cluster-aware replace
+                        replaced = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).replace(key, oldVersion, newVersionEntity, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
-                // Atomic cluster-aware replace
-                replaced = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).replace(key, oldVersion, newVersionEntity, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+                        // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
+                        if (!replaced) {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersion.getVersion(), newVersionEntity.getVersion());
+                            }
+                            backoff(iteration);
 
-                // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
-                if (!replaced) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersion.getVersion(), newVersionEntity.getVersion());
+                            oldVersion = cache.get(key);
+
+                            if (oldVersion == null) {
+                                LOG.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
+                                return;
+                            }
+
+                            session = oldVersion.getEntity();
+
+                            task.runUpdate(session);
+                        } else {
+                            if (LOG.isTraceEnabled()) {
+                                LOG.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                            }
+                        }
                     }
-                    backoff(iteration);
 
-                    oldVersion = cache.get(key);
-
-                    if (oldVersion == null) {
-                        LOG.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
-                        return;
+                    if (!replaced) {
+                        LOG.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
                     }
-
-                    session = oldVersion.getEntity();
-
-                    task.runUpdate(session);
-                } else {
-                    if (LOG.isTraceEnabled()) {
-                        LOG.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
-                    }
-                }
-            }
-
-            if (!replaced) {
-                LOG.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
-            }
-        });
+                });
     }
 
     /**
@@ -153,6 +150,18 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
 
     @Override
     public void applyChanges() {
-        changes.forEach(Runnable::run);
+        if (!changes.isEmpty()) {
+            List<Throwable> exceptions = new ArrayList<>();
+            CompletableFuture.allOf(changes.stream().map(s -> s.get().exceptionally(throwable -> {
+                exceptions.add(throwable);
+                return null;
+            })).toArray(CompletableFuture[]::new)).join();
+            // If any of those futures has failed, add the exceptions as suppressed exceptions to our runtime exception
+            if (!exceptions.isEmpty()) {
+                RuntimeException ex = new RuntimeException("unable to complete the session updates");
+                exceptions.forEach(ex::addSuppressed);
+                throw ex;
+            }
+        }
     }
 }

@@ -26,8 +26,6 @@ import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -41,13 +39,11 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
     private final List<SessionChangesPerformer<K, V>> changesPerformers;
     protected final boolean offline;
-    private final ArrayBlockingQueue<PersistentDeferredElement<K, V>> asyncQueue;
-    private Collection<PersistentDeferredElement<K, V>> batch;
 
-    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<K> serializer, ArrayBlockingQueue<PersistentDeferredElement<K, V>> asyncQueue) {
+    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<K> serializer,
+                                                       ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
         super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, serializer);
         this.offline = offline;
-        this.asyncQueue = asyncQueue;
 
         if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
             throw new IllegalStateException("Persistent user sessions are not enabled");
@@ -56,12 +52,12 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
         if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) &&
             (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
             changesPerformers = List.of(
-                    new JpaChangesPerformer<>(session, cache.getName(), offline)
+                    new JpaChangesPerformer<>(cache.getName(), offline, batchingQueue)
             );
         } else {
             changesPerformers = List.of(
-                    new JpaChangesPerformer<>(session, cache.getName(), offline),
-                    new EmbeddedCachesChangesPerformer<>(cache, serializer),
+                    new JpaChangesPerformer<>(cache.getName(), offline, batchingQueue),
+                    new EmbeddedCachesChangesPerformer<>(cache),
                     new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker)
             );
         }
@@ -84,18 +80,8 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                if (merged.isDeferrable()) {
-                    asyncQueue.add(new PersistentDeferredElement<>(entry, merged));
-                } else {
-                    changesPerformers.forEach(p -> p.registerChange(entry, merged));
-                }
+                changesPerformers.forEach(p -> p.registerChange(entry, merged));
             }
-        }
-
-        if (batch != null) {
-            batch.forEach(o -> {
-                changesPerformers.forEach(p -> p.registerChange(o.getEntry(), o.getMerged()));
-            });
         }
 
         changesPerformers.forEach(SessionChangesPerformer::applyChanges);
@@ -104,13 +90,6 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
     @Override
     protected void rollbackImpl() {
 
-    }
-
-    public void applyDeferredBatch(Collection<PersistentDeferredElement<K, V>> batchToApply) {
-        if (this.batch == null) {
-            this.batch = new ArrayList<>(batchToApply.size());
-        }
-        batch.addAll(batchToApply);
     }
 
 }

@@ -46,8 +46,8 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session, Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<AuthenticatedClientSessionEntity> lifespanMsLoader, SessionFunction<AuthenticatedClientSessionEntity> maxIdleTimeMsLoader, boolean offline, InfinispanKeyGenerator keyGenerator,
-                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx, SerializeExecutionsByKey<UUID> serializer, ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueue) {
-        super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offline, serializer, asyncQueue);
+                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx, SerializeExecutionsByKey<UUID> serializer, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
+        super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offline, serializer, batchingQueue);
         this.keyGenerator = keyGenerator;
         this.userSessionTx = userSessionTx;
     }
@@ -57,10 +57,14 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         if (myUpdates == null) {
             SessionEntityWrapper<AuthenticatedClientSessionEntity> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
+                LOG.debugf("client-session not found in cache for sessionId=%s, offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, client, userSession);
+            } else {
+                LOG.debugf("client-session found in cache for sessionId=%s, offline=%s", key, offline);
             }
 
             if (wrappedEntity == null) {
+                LOG.debugf("client-session not found in persister for sessionId=%s, offline=%s", key, offline);
                 return null;
             }
 
@@ -98,6 +102,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
         SessionEntityWrapper<AuthenticatedClientSessionEntity> authenticatedClientSessionEntitySessionEntityWrapper = importClientSession(realm, client, userSession, clientSession);
         if (authenticatedClientSessionEntitySessionEntityWrapper == null) {
+            LOG.debugf("client-session not imported from persister for sessionId=%s, offline=%s, removing from persister.", clientSession.getId(), offline);
             persister.removeClientSession(userSession.getId(), client.getId(), offline);
         }
 

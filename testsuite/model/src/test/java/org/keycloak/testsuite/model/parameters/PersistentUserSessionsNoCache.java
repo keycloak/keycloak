@@ -23,9 +23,9 @@ import org.keycloak.testsuite.model.KeycloakModelParameters;
 
 import java.util.Collections;
 
-public class PersistentUserSessions extends KeycloakModelParameters {
+public class PersistentUserSessionsNoCache extends KeycloakModelParameters {
 
-    public PersistentUserSessions() {
+    public PersistentUserSessionsNoCache() {
         super(Collections.emptySet(), Collections.emptySet());
     }
 
@@ -36,5 +36,6 @@ public class PersistentUserSessions extends KeycloakModelParameters {
 
     public static void updateConfigForJpa(Config cf) {
         System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.PERSISTENT_USER_SESSIONS), "enabled");
+        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE), "enabled");
     }
 }

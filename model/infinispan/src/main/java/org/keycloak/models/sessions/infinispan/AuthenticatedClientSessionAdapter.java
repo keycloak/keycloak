@@ -157,11 +157,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             }
 
             @Override
-            public boolean isDeferrable() {
-                return true;
-            }
-
-            @Override
             public String toString() {
                 return "setTimestamp(" + timestamp + ')';
             }
