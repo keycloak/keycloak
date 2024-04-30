@@ -16,6 +16,7 @@
  */
 package org.keycloak.organization;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
@@ -140,15 +141,16 @@ public interface OrganizationProvider extends Provider {
      * @param organization the organization
      * @return The identityProvider associated with a given {@code organization} or {@code null} if there is none.
      */
-    IdentityProviderModel getIdentityProvider(OrganizationModel organization);
+    Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization);
 
     /**
      * Removes the link between the given {@link OrganizationModel} and identity provider associated with it if such a link exists.
      * 
      * @param organization the organization
+     * @param identityProvider the identity provider
      * @return {@code true} if the link was removed, {@code false} otherwise
      */
-    boolean removeIdentityProvider(OrganizationModel organization);
+    boolean removeIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
 
     /**
      * Indicates if the current realm supports organization.

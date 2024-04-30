@@ -142,9 +142,9 @@ public class OrganizationResource {
         return new OrganizationMemberResource(session, organization, auth, adminEvent);
     }
 
-    @Path("{id}/identity-provider")
-    public OrganizationIdentityProviderResource identityProvider(@PathParam("id") String id) {
-        return new OrganizationIdentityProviderResource(session, getOrganization(id), auth, adminEvent);
+    @Path("{id}/identity-providers")
+    public OrganizationIdentityProvidersResource identityProvider(@PathParam("id") String id) {
+        return new OrganizationIdentityProvidersResource(session, getOrganization(id), auth, adminEvent);
     }
     
     private OrganizationModel getOrganization(String id) {

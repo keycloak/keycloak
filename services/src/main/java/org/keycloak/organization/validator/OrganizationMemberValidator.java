@@ -19,11 +19,13 @@ package org.keycloak.organization.validator;
 
 import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
@@ -32,6 +34,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidationContext;
@@ -83,15 +86,38 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
             UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
             AttributeContext attributeContext = upContext.getAttributeContext();
             UserModel user = attributeContext.getUser();
+            String emailDomain = email.substring(email.indexOf('@') + 1);
+            List<String> expectedDomains = organization.getDomains().map(OrganizationDomainModel::getName).toList();
 
-            if (!organization.isManaged(user)) {
+            if (UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext())) {
+                KeycloakSession session = attributeContext.getSession();
+                BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) session.getAttribute(BrokeredIdentityContext.class.getName());
+
+                if (brokerContext != null) {
+                    String alias = brokerContext.getIdpConfig().getAlias();
+                    IdentityProviderModel broker = organization.getIdentityProviders().filter((p) -> p.getAlias().equals(alias)).findAny().orElse(null);
+
+                    if (broker == null) {
+                        return;
+                    }
+
+                    String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+                    if (brokerDomain == null) {
+                        return;
+                    }
+
+                    expectedDomains = List.of(brokerDomain);
+                }
+            } else if (!organization.isManaged(user)) {
                 return;
             }
 
-            String domain = email.substring(email.indexOf('@') + 1);
-            Stream<OrganizationDomainModel> expectedDomains = organization.getDomains();
+            if (expectedDomains.isEmpty()) {
+                return;
+            }
 
-            if (expectedDomains.map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
+            if (!expectedDomains.contains(emailDomain)) {
                 context.addError(new ValidationError(ID, inputHint, "Email domain does not match any domain from the organization"));
             }
         }

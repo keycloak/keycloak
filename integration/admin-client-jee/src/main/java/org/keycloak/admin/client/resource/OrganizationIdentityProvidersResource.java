@@ -17,25 +17,28 @@
 
 package org.keycloak.admin.client.resource;
 
+import java.util.List;
+
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
-public interface OrganizationIdentityProviderResource {
+public interface OrganizationIdentityProvidersResource {
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response create(IdentityProviderRepresentation idpRepresentation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    IdentityProviderRepresentation toRepresentation();
+    List<IdentityProviderRepresentation> getIdentityProviders();
 
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    Response update(IdentityProviderRepresentation idpRepresentation);
-
-    @DELETE
-    Response delete();
+    @Path("{id}")
+    OrganizationIdentityProviderResource get(@PathParam("id") String id);
 }

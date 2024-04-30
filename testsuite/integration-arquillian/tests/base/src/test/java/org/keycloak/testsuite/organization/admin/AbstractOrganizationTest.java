@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -62,10 +63,18 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             providerRealm.setClients(createProviderClients());
             providerRealm.setUsers(List.of(
                     UserBuilder.create()
-                    .username(getUserLogin())
-                    .email(getUserEmail())
-                    .password(getUserPassword())
-                    .enabled(true).build())
+                        .username(getUserLogin())
+                        .email(getUserEmail())
+                        .password(getUserPassword())
+                        .enabled(true)
+                        .build(),
+                    UserBuilder.create()
+                        .username("external")
+                        .email("external@user.org")
+                        .password("password")
+                        .enabled(true)
+                        .build()
+                    )
             );
 
             return providerRealm;
@@ -79,6 +88,13 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         @Override
         public String getIDPAlias() {
             return name + "-identity-provider";
+        }
+
+        @Override
+        public List<ClientRepresentation> createProviderClients() {
+            List<ClientRepresentation> clients = super.createProviderClients();
+            clients.get(0).setRedirectUris(List.of("*"));
+            return clients;
         }
     };
 
@@ -126,7 +142,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             id = ApiUtil.getCreatedId(response);
         }
 
-        testRealm().organizations().get(id).identityProvider().create(brokerConfigFunction.apply(name).setUpIdentityProvider()).close();
+        testRealm().organizations().get(id).identityProviders().create(brokerConfigFunction.apply(name).setUpIdentityProvider()).close();
         org = testRealm().organizations().get(id).toRepresentation();
         getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
 

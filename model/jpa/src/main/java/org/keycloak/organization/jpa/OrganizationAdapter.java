@@ -130,8 +130,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
-    public IdentityProviderModel getIdentityProvider() {
-        return provider.getIdentityProvider(this);
+    public Stream<IdentityProviderModel> getIdentityProviders() {
+        return provider.getIdentityProviders(this);
     }
 
     @Override

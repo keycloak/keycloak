@@ -57,9 +57,6 @@ public class OrganizationEntity {
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @Column(name = "IDP_ALIAS")
-    private String idpAlias;
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
 
@@ -93,14 +90,6 @@ public class OrganizationEntity {
 
     public String getName() {
         return name;
-    }
-
-    public String getIdpAlias() {
-        return idpAlias;
-    }
-
-    public void setIdpAlias(String idpAlias) {
-        this.idpAlias = idpAlias;
     }
 
     public Collection<OrganizationDomainEntity> getDomains() {

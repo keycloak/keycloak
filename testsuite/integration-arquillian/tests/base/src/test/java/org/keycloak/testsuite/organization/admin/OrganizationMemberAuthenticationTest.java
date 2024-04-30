@@ -43,7 +43,7 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
 
         // the email does not match an organization so redirect to the realm's default authentication mechanism
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
+        Assert.assertTrue("Driver should be on the consumer realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertEquals(member.getEmail(), loginPage.getUsername());

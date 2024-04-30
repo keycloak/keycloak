@@ -107,33 +107,33 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
             idpRep.setProviderId("oidc");
             //create IdP
             try (
-                    Response userResponse = realmUserResource.organizations().get(orgId).identityProvider().create(idpRep);
-                    Response adminResponse = realmAdminResource.organizations().get(orgId).identityProvider().create(idpRep)
+                    Response userResponse = realmUserResource.organizations().get(orgId).identityProviders().create(idpRep);
+                    Response adminResponse = realmAdminResource.organizations().get(orgId).identityProviders().create(idpRep)
             ) {
                 assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
                 assertThat(adminResponse.getStatus(), equalTo(Status.CREATED.getStatusCode()));
-                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).identityProvider().delete().close());
+                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).identityProviders().get(idpRep.getAlias()).delete().close());
             }
 
             //get IdP
             try {
                 //we should get 403, not 400 or 404 etc.
-                realmUserResource.organizations().get("non-existing").identityProvider().toRepresentation();
+                realmUserResource.organizations().get("non-existing").identityProviders().get(idpRep.getAlias()).toRepresentation();
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
             try {
-                realmUserResource.organizations().get(orgId).identityProvider().toRepresentation();
+                realmUserResource.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).toRepresentation();
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().get(orgId).identityProvider().toRepresentation(), Matchers.notNullValue());
+            assertThat(realmAdminResource.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).toRepresentation(), Matchers.notNullValue());
 
             //update IdP
-            try (Response userResponse = realmUserResource.organizations().get(orgId).identityProvider().update(idpRep)) {
+            try (Response userResponse = realmUserResource.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).update(idpRep)) {
                 assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
             }
 
             //delete IdP
-            try (Response userResponse = realmUserResource.organizations().get(orgId).identityProvider().delete()) {
+            try (Response userResponse = realmUserResource.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).delete()) {
                 assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
             }
 
