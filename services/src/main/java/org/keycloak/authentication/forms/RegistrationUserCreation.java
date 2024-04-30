@@ -247,6 +247,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     private MultivaluedMap<String, String> normalizeFormParameters(MultivaluedMap<String, String> formParams) {
         MultivaluedHashMap<String, String> copy = new MultivaluedHashMap<>(formParams);
 
+        // Remove google recaptcha form property to avoid length errors
+        copy.remove(RegistrationPage.FIELD_RECAPTCHA_RESPONSE);
         // Remove "password" and "password-confirm" to avoid leaking them in the user-profile data
         copy.remove(RegistrationPage.FIELD_PASSWORD);
         copy.remove(RegistrationPage.FIELD_PASSWORD_CONFIRM);
