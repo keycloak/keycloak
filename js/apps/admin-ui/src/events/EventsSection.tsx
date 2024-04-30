@@ -15,6 +15,7 @@ import {
   FlexItem,
   Form,
   FormGroup,
+  Icon,
   PageSection,
   Tab,
   TabTitleText,
@@ -75,12 +76,18 @@ const defaultValues: UserEventSearchForm = {
 const StatusRow = (event: EventRepresentation) =>
   !event.error ? (
     <span>
-      <CheckCircleIcon color="green" /> {event.type}
+      <Icon status="success">
+        <CheckCircleIcon />
+      </Icon>
+      {event.type}
     </span>
   ) : (
     <Tooltip content={event.error}>
       <span>
-        <WarningTriangleIcon color="orange" /> {event.type}
+        <Icon status="warning">
+          <WarningTriangleIcon />
+        </Icon>
+        {event.type}
       </span>
     </Tooltip>
   );
