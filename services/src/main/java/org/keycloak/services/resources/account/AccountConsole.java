@@ -54,7 +54,6 @@ import org.keycloak.utils.MediaType;
  */
 public class AccountConsole implements AccountResourceProvider {
 
-    private static final Logger logger = Logger.getLogger(AccountConsole.class);
     // Used when some other context (ie. IdentityBrokerService) wants to forward error to account management and display it here
     public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
 
