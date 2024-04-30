@@ -1635,7 +1635,6 @@ public class RepresentationToModel {
 
     private static <T> Set<T> collectionToSet(Collection<T> collection) {
         return Optional.ofNullable(collection)
-                .filter(col -> !col.isEmpty())
                 .map(HashSet::new)
                 .orElse(null);
     }
