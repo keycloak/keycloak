@@ -165,7 +165,8 @@
             "deleteAccountAllowed": ${deleteAccountAllowed?c},
             "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
             "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
-            "isViewGroupsEnabled": ${isViewGroupsEnabled?c}
+            "isViewGroupsEnabled": ${isViewGroupsEnabled?c},
+            "isOid4VciEnabled": ${isOid4VciEnabled?c}
         },
         "referrerName": "${referrerName!""}",
         "referrerUrl": "${referrer_uri!""}"

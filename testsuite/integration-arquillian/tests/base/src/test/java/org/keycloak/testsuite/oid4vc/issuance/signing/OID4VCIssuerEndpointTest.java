@@ -52,6 +52,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -104,7 +105,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     authenticator.setTokenString(token);
 
                     OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("inexistent-id");
+                    oid4VCIssuerEndpoint.getCredentialOfferURI("inexistent-id", OfferUriType.URI, 0, 0);
                 })));
 
     }
@@ -116,7 +117,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                     authenticator.setTokenString(null);
                     OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential");
+                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0);
                 })));
     }
 
@@ -127,7 +128,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                     authenticator.setTokenString("invalid-token");
                     OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential");
+                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0);
                 })));
     }
 
@@ -142,7 +143,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                         authenticator.setTokenString(token);
                         OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
-                        Response response = oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential");
+                        Response response = oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0);
 
                         assertEquals("An offer uri should have been returned.", HttpStatus.SC_OK, response.getStatus());
                         CredentialOfferURI credentialOfferURI = new ObjectMapper().convertValue(response.getEntity(), CredentialOfferURI.class);

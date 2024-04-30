@@ -22,5 +22,10 @@
     "label": "resources",
     "path": "resources",
     "isVisible": "isMyResourcesEnabled"
+  },
+  {
+    "label": "oid4vci",
+    "path": "oid4vci",
+    "isVisible":"isOid4VciEnabled"
   }
 ]

@@ -38,6 +38,7 @@ export { Resources } from "./resources/Resources";
 export { ResourcesTab } from "./resources/ResourcesTab";
 export { ResourceToolbar } from "./resources/ResourceToolbar";
 export { SharedWith } from "./resources/SharedWith";
+export { Oid4Vci } from "./oid4vci/Oid4Vci";
 export { ShareTheResource } from "./resources/ShareTheResource";
 export {
   deleteConsent,

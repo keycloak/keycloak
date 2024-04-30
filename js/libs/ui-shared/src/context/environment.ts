@@ -12,6 +12,7 @@ export type Feature = {
   updateEmailFeatureEnabled: boolean;
   updateEmailActionEnabled: boolean;
   isViewGroupsEnabled: boolean;
+  isOid4VciEnabled: boolean;
 };
 
 export type BaseEnvironment = {
@@ -83,6 +84,7 @@ const defaultEnvironment: AdminEnvironment & AccountEnvironment = {
     updateEmailFeatureEnabled: true,
     updateEmailActionEnabled: true,
     isViewGroupsEnabled: true,
+    isOid4VciEnabled: false,
   },
 };
 
