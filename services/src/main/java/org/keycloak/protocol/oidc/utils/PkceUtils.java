@@ -101,7 +101,7 @@ public class PkceUtils {
 
         if (!isValidPkceCodeVerifier(codeVerifier)) {
             String errorReason = "Invalid code verifier";
-            String errorMessage = "PKCE code verification failed: " + errorReason;
+            String errorMessage = "PKCE verification failed: " + errorReason;
             logger.warnf(errorMessage);
             event.error(Errors.INVALID_CODE_VERIFIER);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
@@ -121,7 +121,7 @@ public class PkceUtils {
             }
         } catch (Exception nae) {
             String errorReason = "Unsupported algorithm specified";
-            String errorMessage = "PKCE code verification failed: " + errorReason;
+            String errorMessage = "PKCE verification failed: " + errorReason;
             logger.warnf(errorMessage);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
             event.detail(Details.REASON, errorReason);
@@ -129,8 +129,8 @@ public class PkceUtils {
         }
         if (!codeChallenge.equals(codeVerifierEncoded)) {
             String errorReason = "Code mismatch";
-            String errorMessage = "PKCE code verification failed: " + errorReason;
-            logger.warnf(errorMessage + " authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorMessage = "PKCE verification failed: " + errorReason;
+            logger.warnf(errorMessage + ". authUserId = %s, authUsername = %s", authUserId, authUsername);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
             event.detail(Details.REASON, errorReason);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
