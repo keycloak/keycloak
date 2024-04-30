@@ -137,7 +137,7 @@ kubectl -n {ns} create secret generic {ts-secret} \
 +
 NOTE: Keystore and Truststore must be uploaded in both {ocp} clusters.
 
-. Create an {jdgserver_name} Cluster with Cross-Site enabled
+. Create a Cluster for {jdgserver_name} with Cross-Site enabled
 +
 The {infinispan-operator-docs}#setting-up-xsite[Setting Up Cross-Site] documentation provides all the information on how to create and configure your {jdgserver_name} cluster with cross-site enabled, including the previous steps.
 +
