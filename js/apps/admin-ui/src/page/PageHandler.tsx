@@ -11,6 +11,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
+import { useParams } from "../utils/useParams";
 import { PAGE_PROVIDER, TAB_PROVIDER } from "./PageList";
 import { toPage } from "./routes";
 
@@ -31,6 +32,7 @@ export const PageHandler = ({
   const [realm, setRealm] = useState<RealmRepresentation>();
   const { addAlert, addError } = useAlerts();
   const [id, setId] = useState(idAttribute);
+  const params = useParams();
 
   useFetch(
     async () =>
@@ -51,11 +53,13 @@ export const PageHandler = ({
   );
 
   const onSubmit = async (component: ComponentRepresentation) => {
-    if (component.config)
+    if (component.config || params) {
+      component.config = Object.assign(component.config || {}, params);
       Object.entries(component.config).forEach(
         ([key, value]) =>
           (component.config![key] = Array.isArray(value) ? value : [value]),
       );
+    }
     try {
       const updatedComponent = {
         ...component,
