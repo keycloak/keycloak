@@ -117,9 +117,8 @@ interface TypedClientAttributeInterface {
         Object nonApplicableValue = getNonApplicableValue();
         // Check if clientType supports the feature. If not, return directly
         if (!clientType.isApplicable(propertyName) && !Objects.equals(nonApplicableValue, newValue)) {
-            throw new ClientTypeException(
-                    "Property is not-applicable to client type " + clientType.getName()
-                            + " and can not be modified.", propertyName);
+            logger.warnf("Property %s is not-applicable to client type %s and can not be modified.", propertyName, clientType.getName());
+            return;
         }
 
         // Check if this is read-only. If yes and there is an attempt to change some stuff, then throw an exception

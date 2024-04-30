@@ -530,7 +530,7 @@ public class RepresentationToModel {
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 clientPropertyUpdates.add(
-                    updatePropertyAction(val -> client.setAttribute(entry.getKey(), val), entry::getValue, () -> client.getAttribute(entry.getKey())));
+                    updatePropertyAction(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
             }
         }
 
@@ -575,7 +575,7 @@ public class RepresentationToModel {
             return newSecret;
         }
         // Do not change current secret.
-        return null;
+        return currentSecret;
     }
 
     private static Set<String> defaultWebOrigins(ClientModel client) {
@@ -663,9 +663,7 @@ public class RepresentationToModel {
         return () -> {
             try {
                 T value = representationGetter.get();
-                if (value != null) {
-                        modelSetter.accept(value);
-                }
+                modelSetter.accept(value);
             } catch (ClientTypeException cte) {
                 return cte;
             }
