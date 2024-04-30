@@ -561,7 +561,6 @@ public class RepresentationToModel {
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
         if (Boolean.TRUE.equals(rep.isPublicClient()) || Boolean.TRUE.equals(rep.isBearerOnly())) {
             // Clear out the secret with null
-            client.setSecret(null);
             return null;
         }
 
@@ -586,7 +585,7 @@ public class RepresentationToModel {
 
         Set<String> redirectUris = client.getRedirectUris();
         if (redirectUris == null || redirectUris.isEmpty()) {
-            return null;
+            return new HashSet<>();
         }
 
         return client.getRedirectUris()

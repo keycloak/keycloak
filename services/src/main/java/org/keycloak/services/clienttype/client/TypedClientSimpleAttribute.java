@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-enum TypedClientAttribute implements TypedClientAttributeInterface {
+enum TypedClientSimpleAttribute implements TypedClientAttribute {
     // Top Level client attributes
     STANDARD_FLOW_ENABLED("standardFlowEnabled", false),
     BEARER_ONLY("bearerOnly", false),
@@ -32,7 +32,7 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     private final String propertyName;
     private final Object nonApplicableValue;
 
-    TypedClientAttribute(String propertyName, Object nonApplicableValue) {
+    TypedClientSimpleAttribute(String propertyName, Object nonApplicableValue) {
         this.propertyName = propertyName;
         this.nonApplicableValue = nonApplicableValue;
     }
@@ -48,7 +48,7 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     }
 }
 
-enum TypedClientExtendedAttribute implements TypedClientAttributeInterface {
+enum TypedClientExtendedAttribute implements TypedClientAttribute {
     // Extended Client Type attributes defined as client attribute entities.
     DEVICE_AUTHORIZATION_GRANT_ENABLED("oauth2.device.authorization.grant.enabled", "false"),
     CIBA_GRANT_ENABLED("oidc.ciba.grant.enabled", "false"),
@@ -86,8 +86,8 @@ enum TypedClientExtendedAttribute implements TypedClientAttributeInterface {
     }
 }
 
-interface TypedClientAttributeInterface {
-    Logger logger = Logger.getLogger(TypedClientAttributeInterface.class);
+interface TypedClientAttribute {
+    Logger logger = Logger.getLogger(TypedClientAttribute.class);
 
     default <T> T getClientAttribute(ClientType clientType, Supplier<T> clientGetter, Class<T> tClass) {
         String propertyName = getPropertyName();

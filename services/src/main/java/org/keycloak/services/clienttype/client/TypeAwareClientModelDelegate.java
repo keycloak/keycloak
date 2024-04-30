@@ -48,169 +48,169 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isStandardFlowEnabled() {
-        return TypedClientAttribute.STANDARD_FLOW_ENABLED
+        return TypedClientSimpleAttribute.STANDARD_FLOW_ENABLED
                 .getClientAttribute(clientType, super::isStandardFlowEnabled, Boolean.class);
     }
 
     @Override
     public void setStandardFlowEnabled(boolean standardFlowEnabled) {
-        TypedClientAttribute.STANDARD_FLOW_ENABLED
+        TypedClientSimpleAttribute.STANDARD_FLOW_ENABLED
                 .setClientAttribute(clientType, standardFlowEnabled, super::setStandardFlowEnabled, Boolean.class);
     }
 
     @Override
     public boolean isBearerOnly() {
-        return TypedClientAttribute.BEARER_ONLY
+        return TypedClientSimpleAttribute.BEARER_ONLY
                 .getClientAttribute(clientType, super::isBearerOnly, Boolean.class);
     }
 
     @Override
     public void setBearerOnly(boolean bearerOnly) {
-        TypedClientAttribute.BEARER_ONLY
+        TypedClientSimpleAttribute.BEARER_ONLY
                 .setClientAttribute(clientType, bearerOnly, super::setBearerOnly, Boolean.class);
     }
 
     @Override
     public boolean isConsentRequired() {
-        return TypedClientAttribute.CONSENT_REQUIRED
+        return TypedClientSimpleAttribute.CONSENT_REQUIRED
                 .getClientAttribute(clientType, super::isConsentRequired, Boolean.class);
     }
 
     @Override
     public void setConsentRequired(boolean consentRequired) {
-        TypedClientAttribute.CONSENT_REQUIRED
+        TypedClientSimpleAttribute.CONSENT_REQUIRED
                 .setClientAttribute(clientType, consentRequired, super::setConsentRequired, Boolean.class);
     }
 
     @Override
     public boolean isDirectAccessGrantsEnabled() {
-        return TypedClientAttribute.DIRECT_ACCESS_GRANTS_ENABLED
+        return TypedClientSimpleAttribute.DIRECT_ACCESS_GRANTS_ENABLED
                 .getClientAttribute(clientType, super::isDirectAccessGrantsEnabled, Boolean.class);
     }
 
     @Override
     public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
-        TypedClientAttribute.DIRECT_ACCESS_GRANTS_ENABLED
+        TypedClientSimpleAttribute.DIRECT_ACCESS_GRANTS_ENABLED
                 .setClientAttribute(clientType, directAccessGrantsEnabled, super::setDirectAccessGrantsEnabled, Boolean.class);
     }
 
     @Override
     public boolean isAlwaysDisplayInConsole() {
-        return TypedClientAttribute.ALWAYS_DISPLAY_IN_CONSOLE
+        return TypedClientSimpleAttribute.ALWAYS_DISPLAY_IN_CONSOLE
                 .getClientAttribute(clientType, super::isAlwaysDisplayInConsole, Boolean.class);
     }
 
     @Override
     public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
-        TypedClientAttribute.ALWAYS_DISPLAY_IN_CONSOLE
+        TypedClientSimpleAttribute.ALWAYS_DISPLAY_IN_CONSOLE
                 .setClientAttribute(clientType, alwaysDisplayInConsole, super::setAlwaysDisplayInConsole, Boolean.class);
     }
 
     @Override
     public boolean isFrontchannelLogout() {
-        return TypedClientAttribute.FRONTCHANNEL_LOGOUT
+        return TypedClientSimpleAttribute.FRONTCHANNEL_LOGOUT
                 .getClientAttribute(clientType, super::isFrontchannelLogout, Boolean.class);
     }
 
     @Override
     public void setFrontchannelLogout(boolean frontchannelLogout) {
-        TypedClientAttribute.FRONTCHANNEL_LOGOUT
+        TypedClientSimpleAttribute.FRONTCHANNEL_LOGOUT
                 .setClientAttribute(clientType, frontchannelLogout, super::setFrontchannelLogout, Boolean.class);
     }
 
     @Override
     public boolean isImplicitFlowEnabled() {
-        return TypedClientAttribute.IMPLICIT_FLOW_ENABLED
+        return TypedClientSimpleAttribute.IMPLICIT_FLOW_ENABLED
                 .getClientAttribute(clientType, super::isImplicitFlowEnabled, Boolean.class);
     }
 
     @Override
     public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
-        TypedClientAttribute.IMPLICIT_FLOW_ENABLED
+        TypedClientSimpleAttribute.IMPLICIT_FLOW_ENABLED
                 .setClientAttribute(clientType, implicitFlowEnabled, super::setImplicitFlowEnabled, Boolean.class);
     }
 
     @Override
     public boolean isServiceAccountsEnabled() {
-        return TypedClientAttribute.SERVICE_ACCOUNTS_ENABLED
+        return TypedClientSimpleAttribute.SERVICE_ACCOUNTS_ENABLED
                 .getClientAttribute(clientType, super::isServiceAccountsEnabled, Boolean.class);
     }
 
     @Override
     public void setServiceAccountsEnabled(boolean flag) {
-        TypedClientAttribute.SERVICE_ACCOUNTS_ENABLED
+        TypedClientSimpleAttribute.SERVICE_ACCOUNTS_ENABLED
                 .setClientAttribute(clientType, flag, super::setServiceAccountsEnabled, Boolean.class);
     }
 
     @Override
     public String getProtocol() {
-        return TypedClientAttribute.PROTOCOL
+        return TypedClientSimpleAttribute.PROTOCOL
                 .getClientAttribute(clientType, super::getProtocol, String.class);
     }
 
     @Override
     public void setProtocol(String protocol) {
-        TypedClientAttribute.PROTOCOL
+        TypedClientSimpleAttribute.PROTOCOL
                 .setClientAttribute(clientType, protocol, super::setProtocol, String.class);
     }
 
     @Override
     public boolean isPublicClient() {
-        return TypedClientAttribute.PUBLIC_CLIENT
+        return TypedClientSimpleAttribute.PUBLIC_CLIENT
                 .getClientAttribute(clientType, super::isPublicClient, Boolean.class);
     }
 
     @Override
     public void setPublicClient(boolean flag) {
-        TypedClientAttribute.PUBLIC_CLIENT
+        TypedClientSimpleAttribute.PUBLIC_CLIENT
                 .setClientAttribute(clientType, flag, super::setPublicClient, Boolean.class);
     }
 
     @Override
     public Set<String> getWebOrigins() {
-        return TypedClientAttribute.WEB_ORIGINS
+        return TypedClientSimpleAttribute.WEB_ORIGINS
                 .getClientAttribute(clientType, super::getWebOrigins, Set.class);
     }
 
     @Override
     public void setWebOrigins(Set<String> webOrigins) {
-        TypedClientAttribute.WEB_ORIGINS
+        TypedClientSimpleAttribute.WEB_ORIGINS
                 .setClientAttribute(clientType, webOrigins, super::setWebOrigins, Set.class);
     }
 
     @Override
     public void addWebOrigin(String webOrigin) {
-        TypedClientAttribute.WEB_ORIGINS
+        TypedClientSimpleAttribute.WEB_ORIGINS
                 .setClientAttribute(clientType, webOrigin, super::addWebOrigin, String.class);
     }
 
     @Override
     public void removeWebOrigin(String webOrigin) {
-        TypedClientAttribute.WEB_ORIGINS
+        TypedClientSimpleAttribute.WEB_ORIGINS
                 .setClientAttribute(clientType, null, (val) -> super.removeWebOrigin(webOrigin), String.class);
     }
 
     @Override
     public Set<String> getRedirectUris() {
-        return TypedClientAttribute.REDIRECT_URIS
+        return TypedClientSimpleAttribute.REDIRECT_URIS
                 .getClientAttribute(clientType, super::getRedirectUris, Set.class);
     }
 
     @Override
     public void setRedirectUris(Set<String> redirectUris) {
-        TypedClientAttribute.REDIRECT_URIS
+        TypedClientSimpleAttribute.REDIRECT_URIS
                 .setClientAttribute(clientType, redirectUris, super::setRedirectUris, Set.class);
     }
 
     @Override
     public void addRedirectUri(String redirectUri) {
-        TypedClientAttribute.REDIRECT_URIS
+        TypedClientSimpleAttribute.REDIRECT_URIS
                 .setClientAttribute(clientType, redirectUri, super::addRedirectUri, String.class);
     }
 
     @Override
     public void removeRedirectUri(String redirectUri) {
-        TypedClientAttribute.REDIRECT_URIS
+        TypedClientSimpleAttribute.REDIRECT_URIS
             .setClientAttribute(clientType, null, (val) -> super.removeRedirectUri(redirectUri), String.class);
     }
 
