@@ -46,9 +46,8 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session, Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<AuthenticatedClientSessionEntity> lifespanMsLoader, SessionFunction<AuthenticatedClientSessionEntity> maxIdleTimeMsLoader, boolean offline, InfinispanKeyGenerator keyGenerator,
-                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx, SerializeExecutionsByKey<UUID> serializer, ArrayBlockingQueue<PersistentDeferredElement<UUID, AuthenticatedClientSessionEntity>> asyncQueue,
-                                                            boolean batchAllWrites) {
-        super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offline, serializer, asyncQueue, batchAllWrites);
+                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx, SerializeExecutionsByKey<UUID> serializer, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
+        super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offline, serializer, batchingQueue);
         this.keyGenerator = keyGenerator;
         this.userSessionTx = userSessionTx;
     }

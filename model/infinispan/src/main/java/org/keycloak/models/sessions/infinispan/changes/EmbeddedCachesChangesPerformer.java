@@ -24,6 +24,7 @@ import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +37,10 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
 
     private static final Logger LOG = Logger.getLogger(EmbeddedCachesChangesPerformer.class);
     private final Cache<K, SessionEntityWrapper<V>> cache;
-    private final SerializeExecutionsByKey<K> serializer;
     private final List<Supplier<CompletableFuture<?>>> changes = new LinkedList<>();
 
-    public EmbeddedCachesChangesPerformer(Cache<K, SessionEntityWrapper<V>> cache, SerializeExecutionsByKey<K> serializer) {
+    public EmbeddedCachesChangesPerformer(Cache<K, SessionEntityWrapper<V>> cache) {
         this.cache = cache;
-        this.serializer = serializer;
     }
 
     private CompletableFuture<?> runOperationInCluster(K key, MergedUpdate<V> task, SessionEntityWrapper<V> sessionWrapper) {
@@ -146,22 +145,23 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
 
     @Override
     public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
-        merged.enqueue();
-        changes.add(() -> runOperationInCluster(entry.getKey(), merged, entry.getValue().getEntityWrapper())
-                .whenCompleteAsync((o, t) -> {
-                    if (t == null) {
-                        merged.complete();
-                    } else {
-                        merged.fail(t);
-                    }
-                })
-        );
+        changes.add(() -> runOperationInCluster(entry.getKey(), merged, entry.getValue().getEntityWrapper()));
     }
 
     @Override
     public void applyChanges() {
         if (!changes.isEmpty()) {
-            CompletableFuture.allOf(changes.stream().map(Supplier::get).toArray(CompletableFuture[]::new)).join();
+            List<Throwable> exceptions = new ArrayList<>();
+            CompletableFuture.allOf(changes.stream().map(s -> s.get().exceptionally(throwable -> {
+                exceptions.add(throwable);
+                return null;
+            })).toArray(CompletableFuture[]::new)).join();
+            // If any of those futures has failed, add the exceptions as suppressed exceptions to our runtime exception
+            if (!exceptions.isEmpty()) {
+                RuntimeException ex = new RuntimeException("unable to complete the session updates");
+                exceptions.forEach(ex::addSuppressed);
+                throw ex;
+            }
         }
     }
 }

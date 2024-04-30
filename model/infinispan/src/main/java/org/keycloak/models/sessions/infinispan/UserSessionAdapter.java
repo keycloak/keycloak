@@ -251,11 +251,6 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
             }
 
             @Override
-            public boolean isDeferrable() {
-                return true;
-            }
-
-            @Override
             public String toString() {
                 return "setLastSessionRefresh(" + lastSessionRefresh + ')';
             }

@@ -43,15 +43,7 @@ public class RemoteCachesChangesPerformer<K, V extends SessionEntity> implements
     @Override
     public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
         SessionUpdatesList<V> updates = entry.getValue();
-        merged.enqueue();
-        changes.add(() -> {
-            try {
-                remoteCacheInvoker.runTask(session, updates.getRealm(), cache.getName(), entry.getKey(), merged, updates.getEntityWrapper());
-                merged.complete();
-            } catch (Throwable t) {
-                merged.fail(t);
-            }
-        });
+        changes.add(() -> remoteCacheInvoker.runTask(session, updates.getRealm(), cache.getName(), entry.getKey(), merged, updates.getEntityWrapper()));
     }
 
     @Override

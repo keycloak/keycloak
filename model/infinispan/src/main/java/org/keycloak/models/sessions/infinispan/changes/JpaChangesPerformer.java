@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.util.function.TriConsumer;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Retry;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,17 +29,15 @@ import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmModelDelegate;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.UserSessionModelDelegate;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +46,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -59,18 +57,19 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionChangesPerformer<K, V> {
     private static final Logger LOG = Logger.getLogger(JpaChangesPerformer.class);
 
-    private final KeycloakSession session;
     private final String cacheName;
     private final boolean offline;
-    private final List<Consumer<KeycloakSession>> changes = new LinkedList<>();
-    private final List<MergedUpdate<V>> tasks = new LinkedList<>();
+    private final List<PersistentUpdate> changes = new LinkedList<>();
     private final TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor;
+    private final KeycloakSession session;
+    private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
 
-    public JpaChangesPerformer(KeycloakSession session, String cacheName, boolean offline) {
-        this.session = session;
+    public JpaChangesPerformer(KeycloakSession session, String cacheName, boolean offline, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
         this.cacheName = cacheName;
         this.offline = offline;
+        this.batchingQueue = batchingQueue;
         processor = processor();
+        this.session = session;
     }
 
     @Override
@@ -80,9 +79,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     @Override
     public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
-        merged.enqueue();
-        tasks.add(merged);
-        changes.add(innerSession -> processor.accept(innerSession, entry, merged));
+        changes.add(new PersistentUpdate(innerSession -> processor.accept(innerSession, entry, merged)));
     }
 
     private TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor() {
@@ -96,37 +93,17 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
     @Override
     public void applyChanges() {
         if (!changes.isEmpty()) {
-            try {
-                Retry.executeWithBackoff(iteration -> {
-                            if (iteration < 2) {
-                                // attempt to write whole batch in the first two attempts
-                                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
-                                        innerSession -> changes.forEach(c -> c.accept(innerSession)));
-                            } else {
-                                LOG.warnf("Running single changes in iteration %d for %d entries", iteration, changes.size());
-                                ArrayList<Consumer<KeycloakSession>> performedChanges = new ArrayList<>();
-                                List<Throwable> throwables = new ArrayList<>();
-                                changes.forEach(change -> {
-                                    try {
-                                        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
-                                                change::accept);
-                                        performedChanges.add(change);
-                                    } catch (Throwable ex) {
-                                        throwables.add(ex);
-                                    }
-                                });
-                                changes.removeAll(performedChanges);
-                                if (!throwables.isEmpty()) {
-                                    RuntimeException ex = new RuntimeException("unable to complete some changes");
-                                    throwables.forEach(ex::addSuppressed);
-                                    throw ex;
-                                }
-                            }
-                        },
-                        Duration.of(10, ChronoUnit.SECONDS), 0);
-                tasks.forEach(MergedUpdate::complete);
-            } catch (Throwable t) {
-                tasks.forEach(merged -> merged.fail(t));
+            batchingQueue.addAll(changes);
+            List<Throwable> exceptions = new ArrayList<>();
+            CompletableFuture.allOf(changes.stream().map(f -> f.future().exceptionally(throwable -> {
+                exceptions.add(throwable);
+                return null;
+            })).toArray(CompletableFuture[]::new)).join();
+            // If any of those futures has failed, add the exceptions as suppressed exceptions to our runtime exception
+            if (!exceptions.isEmpty()) {
+                RuntimeException ex = new RuntimeException("unable to complete the session updates");
+                exceptions.forEach(ex::addSuppressed);
+                throw ex;
             }
         }
     }

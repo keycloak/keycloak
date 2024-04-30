@@ -42,9 +42,9 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 public class UserSessionPersistentChangelogBasedTransaction extends PersistentSessionsChangelogBasedTransaction<String, UserSessionEntity> {
 
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
-    public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<UserSessionEntity> lifespanMsLoader, SessionFunction<UserSessionEntity> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<String> serializer, ArrayBlockingQueue<PersistentDeferredElement<String,
-            UserSessionEntity>> asyncQueue, boolean batchAllWrites) {
-        super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offline, serializer, asyncQueue, batchAllWrites);
+    public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<UserSessionEntity> lifespanMsLoader, SessionFunction<UserSessionEntity> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<String> serializer,
+                                                          ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
+        super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offline, serializer, batchingQueue);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key) {

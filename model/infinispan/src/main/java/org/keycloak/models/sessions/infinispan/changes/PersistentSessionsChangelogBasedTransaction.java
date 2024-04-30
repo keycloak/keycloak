@@ -27,7 +27,6 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -42,15 +41,11 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
     private final List<SessionChangesPerformer<K, V>> changesPerformers;
     protected final boolean offline;
-    private final ArrayBlockingQueue<PersistentDeferredElement<K, V>> asyncQueue;
-    private final boolean batchAllWrites;
-    private Collection<PersistentDeferredElement<K, V>> batch;
 
-    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<K> serializer, ArrayBlockingQueue<PersistentDeferredElement<K, V>> asyncQueue, boolean batchAllWrites) {
+    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, boolean offline, SerializeExecutionsByKey<K> serializer,
+                                                       ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
         super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, serializer);
         this.offline = offline;
-        this.asyncQueue = asyncQueue;
-        this.batchAllWrites = batchAllWrites;
 
         if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
             throw new IllegalStateException("Persistent user sessions are not enabled");
@@ -59,12 +54,12 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
         if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) &&
             (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
             changesPerformers = List.of(
-                    new JpaChangesPerformer<>(session, cache.getName(), offline)
+                    new JpaChangesPerformer<>(session, cache.getName(), offline, batchingQueue)
             );
         } else {
             changesPerformers = List.of(
-                    new JpaChangesPerformer<>(session, cache.getName(), offline),
-                    new EmbeddedCachesChangesPerformer<>(cache, serializer),
+                    new JpaChangesPerformer<>(session, cache.getName(), offline, batchingQueue),
+                    new EmbeddedCachesChangesPerformer<>(cache),
                     new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker)
             );
         }
@@ -88,78 +83,16 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                if (batchAllWrites) {
-                    changesPerformers.stream()
-                            .filter(c -> !c.benefitsFromBatching())
-                            .forEach(p -> p.registerChange(entry, merged));
-                    // We will batch the inserts and updates and deletes (although deletes have shown deadlocks if there are concurrent updates).
-                    // We'll also wait for all deferrable items, as doing so will reduce the likelihood of concurrent requests later
-                    // which might lead to deadlocks.
-                    // Important to memorize the future first before adding it to the queue,
-                    // as the future will only be created only when necessary.
-                    CompletableFuture<Void> result = merged.result();
-                    futures.add(result);
-                    // Don't include in background batch processing the items that don't benefit from the batching.
-                    // This is usually the communication with the internal and external Infinispan.
-                    addEntryToQueue(entry, merged, true);
-                } else if (merged.isDeferrable()) {
-                    // This is deferrable, no need to memorize the future
-                    addEntryToQueue(entry, merged, false);
-                } else {
-                    changesPerformers.forEach(p -> p.registerChange(entry, merged));
-                }
-            }
-        }
-
-        if (batch != null) {
-            batch.forEach(o -> {
-                changesPerformers.stream()
-                        .filter(p -> !o.isOnlyThoseThatBenefitFromBatching() || p.benefitsFromBatching())
-                        .forEach(p -> p.registerChange(o.getEntry(), o.getMerged()));
-            });
-        }
-
-        // If we enqueued any items that we wait for in the background tasks, this is now the moment
-        if (!futures.isEmpty()) {
-            List<Throwable> exceptions = new ArrayList<>();
-            CompletableFuture.allOf(futures.stream().map(f -> f.exceptionally(throwable -> {
-                exceptions.add(throwable);
-                return null;
-            })).toArray(CompletableFuture[]::new)).join();
-            // If any of those futures has failed, add the exceptions as suppressed exceptions to our runtime exception
-            if (!exceptions.isEmpty()) {
-                RuntimeException ex = new RuntimeException("unable to complete the session updates");
-                exceptions.forEach(ex::addSuppressed);
-                throw ex;
+                changesPerformers.forEach(p -> p.registerChange(entry, merged));
             }
         }
 
         changesPerformers.forEach(SessionChangesPerformer::applyChanges);
     }
 
-    private void addEntryToQueue(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged, boolean onlyThoseThatBenefitFromBatching) {
-        if (!asyncQueue.offer(new PersistentDeferredElement<>(entry, merged, onlyThoseThatBenefitFromBatching))) {
-            logger.warnf("Queue for cache %s is full, will block", cache.getName());
-            try {
-                // this will block until there is a free spot in the queue
-                asyncQueue.put(new PersistentDeferredElement<>(entry, merged, onlyThoseThatBenefitFromBatching));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     @Override
     protected void rollbackImpl() {
 
-    }
-
-    public void applyDeferredBatch(Collection<PersistentDeferredElement<K, V>> batchToApply) {
-        if (this.batch == null) {
-            this.batch = new ArrayList<>(batchToApply.size());
-        }
-        batch.addAll(batchToApply);
     }
 
 }

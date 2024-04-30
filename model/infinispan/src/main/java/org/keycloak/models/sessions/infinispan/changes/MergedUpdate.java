@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -37,14 +36,6 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     private CrossDCMessageStatus crossDCMessageStatus;
     private final long lifespanMs;
     private final long maxIdleTimeMs;
-    private boolean isDeferrable;
-    private CompletableFuture<Void> completed;
-    private int tasks = 0;
-
-    @Override
-    public boolean isDeferrable() {
-        return isDeferrable;
-    }
 
     private MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus, long lifespanMs, long maxIdleTimeMs) {
         this.operation = operation;
@@ -86,11 +77,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
 
         MergedUpdate<S> result = null;
         S session = sessionWrapper.getEntity();
-        boolean isDeferrable = true;
         for (SessionUpdateTask<S> child : childUpdates) {
-            if (!child.isDeferrable()) {
-                isDeferrable = false;
-            }
             if (result == null) {
                 CacheOperation operation = child.getOperation(session);
 
@@ -126,14 +113,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                 result.childUpdates.add(child);
             }
         }
-        if (result != null) {
-            result.setDeferable(isDeferrable);
-        }
         return result;
-    }
-
-    private void setDeferable(boolean isDeferrable) {
-        this.isDeferrable = isDeferrable;
     }
 
     @Override
@@ -141,31 +121,4 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
         return "MergedUpdate" + childUpdates;
     }
 
-    public void complete() {
-        if (completed != null) {
-            -- tasks;
-            if (tasks == 0) {
-                completed.complete(null);
-            }
-        }
-    }
-
-    public void fail(Throwable t) {
-        if (completed != null) {
-            completed.completeExceptionally(t);
-        }
-    }
-
-    public CompletableFuture<Void> result() {
-        if (completed == null) {
-            completed = new CompletableFuture<>();
-        }
-        return completed;
-    }
-
-    public void enqueue() {
-        if (completed != null) {
-            ++tasks;
-        }
-    }
 }
