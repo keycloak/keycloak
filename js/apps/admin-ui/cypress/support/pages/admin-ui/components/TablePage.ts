@@ -5,14 +5,12 @@ export default class TablePage extends CommonElements {
   #tableRowItemChckBx: string;
   #tableHeaderRowItem: string;
   #tableInModal: boolean;
-  static tableSelector = "table[aria-label]";
+  static tableSelector = ".pf-c-table";
 
   constructor(parentElement?: string) {
     super(parentElement ?? TablePage.tableSelector + ":visible");
-    this.#tableRowItem =
-      this.parentSelector + "tbody tr[data-ouia-component-type]";
-    this.#tableHeaderRowItem =
-      this.parentSelector + "thead tr[data-ouia-component-type]";
+    this.#tableRowItem = this.parentSelector + "tbody tr";
+    this.#tableHeaderRowItem = this.parentSelector + "thead tr";
     this.#tableRowItemChckBx = ".pf-c-table__check";
     this.#tableInModal = false;
   }

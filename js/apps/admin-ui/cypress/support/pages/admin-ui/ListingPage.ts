@@ -34,7 +34,7 @@ export default class ListingPage extends CommonElements {
   #itemsRows = "table:visible";
   #deleteUserButton = "delete-user-btn";
   #emptyListImg = '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
-  public emptyState = "empty-state";
+  #emptyState = "empty-state";
   #itemRowDrpDwn = ".pf-c-dropdown__toggle";
   #itemRowSelect = ".pf-c-select__toggle:nth-child(1)";
   #itemRowSelectItem = ".pf-c-select__menu-item";
@@ -399,6 +399,10 @@ export default class ListingPage extends CommonElements {
   goToResourceDetails(name: string) {
     this.#getResourceLink(name).click();
     return this;
+  }
+
+  assertNoResults() {
+    cy.findByTestId(this.#emptyState).should("exist");
   }
 
   assertDefaultResource() {
