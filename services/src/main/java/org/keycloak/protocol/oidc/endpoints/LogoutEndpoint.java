@@ -398,7 +398,7 @@ public class LogoutEndpoint {
         SessionCodeChecks checks = new LogoutSessionCodeChecks(realm, session.getContext().getUri(), request, clientConnection, session, event, null, clientId, tabId);
         AuthenticationSessionModel logoutSession = checks.initialVerifyAuthSession();
         if (logoutSession == null) {
-            String errorMessage = "Failed verification when changing locale logout.";
+            String errorMessage = "Failed verification when changing locale during logout.";
             logger.debugf(errorMessage + " clientId=%s, tabId=%s", clientId, tabId);
 
             SystemClientUtil.checkSkipLink(session, logoutSession);
@@ -607,7 +607,7 @@ public class LogoutEndpoint {
         }
 
         if (!backchannelLogoutResponse.getLocalLogoutSucceeded()) {
-            String errorMessage = "There was an error in the local logout";
+            String errorMessage = "There was an error during the local logout";
             event.error(Errors.LOGOUT_FAILED);
             event.detail(Details.REASON, errorMessage);
             throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, errorMessage,

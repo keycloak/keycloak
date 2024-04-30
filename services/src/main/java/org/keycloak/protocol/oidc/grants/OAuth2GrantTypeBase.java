@@ -254,6 +254,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
 
         if (!validScopes) {
+            logger.debugf("Invalid scopes: %s. realm=%s client_id=%s", scope, realm.getName(), client.getClientId());
             event.error(Errors.INVALID_REQUEST);
             Set<String> allowedScopes = Stream.concat( //
                     client.getClientScopes(true).values().stream().filter(ClientScopeModel::isIncludeInTokenScope).map(ClientScopeModel::getName), //
@@ -261,7 +262,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             ).collect(Collectors.toCollection(TreeSet::new));
             String errorMessage = "Invalid scopes. Scopes must be contained in " + allowedScopes;
             event.detail(Details.REASON, errorMessage);
-            logger.debugf("Invalid scopes: %s. realm=%s client_id=%s", scope, realm.getName(), client.getClientId());
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage,
                     Response.Status.BAD_REQUEST);
         }
