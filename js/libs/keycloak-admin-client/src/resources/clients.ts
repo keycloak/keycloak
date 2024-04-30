@@ -29,6 +29,7 @@ export interface ClientQuery extends PaginatedQuery {
   clientId?: string;
   viewableOnly?: boolean;
   search?: boolean;
+  q?: string;
 }
 
 export interface ResourceQuery extends PaginatedQuery {
