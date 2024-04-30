@@ -220,6 +220,14 @@ public class IdentityProviderModel implements Serializable {
         return displayIconClasses;
     }
 
+    public String getOrganizationId() {
+        return getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+    }
+
+    public void setOrganizationId(String organizationId) {
+        getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, organizationId);
+    }
+
     /**
      * <p>Validates this configuration.
      * 

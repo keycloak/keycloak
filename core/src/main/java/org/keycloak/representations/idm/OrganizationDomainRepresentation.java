@@ -27,6 +27,14 @@ public class OrganizationDomainRepresentation {
     private String name;
     private boolean verified;
 
+    public OrganizationDomainRepresentation() {
+        // for reflection
+    }
+
+    public OrganizationDomainRepresentation(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return this.name;
     }

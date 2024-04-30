@@ -89,7 +89,6 @@
             <column name="GROUP_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="IDP_ALIAS" type="VARCHAR(255)" />
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>

@@ -160,7 +160,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testDelete() {
+    public void testDeleteUnmanagedMember() {
         UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
@@ -182,6 +182,19 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         } catch (NotFoundException ignore) {
 
         }
+    }
+
+    @Test
+    public void testUpdateEmailUnmanagedMember() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        UserRepresentation expected = addMember(organization);
+        expected.setEmail("some@unknown.org");
+        UserResource userResource = testRealm().users().get(expected.getId());
+        userResource.update(expected);
+        UserRepresentation actual = userResource.toRepresentation();
+        assertEquals(expected.getId(), actual.getId());
+        assertEquals(expected.getEmail(), actual.getEmail());
+
     }
 
     @Test

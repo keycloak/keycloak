@@ -17,6 +17,9 @@
 
 package org.keycloak.organization.authentication.authenticators.broker;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -29,7 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 
-public class IdpOrganizationAuthenticator extends AbstractIdpAuthenticator {
+public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthenticator {
 
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -46,10 +49,10 @@ public class IdpOrganizationAuthenticator extends AbstractIdpAuthenticator {
             return;
         }
 
-        IdentityProviderModel expectedBroker = organization.getIdentityProvider();
-        IdentityProviderModel currentBroker = brokerContext.getIdpConfig();
+        Stream<IdentityProviderModel> expectedBrokers = organization.getIdentityProviders();
+        IdentityProviderModel broker = brokerContext.getIdpConfig();
 
-        if (!expectedBroker.getAlias().equals(currentBroker.getAlias())) {
+        if (expectedBrokers.noneMatch(broker::equals)) {
             context.failure(AuthenticationFlowError.ACCESS_DENIED);
             return;
         }
@@ -71,31 +74,12 @@ public class IdpOrganizationAuthenticator extends AbstractIdpAuthenticator {
             return false;
         }
 
-        String domain = getEmailDomain(user.getEmail());
+        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
-        if (domain == null) {
+        if (organization == null) {
             return false;
         }
 
-        OrganizationModel organization = provider.getByDomainName(domain);
-
-        if (organization == null || provider.getIdentityProvider(organization) == null) {
-            return false;
-        }
-
-        session.setAttribute(OrganizationModel.class.getName(), organization);
-
-        return true;
+        return provider.getIdentityProviders(organization).findAny().isPresent();
     }
-
-    private String getEmailDomain(String email) {
-        int domainSeparator = email.indexOf('@');
-
-        if (domainSeparator == -1) {
-            return null;
-        }
-
-        return email.substring(domainSeparator + 1);
-    }
-
 }
