@@ -522,7 +522,7 @@ public class RepresentationToModel {
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
-            add(updatePropertyAction(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris())));
+            add(updatePropertyAction(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
             add(updatePropertyAction(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
         }};
 
@@ -579,10 +579,16 @@ public class RepresentationToModel {
     }
 
     private static Set<String> defaultWebOrigins(ClientModel client) {
-        Optional<Set<String>> webOrigins = Optional.of(client.getWebOrigins()).filter(origins -> !origins.isEmpty());
-        if (webOrigins.isPresent()) {
-            return webOrigins.get();
+        Set<String> webOrigins = client.getWebOrigins();
+        if (webOrigins != null && !webOrigins.isEmpty()) {
+            return webOrigins;
         }
+
+        Set<String> redirectUris = client.getRedirectUris();
+        if (redirectUris == null || redirectUris.isEmpty()) {
+            return null;
+        }
+
         return client.getRedirectUris()
                 .stream()
                 .filter(uri -> uri.startsWith("http"))
@@ -1631,6 +1637,9 @@ public class RepresentationToModel {
     }
 
     private static <T> Set<T> collectionToSet(Collection<T> collection) {
-        return Optional.ofNullable(collection).map(HashSet::new).orElse(null);
+        return Optional.ofNullable(collection)
+                .filter(col -> !col.isEmpty())
+                .map(HashSet::new)
+                .orElse(null);
     }
 }

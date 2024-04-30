@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -23,9 +24,9 @@ enum TypedClientAttribute implements TypedClientAttributeInterface {
     IMPLICIT_FLOW_ENABLED("implicitFlowEnabled", false),
     PROTOCOL("protocol", null),
     PUBLIC_CLIENT("publicClient", false),
-    REDIRECT_URIS("redirectUris", null),
+    REDIRECT_URIS("redirectUris", Set.of()),
     SERVICE_ACCOUNTS_ENABLED("serviceAccountsEnabled", false),
-    WEB_ORIGINS("webOrigins", null),
+    WEB_ORIGINS("webOrigins", Set.of()),
     ;
 
     private final String propertyName;
