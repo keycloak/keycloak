@@ -19,6 +19,7 @@ import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
 
 import "./page-nav.css";
+import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 type LeftNavProps = { title: string; path: string; id?: string };
 
@@ -61,9 +62,9 @@ export const PageNav = () => {
   const { t } = useTranslation();
   const { hasSomeAccess } = useAccess();
   const { componentTypes } = useServerInfo();
+  const isFeatureEnabled = useIsFeatureEnabled();
   const pages =
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
-
   const navigate = useNavigate();
 
   type SelectedItem = {
@@ -122,14 +123,15 @@ export const PageNav = () => {
               <LeftNav title="authentication" path="/authentication" />
               <LeftNav title="identityProviders" path="/identity-providers" />
               <LeftNav title="userFederation" path="/user-federation" />
-              {pages?.map((p) => (
-                <LeftNav
-                  key={p.id}
-                  title={p.id}
-                  path={toPage({ providerId: p.id }).pathname!}
-                  id="/page-section"
-                />
-              ))}
+              {isFeatureEnabled(Feature.DeclarativeUI) &&
+                pages?.map((p) => (
+                  <LeftNav
+                    key={p.id}
+                    title={p.id}
+                    path={toPage({ providerId: p.id }).pathname!}
+                    id="/page-section"
+                  />
+                ))}
             </NavGroup>
           )}
         </Nav>
