@@ -29,7 +29,6 @@ import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -61,15 +60,13 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
     private final boolean offline;
     private final List<PersistentUpdate> changes = new LinkedList<>();
     private final TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor;
-    private final KeycloakSession session;
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
 
-    public JpaChangesPerformer(KeycloakSession session, String cacheName, boolean offline, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
+    public JpaChangesPerformer(String cacheName, boolean offline, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
         this.cacheName = cacheName;
         this.offline = offline;
         this.batchingQueue = batchingQueue;
         processor = processor();
-        this.session = session;
     }
 
     @Override
@@ -90,10 +87,28 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         };
     }
 
+    private boolean warningShown = false;
+
+    private void offer(PersistentUpdate update) {
+        if (!batchingQueue.offer(update)) {
+            if (!warningShown) {
+                warningShown = true;
+                LOG.warn("Queue is full, will block");
+            }
+            try {
+                // this will block until there is a free spot in the queue
+                batchingQueue.put(update);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     @Override
     public void applyChanges() {
         if (!changes.isEmpty()) {
-            batchingQueue.addAll(changes);
+            changes.forEach(this::offer);
             List<Throwable> exceptions = new ArrayList<>();
             CompletableFuture.allOf(changes.stream().map(f -> f.future().exceptionally(throwable -> {
                 exceptions.add(throwable);

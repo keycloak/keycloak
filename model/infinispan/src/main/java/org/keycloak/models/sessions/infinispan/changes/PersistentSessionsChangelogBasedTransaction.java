@@ -52,11 +52,11 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
         if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) &&
             (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME) || cache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
             changesPerformers = List.of(
-                    new JpaChangesPerformer<>(session, cache.getName(), offline, batchingQueue)
+                    new JpaChangesPerformer<>(cache.getName(), offline, batchingQueue)
             );
         } else {
             changesPerformers = List.of(
-                    new JpaChangesPerformer<>(session, cache.getName(), offline, batchingQueue),
+                    new JpaChangesPerformer<>(cache.getName(), offline, batchingQueue),
                     new EmbeddedCachesChangesPerformer<>(cache),
                     new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker)
             );
