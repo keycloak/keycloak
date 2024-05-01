@@ -168,8 +168,8 @@ public class LogoutEndpoint {
                 String errorMessage = "Parameter 'redirect_uri' no longer supported.";
                 event.detail(Details.REASON, errorMessage);
                 event.error(Errors.INVALID_REQUEST);
-                logger.warnf(errorMessage + " Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
-                        OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
+                logger.warnf("%s Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
+                        errorMessage, OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
             }
 
@@ -223,7 +223,7 @@ public class LogoutEndpoint {
                     String errorMessage = "Parameter client_id is different than the client for which ID Token was issued.";
                     event.detail(Details.REASON, errorMessage);
                     event.error(Errors.INVALID_TOKEN);
-                    logger.warnf(errorMessage + " Parameter client_id: '%s', ID Token issued for: '%s'.", clientId, idToken.getIssuedFor());
+                    logger.warnf("%s Parameter client_id: '%s', ID Token issued for: '%s'.", errorMessage, clientId, idToken.getIssuedFor());
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
                 } else {
                     confirmationNeeded = false;
@@ -366,8 +366,8 @@ public class LogoutEndpoint {
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.LOGGING_OUT.name(), ClientSessionCode.ActionType.USER) || !checks.isActionRequest() || !formData.containsKey("confirmLogout")) {
             AuthenticationSessionModel logoutSession = checks.getAuthenticationSession();
             String errorMessage = "Failed verification during logout.";
-            logger.debugf(errorMessage + " logoutSessionId=%s, clientId=%s, tabId=%s",
-                    logoutSession != null ? logoutSession.getParentSession().getId() : "unknown", clientId, tabId);
+            logger.debugf( "%s logoutSessionId=%s, clientId=%s, tabId=%s",
+                    errorMessage, logoutSession != null ? logoutSession.getParentSession().getId() : "unknown", clientId, tabId);
 
             SystemClientUtil.checkSkipLink(session, logoutSession);
 
@@ -400,7 +400,7 @@ public class LogoutEndpoint {
         AuthenticationSessionModel logoutSession = checks.initialVerifyAuthSession();
         if (logoutSession == null) {
             String errorMessage = "Failed verification when changing locale during logout.";
-            logger.debugf(errorMessage + " clientId=%s, tabId=%s", clientId, tabId);
+            logger.debugf("%s clientId=%s, tabId=%s", errorMessage, clientId, tabId);
 
             SystemClientUtil.checkSkipLink(session, logoutSession);
 

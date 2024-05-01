@@ -229,7 +229,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private void checkClient(String clientId) {
         if (clientId == null) {
-            event.detail(Details.REASON, String.format("Missing parameter: %s", OIDCLoginProtocol.CLIENT_ID_PARAM));
+            event.detail(Details.REASON, "Missing parameter: " + OIDCLoginProtocol.CLIENT_ID_PARAM);
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
         }
