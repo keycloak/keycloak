@@ -18,11 +18,11 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -490,7 +490,7 @@ public class RepresentationToModel {
      * @param isNew  Whether the client is new or not (needed because some getters cannot return null).
      */
     private static void updateClientProperties(ClientModel client, ClientRepresentation rep, boolean isNew) {
-        List<Supplier<ClientTypeException>> clientPropertyUpdates = new ArrayList<Supplier<ClientTypeException>>() {{
+        List<Supplier<ClientTypeException>> clientPropertyUpdates = new LinkedList<Supplier<ClientTypeException>>() {{
             /**
              * Values from the ClientRepresentation take precedence.
              * Then values from the ClientModel (these may be augmented from the client type configuration).
@@ -516,7 +516,7 @@ public class RepresentationToModel {
             add(updatePropertyAction(client::setNotBefore, rep::getNotBefore, client::getNotBefore));
             // Fields with defaults if not initially provided
             add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> OIDC));
-            add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, () -> defaultNodeReRegistraionTimeout(client, isNew)));
+            add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, () -> defaultNodeReRegistrationTimeout(client, isNew)));
             add(updatePropertyAction(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
             add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed, () -> defaultFullScopeAllowed(client, isNew)));
             // Client Secret
@@ -548,14 +548,21 @@ public class RepresentationToModel {
     }
 
     private static Boolean defaultFullScopeAllowed(ClientModel client, boolean isNew) {
-         return isNew ? !client.isConsentRequired() : client.isFullScopeAllowed();
+        // If the client is newly created and the value is set to true, the value must be augmented through a
+        // client type configuration, so do not update. Yet if new and false, the field MAY be controlled through a
+        // client type. We can only attempt to set the sane default based on consent required.
+        return isNew && !client.isFullScopeAllowed() ? !client.isConsentRequired() : client.isFullScopeAllowed();
     }
 
-    private static Integer defaultNodeReRegistraionTimeout(ClientModel client, boolean isNew) {
-        if (!ObjectUtil.isEqualOrBothNull(client.getNodeReRegistrationTimeout(), 0) || !isNew) {
-            return client.getNodeReRegistrationTimeout();
+    private static Integer defaultNodeReRegistrationTimeout(ClientModel client, boolean isNew) {
+        // If the client is newly created and the value is 0, the client MAY not be augmented with a client type.
+        if (isNew && Objects.equals(client.getNodeReRegistrationTimeout(), 0)) {
+            // Return the sane default.
+            return -1;
         }
-        return -1;
+        // Update client request without an overriding value or is new and augmented with a client type,
+        // do not attempt to update.
+        return client.getNodeReRegistrationTimeout();
     }
 
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
