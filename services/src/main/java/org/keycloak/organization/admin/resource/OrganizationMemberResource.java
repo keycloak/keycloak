@@ -63,6 +63,7 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.UserResource;
 import org.keycloak.services.resources.admin.UsersResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.utils.StringUtil;
 
 @Provider
@@ -125,9 +126,6 @@ public class OrganizationMemberResource {
         UserModel user = session.users().getUserByEmail(realm, rep.getEmail());
 
         InviteOrgActionToken token = null;
-        // TODO not sure if this client id is right or if we should get one from the user somehow...
-        // TODO not really sure if the token is getting signed so we need to figure out where that's happening... maybe in the serialize method?
-        // TODO the expiration is set to a day in seconds but we should probably get this from configuration instead
         String link = null;
         int tokenExpiration = Time.currentTime() + realm.getActionTokenGeneratedByAdminLifespan();
         if (user != null) {
@@ -138,11 +136,16 @@ public class OrganizationMemberResource {
                    .build(realm.getName()).toString();
         } else {
             // this path lets us invite a user that doesn't exist yet, letting them register into the organization
-            token = new InviteOrgActionToken(null, tokenExpiration, rep.getEmail(), session.getContext().getClient().getClientId());
+            token = new InviteOrgActionToken(null, tokenExpiration, rep.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             token.setOrgId(organization.getId());
             link = LoginActionsService.registrationFormProcessor(session.getContext().getUri())
                     .queryParam(Constants.ORG_TOKEN, token.serialize(session, realm, session.getContext().getUri()))
                     .build(realm.getName()).toString();
+        }
+
+        if (user == null ) {
+            user = new InMemoryUserAdapter(session, realm, null);
+            user.setEmail(rep.getEmail());
         }
 
         try {
