@@ -205,6 +205,9 @@ public class ClientScopeResource {
             }
         }
     }
+    public static void validateClientScopeProtocol(String protocol)throws ErrorResponseException{
+        if(protocol==null || (!protocol.equals("openid-connect") && !protocol.equals("saml"))) throw ErrorResponse.error("Unexpected protocol",Response.Status.BAD_REQUEST);
+    }
 
     public static void validateClientScopeName(String name) throws ErrorResponseException {
         if (!scopeNamePattern.matcher(name).matches()) {
