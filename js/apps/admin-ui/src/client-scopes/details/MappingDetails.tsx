@@ -218,11 +218,8 @@ export default function MappingDetails() {
               rules={{ required: { value: true, message: t("required") } }}
             />
             <DynamicComponents
-                properties={(mapping?.properties || []).map((obj: any) => ({
-                  ...obj,
-                  stringify: true,
-                }))}
-              isNew={!isUpdating}
+                properties={mapping?.properties || []}
+                isNew={!isUpdating}
             />
             <ActionGroup>
               <Button variant="primary" type="submit">

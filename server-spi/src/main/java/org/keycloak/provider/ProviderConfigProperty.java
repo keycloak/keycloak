@@ -76,6 +76,7 @@ public class ProviderConfigProperty {
     protected List<String> options;
     protected boolean secret;
     protected boolean required;
+    protected boolean stringify;
     private boolean readOnly;
 
     public ProviderConfigProperty() {
@@ -106,6 +107,10 @@ public class ProviderConfigProperty {
     public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, boolean secret, boolean required) {
         this(name, label, helpText, type, defaultValue, secret);
         this.required = required;
+    }
+    public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, boolean secret, boolean required, boolean stringify) {
+        this(name, label, helpText, type, defaultValue, secret, required);
+        this.stringify = stringify;
     }
 
     /**
@@ -218,5 +223,13 @@ public class ProviderConfigProperty {
 
     public boolean isReadOnly() {
         return readOnly;
+    }
+
+    public boolean isStringify() {
+        return stringify;
+    }
+
+    public void setStringify(boolean stringify) {
+        this.stringify = stringify;
     }
 }
