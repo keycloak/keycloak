@@ -60,6 +60,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     protected FreeMarkerProvider freeMarker;
     protected RealmModel realm;
     protected UserModel user;
+    protected String userEmail;
     protected final Map<String, Object> attributes = new HashMap<>();
 
     public FreeMarkerEmailTemplateProvider(KeycloakSession session) {

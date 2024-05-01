@@ -19,9 +19,12 @@ package org.keycloak.testsuite.organization.admin;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -31,13 +34,23 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -46,10 +59,16 @@ import org.keycloak.testsuite.util.UserBuilder;
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Rule
+    public AssertEvents events = new AssertEvents(this);
+
+    @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
     @Page
     protected InfoPage infoPage;
+
+    @Page
+    protected RegisterPage registerPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -83,5 +102,49 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         infoPage.clickToContinue();
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
         Assert.assertTrue(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+    }
+
+
+    @Test
+    public void testInviteNewUserRegistration() throws IOException {
+
+        UserRepresentation user = UserBuilder.create()
+                .username("invitedUser")
+                .email("inviteduser@email")
+                .enabled(true)
+                .build();
+        // User isn't created when we send the invite
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteMember(user).close();
+
+        MimeMessage message = greenMail.getLastReceivedMessage();
+        Assert.assertNotNull(message);
+        String link = MailUtils.getPasswordResetEmailLink(message);
+        String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
+        Assert.assertNotNull(orgToken);
+
+        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+        driver.navigate().to(link.trim());
+        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", "inviteduser@myemail",
+                    "invitedUser", "password", "password", null, true, null);
+
+        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister("invitedUser", "inviteduser@email")
+                    .assertEvent().getUserId();
+        UserRepresentation registeredUser = assertUserRegistered(userId, "invitedUser");
+        Assert.assertTrue(organization.members().getAll().stream().anyMatch(actual -> registeredUser.getId().equals(actual.getId())));
+    }
+
+    private UserRepresentation assertUserRegistered(String userId, String username) {
+        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
+
+        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
+        org.junit.Assert.assertNotNull(user);
+        org.junit.Assert.assertNotNull(user.getCreatedTimestamp());
+        return user;
     }
 }
