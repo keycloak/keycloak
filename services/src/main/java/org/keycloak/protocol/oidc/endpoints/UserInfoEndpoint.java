@@ -170,8 +170,8 @@ public class UserInfoEndpoint {
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
         if (tokenForUserInfo.getToken() == null) {
-            event.error(Errors.INVALID_TOKEN);
             event.detail(Details.REASON, "Missing token");
+            event.error(Errors.INVALID_TOKEN);
             throw error.unauthorized();
         }
 
