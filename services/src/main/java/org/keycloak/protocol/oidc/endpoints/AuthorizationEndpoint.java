@@ -229,8 +229,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private void checkClient(String clientId) {
         if (clientId == null) {
-            event.error(Errors.INVALID_REQUEST);
             event.detail(Details.REASON, String.format("Missing parameter: %s", OIDCLoginProtocol.CLIENT_ID_PARAM));
+            event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
         }
 
@@ -258,9 +258,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
         if (!protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
-            event.error(Errors.INVALID_CLIENT);
             String errorMessage = "Wrong client protocol.";
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CLIENT);
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, errorMessage);
         }
 
@@ -317,8 +317,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
                 if (essential) {
                     logger.errorf("Requested essential acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct ACR passed in the 'claims' parameter.", acr);
-                    event.error(Errors.INVALID_REQUEST);
                     event.detail(Details.REASON, "Invalid requested essential acr value");
+                    event.error(Errors.INVALID_REQUEST);
                     throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
                 } else {
                     logger.warnf("Requested acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct used ACR.", acr);

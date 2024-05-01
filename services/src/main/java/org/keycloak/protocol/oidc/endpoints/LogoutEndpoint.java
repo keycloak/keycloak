@@ -165,9 +165,9 @@ public class LogoutEndpoint {
         if (!providerConfig.isLegacyLogoutRedirectUri()) {
             if (deprecatedRedirectUri != null) {
                 event.event(EventType.LOGOUT);
-                event.error(Errors.INVALID_REQUEST);
                 String errorMessage = "Parameter 'redirect_uri' no longer supported.";
                 event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
                 logger.warnf(errorMessage + " Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
                         OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
@@ -175,9 +175,9 @@ public class LogoutEndpoint {
 
             if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
                 event.event(EventType.LOGOUT);
-                event.error(Errors.INVALID_REQUEST);
                 String errorMessage = "Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.";
                 event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
                 logger.warnf(errorMessage);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER,
                         OIDCLoginProtocol.ID_TOKEN_HINT);
@@ -202,6 +202,7 @@ public class LogoutEndpoint {
                 TokenVerifier.createWithoutSignature(idToken).tokenType(Arrays.asList(TokenUtil.TOKEN_TYPE_ID)).verify();
             } catch (OAuthErrorException | VerificationException e) {
                 event.event(EventType.LOGOUT);
+                event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
             }
@@ -219,9 +220,9 @@ public class LogoutEndpoint {
                 if (!idToken.getIssuedFor().equals(clientId)) {
                     event.event(EventType.LOGOUT);
                     event.client(clientId);
-                    event.error(Errors.INVALID_TOKEN);
                     String errorMessage = "Parameter client_id is different than the client for which ID Token was issued.";
                     event.detail(Details.REASON, errorMessage);
+                    event.error(Errors.INVALID_TOKEN);
                     logger.warnf(errorMessage + " Parameter client_id: '%s', ID Token issued for: '%s'.", clientId, idToken.getIssuedFor());
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
                 } else {
@@ -405,8 +406,8 @@ public class LogoutEndpoint {
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
-                event.error(Errors.LOGOUT_FAILED);
                 event.detail(Details.REASON, errorMessage);
+                event.error(Errors.LOGOUT_FAILED);
                 return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
             } else {
                 // Probably changing locale on logout screen after logout was already performed. If there is no session in the browser, we can just display that logout was already finished
@@ -571,18 +572,18 @@ public class LogoutEndpoint {
 
         String encodedLogoutToken = form.getFirst(OAuth2Constants.LOGOUT_TOKEN);
         if (encodedLogoutToken == null) {
-            event.error(Errors.INVALID_TOKEN);
             String errorMessage = "No logout token";
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, errorMessage,
                     Response.Status.BAD_REQUEST);
         }
 
         LogoutTokenValidationCode validationCode = tokenManager.verifyLogoutToken(session, realm, encodedLogoutToken);
         if (!validationCode.equals(LogoutTokenValidationCode.VALIDATION_SUCCESS)) {
-            event.error(Errors.INVALID_TOKEN);
             String errorMessage = validationCode.getErrorMessage();
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, errorMessage,
                     Response.Status.BAD_REQUEST);
         }
@@ -608,8 +609,8 @@ public class LogoutEndpoint {
 
         if (!backchannelLogoutResponse.getLocalLogoutSucceeded()) {
             String errorMessage = "There was an error during the local logout";
-            event.error(Errors.LOGOUT_FAILED);
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.LOGOUT_FAILED);
             throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, errorMessage,
                     Response.Status.NOT_IMPLEMENTED);
         }

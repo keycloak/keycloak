@@ -115,6 +115,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             httpRequest.getDecodedFormParameters(), AuthorizationEndpointRequestParserProcessor.EndpointType.OAUTH2_DEVICE_ENDPOINT);
 
         if (request.getInvalidRequestMessage() != null) {
+            event.detail(Details.REASON, request.getInvalidRequestMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT,
                 request.getInvalidRequestMessage(), Response.Status.BAD_REQUEST);
@@ -128,9 +129,11 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         CacheControlUtil.noBackButtonCacheControlHeader(session);
 
         if (!realm.getOAuth2DeviceConfig().isOAuth2DeviceAuthorizationGrantEnabled(client)) {
+            String errorMessage = "Client not allowed for OAuth 2.0 Device Authorization Grant";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT,
-                "Client not allowed for OAuth 2.0 Device Authorization Grant", Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         // https://tools.ietf.org/html/rfc7636#section-4
@@ -314,8 +317,8 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
      * @return Verification page response with error message
      */
     private Response invalidUserCodeResponse(String errorMessage, String reason) {
-        event.error(Errors.INVALID_OAUTH2_USER_CODE);
         event.detail(Details.REASON, reason);
+        event.error(Errors.INVALID_OAUTH2_USER_CODE);
         logger.debugf("invalid user code: %s", reason);
         return createVerificationPage(errorMessage);
     }
@@ -394,13 +397,17 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         }
 
         if (!realm.getOAuth2DeviceConfig().isOAuth2DeviceAuthorizationGrantEnabled(client)) {
+            String errorMessage = "Client is not allowed to initiate OAuth 2.0 Device Authorization Grant. The flow is disabled for the client.";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorResponseException(Errors.UNAUTHORIZED_CLIENT, "Client is not allowed to initiate OAuth 2.0 Device Authorization Grant. The flow is disabled for the client.", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(Errors.UNAUTHORIZED_CLIENT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (client.isBearerOnly()) {
+            String errorMessage = "Bearer-only applications are not allowed to initiate browser login.";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorResponseException(Errors.UNAUTHORIZED_CLIENT, "Bearer-only applications are not allowed to initiate browser login.", Response.Status.FORBIDDEN);
+            throw new ErrorResponseException(Errors.UNAUTHORIZED_CLIENT, errorMessage, Response.Status.FORBIDDEN);
         }
 
         String protocol = client.getProtocol();
@@ -410,8 +417,10 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
         if (!protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            String errorMessage = "Wrong client protocol.";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorResponseException(Errors.UNAUTHORIZED_CLIENT, "Wrong client protocol." , Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(Errors.UNAUTHORIZED_CLIENT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         session.getContext().setClient(client);

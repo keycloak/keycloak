@@ -130,31 +130,31 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         if (redirectUri != null && !redirectUri.equals(redirectUriParam)) {
-            event.error(Errors.INVALID_REDIRECT_URI);
             String errorMessage = "Parameter 'redirect_uri' did not match originally saved redirect URI used in initial OIDC request. Saved redirectUri: %s, redirectUri parameter: %s";
             event.detail(Details.REASON, String.format(errorMessage, redirectUri, redirectUriParam));
+            event.error(Errors.INVALID_REDIRECT_URI);
             logger.tracef(errorMessage, redirectUri, redirectUriParam);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
 
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
-            event.error(Errors.INVALID_CLIENT);
             String errorMessage = "Auth error: Found different client_id in clientSession";
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CLIENT);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (!client.isStandardFlowEnabled()) {
-            event.error(Errors.NOT_ALLOWED);
             String errorMessage = "Client not allowed to exchange code";
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            event.error(Errors.USER_SESSION_NOT_FOUND);
             String errorMessage = "Session not active";
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.USER_SESSION_NOT_FOUND);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
@@ -193,9 +193,9 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         String scopeParam = codeData.getScope();
         Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(scopeParam, client);
         if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopesSupplier.get())) {
-            event.error(Errors.NOT_ALLOWED);
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 

@@ -187,9 +187,9 @@ public class UserInfoEndpoint {
             token = verifier.verify().getToken();
 
             if (!TokenUtil.hasScope(token.getScope(), OAuth2Constants.SCOPE_OPENID)) {
-                event.error(Errors.ACCESS_DENIED);
                 String errorMessage = "Missing openid scope";
                 event.detail(Details.REASON, errorMessage);
+                event.error(Errors.ACCESS_DENIED);
                 throw error.insufficientScope(errorMessage);
             }
 
@@ -208,15 +208,15 @@ public class UserInfoEndpoint {
             if (clientModel == null) {
                 cors.allowAllOrigins();
             }
-            event.error(Errors.INVALID_TOKEN);
             event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.INVALID_TOKEN);
             throw error.invalidToken("Token verification failed");
         }
 
         if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
-            event.error(Errors.INVALID_CLIENT);
             String errorMessage = "Wrong client protocol";
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CLIENT);
             throw error.invalidToken(errorMessage);
         }
 
@@ -249,9 +249,9 @@ public class UserInfoEndpoint {
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
-                event.error(Errors.NOT_ALLOWED);
                 String errorMessage = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
                 event.detail(Details.REASON, errorMessage);
+                event.error(Errors.NOT_ALLOWED);
                 throw error.invalidToken(errorMessage);
             }
         }
@@ -262,9 +262,9 @@ public class UserInfoEndpoint {
                     DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
                     DPoPUtil.validateBinding(token, dPoP);
                 } catch (VerificationException ex) {
-                    event.error(Errors.NOT_ALLOWED);
                     String errorMessage = "DPoP proof and token binding verification failed";
                     event.detail(Details.REASON, errorMessage + ": " + ex.getMessage());
+                    event.error(Errors.NOT_ALLOWED);
                     throw error.invalidToken(errorMessage);
                 }
             }

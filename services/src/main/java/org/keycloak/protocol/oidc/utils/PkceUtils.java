@@ -123,16 +123,16 @@ public class PkceUtils {
             String errorReason = "Unsupported algorithm specified";
             String errorMessage = "PKCE verification failed: " + errorReason;
             logger.warnf(errorMessage);
-            event.error(Errors.PKCE_VERIFICATION_FAILED);
             event.detail(Details.REASON, errorReason);
+            event.error(Errors.PKCE_VERIFICATION_FAILED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
         if (!codeChallenge.equals(codeVerifierEncoded)) {
             String errorReason = "Code mismatch";
             String errorMessage = "PKCE verification failed: " + errorReason;
             logger.warnf(errorMessage + ". authUserId = %s, authUsername = %s", authUserId, authUsername);
-            event.error(Errors.PKCE_VERIFICATION_FAILED);
             event.detail(Details.REASON, errorReason);
+            event.error(Errors.PKCE_VERIFICATION_FAILED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         } else {
             logger.debugf("PKCE verification success. codeVerifierEncoded = %s, codeChallenge = %s", codeVerifierEncoded, codeChallenge);

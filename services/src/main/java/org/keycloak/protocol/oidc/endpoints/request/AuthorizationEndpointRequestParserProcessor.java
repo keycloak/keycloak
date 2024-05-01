@@ -122,8 +122,8 @@ public class AuthorizationEndpointRequestParserProcessor {
         } else {
             String errorMessage = "Parameter 'client_id' not present or present multiple times in the HTTP request parameters";
             logger.warnf(errorMessage);
-            event.error(Errors.INVALID_REQUEST);
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
     }

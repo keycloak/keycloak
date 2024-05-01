@@ -135,8 +135,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             try {
                 session.clientPolicy().triggerOnEvent(clientPolicyContextGenerator.apply(responseBuilder));
             } catch (ClientPolicyException cpe) {
-                event.error(cpe.getError());
                 event.detail(Details.REASON, cpe.getErrorDetail());
+                event.error(cpe.getError());
                 throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
             }
         }
@@ -173,9 +173,9 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     responseBuilder.getRefreshToken().setConfirmation(confirmation);
                 }
             } else {
-                event.error(Errors.INVALID_REQUEST);
                 String errorMessage = "Client Certification missing for MTLS HoK Token Binding";
                 event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                         errorMessage, Response.Status.BAD_REQUEST);
             }
@@ -235,8 +235,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                 dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
                 session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
             } catch (VerificationException ex) {
-                event.error(Errors.INVALID_DPOP_PROOF);
                 event.detail(Details.REASON, ex.getMessage());
+                event.error(Errors.INVALID_DPOP_PROOF);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_DPOP_PROOF, ex.getMessage(), Response.Status.BAD_REQUEST);
             }
         }
@@ -254,16 +254,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
 
         if (!validScopes) {
-            logger.debugf("Invalid scopes: %s. realm=%s client_id=%s", scope, realm.getName(), client.getClientId());
-            event.error(Errors.INVALID_REQUEST);
-            Set<String> allowedScopes = Stream.concat( //
-                    client.getClientScopes(true).values().stream().filter(ClientScopeModel::isIncludeInTokenScope).map(ClientScopeModel::getName), //
-                    client.getClientScopes(false).values().stream().filter(ClientScopeModel::isIncludeInTokenScope).map(ClientScopeModel::getName) //
-            ).collect(Collectors.toCollection(TreeSet::new));
-            String errorMessage = "Invalid scopes. Scopes must be contained in " + allowedScopes;
+            String errorMessage = "Invalid scopes: " + scope;
             event.detail(Details.REASON, errorMessage);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage,
-                    Response.Status.BAD_REQUEST);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         return scope;
