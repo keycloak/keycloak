@@ -18,6 +18,7 @@
 package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
@@ -101,6 +102,9 @@ public class AuthenticationProcessor {
     protected HttpRequest request;
     protected String flowId;
     protected String flowPath;
+
+
+    protected String orgToken;
     protected boolean browserFlow;
     protected BruteForceProtector protector;
     protected Runnable afterResetListener;
@@ -225,6 +229,15 @@ public class AuthenticationProcessor {
      */
     public AuthenticationProcessor setFlowPath(String flowPath) {
         this.flowPath = flowPath;
+        return this;
+    }
+
+    public String getOrgToken() {
+        return orgToken;
+    }
+
+    public AuthenticationProcessor setOrgToken(String orgToken) {
+        this.orgToken = orgToken;
         return this;
     }
 

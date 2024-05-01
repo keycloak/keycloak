@@ -735,6 +735,10 @@ public class LoginActionsService {
         return processFlow(action, execution, authSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage, new AuthenticationProcessor());
     }
 
+    protected Response processRegistrationWithInviteToken(boolean action, String execution, AuthenticationSessionModel authSession, String errorMessage, String token) {
+        AuthenticationProcessor authenticationProcessor = new AuthenticationProcessor().setOrgToken(token);
+        return processFlow(action, execution, authSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage, authenticationProcessor);
+    }
 
     /**
      * protocol independent registration page entry point
@@ -746,15 +750,13 @@ public class LoginActionsService {
     @GET
     public Response registerPage(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                  @QueryParam(SESSION_CODE) String code,
-                                 // TODO this is unused but having it here adds it to openapi. What's the better approach?
-                                 // Should this be pulled off the query params and then injected into the flow processor as its own thing?
                                  @QueryParam(Constants.ORG_TOKEN) String orgToken,
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
 
-        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
+        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData, orgToken);
     }
 
 
@@ -773,14 +775,12 @@ public class LoginActionsService {
                                     @QueryParam(Constants.CLIENT_ID) String clientId,
                                     @QueryParam(Constants.CLIENT_DATA) String clientData,
                                     @QueryParam(Constants.TAB_ID) String tabId) {
-        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
+        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData, orgToken);
     }
 
 
-    private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, String clientData) {
+    private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, String clientData, String orgToken) {
         event.event(EventType.REGISTER);
-
-        // TODO if we parse the org token here and then pass in the already decoded token we can save ourselves some duplicated work
 
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
@@ -798,7 +798,7 @@ public class LoginActionsService {
 
         AuthenticationManager.expireIdentityCookie(session);
 
-        return processRegistration(checks.isActionRequest(), execution, authSession, null);
+        return processRegistrationWithInviteToken(checks.isActionRequest(), execution, authSession, null, orgToken);
     }
 
 

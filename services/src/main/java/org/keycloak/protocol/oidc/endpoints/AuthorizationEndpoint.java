@@ -195,7 +195,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         CacheControlUtil.noBackButtonCacheControlHeader(session);
         switch (action) {
             case REGISTER:
-                return buildRegister();
+                return buildRegister(params.getFirst(Constants.ORG_TOKEN));
             case FORGOT_CREDENTIALS:
                 return buildForgotCredential();
             case CODE:
@@ -341,13 +341,16 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return handleBrowserAuthenticationRequest(authenticationSession, new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event), TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), false);
     }
 
-    private Response buildRegister() {
+    private Response buildRegister(String inviteToken) {
         authManager.expireIdentityCookie(session);
 
         AuthenticationFlowModel flow = realm.getRegistrationFlow();
         String flowId = flow.getId();
 
         AuthenticationProcessor processor = createProcessor(authenticationSession, flowId, LoginActionsService.REGISTRATION_PATH);
+        if (inviteToken != null) {
+            processor.setOrgToken(inviteToken);
+        }
         authenticationSession.setClientNote(APP_INITIATED_FLOW, LoginActionsService.REGISTRATION_PATH);
 
         return processor.authenticate();
