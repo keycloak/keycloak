@@ -63,6 +63,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -134,9 +135,12 @@ public class OrganizationMemberResource {
         InviteOrgActionToken token = null;
         String link = null;
         int tokenExpiration = Time.currentTime() + realm.getActionTokenGeneratedByAdminLifespan();
+        String redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
+
         if (user != null) {
            token = new InviteOrgActionToken(user.getId(), tokenExpiration, user.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
            token.setOrgId(organization.getId());
+           token.setRedirectUri(redirectUri);
            link = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
                    .queryParam("key", token.serialize(session, realm, session.getContext().getUri()))
                    .build(realm.getName()).toString();
@@ -145,9 +149,10 @@ public class OrganizationMemberResource {
             // this path lets us invite a user that doesn't exist yet, letting them register into the organization
             token = new InviteOrgActionToken(null, tokenExpiration, rep.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             token.setOrgId(organization.getId());
+            token.setRedirectUri(redirectUri);
             Map<String, String> params = Map.of("realm", realm.getName(), "protocol", "openid-connect");
             link = OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
-                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.TOKEN)
+                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.CODE)
                     .queryParam(Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
                     .queryParam(Constants.ORG_TOKEN, token.serialize(session, realm, session.getContext().getUri()))
                     .buildFromMap(params).toString();
