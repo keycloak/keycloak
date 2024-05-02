@@ -20,7 +20,6 @@ import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArch
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
-import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 
 /**
@@ -35,24 +34,12 @@ public class EAPDeploymentArchiveProcessor implements ApplicationArchiveProcesso
     public void process(Archive<?> archive, TestClass testClass) {
         if (DeploymentArchiveProcessorUtils.checkRunOnServerDeployment(archive)) return;
 
-        modifyWebXML(archive, testClass);
-
         modifyOIDCAdapterConfig(archive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH);
         modifyOIDCAdapterConfig(archive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH_JS);
 
         modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH);
         modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH_TENANT1);
         modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH_TENANT2);
-    }
-
-    private void modifyWebXML(Archive<?> archive, TestClass testClass) {
-        if (!archive.contains(DeploymentArchiveProcessorUtils.WEBXML_PATH)) return;
-        if (!testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) return;
-        if (!archive.contains(DeploymentArchiveProcessorUtils.JBOSS_DEPLOYMENT_XML_PATH)) return;
-
-        log.debug("Modifying WEB.XML in " + archive.getName() + " for Servlet Filter.");
-        DeploymentArchiveProcessorUtils.modifyWebXMLForServletFilter(archive, testClass);
-        DeploymentArchiveProcessorUtils.addFilterDependencies(archive, testClass);
     }
 
     private void modifyOIDCAdapterConfig(Archive<?> archive, String adapterConfigPath) {
