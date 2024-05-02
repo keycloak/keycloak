@@ -87,6 +87,10 @@ public class ClientScopeResource {
         return new ProtocolMappersResource(session, clientScope, auth, adminEvent, manageCheck, viewCheck);
     }
 
+    public static void validateClientScopeProtocol(String protocol)throws ErrorResponseException{
+        if(protocol==null || (!protocol.equals("openid-connect") && !protocol.equals("saml"))) throw ErrorResponse.error("Unexpected protocol",Response.Status.BAD_REQUEST);
+    }
+
     /**
      * Base path for managing the role scope mappings for the client scope
      *
