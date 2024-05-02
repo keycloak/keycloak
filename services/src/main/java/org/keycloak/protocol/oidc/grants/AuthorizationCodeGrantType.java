@@ -67,9 +67,9 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         String code = formParams.getFirst(OAuth2Constants.CODE);
         if (code == null) {
-            event.error(Errors.INVALID_CODE);
             String errorMessage = "Missing parameter: " + OAuth2Constants.CODE;
             event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
         }
 
