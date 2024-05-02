@@ -126,7 +126,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     remoteCacheInvoker,
                     lastSessionRefreshStore,
                     offlineLastSessionRefreshStore,
-                    persisterLastSessionRefreshStore,
                     keyGenerator,
                     cache,
                     offlineSessionsCache,
@@ -178,7 +177,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
                         keyGenerator = new InfinispanKeyGenerator();
                         checkRemoteCaches(session);
-                        loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
+                        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                            initializeLastSessionRefreshStore(factory);
+                        }
                         registerClusterListeners(session);
                         loadSessionsFromRemoteCaches(session);
 
@@ -234,9 +235,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
          return config.getInt("sessionPreloadStalledTimeoutInSeconds", defaultTimeout);
     }
 
-    @Override
-    public void loadPersistentSessions(final KeycloakSessionFactory sessionFactory, final int maxErrors, final int sessionsPerSegment) {
-
+    public void initializeLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -244,10 +243,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 // Initialize persister for periodically doing bulk DB updates of lastSessionRefresh timestamps of refreshed sessions
                 persisterLastSessionRefreshStore = new PersisterLastSessionRefreshStoreFactory().createAndInit(session, true);
             }
-
         });
-
-
     }
 
 
