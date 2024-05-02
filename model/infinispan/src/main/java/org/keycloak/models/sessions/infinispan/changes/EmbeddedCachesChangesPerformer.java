@@ -90,7 +90,7 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
                 .thenAccept(returnValue -> {
                     int iteration = 0;
                     SessionEntityWrapper<V> newVersionEntity = newVersionEntityFirst;
-                    SessionEntityWrapper<V> oldVersionEntity = oldVersionEntityFirst;
+                    SessionEntityWrapper<V> oldVersion = oldVersionEntityFirst;
 
                     while (true) {
                         if (returnValue == null) {
@@ -100,27 +100,27 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
 
                         if (returnValue.getVersion().equals(newVersionEntity.getVersion())){
                             if (LOG.isTraceEnabled()) {
-                                LOG.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                                LOG.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
                             }
 
                             return;
                         } else {
                             if (LOG.isTraceEnabled()) {
-                                LOG.tracef("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
+                                LOG.tracef("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersion.getVersion(), newVersionEntity.getVersion());
                             }
                         }
 
                         if (++iteration >= InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
-                            LOG.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
+                            LOG.warnf("Failed to replace entity '%s' in cache '%s'. Expected: %s, Current: %s", key, cache.getName(), oldVersion, returnValue);
                             return;
                         }
 
-                        oldVersionEntity = returnValue;
-                        V session = oldVersionEntity.getEntity();
+                        oldVersion = returnValue;
+                        V session = oldVersion.getEntity();
                         task.runUpdate(session);
-                        newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersionEntity.getLocalMetadata());
+                        newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
 
-                        returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersionEntity.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+                        returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
                     }
                 });
     }
