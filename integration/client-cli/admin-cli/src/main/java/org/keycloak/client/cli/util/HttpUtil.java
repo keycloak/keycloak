@@ -314,7 +314,7 @@ public class HttpUtil {
                 }
                 query.append(params.getKey()).append("=").append(URLEncoder.encode(params.getValue(), "utf-8"));
             } catch (Exception e) {
-                throw new RuntimeException("Failed to encode query params: " + params.getKey() + "=" + params.getValue());
+                throw new IllegalArgumentException("Failed to encode query params: " + params.getKey() + "=" + params.getValue());
             }
         }
 

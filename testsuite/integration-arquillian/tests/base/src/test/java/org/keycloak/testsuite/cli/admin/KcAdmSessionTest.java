@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.cli.admin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.client.cli.config.FileConfigHandler;
@@ -13,9 +11,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import static org.hamcrest.Matchers.equalTo;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
@@ -47,6 +50,16 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 0);
             String userId = exe.stdoutLines().get(0);
+
+            exe = execute("get users --config '" + configFile.getName() + "' -r demorealm -q q=username:testuser");
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+            String result = exe.stdoutString();
+            assertTrue(result.contains(userId));
+
+            exe = execute("get users --config '" + configFile.getName() + "' -r demorealm -q q=username:non-existent");
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+            String emptyResult = exe.stdoutString();
+            assertFalse(emptyResult.contains(userId));
 
             // add realm admin capabilities to user
             exe = execute("add-roles --config '" + configFile.getName() + "' -r demorealm --uusername testuser --cclientid realm-management --rolename realm-admin");

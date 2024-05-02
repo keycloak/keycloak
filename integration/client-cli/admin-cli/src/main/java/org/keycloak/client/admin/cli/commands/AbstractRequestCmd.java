@@ -113,7 +113,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
     @ArgGroup(exclusive = true, multiplicity = "0..*")
     List<AttributeOperations> rawAttributeOperations = new ArrayList<>();
 
-    @Option(names = {"-q", "--query"}, description = "Add to request URI a NAME query parameter with value VALUE")
+    @Option(names = {"-q", "--query"}, description = "Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin")
     List<String> rawFilters = new LinkedList<>();
 
     @Parameters(arity = "0..1")
@@ -142,12 +142,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         }
 
         for (String arg : rawFilters) {
-            String[] keyVal;
-            if (arg.indexOf("=") == -1) {
-                keyVal = new String[] {"", arg};
-            } else {
-                keyVal = parseKeyVal(arg);
-            }
+            String[] keyVal = parseKeyVal(arg);
             filter.put(keyVal[0], keyVal[1]);
         }
 
