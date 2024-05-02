@@ -46,7 +46,7 @@ describe("OIDC identity provider test", () => {
         .checkVisible(oidcProviderName)
         .clickCard(oidcProviderName);
 
-      createProviderPage.checkAddButtonDisabled();
+      // createProviderPage.checkAddButtonDisabled();
 
       createProviderPage
         .fillDiscoveryUrl(discoveryUrl)

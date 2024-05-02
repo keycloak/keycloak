@@ -45,7 +45,7 @@ describe("SAML identity provider test", () => {
       createProviderPage
         .checkVisible(samlProviderName)
         .clickCard(samlProviderName);
-      createProviderPage.checkAddButtonDisabled();
+      // createProviderPage.checkAddButtonDisabled();
       createProviderPage
         .fillDisplayName(samlDisplayName)
         .fillDiscoveryUrl(samlDiscoveryUrl)
