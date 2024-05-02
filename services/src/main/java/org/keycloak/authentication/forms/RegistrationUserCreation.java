@@ -176,12 +176,13 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         // since we already validated the token we can just add the user to the organization
         if (aToken != null) {
-            String org = aToken.getSubject();
+            String org = aToken.getOtherClaims().get("org_id").toString();
             KeycloakSession session = context.getSession();
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
             OrganizationModel orgModel = provider.getById(org);
             provider.addMember(orgModel, user);
             context.getEvent().detail(Details.ORG_ID, org);
+            context.getAuthenticationSession().setRedirectUri(aToken.getOtherClaims().get("reduri").toString());
         }
 
         user.setEnabled(true);

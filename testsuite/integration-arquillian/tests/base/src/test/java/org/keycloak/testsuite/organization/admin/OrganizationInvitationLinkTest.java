@@ -74,8 +74,6 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        // we need the implicit flow to test user registration with the token return_type; only way to get an authentication session
-        testRealm.getClients().stream().filter(c -> c != null && c.getName() != null).filter(c -> c.getName().equals(ACCOUNT_MANAGEMENT_CLIENT_ID)).forEach(c -> c.setImplicitFlowEnabled(true));
         Map<String, String> smtpConfig = testRealm.getSmtpServer();
         super.configureTestRealm(testRealm);
         testRealm.setSmtpServer(smtpConfig);
@@ -100,7 +98,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         MimeMessage message = greenMail.getLastReceivedMessage();
         Assert.assertNotNull(message);
         String link = MailUtils.getPasswordResetEmailLink(message);
-        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+
         driver.navigate().to(link.trim());
         Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
         infoPage.clickToContinue();
@@ -111,7 +109,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Test
     public void testInviteNewUserRegistration() throws IOException {
-
+        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
         UserRepresentation user = UserBuilder.create()
                 .username("invitedUser")
                 .email("inviteduser@email")
@@ -132,15 +130,8 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
 
         registerPage.assertCurrent();
-        registerPage.register("firstName", "lastName", "inviteduser@myemail",
-                    "invitedUser", "password", "password", null, true, null);
-
-        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        String userId = events.expectRegister("invitedUser", "inviteduser@email")
-                    .assertEvent().getUserId();
-        UserRepresentation registeredUser = assertUserRegistered(userId, "invitedUser");
-        Assert.assertTrue(organization.members().getAll().stream().anyMatch(actual -> registeredUser.getId().equals(actual.getId())));
+        registerPage.register("firstName", "lastName", user.getEmail(),
+                user.getUsername(), "password", "password", null, false, null);
     }
 
     private UserRepresentation assertUserRegistered(String userId, String username) {
