@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -34,11 +35,13 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.ext.Provider;
 import java.util.Objects;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -54,11 +57,14 @@ import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.UserResource;
 import org.keycloak.services.resources.admin.UsersResource;
@@ -135,13 +141,18 @@ public class OrganizationMemberResource {
                    .queryParam("key", token.serialize(session, realm, session.getContext().getUri()))
                    .build(realm.getName()).toString();
         } else {
+            // TODO this link really only works with implicit token grants enabled for the given client
             // this path lets us invite a user that doesn't exist yet, letting them register into the organization
             token = new InviteOrgActionToken(null, tokenExpiration, rep.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             token.setOrgId(organization.getId());
-            link = LoginActionsService.registrationFormProcessor(session.getContext().getUri())
+            Map<String, String> params = Map.of("realm", realm.getName(), "protocol", "openid-connect");
+            link = OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
+                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.TOKEN)
+                    .queryParam(Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
                     .queryParam(Constants.ORG_TOKEN, token.serialize(session, realm, session.getContext().getUri()))
-                    .build(realm.getName()).toString();
+                    .buildFromMap(params).toString();
         }
+
 
         if (user == null ) {
             user = new InMemoryUserAdapter(session, realm, null);
