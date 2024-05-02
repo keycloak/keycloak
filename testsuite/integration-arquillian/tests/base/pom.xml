@@ -529,44 +529,6 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-eap</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>${wildfly.core.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
             <id>app-server-eap8</id>
             <activation>
                 <property>
@@ -606,95 +568,7 @@
             </build>
         </profile>
 
-        <profile>
-            <id>app-server-eap71</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap71</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap71</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-eap</app.server.artifactId><!-- Need to override -->
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>3.0.10.Final</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <!-- EAP6, Fuse 6.x and Fuse 7.x adapter profiles, can be removed once there will be no need for supporting these adapters  -->
-        <profile>
-            <id>app-server-eap6</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap6</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
-                <!--TODO: check it when KEYCLOAK-8529 is resolved-->
-                <!--<infinispan.version>8.2.5.Final</infinispan.version>     KEYCLOAK-5302 -->
-
-                <app.server.management.protocol>remote</app.server.management.protocol>
-                <app.server.management.port>10199</app.server.management.port>
-                <app.server.1.management.port>10299</app.server.1.management.port>
-                <app.server.2.management.port>10399</app.server.2.management.port>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap6</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>2.0.10.Final</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.jboss.modules</groupId>
-                            <artifactId>jboss-modules</artifactId>  
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>app-server-fuse63</id>
             <activation>

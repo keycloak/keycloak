@@ -278,7 +278,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.apply.offline.cli}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -303,7 +303,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.apply.offline.cli}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -535,7 +535,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--wildfly9-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -561,7 +561,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--wildfly9-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -698,20 +698,6 @@
             </build>
         </profile>
 
-        <!-- Latest EAP (currently 7.4.X) -->
-        <profile>
-            <id>app-server-eap</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap</module>
-            </modules>
-        </profile>
-
         <!-- EAP8 (not available to community yet) -->
         <profile>
             <id>app-server-eap8</id>
@@ -726,30 +712,6 @@
             </modules>
         </profile>
 
-        <profile>
-            <id>app-server-eap71</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap71</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-eap6</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap6</module>
-            </modules>
-        </profile>
         <profile>
             <id>app-server-wildfly</id>
             <activation>
