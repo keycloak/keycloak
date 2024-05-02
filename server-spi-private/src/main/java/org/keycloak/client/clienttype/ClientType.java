@@ -19,7 +19,9 @@
 package org.keycloak.client.clienttype;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTypeRepresentation;
+
+import java.util.Map;
 
 /**
  * TODO:client-types javadocs
@@ -41,10 +43,8 @@ public interface ClientType {
     <T> T getDefaultValue(String optionName, Class<T> optionType);
 
 
-    // Augment at the client type
-    // Augment particular client on creation of client  (TODO:client-types Should it be clientModel or clientRepresentation? Or something else?)
-    void onCreate(ClientRepresentation newClient) throws ClientTypeException;
+    Map<String, ClientTypeRepresentation.PropertyConfig> getConfiguration();
 
-    // Augment particular client on update of client (TODO:client-types Should it be clientModel or clientRepresentation? Or something else?)
-    void onUpdate(ClientModel currentClient, ClientRepresentation clientToUpdate) throws ClientTypeException;
+    // Augment at the client type
+    ClientModel augment(ClientModel client);
 }

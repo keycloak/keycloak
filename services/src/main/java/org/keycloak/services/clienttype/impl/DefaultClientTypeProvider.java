@@ -18,11 +18,9 @@
 
 package org.keycloak.services.clienttype.impl;
 
-import java.beans.PropertyDescriptor;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
@@ -35,17 +33,9 @@ public class DefaultClientTypeProvider implements ClientTypeProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultClientTypeProvider.class);
 
-    private final KeycloakSession session;
-    private final Map<String, PropertyDescriptor> clientRepresentationProperties;
-
-    public DefaultClientTypeProvider(KeycloakSession session, Map<String, PropertyDescriptor> clientRepresentationProperties) {
-        this.session = session;
-        this.clientRepresentationProperties = clientRepresentationProperties;
-    }
-
     @Override
     public ClientType getClientType(ClientTypeRepresentation clientTypeRep) {
-        return new DefaultClientType(session, clientTypeRep, clientRepresentationProperties);
+        return new DefaultClientType(clientTypeRep);
     }
 
     @Override

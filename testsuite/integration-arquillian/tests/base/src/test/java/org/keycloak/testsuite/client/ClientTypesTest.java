@@ -126,14 +126,10 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
         clientRep.setServiceAccountsEnabled(true);
 
-        // Adding non-applicable attribute should not fail
+        // Adding non-applicable attribute should not fail but not update client attribute
         clientRep.getAttributes().put(ClientModel.LOGO_URI, "https://foo");
-        try {
-            testRealm().clients().get(clientRep.getId()).update(clientRep);
-            Assert.fail("Not expected to update client");
-        } catch (BadRequestException bre) {
-            assertErrorResponseContainsParams(bre.getResponse(), "logoUri");
-        }
+        testRealm().clients().get(clientRep.getId()).update(clientRep);
+        assertEquals(testRealm().clients().get(clientRep.getId()).toRepresentation().getAttributes().get(ClientModel.LOGO_URI), null);
 
         // Update of supported attribute should be successful
         clientRep.getAttributes().remove(ClientModel.LOGO_URI);
@@ -180,7 +176,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertEquals("default", serviceAccountType.getProvider());
 
         ClientTypeRepresentation.PropertyConfig cfg = serviceAccountType.getConfig().get("standardFlowEnabled");
-        assertPropertyConfig("standardFlowEnabled", cfg, true, true, false);
+        assertPropertyConfig("standardFlowEnabled", cfg, false, null, null);
 
         cfg = serviceAccountType.getConfig().get("serviceAccountsEnabled");
         assertPropertyConfig("serviceAccountsEnabled", cfg, true, true, true);
