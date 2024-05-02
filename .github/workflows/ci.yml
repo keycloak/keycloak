@@ -324,7 +324,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.features=${{ matrix.variant }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=${{ matrix.variant }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
