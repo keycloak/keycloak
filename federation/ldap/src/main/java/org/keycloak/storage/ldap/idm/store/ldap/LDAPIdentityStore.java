@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.ldap.idm.store.ldap;
 
+import javax.naming.NameAlreadyBoundException;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
 import org.keycloak.models.KeycloakSession;
@@ -116,7 +117,7 @@ public class LDAPIdentityStore implements IdentityStore {
         ModificationItem item = new ModificationItem(DirContext.ADD_ATTRIBUTE, attr);
         try {
             this.operationManager.modifyAttributesNaming(groupDn, new ModificationItem[]{item}, null);
-        } catch (AttributeInUseException e) {
+        } catch (AttributeInUseException | NameAlreadyBoundException e) {
             logger.debugf("Group %s already contains the member %s", groupDn, value);
         } catch (NamingException e) {
             throw new ModelException("Could not modify attribute for DN [" + groupDn + "]", e);
