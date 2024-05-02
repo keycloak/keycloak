@@ -29,6 +29,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -191,15 +192,17 @@ public class KeycloakContainerFeaturesController {
     private Set<UpdateFeature> getUpdateFeaturesSet(AnnotatedElement annotatedElement, State state) {
         Set<UpdateFeature> ret = new HashSet<>();
 
+        Profile activeProfile = Optional.ofNullable(Profile.getInstance()).orElse(Profile.defaults());
+
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
                 .map(annotation -> {
                     if (state == State.BEFORE) {
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(),FeatureAction.ENABLE, annotatedElement);
-                    } else if (Profile.getInstance().getDisabledFeatures().contains(annotation.value())) {
+                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.ENABLE, annotatedElement);
+                    } else if (activeProfile.getDisabledFeatures().contains(annotation.value())) {
                         // only disable if it should be
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(),FeatureAction.DISABLE_AND_RESET, annotatedElement);
+                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.DISABLE_AND_RESET, annotatedElement);
                     } else {
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(),FeatureAction.ENABLE, annotatedElement);
+                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.ENABLE, annotatedElement);
                     }
                 })
                 .collect(Collectors.toSet()));
@@ -208,7 +211,7 @@ public class KeycloakContainerFeaturesController {
                 .map(annotation -> {
                     if (state == State.BEFORE) {
                         return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.DISABLE, annotatedElement);
-                    } else if (Profile.getInstance().getDisabledFeatures().contains(annotation.value())) {
+                    } else if (activeProfile.getDisabledFeatures().contains(annotation.value())) {
                         // we do not want to enable features that should be disabled by default
                         return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.DISABLE_AND_RESET, annotatedElement);
                     } else {
