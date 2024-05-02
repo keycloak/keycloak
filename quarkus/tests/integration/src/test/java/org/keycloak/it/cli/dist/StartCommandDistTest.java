@@ -110,6 +110,13 @@ public class StartCommandDistTest {
     }
 
     @Test
+    @Launch({ "start", "--http-enabled=true", "--cache-remote-host=localhost", "--hostname-strict=false", "--cache-remote-tls-enabled=false", "--transaction-xa-enabled=true" })
+    void testStartNoWarningOnDisabledRuntimeOption(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoMessage("cache-remote-tls-enabled: Available only when remote host is set");
+    }
+
+    @Test
     @WithEnvVars({"KC_LOG", "invalid"})
     @Launch({ "start", "--optimized" })
     void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {

@@ -336,12 +336,14 @@ public final class Picocli {
                         if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
                             continue; // we found enabled mapper with the same name
                         }
-                        final boolean deniedPrintException = mapper.isRunTime() && isRebuild();
 
-                        if (PropertyMapper.isCliOption(configValue) && !deniedPrintException) {
-                            throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine(), List.of(mapper.getCliFormat()));
-                        } else {
-                            handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                        // only check build-time for a rebuild, we'll check the runtime later
+                        if (!mapper.isRunTime() || !isRebuild()) {
+                            if (PropertyMapper.isCliOption(configValue)) {
+                                throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine(), List.of(mapper.getCliFormat()));
+                            } else {
+                                handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                            }
                         }
                         continue;
                     }
