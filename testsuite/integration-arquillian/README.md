@@ -160,8 +160,7 @@ integration-arquillian
 │  │  └──undertow (arq. extension)
 │  │
 │  ├──app-server
-│  │  ├──jboss (wildfly/eap/as)
-│  │  └──karaf
+│  │  └──jboss (wildfly/eap/as)
 │  │
 │  └──wildfly-balancer
 │
@@ -172,9 +171,7 @@ integration-arquillian
    └──other   (common settings for all test modules dependent on base)
       │
       ├──adapters         (common settings for all adapter test modules - will be moved into base)
-      │  ├──jboss
-      │  └──karaf
-      │
+      │  └──jboss
       ├──console          
       ├──console_no_users 
       └──...

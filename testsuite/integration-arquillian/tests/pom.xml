@@ -1854,13 +1854,6 @@
                     <type>zip</type>
                 </dependency>
 
-                <!-- Fuse adapter dependency -->
-                <dependency>
-                    <groupId>org.osgi</groupId>
-                    <artifactId>org.osgi.enterprise</artifactId>
-                    <scope>provided</scope>
-                </dependency>
-
                 <!-- Needed for infinispan statistics -->
                 <dependency>
                     <groupId>org.eclipse.microprofile.metrics</groupId>

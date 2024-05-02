@@ -23,6 +23,5 @@
         <module>servlets-jakarta</module>
         <module>app-profile-jee</module>
         <module>cors</module>
-        <module>fuse</module>
     </modules>
 </project>
