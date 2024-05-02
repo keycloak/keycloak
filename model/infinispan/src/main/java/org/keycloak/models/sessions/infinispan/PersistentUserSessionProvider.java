@@ -107,7 +107,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final CrossDCLastSessionRefreshStore lastSessionRefreshStore;
     protected final CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
-    protected final PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
 
     protected final RemoteCacheInvoker remoteCacheInvoker;
     protected final InfinispanKeyGenerator keyGenerator;
@@ -116,7 +115,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                                          RemoteCacheInvoker remoteCacheInvoker,
                                          CrossDCLastSessionRefreshStore lastSessionRefreshStore,
                                          CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore,
-                                         PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
                                          InfinispanKeyGenerator keyGenerator,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
@@ -153,7 +151,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         this.lastSessionRefreshStore = lastSessionRefreshStore;
         this.offlineLastSessionRefreshStore = offlineLastSessionRefreshStore;
-        this.persisterLastSessionRefreshStore = persisterLastSessionRefreshStore;
         this.remoteCacheInvoker = remoteCacheInvoker;
         this.keyGenerator = keyGenerator;
 
@@ -182,7 +179,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public PersisterLastSessionRefreshStore getPersisterLastSessionRefreshStore() {
-        return persisterLastSessionRefreshStore;
+        throw new IllegalStateException("PersisterLastSessionRefreshStore is not supported in PersistentUserSessionProvider");
     }
 
     @Override
