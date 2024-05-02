@@ -19,6 +19,7 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.Constants;
@@ -60,6 +61,8 @@ public class CookieAuthenticator implements Authenticator {
                 acrStore.setLevelAuthenticatedToCurrentRequest(Constants.NO_LOA);
                 authSession.setAuthNote(AuthenticationManager.FORCED_REAUTHENTICATION, "true");
                 context.setForwardedInfoMessage(Messages.REAUTHENTICATE);
+                context.attempted();
+            } else if(AuthenticatorUtil.isForkedFlow(authSession)){
                 context.attempted();
             } else {
                 int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication();
