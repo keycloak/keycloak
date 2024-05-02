@@ -40,7 +40,6 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.HostnameV1Options;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.ProxyOptions.Mode;
@@ -50,6 +49,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 import org.keycloak.urls.UrlType;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -195,7 +195,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     }
 
     protected URI getRealmFrontEndUrl() {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
 
         if (session == null) {
             return null;

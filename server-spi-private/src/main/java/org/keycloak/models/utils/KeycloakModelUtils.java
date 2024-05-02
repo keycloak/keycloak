@@ -25,7 +25,6 @@ import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -53,6 +52,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 import javax.crypto.spec.SecretKeySpec;
 import jakarta.transaction.InvalidTransactionException;
@@ -380,7 +380,7 @@ public final class KeycloakModelUtils {
         V result;
         try (KeycloakSession session = factory.create()) {
             session.getTransactionManager().begin();
-            KeycloakSession old = Resteasy.pushContext(KeycloakSession.class, session);
+            KeycloakSession old = KeycloakSessionUtil.setKeycloakSession(session);
             try {
                 cloneContextRealmClientToSession(context, session);
                 result = callable.run(session);
@@ -388,7 +388,7 @@ public final class KeycloakModelUtils {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
             } finally {
-                Resteasy.pushContext(KeycloakSession.class, old);
+                KeycloakSessionUtil.setKeycloakSession(old);
             }
         }
         return result;

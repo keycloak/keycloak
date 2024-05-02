@@ -18,25 +18,17 @@
 package org.keycloak.common.util;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 /**
- * <p>Provides a layer of indirection to abstract invocations to Resteasy internal APIs for obtaining the KeycloakSession
+ * <p>Provides a way for obtaining the KeycloakSession
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ *
+ * @deprecated use org.keycloak.util.KeycloakSessionUtil instead
  */
+@Deprecated
 public final class Resteasy {
-
-    private static ResteasyProvider provider;
-
-    static {
-        Iterator<ResteasyProvider> iter = ServiceLoader.load(ResteasyProvider.class, Resteasy.class.getClassLoader()).iterator();
-        if (iter.hasNext()) {
-            provider = iter.next();
-        }
-    }
 
     private static final ThreadLocal<Map<Class<?>, Object>> contextualData = new ThreadLocal<Map<Class<?>, Object>>() {
         @Override
@@ -45,12 +37,8 @@ public final class Resteasy {
         };
     };
 
-    public static ResteasyProvider getProvider() {
-        return provider;
-    }
-
     /**
-     * Push the given {@code instance} with type/key {@code type} to the Resteasy context associated with the current thread.
+     * Push the given {@code instance} with type/key {@code type} to the context associated with the current thread.
      * <br>Should not be called directly
      *
      * @param type the type/key to associate the {@code instance} with
@@ -61,7 +49,7 @@ public final class Resteasy {
     }
 
     /**
-     * Clear the Resteasy context associated with the current thread.
+     * Clear the context associated with the current thread.
      * <br>Should not be called directly
      */
     public static void clearContextData() {
@@ -69,18 +57,14 @@ public final class Resteasy {
     }
 
     /**
-     * Lookup the instance associated with the given type/key {@code type} from the Resteasy context associated with the current thread, or from the provider.
+     * Lookup the instance associated with the given type/key {@code type} from the context associated with the current thread.
      * <br> Should only be used to obtain the KeycloakSession
      *
      * @param type the type/key to lookup
      * @return the instance associated with the given {@code type} or null if non-existent.
      */
     public static <R> R getContextData(Class<R> type) {
-        R result = (R) contextualData.get().get(type);
-        if (result != null) {
-            return result;
-        }
-        return provider.getContextData(type);
+        return (R) contextualData.get().get(type);
     }
 
     /**
@@ -88,7 +72,6 @@ public final class Resteasy {
      *
      * @param type the type/key to associate the {@code instance} with
      * @param instance the instance
-     * @deprecated use {@link #pushContext(Class, Object)}
      */
     @Deprecated
     public static void pushDefaultContextObject(Class type, Object instance) {

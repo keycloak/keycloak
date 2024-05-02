@@ -28,14 +28,12 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.ext.Provider;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 @Provider
 @PreMatching
 @Priority(1)
-public class CloseSessionHandler implements ContainerResponseFilter, TransactionalSessionHandler {
+public class CloseSessionFilter implements ContainerResponseFilter, org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler {
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
@@ -66,6 +64,6 @@ public class CloseSessionHandler implements ContainerResponseFilter, Transaction
     }
 
     private void closeSession() {
-        close(Resteasy.getContextData(KeycloakSession.class));
+        close(KeycloakSessionUtil.getKeycloakSession());
     }
 }

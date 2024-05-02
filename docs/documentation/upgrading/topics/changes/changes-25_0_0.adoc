@@ -301,3 +301,9 @@ the `SingleUseObjectKeyModel` also changed to keep consistency with the method n
 
 The previous `getExpiration` method is now deprecated and you should prefer using new newly introduced `getExp` method
 to avoid overflow after 2038.
+
+= Resteasy util class is deprecated
+
+`org.keycloak.common.util.Resteasy` has been deprecated. You should use the `org.keycloak.util.KeycloakSessionUtil` to obtain the `KeycloakSession` instead.
+
+It is highly recommended to avoid obtaining the `KeycloakSession` by means other than when creating your custom provider.
