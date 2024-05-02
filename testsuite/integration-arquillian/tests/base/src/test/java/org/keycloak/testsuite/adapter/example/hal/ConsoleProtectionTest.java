@@ -52,7 +52,7 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class ConsoleProtectionTest extends AbstractAdapterTest {
 
     @Page

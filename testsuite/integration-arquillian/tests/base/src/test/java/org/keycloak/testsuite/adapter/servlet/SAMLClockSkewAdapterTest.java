@@ -46,8 +46,6 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
 
