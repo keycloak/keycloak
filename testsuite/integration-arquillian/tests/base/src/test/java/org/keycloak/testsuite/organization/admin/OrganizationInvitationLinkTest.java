@@ -21,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 
 import java.io.IOException;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.function.Predicate;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
+import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -72,6 +74,8 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        // we need the implicit flow to test user registration with the token return_type; only way to get an authentication session
+        testRealm.getClients().stream().filter(c -> c != null && c.getName() != null).filter(c -> c.getName().equals(ACCOUNT_MANAGEMENT_CLIENT_ID)).forEach(c -> c.setImplicitFlowEnabled(true));
         Map<String, String> smtpConfig = testRealm.getSmtpServer();
         super.configureTestRealm(testRealm);
         testRealm.setSmtpServer(smtpConfig);
