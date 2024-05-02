@@ -71,24 +71,27 @@ public class PkceUtils {
     public static void checkParamsForPkceEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername, EventBuilder event, Cors cors) {
         // check whether code verifier is specified
         if (codeVerifier == null) {
-            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorMessage = "PKCE code verifier not specified";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
         verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername, event, cors);
     }
 
     public static void checkParamsForPkceNotEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername, EventBuilder event, Cors cors) {
         if (codeChallenge != null && codeVerifier == null) {
-            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorMessage = "PKCE code verifier not specified";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (codeChallenge == null && codeVerifier != null) {
-            logger.warnf("PKCE code verifier specified but challenge not present in authorization, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorMessage = "PKCE code verifier specified but challenge not present in authorization";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CODE_VERIFIER);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier specified but challenge not present in authorization", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (codeChallenge != null) {
@@ -102,7 +105,7 @@ public class PkceUtils {
         if (!isValidPkceCodeVerifier(codeVerifier)) {
             String errorReason = "Invalid code verifier";
             String errorMessage = "PKCE verification failed: " + errorReason;
-            logger.info(errorMessage);
+            event.detail(Details.REASON, errorReason);
             event.error(Errors.INVALID_CODE_VERIFIER);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
@@ -122,7 +125,6 @@ public class PkceUtils {
         } catch (Exception nae) {
             String errorReason = "Unsupported algorithm specified";
             String errorMessage = "PKCE verification failed: " + errorReason;
-            logger.info(errorMessage);
             event.detail(Details.REASON, errorReason);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
@@ -130,7 +132,6 @@ public class PkceUtils {
         if (!codeChallenge.equals(codeVerifierEncoded)) {
             String errorReason = "Code mismatch";
             String errorMessage = "PKCE verification failed: " + errorReason;
-            logger.infof(errorMessage + ". authUserId = %s, authUsername = %s", authUserId, authUsername);
             event.detail(Details.REASON, errorReason);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
@@ -141,11 +142,11 @@ public class PkceUtils {
 
     private static boolean isValidPkceCodeVerifier(String codeVerifier) {
         if (codeVerifier.length() < OIDCLoginProtocol.PKCE_CODE_VERIFIER_MIN_LENGTH) {
-            logger.infof(" Error: PKCE codeVerifier length under lower limit , codeVerifier = %s", codeVerifier);
+            logger.debugf(" Error: PKCE codeVerifier length under lower limit , codeVerifier = %s", codeVerifier);
             return false;
         }
         if (codeVerifier.length() > OIDCLoginProtocol.PKCE_CODE_VERIFIER_MAX_LENGTH) {
-            logger.infof(" Error: PKCE codeVerifier length over upper limit , codeVerifier = %s", codeVerifier);
+            logger.debugf(" Error: PKCE codeVerifier length over upper limit , codeVerifier = %s", codeVerifier);
             return false;
         }
         Matcher m = VALID_CODE_VERIFIER_PATTERN.matcher(codeVerifier);
