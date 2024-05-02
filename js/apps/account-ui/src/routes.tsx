@@ -59,7 +59,7 @@ export const PersonalInfoRoute: IndexRouteObject = {
 };
 
 export const RootRoute: RouteObject = {
-  path: new URL(environment.baseUrl).pathname,
+  path: decodeURIComponent(new URL(environment.baseUrl).pathname),
   element: <Root />,
   errorElement: <ErrorPage />,
   children: [

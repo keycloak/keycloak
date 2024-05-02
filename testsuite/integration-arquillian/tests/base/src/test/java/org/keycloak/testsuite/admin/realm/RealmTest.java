@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.realm;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -36,6 +37,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
@@ -67,6 +69,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -86,15 +89,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -218,11 +226,65 @@ public class RealmTest extends AbstractAdminTest {
     }
 
     @Test
+    public void createRealmWithValidConsoleUris() throws Exception {
+        var realmNameWithSpaces = "new realm";
+
+        getCleanup()
+                .addCleanup(() -> adminClient.realms().realm(realmNameWithSpaces).remove());
+
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(realmNameWithSpaces);
+        rep.setEnabled(Boolean.TRUE);
+        rep.setUsers(Collections.singletonList(UserBuilder.create()
+                .username("new-realm-admin")
+                .firstName("new-realm-admin")
+                .lastName("new-realm-admin")
+                .email("new-realm-admin@keycloak.org")
+                .password("password")
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                .build()));
+
+        adminClient.realms().create(rep);
+
+        Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME, realmNameWithSpaces);
+
+        final var urlPlaceHolders = ImmutableSet.of("${authBaseUrl}", "${authAdminUrl}");
+
+        RealmResource newRealm = adminClient.realms().realm(realmNameWithSpaces);
+        List<String> clientUris = newRealm.clients()
+                .findAll()
+                .stream()
+                .flatMap(client -> Stream.concat(Stream.concat(Stream.concat(
+                        client.getRedirectUris().stream(),
+                        Stream.of(client.getBaseUrl())),
+                        Stream.of(client.getRootUrl())),
+                        Stream.of(client.getAdminUrl())))
+                .filter(Objects::nonNull)
+                .filter(uri -> !urlPlaceHolders.contains(uri))
+                .collect(Collectors.toList());
+
+        assertThat(clientUris, not(empty()));
+        assertThat(clientUris, everyItem(containsString("/new%20realm/")));
+
+        try (Keycloak client = AdminClientUtil.createAdminClient(true, realmNameWithSpaces,
+                "new-realm-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            Assert.assertNotNull(client.serverInfo().getInfo());
+        }
+
+        adminClient.realms().realm(realmNameWithSpaces).remove();
+
+        Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
+    }
+
+    @Test
     public void createRealmRejectReservedCharOrEmptyName() {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("new-re;alm");
         assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
         rep.setRealm("");
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
+        rep.setRealm("new-realm");
+        rep.setId("invalid;id");
         assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
     }
 
