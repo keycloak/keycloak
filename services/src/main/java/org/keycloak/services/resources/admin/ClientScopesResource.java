@@ -101,6 +101,7 @@ public class ClientScopesResource {
     @Operation( summary = "Create a new client scope Client Scope’s name must be unique!")
     public Response createClientScope(ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        ClientScopeResource.validateClientScopeProtocol(rep.getProtocol());
         ClientScopeResource.validateClientScopeName(rep.getName());
         ClientScopeResource.validateDynamicClientScope(rep);
         try {

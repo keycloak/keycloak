@@ -19,11 +19,7 @@ package org.keycloak.testsuite.admin.client;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientScopesResource;
-import org.keycloak.admin.client.resource.ProtocolMappersResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.*;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
@@ -34,6 +30,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.*;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -59,10 +56,7 @@ import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.Assert.assertNames;
 
 /**
@@ -110,6 +104,15 @@ public class ClientScopeTest extends AbstractClientTest {
         removeClientScope(scope1Id);
     }
 
+    @Test
+    public void testValidateClientScopeProtocol(){
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("saml");
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("openid-connect");
+        assertThrows(ErrorResponseException.class,()-> org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol(null));
+        assertThrows(ErrorResponseException.class,()-> org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("others"));
+
+
+    }
     @Test
     public void testAddDuplicatedClientScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
