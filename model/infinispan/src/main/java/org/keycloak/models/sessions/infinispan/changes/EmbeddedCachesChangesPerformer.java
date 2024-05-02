@@ -92,7 +92,7 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
                     SessionEntityWrapper<V> newVersionEntity = newVersionEntityFirst;
                     SessionEntityWrapper<V> oldVersionEntity = oldVersionEntityFirst;
 
-                    while (++iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+                    while (true) {
                         if (returnValue == null) {
                             LOG.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
                             return;
@@ -110,6 +110,11 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
                             }
                         }
 
+                        if (++iteration >= InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+                            LOG.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
+                            return;
+                        }
+
                         oldVersionEntity = returnValue;
                         V session = oldVersionEntity.getEntity();
                         task.runUpdate(session);
@@ -117,8 +122,6 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
 
                         returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersionEntity.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
                     }
-
-                    LOG.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
                 });
     }
 
