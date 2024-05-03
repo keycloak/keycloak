@@ -78,7 +78,8 @@ public class DefaultTokenManager implements TokenManager {
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
         SignatureSignerContext signer = signatureProvider.signer();
 
-        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).sign(signer);
+        String type = type(token.getCategory());
+        String encodedToken = new JWSBuilder().type(type).jsonContent(token).sign(signer);
         return encodedToken;
     }
 
@@ -233,6 +234,15 @@ public class DefaultTokenManager implements TokenManager {
             encodedToken = getEncryptedToken(token.getCategory(), encodedToken);
         }
         return encodedToken;
+    }
+
+    private String type(TokenCategory category) {
+        switch (category) {
+            case LOGOUT:
+                return TokenUtil.TOKEN_TYPE_JWT_LOGOUT_TOKEN;
+            default:
+                return "JWT";
+        }
     }
 
     private boolean isTokenEncryptRequired(TokenCategory category) {
