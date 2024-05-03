@@ -735,10 +735,6 @@ public class LoginActionsService {
         return processFlow(action, execution, authSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage, new AuthenticationProcessor());
     }
 
-    protected Response processRegistrationWithInviteToken(boolean action, String execution, AuthenticationSessionModel authSession, String errorMessage, String token) {
-        AuthenticationProcessor authenticationProcessor = new AuthenticationProcessor().setOrgToken(token);
-        return processFlow(action, execution, authSession, REGISTRATION_PATH, realm.getRegistrationFlow(), errorMessage, authenticationProcessor);
-    }
 
     /**
      * protocol independent registration page entry point
@@ -750,13 +746,11 @@ public class LoginActionsService {
     @GET
     public Response registerPage(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                  @QueryParam(SESSION_CODE) String code,
-                                 @QueryParam(Constants.ORG_TOKEN) String orgToken,
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
-
-        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData, orgToken);
+        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
     }
 
 
@@ -770,18 +764,16 @@ public class LoginActionsService {
     @POST
     public Response processRegister(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                     @QueryParam(SESSION_CODE) String code,
-                                    @QueryParam(Constants.ORG_TOKEN) String orgToken,
                                     @QueryParam(Constants.EXECUTION) String execution,
                                     @QueryParam(Constants.CLIENT_ID) String clientId,
                                     @QueryParam(Constants.CLIENT_DATA) String clientData,
                                     @QueryParam(Constants.TAB_ID) String tabId) {
-        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData, orgToken);
+        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
     }
 
 
-    private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, String clientData, String orgToken) {
+    private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, String clientData) {
         event.event(EventType.REGISTER);
-
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
@@ -798,7 +790,7 @@ public class LoginActionsService {
 
         AuthenticationManager.expireIdentityCookie(session);
 
-        return processRegistrationWithInviteToken(checks.isActionRequest(), execution, authSession, null, orgToken);
+        return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }
 
 
