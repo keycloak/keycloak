@@ -19,38 +19,28 @@ package org.keycloak.testsuite.organization.admin;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.UserModel;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieScope;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -93,23 +83,24 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
 
-        organization.members().inviteMember(user).close();
+        organization.members().inviteExistingUser(user.getId()).close();
 
         MimeMessage message = greenMail.getLastReceivedMessage();
         Assert.assertNotNull(message);
         String link = MailUtils.getPasswordResetEmailLink(message);
-
         driver.navigate().to(link.trim());
+        // not yet a member
         Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+        // confirm the intent of membership
         infoPage.clickToContinue();
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
-        Assert.assertTrue(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+        // now a member
+        Assert.assertNotNull(organization.members().member(user.getId()).toRepresentation());
     }
 
 
     @Test
     public void testInviteNewUserRegistration() throws IOException {
-        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
         UserRepresentation user = UserBuilder.create()
                 .username("invitedUser")
                 .email("inviteduser@email")
@@ -117,29 +108,25 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 .build();
         // User isn't created when we send the invite
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        organization.members().inviteMember(user).close();
+        organization.members().inviteUser(user.getEmail()).close();
 
         MimeMessage message = greenMail.getLastReceivedMessage();
         Assert.assertNotNull(message);
         String link = MailUtils.getPasswordResetEmailLink(message);
         String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
         Assert.assertNotNull(orgToken);
-
-        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
         driver.navigate().to(link.trim());
         Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
-
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", user.getEmail(),
                 user.getUsername(), "password", "password", null, false, null);
-    }
+        List<UserRepresentation> users = testRealm().users().searchByEmail(user.getEmail(), true);
+        Assert.assertFalse(users.isEmpty());
+        // user is a member
+        Assert.assertNotNull(organization.members().member(users.get(0).getId()).toRepresentation());
 
-    private UserRepresentation assertUserRegistered(String userId, String username) {
-        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
-
-        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
-        org.junit.Assert.assertNotNull(user);
-        org.junit.Assert.assertNotNull(user.getCreatedTimestamp());
-        return user;
+        // authenticated to the account console
+        Assert.assertTrue(driver.getPageSource().contains("Account Management"));
+        Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
     }
 }
