@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.containsString;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
@@ -98,7 +99,6 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         Assert.assertNotNull(organization.members().member(user.getId()).toRepresentation());
     }
 
-
     @Test
     public void testInviteNewUserRegistration() throws IOException {
         UserRepresentation user = UserBuilder.create()
@@ -124,9 +124,69 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         Assert.assertFalse(users.isEmpty());
         // user is a member
         Assert.assertNotNull(organization.members().member(users.get(0).getId()).toRepresentation());
+        getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
 
         // authenticated to the account console
         Assert.assertTrue(driver.getPageSource().contains("Account Management"));
         Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+    }
+
+    @Test
+    public void testEmailDoesNotChangeOnRegistration() throws IOException {
+        UserRepresentation user = UserBuilder.create()
+                .username("invitedUser")
+                .email("inviteduser@email")
+                .enabled(true)
+                .build();
+        // User isn't created when we send the invite
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(user.getEmail()).close();
+
+        MimeMessage message = greenMail.getLastReceivedMessage();
+        Assert.assertNotNull(message);
+        String link = MailUtils.getPasswordResetEmailLink(message);
+        String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
+        Assert.assertNotNull(orgToken);
+        driver.navigate().to(link.trim());
+        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+        registerPage.assertCurrent();
+        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+        registerPage.register("firstName", "lastName", "invalid@email.com",
+                user.getUsername(), "password", "password", null, false, null);
+        Assert.assertTrue(driver.getPageSource().contains("Email does not match the invitation"));
+        List<UserRepresentation> users = testRealm().users().searchByEmail(user.getEmail(), true);
+        Assert.assertTrue(users.isEmpty());
+    }
+
+    @Test
+    public void testLinkExpired() throws IOException {
+        UserRepresentation user = UserBuilder.create()
+                .username("invitedUser")
+                .email("inviteduser@email")
+                .enabled(true)
+                .build();
+        // User isn't created when we send the invite
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(user.getEmail()).close();
+
+        try {
+            setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
+            MimeMessage message = greenMail.getLastReceivedMessage();
+            Assert.assertNotNull(message);
+            String link = MailUtils.getPasswordResetEmailLink(message);
+            String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
+            Assert.assertNotNull(orgToken);
+            driver.navigate().to(link.trim());
+            Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+            registerPage.assertCurrent();
+            driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+            registerPage.register("firstName", "lastName", "invalid@email.com",
+                    user.getUsername(), "password", "password", null, false, null);
+            Assert.assertTrue(driver.getPageSource().contains("The provided token is not valid or has expired."));
+            List<UserRepresentation> users = testRealm().users().searchByEmail(user.getEmail(), true);
+            Assert.assertTrue(users.isEmpty());
+        } finally {
+            resetTimeOffset();
+        }
     }
 }
