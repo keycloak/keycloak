@@ -232,15 +232,6 @@ public class AuthenticationProcessor {
         return this;
     }
 
-    public String getOrgToken() {
-        return orgToken;
-    }
-
-    public AuthenticationProcessor setOrgToken(String orgToken) {
-        this.orgToken = orgToken;
-        return this;
-    }
-
     public AuthenticationProcessor setForwardedErrorMessage(FormMessage forwardedErrorMessage) {
         this.forwardedErrorMessageStore.setForwardedMessage(forwardedErrorMessage);
         return this;

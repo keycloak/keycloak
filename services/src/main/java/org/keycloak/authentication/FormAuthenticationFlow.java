@@ -265,7 +265,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         return null;
     }
 
-    public URI getActionUrl(String executionId, String code, String token) {
+    public URI getActionUrl(String executionId, String code) {
         ClientModel client = processor.getAuthenticationSession().getClient();
         UriBuilder builder = LoginActionsService.registrationFormProcessor(processor.getUriInfo())
                 .queryParam(LoginActionsService.SESSION_CODE, code)
@@ -273,8 +273,12 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, processor.getAuthenticationSession().getTabId())
                 .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(processor.getSession(), processor.getAuthenticationSession()));
-        if (token != null) {
-            builder.queryParam(Constants.ORG_TOKEN, token);
+
+        MultivaluedMap<String, String> query = processor.getSession().getContext().getUri().getQueryParameters();
+        List<String> token = query.get(Constants.TOKEN);
+
+        if (token != null && !token.isEmpty()) {
+            builder.queryParam(Constants.TOKEN, token.get(0));
         }
 
         return builder.build(processor.getRealm().getName());
@@ -295,7 +299,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         String executionId = formExecution.getId();
         processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, executionId);
         String code = processor.generateCode();
-        URI actionUrl = getActionUrl(executionId, code, processor.orgToken);
+        URI actionUrl = getActionUrl(executionId, code);
         LoginFormsProvider form = processor.getSession().getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(processor.getAuthenticationSession())
                 .setActionUri(actionUrl)

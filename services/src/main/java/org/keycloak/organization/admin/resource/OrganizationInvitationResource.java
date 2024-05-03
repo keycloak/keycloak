@@ -119,7 +119,7 @@ public class OrganizationInvitationResource {
         return OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.CODE)
                 .queryParam(Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
-                .queryParam(Constants.ORG_TOKEN, createToken(user))
+                .queryParam(Constants.TOKEN, createToken(user))
                 .buildFromMap(Map.of("realm", realm.getName(), "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL)).toString();
     }
 
