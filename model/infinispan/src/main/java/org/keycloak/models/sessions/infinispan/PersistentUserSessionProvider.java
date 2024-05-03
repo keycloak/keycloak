@@ -206,13 +206,11 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         AuthenticatedClientSessionAdapter adapter = new AuthenticatedClientSessionAdapter(session, this, entity, client, userSession, clientSessionTx, false);
 
-        if (Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
-            if (userSession.isOffline()) {
-                // If this is an offline session, and the referred online session doesn't exist anymore, don't register the client session in the transaction.
-                // Instead keep it transient and it will be added to the offline session only afterward. This is expected by SessionTimeoutsTest.testOfflineUserClientIdleTimeoutSmallerThanSessionOneRefresh.
-                if (sessionTx.get(realm, userSession.getId(), false) == null) {
-                    return adapter;
-                }
+        if (userSession.isOffline()) {
+            // If this is an offline session, and the referred online session doesn't exist anymore, don't register the client session in the transaction.
+            // Instead keep it transient and it will be added to the offline session only afterward. This is expected by SessionTimeoutsTest.testOfflineUserClientIdleTimeoutSmallerThanSessionOneRefresh.
+            if (sessionTx.get(realm, userSession.getId(), false) == null) {
+                return adapter;
             }
         }
 
@@ -411,10 +409,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         if (predicate.test(userSession)) {
             log.debugf("getUserSessionWithPredicate(%s): found in local cache", id);
             return userSession;
-        }
-
-        if (Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
-            return null;
         }
 
         // Try lookup userSession from remoteCache

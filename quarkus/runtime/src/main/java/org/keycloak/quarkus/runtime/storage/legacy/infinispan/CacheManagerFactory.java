@@ -113,7 +113,7 @@ public class CacheManagerFactory {
         }
 
         DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
-            if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
                 (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
                 ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
                 if (configurationBuilder.memory().maxSize() == null && configurationBuilder.memory().maxCount() == -1) {
@@ -222,11 +222,6 @@ public class CacheManagerFactory {
             SSLContext sslContext = createSSLContext();
 
             DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
-                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) &&
-                    (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
-                    return;
-                }
-
                 PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
 
                 //if specified via command line -> cannot be defined in the xml file

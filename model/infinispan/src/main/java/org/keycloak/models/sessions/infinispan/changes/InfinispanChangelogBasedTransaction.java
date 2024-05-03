@@ -75,10 +75,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, CLIENT_SESSION_CACHE_NAME) || Objects.equals(cacheName, OFFLINE_USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
-                throw new IllegalStateException("Can't load from cache");
-            }
-
             // Lookup entity from cache
             SessionEntityWrapper<V> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {

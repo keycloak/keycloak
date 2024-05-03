@@ -77,39 +77,34 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             throw new IllegalStateException("Cache name is not valid for persistent user sessions: " + cache.getName());
         }
 
-        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
-            changesPerformers = List.of(
-                    new JpaChangesPerformer<>(cache.getName(), batchingQueue)
-            );
-        } else {
-            changesPerformers = List.of(
-                    new JpaChangesPerformer<>(cache.getName(), batchingQueue),
-                    new EmbeddedCachesChangesPerformer<>(cache) {
-                        @Override
-                        public boolean shouldConsumeChange(V entity) {
-                            return !entity.isOffline();
-                        }
-                    },
-                    new EmbeddedCachesChangesPerformer<>(offlineCache){
-                        @Override
-                        public boolean shouldConsumeChange(V entity) {
-                            return entity.isOffline();
-                        }
-                    },
-                    new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker) {
-                        @Override
-                        public boolean shouldConsumeChange(V entity) {
-                            return !entity.isOffline();
-                        }
-                    },
-                    new RemoteCachesChangesPerformer<>(session, offlineCache, remoteCacheInvoker) {
-                        @Override
-                        public boolean shouldConsumeChange(V entity) {
-                            return entity.isOffline();
-                        }
+        changesPerformers = List.of(
+                new JpaChangesPerformer<>(cache.getName(), batchingQueue),
+                new EmbeddedCachesChangesPerformer<>(cache) {
+                    @Override
+                    public boolean shouldConsumeChange(V entity) {
+                        return !entity.isOffline();
                     }
-            );
-        }
+                },
+                new EmbeddedCachesChangesPerformer<>(offlineCache){
+                    @Override
+                    public boolean shouldConsumeChange(V entity) {
+                        return entity.isOffline();
+                    }
+                },
+                new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker) {
+                    @Override
+                    public boolean shouldConsumeChange(V entity) {
+                        return !entity.isOffline();
+                    }
+                },
+                new RemoteCachesChangesPerformer<>(session, offlineCache, remoteCacheInvoker) {
+                    @Override
+                    public boolean shouldConsumeChange(V entity) {
+                        return entity.isOffline();
+                    }
+                }
+        );
+
         this.cache = cache;
         this.offlineCache = offlineCache;
         this.lifespanMsLoader = lifespanMsLoader;
@@ -216,10 +211,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         PersistentSessionUpdateTask<V> task = (PersistentSessionUpdateTask<V>) originalTask;
         SessionUpdatesList<V> myUpdates = getUpdates(task.isOffline()).get(key);
         if (myUpdates == null) {
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
-                throw new IllegalStateException("Can't load from cache");
-            }
-
             // Lookup entity from cache
             SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
             if (wrappedEntity == null) {
