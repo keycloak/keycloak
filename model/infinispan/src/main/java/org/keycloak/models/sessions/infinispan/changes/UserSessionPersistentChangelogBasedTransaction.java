@@ -53,9 +53,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         SessionUpdatesList<UserSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
-            if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
-                wrappedEntity = getCache(offline).get(key);
-            }
+            wrappedEntity = getCache(offline).get(key);
 
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
@@ -113,10 +111,6 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
         if (isScheduledForRemove(sessionId, offline)) {
             return null;
-        }
-
-        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
-            return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).wrapPersistentEntity(persistentUserSession.getRealm(), offline, persistentUserSession);
         }
 
         LOG.debugf("Attempting to import user-session for sessionId=%s offline=%s", sessionId, offline);

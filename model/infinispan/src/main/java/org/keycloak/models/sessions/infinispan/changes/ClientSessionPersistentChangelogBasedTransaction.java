@@ -62,9 +62,8 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         SessionUpdatesList<AuthenticatedClientSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<AuthenticatedClientSessionEntity> wrappedEntity = null;
-            if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
-                wrappedEntity = getCache(offline).get(key);
-            }
+            wrappedEntity = getCache(offline).get(key);
+
             if (wrappedEntity == null) {
                 LOG.debugf("client-session not found in cache for sessionId=%s, offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, client, userSession, offline);
