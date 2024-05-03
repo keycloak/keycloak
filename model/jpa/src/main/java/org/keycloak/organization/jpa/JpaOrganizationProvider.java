@@ -100,7 +100,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         //TODO: won't scale, requires a better mechanism for bulk deleting users
         userProvider.getGroupMembersStream(realm, group).forEach(userModel -> removeMember(organization, userModel));
         groupProvider.removeGroup(realm, group);
-        organization.getIdentityProviders().forEach((model) -> realm.removeIdentityProviderByAlias(model.getAlias()));
+        organization.getIdentityProviders().forEach((model) -> removeIdentityProvider(organization, model));
 
         em.remove(entity);
 
@@ -216,6 +216,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         throwExceptionIfObjectIsNull(identityProvider, "Identity provider");
 
         OrganizationEntity organizationEntity = getEntity(organization.getId());
+        String orgId = identityProvider.getOrganizationId();
+
+        if (organizationEntity.getId().equals(orgId)) {
+            return false;
+        } else if (orgId != null) {
+            throw new ModelValidationException("Identity provider already associated with a different organization");
+        }
 
         identityProvider.setOrganizationId(organizationEntity.getId());
         realm.updateIdentityProvider(identityProvider);
@@ -243,7 +250,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
-        realm.removeIdentityProviderByAlias(identityProvider.getAlias());
+        identityProvider.setOrganizationId(null);
+        realm.updateIdentityProvider(identityProvider);
 
         return true;
     }
