@@ -118,7 +118,7 @@ ifeval::[{project_community}==true]
 Declarative user profile is still a preview feature in this release, but we are working hard on promoting it to a supported feature. Feedback is welcome.
 If you find any issues or have any improvements in mind,  you are welcome to create https://github.com/keycloak/keycloak/issues/new/choose[Github issue],
 ideally with the label `area/user-profile`. It is also recommended to check the link:{upgradingguide_link}[{upgradingguide_name}]  with the migration changes for this
-release for some additional informations related to the migration.
+release for some additional information related to the migration.
 
 endif::[]
 

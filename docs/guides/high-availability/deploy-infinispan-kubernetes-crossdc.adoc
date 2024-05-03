@@ -161,7 +161,7 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <11> The remote site's name, in this case  `{site-b}`.
 <12> The namespace of the {jdgserver_name} cluster from the remote site.
 <13> The {ocp} API URL for the remote site.
-<14> The secret with the access toke to authenticate into the remote site.
+<14> The secret with the access token to authenticate into the remote site.
 +
 For `{site-b}`, the `Infinispan` CR looks similar to the above.
 Note the differences in point 4, 11 and 13.

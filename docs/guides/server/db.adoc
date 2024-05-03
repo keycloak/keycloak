@@ -34,7 +34,7 @@ only exists for development use-cases. The `dev-file` database is not suitable f
 
 == Installing a database driver
 
-Database drivers are shipped as part of {project_name} except for the Oracle Database and Micrsoft SQL Server drivers which need to be installed separately.
+Database drivers are shipped as part of {project_name} except for the Oracle Database and Microsoft SQL Server drivers which need to be installed separately.
 
 Install the necessary driver if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
 
@@ -280,7 +280,7 @@ NOTE: Certain vendors, such as Azure SQL and MariaDB Galera, do not support or r
 
 XA recovery defaults to enabled and will use the file system location `KEYCLOAK_HOME/data/transaction-logs` to store transaction logs. 
 
-NOTE: Enabling XA transactions in a containerized envionment does not fully support XA recovery unless stable storage is available at that path.
+NOTE: Enabling XA transactions in a containerized environment does not fully support XA recovery unless stable storage is available at that path.
 
 == Setting JPA provider configuration option for migrationStrategy
 

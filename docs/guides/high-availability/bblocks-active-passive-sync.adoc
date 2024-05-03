@@ -20,7 +20,7 @@ include::partials/blueprint-disclaimer.adoc[]
 
 Ensures that synchronous replication is available for both the database and the external {jdgserver_name}.
 
-*Suggested setup:* Two AWS Availablity Zones within the same AWS Region.
+*Suggested setup:* Two AWS Availability Zones within the same AWS Region.
 
 *Not considered:* Two regions on the same or different continents, as it would increase the latency and the likelihood of network failures.
 Synchronous replication of databases as a services with Aurora Regional Deployments on AWS is only available within the same region.
