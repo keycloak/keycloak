@@ -654,7 +654,7 @@ The config values can be defined within the Admin Console if you set up config d
                 .displayName(SecretQuestionCredentialProviderFactory.PROVIDER_ID)
                 .helpText("secret-question-text")
                 .createAction(SecretQuestionAuthenticatorFactory.PROVIDER_ID)
-                .removable(false)
+                .removeable(false)
                 .build(session);
     }
 ----
