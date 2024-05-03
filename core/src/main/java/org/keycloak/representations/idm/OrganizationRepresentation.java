@@ -28,6 +28,7 @@ public class OrganizationRepresentation {
 
     private String id;
     private String name;
+    private boolean enabled = true;
     private Map<String, List<String>> attributes;
     private Set<OrganizationDomainRepresentation> domains;
 
@@ -45,6 +46,14 @@ public class OrganizationRepresentation {
 
     public String getName() {
         return name;
+    }
+
+    public boolean isEnabled() {
+        return this.enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public Map<String, List<String>> getAttributes() {
