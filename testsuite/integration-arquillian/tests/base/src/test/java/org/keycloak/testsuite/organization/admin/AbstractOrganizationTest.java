@@ -30,6 +30,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -144,8 +145,10 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             id = ApiUtil.getCreatedId(response);
         }
-
-        testRealm().organizations().get(id).identityProviders().create(brokerConfigFunction.apply(name).setUpIdentityProvider()).close();
+        IdentityProviderRepresentation broker = brokerConfigFunction.apply(name).setUpIdentityProvider();
+        testRealm().identityProviders().create(broker).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(broker.getAlias())::remove);
+        testRealm().organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
         org = testRealm().organizations().get(id).toRepresentation();
         getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
 

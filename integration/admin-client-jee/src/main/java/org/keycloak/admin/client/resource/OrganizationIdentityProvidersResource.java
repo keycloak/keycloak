@@ -33,7 +33,7 @@ public interface OrganizationIdentityProvidersResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    Response create(IdentityProviderRepresentation idpRepresentation);
+    Response addIdentityProvider(String id);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
