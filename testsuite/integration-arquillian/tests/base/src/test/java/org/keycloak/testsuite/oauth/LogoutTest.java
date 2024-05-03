@@ -336,7 +336,12 @@ public class LogoutTest extends AbstractKeycloakTest {
                 MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
             }
 
-            validateLogoutToken(testingClient.testApp().getBackChannelLogoutToken());
+            String rawLogoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
+            JWSInput jwsInput = new JWSInput(rawLogoutToken);
+            LogoutToken logoutToken = jwsInput.readJsonContent(LogoutToken.class);
+            validateLogoutToken(logoutToken);
+            JWSHeader logoutTokenHeader = jwsInput.getHeader();
+            assertEquals("logout+jwt", logoutTokenHeader.getType());
         } finally {
             rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
             clientResource.update(rep);
