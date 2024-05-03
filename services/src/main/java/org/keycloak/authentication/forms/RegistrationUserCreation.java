@@ -291,7 +291,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     private boolean validateOrganizationInvitation(ValidationContext context, MultivaluedMap<String, String> formData, String email) {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             MultivaluedMap<String, String> queryParameters = context.getHttpRequest().getUri().getQueryParameters();
-            String tokenFromQuery = queryParameters.getFirst(Constants.ORG_TOKEN);
+            String tokenFromQuery = queryParameters.getFirst(Constants.TOKEN);
 
             if (tokenFromQuery == null) {
                 return true;
