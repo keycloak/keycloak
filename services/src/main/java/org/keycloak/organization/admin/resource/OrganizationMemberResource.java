@@ -35,9 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.ext.Provider;
-import java.util.Objects;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -54,9 +52,9 @@ import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.*;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -65,12 +63,9 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.UserResource;
-import org.keycloak.services.resources.admin.UsersResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.utils.StringUtil;
 
 @Provider
@@ -122,60 +117,16 @@ public class OrganizationMemberResource {
         throw ErrorResponse.error("User is already a member of the organization.", Status.CONFLICT);
     }
 
+    @Path("invite-user")
+    public Response inviteUser(String email) {
+        return new OrganizationInvitationResource(session, organization, adminEvent).inviteUser(email);
+    }
+
     @POST
-    @Path("invite")
+    @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response inviteMember(UserRepresentation rep) {
-        if (rep == null || StringUtil.isBlank(rep.getEmail())) {
-            throw new BadRequestException("To invite a member you need to provide an email and/or username");
-        }
-
-        UserModel user = session.users().getUserByEmail(realm, rep.getEmail());
-
-        InviteOrgActionToken token = null;
-        String link = null;
-        int tokenExpiration = Time.currentTime() + realm.getActionTokenGeneratedByAdminLifespan();
-        String redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
-
-        if (user != null) {
-           token = new InviteOrgActionToken(user.getId(), tokenExpiration, user.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-           token.setOrgId(organization.getId());
-           token.setRedirectUri(redirectUri);
-           link = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
-                   .queryParam("key", token.serialize(session, realm, session.getContext().getUri()))
-                   .build(realm.getName()).toString();
-        } else {
-            // TODO this link really only works with implicit token grants enabled for the given client
-            // this path lets us invite a user that doesn't exist yet, letting them register into the organization
-            token = new InviteOrgActionToken(null, tokenExpiration, rep.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-            token.setOrgId(organization.getId());
-            token.setRedirectUri(redirectUri);
-            Map<String, String> params = Map.of("realm", realm.getName(), "protocol", "openid-connect");
-            link = OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
-                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.CODE)
-                    .queryParam(Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
-                    .queryParam(Constants.ORG_TOKEN, token.serialize(session, realm, session.getContext().getUri()))
-                    .buildFromMap(params).toString();
-        }
-
-
-        if (user == null ) {
-            user = new InMemoryUserAdapter(session, realm, null);
-            user.setEmail(rep.getEmail());
-        }
-
-        try {
-            session
-                    .getProvider(EmailTemplateProvider.class)
-                    .setRealm(realm)
-                    .setUser(user)
-                    .sendOrgInviteEmail(link, TimeUnit.SECONDS.toMinutes(token.getExp()));
-        } catch (EmailException e) {
-            ServicesLogger.LOGGER.failedToSendEmail(e);
-            throw ErrorResponse.error("Failed to send invite email", Status.INTERNAL_SERVER_ERROR);
-        }
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
-        return Response.noContent().build();
+    public Response inviteExistingUser(String id) {
+        return new OrganizationInvitationResource(session, organization, adminEvent).inviteExistingUser(id);
     }
 
     @GET
