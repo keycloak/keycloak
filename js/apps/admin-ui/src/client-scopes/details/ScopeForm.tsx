@@ -1,6 +1,5 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import { ActionGroup, Button } from "@patternfly/react-core";
-import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -133,7 +132,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name="type"
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
-          variant={SelectVariant.single}
           controller={{ defaultValue: allClientScopeTypes[0] }}
           options={allClientScopeTypes.map((key) => ({
             key,
@@ -146,7 +144,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             name="protocol"
             label={t("protocol")}
             labelIcon={t("protocolHelp")}
-            variant={SelectVariant.single}
             controller={{ defaultValue: providers[0] }}
             options={providers.map((option) => ({
               key: option,

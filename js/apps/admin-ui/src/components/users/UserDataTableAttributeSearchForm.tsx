@@ -7,25 +7,22 @@ import {
   ButtonVariant,
   InputGroup,
   InputGroupItem,
+  SelectOption,
   Text,
   TextContent,
   TextInput,
   TextVariants,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { CheckIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
-import { label } from "@keycloak/keycloak-ui-shared";
+import { SelectVariant, label } from "@keycloak/keycloak-ui-shared";
 
 import { useAlerts } from "../alert/Alerts";
 import { UserAttribute } from "./UserDataTable";
+import { KeycloakSelect } from "../select/KeycloakSelect";
 
 type UserDataTableAttributeSearchFormProps = {
   activeFilters: UserAttribute[];
@@ -132,12 +129,12 @@ export function UserDataTableAttributeSearchForm({
   const createAttributeKeyInputField = () => {
     if (profile) {
       return (
-        <Select
+        <KeycloakSelect
           data-testid="search-attribute-name"
           variant={SelectVariant.typeahead}
-          onToggle={(_event, isOpen) => setSelectAttributeKeyOpen(isOpen)}
+          onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
           selections={getValues().displayName}
-          onSelect={(_, selectedValue) => {
+          onSelect={(selectedValue) => {
             setValue("displayName", selectedValue.toString());
             if (isAttributeKeyDuplicate()) {
               setError("name", { type: "conflict" });
@@ -165,7 +162,7 @@ export function UserDataTableAttributeSearchForm({
               }}
             />
           ))}
-        </Select>
+        </KeycloakSelect>
       );
     } else {
       return (

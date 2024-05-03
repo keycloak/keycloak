@@ -7,13 +7,12 @@ import {
   SearchInput,
   ToolbarItem,
   InputGroupItem,
-} from "@patternfly/react-core";
-import {
   Dropdown,
+  MenuToggle,
+  DropdownList,
   DropdownItem,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
-import { ArrowRightIcon } from "@patternfly/react-icons";
+} from "@patternfly/react-core";
+import { ArrowRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -170,10 +169,20 @@ export function UserDataTableToolbarItems({
   ) : (
     <ToolbarItem>
       <Dropdown
-        toggle={<KebabToggle onToggle={(_event, open) => setKebabOpen(open)} />}
+        toggle={(ref) => (
+          <MenuToggle
+            ref={ref}
+            isExpanded={kebabOpen}
+            variant="plain"
+            onClick={() => setKebabOpen(!kebabOpen)}
+          >
+            <EllipsisVIcon />
+          </MenuToggle>
+        )}
         isOpen={kebabOpen}
-        isPlain
-        dropdownItems={[
+        shouldFocusToggleOnSelect
+      >
+        <DropdownList>
           <DropdownItem
             key="deleteUser"
             component="button"
@@ -184,7 +193,7 @@ export function UserDataTableToolbarItems({
             }}
           >
             {t("deleteUser")}
-          </DropdownItem>,
+          </DropdownItem>
 
           <DropdownItem
             key="unlock"
@@ -195,9 +204,9 @@ export function UserDataTableToolbarItems({
             }}
           >
             {t("unlockAllUsers")}
-          </DropdownItem>,
-        ]}
-      />
+          </DropdownItem>
+        </DropdownList>
+      </Dropdown>
     </ToolbarItem>
   );
 

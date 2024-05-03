@@ -1,27 +1,27 @@
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   FormGroup,
   PageSection,
-} from "@patternfly/react-core";
-import {
-  Select,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { FormAccess } from "../components/form/FormAccess";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../components/select/KeycloakSelect";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
@@ -186,13 +186,11 @@ export default function ExecutorForm() {
               defaultValue=""
               control={control}
               render={({ field }) => (
-                <Select
+                <KeycloakSelect
                   toggleId="kc-executor"
                   placeholderText="Select an executor"
-                  onToggle={(_event, isOpen) =>
-                    setSelectExecutorTypeOpen(isOpen)
-                  }
-                  onSelect={(_, value) => {
+                  onToggle={(isOpen) => setSelectExecutorTypeOpen(isOpen)}
+                  onSelect={(value) => {
                     reset({ ...defaultValues, executor: value.toString() });
                     const selectedExecutor = executorTypes?.filter(
                       (type) => type.id === value,
@@ -219,7 +217,7 @@ export default function ExecutorForm() {
                       description={option.helpText}
                     />
                   ))}
-                </Select>
+                </KeycloakSelect>
               )}
             />
           </FormGroup>

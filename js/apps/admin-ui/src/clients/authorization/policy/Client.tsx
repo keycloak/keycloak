@@ -11,7 +11,7 @@ export const Client = () => {
       helpText={t("policyClientHelp")}
       required
       defaultValue={[]}
-      variant="typeaheadmulti"
+      variant="typeaheadMulti"
     />
   );
 };

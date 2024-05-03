@@ -4,18 +4,18 @@ import {
   Button,
   FormGroup,
   PageSection,
-} from "@patternfly/react-core";
-import {
-  Select,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../components/form/FormAccess";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { FormAccess } from "../components/form/FormAccess";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../components/select/KeycloakSelect";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../util";
 
@@ -66,10 +66,10 @@ export const RealmSettingsThemesTab = ({
             control={control}
             defaultValue=""
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 toggleId="kc-login-theme"
                 onToggle={() => setLoginThemeOpen(!loginThemeOpen)}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setLoginThemeOpen(false);
                 }}
@@ -89,7 +89,7 @@ export const RealmSettingsThemesTab = ({
                     {t(`${theme.name}`)}
                   </SelectOption>
                 ))}
-              </Select>
+              </KeycloakSelect>
             )}
           />
         </FormGroup>
@@ -108,10 +108,10 @@ export const RealmSettingsThemesTab = ({
             control={control}
             defaultValue=""
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 toggleId="kc-account-theme"
                 onToggle={() => setAccountThemeOpen(!accountThemeOpen)}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setAccountThemeOpen(false);
                 }}
@@ -133,7 +133,7 @@ export const RealmSettingsThemesTab = ({
                       {t(`${theme.name}`)}
                     </SelectOption>
                   ))}
-              </Select>
+              </KeycloakSelect>
             )}
           />
         </FormGroup>
@@ -152,10 +152,10 @@ export const RealmSettingsThemesTab = ({
             control={control}
             defaultValue=""
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 toggleId="kc-admin-ui-theme"
                 onToggle={() => setAdminUIThemeOpen(!adminUIThemeOpen)}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setAdminUIThemeOpen(false);
                 }}
@@ -177,7 +177,7 @@ export const RealmSettingsThemesTab = ({
                       {t(`${theme.name}`)}
                     </SelectOption>
                   ))}
-              </Select>
+              </KeycloakSelect>
             )}
           />
         </FormGroup>
@@ -196,10 +196,10 @@ export const RealmSettingsThemesTab = ({
             control={control}
             defaultValue=""
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 toggleId="kc-email-theme"
                 onToggle={() => setEmailThemeOpen(!emailThemeOpen)}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setEmailThemeOpen(false);
                 }}
@@ -219,7 +219,7 @@ export const RealmSettingsThemesTab = ({
                     {t(`${theme.name}`)}
                   </SelectOption>
                 ))}
-              </Select>
+              </KeycloakSelect>
             )}
           />
         </FormGroup>

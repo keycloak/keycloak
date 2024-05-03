@@ -13,7 +13,7 @@ type Variant = `${SelectVariant}`;
 export enum SelectVariant {
   single = "single",
   typeahead = "typeahead",
-  typeaheadMulti = "typeaheadmulti",
+  typeaheadMulti = "typeaheadMulti",
 }
 
 export type SelectControlOption = {
@@ -35,6 +35,7 @@ export type SelectControlProps<
   | "onClear"
   | "isOpen"
   | "onFilter"
+  | "variant"
 > &
   UseControllerProps<T, P> & {
     name: string;

@@ -1,11 +1,11 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
-import { Button, ButtonVariant, PageSection } from "@patternfly/react-core";
 import {
-  Select,
+  Button,
+  ButtonVariant,
+  PageSection,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
@@ -15,6 +15,10 @@ import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { emptyFormatter } from "../../util";
@@ -46,7 +50,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 
   const [filterDropdownOpen, toggleFilter] = useToggle();
   return (
-    <Select
+    <KeycloakSelect
       width={300}
       data-testid="filter-type-select"
       isOpen={filterDropdownOpen}
@@ -54,7 +58,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
       variant={SelectVariant.single}
       onToggle={toggleFilter}
       toggleIcon={<FilterIcon />}
-      onSelect={(_, value) => {
+      onSelect={(value) => {
         const filter =
           FILTER_OPTIONS.find((o) => o === value.toString()) ||
           FILTER_OPTIONS[0];
@@ -74,7 +78,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
           {t(`keysFilter.${option}`)}
         </SelectOption>
       ))}
-    </Select>
+    </KeycloakSelect>
   );
 };
 

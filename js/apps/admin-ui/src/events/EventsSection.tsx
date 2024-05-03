@@ -1,6 +1,7 @@
 import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventRepresentation";
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -17,15 +18,11 @@ import {
   FormGroup,
   Icon,
   PageSection,
+  SelectOption,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth, expandable } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
@@ -41,6 +38,10 @@ import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../components/select/KeycloakSelect";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -266,9 +267,8 @@ export default function EventsSection() {
                     name="type"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <KeycloakSelect
                         className="keycloak__events_search__type_select"
-                        name="eventType"
                         data-testid="event-type-searchField"
                         chipGroupProps={{
                           numChips: 1,
@@ -277,9 +277,9 @@ export default function EventsSection() {
                         }}
                         variant={SelectVariant.typeaheadMulti}
                         typeAheadAriaLabel="Select"
-                        onToggle={(_event, isOpen) => setSelectOpen(isOpen)}
+                        onToggle={(isOpen) => setSelectOpen(isOpen)}
                         selections={field.value}
-                        onSelect={(_, selectedValue) => {
+                        onSelect={(selectedValue) => {
                           const option = selectedValue.toString() as EventType;
                           const changedValue = field.value.includes(option)
                             ? field.value.filter((item) => item !== option)
@@ -287,8 +287,7 @@ export default function EventsSection() {
 
                           field.onChange(changedValue);
                         }}
-                        onClear={(event) => {
-                          event.stopPropagation();
+                        onClear={() => {
                           field.onChange([]);
                         }}
                         isOpen={selectOpen}
@@ -316,7 +315,7 @@ export default function EventsSection() {
                             {t(`eventTypes.${option}.name`)}
                           </SelectOption>
                         ))}
-                      </Select>
+                      </KeycloakSelect>
                     )}
                   />
                 </FormGroup>

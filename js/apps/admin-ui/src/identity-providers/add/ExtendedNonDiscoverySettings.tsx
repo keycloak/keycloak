@@ -3,17 +3,14 @@ import {
   Form,
   FormGroup,
   NumberInput,
-} from "@patternfly/react-core";
-import {
-  Select,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, SelectVariant } from "@keycloak/keycloak-ui-shared";
+import { KeycloakSelect } from "../../components/select/KeycloakSelect";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
@@ -65,11 +62,10 @@ export const ExtendedNonDiscoverySettings = () => {
             defaultValue=""
             control={control}
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 toggleId="prompt"
-                required
                 onToggle={() => setPromptOpen(!promptOpen)}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setPromptOpen(false);
                 }}
@@ -87,7 +83,7 @@ export const ExtendedNonDiscoverySettings = () => {
                     {t(`prompts.${key}`)}
                   </SelectOption>
                 ))}
-              </Select>
+              </KeycloakSelect>
             )}
           />
         </FormGroupField>

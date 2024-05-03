@@ -8,16 +8,12 @@ import {
   HelperTextItem,
   NumberInput,
   PageSection,
+  SelectOption,
   Switch,
   Text,
   TextInput,
   TextVariants,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -34,6 +30,10 @@ import { beerify, convertToFormValues, sortProviders } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 import "./realm-settings-section.css";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../components/select/KeycloakSelect";
 
 type RealmSettingsSessionsTabProps = {
   realm: RealmRepresentation;
@@ -106,16 +106,16 @@ export const RealmSettingsTokensTab = ({
               defaultValue={"RS256"}
               control={form.control}
               render={({ field }) => (
-                <Select
+                <KeycloakSelect
                   toggleId="kc-default-sig-alg"
                   onToggle={() =>
                     setDefaultSigAlgDrpdwnOpen(!defaultSigAlgDrpdwnIsOpen)
                   }
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     field.onChange(value.toString());
                     setDefaultSigAlgDrpdwnOpen(false);
                   }}
-                  selections={[field.value?.toString()]}
+                  selections={field.value?.toString()}
                   variant={SelectVariant.single}
                   aria-label={t("defaultSigAlg")}
                   isOpen={defaultSigAlgDrpdwnIsOpen}
@@ -128,7 +128,7 @@ export const RealmSettingsTokensTab = ({
                       value={p}
                     ></SelectOption>
                   ))}
-                </Select>
+                </KeycloakSelect>
               )}
             />
           </FormGroup>

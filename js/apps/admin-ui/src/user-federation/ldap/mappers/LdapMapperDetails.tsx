@@ -6,15 +6,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  DropdownItem,
   FormGroup,
   PageSection,
-} from "@patternfly/react-core";
-import {
-  DropdownItem,
-  Select,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -36,6 +32,10 @@ import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 import { UserFederationLdapMapperParams } from "../../routes/UserFederationLdapMapper";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../../components/select/KeycloakSelect";
 
 export default function LdapMapperDetails() {
   const { adminClient } = useAdminClient();
@@ -264,15 +264,14 @@ export default function LdapMapperDetails() {
                   control={form.control}
                   data-testid="ldap-mapper-type-select"
                   render={({ field }) => (
-                    <Select
+                    <KeycloakSelect
                       toggleId="kc-providerId"
                       typeAheadAriaLabel={t("mapperType")}
-                      required
                       onToggle={() =>
                         setIsMapperDropdownOpen(!isMapperDropdownOpen)
                       }
                       isOpen={isMapperDropdownOpen}
-                      onSelect={(_, value) => {
+                      onSelect={(value) => {
                         setupForm({
                           providerId: value as string,
                           ...Object.fromEntries(
@@ -292,9 +291,11 @@ export default function LdapMapperDetails() {
                       aria-label={t("selectMapperType")}
                     >
                       {components.map((c) => (
-                        <SelectOption key={c.id} value={c.id} />
+                        <SelectOption key={c.id} value={c.id}>
+                          {c.id}
+                        </SelectOption>
                       ))}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 ></Controller>
               </FormGroup>

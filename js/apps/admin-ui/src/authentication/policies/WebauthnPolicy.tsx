@@ -10,7 +10,6 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -84,9 +83,7 @@ const WebauthnSelect = ({
     <SelectControl
       name={name}
       label={t(label)}
-      variant={
-        isMultiSelect ? SelectVariant.typeaheadMulti : SelectVariant.single
-      }
+      variant={isMultiSelect ? "typeaheadMulti" : "single"}
       controller={{ defaultValue: options[0] }}
       options={options.map((option) => ({
         key: option,

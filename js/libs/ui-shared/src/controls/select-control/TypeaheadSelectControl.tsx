@@ -206,7 +206,10 @@ export const TypeaheadSelectControl = <
                                   );
                                 }}
                               >
-                                {selection}
+                                {isSelectBasedOptions(options)
+                                  ? options.find((o) => selection === o.key)
+                                      ?.value
+                                  : getValue(selection)}
                               </Chip>
                             ),
                           )}

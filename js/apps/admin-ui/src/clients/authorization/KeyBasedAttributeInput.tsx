@@ -1,10 +1,5 @@
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import { Button, TextInput } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+import { Button, SelectOption, TextInput } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { camelCase } from "lodash-es";
@@ -15,6 +10,10 @@ import { useTranslation } from "react-i18next";
 import { defaultContextAttributes } from "../utils";
 
 import "./key-based-attribute-input.css";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 
 export type AttributeType = {
   key?: string;
@@ -99,29 +98,28 @@ const ValueInput = ({
           defaultValue={[]}
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId={`${attribute.id}-value`}
               className="kc-attribute-value-selectable"
-              name={`${name}.${rowIndex}.value`}
               chipGroupProps={{
                 numChips: 1,
                 expandedText: t("hide"),
                 collapsedText: t("showRemaining"),
               }}
-              onToggle={(_event, open) => toggleValueSelect(rowIndex, open)}
+              onToggle={(open) => toggleValueSelect(rowIndex, open)}
               isOpen={isValueOpenArray[rowIndex]}
               variant={SelectVariant.typeahead}
               typeAheadAriaLabel={t("selectOrTypeAKey")}
               placeholderText={t("selectOrTypeAKey")}
               selections={field.value}
-              onSelect={(_, v) => {
+              onSelect={(v) => {
                 field.onChange(v);
 
                 toggleValueSelect(rowIndex, false);
               }}
             >
               {renderSelectOptionType()}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       ) : (
@@ -186,17 +184,16 @@ export const KeyBasedAttributeInput = ({
                 defaultValue=""
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <KeycloakSelect
                     toggleId={`${name}.${rowIndex}.key`}
                     className="kc-attribute-key-selectable"
-                    name={`${name}.${rowIndex}.key`}
-                    onToggle={(_event, open) => toggleKeySelect(rowIndex, open)}
+                    onToggle={(open) => toggleKeySelect(rowIndex, open)}
                     isOpen={isKeyOpenArray[rowIndex]}
                     variant={SelectVariant.typeahead}
                     typeAheadAriaLabel={t("selectOrTypeAKey")}
                     placeholderText={t("selectOrTypeAKey")}
                     selections={field.value}
-                    onSelect={(_, v) => {
+                    onSelect={(v) => {
                       field.onChange(v.toString());
 
                       toggleKeySelect(rowIndex, false);
@@ -211,7 +208,7 @@ export const KeyBasedAttributeInput = ({
                         {attribute.name}
                       </SelectOption>
                     ))}
-                  </Select>
+                  </KeycloakSelect>
                 )}
               />
             </Td>

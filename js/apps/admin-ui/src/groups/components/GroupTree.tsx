@@ -8,15 +8,14 @@ import {
   Tooltip,
   TreeView,
   TreeViewDataItem,
-} from "@patternfly/react-core";
-import {
   Dropdown,
+  MenuToggle,
+  DropdownList,
+  Divider,
   DropdownItem,
-  DropdownPosition,
-  DropdownSeparator,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
-import { AngleRightIcon } from "@patternfly/react-icons";
+} from "@patternfly/react-core";
+
+import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -104,26 +103,37 @@ const GroupTreeContextMenu = ({
         }}
       />
       <Dropdown
-        toggle={<KebabToggle onToggle={toggleOpen} />}
+        popperProps={{
+          position: "right",
+        }}
+        toggle={(ref) => (
+          <MenuToggle
+            ref={ref}
+            onClick={toggleOpen}
+            isExpanded={isOpen}
+            variant="plain"
+          >
+            <EllipsisVIcon />{" "}
+          </MenuToggle>
+        )}
         isOpen={isOpen}
-        isPlain
-        position={DropdownPosition.right}
-        dropdownItems={[
+      >
+        <DropdownList>
           <DropdownItem key="rename" onClick={toggleRenameOpen}>
             {t("rename")}
-          </DropdownItem>,
+          </DropdownItem>
           <DropdownItem key="move" onClick={toggleMoveOpen}>
             {t("moveTo")}
-          </DropdownItem>,
+          </DropdownItem>
           <DropdownItem key="create" onClick={toggleCreateOpen}>
             {t("createChildGroup")}
-          </DropdownItem>,
-          <DropdownSeparator key="separator" />,
+          </DropdownItem>
+          <Divider key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
             {t("delete")}
-          </DropdownItem>,
-        ]}
-      />
+          </DropdownItem>
+        </DropdownList>
+      </Dropdown>
     </>
   );
 };

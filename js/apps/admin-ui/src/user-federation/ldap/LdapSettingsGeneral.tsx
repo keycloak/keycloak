@@ -1,17 +1,16 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
-import { FormGroup } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 
 export type LdapSettingsGeneralProps = {
   form: UseFormReturn<ComponentRepresentation>;
@@ -137,13 +136,12 @@ export const LdapSettingsGeneral = ({
             defaultValue="ad"
             control={form.control}
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 isDisabled={!!vendorEdit}
                 toggleId="kc-vendor"
-                required
                 onToggle={() => setIsVendorDropdownOpen(!isVendorDropdownOpen)}
                 isOpen={isVendorDropdownOpen}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setIsVendorDropdownOpen(false);
                   setVendorDefaultValues();
@@ -152,7 +150,7 @@ export const LdapSettingsGeneral = ({
                 variant={SelectVariant.single}
                 aria-label={t("selectVendor")}
               >
-                <SelectOption key={0} value="ad" isPlaceholder>
+                <SelectOption key={0} value="ad">
                   Active Directory
                 </SelectOption>
                 <SelectOption key={1} value="rhds">
@@ -167,7 +165,7 @@ export const LdapSettingsGeneral = ({
                 <SelectOption key={4} value="other">
                   Other
                 </SelectOption>
-              </Select>
+              </KeycloakSelect>
             )}
           ></Controller>
         </FormGroup>

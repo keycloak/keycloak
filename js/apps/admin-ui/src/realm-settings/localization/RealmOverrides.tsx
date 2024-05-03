@@ -11,18 +11,16 @@ import {
   TextInput,
   TextVariants,
   ToolbarItem,
-} from "@patternfly/react-core";
-import {
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
-  Select,
   SelectGroup,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+  Dropdown,
+  MenuToggle,
+  DropdownList,
+  DropdownItem,
+} from "@patternfly/react-core";
 import {
   CheckIcon,
+  EllipsisVIcon,
   PencilAltIcon,
   SearchIcon,
   TimesIcon,
@@ -53,6 +51,10 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import { AddTranslationModal } from "../AddTranslationModal";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 
 type RealmOverridesProps = {
   internationalizationEnabled: boolean;
@@ -375,13 +377,21 @@ export const RealmOverrides = ({
             </Button>
             <ToolbarItem>
               <Dropdown
-                toggle={
-                  <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
-                }
+                toggle={(ref) => (
+                  <MenuToggle
+                    ref={ref}
+                    onClick={() => setKebabOpen(!kebabOpen)}
+                    variant="plain"
+                    isExpanded={kebabOpen}
+                  >
+                    <EllipsisVIcon />
+                  </MenuToggle>
+                )}
                 isOpen={kebabOpen}
                 isPlain
                 data-testid="toolbar-deleteBtn"
-                dropdownItems={[
+              >
+                <DropdownList>
                   <DropdownItem
                     key="action"
                     component="button"
@@ -395,24 +405,22 @@ export const RealmOverrides = ({
                     }}
                   >
                     {t("delete")}
-                  </DropdownItem>,
-                ]}
-              />
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
             </ToolbarItem>
           </>
         }
         searchTypeComponent={
           <ToolbarItem>
-            <Select
+            <KeycloakSelect
               width={180}
               isOpen={filterDropdownOpen}
               className="kc-filter-by-locale-select"
               variant={SelectVariant.single}
               isDisabled={!internationalizationEnabled}
-              onToggle={(_event, isExpanded) =>
-                setFilterDropdownOpen(isExpanded)
-              }
-              onSelect={(_, value) => {
+              onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
+              onSelect={(value) => {
                 setSelectMenuLocale(value.toString());
                 setSelectMenuValueSelected(true);
                 refreshTable();
@@ -427,7 +435,7 @@ export const RealmOverrides = ({
               }
             >
               {options}
-            </Select>
+            </KeycloakSelect>
           </ToolbarItem>
         }
       >

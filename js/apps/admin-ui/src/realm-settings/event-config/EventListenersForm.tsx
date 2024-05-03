@@ -1,8 +1,7 @@
 import { ActionGroup, Button } from "@patternfly/react-core";
-import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { SelectControl, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 type EventListenersFormProps = {

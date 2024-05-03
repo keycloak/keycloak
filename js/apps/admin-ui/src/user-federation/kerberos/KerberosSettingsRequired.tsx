@@ -1,12 +1,11 @@
 import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
-import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+  HelpItem,
+  SelectControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
-import { useEffect, useState } from "react";
 import {
   Controller,
   FormProvider,
@@ -31,8 +30,6 @@ export const KerberosSettingsRequired = ({
 }: KerberosSettingsRequiredProps) => {
   const { t } = useTranslation();
   const { realm, realmRepresentation } = useRealm();
-
-  const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
 
   const allowPassAuth = useWatch({
     control: form.control,
@@ -155,43 +152,16 @@ export const KerberosSettingsRequired = ({
           />
         </FormGroup>
         {isEqual(allowPassAuth, ["true"]) ? (
-          <FormGroup
+          <SelectControl
+            name="config.editMode[0]"
             label={t("editMode")}
-            labelIcon={
-              <HelpItem
-                helpText={t("editModeKerberosHelp")}
-                fieldLabelId="editMode"
-              />
-            }
-            isRequired
-            fieldId="kc-edit-mode"
-          >
-            <Controller
-              name="config.editMode[0]"
-              defaultValue="READ_ONLY"
-              control={form.control}
-              rules={{ required: true }}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-edit-mode"
-                  required
-                  onToggle={() =>
-                    setIsEditModeDropdownOpen(!isEditModeDropdownOpen)
-                  }
-                  isOpen={isEditModeDropdownOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value as string);
-                    setIsEditModeDropdownOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                >
-                  <SelectOption key={0} value="READ_ONLY" isPlaceholder />
-                  <SelectOption key={1} value="UNSYNCED" />
-                </Select>
-              )}
-            ></Controller>
-          </FormGroup>
+            labelIcon={t("editModeKerberosHelp")}
+            controller={{
+              rules: { required: t("required") },
+              defaultValue: "READ_ONLY",
+            }}
+            options={["READ_ONLY", "UNSYNCED"]}
+          />
         ) : null}
         <FormGroup
           label={t("updateFirstLogin")}
