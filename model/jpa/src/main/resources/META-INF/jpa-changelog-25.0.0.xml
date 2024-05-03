@@ -83,6 +83,9 @@
             <column name="ID" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="ENABLED" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
             <column name="REALM_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>

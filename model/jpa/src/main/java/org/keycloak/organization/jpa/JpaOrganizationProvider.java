@@ -80,6 +80,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         entity.setGroupId(group.getId());
         entity.setRealmId(realm.getId());
         entity.setName(name);
+        entity.setEnabled(true);
 
         em.persist(entity);
 

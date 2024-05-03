@@ -173,6 +173,7 @@ public class OrganizationResource {
 
         rep.setId(model.getId());
         rep.setName(model.getName());
+        rep.setEnabled(model.isEnabled());
         rep.setAttributes(model.getAttributes());
         model.getDomains().filter(Objects::nonNull).map(this::toRepresentation)
                 .forEach(rep::addDomain);
@@ -193,6 +194,7 @@ public class OrganizationResource {
         }
 
         model.setName(rep.getName());
+        model.setEnabled(rep.isEnabled());
         model.setAttributes(rep.getAttributes());
         model.setDomains(Optional.ofNullable(rep.getDomains()).orElse(Set.of()).stream()
                     .filter(Objects::nonNull)

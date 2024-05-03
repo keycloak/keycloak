@@ -19,6 +19,7 @@ package org.keycloak.testsuite.organization.admin;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.List;
 import java.util.function.Function;
@@ -28,10 +29,12 @@ import jakarta.ws.rs.core.Response.Status;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
@@ -199,5 +202,44 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
             return actual;
         }
+    }
+
+    protected void assertBrokerRegistration(OrganizationResource organization, String email) {
+        // login with email only
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        log.debug("Logging in");
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        loginPage.loginUsername(email);
+
+        // user automatically redirected to the organization identity provider
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        // login to the organization identity provider and run the configured first broker login flow
+        loginPage.login(email, bc.getUserPassword());
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        Assert.assertTrue("We must be on correct realm right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), email, "Firstname", "Lastname");
+
+        assertIsMember(email, organization);
+    }
+
+    protected void assertIsMember(String userEmail, OrganizationResource organization) {
+        UserRepresentation account = getUserRepresentation(userEmail);
+        UserRepresentation member = organization.members().member(account.getId()).toRepresentation();
+        Assert.assertEquals(account.getId(), member.getId());
+    }
+
+    protected UserRepresentation getUserRepresentation(String userEmail) {
+        UsersResource users = adminClient.realm(bc.consumerRealmName()).users();
+        List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
+        Assert.assertFalse(reps.isEmpty());
+        Assert.assertEquals(1, reps.size());
+        return reps.get(0);
     }
 }

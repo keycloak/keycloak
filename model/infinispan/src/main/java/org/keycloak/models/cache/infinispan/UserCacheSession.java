@@ -19,10 +19,12 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -54,6 +56,7 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
@@ -335,6 +338,20 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            // check if user is member of a disabled organization.
+            OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizationProvider.getByMember(delegate);
+            if (organization != null && organization.isManaged(delegate) && !organization.isEnabled()) {
+                return new ReadOnlyUserModelDelegate(delegate) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+        }
 
         StorageId storageId = delegate.getFederationLink() != null ?
                 new StorageId(delegate.getFederationLink(), delegate.getId()) : new StorageId(delegate.getId());
