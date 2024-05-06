@@ -8,7 +8,8 @@ export {
 } from "./context/KeycloakContext";
 export {
   environment,
-  type Environment,
+  type AccountEnvironment,
+  type AdminEnvironment,
   type Feature,
 } from "./context/environment";
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";

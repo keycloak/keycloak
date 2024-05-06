@@ -12,7 +12,7 @@ import {
 import { AlertProvider } from "../alerts/Alerts";
 import { ErrorPage } from "./ErrorPage";
 import { Help } from "./HelpContext";
-import { Environment } from "./environment";
+import { AccountEnvironment, AdminEnvironment } from "./environment";
 
 export type KeycloakContext = KeycloakContextProps & {
   keycloak: Keycloak;
@@ -32,7 +32,7 @@ export const useEnvironment = () => {
 };
 
 type KeycloakContextProps = {
-  environment: Environment;
+  environment: AdminEnvironment | AccountEnvironment;
 };
 
 export const KeycloakProvider = ({
@@ -42,20 +42,17 @@ export const KeycloakProvider = ({
   const calledOnce = useRef(false);
   const [init, setInit] = useState(false);
   const [error, setError] = useState<unknown>();
-  const keycloak = useMemo(
-    () => {
-      const keycloak = new Keycloak({
-        url: environment.authUrl,
-        realm: environment.realm,
-        clientId: environment.clientId,
-      });
+  const keycloak = useMemo(() => {
+    const keycloak = new Keycloak({
+      url: environment.authUrl,
+      realm: environment.realm,
+      clientId: environment.clientId,
+    });
 
-      keycloak.onAuthLogout = () => keycloak.login();
+    keycloak.onAuthLogout = () => keycloak.login();
 
-      return keycloak;
-    },
-    [environment],
-  );
+    return keycloak;
+  }, [environment]);
 
   useEffect(() => {
     // only needed in dev mode
@@ -63,11 +60,12 @@ export const KeycloakProvider = ({
       return;
     }
 
-    const init = () => keycloak.init({
-      onLoad: "check-sso",
-      pkceMethod: "S256",
-      responseMode: "query",
-    });
+    const init = () =>
+      keycloak.init({
+        onLoad: "check-sso",
+        pkceMethod: "S256",
+        responseMode: "query",
+      });
 
     init()
       .then(() => setInit(true))

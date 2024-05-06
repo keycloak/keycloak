@@ -14,11 +14,9 @@ export type Feature = {
   isViewGroupsEnabled: boolean;
 };
 
-export type Environment = {
+export type BaseEnvironment = {
   /** The URL to the root of the auth server. */
   authUrl: string;
-  /** The URL to the root of the auth server. */
-  authServerUrl: string;
   /** The URL to the root of the account console. */
   baseUrl: string;
   /** The realm used to authenticate the user to the Account Console. */
@@ -31,20 +29,28 @@ export type Environment = {
   logo: string;
   /** Indicates the url to be followed when Brand image is clicked */
   logoUrl: string;
-  /** The locale of the user */
-  locale: string;
-  /** Feature flags */
-  features: Feature;
-  /** Name of the referrer application in the back link */
-  referrerName?: string;
-  /** UR to the referrer application in the back link */
-  referrerUrl?: string;
-  /** The version hash of the auth server. */
-  resourceVersion: string;
+};
+
+export type AdminEnvironment = BaseEnvironment & {
+  /** The URL to the root of the auth server. */
+  authServerUrl: string;
   /** The name of the master realm. */
   masterRealm: string;
   /** The URL to the base of the Admin UI. */
   consoleBaseUrl: string;
+  /** The version hash of the auth server. */
+  resourceVersion: string;
+};
+
+export type AccountEnvironment = BaseEnvironment & {
+  /** The locale of the user */
+  locale: string;
+  /** Feature flags */
+  features?: Feature;
+  /** Name of the referrer application in the back link */
+  referrerName?: string;
+  /** UR to the referrer application in the back link */
+  referrerUrl?: string;
 };
 
 // During development the realm can be passed as a query parameter when redirecting back from Keycloak.
@@ -52,7 +58,7 @@ const realm =
   new URLSearchParams(window.location.search).get("realm") ||
   location.pathname.match("/realms/(.*?)/account")?.[1];
 
-const defaultEnvironment: Environment = {
+const defaultEnvironment: AdminEnvironment & AccountEnvironment = {
   authUrl: "http://localhost:8180",
   authServerUrl: "http://localhost:8180",
   baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
@@ -81,7 +87,7 @@ const defaultEnvironment: Environment = {
 };
 
 // Merge the default and injected environment variables together.
-const environment: Environment = {
+const environment = {
   ...defaultEnvironment,
   ...getInjectedEnvironment(),
 };
