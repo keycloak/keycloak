@@ -145,7 +145,7 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        if(responseType.equals("none")){
+        if (responseType.equals("none")) {
             ServicesLogger.LOGGER.invalidParameter(OAuth2Constants.RESPONSE_TYPE);
             String errorMessage = "Invalid parameter: response_type=none";
             event.detail(Details.REASON, errorMessage);
