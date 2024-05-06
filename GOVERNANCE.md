@@ -72,7 +72,7 @@ For the nominee to be accepted as a maintainer at least 2/3 of existing maintain
 
 ### Changes in Maintainership
 
-Every 6 months (January and July) active maintainers fill in a survey covering what they have been doing as a maintainer 
+Every 6 months (March and September) active maintainers fill in a survey covering what they have been doing as a maintainer 
 for the last period, and what they are planning on focusing on in the next period. The survey is not made publicly 
 available, but is shared with existing maintainers. This serves to purposes; firstly for the maintainers group to better
 understand what each maintainer is focusing on, and secondly to identify maintainers that are no longer active.
