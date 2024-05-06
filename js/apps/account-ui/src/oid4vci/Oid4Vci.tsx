@@ -123,7 +123,7 @@ export const Oid4Vci = () => {
         addAlert(t('verifiableCredentialsIssuerAlert'))
         return
       } else {
-        const requestUrl = credentialIssuer + "/protocol/oid4vc/credential-offer-uri?credential_configuration_id=" + supportedCredential.id+ "&type=qr-code&width=500&height=500"
+        const requestUrl = credentialIssuer.credential_issuer + "/protocol/oid4vc/credential-offer-uri?credential_configuration_id=" + supportedCredential.id+ "&type=qr-code&width=500&height=500"
     
         return fetchWithToken(requestUrl) 
         .then(response => handleOfferResponse(response))
