@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oidc.mappers;
+package org.keycloak.organization.protocol.mappers.oidc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +32,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
+import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
@@ -69,15 +75,22 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-        UserModel user = userSession.getUser();
-        OrganizationProvider organizationProvider = keycloakSession.getProvider(OrganizationProvider.class);
-        OrganizationModel organization = organizationProvider.getByMember(user);
+        OrganizationProvider provider = keycloakSession.getProvider(OrganizationProvider.class);
 
-        if (organization != null) {
-            Map<String, Map<String, Object>> claim = new HashMap<>();
-            claim.put(organization.getName(), Map.of());
-            token.getOtherClaims().put(OAuth2Constants.ORGANIZATION, claim);
+        if (!provider.isEnabled()) {
+            return;
         }
+
+        UserModel user = userSession.getUser();
+        OrganizationModel organization = provider.getByMember(user);
+
+        if (organization == null || !organization.isEnabled()) {
+            return;
+        }
+
+        Map<String, Map<String, Object>> claim = new HashMap<>();
+        claim.put(organization.getName(), Map.of());
+        token.getOtherClaims().put(OAuth2Constants.ORGANIZATION, claim);
     }
 
     public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
