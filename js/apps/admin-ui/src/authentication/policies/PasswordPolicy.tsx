@@ -64,6 +64,7 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
           isExpanded={open}
           isDisabled={policies?.length === 0}
           style={{ width: "300px" }}
+          data-testid="add-policy"
         >
           {t("addPolicy")}
         </MenuToggle>

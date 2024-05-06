@@ -62,11 +62,11 @@ export const HelpHeader = () => {
       popperProps={{
         position: "right",
       }}
-      isPlain
       isOpen={open}
       toggle={(ref) => (
         <MenuToggle
           ref={ref}
+          variant="plain"
           onClick={() => setOpen(!open)}
           aria-label="Help"
           id="help"

@@ -134,7 +134,7 @@ export const RealmSelector = () => {
     <Dropdown
       id="realm-select"
       data-testid="realmSelector"
-      className="keycloak__realm_selector__dropdown2"
+      className="keycloak__realm_selector__dropdown"
       isOpen={open}
       toggle={(ref) => (
         <MenuToggle

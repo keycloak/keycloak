@@ -1,7 +1,7 @@
 import ModalUtils from "../../../../util/ModalUtils";
 
 export default class BindFlowModal extends ModalUtils {
-  #bindingType = "#bindingType";
+  #bindingType = "#chooseBindingType";
   #dropdownSelectToggleItem = ".pf-v5-c-menu__list > li";
 
   fill(bindingType: string) {

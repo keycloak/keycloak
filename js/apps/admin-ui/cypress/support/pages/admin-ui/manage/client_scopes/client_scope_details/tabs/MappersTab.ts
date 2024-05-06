@@ -3,9 +3,9 @@ import CommonPage from "../../../../../CommonPage";
 export default class MappersTab extends CommonPage {
   #addMapperBtn = "#mapperAction";
   #fromPredefinedMappersBtn =
-    'ul[aria-labelledby="mapperAction"] > li:nth-child(1) a';
+    'ul[class="pf-v5-c-menu__list"] > li:nth-child(1) button';
   #byConfigurationBtn =
-    'ul[aria-labelledby="mapperAction"] > li:nth-child(2) a';
+    'ul[class="pf-v5-c-menu__list"] > li:nth-child(2) button';
   #mapperConfigurationList =
     'ul[aria-label="Add predefined mappers"] > li:not([id=header])';
 

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Path } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { CaretDownIcon } from "@patternfly/react-icons";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
@@ -122,7 +121,7 @@ export const MapperList = ({
                 id="mapperAction"
                 onClick={() => setMapperAction(!mapperAction)}
               >
-                {t("addMapper")} <CaretDownIcon />
+                {t("addMapper")}
               </MenuToggle>
             )}
             isOpen={mapperAction}
