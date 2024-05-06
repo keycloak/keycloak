@@ -50,7 +50,7 @@ public class LoadBalancerResource {
     KeycloakSession session;
 
     /**
-     * Return the status for a laod balancer in a multi-site setup if this Keycloak site should receive traffic.
+     * Return the status for a load balancer in a multi-site setup if this Keycloak site should receive traffic.
      * <p />
      * While a loadbalancer will usually check for the returned status code, the additional text <code>UP</code> or <code>DOWN</down>
      * is returned for humans to see the status in the browser.

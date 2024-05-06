@@ -705,12 +705,12 @@ public class Reflections {
     }
 
     /**
-     * Check the assignability of one type to another, taking into account the actual type arguements
+     * Check the assignability of one type to another, taking into account the actual type arguments
      *
      * @param rawType1 the raw type of the class to check
-     * @param actualTypeArguments1 the actual type arguements to check, or an empty array if not a parameterized type
+     * @param actualTypeArguments1 the actual type arguments to check, or an empty array if not a parameterized type
      * @param rawType2 the raw type of the class to check
-     * @param actualTypeArguments2 the actual type arguements to check, or an empty array if not a parameterized type
+     * @param actualTypeArguments2 the actual type arguments to check, or an empty array if not a parameterized type
      *
      * @return
      */

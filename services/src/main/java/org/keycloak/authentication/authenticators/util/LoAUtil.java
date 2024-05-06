@@ -83,7 +83,7 @@ public class LoAUtil {
 
     /**
      * @param realm
-     * @return All LoA numbers configured in the conditions in the realm browser flow. Key is level, Vaue is maxAge for particular level
+     * @return All LoA numbers configured in the conditions in the realm browser flow. Key is level, Value is maxAge for particular level
      */
     public static Map<Integer, Integer> getLoaMaxAgesConfiguredInRealmBrowserFlow(RealmModel realm) {
         List<AuthenticationExecutionModel> loaConditions = AuthenticatorUtil.getExecutionsByType(realm, realm.getBrowserFlow().getId(), ConditionalLoaAuthenticatorFactory.PROVIDER_ID);
