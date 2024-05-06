@@ -232,9 +232,6 @@ public class InfinispanNotificationsManager {
 
 
         private void hotrodEventReceived(String key) {
-            if (!key.startsWith(TASK_KEY_PREFIX)) {
-                return;
-            }
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
             try {
                 listenersExecutor.submit(() -> {
