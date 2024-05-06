@@ -24,7 +24,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 /**
  * Event for notifying the store, so it can do migrations on the representation as needed.
  *
- * CAUTION: This event is exceptional as it performs any necessary modificaton of the representation.
+ * CAUTION: This event is exceptional as it performs any necessary modification of the representation.
  */
 public class StoreMigrateRepresentationEvent implements ProviderEvent {
 

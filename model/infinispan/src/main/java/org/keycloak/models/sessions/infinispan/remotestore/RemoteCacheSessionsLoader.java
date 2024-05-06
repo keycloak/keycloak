@@ -32,7 +32,6 @@ import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
 
 /**
@@ -52,26 +51,16 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
 
 
     @Override
-    public void init(KeycloakSession session) {
-    }
-
-
-    @Override
-    public RemoteCacheSessionsLoaderContext computeLoaderContext(KeycloakSession session) {
+    public RemoteCacheSessionsLoaderContext computeLoaderContext() {
         return new RemoteCacheSessionsLoaderContext(sessionsPerSegment);
 
     }
 
     @Override
-    public WorkerContext computeWorkerContext(RemoteCacheSessionsLoaderContext loaderCtx, int segment, int workerId, WorkerResult previousResult) {
-        return new WorkerContext(segment, workerId);
+    public WorkerContext computeWorkerContext(int segment) {
+        return new WorkerContext(segment);
     }
 
-
-    @Override
-    public WorkerResult createFailedWorkerResult(RemoteCacheSessionsLoaderContext loaderContext, WorkerContext workerContext) {
-        return new WorkerResult(false, workerContext.getSegment(), workerContext.getWorkerId());
-    }
 
     @Override
     public WorkerResult loadSessions(KeycloakSession session, RemoteCacheSessionsLoaderContext loaderContext, WorkerContext ctx) {
@@ -142,13 +131,13 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
                 insertSessions(decoratedCache, toInsertImmortal, maxIdleImmortal, -1);
             }
         } catch (RuntimeException e) {
-            log.warnf(e, "Error loading sessions from remote cache '%s' for segment '%d'", remoteCache.getName(), ctx.getSegment());
+            log.warnf(e, "Error loading sessions from remote cache '%s' for segment '%d'", remoteCache.getName(), ctx.segment());
             throw e;
         }
 
-        log.debugf("Successfully finished loading sessions from cache '%s' . Segment: %d, Count of sessions loaded: %d", cache.getName(), ctx.getSegment(), countLoaded);
+        log.debugf("Successfully finished loading sessions from cache '%s' . Segment: %d, Count of sessions loaded: %d", cache.getName(), ctx.segment(), countLoaded);
 
-        return new WorkerResult(true, ctx.getSegment(), ctx.getWorkerId());
+        return new WorkerResult(true, ctx.segment());
     }
 
     private void insertSessions(Cache<Object, Object> cache, Map<Object, Object> entries, int maxIdle, int lifespan) {
@@ -169,7 +158,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
     }
 
     @Override
-    public void afterAllSessionsLoaded(BaseCacheInitializer initializer) {
+    public void afterAllSessionsLoaded() {
     }
 
 

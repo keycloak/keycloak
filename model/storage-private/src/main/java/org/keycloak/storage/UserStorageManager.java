@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentFactory;
@@ -50,6 +51,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -62,6 +64,7 @@ import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -111,6 +114,20 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * @return
      */
     protected UserModel importValidation(RealmModel realm, UserModel user) {
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && user != null) {
+            // check if user belongs to a disabled organization
+            OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizationProvider.getByMember(user);
+            if (organization != null && organization.isManaged(user) && !organization.isEnabled()) {
+                return new ReadOnlyUserModelDelegate(user) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+        }
         if (user == null || user.getFederationLink() == null) return user;
 
         UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());

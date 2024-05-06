@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -34,23 +36,35 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
-import java.util.Objects;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.UserResource;
-import org.keycloak.services.resources.admin.UsersResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
 
@@ -101,6 +115,18 @@ public class OrganizationMemberResource {
         }
 
         throw ErrorResponse.error("User is already a member of the organization.", Status.CONFLICT);
+    }
+
+    @Path("invite-user")
+    public Response inviteUser(String email) {
+        return new OrganizationInvitationResource(session, organization, adminEvent).inviteUser(email);
+    }
+
+    @POST
+    @Path("invite-existing-user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response inviteExistingUser(String id) {
+        return new OrganizationInvitationResource(session, organization, adminEvent).inviteExistingUser(id);
     }
 
     @GET

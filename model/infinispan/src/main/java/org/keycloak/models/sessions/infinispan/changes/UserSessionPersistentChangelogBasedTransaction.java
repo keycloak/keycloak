@@ -81,14 +81,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
             return wrappedEntity;
         } else {
-            UserSessionEntity entity = myUpdates.getEntityWrapper().getEntity();
-
             // If entity is scheduled for remove, we don't return it.
-            boolean scheduledForRemove = myUpdates.getUpdateTasks().stream().filter((SessionUpdateTask task) -> {
-
-                return task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE;
-
-            }).findFirst().isPresent();
+            boolean scheduledForRemove = myUpdates.getUpdateTasks().stream()
+                    .map(SessionUpdateTask::getOperation)
+                    .anyMatch(SessionUpdateTask.CacheOperation.REMOVE::equals);
 
             return scheduledForRemove ? null : myUpdates.getEntityWrapper();
         }
@@ -133,15 +129,11 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         if (myUpdates == null) {
             return false;
         }
-
-        V entity = myUpdates.getEntityWrapper().getEntity();
-
         // If entity is scheduled for remove, we don't return it.
-        boolean scheduledForRemove = myUpdates.getUpdateTasks()
-                .stream()
-                .anyMatch(task -> task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE);
 
-        return scheduledForRemove;
+        return myUpdates.getUpdateTasks()
+                .stream()
+                .anyMatch(task -> task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE);
     }
 
 }

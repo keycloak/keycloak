@@ -181,7 +181,7 @@ public interface UsersResource {
      *
      * @param search the value to search. It can be the username, email or any of the supported options to query based on user attributes
      * @param firstResult the position of the first result to retrieve
-     * @param maxResults the maximum number of results to retreive
+     * @param maxResults the maximum number of results to retrieve
      * @return a list of {@link UserRepresentation}
      */
     @GET
@@ -200,7 +200,7 @@ public interface UsersResource {
      *
      * @param search the value to search. It can be the username, email or any of the supported options to query based on user attributes
      * @param firstResult the position of the first result to retrieve
-     * @param maxResults the maximum number of results to retreive
+     * @param maxResults the maximum number of results to retrieve
      * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
      *      email, enabled state, email verification state, federation link, and access.
      *      Note that it means that namely user attributes, required actions, and not before are not returned.)

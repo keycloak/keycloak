@@ -134,7 +134,7 @@ public abstract class CacheManager {
 
     protected void bumpVersion(String id) {
         long next = counter.next();
-        Object rev = revisions.put(id, next);
+        revisions.put(id, next);
     }
 
     public void addRevisioned(Revisioned object, long startupRevision) {

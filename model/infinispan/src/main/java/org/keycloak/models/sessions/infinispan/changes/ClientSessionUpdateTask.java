@@ -25,7 +25,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 public abstract class ClientSessionUpdateTask implements PersistentSessionUpdateTask<AuthenticatedClientSessionEntity> {
 
     @Override
-    public CacheOperation getOperation(AuthenticatedClientSessionEntity session) {
+    public CacheOperation getOperation() {
         return CacheOperation.REPLACE;
     }
 

@@ -22,7 +22,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
 /**
- * Spi implementation fo the creation of {@link  VerifiableCredentialsSigningService}
+ * Spi implementation of the creation of {@link  VerifiableCredentialsSigningService}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */

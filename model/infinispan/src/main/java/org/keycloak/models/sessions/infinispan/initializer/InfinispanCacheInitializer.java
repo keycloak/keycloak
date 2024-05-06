@@ -46,14 +46,13 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
     // Effectively no timeout
     private final int stalledTimeoutInSeconds;
 
-    public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int sessionsPerSegment, int maxErrors, int stalledTimeoutInSeconds) {
-        super(sessionFactory, workCache, sessionLoader, stateKeySuffix, sessionsPerSegment);
+    public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int maxErrors, int stalledTimeoutInSeconds) {
+        super(sessionFactory, workCache, sessionLoader, stateKeySuffix);
         this.maxErrors = maxErrors;
         this.stalledTimeoutInSeconds = stalledTimeoutInSeconds;
     }
 
 
-    @Override
     public void initCache() {
         // due to lazy initialization, this might be called from multiple threads simultaneously, therefore, synchronize
         synchronized (workCache) {
@@ -72,19 +71,10 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
         InitializerState state = getStateFromCache();
         SessionLoader.LoaderContext[] ctx = new SessionLoader.LoaderContext[1];
         if (state == null) {
-            // Rather use separate transactions for update and counting
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
                 @Override
                 public void run(KeycloakSession session) {
-                    sessionLoader.init(session);
-                }
-
-            });
-
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession session) {
-                    ctx[0] = sessionLoader.computeLoaderContext(session);
+                    ctx[0] = sessionLoader.computeLoaderContext();
                 }
 
             });
@@ -94,7 +84,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
                 @Override
                 public void run(KeycloakSession session) {
-                    ctx[0] = sessionLoader.computeLoaderContext(session);
+                    ctx[0] = sessionLoader.computeLoaderContext();
                 }
 
             });
@@ -115,8 +105,6 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
         int errors = 0;
         int segmentToLoad = 0;
 
-        SessionLoader.WorkerResult previousResult = null;
-        SessionLoader.WorkerResult nextResult = null;
         int distributedWorkersCount = 1;
 
         while (segmentToLoad < state.getSegmentsCount()) {
@@ -132,7 +120,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
             final Queue<SessionLoader.WorkerResult> results = new ConcurrentLinkedQueue<>();
 
             for (Integer segment : segments) {
-                SessionLoader.WorkerContext workerCtx = sessionLoader.computeWorkerContext(loaderCtx, segment, segment - segmentToLoad, previousResult);
+                SessionLoader.WorkerContext workerCtx = sessionLoader.computeWorkerContext(segment);
 
                 SessionInitializerWorker worker = new SessionInitializerWorker();
                 worker.setWorkerEnvironment(loaderCtx, workerCtx, sessionLoader);
@@ -144,15 +132,14 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
             // Check the results
             for (SessionLoader.WorkerResult result : results) {
-                if (result.isSuccess()) {
-                    state.markSegmentFinished(result.getSegment());
-                    if (result.getSegment() == segmentToLoad + distributedWorkersCount - 1) {
+                if (result.success()) {
+                    state.markSegmentFinished(result.segment());
+                    if (result.segment() == segmentToLoad + distributedWorkersCount - 1) {
                         // last result for next iteration when complete
-                        nextResult = result;
                     }
                 } else {
                     if (log.isTraceEnabled()) {
-                        log.tracef("Segment %d failed to compute", result.getSegment());
+                        log.tracef("Segment %d failed to compute", result.segment());
                     }
                     anyFailure = true;
                 }
@@ -165,8 +152,6 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
             if (!anyFailure) {
                 // everything is OK, prepare the new row
                 segmentToLoad += distributedWorkersCount;
-                previousResult = nextResult;
-                nextResult = null;
                 if (log.isTraceEnabled()) {
                     log.debugf("New initializer state is: %s", state);
                 }
@@ -177,7 +162,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
         saveStateToCache(state);
 
         // Loader callback after the task is finished
-        this.sessionLoader.afterAllSessionsLoaded(this);
+        this.sessionLoader.afterAllSessionsLoaded();
 
     }
 }

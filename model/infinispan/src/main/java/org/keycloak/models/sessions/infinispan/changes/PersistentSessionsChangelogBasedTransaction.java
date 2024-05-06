@@ -164,11 +164,9 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             V entity = myUpdates.getEntityWrapper().getEntity();
 
             // If entity is scheduled for remove, we don't return it.
-            boolean scheduledForRemove = myUpdates.getUpdateTasks().stream().filter((SessionUpdateTask task) -> {
-
-                return task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE;
-
-            }).findFirst().isPresent();
+            boolean scheduledForRemove = myUpdates.getUpdateTasks().stream()
+                    .map(SessionUpdateTask::getOperation)
+                    .anyMatch(SessionUpdateTask.CacheOperation.REMOVE::equals);
 
             return scheduledForRemove ? null : myUpdates.getEntityWrapper();
         }

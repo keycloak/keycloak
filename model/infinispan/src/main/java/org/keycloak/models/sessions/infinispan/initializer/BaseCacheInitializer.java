@@ -38,14 +38,12 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
     protected final KeycloakSessionFactory sessionFactory;
     protected final Cache<String, Serializable> workCache;
     protected final SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader;
-    protected final int sessionsPerSegment;
     protected final String stateKey;
 
-    public BaseCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader, String stateKeySuffix, int sessionsPerSegment) {
+    public BaseCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader, String stateKeySuffix) {
         this.sessionFactory = sessionFactory;
         this.workCache = workCache;
         this.sessionLoader = sessionLoader;
-        this.sessionsPerSegment = sessionsPerSegment;
         this.stateKey = STATE_KEY_PREFIX + stateKeySuffix;
     }
 
@@ -59,8 +57,7 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
 
     @Override
     protected boolean isCoordinator() {
-        Transport transport = workCache.getCacheManager().getTransport();
-        return transport == null || transport.isCoordinator();
+        return workCache.getCacheManager().isCoordinator();
     }
 
     @Override

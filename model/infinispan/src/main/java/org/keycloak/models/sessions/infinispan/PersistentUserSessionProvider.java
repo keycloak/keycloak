@@ -108,7 +108,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     protected final CrossDCLastSessionRefreshStore lastSessionRefreshStore;
     protected final CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
 
-    protected final RemoteCacheInvoker remoteCacheInvoker;
     protected final InfinispanKeyGenerator keyGenerator;
 
     public PersistentUserSessionProvider(KeycloakSession session,
@@ -151,7 +150,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         this.lastSessionRefreshStore = lastSessionRefreshStore;
         this.offlineLastSessionRefreshStore = offlineLastSessionRefreshStore;
-        this.remoteCacheInvoker = remoteCacheInvoker;
         this.keyGenerator = keyGenerator;
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
@@ -276,10 +274,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         return entityWrapper != null ? entityWrapper.getEntity() : null;
     }
 
-    private Stream<UserSessionModel> getUserSessionsFromPersistenceProviderStream(RealmModel realm, UserModel user, boolean offline) {
+    private Stream<UserSessionModel> getUserSessionsFromPersistenceProviderStream(RealmModel realm, UserModel user) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        return persister.loadUserSessionsStream(realm, user, offline, 0, null)
-                .map(persistentUserSession -> (UserSessionModel) getUserSession(realm, persistentUserSession.getId(), offline))
+        return persister.loadUserSessionsStream(realm, user, true, 0, null)
+                .map(persistentUserSession -> (UserSessionModel) getUserSession(realm, persistentUserSession.getId(), true))
                 .filter(Objects::nonNull);
     }
 
@@ -336,9 +334,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         if (predicate.getBrokerSessionId() != null && !offline) {
             // we haven't yet migrated the old offline entries, so they don't have a brokerSessionId yet
-            return Stream.of(persister.loadUserSessionsStreamByBrokerSessionId(realm, predicate.getBrokerSessionId(), offline))
+            return Stream.of(persister.loadUserSessionsStreamByBrokerSessionId(realm, predicate.getBrokerSessionId(), false))
                     .filter(predicate.toModelPredicate())
-                    .map(s -> (UserSessionModel) getUserSession(realm, s.getId(), offline))
+                    .map(s -> (UserSessionModel) getUserSession(realm, s.getId(), false))
                     .filter(Objects::nonNull);
         }
 
@@ -590,11 +588,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
-    protected void onClientRemovedEvent(String realmId, String clientUuid) {
-        // Nothing for now. userSession.getAuthenticatedClientSessions() will check lazily if particular client exists and update userSession on-the-fly.
-    }
-
-
     protected void onUserRemoved(RealmModel realm, UserModel user) {
         removeUserSessions(realm, user, true);
         removeUserSessions(realm, user, false);
@@ -630,7 +623,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
-        UserModel user = null;
+        UserModel user;
         if (Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
             LightweightUserAdapter lua = LightweightUserAdapter.fromString(session, realm, entity.getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
             final UserSessionAdapter us = wrap(realm, entity, offline, lua);
@@ -704,7 +697,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         UserSessionAdapter userSessionAdapter = (offlineUserSession instanceof UserSessionAdapter) ? (UserSessionAdapter) offlineUserSession :
                 getOfflineUserSession(offlineUserSession.getRealm(), offlineUserSession.getId());
 
-        AuthenticatedClientSessionAdapter offlineClientSession = importClientSession(userSessionAdapter, clientSession, true, false);
+        AuthenticatedClientSessionAdapter offlineClientSession = importOfflineClientSession(userSessionAdapter, clientSession);
 
         // update timestamp to current time
         offlineClientSession.setTimestamp(Time.currentTime());
@@ -716,7 +709,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, UserModel user) {
-        return getUserSessionsFromPersistenceProviderStream(realm, user, true);
+        return getUserSessionsFromPersistenceProviderStream(realm, user);
     }
 
     @Override
@@ -862,11 +855,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         entity.setAuthenticatedClientSessions(new AuthenticatedClientSessionStore());
         entity.setRememberMe(userSession.isRememberMe());
         entity.setState(userSession.getState());
-        if (userSession instanceof OfflineUserSessionModel) {
+        if (userSession instanceof OfflineUserSessionModel offlineUserSession) {
             // this is a hack so that UserModel doesn't have to be available when offline token is imported.
             // see related JIRA - KEYCLOAK-5350 and corresponding test
-            OfflineUserSessionModel oline = (OfflineUserSessionModel) userSession;
-            entity.setUser(oline.getUserId());
+            entity.setUser(offlineUserSession.getUserId());
             // NOTE: Hack
             // We skip calling entity.setLoginUsername(userSession.getLoginUsername())
 
@@ -883,27 +875,14 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
 
-    private AuthenticatedClientSessionAdapter importClientSession(UserSessionAdapter sessionToImportInto,
-                                                                  AuthenticatedClientSessionModel clientSession,
-                                                                  boolean offline,
-                                                                  boolean checkExpiration) {
+    private AuthenticatedClientSessionAdapter importOfflineClientSession(UserSessionAdapter sessionToImportInto,
+                                                                         AuthenticatedClientSessionModel clientSession) {
         AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(sessionToImportInto.getId(), clientSession,
-                sessionToImportInto.getRealm().getId(), clientSession.getClient().getId(), offline);
+                sessionToImportInto.getRealm().getId(), clientSession.getClient().getId(), true);
         entity.setUserSessionId(sessionToImportInto.getId());
 
         // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
         entity.setTimestamp(sessionToImportInto.getLastSessionRefresh());
-
-        if (checkExpiration) {
-            SessionFunction<AuthenticatedClientSessionEntity> lifespanChecker = offline
-                    ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs;
-            SessionFunction<AuthenticatedClientSessionEntity> idleTimeoutChecker = offline
-                    ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs;
-            if (idleTimeoutChecker.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
-                    || lifespanChecker.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
-                return null;
-            }
-        }
 
         final UUID clientSessionId = entity.getId();
 
@@ -913,10 +892,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         AuthenticatedClientSessionStore clientSessions = sessionToImportInto.getEntity().getAuthenticatedClientSessions();
         clientSessions.put(clientSession.getClient().getId(), clientSessionId);
 
-        SessionUpdateTask<UserSessionEntity> registerClientSessionTask = new ClientSessionPersistentChangelogBasedTransaction.RegisterClientSessionTask(clientSession.getClient().getId(), clientSessionId, offline);
+        SessionUpdateTask<UserSessionEntity> registerClientSessionTask = new ClientSessionPersistentChangelogBasedTransaction.RegisterClientSessionTask(clientSession.getClient().getId(), clientSessionId, true);
         sessionTx.addTask(sessionToImportInto.getId(), registerClientSessionTask);
 
-        return new AuthenticatedClientSessionAdapter(session, this, entity, clientSession.getClient(), sessionToImportInto, clientSessionTx, offline);
+        return new AuthenticatedClientSessionAdapter(session, this, entity, clientSession.getClient(), sessionToImportInto, clientSessionTx, true);
     }
 
 

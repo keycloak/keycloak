@@ -55,6 +55,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         assertEquals(organizationName, expected.getName());
         expected.setName("acme");
+        expected.setEnabled(false);
 
         OrganizationResource organization = testRealm().organizations().get(expected.getId());
 
@@ -66,6 +67,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getName(), existing.getName());
         assertEquals(1, existing.getDomains().size());
+        assertThat(existing.isEnabled(), is(false));
     }
 
     @Test
@@ -75,6 +77,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertNotNull(existing);
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getName(), existing.getName());
+        assertThat(expected.isEnabled(), is(true));
     }
 
     @Test
@@ -103,6 +106,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(existing, hasSize(1));
         OrganizationRepresentation orgRep = existing.get(0);
         assertThat(orgRep.getName(), is(equalTo("wayne-industries")));
+        assertThat(orgRep.isEnabled(), is(true));
         assertThat(orgRep.getDomains(), hasSize(2));
         assertThat(orgRep.getDomain("wayneind.com"), not(nullValue()));
         assertThat(orgRep.getDomain("wayneind-gotham.com"), not(nullValue()));
@@ -111,6 +115,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(existing, hasSize(1));
         orgRep = existing.get(0);
         assertThat(orgRep.getName(), is(equalTo("Gotham-Bank")));
+        assertThat(orgRep.isEnabled(), is(true));
         assertThat(orgRep.getDomains(), hasSize(2));
         assertThat(orgRep.getDomain("gtbank.com"), not(nullValue()));
         assertThat(orgRep.getDomain("gtbank.net"), not(nullValue()));

@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -160,6 +161,55 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
             assertEquals(expectedRep.getEmail(), existingRep.getEmail());
             assertEquals(expectedRep.getFirstName(), existingRep.getFirstName());
             assertEquals(expectedRep.getLastName(), existingRep.getLastName());
+            assertTrue(expectedRep.isEnabled());
+        }
+    }
+
+    @Test
+    public void testGetAllDisabledOrganization() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+
+        // add some unmanaged members to the organization.
+        for (int i = 0; i < 5; i++) {
+            addMember(organization, "member-" + i + "@neworg.org");
+        }
+
+        // onboard a test user by authenticating using the organization's provider.
+        super.assertBrokerRegistration(organization, bc.getUserEmail());
+
+        // disable the organization and check that fetching its representation has it disabled.
+        orgRep.setEnabled(false);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        OrganizationRepresentation existingOrg = organization.toRepresentation();
+        assertThat(orgRep.getId(), is(equalTo(existingOrg.getId())));
+        assertThat(orgRep.getName(), is(equalTo(existingOrg.getName())));
+        assertThat(existingOrg.isEnabled(), is(false));
+
+        // now fetch all users from the org - unmanaged users should still be enabled, but managed ones should not.
+        List<UserRepresentation> existing = organization.members().getAll();;
+        assertThat(existing, not(empty()));
+        assertThat(existing, hasSize(6));
+        for (UserRepresentation user : existing) {
+            if (user.getEmail().equals(bc.getUserEmail())) {
+                assertThat(user.isEnabled(), is(false));
+            } else {
+                assertThat(user.isEnabled(), is(true));
+            }
+        }
+
+        // fetching users from the users endpoint should have the same result.
+        existing = testRealm().users().search("*neworg*",0, 10);
+        assertThat(existing, not(empty()));
+        assertThat(existing, hasSize(6));
+        for (UserRepresentation user : existing) {
+            if (user.getEmail().equals(bc.getUserEmail())) {
+                assertThat(user.isEnabled(), is(false));
+            } else {
+                assertThat(user.isEnabled(), is(true));
+            }
         }
     }
 

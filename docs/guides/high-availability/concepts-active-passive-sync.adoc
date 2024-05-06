@@ -15,11 +15,11 @@ Use this setup to be able to fail over automatically in the event of a site fail
 
 Two independent {project_name} deployments running in different sites are connected with a low latency network connection.
 Users, realms, clients, offline sessions, and other entities are stored in a database that is replicated synchronously across the two sites.
-The data is also cached in the {project_name} embedded {jdgserver_name} as local caches.
+The data is also cached in the {project_name} Infinispan caches as local caches.
 When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the replicated `work` cache.
 
-Session-related data is stored in the replicated caches of the embedded {jdgserver_name} of {project_name}, and forwarded to the external {jdgserver_name}, which forwards information to the external {jdgserver_name} running synchronously in the other site.
-As session data of the external {jdgserver_name} is also cached in the embedded {jdgserver_name}, invalidation messages of the replicated `work` cache are needed for invalidation.
+Session-related data is stored in the replicated caches of the Infinispan caches of {project_name}, and forwarded to the external {jdgserver_name}, which forwards information to the external {jdgserver_name} running synchronously in the other site.
+As session data of the external {jdgserver_name} is also cached in the Infinispan caches, invalidation messages of the replicated `work` cache are needed for invalidation.
 
 In the following paragraphs and diagrams, references to deploying {jdgserver_name} apply to the external {jdgserver_name}.
 

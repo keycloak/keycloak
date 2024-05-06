@@ -582,37 +582,6 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         appPage.assertCurrent();
     }
 
-    private void assertBrokerRegistration(OrganizationResource organization, String email) {
-        // login with email only
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        loginPage.loginUsername(email);
-
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        // login to the organization identity provider and run the configured first broker login flow
-        loginPage.login(email, bc.getUserPassword());
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), email, "Firstname", "Lastname");
-
-        assertIsMember(email, organization);
-    }
-
-    private void assertIsMember(String userEmail, OrganizationResource organization) {
-        UserRepresentation account = getUserRepresentation(userEmail);
-        UserRepresentation member = organization.members().member(account.getId()).toRepresentation();
-        Assert.assertEquals(account.getId(), member.getId());
-    }
-
     private void assertIsNotMember(String userEmail, OrganizationResource organization) {
         UsersResource users = adminClient.realm(bc.consumerRealmName()).users();
         List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
@@ -628,13 +597,5 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
             assertNull(organization.members().member(account.getId()).toRepresentation());
         } catch (NotFoundException ignore) {
         }
-    }
-
-    private UserRepresentation getUserRepresentation(String userEmail) {
-        UsersResource users = adminClient.realm(bc.consumerRealmName()).users();
-        List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
-        Assert.assertFalse(reps.isEmpty());
-        Assert.assertEquals(1, reps.size());
-        return reps.get(0);
     }
 }
