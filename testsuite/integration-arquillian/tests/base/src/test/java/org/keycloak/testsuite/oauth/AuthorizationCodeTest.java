@@ -219,6 +219,24 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     }
 
+    @Test
+    public void authorizationRequestFormPostResponseModeWithNoneResponseType() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.responseType("none");
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        String error = driver.findElement(By.id("error")).getText();
+        String errorDescription = driver.findElement(By.id("error_description")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error);
+        assertEquals("Invalid parameter: response_type=none", errorDescription);
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
+
+    }
+
     // KEYCLOAK-3281
     @Test
     public void authorizationRequestFormPostResponseMode() throws IOException {
