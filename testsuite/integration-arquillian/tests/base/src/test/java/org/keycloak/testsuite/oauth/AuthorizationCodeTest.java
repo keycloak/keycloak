@@ -44,6 +44,7 @@ import org.openqa.selenium.By;
 
 import jakarta.ws.rs.core.UriBuilder;
 
+import java.io.Console;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -230,7 +231,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         String errorDescription = driver.findElement(By.id("error_description")).getText();
         String state = driver.findElement(By.id("state")).getText();
-        assertEquals("Invalid parameter: response_type=none", errorDescription);
+        assertEquals("Invalid parameter: response_type is none", errorDescription);
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
 
     }
