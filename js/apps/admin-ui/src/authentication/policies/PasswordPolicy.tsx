@@ -69,11 +69,6 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
         </MenuToggle>
       )}
       isOpen={open}
-        >
-          {t("addPolicy")}
-        </MenuToggle>
-      )}
-      isOpen={open}
     >
       <SelectList>
         {policies?.map((policy) => (
