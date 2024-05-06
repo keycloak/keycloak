@@ -1,4 +1,5 @@
 import { KeycloakContext } from "@keycloak/keycloak-ui-shared";
+import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
 import { CallOptions } from "./api/methods";
 import { Links, parseLinks } from "./api/parse-links";
 import { parseResponse } from "./api/parse-response";
@@ -43,7 +44,7 @@ export const fetchPermission = async (
 };
 
 export const updateRequest = (
-  context: KeycloakContext,
+  context: KeycloakContext<BaseEnvironment>,
   resourceId: string,
   username: string,
   scopes: Scope[] | string[],
@@ -54,7 +55,7 @@ export const updateRequest = (
   });
 
 export const updatePermissions = (
-  context: KeycloakContext,
+  context: KeycloakContext<BaseEnvironment>,
   resourceId: string,
   permissions: Permission[],
 ) =>

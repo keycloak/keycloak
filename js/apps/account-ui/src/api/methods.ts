@@ -1,4 +1,8 @@
-import { KeycloakContext } from "@keycloak/keycloak-ui-shared";
+import {
+  AccountEnvironment,
+  KeycloakContext,
+} from "@keycloak/keycloak-ui-shared";
+import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
 import { joinPath } from "../utils/joinPath";
 import { parseResponse } from "./parse-response";
 import {
@@ -13,7 +17,7 @@ import {
 import { request } from "./request";
 
 export type CallOptions = {
-  context: KeycloakContext;
+  context: KeycloakContext<BaseEnvironment>;
   signal?: AbortSignal;
 };
 
@@ -41,7 +45,7 @@ export async function getSupportedLocales({
 }
 
 export async function savePersonalInfo(
-  context: KeycloakContext,
+  context: KeycloakContext<AccountEnvironment>,
   info: UserRepresentation,
 ): Promise<void> {
   const response = await request("/", context, { body: info, method: "POST" });
@@ -81,11 +85,17 @@ export async function getApplications({
   return parseResponse<ClientRepresentation[]>(response);
 }
 
-export async function deleteConsent(context: KeycloakContext, id: string) {
+export async function deleteConsent(
+  context: KeycloakContext<BaseEnvironment>,
+  id: string,
+) {
   return request(`/applications/${id}/consent`, context, { method: "DELETE" });
 }
 
-export async function deleteSession(context: KeycloakContext, id?: string) {
+export async function deleteSession(
+  context: KeycloakContext<BaseEnvironment>,
+  id?: string,
+) {
   return request(`/sessions${id ? `/${id}` : ""}`, context, {
     method: "DELETE",
   });
@@ -104,7 +114,7 @@ export async function getLinkedAccounts({ signal, context }: CallOptions) {
 }
 
 export async function unLinkAccount(
-  context: KeycloakContext,
+  context: KeycloakContext<BaseEnvironment>,
   account: LinkedAccountRepresentation,
 ) {
   const response = await request(
@@ -119,7 +129,7 @@ export async function unLinkAccount(
 }
 
 export async function linkAccount(
-  context: KeycloakContext,
+  context: KeycloakContext<BaseEnvironment>,
   account: LinkedAccountRepresentation,
 ) {
   const redirectUri = encodeURIComponent(

@@ -1,6 +1,7 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { AdminEnvironment, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -30,7 +31,6 @@ import { useRealms } from "../context/RealmsContext";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
-import environment from "../environment";
 import helpUrls from "../help-urls";
 import { DEFAULT_LOCALE } from "../i18n/i18n";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
@@ -76,6 +76,7 @@ const RealmSettingsHeader = ({
   refresh,
 }: RealmSettingsHeaderProps) => {
   const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment<AdminEnvironment>();
 
   const { t } = useTranslation();
   const { refresh: refreshRealms } = useRealms();

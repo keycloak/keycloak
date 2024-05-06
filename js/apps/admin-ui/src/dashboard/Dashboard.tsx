@@ -2,6 +2,7 @@ import FeatureRepresentation, {
   FeatureType,
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { HelpItem, label, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
@@ -33,7 +34,6 @@ import {
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem, label } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import {
@@ -42,7 +42,6 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import environment from "../environment";
 import helpUrls from "../help-urls";
 import { useFetch } from "../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
@@ -53,6 +52,7 @@ import "./dashboard.css";
 
 const EmptyDashboard = () => {
   const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment();
 
   const { t } = useTranslation();
   const { realm } = useRealm();

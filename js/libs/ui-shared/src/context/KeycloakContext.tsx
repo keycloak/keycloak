@@ -12,18 +12,22 @@ import {
 import { AlertProvider } from "../alerts/Alerts";
 import { ErrorPage } from "./ErrorPage";
 import { Help } from "./HelpContext";
-import { AccountEnvironment, AdminEnvironment } from "./environment";
+import { BaseEnvironment } from "./environment";
 
-export type KeycloakContext = KeycloakContextProps & {
-  keycloak: Keycloak;
-};
+export type KeycloakContext<T extends BaseEnvironment = BaseEnvironment> =
+  KeycloakContextProps<T> & {
+    keycloak: Keycloak;
+  };
 
-const KeycloakEnvContext = createContext<KeycloakContext | undefined>(
-  undefined,
-);
+const createKeycloakEnvContext = <T extends BaseEnvironment>() =>
+  createContext<KeycloakContext<T> | undefined>(undefined);
 
-export const useEnvironment = () => {
-  const context = useContext(KeycloakEnvContext);
+let KeycloakEnvContext: any;
+
+export const useEnvironment = <
+  T extends BaseEnvironment = BaseEnvironment,
+>() => {
+  const context = useContext<KeycloakContext<T>>(KeycloakEnvContext);
   if (!context)
     throw Error(
       "no environment provider in the hierarchy make sure to add the provider",
@@ -31,14 +35,15 @@ export const useEnvironment = () => {
   return context;
 };
 
-type KeycloakContextProps = {
-  environment: AdminEnvironment | AccountEnvironment;
-};
+interface KeycloakContextProps<T extends BaseEnvironment> {
+  environment: T;
+}
 
-export const KeycloakProvider = ({
+export const KeycloakProvider = <T extends BaseEnvironment>({
   environment,
   children,
-}: PropsWithChildren<KeycloakContextProps>) => {
+}: PropsWithChildren<KeycloakContextProps<T>>) => {
+  KeycloakEnvContext = createKeycloakEnvContext<T>();
   const calledOnce = useRef(false);
   const [init, setInit] = useState(false);
   const [error, setError] = useState<unknown>();

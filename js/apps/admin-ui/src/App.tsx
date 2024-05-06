@@ -47,12 +47,12 @@ const AppContexts = ({ children }: PropsWithChildren) => (
 );
 
 export const App = () => {
-  const { keycloak } = useEnvironment();
+  const { keycloak, environment } = useEnvironment();
   const [adminClient, setAdminClient] = useState<KeycloakAdminClient>();
 
   useEffect(() => {
     const init = async () => {
-      const client = await initAdminClient(keycloak);
+      const client = await initAdminClient(keycloak, environment);
       setAdminClient(client);
     };
     init().catch(console.error);

@@ -46,7 +46,7 @@ export type AccountEnvironment = BaseEnvironment & {
   /** The locale of the user */
   locale: string;
   /** Feature flags */
-  features?: Feature;
+  features: Feature;
   /** Name of the referrer application in the back link */
   referrerName?: string;
   /** UR to the referrer application in the back link */

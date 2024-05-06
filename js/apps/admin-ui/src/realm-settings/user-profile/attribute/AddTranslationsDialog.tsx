@@ -1,4 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Flex,
@@ -12,11 +13,11 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
+import { SearchIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../../admin-client";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
