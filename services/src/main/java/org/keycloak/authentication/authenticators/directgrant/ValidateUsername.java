@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.directgrant;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -71,6 +72,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
 
         if (user == null) {
+            AuthenticatorUtils.dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -79,6 +81,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
         String bruteForceError = getDisabledByBruteForceEventError(context, user);
         if (bruteForceError != null) {
+            AuthenticatorUtils.dummyHash(context);
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");

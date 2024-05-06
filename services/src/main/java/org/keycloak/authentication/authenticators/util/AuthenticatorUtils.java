@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.common.util.Time;
+import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.events.Errors;
 import org.keycloak.models.*;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -51,6 +52,24 @@ public final class AuthenticatorUtils {
 
     public static String getDisabledByBruteForceEventError(AuthenticationFlowContext authnFlowContext, UserModel authenticatedUser) {
         return AuthenticatorUtils.getDisabledByBruteForceEventError(authnFlowContext.getProtector(), authnFlowContext.getSession(), authnFlowContext.getRealm(), authenticatedUser);
+    }
+
+    /**
+     * This method exists to simulate hashing of some "dummy" password. The purpose is to make the user enumeration harder, so the authentication request with non-existing username also need
+     * to simulate the password hashing overhead and takes same time like the request with existing username, but incorrect password.
+     *
+     * @param context
+     */
+    public static void dummyHash(AuthenticationFlowContext context) {
+        PasswordPolicy passwordPolicy = context.getRealm().getPasswordPolicy();
+        PasswordHashProvider provider;
+        if (passwordPolicy != null && passwordPolicy.getHashAlgorithm() != null) {
+            provider = context.getSession().getProvider(PasswordHashProvider.class, passwordPolicy.getHashAlgorithm());
+        } else {
+            provider = context.getSession().getProvider(PasswordHashProvider.class);
+        }
+        int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
+        provider.encodedCredential("SlightlyLongerDummyPassword", iterations);
     }
 
     /**
