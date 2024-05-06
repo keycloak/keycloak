@@ -146,7 +146,7 @@ EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityMan
 Company myCompany = em.find(Company.class, "123");
 ----
 
-The methods `getChangelogLocation` and `getFactoryId` are important to support automatic updating of your entities by Liquibase. https://www.liquibase.com/community[Liquibase]
+The methods `getChangelogLocation` and `getFactoryId` are important to support automatic updating of your entities by Liquibase. https://www.liquibase.com/community/contributors[Liquibase]
 is a framework for updating the database schema, which {project_name} internally uses to create the DB schema and update the DB schema among versions. You may need to use
 it as well and create a changelog for your entities. Note that versioning of your own Liquibase changelog is independent
 of {project_name} versions. In other words, when you update to a new {project_name} version, you are not forced to update your
