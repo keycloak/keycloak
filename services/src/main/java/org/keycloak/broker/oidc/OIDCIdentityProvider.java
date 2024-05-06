@@ -264,6 +264,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
+    @Override
     protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
         SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                 .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
@@ -909,15 +910,19 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (subjectTokenType == null) {
             subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
         }
+        String accessToken;
         if (OAuth2Constants.JWT_TOKEN_TYPE.equals(subjectTokenType) || OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType)) {
             return validateJwt(event, subjectToken, subjectTokenType);
         } else if (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType)) {
-            return validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+            accessToken = subjectToken;
+        } else if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(subjectTokenType)) {
+            accessToken = exchangeRefreshTokenForAccessToken(event, subjectToken);
         } else {
             event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN_TYPE + " invalid");
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token type", Response.Status.BAD_REQUEST);
         }
+        return validateExternalTokenThroughUserInfo(event, accessToken, subjectTokenType);
     }
 
     @Override
