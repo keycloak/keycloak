@@ -208,7 +208,7 @@ describe("Realm settings tabs tests", () => {
 
       cy.get(realmSettingsPage.supportedLocalesTypeahead)
         .click()
-        .get(".pf-v5-c-select__menu-item")
+        .get(".pf-v5-c-menu__list-item")
         .contains("Danish")
         .click();
       cy.get("#kc-l-supported-locales").click();

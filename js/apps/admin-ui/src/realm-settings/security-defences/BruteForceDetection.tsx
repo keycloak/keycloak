@@ -89,7 +89,7 @@ export const BruteForceDetection = ({
           <KeycloakSelect
             toggleId="kc-brute-force-mode"
             onToggle={() => setIsBruteForceModeOpen(!isBruteForceModeOpen)}
-            onSelect={(_, value) => {
+            onSelect={(value) => {
               switch (value as BruteForceMode) {
                 case BruteForceMode.Disabled:
                   form.setValue("bruteForceProtected", false);

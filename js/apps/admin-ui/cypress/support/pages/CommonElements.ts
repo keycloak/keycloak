@@ -20,13 +20,13 @@ export default class CommonElements {
     this.dropdownMenuItem =
       this.parentSelector + ".pf-v5-c-menu__list .pf-v5-c-menu__item";
     this.selectMenuItem =
-      this.parentSelector + ".pf-v5-c-select__menu .pf-v5-c-select__menu-item";
+      this.parentSelector + ".pf-v5-c-menu__list .pf-v5-c-menu__list-item";
     this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-select__toggle";
     this.tableKebabBtn = this.parentSelector + ".pf-v5-c-dropdown__toggle";
     this.dropdownSelectToggleBtn =
       this.parentSelector + ".pf-v5-c-select__toggle";
     this.dropdownSelectToggleItem =
-      this.parentSelector + ".pf-v5-c-select__menu > li";
+      this.parentSelector + ".pf-v5-c-menu__list > li";
   }
 
   clickPrimaryBtn() {

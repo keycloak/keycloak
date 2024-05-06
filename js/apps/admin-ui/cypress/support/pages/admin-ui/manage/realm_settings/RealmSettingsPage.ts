@@ -229,7 +229,7 @@ export default class RealmSettingsPage extends CommonPage {
   #eventListenersRevertBtn = "revertEventListenerBtn";
   #eventListenersInputFld =
     ".pf-v5-c-form-control.pf-v5-c-select__toggle-typeahead";
-  #eventListenersDrpDwnOption = ".pf-v5-c-select__menu";
+  #eventListenersDrpDwnOption = ".pf-v5-c-menu__list";
   #eventListenersDrwDwnSelect =
     ".pf-v5-c-button.pf-v5-c-select__toggle-button.pf-m-plain";
   #eventListenerRemove = '[data-ouia-component-id="Remove"]';

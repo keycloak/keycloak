@@ -32,7 +32,7 @@ export default class CreateClientPage extends CommonPage {
   #adminUrlInput = "adminUrl";
 
   #loginThemeDrpDwn = "#login_theme";
-  #loginThemeList = 'ul[class="pf-v5-c-select__menu"]';
+  #loginThemeList = 'ul[class="pf-v5-c-menu__list"]';
   #consentRequiredSwitch = '[for="consentRequired"] .pf-v5-c-switch__toggle';
   #consentRequiredSwitchInput = "#consentRequired";
   #displayClientOnScreenSwitch =

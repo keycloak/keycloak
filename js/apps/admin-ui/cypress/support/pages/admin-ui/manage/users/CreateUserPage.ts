@@ -119,7 +119,7 @@ export default class CreateUserPage {
   #getSelectOptions(attrName: string) {
     return this.#getSelectFieldButton(attrName)
       .parent()
-      .find(".pf-v5-c-select__menu-item");
+      .find(".pf-v5-c-menu__list-item");
   }
 
   #toggleSelectField(
