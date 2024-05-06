@@ -24,6 +24,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -52,9 +53,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         String code = formParams.getFirst(OAuth2Constants.CODE);
 
         if (code == null) {
+            String errorMessage = "Missing parameter: " + OAuth2Constants.CODE;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
         OAuth2CodeParser.ParseResult result = OAuth2CodeParser.parseCode(session, code, realm, event);
         if (result.isIllegalCode()) {

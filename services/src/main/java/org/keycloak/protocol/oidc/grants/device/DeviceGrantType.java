@@ -157,8 +157,10 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
 
         if (deviceCodeModel != null) {
             if (!client.getClientId().equals(deviceCodeModel.getClientId())) {
+                String errorMessage = "unauthorized client";
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.INVALID_OAUTH2_DEVICE_CODE);
-                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "unauthorized client",
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, errorMessage,
                         Response.Status.BAD_REQUEST);
             }
         }
@@ -210,16 +212,20 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         setContext(context);
 
         if (!realm.getOAuth2DeviceConfig().isOAuth2DeviceAuthorizationGrantEnabled(client)) {
+            String errorMessage = "Client not allowed OAuth 2.0 Device Authorization Grant";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
-                "Client not allowed OAuth 2.0 Device Authorization Grant", Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         String deviceCode = formParams.getFirst(OAuth2Constants.DEVICE_CODE);
         if (deviceCode == null) {
+            String errorMessage = "Missing parameter: " + OAuth2Constants.DEVICE_CODE;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_OAUTH2_DEVICE_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                "Missing parameter: " + OAuth2Constants.DEVICE_CODE, Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         OAuth2DeviceCodeModel deviceCodeModel = getDeviceByDeviceCode(session, realm, client, event, deviceCode);
@@ -242,9 +248,11 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         }
 
         if (deviceCodeModel.isDenied()) {
+            String errorMessage = "The end user denied the authorization request";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.ACCESS_DENIED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED,
-                "The end user denied the authorization request", Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (deviceCodeModel.isPending()) {
@@ -309,14 +317,17 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            String errorMessage = "Session not active";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Session not active",
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage,
                 Response.Status.BAD_REQUEST);
         }
 
         try {
             session.clientPolicy().triggerOnEvent(new DeviceTokenRequestContext(deviceCodeModel, formParams));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(),
                 Response.Status.BAD_REQUEST);
@@ -326,9 +337,11 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         // (but in device_code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = deviceCodeModel.getScope();
         if (!TokenManager.verifyConsentStillAvailable(session, user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
+            String errorMessage = "Client no longer has requested consent from user";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
-                "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,

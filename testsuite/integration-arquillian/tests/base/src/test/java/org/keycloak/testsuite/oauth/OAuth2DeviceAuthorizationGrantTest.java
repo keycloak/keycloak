@@ -448,7 +448,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         Assert.assertEquals(400, tokenResponse.getStatusCode());
         Assert.assertEquals("invalid_grant", tokenResponse.getError());
-        Assert.assertEquals("PKCE verification failed", tokenResponse.getErrorDescription());
+        Assert.assertEquals("PKCE verification failed: Code mismatch", tokenResponse.getErrorDescription());
     }
 
 

@@ -28,6 +28,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -66,8 +67,10 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         String code = formParams.getFirst(OAuth2Constants.CODE);
         if (code == null) {
+            String errorMessage = "Missing parameter: " + OAuth2Constants.CODE;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         OAuth2CodeParser.ParseResult parseResult = OAuth2CodeParser.parseCode(session, code, realm, event);
@@ -127,24 +130,32 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         if (redirectUri != null && !redirectUri.equals(redirectUriParam)) {
-            event.error(Errors.INVALID_CODE);
-            logger.tracef("Parameter 'redirect_uri' did not match originally saved redirect URI used in initial OIDC request. Saved redirectUri: %s, redirectUri parameter: %s", redirectUri, redirectUriParam);
+            String errorMessage = "Parameter 'redirect_uri' did not match originally saved redirect URI used in initial OIDC request. Saved redirectUri: %s, redirectUri parameter: %s";
+            event.detail(Details.REASON, String.format(errorMessage, redirectUri, redirectUriParam));
+            event.error(Errors.INVALID_REDIRECT_URI);
+            logger.tracef(errorMessage, redirectUri, redirectUriParam);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
 
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
-            event.error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Auth error", Response.Status.BAD_REQUEST);
+            String errorMessage = "Auth error: Found different client_id in clientSession";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (!client.isStandardFlowEnabled()) {
+            String errorMessage = "Client not allowed to exchange code";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            String errorMessage = "Session not active";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Session not active", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         // https://tools.ietf.org/html/rfc7636#section-4.6
@@ -182,8 +193,10 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         String scopeParam = codeData.getScope();
         Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(scopeParam, client);
         if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopesSupplier.get())) {
+            String errorMessage = "Client no longer has requested consent from user";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
