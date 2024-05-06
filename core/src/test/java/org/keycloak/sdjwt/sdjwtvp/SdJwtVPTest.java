@@ -16,27 +16,26 @@
  */
 package org.keycloak.sdjwt.sdjwtvp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.keycloak.common.VerificationException;
+import org.keycloak.rule.CryptoInitRule;
+import org.keycloak.sdjwt.*;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import java.util.Arrays;
 
-import org.junit.Test;
-import org.keycloak.common.VerificationException;
-import org.keycloak.sdjwt.DisclosureSpec;
-import org.keycloak.sdjwt.IssuerSignedJWT;
-import org.keycloak.sdjwt.SdJwt;
-import org.keycloak.sdjwt.TestSettings;
-import org.keycloak.sdjwt.TestUtils;
-import org.keycloak.sdjwt.vp.SdJwtVP;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public class SdJwtVPTest {
+public abstract class SdJwtVPTest {
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
     // Additional tests can be written to cover edge cases, error conditions,
     // and any other functionality specific to the SdJwt class.
     @Test

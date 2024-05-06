@@ -30,16 +30,13 @@ import java.security.spec.ECPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.ClassRule;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
-import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.crypto.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.rule.CryptoInitRule;
 
 /**
  * Import test-settings from:
@@ -208,7 +205,7 @@ public class TestSettings {
         keyWrapper.setType(keyPair.getPublic().getAlgorithm());
         keyWrapper.setUse(KeyUse.SIG);
         keyWrapper.setKid(kid);
-        return new AsymmetricSignatureSignerContext(keyWrapper);
+        return new ECDSASignatureSignerContext(keyWrapper);
     }
 
     private static SignatureVerifierContext getSignatureVerifierContext(PublicKey publicKey, String algorithm,
@@ -219,7 +216,7 @@ public class TestSettings {
         keyWrapper.setType(publicKey.getAlgorithm());
         keyWrapper.setUse(KeyUse.SIG);
         keyWrapper.setKid(kid);
-        return new AsymmetricSignatureVerifierContext(keyWrapper);
+        return new ECDSASignatureVerifierContext(keyWrapper);
     }
 
     private static final Map<String, String> ECDSA_CURVE_2_SPECS_NAMES = new HashMap<>();
