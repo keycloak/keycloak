@@ -238,6 +238,8 @@ public class InfinispanNotificationsManager {
                     Supplier<Serializable> fetchEvent = () -> remoteCache.get(key);
                     Serializable event = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(fetchEvent);
                     int iteration = 0;
+                    // Event might have been generated from a node which is more up-to-date, so the fetch might return null.
+                    // Retry until we find a node that is up-to-date and has the entry.
                     while (event == null && iteration < MAX_BACKOFF_RETRIES) {
                         ++iteration;
                         try {
