@@ -51,7 +51,9 @@ export const ListComponent = ({
                 selected={option === field.value}
                 key={option}
                 value={option}
-              />
+              >
+                {option}
+              </SelectOption>
             ))}
           </KeycloakSelect>
         )}

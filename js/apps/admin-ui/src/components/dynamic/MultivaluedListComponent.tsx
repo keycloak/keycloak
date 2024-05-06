@@ -76,7 +76,9 @@ export const MultiValuedListComponent = ({
             aria-label={t(label!)}
           >
             {options?.map((option) => (
-              <SelectOption key={option} value={option} />
+              <SelectOption key={option} value={option}>
+                {option}
+              </SelectOption>
             ))}
           </KeycloakSelect>
         )}

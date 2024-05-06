@@ -133,9 +133,6 @@ export const TypeaheadSelect = ({
               onKeyDown={(event) => onInputKeyDown(event)}
               autoComplete="off"
               innerRef={textInputRef}
-              {...(selections && {
-                "aria-activedescendant": selections.toString(),
-              })}
               role="combobox"
               isExpanded={rest.isOpen}
               aria-controls="select-typeahead-listbox"

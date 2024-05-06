@@ -56,8 +56,9 @@ export const SingleSelect = ({
           isExpanded={isOpen}
           aria-label={props["aria-label"]}
           icon={toggleIcon}
+          isFullWidth
         >
-          {selections}
+          {selections || props["aria-label"]}
         </MenuToggle>
       )}
       isOpen={isOpen}
