@@ -20,5 +20,11 @@ export default defineConfig({
   plugins: [react(), checker({ typescript: true })],
   test: {
     watch: false,
+    environment: "jsdom",
+    server: {
+      deps: {
+        inline: [/@patternfly\/.*/],
+      },
+    },
   },
 });
