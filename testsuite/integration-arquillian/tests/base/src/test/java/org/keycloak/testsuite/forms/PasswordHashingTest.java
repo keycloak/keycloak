@@ -213,7 +213,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
                 Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS,
                 0,
                 256);
-        String encodedPassword = specificKeySizeHashProvider.encode(password, -1);
+        String encodedPassword = specificKeySizeHashProvider.encodedCredential(password, -1).getPasswordSecretData().getValue();
 
         // Create a user with the encoded password, simulating a user import from a different system using a specific key size
         UserRepresentation user = UserBuilder.create().username(username).password(encodedPassword).build();
@@ -416,7 +416,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         BiFunction<PasswordHashProvider, Integer, Long> hasher = (provider, iterations) -> {
             long result = 0L;
             for (String password : plainTextPasswords) {
-                String encoded = provider.encode(password, iterations);
+                String encoded = provider.encodedCredential(password, iterations).getPasswordSecretData().getValue();
                 result += encoded.hashCode();
             }
             return result;
