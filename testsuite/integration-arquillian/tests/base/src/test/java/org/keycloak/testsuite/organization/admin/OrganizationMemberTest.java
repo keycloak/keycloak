@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -201,15 +202,26 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // fetching users from the users endpoint should have the same result.
+        UserRepresentation disabledUser = null;
         existing = testRealm().users().search("*neworg*",0, 10);
         assertThat(existing, not(empty()));
         assertThat(existing, hasSize(6));
         for (UserRepresentation user : existing) {
             if (user.getEmail().equals(bc.getUserEmail())) {
                 assertThat(user.isEnabled(), is(false));
+                disabledUser = user;
             } else {
                 assertThat(user.isEnabled(), is(true));
             }
+        }
+
+        assertThat(disabledUser, notNullValue());
+        // try to update the disabled user (for example, try to re-enable the user) - should not be possible.
+        disabledUser.setEnabled(true);
+        try {
+            testRealm().users().get(disabledUser.getId()).update(disabledUser);
+            fail("Should not be possible to update disabled org user");
+        } catch(BadRequestException ignored) {
         }
     }
 
