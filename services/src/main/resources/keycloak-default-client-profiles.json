@@ -30,6 +30,10 @@
           "configuration": {}
         },
         {
+          "executor": "secure-redirect-uris-enforcer",
+          "configuration": {}
+        },
+        {
           "executor": "consent-required",
           "configuration": {
             "auto-configure": true
@@ -67,6 +71,10 @@
         },
         {
           "executor": "secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-redirect-uris-enforcer",
           "configuration": {}
         },
         {
