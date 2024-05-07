@@ -84,7 +84,7 @@ if not "x%JAVA_OPTS%" == "x" (
   set "JAVA_OPTS=-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:FlightRecorderOptions=stackdepth=512"
 
   if "x%JAVA_OPTS_KC_HEAP%" == "x" (
-    set "JAVA_OPTS_KC_HEAP=-XX:MaxHeapFreeRatio=20"
+    set "JAVA_OPTS_KC_HEAP=-XX:MaxHeapFreeRatio=40"
 
     if "!KC_RUN_IN_CONTAINER!" == "true" (
       rem Maximum utilization of the heap is set to 70% of the total container memory
