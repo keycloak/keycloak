@@ -12,8 +12,7 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-import { Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { Table } from "@patternfly/react-table/deprecated";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

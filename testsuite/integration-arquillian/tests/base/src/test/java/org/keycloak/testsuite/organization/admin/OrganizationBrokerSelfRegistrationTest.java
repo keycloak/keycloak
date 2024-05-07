@@ -61,7 +61,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(IdentityProviderModel.LOGIN_HINT, "true");
-        organization.identityProviders().get(bc.getIDPAlias()).update(idp).close();
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
@@ -127,10 +127,10 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         // create a realm user in the consumer realm
         realmsResouce().realm(bc.consumerRealmName()).users()
                 .create(UserBuilder.create()
-                    .username(bc.getUserLogin())
-                    .email(bc.getUserEmail())
-                    .password(bc.getUserPassword())
-                    .enabled(true).build()
+                        .username(bc.getUserLogin())
+                        .email(bc.getUserEmail())
+                        .password(bc.getUserPassword())
+                        .enabled(true).build()
                 ).close();
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
@@ -174,6 +174,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         // logout to force the user to authenticate again
         UserRepresentation account = getUserRepresentation(bc.getUserEmail());
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
 
         // login with email only
         loginPage.open(bc.consumerRealmName());
@@ -197,7 +198,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         OrganizationIdentityProviderResource idp = organization.identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation idpRep = idp.toRepresentation();
         idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
-        idp.update(idpRep).close();
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         // add the member for the first time
         assertBrokerRegistration(organization, bc.getUserEmail());
@@ -248,11 +249,13 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
-        organization.identityProviders().get(bc.getIDPAlias()).update(idp).close();
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
         idp.setAlias("second-idp");
         idp.setInternalId(null);
         idp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        organization.identityProviders().create(idp).close();
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
@@ -290,7 +293,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
         // set a domain to the existing broker
-        organization.identityProviders().get(bc.getIDPAlias()).update(idp).close();
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
         idp = bc.setUpIdentityProvider();
         idp.setAlias("second-idp");
@@ -298,7 +301,9 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         idp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         // create a second broker without a domain set
-        organization.identityProviders().create(idp).close();
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
         idp = organization.identityProviders().get(idp.getAlias()).toRepresentation();
 
         oauth.clientId("broker-app");
@@ -313,7 +318,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
 
         idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString());
-        organization.identityProviders().get(idp.getAlias()).update(idp).close();
+        testRealm().identityProviders().get(idp.getAlias()).update(idp);
         driver.navigate().refresh();
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
@@ -326,7 +331,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
         // set a domain to the existing broker
-        organization.identityProviders().get(bc.getIDPAlias()).update(idp).close();
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
         idp = bc.setUpIdentityProvider();
         idp.setAlias("second-idp");
@@ -334,7 +339,9 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         idp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         // create a second broker without a domain set
-        organization.identityProviders().create(idp).close();
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
@@ -375,7 +382,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
         // set a domain to the existing broker
-        organization.identityProviders().get(bc.getIDPAlias()).update(idp).close();
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
         idp = bc.setUpIdentityProvider();
         idp.setAlias("second-idp");
@@ -383,7 +390,9 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "other.org");
         idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         // create a second broker without a domain set
-        organization.identityProviders().create(idp).close();
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
@@ -421,14 +430,16 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
         // set a domain to the existing broker
-        organization.identityProviders().get(bc.getIDPAlias()).update(idp).close();
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
         idp = bc.setUpIdentityProvider();
         idp.setAlias("second-idp");
         idp.setInternalId(null);
         idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         // create a second broker without a domain set
-        organization.identityProviders().create(idp).close();
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
@@ -498,7 +509,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
 
         // make sure the user can select this idp from the organization when authenticating
         idpRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
-        organization.identityProviders().get(idpRep.getAlias()).update(idpRep).close();
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         // create a user to the provider realm using a email that does not share the same domain as the org
         UserRepresentation user = UserBuilder.create()
@@ -536,7 +547,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
 
         // make sure the user can select this idp from the organization when authenticating
         idpRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
-        organization.identityProviders().get(idpRep.getAlias()).update(idpRep).close();
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         // create a user to the provider realm using a email that does not share the same domain as the org
         UserRepresentation user = UserBuilder.create()
@@ -571,6 +582,7 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
         updateAccountInformationPage.updateAccountInformation(user.getUsername(), user.getEmail(), "Firstname", "Lastname");
         UserRepresentation account = getUserRepresentation(user.getEmail());
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
 
         // the flow now changed and the user should be automatically redirected to the origin broker
         loginPage.open(bc.consumerRealmName());
@@ -580,37 +592,6 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         loginPage.login("user@different.org", "password");
         appPage.assertCurrent();
-    }
-
-    private void assertBrokerRegistration(OrganizationResource organization, String email) {
-        // login with email only
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        loginPage.loginUsername(email);
-
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        // login to the organization identity provider and run the configured first broker login flow
-        loginPage.login(email, bc.getUserPassword());
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), email, "Firstname", "Lastname");
-
-        assertIsMember(email, organization);
-    }
-
-    private void assertIsMember(String userEmail, OrganizationResource organization) {
-        UserRepresentation account = getUserRepresentation(userEmail);
-        UserRepresentation member = organization.members().member(account.getId()).toRepresentation();
-        Assert.assertEquals(account.getId(), member.getId());
     }
 
     private void assertIsNotMember(String userEmail, OrganizationResource organization) {
@@ -628,13 +609,5 @@ public class OrganizationBrokerSelfRegistrationTest extends AbstractOrganization
             assertNull(organization.members().member(account.getId()).toRepresentation());
         } catch (NotFoundException ignore) {
         }
-    }
-
-    private UserRepresentation getUserRepresentation(String userEmail) {
-        UsersResource users = adminClient.realm(bc.consumerRealmName()).users();
-        List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
-        Assert.assertFalse(reps.isEmpty());
-        Assert.assertEquals(1, reps.size());
-        return reps.get(0);
     }
 }

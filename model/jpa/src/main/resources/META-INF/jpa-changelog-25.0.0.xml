@@ -83,6 +83,9 @@
             <column name="ID" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="ENABLED" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
             <column name="REALM_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
@@ -92,6 +95,7 @@
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="DESCRIPTION" type="VARCHAR(4000)"/>
         </createTable>
         <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
         <addUniqueConstraint tableName="ORG" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>

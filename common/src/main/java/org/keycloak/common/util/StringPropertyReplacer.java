@@ -54,7 +54,7 @@ public final class StringPropertyReplacer
     private static final Properties systemEnvProperties = new SystemEnvProperties();
 
     /**
-     * Go through the input string and replace any occurance of ${p} with
+     * Go through the input string and replace any occurrence of ${p} with
      * the System.getProperty(p) value. If there is no such property p defined,
      * then the ${p} reference will remain unchanged.
      *
@@ -78,7 +78,7 @@ public final class StringPropertyReplacer
     }
 
     /**
-     * Go through the input string and replace any occurance of ${p} with
+     * Go through the input string and replace any occurrence of ${p} with
      * the props.getProperty(p) value. If there is no such property p defined,
      * then the ${p} reference will remain unchanged.
      *

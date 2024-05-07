@@ -158,9 +158,6 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
     @Test
     public void testUserSessionPropagationBetweenSites() throws InterruptedException {
-        // When user sessions are not stored in the cache, this test doesn't make sense
-        Assume.assumeThat(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE), Matchers.not(true));
-
         AtomicInteger index = new AtomicInteger();
         AtomicReference<String> userSessionId = new AtomicReference<>();
         AtomicReference<List<Boolean>> containsSession = new AtomicReference<>(new LinkedList<>());

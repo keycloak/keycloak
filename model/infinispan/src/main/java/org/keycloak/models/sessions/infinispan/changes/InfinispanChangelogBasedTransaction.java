@@ -75,10 +75,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, CLIENT_SESSION_CACHE_NAME) || Objects.equals(cacheName, OFFLINE_USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
-                throw new IllegalStateException("Can't load from cache");
-            }
-
             // Lookup entity from cache
             SessionEntityWrapper<V> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
@@ -153,12 +149,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
             return wrappedEntity;
         } else {
-            V entity = myUpdates.getEntityWrapper().getEntity();
-
             // If entity is scheduled for remove, we don't return it.
             boolean scheduledForRemove = myUpdates.getUpdateTasks().stream().filter((SessionUpdateTask task) -> {
 
-                return task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE;
+                return task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE;
 
             }).findFirst().isPresent();
 
@@ -194,8 +188,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
 
     private void runOperationInCluster(K key, MergedUpdate<V> task,  SessionEntityWrapper<V> sessionWrapper) {
-        V session = sessionWrapper.getEntity();
-        SessionUpdateTask.CacheOperation operation = task.getOperation(session);
+        SessionUpdateTask.CacheOperation operation = task.getOperation();
 
         // Don't need to run update of underlying entity. Local updates were already run
         //task.runUpdate(session);

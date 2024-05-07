@@ -28,6 +28,4 @@ public interface ContainerConstants {
     String APP_SERVER_EAP_CLUSTER = APP_SERVER_EAP + "-ha-node-1;" + APP_SERVER_EAP + "-ha-node-2";
 
     String APP_SERVER_EAP8 = APP_SERVER_PREFIX + "eap8";
-    String APP_SERVER_FUSE63 = APP_SERVER_PREFIX + "fuse63";
-    String APP_SERVER_FUSE7X = APP_SERVER_PREFIX + "fuse7x";
 }

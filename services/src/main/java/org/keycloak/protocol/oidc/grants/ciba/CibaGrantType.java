@@ -113,16 +113,20 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         setContext(context);
 
         if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
+            String errorMessage = "Client not allowed OIDC CIBA Grant";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
-                "Client not allowed OIDC CIBA Grant", Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         String jwe = formParams.getFirst(AUTH_REQ_ID);
 
         if (jwe == null) {
+            String errorMessage = "Missing parameter: " + AUTH_REQ_ID;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + AUTH_REQ_ID, Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         logger.tracev("CIBA Grant :: authReqId = {0}", jwe);
@@ -185,8 +189,10 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         if (!TokenManager
                 .verifyConsentStillAvailable(session,
                         user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
+            String errorMessage = "Client no longer has requested consent from user";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
@@ -236,8 +242,10 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         authSession.setAuthenticatedUser(user);
 
         if (user.getRequiredActionsStream().count() > 0) {
+            String errorMessage = "Account is not fully set up";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         AuthenticationManager.setClientScopesInSession(authSession);

@@ -1,7 +1,7 @@
 import CommonElements from "../CommonElements";
 
 export default class SidebarPage extends CommonElements {
-  #realmsDrpDwn = "realmSelectorToggle";
+  #realmsDrpDwn = "realmSelector";
   #createRealmBtn = "add-realm";
 
   #clientsBtn = "#nav-item-clients";

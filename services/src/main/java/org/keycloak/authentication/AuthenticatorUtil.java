@@ -71,6 +71,10 @@ public class AuthenticatorUtil {
         return "true".equals(authSession.getAuthNote(PASSWORD_VALIDATED));
     }
 
+    public static boolean isForkedFlow(AuthenticationSessionModel authSession) {
+        return authSession.getAuthNote(AuthenticationProcessor.FORKED_FROM) != null;
+    }
+
     /**
      * Set authentication session note for callbacks defined for {@link AuthenticationFlowCallbackFactory) factories
      *

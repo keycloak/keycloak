@@ -52,7 +52,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     }
 
     @Override
-    public CacheOperation getOperation(S session) {
+    public CacheOperation getOperation() {
         return operation;
     }
 
@@ -79,7 +79,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
         S session = sessionWrapper.getEntity();
         for (SessionUpdateTask<S> child : childUpdates) {
             if (result == null) {
-                CacheOperation operation = child.getOperation(session);
+                CacheOperation operation = child.getOperation();
 
                 if (lifespanMs == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdleTimeMs == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
                     operation = CacheOperation.REMOVE;
@@ -91,9 +91,9 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
             } else {
 
                 // Merge the operations. REMOVE is special case as other operations are not needed then.
-                CacheOperation mergedOp = result.getOperation(session).merge(child.getOperation(session), session);
+                CacheOperation mergedOp = result.getOperation().merge(child.getOperation(), session);
                 if (mergedOp == CacheOperation.REMOVE) {
-                    result = new MergedUpdate<>(child.getOperation(session), child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
+                    result = new MergedUpdate<>(child.getOperation(), child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
                     result.childUpdates.add(child);
                     return result;
                 }

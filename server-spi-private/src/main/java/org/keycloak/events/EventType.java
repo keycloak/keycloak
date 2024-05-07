@@ -57,6 +57,7 @@ public enum EventType implements EnumWithStableIndex {
     REMOVE_FEDERATED_IDENTITY(9, true),
     REMOVE_FEDERATED_IDENTITY_ERROR(0x10000 + REMOVE_FEDERATED_IDENTITY.getStableIndex(), true),
 
+
     UPDATE_EMAIL(10, true),
     UPDATE_EMAIL_ERROR(0x10000 + UPDATE_EMAIL.getStableIndex(), true),
     UPDATE_PROFILE(11, true),
@@ -167,7 +168,9 @@ public enum EventType implements EnumWithStableIndex {
     OAUTH2_EXTENSION_GRANT_ERROR(0x10000 + OAUTH2_EXTENSION_GRANT.getStableIndex(), true),
 
     FEDERATED_IDENTITY_OVERRIDE_LINK(55, true),
-    FEDERATED_IDENTITY_OVERRIDE_LINK_ERROR(0x10000 + FEDERATED_IDENTITY_OVERRIDE_LINK.getStableIndex(), true);
+    FEDERATED_IDENTITY_OVERRIDE_LINK_ERROR(0x10000 + FEDERATED_IDENTITY_OVERRIDE_LINK.getStableIndex(), true),
+    INVITE_ORG(60, true),
+    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true);
 
     private final int stableIndex;
     private final boolean saveByDefault;

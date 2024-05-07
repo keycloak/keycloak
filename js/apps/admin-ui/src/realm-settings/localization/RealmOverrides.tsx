@@ -30,13 +30,13 @@ import {
   ActionsColumn,
   IRow,
   IRowCell,
+  Table,
   Tbody,
   Td,
   Th,
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { Table } from "@patternfly/react-table/deprecated";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { ChangeEvent, useEffect, useState, type FormEvent } from "react";

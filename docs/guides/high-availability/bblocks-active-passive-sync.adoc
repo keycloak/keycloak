@@ -41,7 +41,7 @@ A synchronously replicated database across two sites.
 
 == {jdgserver_name}
 
-An {jdgserver_name} deployment which leverages the {jdgserver_name}'s Cross-DC functionality.
+A deployment of {jdgserver_name} that leverages the {jdgserver_name}'s Cross-DC functionality.
 
 *Blueprint:* <@links.ha id="deploy-infinispan-kubernetes-crossdc" /> using the {jdgserver_name} Operator, and connect the two sites using {jdgserver_name}'s Gossip Router.
 

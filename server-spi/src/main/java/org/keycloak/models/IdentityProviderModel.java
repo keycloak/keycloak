@@ -272,7 +272,7 @@ public class IdentityProviderModel implements Serializable {
     }
 
     /**
-     * Returns flag whether the users withing this IdP should be transient, ie. not stored in Keycloak database.
+     * Returns flag whether the users within this IdP should be transient, ie. not stored in Keycloak database.
      * Default value: {@code false}.
      * @return
      */

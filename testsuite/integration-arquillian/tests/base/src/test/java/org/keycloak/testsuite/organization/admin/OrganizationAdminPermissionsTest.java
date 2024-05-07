@@ -105,13 +105,15 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("dummy");
             idpRep.setProviderId("oidc");
+            realmAdminResource.identityProviders().create(idpRep).close();
+
             //create IdP
             try (
-                    Response userResponse = realmUserResource.organizations().get(orgId).identityProviders().create(idpRep);
-                    Response adminResponse = realmAdminResource.organizations().get(orgId).identityProviders().create(idpRep)
+                    Response userResponse = realmUserResource.organizations().get(orgId).identityProviders().addIdentityProvider(idpRep.getAlias());
+                    Response adminResponse = realmAdminResource.organizations().get(orgId).identityProviders().addIdentityProvider(idpRep.getAlias())
             ) {
                 assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-                assertThat(adminResponse.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                assertThat(adminResponse.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
                 getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).identityProviders().get(idpRep.getAlias()).delete().close());
             }
 
@@ -126,11 +128,6 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
             assertThat(realmAdminResource.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).toRepresentation(), Matchers.notNullValue());
-
-            //update IdP
-            try (Response userResponse = realmUserResource.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).update(idpRep)) {
-                assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
-            }
 
             //delete IdP
             try (Response userResponse = realmUserResource.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).delete()) {

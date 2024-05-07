@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
+      ci-quarkus: ${{ steps.conditional.outputs.ci-quarkus }}
       ci-store: ${{ steps.conditional.outputs.ci-store }}
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
       ci-store-matrix: ${{ steps.conditional-stores.outputs.matrix }}
@@ -174,7 +175,8 @@ jobs:
 
   quarkus-unit-tests:
     name: Quarkus UT
-    needs: build
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-quarkus == 'true'
     timeout-minutes: 15
     strategy:
       matrix:
@@ -204,21 +206,28 @@ jobs:
 
   quarkus-integration-tests:
     name: Quarkus IT
-    needs: build
+    needs: [build, conditional]
     timeout-minutes: 115
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        server: [sanity-check-zip, zip, container, storage]
+        os: [ubuntu-latest]
+        suite: [zip, container, storage, smoke]
+        full-testsuite:
+          - ${{ needs.conditional.outputs.ci-quarkus == 'true' }}
+        # Win runs always as includes are evaluated after excludes
+        include:
+          - os: windows-latest
+            suite: win
+        # Either run smoke tests, or full testsuite
         exclude:
-          - os: windows-latest
-            server: zip
-          - os: windows-latest
-            server: container
-          - os: windows-latest
-            server: storage
-          - os: ubuntu-latest
-            server: sanity-check-zip
+          - full-testsuite: false
+            suite: zip
+          - full-testsuite: false
+            suite: container
+          - full-testsuite: false
+            suite: storage
+          - full-testsuite: true
+            suite: smoke
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
@@ -231,16 +240,18 @@ jobs:
         uses: ./.github/actions/unit-test-setup
 
       # Not sure why, but needs to re-build otherwise there's some failures starting up
+      # Smoke tests should cover scenarios that could be broken by changes in other modules that quarkus
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
-          PARAMS["sanity-check-zip"]="-Dtest=StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
+          PARAMS["win"]="-Dtest=StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
           PARAMS["zip"]=""
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest,ExternalInfinispanTest"
+          PARAMS["smoke"]="-Dtest=ClusterConfigDistTest,CustomJpaEntityProviderDistTest,ExportDistTest,FeaturesDistTest,ImportAtStartupDistTest,ImportDistTest,JaxRsDistTest,TruststoreDistTest"
 
           ./mvnw install -pl quarkus/tests/integration -am -DskipTests
-          ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} 2>&1 | misc/log/trimmer.sh
+          ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -309,10 +320,6 @@ jobs:
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
-    strategy:
-      matrix:
-        variant: ["persistent-user-sessions,persistent-user-sessions-no-cache", "persistent-user-sessions"]
-      fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
@@ -324,7 +331,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=${{ matrix.variant }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature="persistent-user-sessions" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()

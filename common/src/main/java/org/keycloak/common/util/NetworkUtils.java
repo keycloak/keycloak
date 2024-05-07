@@ -57,11 +57,11 @@ public class NetworkUtils {
     }
 
     /**
-     * <p>Convert IPv6 adress into RFC 5952 form.
+     * <p>Convert IPv6 address into RFC 5952 form.
      * E.g. 2001:db8:0:1:0:0:0:1 -> 2001:db8:0:1::1</p>
      *
      * <p>Method is null safe, and if IPv4 address or host name is passed to the
-     * method it is returned wihout any processing.</p>
+     * method it is returned without any processing.</p>
      *
      * <p>Method also supports IPv4 in IPv6 (e.g. 0:0:0:0:0:ffff:192.0.2.1 ->
      * ::ffff:192.0.2.1), and zone ID (e.g. fe80:0:0:0:f0f0:c0c0:1919:1234%4

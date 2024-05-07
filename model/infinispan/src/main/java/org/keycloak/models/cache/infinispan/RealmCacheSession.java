@@ -64,7 +64,7 @@ import java.util.stream.Stream;
  * ClientList caches:
  * - lists of clients are cached in a specific cache entry i.e. realm clients, find client by clientId
  * - realm client lists need to be invalidated and evited whenever a client is added or removed from a realm.  RealmProvider
- * now has addClient/removeClient at its top level.  All adapaters should use these methods so that the appropriate invalidations
+ * now has addClient/removeClient at its top level.  All adapters should use these methods so that the appropriate invalidations
  * can be registered.
  * - whenever a client is added/removed the realm of the client is added to a listInvalidations set
  * this set must be checked before sending back or caching a cached query.  This check is required to
@@ -83,7 +83,7 @@ import java.util.stream.Stream;
  * DBs with Repeatable Read:
  * - DBs like MySQL are Repeatable Read by default.  So, if you query a Client for instance, it will always return the same result in the same transaction even if the DB
  * was updated in between these queries.  This makes it possible to store stale cache entries.  To avoid this problem, this class stores the current local version counter
- * at the beginningof the transaction.  Whenever an entry is added to the cache, the current coutner is compared against the counter at the beginning of the tx.  If the current
+ * at the beginning of the transaction.  Whenever an entry is added to the cache, the current counter is compared against the counter at the beginning of the tx.  If the current
  * is greater, then don't cache.
  *
  * Groups and Roles:
@@ -122,7 +122,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected Set<String> invalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
 
-    protected boolean clearAll;
     protected final long startupRevision;
     private final StoreManagers datastoreProvider;
 
@@ -133,14 +132,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         this.datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistPrepare(getPrepareTransaction());
         session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
-    }
-
-    public long getStartupRevision() {
-        return startupRevision;
-    }
-
-    public boolean isInvalid(String id) {
-        return invalidations.contains(id);
     }
 
     @Override
@@ -355,9 +346,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             @Override
             public void commit() {
                 try {
-                    if (clearAll) {
-                        cache.clear();
-                    }
                     runInvalidations();
                     transactionActive = false;
                 } finally {
@@ -551,7 +539,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         listInvalidations.add(realm.getId());
 
         invalidationEvents.add(ClientAddedEvent.create(client.getId(), client.getClientId(), realm.getId()));
-        cache.clientAdded(realm.getId(), client.getId(), client.getClientId(), invalidations);
+        cache.clientAdded(realm.getId(), invalidations);
         return client;
     }
 

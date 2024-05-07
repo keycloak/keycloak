@@ -58,7 +58,7 @@ public class ClientAddedEvent extends InvalidationEvent implements RealmCacheInv
 
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
-        realmCache.clientAdded(realmId, clientUuid, clientId, invalidations);
+        realmCache.clientAdded(realmId, invalidations);
     }
 
     @Override

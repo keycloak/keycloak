@@ -47,8 +47,8 @@ include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
 This is optional and it default to `11222`.
 <3> The Secret `name` and `key` with the {jdgserver_name} username credential.
 <4> The Secret `name` and `key` with the {jdgserver_name} password credential.
-<5> The `spi-connections-infinispan-quarkus-site-name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its embedded {jdgserver_name} deployment when a remote store is used.
-This site-name is related only to the embedded {jdgserver_name} and does not need to match any value from the external {jdgserver_name} deployment.
+<5> The `spi-connections-infinispan-quarkus-site-name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its Infinispan caches deployment when a remote store is used.
+This site-name is related only to the Infinispan caches and does not need to match any value from the external {jdgserver_name} deployment.
 If you are using multiple sites for {project_name} in a cross-DC setup such as <@links.ha id="deploy-infinispan-kubernetes-crossdc" />, the site name must be different in each site.
 
 </@tmpl.guide>

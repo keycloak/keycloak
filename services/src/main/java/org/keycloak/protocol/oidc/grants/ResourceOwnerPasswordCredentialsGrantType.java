@@ -66,18 +66,23 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
         if (!client.isDirectAccessGrantsEnabled()) {
+            String errorMessage = "Client not allowed for direct access grants";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT, "Client not allowed for direct access grants", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (client.isConsentRequired()) {
+            String errorMessage = "Client requires user consent";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.CONSENT_DENIED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         try {
             session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsContext(formParams));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
@@ -116,8 +121,10 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         if (user.getRequiredActionsStream().count() > 0 || authSession.getRequiredActions().size() > 0) {
             // Remove authentication session as "Resource Owner Password Credentials Grant" is single-request scoped authentication
             new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
+            String errorMessage = "Account is not fully set up";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
 
         }
 
@@ -144,6 +151,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         try {
             session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsResponseContext(formParams, clientSessionCtx, responseBuilder));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }

@@ -27,6 +27,12 @@
 
 
 ###################################################################################################
+# Core Clients (@keycloak/core-clients-maintainers)
+###################################################################################################
+
+/js/libs/keycloak-js/                                       @keycloak/core-clients-maintainers
+
+###################################################################################################
 # Cloud Native (@keycloak/cloud-native-maintainers)
 ###################################################################################################
 
@@ -34,7 +40,7 @@
 /quarkus/                                                   @keycloak/cloud-native-maintainers @keycloak/maintainers
 /docs/guides/server/                                        @keycloak/cloud-native-maintainers @keycloak/maintainers
 /docs/guides/operator/                                      @keycloak/cloud-native-maintainers @keycloak/maintainers
-/integration/client-cli/admin-cli                           @keycloak/cloud-native-maintainers @keycloak/maintainers
+/integration/client-cli/admin-cli/                          @keycloak/cloud-native-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # UI (@keycloak/ui-maintainers)
@@ -48,5 +54,6 @@
 /tsconfig.json                                              @keycloak/ui-maintainers
 /themes/                                                    @keycloak/ui-maintainers @keycloak/maintainers
 /js/                                                        @keycloak/ui-maintainers
+/js/*/maven-resources-community/*/messages_*.properties     @keycloak/ui-maintainers @keycloak/maintainers
 /adapters/oidc/js/                                          @keycloak/ui-maintainers
 /rest/admin-ui-ext/                                         @keycloak/ui-maintainers

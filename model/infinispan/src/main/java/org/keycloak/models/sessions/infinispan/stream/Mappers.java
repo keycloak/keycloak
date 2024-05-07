@@ -18,17 +18,14 @@
 package org.keycloak.models.sessions.infinispan.stream;
 
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -37,24 +34,8 @@ import java.util.stream.Stream;
  */
 public class Mappers {
 
-    public static Function<Map.Entry<String, SessionEntityWrapper>, Map.Entry<String, SessionEntity>> unwrap() {
-        return new SessionUnwrap();
-    }
-
-    public static Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, String> sessionId() {
-        return new SessionIdMapper();
-    }
-
-    public static Function<Map.Entry<String, SessionEntityWrapper>, SessionEntity> sessionEntity() {
-        return new SessionEntityMapper();
-    }
-
     public static Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, UserSessionEntity> userSessionEntity() {
         return new UserSessionEntityMapper();
-    }
-
-    public static Function<Map.Entry<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>>, AuthenticatedClientSessionEntity> clientSessionEntity() {
-        return new AuthenticatedClientSessionEntityMapper();
     }
 
     public static Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey> loginFailureId() {
@@ -62,60 +43,10 @@ public class Mappers {
     }
 
 
-    private static class SessionUnwrap implements Function<Map.Entry<String, SessionEntityWrapper>, Map.Entry<String, SessionEntity>>, Serializable {
-
-        @Override
-        public Map.Entry<String, SessionEntity> apply(Map.Entry<String, SessionEntityWrapper> wrapperEntry) {
-            return new Map.Entry<String, SessionEntity>() {
-
-                @Override
-                public String getKey() {
-                    return wrapperEntry.getKey();
-                }
-
-                @Override
-                public SessionEntity getValue() {
-                    return wrapperEntry.getValue().getEntity();
-                }
-
-                @Override
-                public SessionEntity setValue(SessionEntity value) {
-                    throw new IllegalStateException("Unsupported operation");
-                }
-
-            };
-        }
-
-    }
-
-
-    private static class SessionIdMapper implements Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, String>, Serializable {
-        @Override
-        public String apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-            return entry.getKey();
-        }
-    }
-
-    private static class SessionEntityMapper implements Function<Map.Entry<String, SessionEntityWrapper>, SessionEntity>, Serializable {
-        @Override
-        public SessionEntity apply(Map.Entry<String, SessionEntityWrapper> entry) {
-            return entry.getValue().getEntity();
-        }
-    }
-
     private static class UserSessionEntityMapper implements Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, UserSessionEntity>, Serializable {
 
         @Override
         public UserSessionEntity apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-            return entry.getValue().getEntity();
-        }
-
-    }
-
-    private static class AuthenticatedClientSessionEntityMapper implements Function<Map.Entry<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>>, AuthenticatedClientSessionEntity>, Serializable {
-
-        @Override
-        public AuthenticatedClientSessionEntity apply(Map.Entry<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> entry) {
             return entry.getValue().getEntity();
         }
 

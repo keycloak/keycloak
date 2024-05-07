@@ -77,7 +77,7 @@ public class SdJwt {
     /**
      * Prepare to a nested payload to this SD-JWT.
      * <p>
-     * droping the algo claim.
+     * dropping the algo claim.
      *
      * @param nestedSdJwt
      * @return

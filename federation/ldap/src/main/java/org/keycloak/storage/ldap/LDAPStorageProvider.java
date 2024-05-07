@@ -953,7 +953,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
      *
      * @param realm realm
      * @param kerberosPrincipal kerberos principal of the authenticated user
-     * @return finded or newly created user
+     * @return found or newly created user
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, KerberosPrincipal kerberosPrincipal) {
         String kerberosPrincipalAttrName = kerberosConfig.getKerberosPrincipalAttribute();
