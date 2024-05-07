@@ -27,7 +27,6 @@ type AttributesTabProps = {
 
 export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   const { adminClient } = useAdminClient();
-
   const { config, save } = useUserProfile();
   const { realm } = useRealm();
   const { t } = useTranslation();
