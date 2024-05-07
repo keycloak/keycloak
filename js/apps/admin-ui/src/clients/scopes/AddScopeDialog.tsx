@@ -171,7 +171,6 @@ export const AddScopeDialog = ({
                   direction: "up",
                 }}
                 className="keycloak__client-scopes-add__add-dropdown"
-                id="add-dropdown"
                 key="add-dropdown"
                 isOpen={addToggle}
                 toggle={(ref) => (
@@ -180,7 +179,7 @@ export const AddScopeDialog = ({
                     isDisabled={rows.length === 0}
                     onClick={() => setAddToggle(!addToggle)}
                     variant="primary"
-                    id="add-scope-toggle"
+                    id="add-dropdown"
                     statusIcon={<CaretUpIcon />}
                   >
                     {t("add")}

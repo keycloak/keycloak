@@ -111,6 +111,7 @@ export const UserSelect = ({
             id={name!}
             toggle={(ref) => (
               <MenuToggle
+                data-testid={name!}
                 ref={ref}
                 variant="typeahead"
                 onClick={toggleOpen}

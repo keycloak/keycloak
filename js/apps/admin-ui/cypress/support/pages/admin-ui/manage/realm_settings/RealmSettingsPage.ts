@@ -61,8 +61,7 @@ export default class RealmSettingsPage extends CommonPage {
 
   selectDefaultLocale = "#kc-default-locale";
   defaultLocaleList = "select-default-locale";
-  supportedLocalesTypeahead =
-    "#kc-l-supported-locales-select-multi-typeahead-typeahead";
+  supportedLocalesTypeahead = "#supportedLocales";
   supportedLocalesToggle = "#kc-l-supported-locales";
   emailSaveBtn = "email-tab-save";
   managedAccessSwitch = "userManagedAccessAllowed";

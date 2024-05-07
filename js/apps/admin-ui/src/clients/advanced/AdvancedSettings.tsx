@@ -148,9 +148,9 @@ export const AdvancedSettings = ({
               control={control}
               render={({ field }) => (
                 <Select
-                  id="keyForCodeExchange"
                   toggle={(ref) => (
                     <MenuToggle
+                      id="keyForCodeExchange"
                       ref={ref}
                       onClick={() => setOpen(!open)}
                       isExpanded={open}

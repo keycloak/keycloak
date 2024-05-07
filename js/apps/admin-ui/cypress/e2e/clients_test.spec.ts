@@ -321,7 +321,7 @@ describe("Clients test", () => {
       clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
       cy.get("div#generatedUserInfo").contains("No generated user info");
 
-      cy.get("input#user-select-typeahead").type("admin-a");
+      cy.get("[data-testid='user'] input").type("admin-a");
       cy.get("li[id*=select-option-] > button:first-child").click();
 
       clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
