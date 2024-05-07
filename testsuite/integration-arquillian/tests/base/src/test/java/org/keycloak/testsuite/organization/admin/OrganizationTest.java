@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -56,6 +57,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertEquals(organizationName, expected.getName());
         expected.setName("acme");
         expected.setEnabled(false);
+        expected.setDescription("ACME Corporation Organization");
 
         OrganizationResource organization = testRealm().organizations().get(expected.getId());
 
@@ -68,6 +70,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertEquals(expected.getName(), existing.getName());
         assertEquals(1, existing.getDomains().size());
         assertThat(existing.isEnabled(), is(false));
+        assertThat(existing.getDescription(), notNullValue());
+        assertThat(expected.getDescription(), is(equalTo(existing.getDescription())));
     }
 
     @Test
