@@ -1,5 +1,10 @@
-import { MenuToggle, Select, SelectList } from "@patternfly/react-core";
-import { useRef, useState } from "react";
+import {
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOptionProps,
+} from "@patternfly/react-core";
+import { Children, useRef, useState } from "react";
 import { KeycloakSelectProps, propertyToString } from "./KeycloakSelect";
 
 type SingleSelectProps = Omit<KeycloakSelectProps, "variant">;
@@ -33,6 +38,10 @@ export const SingleSelect = ({
     return "inline";
   };
 
+  const childArray = Children.toArray(
+    children,
+  ) as React.ReactElement<SelectOptionProps>[];
+
   return (
     <Select
       ref={ref}
@@ -60,7 +69,10 @@ export const SingleSelect = ({
           icon={toggleIcon}
           isFullWidth
         >
-          {selections || props["aria-label"]}
+          {childArray.find((c) => c.props.value === selections)?.props
+            .children ||
+            selections ||
+            props["aria-label"]}
         </MenuToggle>
       )}
       isOpen={isOpen}

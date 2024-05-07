@@ -228,9 +228,7 @@ export default class AdvancedTab extends PageObject {
 
   selectBrowserFlowInput(input: string) {
     cy.get(this.#browserFlowInput).click();
-    cy.get(this.#browserFlowInput + " + ul")
-      .contains(input)
-      .click();
+    cy.get(this.#browserFlowInput).parent().get("ul").contains(input).click();
     return this;
   }
 
