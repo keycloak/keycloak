@@ -34,6 +34,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.*;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -127,7 +128,12 @@ public class ClientScopeTest extends AbstractClientTest {
         // Cleanup
         removeClientScope(scopeId);
     }
-
+    @Test
+    public void testValidateClientScopeProtocol(){
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("saml");
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("openid-connect");
+        Assert.assertThrows(ErrorResponseException.class,()->org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("other"));
+    }
 
     @Test (expected = NotFoundException.class)
     public void testGetUnknownScope() {
