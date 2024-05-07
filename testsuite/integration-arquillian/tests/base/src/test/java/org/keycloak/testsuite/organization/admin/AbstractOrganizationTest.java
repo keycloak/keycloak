@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.organization.admin;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -28,6 +29,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -102,6 +105,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             id = ApiUtil.getCreatedId(response);
         }
         IdentityProviderRepresentation broker = brokerConfigFunction.apply(name).setUpIdentityProvider();
+        broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, org.getDomains().iterator().next().getName());
         testRealm().identityProviders().create(broker).close();
         getCleanup().addCleanup(testRealm().identityProviders().get(broker.getAlias())::remove);
         testRealm().organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
@@ -183,6 +187,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         Assert.assertTrue("We must be on correct realm right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         log.debug("Updating info on updateAccount page");
+        assertFalse(driver.getPageSource().contains("kc.org"));
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), email, "Firstname", "Lastname");
 
         assertIsMember(email, organization);

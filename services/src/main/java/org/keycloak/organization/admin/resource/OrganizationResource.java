@@ -17,8 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
-import java.util.Comparator;
-import java.util.Optional;
+import static java.util.Optional.ofNullable;
+
 import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -78,7 +78,7 @@ public class OrganizationResource {
             throw ErrorResponse.error("Organization cannot be null.", Response.Status.BAD_REQUEST);
         }
 
-        Set<String> domains = organization.getDomains().stream().map(OrganizationDomainRepresentation::getName).collect(Collectors.toSet());
+        Set<String> domains = ofNullable(organization.getDomains()).orElse(Set.of()).stream().map(OrganizationDomainRepresentation::getName).collect(Collectors.toSet());
         OrganizationModel model = provider.create(organization.getName(), domains);
 
         toModel(organization, model);
@@ -198,7 +198,7 @@ public class OrganizationResource {
         model.setEnabled(rep.isEnabled());
         model.setDescription(rep.getDescription());
         model.setAttributes(rep.getAttributes());
-        model.setDomains(Optional.ofNullable(rep.getDomains()).orElse(Set.of()).stream()
+        model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
                     .filter(Objects::nonNull)
                     .map(this::toModel)
                     .collect(Collectors.toSet()));

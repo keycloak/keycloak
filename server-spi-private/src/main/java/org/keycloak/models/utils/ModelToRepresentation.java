@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import static java.util.Optional.ofNullable;
 import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 
 import org.jboss.logging.Logger;
@@ -55,13 +56,13 @@ import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -463,7 +464,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
 
         CibaConfig cibaPolicy = realm.getCibaPolicy();
-        Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
+        Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());
         attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, cibaPolicy.getBackchannelTokenDeliveryMode());
         attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(cibaPolicy.getExpiresIn()));
         attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(cibaPolicy.getPoolingInterval()));
@@ -826,7 +827,7 @@ public class ModelToRepresentation {
         ProtocolMapperRepresentation rep = new ProtocolMapperRepresentation();
         rep.setId(model.getId());
         rep.setProtocol(model.getProtocol());
-        Map<String, String> config = new HashMap<>(model.getConfig());
+        Map<String, String> config = new HashMap<>(ofNullable(model.getConfig()).orElse(Collections.emptyMap()));
         rep.setConfig(config);
         rep.setName(model.getName());
         rep.setProtocolMapper(model.getProtocolMapper());

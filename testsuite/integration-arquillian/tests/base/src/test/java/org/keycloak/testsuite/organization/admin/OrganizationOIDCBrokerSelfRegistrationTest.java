@@ -21,6 +21,6 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(Feature.ORGANIZATION)
-public class OrganizationBrokerSelfRegistrationTest extends AbstractBrokerSelfRegistrationTest {
+public class OrganizationOIDCBrokerSelfRegistrationTest extends AbstractBrokerSelfRegistrationTest {
 
 }

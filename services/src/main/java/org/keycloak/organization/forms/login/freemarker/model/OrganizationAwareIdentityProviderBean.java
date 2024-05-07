@@ -19,6 +19,7 @@ package org.keycloak.organization.forms.login.freemarker.model;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.models.IdentityProviderModel;
@@ -32,8 +33,16 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
     private final List<IdentityProvider> providers;
 
     public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate, KeycloakSession session, boolean onlyOrganizationBrokers) {
+        this(delegate, session, onlyOrganizationBrokers, false);
+    }
+
+    public OrganizationAwareIdentityProviderBean(IdentityProviderBean delegate, KeycloakSession session, boolean onlyOrganizationBrokers, boolean onlyRealmBrokers) {
         this.session = session;
-        if (onlyOrganizationBrokers) {
+        if (onlyRealmBrokers) {
+            providers = Optional.ofNullable(delegate.getProviders()).orElse(List.of()).stream()
+                    .filter(Predicate.not(this::isPublicOrganizationBroker))
+                    .toList();
+        } else if (onlyOrganizationBrokers) {
             providers = Optional.ofNullable(delegate.getProviders()).orElse(List.of()).stream()
                     .filter(this::isPublicOrganizationBroker)
                     .toList();
