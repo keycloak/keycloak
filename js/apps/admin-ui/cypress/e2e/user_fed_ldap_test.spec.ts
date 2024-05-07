@@ -102,13 +102,9 @@ const ldapTestFailMsg =
 describe("User Federation LDAP tests", () => {
   const realmName = `ldap-realm-${uuid()}`;
 
-  before(async () => {
-    await adminClient.createRealm(realmName);
-  });
+  before(() => adminClient.createRealm(realmName));
 
-  after(async () => {
-    await adminClient.deleteRealm(realmName);
-  });
+  after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {
     loginPage.logIn();

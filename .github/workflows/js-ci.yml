@@ -220,7 +220,7 @@ jobs:
     name: Generate Test Seed
     needs:
       - conditional
-    if: needs.conditional.outputs.js-ci == 'true' && github.repository == 'keycloak/keycloak'
+    if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     outputs:
       seed: ${{ steps.generate-random-number.outputs.value }}
@@ -237,7 +237,7 @@ jobs:
       - conditional
       - build-keycloak
       - generate-test-seed
-    if: needs.conditional.outputs.js-ci == 'true' && github.repository == 'keycloak/keycloak'
+    if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
       WORKSPACE: admin-ui

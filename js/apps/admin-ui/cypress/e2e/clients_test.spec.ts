@@ -34,13 +34,9 @@ const dedicatedScopesMappersTab = new DedicatedScopesMappersTab();
 describe("Clients test", () => {
   const realmName = `clients-realm-${uuid()}`;
 
-  before(async () => {
-    await adminClient.createRealm(realmName);
-  });
+  before(() => adminClient.createRealm(realmName));
 
-  after(async () => {
-    await adminClient.deleteRealm(realmName);
-  });
+  after(() => adminClient.deleteRealm(realmName));
 
   describe("Client details - Client scopes subtab", () => {
     const clientId = "client-scopes-subtab-test";
@@ -839,11 +835,9 @@ describe("Clients test", () => {
       clientDetailsPage.goToAdvancedTab();
     });
 
-    afterEach(async () => {
-      await adminClient.inRealm(realmName, () =>
-        adminClient.deleteClient(client),
-      );
-    });
+    afterEach(() =>
+      adminClient.inRealm(realmName, () => adminClient.deleteClient(client)),
+    );
 
     it("Clustering", () => {
       advancedTab.expandClusterNode();
@@ -1086,21 +1080,21 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(mappingClient);
     });
 
-    before(async () => {
-      await adminClient.inRealm(realmName, () =>
+    before(() =>
+      adminClient.inRealm(realmName, () =>
         adminClient.createClient({
           protocol: "openid-connect",
           clientId: mappingClient,
           publicClient: false,
         }),
-      );
-    });
+      ),
+    );
 
-    after(async () => {
-      await adminClient.inRealm(realmName, () =>
+    after(() =>
+      adminClient.inRealm(realmName, () =>
         adminClient.deleteClient(mappingClient),
-      );
-    });
+      ),
+    );
 
     it("Add mapping to openid client", () => {
       clientDetailsPage
@@ -1138,11 +1132,9 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(keysName);
     });
 
-    after(async () => {
-      await adminClient.inRealm(realmName, () =>
-        adminClient.deleteClient(keysName),
-      );
-    });
+    after(() =>
+      adminClient.inRealm(realmName, () => adminClient.deleteClient(keysName)),
+    );
 
     it("Generate new keys", () => {
       const keysTab = clientDetailsPage.goToKeysTab();
@@ -1215,11 +1207,9 @@ describe("Clients test", () => {
       cy.wait("@fetchClient");
     });
 
-    after(async () => {
-      await adminClient.inRealm(realmName, () =>
-        adminClient.deleteClient(clientId),
-      );
-    });
+    after(() =>
+      adminClient.inRealm(realmName, () => adminClient.deleteClient(clientId)),
+    );
 
     it("Shows an explainer text for bearer only clients", () => {
       commonPage
