@@ -16,12 +16,10 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 
@@ -90,11 +88,9 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             post.setHeader("Content-Type", "application/json");
 
             CloseableHttpResponse response = client.execute(post);
-            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatusLine().getStatusCode());
 
-            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals("unknown_error", error.getError());
-            assertNull(error.getErrorDescription());
+            assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Not able to deserialize data provided"));
         }
     }
 
@@ -110,11 +106,13 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             post.setHeader("Content-Type", "application/json");
 
             CloseableHttpResponse response = client.execute(post);
-            assertEquals(400, response.getStatusLine().getStatusCode());
 
-            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals("unknown_error", error.getError());
-            assertNull(error.getErrorDescription());
+            assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatusLine().getStatusCode());
+
+            Header header = response.getFirstHeader("Content-Type");
+            assertThat(header, notNullValue());
+            assertEquals(jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM, header.getValue());
+            assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Not able to deserialize data provided"));
         }
     }
 
@@ -248,14 +246,13 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             post.setHeader("Content-Type", "application/json");
 
             try (CloseableHttpResponse response = client.execute(post)) {
-                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+                assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatusLine().getStatusCode());
 
                 Header header = response.getFirstHeader("Content-Type");
                 assertThat(header, notNullValue());
-                assertEquals(MediaType.APPLICATION_JSON, header.getValue());
+                assertEquals(jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM, header.getValue());
 
-                OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-                assertEquals("unknown_error", error.getError());
+                assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Not able to deserialize data provided"));
             }
         }
     }
