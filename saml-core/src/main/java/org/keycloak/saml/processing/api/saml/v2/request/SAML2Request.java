@@ -23,6 +23,7 @@ import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.AttributeQueryType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -294,6 +295,8 @@ public class SAML2Request {
             writer.write((AuthnRequestType) rat);
         } else if (rat instanceof LogoutRequestType) {
             writer.write((LogoutRequestType) rat);
+        } else if (rat instanceof AttributeQueryType) {
+            writer.write((AttributeQueryType) rat);
         }
 
         return DocumentUtil.getDocument(new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET));

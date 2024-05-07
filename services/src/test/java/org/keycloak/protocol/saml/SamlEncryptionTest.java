@@ -135,7 +135,7 @@ public class SamlEncryptionTest {
         if (keyWrapMgf != null) {
             bindingBuilder.keyEncryptionMgfAlgorithm(keyWrapMgf);
         }
-        bindingBuilder.encrypt(pair.getPublic());
+        bindingBuilder.encryptWith(pair.getPublic()).encrypt();
         Document samlDocument = builder.buildDocument(samlModel);
         bindingBuilder.postBinding(samlDocument);
 

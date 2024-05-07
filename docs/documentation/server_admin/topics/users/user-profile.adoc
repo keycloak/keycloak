@@ -898,3 +898,123 @@ set their display name, description, and values, using a placeholder that will t
 
 For that, you can use a placeholder to resolve messages keys such as `${myAttributeName}`, where `myAttributeName` is the key for a message in a message bundle. For more details,
 look at link:{developerguide_link}#messages[{developerguide_name}] about how to add message bundles to custom themes.
+
+[[_configuring-external-attribute-sources]]
+== Configuring external attribute sources
+
+In order to perform attribute based access control (ABAC), some organizations may require syncing attributes from authoritative attribute sources
+or supplementing the user attributes used to set custom claims on generated access tokens. Keycloak supports multiple
+methods for enriching user attributes over standards based protocols.
+
+Built In Providers:
+
+* `SAML Attribute Query`: Perform a SAML attribute query request as described in https://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf[section 6 of the SAML2 profile]
+* `REST API`: Perform a REST API call to request attributes from a remote server. Supports HTTP header or mTLS authentication.
+
+To configure a trusted external attribute source, see the procedure below:
+
+. Click `Users` in the menu.
+. Select the `Attribute Store` tab.
+. From the `Add provider` dropdown, select an attribute store provider. For example `SAML Attribute Store`.
+image:images/create-saml-attribute-store-instance.png[]
+. Populate the configuration fields according to your external attribute source.
+
+=== Provider Configurations
+
+==== SAML Attribute Query
+
+This provider implements the SAML2 attribute query protocol as described in https://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf[section 6 of the SAML2 profile]
+and the https://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-x509-authn-attrib-profile-cd.html[SAML2 X509 attribute sharing profile].
+
+.Configuration Values
+
+|===
+|Name |Description |Example Value
+
+|SOAP Endpoint
+|The SOAP endpoint of the authoritative attribute source. For the SAML attribute query provider, this will be the SAML attribute endpoint.
+|https://myidp.org/protocol/saml/attributes
+
+|Response Signing Certificate
+|The certificate the authoritative attribute source uses to sign attribute query responses. This will be used to verify the signatures on the attribute query response document.
+|MIICrzCC...FfpGyVxg==
+
+|Request Encryption Certificate
+|The certificate this provider will use to encrypt requests to the authoritative attribute source.
+|MIICrzCC...XmyM7Mnw==
+
+|Attribute Lookup Client
+|The SAML client that should be used to perform the attribute lookup request. The signing and encryption certificates of this client will be used to sign requests to the authoritative attribute source and decrypt encrypted responses from the authoritative attribute source.
+|attr-lookup-client
+
+|Response Issuer
+|The URI of the authoritative attribute source. This will be used to verify the issuer value on the response received from the external IdP.
+|http://myidp.org/realms/attr-src
+
+|Request Issuer
+|The URI to set in SAML attribute query request to the authoritative attribute source.
+|http://myidp.org/realms/attr-lookup
+
+|Request Subject Attribute
+|The attribute on the user that should be used to populate the attribute query request subject. If no attribute is specified, the `username` of the user will be used.
+|x509dn
+
+|Request Subject Format
+|The name ID format to set on the attribute query request.
+|urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName
+
+|Require Assertion Signature
+|Require the assertions in the response document from the authoritative attribute source to be signed. If the assertions are not signed, the request will fail.
+|True
+
+|Require Document Signature
+|Require the document in the response from the authoritative attribute source to be signed. If the document is not signed, the request will fail.
+|True
+
+|Require Encrypted Assertion
+|Require the assertions in the response from the authoritative attribute source to be encrypted. If the assertions are not encrypted, the request will fail.
+|True
+
+|Sign Document
+|Sign the attribute query request sent to the authoritative attribute source.
+|True
+
+|Encrypt Subject
+|Encrypt name ID in the attribute query request to the authoritative attribute source.
+|True
+
+|===
+
+==== REST API
+
+This provider collects attributes from a REST API endpoint. The API response must be JSON formatted text.
+
+.Configuration Values
+
+|===
+|Name |Description |Example Value
+
+|URL
+|The URL to request attributes from. Supports basic templating with user attributes using the `${<user attribute>}` syntax.
+|https://my-attr-store/users/${username}
+
+|Method
+|The HTTP method to use for the request. Either GET or POST.
+|GET
+
+|Client Certificate
+|The certificate and private key to use for mTLS authentication with the remote server. If this is not set, mTLS authentication will not occur.
+|my-tls-client
+
+|Request Headers
+|The headers to set on the HTTP request.
+|Key: `Authorization`, Value: `Bearer: <token>`
+
+|===
+
+=== Using Attributes from Attribute Stores
+
+Keycloak enables administrators to utilize attributes from external stores in 2 different ways:
+
+* Attribute Sync: Periodically sync attributes from a configured `Attribute Store` with the internal user store. See the <<_attribute-sync, Attribute Sync section>>
+* Attribute Store Mapper: Map attributes to token claims in generated access tokens. See the <<_attribute-store-mapper, Attribute Store Mapper section>>

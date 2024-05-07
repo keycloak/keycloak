@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.saml;
 
+import jakarta.ws.rs.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -36,14 +37,7 @@ import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
-import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
-import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
-import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
-import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
-import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -59,11 +53,13 @@ import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.saml.attributeQuery.server.AttributeQueryServerProvider;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.protocol.saml.attributeQuery.server.AttributeQueryContext;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.protocol.saml.profile.util.Soap;
@@ -113,15 +109,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.FormParam;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.*;
@@ -134,11 +121,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.PublicKey;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -1054,6 +1037,46 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
     /**
+     * Handles SAML attribute query SOAP messages
+     * @param inputStream the data of the request.
+     * @return The response to the SOAP message
+     */
+    @POST
+    @Path(SamlProtocol.ATTRIBUTE_QUERY_SERVICE_PATH)
+    @NoCache
+    @Consumes({"application/soap+xml", MediaType.TEXT_XML})
+    public Response attributeQueryService(InputStream inputStream) {
+        Document soapBodyContents;
+        SAMLDocumentHolder samlDocumentHolder;
+
+        // parse the soap message
+        try {
+            soapBodyContents = Soap.extractSoapMessage(inputStream);
+        } catch (RuntimeException ex){
+            logger.error("Unable to extract SOAP message from request body");
+            return Soap.createFault().reason("").detail("").build();
+        }
+        try {
+            samlDocumentHolder = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
+        } catch (Exception e) {
+            logger.errorf("Attribute query endpoint obtained request that contained no message: %s", DocumentUtil.asString(soapBodyContents));
+            return Soap.createFault().reason("").detail("").build();
+        }
+
+        // get the configured attribute query provider
+        AttributeQueryContext context = new AttributeQueryContext(session, realm, event, samlDocumentHolder);
+        AttributeQueryServerProvider provider = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(AttributeQueryServerProvider.class)
+                .sorted((f1, f2) -> f2.order() - f1.order())
+                .map(f -> session.getProvider(AttributeQueryServerProvider.class, f.getId()))
+                .findFirst()
+                .orElseThrow(() -> new InternalServerErrorException("No attribute query provider available"));
+
+        // respond to the SOAP request
+        return provider.respond(context);
+    }
+
+    /**
      * Handles SOAP messages. Chooses the correct response path depending on whether the message is of type ECP or Artifact
      * @param inputStream the data of the request.
      * @return The response to the SOAP message
@@ -1305,7 +1328,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     logger.error("Failed to obtain encryption key for client", e);
                     return emptyArtifactResponseMessage(artifactResolveMessage, null);
                 }
-                bindingBuilder.encrypt(publicKey);
+                bindingBuilder.encrypt().encryptWith(publicKey);
             }
         }
 

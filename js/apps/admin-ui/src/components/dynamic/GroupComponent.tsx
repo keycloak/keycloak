@@ -1,4 +1,3 @@
-import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   Button,
   Chip,
@@ -8,10 +7,18 @@ import {
   InputGroupItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import {
+  Controller,
+  ControllerRenderProps,
+  FieldValues,
+  useFormContext,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { GroupPickerDialog } from "../group/GroupPickerDialog";
+import {
+  GroupPickerDialog,
+  GroupPickerDialogProps,
+} from "../group/GroupPickerDialog";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
@@ -21,33 +28,51 @@ export const GroupComponent = ({
   label,
   helpText,
   required,
+  options,
+  defaultValue,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [groups, setGroups] = useState<GroupRepresentation[]>();
+
   const { control } = useFormContext();
+
+  const selectType: GroupPickerDialogProps["type"] = options?.includes("multi")
+    ? "selectMany"
+    : "selectOne";
+
+  const remove = (
+    field: ControllerRenderProps<FieldValues, string>,
+    group: string,
+  ) =>
+    Array.isArray(field.value)
+      ? field.onChange(
+          field.value.filter((toRemove: string) => group != toRemove),
+        )
+      : field.onChange("");
 
   return (
     <Controller
       name={convertToName(name!)}
-      defaultValue=""
+      defaultValue={defaultValue || ""}
       control={control}
       render={({ field }) => (
         <>
           {open && (
             <GroupPickerDialog
-              type="selectOne"
+              type={selectType}
               text={{
                 title: "selectGroup",
                 ok: "select",
               }}
               onConfirm={(groups) => {
-                field.onChange(groups?.[0].path);
-                setGroups(groups);
+                field.onChange(
+                  selectType == "selectMany"
+                    ? groups?.map((g) => g.path)
+                    : groups?.[0].path,
+                );
                 setOpen(false);
               }}
               onClose={() => setOpen(false)}
-              filterGroups={groups}
             />
           )}
 
@@ -62,11 +87,18 @@ export const GroupComponent = ({
             <InputGroup>
               <InputGroupItem>
                 <ChipGroup>
-                  {field.value && (
-                    <Chip onClick={() => field.onChange(undefined)}>
-                      {field.value}
-                    </Chip>
-                  )}
+                  {field.value &&
+                    (Array.isArray(field.value) ? (
+                      field.value.map((g: string) => (
+                        <Chip key={g} onClick={() => remove(field, g)}>
+                          {g}
+                        </Chip>
+                      ))
+                    ) : (
+                      <Chip onClick={() => remove(field, field.value)}>
+                        {field.value}
+                      </Chip>
+                    ))}
                 </ChipGroup>
               </InputGroupItem>
               <InputGroupItem>

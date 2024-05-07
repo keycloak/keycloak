@@ -1,0 +1,20 @@
+[[_attribute-sync]]
+=== Attribute Sync
+
+Administrators can sync attributes with an external identity store using the built-in `attributes` provider.
+When configured with either a full sync period or a changed sync period, Keycloak will automatically run the configured
+attribute store provider for all users in the specified groups and add the attributes to the users based on the configured
+mappers.
+
+.Configuration
+
+. Go to `User federation` and select `Add Attributes providers`
+. Select an attribute store provider from the dropdown
+. Select a set of user groups to sync attributes for. Only users belonging to one of the selected groups will be synced
+. Set a `Periodic changed users sync` period
+. Click `Save`
+image:images/create-attribute-federation-instance.png[]
+. Select the newly created attribute federation provider
+. Select the `Mappers` tab
+. Configure mappers to determine how attributes are set on users when the sync occurs
+image:images/create-attribute-federation-mappers.png[]

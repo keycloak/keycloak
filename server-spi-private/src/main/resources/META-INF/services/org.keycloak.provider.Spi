@@ -100,3 +100,6 @@ org.keycloak.health.LoadBalancerCheckSpi
 org.keycloak.cookie.CookieSpi
 org.keycloak.organization.OrganizationSpi
 org.keycloak.securityprofile.SecurityProfileSpi
+org.keycloak.protocol.saml.attributeQuery.server.AttributeQueryServerSpi
+org.keycloak.storage.attributes.AttributeStoreProviderSpi
+org.keycloak.storage.attributes.AttributeMapperSpi

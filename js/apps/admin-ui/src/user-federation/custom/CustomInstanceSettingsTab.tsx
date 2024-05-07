@@ -1,4 +1,7 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+
 import {
   ActionGroup,
   AlertVariant,
@@ -27,7 +30,7 @@ import { SyncSettings } from "./SyncSettings";
 
 import "./custom-provider-settings.css";
 
-export default function CustomProviderSettings() {
+export const CustomInstanceSettingsTab = () => {
   const { t } = useTranslation();
   const { id, providerId } = useParams<CustomUserFederationRouteParams>();
   const navigate = useNavigate();
@@ -49,7 +52,7 @@ export default function CustomProviderSettings() {
     useServerInfo().componentTypes?.[
       "org.keycloak.storage.UserStorageProvider"
     ] || []
-  ).find((p) => p.id === providerId);
+  ).find((p: ComponentTypeRepresentation) => p.id === providerId);
 
   useFetch(
     async () => {
@@ -73,7 +76,7 @@ export default function CustomProviderSettings() {
       adminClient.realms.findOne({
         realm: realmName,
       }),
-    (realm) => setParentId(realm?.id!),
+    (realm?: RealmRepresentation) => setParentId(realm?.id!),
     [],
   );
 
@@ -155,4 +158,4 @@ export default function CustomProviderSettings() {
       </PageSection>
     </FormProvider>
   );
-}
+};

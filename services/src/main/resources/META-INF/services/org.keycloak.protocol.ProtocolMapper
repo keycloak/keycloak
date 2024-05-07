@@ -56,3 +56,4 @@ org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTypeMapper
 org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCContextMapper
 org.keycloak.protocol.oidc.mappers.SessionStateMapper
 org.keycloak.protocol.oidc.mappers.SubMapper
+org.keycloak.protocol.oidc.mappers.AttributeStoreMapper

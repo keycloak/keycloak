@@ -156,7 +156,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_LOGOUT_INITIATOR_CLIENT_ID = "SAML_LOGOUT_INITIATOR_CLIENT_ID";
     public static final String USER_SESSION_ID = "userSessionId";
     public static final String CLIENT_SESSION_ID = "clientSessionId";
-
+    public static final String ATTRIBUTE_QUERY_SERVICE_PATH = "attributes";
 
     protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
 
@@ -585,7 +585,7 @@ public class SamlProtocol implements LoginProtocol {
                 logger.error("failed", e);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.FAILED_TO_PROCESS_RESPONSE);
             }
-            bindingBuilder.encrypt(publicKey);
+            bindingBuilder.encrypt().encryptWith(publicKey);
         }
         try {
             samlDocument = builder.buildDocument(samlModel);

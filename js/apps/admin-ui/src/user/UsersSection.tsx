@@ -14,6 +14,7 @@ import {
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import "./user-section.css";
 import { useAccess } from "../context/access/Access";
+import AttributeStoreTab from "../components/attribute-store-tab/AttributeStoreTab";
 
 export default function UsersSection() {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ export default function UsersSection() {
 
   const listTab = useTab("list");
   const permissionsTab = useTab("permissions");
+  const attributeStoreTab = useTab("attributeStore");
 
   return (
     <>
@@ -74,6 +76,18 @@ export default function UsersSection() {
               {...permissionsTab}
             >
               <PermissionsTab type="users" />
+            </Tab>
+          )}
+          {isFeatureEnabled(Feature.AttributeStore) && (
+            <Tab
+              id="attributeStore"
+              data-testid="attributeStoreTab"
+              title={
+                <TabTitleText>{t("attributeStore.tab.label")}</TabTitleText>
+              }
+              {...attributeStoreTab}
+            >
+              <AttributeStoreTab />
             </Tab>
           )}
         </RoutableTabs>

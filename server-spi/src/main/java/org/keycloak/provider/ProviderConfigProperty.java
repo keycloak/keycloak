@@ -38,6 +38,12 @@ public class ProviderConfigProperty {
     public static final String SCRIPT_TYPE="Script";
     public static final String FILE_TYPE="File";
     public static final String ROLE_TYPE="Role";
+
+    /**
+     * Possibility to select groups
+     * Options
+     * multi: perform multi-select (defaults to single select)
+     */
     public static final String GROUP_TYPE="Group";
 
     /**
@@ -57,6 +63,22 @@ public class ProviderConfigProperty {
      */
     public static final String USER_PROFILE_ATTRIBUTE_LIST_TYPE="UserProfileAttributeList";
     public static final String PASSWORD="Password";
+
+    /**
+     * Possibility to select Keycloak keys
+     * Options
+     * multi: perform multi-select (defaults to single select)
+     */
+    public static final String KEY_TYPE="Key";
+
+    /**
+     * Possibility to select provider instances represented by components
+     *
+     * Options
+     * multi: perform multi-select (defaults to single select)
+     * type/<provider type>: type of provider to choose from
+     */
+    public static final String PROVIDER_INSTANCE_TYPE ="ProviderInstance";
 
     /**
      * textarea field
@@ -162,7 +184,7 @@ public class ProviderConfigProperty {
     }
 
     /**
-     * For list types, this is a list of choices to choose from.
+     * For list types, this is a list of choices to choose from. Can also be used to convey component configuration options.
      *
      * @return
      */
