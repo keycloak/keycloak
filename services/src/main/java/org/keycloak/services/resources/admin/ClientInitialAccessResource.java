@@ -45,6 +45,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -80,11 +83,23 @@ public class ClientInitialAccessResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
     @Operation( summary = "Create a new initial access token.")
     @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = ClientInitialAccessCreatePresentation.class)))
-    public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config) {
+    public Object create(ClientInitialAccessCreatePresentation config) {
         auth.clients().requireManage();
 
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
         int count = config.getCount() != null ? config.getCount() : 1;
+        if (expiration <= 0) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Invalid value for expiration");
+            error.put("error_description", "The expiration time interval cannot be less than or equal to 0");
+            return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+        }
+        if (count < 0) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Invalid value for count");
+            error.put("error_description", "The count cannot be less than 0");
+            return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+        }
 
         ClientInitialAccessModel clientInitialAccessModel = session.realms().createClientInitialAccessModel(realm, expiration, count);
 
