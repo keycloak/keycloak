@@ -20,6 +20,7 @@ import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
+import environment from "../../environment";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -49,7 +50,7 @@ export const AddRoleMappingModal = ({
   const [searchToggle, setSearchToggle] = useState(false);
 
   const [filterType, setFilterType] = useState<FilterType>(
-    canViewRealmRoles ? "roles" : "clients",
+    environment.defaultRoleMappingFilter == "clients" ? "clients" : (canViewRealmRoles ? "roles" : "clients"),
   );
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
   const [key, setKey] = useState(0);

@@ -133,7 +133,8 @@
       "masterRealm": "${masterRealm}",
       "resourceVersion": "${resourceVersion}",
       "logo": "${properties.logo!""}",
-      "logoUrl": "${properties.logoUrl!""}"
+      "logoUrl": "${properties.logoUrl!""}",
+      "defaultRoleMappingFilter": "${properties.defaultRoleMappingFilter!""}"
     }
   </script>
 </body>

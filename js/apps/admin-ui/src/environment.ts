@@ -19,6 +19,8 @@ export type Environment = {
   logo: string;
   /** Indicates the url to be followed when Brand image is clicked */
   logoUrl: string;
+  /** Indicates the default role filter to present when mapping roles */
+  defaultRoleMappingFilter: string;
 };
 
 // During development the realm can be passed as a query parameter when redirecting back from Keycloak.
@@ -36,6 +38,7 @@ const defaultEnvironment: Environment = {
   resourceVersion: "unknown",
   logo: "/logo.svg",
   logoUrl: "",
+  defaultRoleMappingFilter: "",
 };
 
 // Merge the default and injected environment variables together.
