@@ -28,7 +28,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -41,12 +40,12 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
+import org.keycloak.testsuite.broker.BrokerConfiguration;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -56,53 +55,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected String organizationName = "neworg";
     protected String memberEmail = "jdoe@neworg.org";
     protected String memberPassword = "password";
-    protected Function<String, KcOidcBrokerConfiguration> brokerConfigFunction = name ->  new KcOidcBrokerConfiguration() {
-        @Override
-        public String consumerRealmName() {
-            return TEST_REALM_NAME;
-        }
+    protected Function<String, BrokerConfiguration> brokerConfigFunction = name -> new BrokerConfigurationWrapper(name, createBrokerConfiguration());
 
-        @Override
-        public RealmRepresentation createProviderRealm() {
-            RealmRepresentation providerRealm = super.createProviderRealm();
-
-            providerRealm.setClients(createProviderClients());
-            providerRealm.setUsers(List.of(
-                    UserBuilder.create()
-                        .username(getUserLogin())
-                        .email(getUserEmail())
-                        .password(getUserPassword())
-                        .enabled(true)
-                        .build(),
-                    UserBuilder.create()
-                        .username("external")
-                        .email("external@user.org")
-                        .password("password")
-                        .enabled(true)
-                        .build()
-                    )
-            );
-
-            return providerRealm;
-        }
-
-        @Override
-        public String getUserEmail() {
-            return getUserLogin() + "@" + organizationName + ".org";
-        }
-
-        @Override
-        public String getIDPAlias() {
-            return name + "-identity-provider";
-        }
-
-        @Override
-        public List<ClientRepresentation> createProviderClients() {
-            List<ClientRepresentation> clients = super.createProviderClients();
-            clients.get(0).setRedirectUris(List.of("*"));
-            return clients;
-        }
-    };
 
     @Page
     protected LoginPage loginPage;
@@ -116,7 +70,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     @Page
     protected AppPage appPage;
 
-    protected KcOidcBrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
+    protected BrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -259,4 +213,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             return group;
         }
     }
+
+    protected BrokerConfiguration createBrokerConfiguration() {
+        return new KcOidcBrokerConfiguration();
+    };
 }
