@@ -228,10 +228,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
-
-        String errorDescription = driver.findElement(By.id("error_description")).getText();
+        String error = driver.findElement(By.id("error")).getText();
         String state = driver.findElement(By.id("state")).getText();
-        assertEquals("Invalid parameter: response_type is none", errorDescription);
+        assertEquals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, error);
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
 
     }

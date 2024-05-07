@@ -145,20 +145,18 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        if (responseType.equals("none")) {
-            ServicesLogger.LOGGER.invalidParameter(OAuth2Constants.RESPONSE_TYPE);
-            String errorMessage = "Invalid parameter: response_type is none";
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
-        }
-
         event.detail(Details.RESPONSE_TYPE, responseType);
 
         try {
             this.parsedResponseType = OIDCResponseType.parse(responseType);
         } catch (IllegalArgumentException iae) {
             event.detail(Details.REASON, iae.getMessage());
+            event.error(Errors.INVALID_REQUEST);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
+        }
+
+        if (responseType.equals("none")) {
+            event.detail(Details.REASON, "response_type is none");
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
