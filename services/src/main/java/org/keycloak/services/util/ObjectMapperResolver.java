@@ -40,7 +40,7 @@ public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
     protected ObjectMapper mapper;
 
     public ObjectMapperResolver() {
-        mapper = createStreamSerializer();
+        mapper = ObjectMapperInitializer.OBJECT_MAPPER;
     }
 
     public static ObjectMapper createStreamSerializer() {
@@ -57,11 +57,21 @@ public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
             mapper.enable(SerializationFeature.INDENT_OUTPUT);
         }
 
+        // allow to discover jackson mappers on the classpath
+        if (Boolean.parseBoolean(System.getProperty("keycloak.jsonEnableJacksonModuleDiscovery", "true"))) {
+            mapper.findAndRegisterModules();
+        }
+
         return mapper;
     }
 
     @Override
     public ObjectMapper getContext(Class<?> type) {
         return mapper;
+    }
+
+    private static class ObjectMapperInitializer {
+
+        private static final ObjectMapper OBJECT_MAPPER = createStreamSerializer();
     }
 }
