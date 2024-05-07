@@ -54,6 +54,9 @@ public class OrganizationEntity {
     @Column(name = "ENABLED")
     private boolean enabled;
 
+    @Column(name = "DESCRIPTION")
+    private String description;
+
     @Column(name = "REALM_ID")
     private String realmId;
 
@@ -81,6 +84,14 @@ public class OrganizationEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getRealmId() {

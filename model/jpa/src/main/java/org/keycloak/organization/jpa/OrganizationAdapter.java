@@ -87,6 +87,16 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public String getDescription() {
+        return entity.getDescription();
+    }
+
+    @Override
+    public void setDescription(String description) {
+        entity.setDescription(description);
+    }
+
+    @Override
     public void setAttributes(Map<String, List<String>> attributes) {
         if (attributes == null) {
             return;
