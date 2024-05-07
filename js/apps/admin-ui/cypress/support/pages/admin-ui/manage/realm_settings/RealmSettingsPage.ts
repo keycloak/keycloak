@@ -23,13 +23,13 @@ export default class RealmSettingsPage extends CommonPage {
   userProfileTab = "rs-user-profile-tab";
   tokensTab = "rs-tokens-tab";
   selectLoginTheme = "#kc-login-theme";
-  loginThemeList = "#kc-login-theme + ul";
+  loginThemeList = "[data-testid='select-login-theme']";
   selectAccountTheme = "#kc-account-theme";
-  accountThemeList = "#kc-account-theme + ul";
+  accountThemeList = "[data-testid='select-account-theme']";
   selectAdminTheme = "#kc-admin-ui-theme";
-  adminThemeList = "#kc-admin-ui-theme + ul";
+  adminThemeList = "[data-testid='select-admin-theme']";
   selectEmailTheme = "#kc-email-theme";
-  emailThemeList = "#kc-email-theme + ul";
+  emailThemeList = "[data-testid='select-email-theme']";
   ssoSessionIdleSelectMenu = "#kc-sso-session-idle-select-menu";
   ssoSessionIdleSelectMenuList = "#kc-sso-session-idle-select-menu > div > ul";
   ssoSessionMaxSelectMenu = "#kc-sso-session-max-select-menu";

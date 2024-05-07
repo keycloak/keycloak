@@ -15,6 +15,7 @@ export const SingleSelect = ({
   width,
   maxHeight,
   toggleIcon,
+  className,
   children,
   ...props
 }: SingleSelectProps) => {
@@ -52,6 +53,7 @@ export const SingleSelect = ({
         <MenuToggle
           id={toggleId}
           ref={ref}
+          className={className}
           onClick={toggle}
           isExpanded={isOpen}
           aria-label={props["aria-label"]}
