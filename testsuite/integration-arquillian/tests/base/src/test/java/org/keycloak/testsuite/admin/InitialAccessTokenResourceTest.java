@@ -94,6 +94,29 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         assertEquals(5, list.get(0).getCount() + list.get(1).getCount());
     }
 
+    @Test
+    public void testInvalidParametersWhileCreatingInitialAccessTokens() {
+        // Set Count as -1
+        ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
+        rep.setCount(-1);
+        rep.setExpiration(100);
+        try {
+            resource.create(rep);
+        } catch (Exception ex) {
+            //expected
+        }
+
+        // Set Expiration as -100
+        rep = new ClientInitialAccessCreatePresentation();
+        rep.setCount(5);
+        rep.setExpiration(-100);
+        try {
+            resource.create(rep);
+        } catch (Exception ex) {
+            //expected
+        }
+    }
+
 
     @Test
     public void testPeriodicExpiration() throws ClientRegistrationException, InterruptedException {
