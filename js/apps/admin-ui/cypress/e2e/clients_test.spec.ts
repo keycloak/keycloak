@@ -586,10 +586,12 @@ describe("Clients test", () => {
         );
     });
 
-    it("should delete 'identical' client id", async () => {
+    it("should delete 'identical' client id", () => {
       commonPage.sidebar().goToClients();
-      await adminClient.inRealm(realmName, () =>
-        adminClient.deleteClient(identicalClientId),
+      cy.wrap(null).then(() =>
+        adminClient.inRealm(realmName, () =>
+          adminClient.deleteClient(identicalClientId),
+        ),
       );
     });
   });
