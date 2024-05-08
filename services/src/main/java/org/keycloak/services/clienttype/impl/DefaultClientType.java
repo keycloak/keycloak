@@ -20,8 +20,10 @@ package org.keycloak.services.clienttype.impl;
 
 import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.services.clienttype.client.TypeAwareClientModelDelegate;
+import org.keycloak.services.clienttype.client.TypeDefaultedClientRepresentation;
 
 import java.util.Map;
 
@@ -72,5 +74,10 @@ public class DefaultClientType implements ClientType {
     @Override
     public ClientModel augment(ClientModel client) {
         return new TypeAwareClientModelDelegate(this, () -> client);
+    }
+
+    @Override
+    public ClientRepresentation augment(ClientRepresentation representation) {
+        return new TypeDefaultedClientRepresentation(this, representation);
     }
 }

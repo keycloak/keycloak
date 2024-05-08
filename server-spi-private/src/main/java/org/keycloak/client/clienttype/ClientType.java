@@ -19,6 +19,7 @@
 package org.keycloak.client.clienttype;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 
 import java.util.Map;
@@ -47,4 +48,5 @@ public interface ClientType {
 
     // Augment at the client type
     ClientModel augment(ClientModel client);
+    ClientRepresentation augment(ClientRepresentation representation);
 }

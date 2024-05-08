@@ -61,6 +61,7 @@ import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
@@ -336,6 +337,7 @@ public class RepresentationToModel {
             ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
             ClientType clientType = mgr.getClientType(realm, resourceRep.getType());
             client = clientType.augment(client);
+            resourceRep = clientType.augment(resourceRep);
         }
 
         updateClientProperties(client, resourceRep, true);
@@ -526,8 +528,8 @@ public class RepresentationToModel {
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
-            add(updatePropertyAction(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
-            add(updatePropertyAction(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+            add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
+            add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
         }};
 
         // Extended client attributes
@@ -1643,12 +1645,6 @@ public class RepresentationToModel {
         representation.setClientId(client.getId());
 
         return toModel(representation, authorization, client);
-    }
-
-    private static <T> Set<T> collectionToSet(Collection<T> collection) {
-        return Optional.ofNullable(collection)
-                .map(HashSet::new)
-                .orElse(null);
     }
 
     private static void updateOrganizationBroker(RealmModel realm, IdentityProviderRepresentation representation, KeycloakSession session) {
