@@ -1,166 +1,192 @@
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
-  ActionGroup,
   Button,
-  FormGroup,
+  ButtonVariant,
   PageSection,
-  Text,
-  TextContent,
+  ToolbarItem,
 } from "@patternfly/react-core";
-import { useEffect, useMemo } from "react";
-import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
-
-import { FormAccess } from "../../components/form/FormAccess";
-import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
-import { toUserProfile } from "../routes/UserProfile";
+import { toEditAttributesGroup } from "../routes/EditAttributesGroup";
+import { toNewAttributesGroup } from "../routes/NewAttributesGroup";
 import { useUserProfile } from "./UserProfileContext";
+import { adminClient } from "../../admin-client";
+import useLocale from "../../utils/useLocale";
 
-import "../realm-settings-section.css";
-
-function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
-  return Object.entries(input).reduce((p, [key, value]) => {
-    if (typeof value === "string") {
-      return [...p, { key, value }];
-    } else {
-      return [...p];
-    }
-  }, [] as KeyValueType[]);
-}
-
-function transformAnnotations(input: KeyValueType[]): Record<string, unknown> {
-  return Object.fromEntries(
-    input
-      .filter((annotation) => annotation.key.length > 0)
-      .map((annotation) => [annotation.key, annotation.value] as const),
-  );
-}
-
-type FormFields = Required<Omit<UserProfileGroup, "annotations">> & {
-  annotations: KeyValueType[];
+type AttributesGroupTabProps = {
+  setTableData: React.Dispatch<
+    React.SetStateAction<Record<string, string>[] | undefined>
+  >;
 };
 
-const defaultValues: FormFields = {
-  annotations: [],
-  displayDescription: "",
-  displayHeader: "",
-  name: "",
-};
-
-export default function AttributesGroupForm() {
-  const { t } = useTranslation();
-  const { realm } = useRealm();
+export const AttributesGroupTab = ({
+  setTableData,
+}: AttributesGroupTabProps) => {
   const { config, save } = useUserProfile();
+  const { t } = useTranslation();
+  const combinedLocales = useLocale();
   const navigate = useNavigate();
-  const params = useParams<EditAttributesGroupParams>();
-  const form = useForm<FormFields>({ defaultValues });
+  const { realm } = useRealm();
+  const [key, setKey] = useState(0);
+  const [groupToDelete, setGroupToDelete] = useState<UserProfileGroup>();
 
-  const matchingGroup = useMemo(
-    () => config?.groups?.find(({ name }) => name === params.name),
-    [config?.groups],
-  );
+  // Refresh data in table when config changes.
+  useEffect(() => setKey((value) => value + 1), [config]);
 
-  useEffect(() => {
-    if (!matchingGroup) {
-      return;
-    }
+  async function loader() {
+    return config?.groups ?? [];
+  }
 
-    const annotations = matchingGroup.annotations
-      ? parseAnnotations(matchingGroup.annotations)
-      : [];
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "deleteDialogTitle",
+    children: (
+      <Trans i18nKey="deleteDialogDescription">
+        {" "}
+        <strong>{{ group: groupToDelete?.name }}</strong>.
+      </Trans>
+    ),
+    continueButtonLabel: "delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      const groups = (config?.groups ?? []).filter(
+        (group) => group !== groupToDelete,
+      );
+      const translationsForDisplayHeaderToDelete =
+        groupToDelete?.displayHeader?.substring(
+          2,
+          groupToDelete?.displayHeader.length - 1,
+        );
+      const translationsForDisplayDescriptionToDelete =
+        groupToDelete?.displayDescription?.substring(
+          2,
+          groupToDelete?.displayDescription.length - 1,
+        );
 
-    form.reset({ ...defaultValues, ...matchingGroup, annotations });
-  }, [matchingGroup]);
+      try {
+        await Promise.all(
+          combinedLocales.map(async (locale) => {
+            try {
+              const response =
+                await adminClient.realms.getRealmLocalizationTexts({
+                  realm,
+                  selectedLocale: locale,
+                });
 
-  const onSubmit: SubmitHandler<FormFields> = async (values) => {
-    if (!config) {
-      return;
-    }
+              if (response) {
+                await adminClient.realms.deleteRealmLocalizationTexts({
+                  realm,
+                  selectedLocale: locale,
+                  key: translationsForDisplayHeaderToDelete,
+                });
 
-    const groups = [...(config.groups ?? [])];
-    const updateAt = matchingGroup ? groups.indexOf(matchingGroup) : -1;
-    const updatedGroup: UserProfileGroup = {
-      ...values,
-      annotations: transformAnnotations(values.annotations),
-    };
+                await adminClient.realms.deleteRealmLocalizationTexts({
+                  realm,
+                  selectedLocale: locale,
+                  key: translationsForDisplayDescriptionToDelete,
+                });
 
-    if (updateAt === -1) {
-      groups.push(updatedGroup);
-    } else {
-      groups[updateAt] = updatedGroup;
-    }
+                const updatedData =
+                  await adminClient.realms.getRealmLocalizationTexts({
+                    realm,
+                    selectedLocale: locale,
+                  });
+                setTableData([updatedData]);
+              }
+            } catch (error) {
+              console.error(`Error removing translations for ${locale}`);
+            }
+          }),
+        );
 
-    const success = await save({ ...config, groups });
+        save(
+          { ...config, groups },
+          {
+            successMessageKey: "deleteSuccess",
+            errorMessageKey: "deleteAttributeGroupError",
+          },
+        );
+      } catch (error) {
+        console.error(
+          `Error removing translations or updating attributes group: ${error}`,
+        );
+      }
+    },
+  });
 
-    if (success) {
-      navigate(toUserProfile({ realm, tab: "attributes-group" }));
-    }
-  };
+  function deleteAttributeGroup(group: UserProfileGroup) {
+    setGroupToDelete(group);
+    toggleDeleteDialog();
+  }
 
   return (
-    <>
-      <ViewHeader
-        titleKey={matchingGroup ? "editGroupText" : "createGroupText"}
-        divider
+    <PageSection variant="light" className="pf-v5-u-p-0">
+      <DeleteConfirm />
+      <KeycloakDataTable
+        key={key}
+        loader={loader}
+        ariaLabelKey="tableTitle"
+        toolbarItem={
+          <ToolbarItem>
+            <Button
+              component={(props) => (
+                <Link
+                  data-testid="create-attributes-groups-action"
+                  {...props}
+                  to={toNewAttributesGroup({ realm })}
+                />
+              )}
+            >
+              {t("createGroupText")}
+            </Button>
+          </ToolbarItem>
+        }
+        columns={[
+          {
+            name: "name",
+            displayKey: "columnName",
+            cellRenderer: (group) => (
+              <Link
+                to={toEditAttributesGroup({
+                  realm,
+                  name: group.name!,
+                })}
+              >
+                {group.name}
+              </Link>
+            ),
+          },
+          {
+            name: "displayHeader",
+            displayKey: "columnDisplayName",
+          },
+          {
+            name: "displayDescription",
+            displayKey: "columnDisplayDescription",
+          },
+        ]}
+        actions={[
+          {
+            title: t("delete"),
+            onRowClick: deleteAttributeGroup,
+          } as Action<UserProfileGroup>,
+        ]}
+        emptyState={
+          <ListEmptyState
+            message={t("emptyStateMessage")}
+            instructions={t("emptyStateInstructions")}
+            primaryActionText={t("createGroupText")}
+            onPrimaryAction={() => navigate(toNewAttributesGroup({ realm }))}
+          />
+        }
       />
-      <PageSection variant="light" onSubmit={form.handleSubmit(onSubmit)}>
-        <FormAccess isHorizontal role="manage-realm">
-          <FormProvider {...form}>
-            <TextControl
-              name="name"
-              label={t("nameField")}
-              labelIcon={t("nameHintHelp")}
-              rules={{ required: t("required") }}
-              readOnly={!!matchingGroup}
-            />
-            {!!matchingGroup && (
-              <input type="hidden" {...form.register("name")} />
-            )}
-            <TextControl
-              name="displayHeader"
-              label={t("displayHeaderField")}
-              labelIcon={t("displayHeaderHintHelp")}
-            />
-            <TextControl
-              name="displayDescription"
-              label={t("displayDescriptionField")}
-              labelIcon={t("displayDescriptionHintHelp")}
-            />
-            <TextContent>
-              <Text component="h2">{t("annotationsText")}</Text>
-            </TextContent>
-            <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
-              <KeyValueInput label={t("annotationsText")} name="annotations" />
-            </FormGroup>
-            <ActionGroup>
-              <Button
-                variant="primary"
-                type="submit"
-                data-testid="saveGroupBtn"
-              >
-                {t("save")}
-              </Button>
-              <Button
-                variant="link"
-                component={(props) => (
-                  <Link
-                    {...props}
-                    to={toUserProfile({ realm, tab: "attributes-group" })}
-                  />
-                )}
-              >
-                {t("cancel")}
-              </Button>
-            </ActionGroup>
-          </FormProvider>
-        </FormAccess>
-      </PageSection>
-    </>
+    </PageSection>
   );
-}
+};

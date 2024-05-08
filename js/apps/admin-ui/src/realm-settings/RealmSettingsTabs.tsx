@@ -14,11 +14,12 @@ import {
   DropdownItem,
   DropdownSeparator,
 } from "@patternfly/react-core/deprecated";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
+import { useAccess } from "../context/access/Access";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
@@ -28,14 +29,13 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealms } from "../context/RealmsContext";
-import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import helpUrls from "../help-urls";
-import { DEFAULT_LOCALE } from "../i18n/i18n";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
+import { LocalizationTab } from "./localization/LocalizationTab";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
@@ -50,11 +50,11 @@ import { RealmSettingsTokensTab } from "./TokensTab";
 import { UserRegistration } from "./UserRegistration";
 import { EventsTab } from "./event-config/EventsTab";
 import { KeysTab } from "./keys/KeysTab";
-import { LocalizationTab } from "./localization/LocalizationTab";
 import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
 import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
+import useLocale from "../utils/useLocale";
 
 export interface UIRealmRepresentation extends RealmRepresentation {
   upConfig?: UserProfileConfig;
@@ -77,14 +77,12 @@ const RealmSettingsHeader = ({
 }: RealmSettingsHeaderProps) => {
   const { adminClient } = useAdminClient();
   const { environment } = useEnvironment<AdminEnvironment>();
-
   const { t } = useTranslation();
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
   const [partialExportOpen, setPartialExportOpen] = useState(false);
-
   const { hasAccess } = useAccess();
   const canManageRealm = hasAccess("manage-realm");
 
@@ -187,22 +185,20 @@ export const RealmSettingsTabs = ({
   refresh,
 }: RealmSettingsTabsProps) => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { refresh: refreshRealms } = useRealms();
+  const combinedLocales = useLocale();
   const navigate = useNavigate();
   const isFeatureEnabled = useIsFeatureEnabled();
   const [tableData, setTableData] = useState<
     Record<string, string>[] | undefined
   >(undefined);
-
   const { control, setValue, getValues } = useForm({
     mode: "onChange",
   });
   const [key, setKey] = useState(0);
-
   const refreshHeader = () => {
     setKey(key + 1);
   };
@@ -210,20 +206,6 @@ export const RealmSettingsTabs = ({
   const setupForm = (r: RealmRepresentation = realm) => {
     convertToFormValues(r, setValue);
   };
-
-  const defaultSupportedLocales = useMemo(() => {
-    return realm.supportedLocales?.length
-      ? realm.supportedLocales
-      : [DEFAULT_LOCALE];
-  }, [realm]);
-
-  const defaultLocales = useMemo(() => {
-    return realm.defaultLocale?.length ? [realm.defaultLocale] : [];
-  }, [realm]);
-
-  const combinedLocales = useMemo(() => {
-    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
-  }, [defaultLocales, defaultSupportedLocales]);
 
   useEffect(() => {
     setupForm();
