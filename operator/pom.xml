@@ -173,7 +173,7 @@
                     </goals>
                     <configuration>
                         <properties>
-                            <quarkus.package.filter-optional-dependencies>true</quarkus.package.filter-optional-dependencies> 
+                            <quarkus.package.jar.filter-optional-dependencies>true</quarkus.package.jar.filter-optional-dependencies>
                         </properties>
                     </configuration>
                     </execution>
