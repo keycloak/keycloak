@@ -74,7 +74,7 @@ export default class TableToolbar extends CommonElements {
 
   searchItem(searchValue: string, wait = true) {
     if (wait) {
-      const searchUrl = `/admin/realms/master/*${searchValue}*`;
+      const searchUrl = `/admin/realms/*/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
     cy.get(this.#searchInput).clear();
