@@ -231,8 +231,8 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v20.12.2</node.version>
-        <pnpm.version>9.0.1</pnpm.version>
+        <node.version>v20.13.0</node.version>
+        <pnpm.version>9.1.0</pnpm.version>
         <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
         <!-- The clean step is skipped on Windows -->
         <js.skip.clean>false</js.skip.clean>
