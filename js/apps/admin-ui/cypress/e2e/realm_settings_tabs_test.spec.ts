@@ -204,14 +204,14 @@ describe("Realm settings tabs tests", () => {
       realmSettingsPage.goToLocalizationTab();
       realmSettingsPage.goToLocalizationLocalesSubTab();
 
-      cy.findByTestId("internationalization-disabled").click({ force: true });
+      cy.findByTestId("internationalizationEnabled").click({ force: true });
 
       cy.get(realmSettingsPage.supportedLocalesTypeahead)
         .click()
         .get(".pf-v5-c-menu__list-item")
         .contains("Danish")
-        .click();
-      cy.get("#kc-l-supported-locales").click();
+        .click({ force: true });
+      cy.findByTestId("internationalizationEnabled").click({ force: true });
 
       cy.intercept("GET", `/admin/realms/${realmName}/localization/en*`).as(
         "load",

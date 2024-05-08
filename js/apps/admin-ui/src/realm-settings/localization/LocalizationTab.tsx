@@ -103,6 +103,7 @@ export const LocalizationTab = ({
               <>
                 <SelectControl
                   name="supportedLocales"
+                  isScrollable
                   label={t("supportedLocales")}
                   controller={{
                     defaultValue: defaultSupportedLocales,
