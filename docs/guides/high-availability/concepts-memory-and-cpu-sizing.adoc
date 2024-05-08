@@ -80,6 +80,19 @@ Limits calculated:
 +
 (1250 MB expected memory usage minus 300 non-heap-usage, divided by 0.7)
 
+== Persistent user sessions
+
+When using persistent sessions, {project_name} will use less memory as it will keep only a subset of sessions in memory.
+At the same time it will use more CPU resources to communicate with the database, and it will use a lot more CPU and write IO on the database to keep the session information up to date.
+
+A performance test showed the following per 100 requests/second that update the database (login, logout, refresh token), tested up to 300 requests per second:
+
+* 0.25 vCPU on each Pod in a 3-node Keycloak cluster.
+* 0.25 CPU and 800 WriteIOPS on a Aurora PostgreSQL multi-AZ database base on a `db.t4g.large` instance type.
+
+The average latency of the requests increased by 20-40 ms when running on an Aurora PostgreSQL multi-AZ database with a single reader instance on another AZ.
+The latency is expected to be lower when running in a single AZ or non-replicated database.
+
 == Reference architecture
 
 The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
