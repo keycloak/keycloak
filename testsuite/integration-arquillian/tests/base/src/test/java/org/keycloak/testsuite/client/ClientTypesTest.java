@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
@@ -164,10 +165,9 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(0, clientTypes.getRealmClientTypes().size());
 
-        List<String> globalClientTypeNames = clientTypes.getGlobalClientTypes().stream()
-                .map(ClientTypeRepresentation::getName)
+        List<ClientTypeRepresentation> globalClientTypeNames = clientTypes.getGlobalClientTypes().stream()
                 .collect(Collectors.toList());
-        Assert.assertNames(globalClientTypeNames, "sla", "service-account");
+        assertNames(globalClientTypeNames, "sla", "service-account");
 
         ClientTypeRepresentation serviceAccountType = clientTypes.getGlobalClientTypes().stream()
                 .filter(clientType -> "service-account".equals(clientType.getName()))
@@ -184,7 +184,6 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         cfg = serviceAccountType.getConfig().get("tosUri");
         assertPropertyConfig("tosUri", cfg, false, null, null);
     }
-
 
     @Test
     public void testClientTypesAdminRestAPI_realmTypes() {
@@ -278,7 +277,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         List<String> names = clientTypes.stream()
                 .map(ClientTypeRepresentation::getName)
                 .collect(Collectors.toList());
-        Assert.assertNames(names, expectedNames);
+        assertThat(names, hasItems(expectedNames));
     }
 
 

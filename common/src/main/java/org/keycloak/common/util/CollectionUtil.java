@@ -20,6 +20,7 @@ package org.keycloak.common.util;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -88,5 +89,9 @@ public class CollectionUtil {
         return iteratorCollection.stream()
                 .filter(searchCollection::contains)
                 .collect(Collectors.toSet());
+    }
+
+    public static <T> Set<T> collectionToSet(Collection<T> collection) {
+        return collection == null ? null : new HashSet<>(collection);
     }
 }

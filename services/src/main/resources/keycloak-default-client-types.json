@@ -12,6 +12,65 @@
       }
     },
     {
+      "name": "oidc",
+      "provider": "default",
+      "config": {
+        "authorizationServicesEnabled": {
+          "applicable": true,
+          "default-value": false
+        },
+        "consentRequired": {
+          "applicable": true,
+          "default-value": false
+        },
+        "directAccessGrantsEnabled": {
+          "applicable": true,
+          "default-value": false
+        },
+        "frontchannelLogout": {
+          "applicable": true,
+          "default-value": false
+        },
+        "fullScopeAllowed": {
+          "applicable": true,
+          "default-value": true
+        },
+        "implicitFlowEnabled": {
+          "applicable": true,
+          "default-value": false
+        },
+        "nodeReRegistrationTimeout": {
+          "applicable": true,
+          "default-value": -1
+        },
+        "oauth2.device.authorization.grant.enabled": {
+          "applicable": true,
+          "default-value": "false"
+        },
+        "oidc.ciba.grant.enabled": {
+          "applicable": true,
+          "default-value": "false"
+        },
+        "protocol": {
+          "applicable": true,
+          "default-value": "openid-connect",
+          "read-only": true
+        },
+        "publicClient": {
+          "applicable": true,
+          "default-value": true
+        },
+        "serviceAccountsEnabled": {
+          "applicable": true,
+          "default-value": false
+        },
+        "standardFlowEnabled": {
+          "applicable": true,
+          "default-value": false
+        }
+      }
+    },
+    {
       "name": "service-account",
       "provider": "default",
       "config": {

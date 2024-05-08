@@ -112,6 +112,14 @@ interface TypedClientAttribute {
         return clientGetter.get();
     }
 
+    default <T> T orDefault(ClientType clientType, Supplier<T> clientGetter, Class<T> tClass) {
+        var typeValue = clientGetter.get();
+        if (typeValue != null) {
+            return typeValue;
+        }
+        return clientType.getDefaultValue(getPropertyName(), tClass);
+    }
+
     default <T> void setClientAttribute(ClientType clientType, T newValue, Consumer<T> clientSetter, Class<T> tClass) {
         String propertyName = getPropertyName();
         Object nonApplicableValue = getNonApplicableValue();
