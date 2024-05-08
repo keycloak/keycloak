@@ -1,8 +1,24 @@
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { ActionGroup, Alert, Button, FormGroup, Grid, GridItem, PageSection, Text, TextContent, TextInput } from "@patternfly/react-core";
+import {
+  ActionGroup,
+  Alert,
+  Button,
+  FormGroup,
+  Grid,
+  GridItem,
+  PageSection,
+  Text,
+  TextContent,
+  TextInput,
+} from "@patternfly/react-core";
 import { useEffect, useMemo, useState } from "react";
-import { FormProvider, SubmitHandler, useForm, useWatch } from "react-hook-form";
+import {
+  FormProvider,
+  SubmitHandler,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
@@ -19,7 +35,10 @@ import { useFetch } from "../../utils/useFetch";
 import { GlobeRouteIcon } from "@patternfly/react-icons";
 import useToggle from "../../utils/useToggle";
 import useLocale from "../../utils/useLocale";
-import { AddTranslationsDialog, TranslationsType } from "./attribute/AddTranslationsDialog";
+import {
+  AddTranslationsDialog,
+  TranslationsType,
+} from "./attribute/AddTranslationsDialog";
 import "../realm-settings-section.css";
 import { useAdminClient } from "../../admin-client";
 
@@ -35,7 +54,9 @@ function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
 
 function transformAnnotations(input: KeyValueType[]): Record<string, unknown> {
   return Object.fromEntries(
-    input.filter((annotation) => annotation.key.length > 0).map((annotation) => [annotation.key, annotation.value] as const)
+    input
+      .filter((annotation) => annotation.key.length > 0)
+      .map((annotation) => [annotation.key, annotation.value] as const),
   );
 }
 
@@ -78,8 +99,14 @@ export default function AttributesGroupForm() {
   const { addError } = useAlerts();
   const editMode = params.name ? true : false;
   const [newAttributesGroupName, setNewAttributesGroupName] = useState("");
-  const [generatedAttributesGroupDisplayName, setGeneratedAttributesGroupDisplayName] = useState("");
-  const [generatedAttributesGroupDisplayDescription, setGeneratedAttributesGroupDisplayDescription] = useState("");
+  const [
+    generatedAttributesGroupDisplayName,
+    setGeneratedAttributesGroupDisplayName,
+  ] = useState("");
+  const [
+    generatedAttributesGroupDisplayDescription,
+    setGeneratedAttributesGroupDisplayDescription,
+  ] = useState("");
   const [addTranslationsModalOpen, toggleModal] = useToggle();
   const regexPattern = /\$\{([^}]+)\}/;
   const [type, setType] = useState<TranslationsType>();
@@ -94,22 +121,40 @@ export default function AttributesGroupForm() {
     },
   });
 
-  const matchingGroup = useMemo(() => config?.groups?.find(({ name }) => name === params.name), [config?.groups]);
+  const matchingGroup = useMemo(
+    () => config?.groups?.find(({ name }) => name === params.name),
+    [config?.groups],
+  );
 
   useEffect(() => {
     if (!matchingGroup) {
       return;
     }
 
-    const annotations = matchingGroup.annotations ? parseAnnotations(matchingGroup.annotations) : [];
+    const annotations = matchingGroup.annotations
+      ? parseAnnotations(matchingGroup.annotations)
+      : [];
 
     form.reset({ ...defaultValues, ...matchingGroup, annotations });
   }, [matchingGroup]);
 
   useEffect(() => {
-    form.setValue("displayHeader", matchingGroup ? matchingGroup.displayHeader! : generatedAttributesGroupDisplayName);
-    form.setValue("displayDescription", matchingGroup ? matchingGroup.displayDescription! : generatedAttributesGroupDisplayDescription);
-  }, [generatedAttributesGroupDisplayName, generatedAttributesGroupDisplayDescription]);
+    form.setValue(
+      "displayHeader",
+      matchingGroup
+        ? matchingGroup.displayHeader!
+        : generatedAttributesGroupDisplayName,
+    );
+    form.setValue(
+      "displayDescription",
+      matchingGroup
+        ? matchingGroup.displayDescription!
+        : generatedAttributesGroupDisplayDescription,
+    );
+  }, [
+    generatedAttributesGroupDisplayName,
+    generatedAttributesGroupDisplayDescription,
+  ]);
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
@@ -119,7 +164,7 @@ export default function AttributesGroupForm() {
       }
       setRealm(realm);
     },
-    []
+    [],
   );
 
   useFetch(
@@ -131,31 +176,47 @@ export default function AttributesGroupForm() {
       const translationsResults = await Promise.all(
         combinedLocales.map(async (selectedLocale) => {
           try {
-            const translations = await adminClient.realms.getRealmLocalizationTexts({
-              realm: realmName,
-              selectedLocale,
-            });
+            const translations =
+              await adminClient.realms.getRealmLocalizationTexts({
+                realm: realmName,
+                selectedLocale,
+              });
 
-            const formattedDisplayHeaderKey = formData.displayHeader?.substring(2, formData.displayHeader.length - 1);
-            const formattedDisplayDescriptionKey = formData.displayDescription?.substring(2, formData.displayDescription.length - 1);
+            const formattedDisplayHeaderKey = formData.displayHeader?.substring(
+              2,
+              formData.displayHeader.length - 1,
+            );
+            const formattedDisplayDescriptionKey =
+              formData.displayDescription?.substring(
+                2,
+                formData.displayDescription.length - 1,
+              );
 
             return {
               locale: selectedLocale,
               headerTranslation: translations[formattedDisplayHeaderKey] ?? "",
-              descriptionTranslation: translations[formattedDisplayDescriptionKey] ?? "",
+              descriptionTranslation:
+                translations[formattedDisplayDescriptionKey] ?? "",
             };
           } catch (error) {
-            console.error(`Error fetching translations for ${selectedLocale}:`, error);
+            console.error(
+              `Error fetching translations for ${selectedLocale}:`,
+              error,
+            );
             return null;
           }
-        })
+        }),
       );
 
       translationsResults.forEach((translationsResult) => {
         if (translationsResult) {
-          const { locale, headerTranslation, descriptionTranslation } = translationsResult;
+          const { locale, headerTranslation, descriptionTranslation } =
+            translationsResult;
           translationsToSaveDisplayHeader.push({
-            key: formData.displayHeader?.substring(2, formData.displayHeader.length - 1),
+            key: formData.displayHeader?.substring(
+              2,
+              formData.displayHeader.length - 1,
+            ),
             translations: [
               {
                 locale,
@@ -164,7 +225,10 @@ export default function AttributesGroupForm() {
             ],
           });
           translationsToSaveDisplayDescription.push({
-            key: formData.displayDescription?.substring(2, formData.displayDescription.length - 1),
+            key: formData.displayDescription?.substring(
+              2,
+              formData.displayDescription.length - 1,
+            ),
             translations: [
               {
                 locale,
@@ -184,19 +248,27 @@ export default function AttributesGroupForm() {
       setTranslationsData({
         displayHeader: {
           key: data.translationsToSaveDisplayHeader[0].key,
-          translations: data.translationsToSaveDisplayHeader.flatMap((translationData) => translationData.translations),
+          translations: data.translationsToSaveDisplayHeader.flatMap(
+            (translationData) => translationData.translations,
+          ),
         },
         displayDescription: {
           key: data.translationsToSaveDisplayDescription[0].key,
-          translations: data.translationsToSaveDisplayDescription.flatMap((translationData) => translationData.translations),
+          translations: data.translationsToSaveDisplayDescription.flatMap(
+            (translationData) => translationData.translations,
+          ),
         },
       });
     },
-    [combinedLocales]
+    [combinedLocales],
   );
 
   const saveTranslations = async () => {
-    const addLocalization = async (key: string, locale: string, value: string) => {
+    const addLocalization = async (
+      key: string,
+      locale: string,
+      value: string,
+    ) => {
       try {
         await adminClient.realms.addLocalization(
           {
@@ -204,23 +276,40 @@ export default function AttributesGroupForm() {
             selectedLocale: locale,
             key: key,
           },
-          value
+          value,
         );
       } catch (error) {
-        console.error(`Error saving translation for locale ${locale}: ${error}`);
+        console.error(
+          `Error saving translation for locale ${locale}: ${error}`,
+        );
       }
     };
 
     try {
-      if (translationsData.displayHeader && translationsData.displayHeader.translations.length > 0) {
+      if (
+        translationsData.displayHeader &&
+        translationsData.displayHeader.translations.length > 0
+      ) {
         for (const translation of translationsData.displayHeader.translations) {
-          await addLocalization(translationsData.displayHeader.key, translation.locale, translation.value);
+          await addLocalization(
+            translationsData.displayHeader.key,
+            translation.locale,
+            translation.value,
+          );
         }
       }
 
-      if (translationsData.displayDescription && translationsData.displayDescription.translations.length > 0) {
-        for (const translation of translationsData.displayDescription.translations) {
-          await addLocalization(translationsData.displayDescription.key, translation.locale, translation.value);
+      if (
+        translationsData.displayDescription &&
+        translationsData.displayDescription.translations.length > 0
+      ) {
+        for (const translation of translationsData.displayDescription
+          .translations) {
+          await addLocalization(
+            translationsData.displayDescription.key,
+            translation.locale,
+            translation.value,
+          );
         }
       }
     } catch (error) {
@@ -247,15 +336,20 @@ export default function AttributesGroupForm() {
     }
 
     if (realm?.internationalizationEnabled) {
-      const hasNonEmptyDisplayHeaderTranslations = translationsData.displayHeader.translations.some(
-        (translation) => translation.value.trim() !== ""
-      );
+      const hasNonEmptyDisplayHeaderTranslations =
+        translationsData.displayHeader.translations.some(
+          (translation) => translation.value.trim() !== "",
+        );
 
-      const hasNonEmptyDisplayDescriptionTranslations = translationsData.displayDescription.translations.some(
-        (translation) => translation.value.trim() !== ""
-      );
+      const hasNonEmptyDisplayDescriptionTranslations =
+        translationsData.displayDescription.translations.some(
+          (translation) => translation.value.trim() !== "",
+        );
 
-      if (!hasNonEmptyDisplayHeaderTranslations || !hasNonEmptyDisplayDescriptionTranslations) {
+      if (
+        !hasNonEmptyDisplayHeaderTranslations ||
+        !hasNonEmptyDisplayDescriptionTranslations
+      ) {
         addError("createAttributeError", t("translationError"));
         return;
       }
@@ -279,22 +373,37 @@ export default function AttributesGroupForm() {
     name: "displayDescription",
   });
 
-  const handleAttributesGroupNameChange = (event: React.FormEvent<HTMLInputElement>, value: string) => {
-    const newDisplayName = value !== "" && realm?.internationalizationEnabled ? "${profile.attribute-group." + `${value}}` : "";
+  const handleAttributesGroupNameChange = (
+    event: React.FormEvent<HTMLInputElement>,
+    value: string,
+  ) => {
+    const newDisplayName =
+      value !== "" && realm?.internationalizationEnabled
+        ? "${profile.attribute-group." + `${value}}`
+        : "";
     const newDisplayDescription =
-      value !== "" && realm?.internationalizationEnabled ? "${profile.attribute-group-description." + `${value}}` : "";
+      value !== "" && realm?.internationalizationEnabled
+        ? "${profile.attribute-group-description." + `${value}}`
+        : "";
     setNewAttributesGroupName(value);
     setGeneratedAttributesGroupDisplayName(newDisplayName);
     setGeneratedAttributesGroupDisplayDescription(newDisplayDescription);
   };
 
-  const attributesGroupDisplayPatternMatch = regexPattern.test(attributesGroupDisplayName || attributesGroupDisplayDescription);
-
-  const formattedAttributesGroupDisplayName = attributesGroupDisplayName?.substring(2, attributesGroupDisplayName.length - 1);
-  const formattedAttributesGroupDisplayDescription = attributesGroupDisplayDescription?.substring(
-    2,
-    attributesGroupDisplayDescription.length - 1
+  const attributesGroupDisplayPatternMatch = regexPattern.test(
+    attributesGroupDisplayName || attributesGroupDisplayDescription,
   );
+
+  const formattedAttributesGroupDisplayName =
+    attributesGroupDisplayName?.substring(
+      2,
+      attributesGroupDisplayName.length - 1,
+    );
+  const formattedAttributesGroupDisplayDescription =
+    attributesGroupDisplayDescription?.substring(
+      2,
+      attributesGroupDisplayDescription.length - 1,
+    );
 
   const handleHeaderTranslationsAdded = (headerTranslations: Translations) => {
     setTranslationsData((prev) => ({
@@ -303,7 +412,9 @@ export default function AttributesGroupForm() {
     }));
   };
 
-  const handleDescriptionTranslationsAdded = (descriptionTranslations: Translations) => {
+  const handleDescriptionTranslationsAdded = (
+    descriptionTranslations: Translations,
+  ) => {
     setTranslationsData((prev) => ({
       ...prev,
       displayDescription: descriptionTranslations,
@@ -315,7 +426,9 @@ export default function AttributesGroupForm() {
   };
 
   const groupDisplayNameKey =
-    type === "displayHeader" ? formattedAttributesGroupDisplayName : `profile.attribute-group.${newAttributesGroupName}`;
+    type === "displayHeader"
+      ? formattedAttributesGroupDisplayName
+      : `profile.attribute-group.${newAttributesGroupName}`;
   const groupDisplayDescriptionKey =
     type === "displayDescription"
       ? formattedAttributesGroupDisplayDescription
@@ -325,17 +438,34 @@ export default function AttributesGroupForm() {
     <>
       {addTranslationsModalOpen && (
         <AddTranslationsDialog
-          translationKey={type === "displayHeader" ? groupDisplayNameKey : groupDisplayDescriptionKey}
-          type={type === "displayHeader" ? "displayHeader" : "displayDescription"}
-          translations={type === "displayHeader" ? translationsData.displayHeader : translationsData.displayDescription}
-          onTranslationsAdded={type === "displayHeader" ? handleHeaderTranslationsAdded : handleDescriptionTranslationsAdded}
+          translationKey={
+            type === "displayHeader"
+              ? groupDisplayNameKey
+              : groupDisplayDescriptionKey
+          }
+          type={
+            type === "displayHeader" ? "displayHeader" : "displayDescription"
+          }
+          translations={
+            type === "displayHeader"
+              ? translationsData.displayHeader
+              : translationsData.displayDescription
+          }
+          onTranslationsAdded={
+            type === "displayHeader"
+              ? handleHeaderTranslationsAdded
+              : handleDescriptionTranslationsAdded
+          }
           toggleDialog={handleToggleDialog}
           onCancel={() => {
             toggleModal();
           }}
         />
       )}
-      <ViewHeader titleKey={matchingGroup ? "editGroupText" : "createGroupText"} divider />
+      <ViewHeader
+        titleKey={matchingGroup ? "editGroupText" : "createGroupText"}
+        divider
+      />
       <PageSection variant="light" onSubmit={form.handleSubmit(onSubmit)}>
         <FormAccess isHorizontal role="manage-realm">
           <FormProvider {...form}>
@@ -354,10 +484,17 @@ export default function AttributesGroupForm() {
                 },
               }}
             />
-            {!!matchingGroup && <input type="hidden" {...form.register("name")} />}
+            {!!matchingGroup && (
+              <input type="hidden" {...form.register("name")} />
+            )}
             <FormGroup
               label={t("displayHeaderField")}
-              labelIcon={<HelpItem helpText={t("displayHeaderHintHelp")} fieldLabelId="displayHeaderField" />}
+              labelIcon={
+                <HelpItem
+                  helpText={t("displayHeaderHintHelp")}
+                  fieldLabelId="displayHeaderField"
+                />
+              }
               fieldId="kc-attributes-group-display-header"
             >
               <Grid hasGutter>
@@ -366,7 +503,8 @@ export default function AttributesGroupForm() {
                     id="kc-attributes-group-display-header"
                     data-testid="attributes-group-display-header"
                     isDisabled={
-                      (realm?.internationalizationEnabled && newAttributesGroupName !== "") ||
+                      (realm?.internationalizationEnabled &&
+                        newAttributesGroupName !== "") ||
                       (editMode && attributesGroupDisplayPatternMatch)
                     }
                     value={
@@ -379,7 +517,13 @@ export default function AttributesGroupForm() {
                     {...form.register("displayHeader")}
                   />
                   {generatedAttributesGroupDisplayName && (
-                    <Alert className="pf-v5-u-mt-sm" variant="info" isInline isPlain title={t("addAttributesGroupTranslationInfo")} />
+                    <Alert
+                      className="pf-v5-u-mt-sm"
+                      variant="info"
+                      isInline
+                      isPlain
+                      title={t("addAttributesGroupTranslationInfo")}
+                    />
                   )}
                 </GridItem>
                 {realm?.internationalizationEnabled && (
@@ -402,7 +546,12 @@ export default function AttributesGroupForm() {
             </FormGroup>
             <FormGroup
               label={t("displayDescriptionField")}
-              labelIcon={<HelpItem helpText={t("displayDescriptionHintHelp")} fieldLabelId="displayDescriptionField" />}
+              labelIcon={
+                <HelpItem
+                  helpText={t("displayDescriptionHintHelp")}
+                  fieldLabelId="displayDescriptionField"
+                />
+              }
               fieldId="kc-attributes-group-display-description"
             >
               <Grid hasGutter>
@@ -411,7 +560,8 @@ export default function AttributesGroupForm() {
                     id="kc-attributes-group-display-description"
                     data-testid="attributes-group-display-description"
                     isDisabled={
-                      (realm?.internationalizationEnabled && newAttributesGroupName !== "") ||
+                      (realm?.internationalizationEnabled &&
+                        newAttributesGroupName !== "") ||
                       (editMode && attributesGroupDisplayPatternMatch)
                     }
                     value={
@@ -424,7 +574,13 @@ export default function AttributesGroupForm() {
                     {...form.register("displayDescription")}
                   />
                   {generatedAttributesGroupDisplayDescription && (
-                    <Alert className="pf-v5-u-mt-sm" variant="info" isInline isPlain title={t("addAttributesGroupTranslationInfo")} />
+                    <Alert
+                      className="pf-v5-u-mt-sm"
+                      variant="info"
+                      isInline
+                      isPlain
+                      title={t("addAttributesGroupTranslationInfo")}
+                    />
                   )}
                 </GridItem>
                 {realm?.internationalizationEnabled && (
@@ -433,7 +589,9 @@ export default function AttributesGroupForm() {
                       variant="link"
                       className="pf-m-plain"
                       data-testid="addAttributeDisplayDescriptionTranslationBtn"
-                      aria-label={t("addAttributeDisplayDescriptionTranslation")}
+                      aria-label={t(
+                        "addAttributeDisplayDescriptionTranslation",
+                      )}
                       isDisabled={!newAttributesGroupName && !editMode}
                       onClick={() => {
                         setType("displayDescription");
@@ -452,7 +610,11 @@ export default function AttributesGroupForm() {
               <KeyValueInput label={t("annotationsText")} name="annotations" />
             </FormGroup>
             <ActionGroup>
-              <Button variant="primary" type="submit" data-testid="saveGroupBtn">
+              <Button
+                variant="primary"
+                type="submit"
+                data-testid="saveGroupBtn"
+              >
                 {t("save")}
               </Button>
               <Button

@@ -20,10 +20,12 @@ export default function useLocale() {
       }
       setRealm(realm);
     },
-    []
+    [],
   );
   const defaultSupportedLocales = useMemo(() => {
-    return realm?.supportedLocales?.length ? realm.supportedLocales : [DEFAULT_LOCALE];
+    return realm?.supportedLocales?.length
+      ? realm.supportedLocales
+      : [DEFAULT_LOCALE];
   }, [realm]);
 
   const defaultLocales = useMemo(() => {

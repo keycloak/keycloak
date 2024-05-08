@@ -1,6 +1,17 @@
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import { Button, ButtonVariant, Divider, Toolbar, ToolbarContent, ToolbarItem } from "@patternfly/react-core";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core/deprecated";
+import {
+  Button,
+  ButtonVariant,
+  Divider,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
@@ -22,7 +33,9 @@ const RESTRICTED_ATTRIBUTES = ["username", "email"];
 type movedAttributeType = UserProfileAttribute;
 
 type AttributesTabProps = {
-  setTableData: React.Dispatch<React.SetStateAction<Record<string, string>[] | undefined>>;
+  setTableData: React.Dispatch<
+    React.SetStateAction<Record<string, string>[] | undefined>
+  >;
 };
 
 export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
@@ -33,7 +46,8 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   const combinedLocales = useLocale();
   const navigate = useNavigate();
   const [filter, setFilter] = useState("allGroups");
-  const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] = useToggle();
+  const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
+    useToggle();
   const [data, setData] = useState(config?.attributes);
   const [attributeToDelete, setAttributeToDelete] = useState("");
 
@@ -47,19 +61,25 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
     onConfirm: async () => {
       if (!config?.attributes) return;
 
-      const translationsToDelete = config.attributes.find((attribute) => attribute.name === attributeToDelete)?.displayName;
+      const translationsToDelete = config.attributes.find(
+        (attribute) => attribute.name === attributeToDelete,
+      )?.displayName;
 
       // Remove the the `${}` from translationsToDelete string
-      const formattedTranslationsToDelete = translationsToDelete?.substring(2, translationsToDelete.length - 1);
+      const formattedTranslationsToDelete = translationsToDelete?.substring(
+        2,
+        translationsToDelete.length - 1,
+      );
 
       try {
         await Promise.all(
           combinedLocales.map(async (locale) => {
             try {
-              const response = await adminClient.realms.getRealmLocalizationTexts({
-                realm,
-                selectedLocale: locale,
-              });
+              const response =
+                await adminClient.realms.getRealmLocalizationTexts({
+                  realm,
+                  selectedLocale: locale,
+                });
 
               if (response) {
                 await adminClient.realms.deleteRealmLocalizationTexts({
@@ -68,31 +88,36 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                   key: formattedTranslationsToDelete,
                 });
 
-                const updatedData = await adminClient.realms.getRealmLocalizationTexts({
-                  realm,
-                  selectedLocale: locale,
-                });
+                const updatedData =
+                  await adminClient.realms.getRealmLocalizationTexts({
+                    realm,
+                    selectedLocale: locale,
+                  });
                 setTableData([updatedData]);
               }
             } catch (error) {
               console.error(`Error removing translations for ${locale}`);
             }
-          })
+          }),
         );
 
-        const updatedAttributes = config.attributes.filter((attribute) => attribute.name !== attributeToDelete);
+        const updatedAttributes = config.attributes.filter(
+          (attribute) => attribute.name !== attributeToDelete,
+        );
 
         save(
           { ...config, attributes: updatedAttributes, groups: config.groups },
           {
             successMessageKey: "deleteAttributeSuccess",
             errorMessageKey: "deleteAttributeError",
-          }
+          },
         );
 
         setAttributeToDelete("");
       } catch (error) {
-        console.error(`Error removing translations or updating attributes: ${error}`);
+        console.error(
+          `Error removing translations or updating attributes: ${error}`,
+        );
       }
     },
   });
@@ -104,7 +129,10 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   const attributes = config.attributes ?? [];
   const groups = config.groups ?? [];
 
-  const executeMove = async (attribute: UserProfileAttribute, newIndex: number) => {
+  const executeMove = async (
+    attribute: UserProfileAttribute,
+    newIndex: number,
+  ) => {
     const fromIndex = attributes.findIndex((attr) => {
       return attr.name === attribute.name;
     });
@@ -119,7 +147,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       {
         successMessageKey: "updatedUserProfileSuccess",
         errorMessageKey: "updatedUserProfileError",
-      }
+      },
     );
   };
 
@@ -150,19 +178,33 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
               onSelect={(_, value) => {
                 const filter = value.toString();
                 setFilter(filter);
-                setData(filter === "allGroups" ? attributes : attributes.filter((attr) => attr.group === filter));
+                setData(
+                  filter === "allGroups"
+                    ? attributes
+                    : attributes.filter((attr) => attr.group === filter),
+                );
                 toggleIsFilterTypeDropdownOpen();
               }}
               selections={filter === "allGroups" ? t(filter) : filter}
             >
               {[
-                <SelectOption key="allGroups" data-testid="all-groups" value="allGroups">
+                <SelectOption
+                  key="allGroups"
+                  data-testid="all-groups"
+                  value="allGroups"
+                >
                   {t("allGroups")}
                 </SelectOption>,
                 ...uniqBy(
                   attributes.filter((attr) => !!attr.group),
-                  "group"
-                ).map((attr) => <SelectOption key={attr.group} data-testid={`${attr.group}-option`} value={attr.group} />),
+                  "group",
+                ).map((attr) => (
+                  <SelectOption
+                    key={attr.group}
+                    data-testid={`${attr.group}-option`}
+                    value={attr.group}
+                  />
+                )),
               ]}
             </Select>
           </ToolbarItem>
@@ -170,7 +212,9 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
             <Button
               data-testid="createAttributeBtn"
               variant="primary"
-              component={(props) => <Link {...props} to={toAddAttribute({ realm })} />}
+              component={(props) => (
+                <Link {...props} to={toAddAttribute({ realm })} />
+              )}
             >
               {t("createAttribute")}
             </Button>
@@ -198,7 +242,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                 toAttribute({
                   realm,
                   attributeName: component.name,
-                })
+                }),
               );
             },
           },
