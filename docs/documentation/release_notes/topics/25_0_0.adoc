@@ -50,22 +50,7 @@ bin/kc.sh build --features=persistent-user-session ...
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
 
-NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the existing online user and client sessions will not be migrated to the database. It will only affect newly created online user and online client sessions.
-
-With persistent sessions enabled, the in-memory caches for online user sessions, offline user sessions, online client sessions and offline client sessions are limited to 10000 entries per node by default which will reduce the overall memory usage of Keycloak for larger installations.
-Items which are evicted from memory will be loaded on-demand from the database when needed.
-To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
-Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.
-
-To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, for those caches, consult the updated https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
-
-With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available which were used to override the time offline sessions are kept in memory.
-
-To log out all online users sessions of a realm with the `persistent-user-session` feature enabled, use the following steps as before:
-
-. Login to the Admin Console.
-. Select the menu entry *Sessions*.
-. Select the action *Sign out all active sessions*.
+For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Cookies updates
 

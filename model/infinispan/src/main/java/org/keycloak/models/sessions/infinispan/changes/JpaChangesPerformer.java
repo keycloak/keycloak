@@ -113,6 +113,14 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 exceptions.forEach(ex::addSuppressed);
                 throw ex;
             }
+            changes.clear();
+        }
+    }
+
+    public void applyChangesSynchronously(KeycloakSession session) {
+        if (!changes.isEmpty()) {
+            changes.forEach(persistentUpdate -> persistentUpdate.perform(session));
+            changes.clear();
         }
     }
 

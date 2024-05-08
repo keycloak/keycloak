@@ -21,6 +21,7 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
+import org.infinispan.commons.util.CloseableIterator;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
@@ -29,6 +30,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -42,10 +44,13 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
+import org.keycloak.models.sessions.infinispan.changes.JpaChangesPerformer;
+import org.keycloak.models.sessions.infinispan.changes.MergedUpdate;
 import org.keycloak.models.sessions.infinispan.changes.PersistentUpdate;
 import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.SessionUpdatesList;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
@@ -64,10 +69,12 @@ import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -973,4 +980,77 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         // This allows creating a UUID that is constant even if the entry is reloaded from the database
         return UUID.nameUUIDFromBytes((userSessionId + clientId).getBytes(StandardCharsets.UTF_8));
     }
+
+    @Override
+    public void migrate(String modelVersion) {
+        if (new ModelVersion(modelVersion).equals(new ModelVersion("25.0.0"))) {
+            migrateNonPersistentSessionsToPersistentSessions();
+        }
+    }
+
+    /**
+     * Copy over all sessions in Infinispan to the persistent user sessions in the database.
+     * This method is public so people can use it to build their custom migrations or re-import sessions when necessary
+     * in a future version of Keycloak.
+     */
+    public void migrateNonPersistentSessionsToPersistentSessions() {
+        JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName(), new ArrayBlockingQueue<>(1));
+        JpaChangesPerformer<UUID, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName(), new ArrayBlockingQueue<>(1));
+        AtomicInteger currentBatch = new AtomicInteger(0);
+        RemoteCache<String, SessionEntityWrapper<UserSessionEntity>> remoteCache = InfinispanUtil.getRemoteCache(sessionCache);
+        if (remoteCache != null) {
+            try (CloseableIterator<Map.Entry<Object, Object>> it = remoteCache.retrieveEntries(null, 100)) {
+                while (it.hasNext()) {
+                    Map.Entry<Object, Object> next = it.next();
+                    //noinspection unchecked
+                    SessionEntityWrapper<UserSessionEntity> userSession = (SessionEntityWrapper<UserSessionEntity>) next.getValue();
+                    processEntryFromCache(userSession, userSessionPerformer, clientSessionPerformer, currentBatch);
+                }
+            }
+            flush(userSessionPerformer, clientSessionPerformer);
+            remoteCache.clear();
+        } else {
+            sessionCache.forEach((key, value) -> processEntryFromCache(value, userSessionPerformer, clientSessionPerformer, currentBatch));
+            flush(userSessionPerformer, clientSessionPerformer);
+        }
+        sessionCache.clear();
+        clientSessionCache.clear();
+        offlineSessionCache.clear();
+        offlineClientSessionCache.clear();
+        log.infof("Migrated %d user sessions total.", currentBatch.intValue());
+    }
+
+    /**
+     * When calling this, ensure that the cache doesn't contain entries for user or client sessions that are already contained in the database.
+     * Such entries should first be cleared from the cache before this is being called.
+     * As this is assumed to run once during the upgrade to Keycloak 25, this should be safe to assume.
+     */
+    private void processEntryFromCache(SessionEntityWrapper<UserSessionEntity> sessionEntityWrapper, JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer, JpaChangesPerformer<UUID, AuthenticatedClientSessionEntity> clientSessionPerformer, AtomicInteger count) {
+        RealmModel realm = session.realms().getRealm(sessionEntityWrapper.getEntity().getRealmId());
+        sessionEntityWrapper.getEntity().getAuthenticatedClientSessions().forEach((k, uuid) -> {
+            SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessionCache.get(uuid);
+            if (clientSession != null) {
+                clientSession.getEntity().setUserSessionId(sessionEntityWrapper.getEntity().getId());
+                MergedUpdate<AuthenticatedClientSessionEntity> merged2 = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), clientSession, 1, 1);
+                clientSessionPerformer.registerChange(Map.entry(uuid, new SessionUpdatesList<>(realm, clientSession)), merged2);
+            }
+        });
+        MergedUpdate<UserSessionEntity> merged = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), sessionEntityWrapper, 1, 1);
+        userSessionPerformer.registerChange(Map.entry(sessionEntityWrapper.getEntity().getId(), new SessionUpdatesList<>(realm, sessionEntityWrapper)), merged);
+        if (count.incrementAndGet() % 100 == 0) {
+            flush(userSessionPerformer, clientSessionPerformer);
+        }
+        if (count.intValue() % 1000 == 0) {
+            log.infof("Migrated %d user sessions total, continuing...", count.intValue());
+        }
+    }
+
+    private <E extends SessionEntity, K> void flush(JpaChangesPerformer<K, E> userSessionsPerformer, JpaChangesPerformer<UUID, AuthenticatedClientSessionEntity> clientSessionPerformer) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                s -> {
+                    userSessionsPerformer.applyChangesSynchronously(s);
+                    clientSessionPerformer.applyChangesSynchronously(s);
+                });
+    }
+
 }

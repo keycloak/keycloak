@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
 import java.util.Collection;
@@ -208,4 +209,7 @@ public interface UserSessionProvider extends Provider {
     void close();
 
     int getStartupTime(RealmModel realm);
+
+    default void migrate(String modelVersion) {
+    }
 }
