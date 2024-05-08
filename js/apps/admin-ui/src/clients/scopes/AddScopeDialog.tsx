@@ -216,10 +216,10 @@ export const AddScopeDialog = ({
             onSelect={() => {
               onFilterTypeDropdownSelect(filterType);
             }}
-            data-testid="filter-type-dropdown"
             toggle={(ref) => (
               <MenuToggle
                 ref={ref}
+                data-testid="filter-type-dropdown"
                 id="toggle-id-9"
                 onClick={toggleIsFilterTypeDropdownOpen}
                 icon={<FilterIcon />}

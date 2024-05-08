@@ -100,6 +100,7 @@ export const CredentialRow = ({
               isExpanded={kebabOpen}
               onClick={toggleKebab}
               variant="plain"
+              aria-label="Kebab toggle"
             >
               <EllipsisVIcon />
             </MenuToggle>

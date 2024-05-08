@@ -149,9 +149,9 @@ export const AddRoleMappingModal = ({
                   setSearchToggle(false);
                   refresh();
                 }}
-                data-testid="filter-type-dropdown"
                 toggle={(ref) => (
                   <MenuToggle
+                    data-testid="filter-type-dropdown"
                     ref={ref}
                     onClick={() => setSearchToggle(!searchToggle)}
                     icon={<FilterIcon />}
