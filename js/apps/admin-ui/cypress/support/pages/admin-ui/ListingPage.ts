@@ -52,7 +52,9 @@ export default class ListingPage extends CommonElements {
   public tableRowItem = "tbody tr[data-ouia-component-type]:visible";
   #table = "table[aria-label]";
   #filterSessionDropdownButton = ".pf-v5-c-select button:nth-child(1)";
-  #filterDropdownButton = "[class*='searchtype']";
+  #searchTypeButton = "[data-testid='clientScopeSearch']";
+  #filterDropdownButton = "[data-testid='clientScopeSearchType']";
+  #protocolFilterDropdownButton = "[data-testid='clientScopeSearchProtocol']";
   #kebabMenu = "[data-testid='kebab']";
   #dropdownItem = ".pf-v5-c-menu__list-item";
   #toolbarChangeType = "#change-type-dropdown";
@@ -319,14 +321,14 @@ export default class ListingPage extends CommonElements {
   }
 
   selectFilter(filter: Filter) {
-    cy.get(this.#filterDropdownButton).first().click();
+    cy.get(this.#searchTypeButton).click();
     cy.get(this.#dropdownItem).contains(filter).click();
 
     return this;
   }
 
   selectSecondaryFilter(itemName: string) {
-    cy.get(this.#filterDropdownButton).last().click();
+    cy.get(this.#filterDropdownButton).click();
     cy.get(this.#itemRowSelectItem).contains(itemName).click();
 
     return this;
@@ -339,7 +341,8 @@ export default class ListingPage extends CommonElements {
   }
 
   selectSecondaryFilterProtocol(protocol: FilterProtocol) {
-    this.selectSecondaryFilter(protocol);
+    cy.get(this.#protocolFilterDropdownButton).click();
+    cy.get(this.#itemRowSelectItem).contains(protocol).click();
 
     return this;
   }

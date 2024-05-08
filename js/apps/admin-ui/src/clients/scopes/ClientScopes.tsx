@@ -300,6 +300,7 @@ export const ClientScopes = ({
                     toggle={(ref) => (
                       <MenuToggle
                         data-testid="kebab"
+                        aria-label="Kebab toggle"
                         ref={ref}
                         variant="plain"
                         onClick={() => setKebabOpen(!kebabOpen)}

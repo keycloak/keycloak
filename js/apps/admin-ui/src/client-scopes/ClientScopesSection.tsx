@@ -260,6 +260,7 @@ export default function ClientScopesSection() {
                   toggle={(ref) => (
                     <MenuToggle
                       data-testid="kebab"
+                      aria-label="Kebab toggle"
                       ref={ref}
                       onClick={() => setKebabOpen(!kebabOpen)}
                       variant="plain"
