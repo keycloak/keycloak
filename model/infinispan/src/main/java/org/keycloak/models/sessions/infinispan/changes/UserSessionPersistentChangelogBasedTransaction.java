@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -45,8 +44,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                                                           SessionFunction<UserSessionEntity> maxIdleTimeMsLoader,
                                                           SessionFunction<UserSessionEntity> offlineLifespanMsLoader,
                                                           SessionFunction<UserSessionEntity> offlineMaxIdleTimeMsLoader,
-                                                          ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
-        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue);
+                                                          ArrayBlockingQueue<PersistentUpdate> batchingQueue,
+                                                          SerializeExecutionsByKey<String> sessions,
+                                                          SerializeExecutionsByKey<String> offlineSessions) {
+        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, sessions, offlineSessions);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, boolean offline) {

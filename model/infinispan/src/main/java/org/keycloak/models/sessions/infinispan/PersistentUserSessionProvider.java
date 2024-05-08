@@ -43,6 +43,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.PersistentUpdate;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
@@ -119,7 +120,11 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache,
-                                         ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate) {
+                                         ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate,
+                                         SerializeExecutionsByKey<String> serializerSession,
+                                         SerializeExecutionsByKey<String> serializerOfflineSession,
+                                         SerializeExecutionsByKey<UUID> serializerClientSession,
+                                         SerializeExecutionsByKey<UUID> serializerOfflineClientSession) {
         if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
             throw new IllegalStateException("Persistent user sessions are not enabled");
         }
@@ -136,7 +141,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 remoteCacheInvoker,
                 SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs,
                 SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs,
-                asyncQueuePersistentUpdate);
+                asyncQueuePersistentUpdate,
+                serializerSession,
+                serializerOfflineSession);
 
         this.clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
                 clientSessionCache, offlineClientSessionCache,
@@ -144,7 +151,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs,
                 SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs,
                 sessionTx,
-                asyncQueuePersistentUpdate);
+                asyncQueuePersistentUpdate,
+                serializerClientSession,
+                serializerOfflineClientSession);
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 

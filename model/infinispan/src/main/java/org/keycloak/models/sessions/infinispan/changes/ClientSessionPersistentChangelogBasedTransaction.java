@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -53,8 +52,10 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                                                             SessionFunction<AuthenticatedClientSessionEntity> offlineLifespanMsLoader,
                                                             SessionFunction<AuthenticatedClientSessionEntity> offlineMaxIdleTimeMsLoader,
                                                             UserSessionPersistentChangelogBasedTransaction userSessionTx,
-                                                            ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
-        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue);
+                                                            ArrayBlockingQueue<PersistentUpdate> batchingQueue,
+                                                            SerializeExecutionsByKey<UUID> sessions,
+                                                            SerializeExecutionsByKey<UUID> offlineSessions) {
+        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, sessions, offlineSessions);
         this.userSessionTx = userSessionTx;
     }
 
