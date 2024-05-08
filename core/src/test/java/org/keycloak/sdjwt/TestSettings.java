@@ -33,7 +33,12 @@ import java.util.Map;
 import org.junit.ClassRule;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.crypto.*;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureVerifierContext;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.rule.CryptoInitRule;
