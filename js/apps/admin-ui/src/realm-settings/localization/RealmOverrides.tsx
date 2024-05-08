@@ -383,13 +383,13 @@ export const RealmOverrides = ({
                     onClick={() => setKebabOpen(!kebabOpen)}
                     variant="plain"
                     isExpanded={kebabOpen}
+                    data-testid="toolbar-deleteBtn"
                   >
                     <EllipsisVIcon />
                   </MenuToggle>
                 )}
                 isOpen={kebabOpen}
                 isPlain
-                data-testid="toolbar-deleteBtn"
               >
                 <DropdownList>
                   <DropdownItem

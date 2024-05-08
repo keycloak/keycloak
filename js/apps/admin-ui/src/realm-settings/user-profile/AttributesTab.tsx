@@ -169,6 +169,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         <ToolbarContent>
           <ToolbarItem>
             <KeycloakSelect
+              toggleId="kc-group-filter"
               width={200}
               data-testid="filter-select"
               isOpen={isFilterTypeDropdownOpen}
@@ -199,11 +200,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                   attributes.filter((attr) => !!attr.group),
                   "group",
                 ).map((attr) => (
-                  <SelectOption
-                    key={attr.group}
-                    data-testid={`${attr.group}-option`}
-                    value={attr.group}
-                  >
+                  <SelectOption key={attr.group} value={attr.group}>
                     {attr.group}
                   </SelectOption>
                 )),
