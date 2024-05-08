@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -89,15 +90,11 @@ public class ClientInitialAccessResource {
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
         int count = config.getCount() != null ? config.getCount() : 1;
         if (expiration < 0) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Invalid value for expiration");
-            error.put("error_description", "The expiration time interval cannot be less than 0");
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation("Invalid value for expiration", "The expiration time interval cannot be less than 0");
             return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
         if (count < 0) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Invalid value for count");
-            error.put("error_description", "The count cannot be less than 0");
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation("Invalid value for count", "The count cannot be less than 0");
             return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
 

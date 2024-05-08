@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
+import jakarta.ws.rs.BadRequestException;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
@@ -26,6 +27,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
@@ -102,18 +104,24 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         rep.setExpiration(100);
         try {
             resource.create(rep);
-        } catch (Exception ex) {
-            //expected
+            Assert.fail("Invalid value for count");
+        }catch (BadRequestException e){
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            Assert.assertEquals("Invalid value for count", error.getError());
+            Assert.assertEquals("The count cannot be less than 0", error.getErrorDescription());
         }
 
-        // Set Expiration as -100
+        // Set Expiration as -10
         rep = new ClientInitialAccessCreatePresentation();
-        rep.setCount(5);
-        rep.setExpiration(-100);
+        rep.setCount(100);
+        rep.setExpiration(-10);
         try {
             resource.create(rep);
-        } catch (Exception ex) {
-            //expected
+            Assert.fail("Invalid value for expiration");
+        }catch (BadRequestException e){
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            Assert.assertEquals("Invalid value for expiration", error.getError());
+            Assert.assertEquals("The expiration time interval cannot be less than 0", error.getErrorDescription());
         }
     }
 
