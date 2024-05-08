@@ -22,7 +22,11 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
 import org.keycloak.rule.CryptoInitRule;
-import org.keycloak.sdjwt.*;
+import org.keycloak.sdjwt.DisclosureSpec;
+//import org.keycloak.sdjwt.IssuerSignedJWT;
+import org.keycloak.sdjwt.SdJwt;
+import org.keycloak.sdjwt.TestSettings;
+import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import java.util.Arrays;
