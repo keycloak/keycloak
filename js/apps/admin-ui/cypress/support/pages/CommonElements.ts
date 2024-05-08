@@ -21,10 +21,9 @@ export default class CommonElements {
       this.parentSelector + ".pf-v5-c-menu__list .pf-v5-c-menu__item";
     this.selectMenuItem =
       this.parentSelector + ".pf-v5-c-menu__list .pf-v5-c-menu__list-item";
-    this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-select__toggle";
-    this.tableKebabBtn = this.parentSelector + ".pf-v5-c-dropdown__toggle";
-    this.dropdownSelectToggleBtn =
-      this.parentSelector + ".pf-v5-c-select__toggle";
+    this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-menu-toggle";
+    this.tableKebabBtn = this.parentSelector + ".pf-v5-c-menu-toggle";
+    this.dropdownSelectToggleBtn = this.parentSelector + ".pf-v5-c-menu-toggle";
     this.dropdownSelectToggleItem =
       this.parentSelector + ".pf-v5-c-menu__list > li";
   }

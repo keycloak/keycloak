@@ -5,7 +5,7 @@ export default class PageObject {
   #drpDwnMenuToggleBtn = ".pf-v5-c-menu-toggle";
   #selectMenuList = ".pf-v5-c-menu__list";
   #selectMenuItem = ".pf-v5-c-menu__list-item";
-  #selectMenuToggleBtn = ".pf-v5-c-select__toggle";
+  #selectMenuToggleBtn = ".pf-v5-c-menu-toggle";
   #switchInput = ".pf-v5-c-switch__input";
   #formLabel = ".pf-v5-c-form__label";
   #chipGroup = ".pf-v5-c-chip-group";

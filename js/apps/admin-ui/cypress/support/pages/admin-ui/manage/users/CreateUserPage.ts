@@ -88,7 +88,7 @@ export default class CreateUserPage {
   ) {
     this.#getSelectFieldButton(attrName).should(
       "have.class",
-      "pf-v5-c-select__toggle",
+      "pf-v5-c-menu-toggle",
     );
 
     const valueToCheck = expectedValue ? expectedValue : this.emptyOptionValue;

@@ -299,8 +299,8 @@ export const ClientScopes = ({
                   <Dropdown
                     toggle={(ref) => (
                       <MenuToggle
+                        data-testid="kebab"
                         ref={ref}
-                        aria-label="kebab dropdown toggle"
                         variant="plain"
                         onClick={() => setKebabOpen(!kebabOpen)}
                         isExpanded={kebabOpen}

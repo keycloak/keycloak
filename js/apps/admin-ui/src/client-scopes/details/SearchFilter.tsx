@@ -74,7 +74,7 @@ export const SearchDropdown = ({
     <Dropdown
       toggle={(ref) => (
         <MenuToggle
-          className="keycloak__client-scopes__searchtype"
+          data-testid="clientScopeSearch"
           ref={ref}
           id="toggle-id"
           onClick={() => setSearchToggle(!searchToggle)}
@@ -115,7 +115,7 @@ export const SearchToolbar = ({
             <Select
               toggle={(ref) => (
                 <MenuToggle
-                  className="keycloak__client-scopes__searchtype"
+                  data-testid="clientScopeSearchType"
                   ref={ref}
                   isExpanded={open}
                   onClick={() => setOpen(!open)}
@@ -160,7 +160,7 @@ export const SearchToolbar = ({
             <Select
               toggle={(ref) => (
                 <MenuToggle
-                  className="keycloak__client-scopes__searchtype"
+                  data-testid="clientScopeSearchProtocol"
                   ref={ref}
                   isExpanded={open}
                   onClick={() => setOpen(!open)}

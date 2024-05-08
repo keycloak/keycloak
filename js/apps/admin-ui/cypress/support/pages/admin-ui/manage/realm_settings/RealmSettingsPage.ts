@@ -199,7 +199,7 @@ export default class RealmSettingsPage extends CommonPage {
   #clientPolicy = 'a[href*="realm-settings/client-policies/Test/edit-policy"]';
   #reloadBtn = "reloadProfile";
   #addExecutor = "addExecutor";
-  #addExecutorDrpDwn = ".pf-v5-c-select__toggle";
+  #addExecutorDrpDwn = ".pf-v5-c-menu-toggle";
   #addExecutorDrpDwnOption = "executorType-select";
   #addExecutorCancelBtn = ".pf-v5-c-form__actions a";
   #addExecutorSaveBtn = "addExecutor-saveBtn";
@@ -210,7 +210,7 @@ export default class RealmSettingsPage extends CommonPage {
 
   #listingPage = new ListingPage();
   #addCondition = "addCondition";
-  #addConditionDrpDwn = ".pf-v5-c-select__toggle";
+  #addConditionDrpDwn = ".pf-v5-c-menu-toggle";
   #addConditionDrpDwnOption = "conditionType-select";
   #addConditionCancelBtn = "addCondition-cancelBtn";
   #addConditionSaveBtn = "addCondition-saveBtn";
@@ -745,7 +745,8 @@ export default class RealmSettingsPage extends CommonPage {
 
   shouldRemoveEventFromEventListener() {
     cy.get(this.#eventListenerRemove).last().click({ force: true });
-    cy.findByTestId(this.#eventListenersSaveBtn).click({ force: true });
+    cy.get(this.#eventListenersInputFld).click();
+    cy.findByTestId(this.#eventListenersSaveBtn).click();
     cy.get(this.#alertMessage).should(
       "be.visible",
       "Event listener has been updated.",
