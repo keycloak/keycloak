@@ -2,12 +2,11 @@ import { PropsWithChildren, useEffect, useMemo } from "react";
 import { useMatch } from "react-router-dom";
 import {
   createNamedContext,
+  useEnvironment,
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
-import environment from "../../environment";
 
 type RealmContextType = {
   realm: string;
@@ -19,6 +18,9 @@ export const RealmContext = createNamedContext<RealmContextType | undefined>(
 );
 
 export const RealmContextProvider = ({ children }: PropsWithChildren) => {
+  const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment();
+
   const routeMatch = useMatch({
     path: DashboardRouteWithRealm.path,
     end: false,
@@ -26,7 +28,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
 
   const realmParam = routeMatch?.params.realm;
   const realm = useMemo(
-    () => decodeURIComponent(realmParam ?? environment.loginRealm),
+    () => decodeURIComponent(realmParam ?? environment.realm),
     [realmParam],
   );
 

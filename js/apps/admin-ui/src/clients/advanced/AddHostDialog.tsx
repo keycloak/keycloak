@@ -8,7 +8,7 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 
 type FormFields = {
@@ -28,6 +28,8 @@ export const AddHostDialog = ({
   onAdded,
   onClose,
 }: AddHostDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<FormFields>();
   const {

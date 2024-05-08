@@ -4,8 +4,7 @@ import { SelectProps, SelectVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SelectControl } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import type { ComponentProps } from "../dynamic/components";
 
@@ -20,6 +19,8 @@ export const ClientSelect = ({
   required = false,
   variant = SelectVariant.typeahead,
 }: ClientSelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [clients, setClients] = useState<ClientRepresentation[]>([]);

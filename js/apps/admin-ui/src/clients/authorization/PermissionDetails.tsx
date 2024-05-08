@@ -21,8 +21,7 @@ import {
   TextAreaControl,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -46,6 +45,8 @@ type FormFields = PolicyRepresentation & {
 };
 
 export default function PermissionDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const form = useForm<FormFields>({

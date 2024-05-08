@@ -23,7 +23,7 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "@keycloak/keycloak-ui-shared";
+import { ContinueCancelModal, useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { deleteSession, getDevices } from "../api/methods";
 import {
   ClientRepresentation,
@@ -32,7 +32,6 @@ import {
 } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
-import { useEnvironment } from "../root/KeycloakContext";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 

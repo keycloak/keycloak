@@ -12,7 +12,7 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -29,6 +29,8 @@ import {
 import { toClientRegistration } from "../routes/ClientRegistration";
 
 export default function DetailProvider() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id, providerId, subTab } = useParams<RegistrationProviderParams>();
   const navigate = useNavigate();

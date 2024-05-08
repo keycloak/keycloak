@@ -21,7 +21,7 @@ import {
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 
 type ManagePriorityDialogProps = {
@@ -33,6 +33,8 @@ export const ManagePriorityDialog = ({
   components,
   onClose,
 }: ManagePriorityDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 

@@ -9,7 +9,7 @@ import {
 import { CheckIcon, PencilAltIcon, TimesIcon } from "@patternfly/react-icons";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 
 type UserLabelForm = {
@@ -29,6 +29,8 @@ export const InlineLabelEdit = ({
   isEditable,
   toggle,
 }: InlineLabelEditProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { register, handleSubmit } = useForm<UserLabelForm>();
 

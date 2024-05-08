@@ -37,8 +37,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -71,6 +70,8 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
 };
 
 export const PartialImportDialog = (props: PartialImportProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
 

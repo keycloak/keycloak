@@ -1,20 +1,41 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import {
+  createNamedContext,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
+import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
+import type Keycloak from "keycloak-js";
 
-import environment from "./environment";
-import { keycloak } from "./keycloak";
+export type AdminClientProps = {
+  keycloak: Keycloak;
+  adminClient: KeycloakAdminClient;
+};
 
-export const adminClient = new KeycloakAdminClient();
+export const AdminClientContext = createNamedContext<
+  AdminClientProps | undefined
+>("AdminClientContext", undefined);
 
-adminClient.setConfig({ realmName: environment.loginRealm });
-adminClient.baseUrl = environment.authUrl;
-adminClient.registerTokenProvider({
-  async getAccessToken() {
-    try {
-      await keycloak.updateToken(5);
-    } catch (error) {
-      keycloak.login();
-    }
+export const useAdminClient = () => useRequiredContext(AdminClientContext);
 
-    return keycloak.token;
-  },
-});
+export async function initAdminClient(
+  keycloak: Keycloak,
+  environment: BaseEnvironment,
+) {
+  const adminClient = new KeycloakAdminClient();
+
+  adminClient.setConfig({ realmName: environment.realm });
+  adminClient.baseUrl = environment.authUrl;
+  adminClient.registerTokenProvider({
+    async getAccessToken() {
+      try {
+        await keycloak.updateToken(5);
+      } catch (error) {
+        keycloak.login();
+      }
+
+      return keycloak.token;
+    },
+  });
+
+  return adminClient;
+}

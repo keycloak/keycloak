@@ -21,8 +21,7 @@ import {
   SelectControl,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
@@ -46,6 +45,8 @@ export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm: realmName } = useRealm();
   const [userProfileConfig, setUserProfileConfig] =
     useState<UserProfileConfig>();
@@ -93,6 +94,8 @@ function RealmSettingsGeneralTabForm({
   save,
   userProfileConfig,
 }: RealmSettingsGeneralTabFormProps) {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useForm<FormFields>();
