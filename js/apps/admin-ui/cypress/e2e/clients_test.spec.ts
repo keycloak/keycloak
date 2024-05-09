@@ -571,7 +571,9 @@ describe("Clients test", () => {
       cy.findByTestId("importClient").click();
       cy.findByTestId("realm-file").selectFile(
         "cypress/fixtures/partial-import-test-data/import-identical-client.json",
-        { action: "drag-drop" },
+        {
+          action: "drag-drop",
+        },
       );
 
       cy.wait(1000);
@@ -1169,10 +1171,11 @@ describe("Clients test", () => {
         .tabUtils()
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
+        .checkTabExists(ClientsDetailsTab.ClientScopes, true)
         .checkTabExists(ClientsDetailsTab.Sessions, true)
         .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(5);
+        .checkNumberOfTabsIsEqual(6);
     });
 
     it("Hides the delete action", () => {
