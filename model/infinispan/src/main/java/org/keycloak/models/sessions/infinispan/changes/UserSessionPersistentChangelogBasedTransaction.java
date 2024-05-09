@@ -45,9 +45,9 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                                                           SessionFunction<UserSessionEntity> offlineLifespanMsLoader,
                                                           SessionFunction<UserSessionEntity> offlineMaxIdleTimeMsLoader,
                                                           ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                          SerializeExecutionsByKey<String> sessions,
-                                                          SerializeExecutionsByKey<String> offlineSessions) {
-        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, sessions, offlineSessions);
+                                                          SerializeExecutionsByKey<String> serializerOnline,
+                                                          SerializeExecutionsByKey<String> serializerOffline) {
+        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, boolean offline) {

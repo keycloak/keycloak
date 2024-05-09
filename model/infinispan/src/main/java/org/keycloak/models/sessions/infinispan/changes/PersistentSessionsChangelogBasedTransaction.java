@@ -62,8 +62,8 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                                                        SessionFunction<V> offlineLifespanMsLoader,
                                                        SessionFunction<V> offlineMaxIdleTimeMsLoader,
                                                        ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                       SerializeExecutionsByKey<K> sessions,
-                                                       SerializeExecutionsByKey<K> offlineSessions) {
+                                                       SerializeExecutionsByKey<K> serializerOnline,
+                                                       SerializeExecutionsByKey<K> serializerOffline) {
         kcSession = session;
 
         if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
@@ -81,13 +81,13 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
         changesPerformers = List.of(
                 new JpaChangesPerformer<>(cache.getName(), batchingQueue),
-                new EmbeddedCachesChangesPerformer<>(cache, sessions) {
+                new EmbeddedCachesChangesPerformer<>(cache, serializerOnline) {
                     @Override
                     public boolean shouldConsumeChange(V entity) {
                         return !entity.isOffline();
                     }
                 },
-                new EmbeddedCachesChangesPerformer<>(offlineCache, offlineSessions){
+                new EmbeddedCachesChangesPerformer<>(offlineCache, serializerOffline){
                     @Override
                     public boolean shouldConsumeChange(V entity) {
                         return entity.isOffline();

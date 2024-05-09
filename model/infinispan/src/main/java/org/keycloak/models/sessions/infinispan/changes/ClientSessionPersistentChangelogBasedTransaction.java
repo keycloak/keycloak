@@ -53,9 +53,9 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                                                             SessionFunction<AuthenticatedClientSessionEntity> offlineMaxIdleTimeMsLoader,
                                                             UserSessionPersistentChangelogBasedTransaction userSessionTx,
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                            SerializeExecutionsByKey<UUID> sessions,
-                                                            SerializeExecutionsByKey<UUID> offlineSessions) {
-        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, sessions, offlineSessions);
+                                                            SerializeExecutionsByKey<UUID> serializerOnline,
+                                                            SerializeExecutionsByKey<UUID> serializerOffline) {
+        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
         this.userSessionTx = userSessionTx;
     }
 
