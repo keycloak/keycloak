@@ -1171,11 +1171,10 @@ describe("Clients test", () => {
         .tabUtils()
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
-        .checkTabExists(ClientsDetailsTab.ClientScopes, true)
         .checkTabExists(ClientsDetailsTab.Sessions, true)
         .checkTabExists(ClientsDetailsTab.Permissions, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(6);
+        .checkNumberOfTabsIsEqual(5);
     });
 
     it("Hides the delete action", () => {
