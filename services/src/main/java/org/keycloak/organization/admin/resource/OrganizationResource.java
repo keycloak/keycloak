@@ -164,9 +164,7 @@ public class OrganizationResource {
 
     @Path("{id}/members")
     public OrganizationMemberResource members(@PathParam("id") String id) {
-        OrganizationModel organization = getOrganization(id);
-        session.setAttribute(OrganizationModel.class.getName(), organization);
-        return new OrganizationMemberResource(session, organization, auth, adminEvent);
+        return new OrganizationMemberResource(session, getOrganization(id), auth, adminEvent);
     }
 
     @Path("{id}/identity-providers")
@@ -187,6 +185,8 @@ public class OrganizationResource {
         if (model == null) {
             throw ErrorResponse.error("Organization not found.", Response.Status.NOT_FOUND);
         }
+
+        session.setAttribute(OrganizationModel.class.getName(), model);
 
         return model;
     }

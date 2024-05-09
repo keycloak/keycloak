@@ -64,8 +64,10 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     private final GroupProvider groupProvider;
     private final UserProvider userProvider;
     private final RealmModel realm;
+    private final KeycloakSession session;
 
     public JpaOrganizationProvider(KeycloakSession session) {
+        this.session = session;
         em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         groupProvider = session.groups();
         userProvider = session.users();
@@ -85,21 +87,22 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelDuplicateException("A organization with the same name already exists.");
         }
 
-        OrganizationEntity entity = new OrganizationEntity();
-        entity.setId(KeycloakModelUtils.generateId());
+        OrganizationAdapter adapter = new OrganizationAdapter(realm, this);
 
-        GroupModel group = createOrganizationGroup(entity.getId());
+        try {
+            session.setAttribute(OrganizationModel.class.getName(), adapter);
+            GroupModel group = createOrganizationGroup(adapter.getId());
 
-        entity.setGroupId(group.getId());
-        entity.setRealmId(realm.getId());
-        entity.setName(name);
-        entity.setEnabled(true);
+            adapter.setGroupId(group.getId());
+            adapter.setName(name);
+            adapter.setEnabled(true);
 
-        em.persist(entity);
+            em.persist(adapter.getEntity());
 
-        OrganizationAdapter adapter = new OrganizationAdapter(realm, entity, this);
-
-        adapter.setDomains(domains.stream().map(OrganizationDomainModel::new).collect(Collectors.toSet()));
+            adapter.setDomains(domains.stream().map(OrganizationDomainModel::new).collect(Collectors.toSet()));
+        } finally {
+            session.removeAttribute(OrganizationModel.class.getName());
+        }
 
         return adapter;
     }
@@ -107,16 +110,21 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public boolean remove(OrganizationModel organization) {
         OrganizationEntity entity = getEntity(organization.getId());
-        GroupModel group = getOrganizationGroup(entity);
 
-        if (group != null) {
-            //TODO: won't scale, requires a better mechanism for bulk deleting users
-            userProvider.getGroupMembersStream(realm, group).forEach(userModel -> removeMember(organization, userModel));
-            groupProvider.removeGroup(realm, group);
-            organization.getIdentityProviders().forEach((model) -> removeIdentityProvider(organization, model));
+        try {
+            session.setAttribute(OrganizationModel.class.getName(), organization);
+            GroupModel group = getOrganizationGroup(entity);
+
+            if (group != null) {
+                //TODO: won't scale, requires a better mechanism for bulk deleting users
+                userProvider.getGroupMembersStream(realm, group).forEach(userModel -> removeMember(organization, userModel));
+                groupProvider.removeGroup(realm, group);
+                organization.getIdentityProviders().forEach((model) -> removeIdentityProvider(organization, model));
+            }
+            em.remove(entity);
+        } finally {
+            session.removeAttribute(OrganizationModel.class.getName());
         }
-
-        em.remove(entity);
 
         return true;
     }
@@ -133,18 +141,30 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         throwExceptionIfObjectIsNull(user, "User");
 
         OrganizationEntity entity = getEntity(organization.getId());
-        GroupModel group = getOrganizationGroup(entity);
+        OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
-        if (user.isMemberOf(group)) {
-            return false;
+        if (current == null) {
+            session.setAttribute(OrganizationModel.class.getName(), organization);
         }
 
-        if (user.getFirstAttribute(ORGANIZATION_ATTRIBUTE) != null) {
-            throw new ModelException("User [" + user.getId() + "] is a member of a different organization");
-        }
+        try {
+            GroupModel group = getOrganizationGroup(entity);
 
-        user.joinGroup(group);
-        user.setSingleAttribute(ORGANIZATION_ATTRIBUTE, entity.getId());
+            if (user.isMemberOf(group)) {
+                return false;
+            }
+
+            if (user.getFirstAttribute(ORGANIZATION_ATTRIBUTE) != null) {
+                throw new ModelException("User [" + user.getId() + "] is a member of a different organization");
+            }
+
+            user.joinGroup(group);
+            user.setSingleAttribute(ORGANIZATION_ATTRIBUTE, entity.getId());
+        } finally {
+            if (current == null) {
+                session.removeAttribute(OrganizationModel.class.getName());
+            }
+        }
 
         return true;
     }
@@ -333,10 +353,22 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         if (isManagedMember(organization, member)) {
             userProvider.removeUser(realm, member);
         } else {
-            List<String> organizations = member.getAttributes().get(ORGANIZATION_ATTRIBUTE);
-            organizations.remove(organization.getId());
-            member.setAttribute(ORGANIZATION_ATTRIBUTE, organizations);
-            member.leaveGroup(getOrganizationGroup(organization));
+            OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+
+            if (current == null) {
+                session.setAttribute(OrganizationModel.class.getName(), organization);
+            }
+
+            try {
+                List<String> organizations = member.getAttributes().get(ORGANIZATION_ATTRIBUTE);
+                organizations.remove(organization.getId());
+                member.setAttribute(ORGANIZATION_ATTRIBUTE, organizations);
+                member.leaveGroup(getOrganizationGroup(organization));
+            } finally {
+                if (current == null) {
+                    session.removeAttribute(OrganizationModel.class.getName());
+                }
+            }
         }
 
         return true;

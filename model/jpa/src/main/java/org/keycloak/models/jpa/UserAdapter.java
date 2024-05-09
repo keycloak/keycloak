@@ -22,6 +22,8 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
+import org.keycloak.models.GroupModel.GroupMemberLeaveEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -412,6 +414,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         em.persist(entity);
         em.flush();
         em.detach(entity);
+        GroupMemberJoinEvent.fire(group, session);
 
     }
 
@@ -427,7 +430,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.remove(entity);
         }
         em.flush();
-
+        GroupMemberLeaveEvent.fire(group, session);
     }
 
     @Override
@@ -544,6 +547,4 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public int hashCode() {
         return getId().hashCode();
     }
-
-
 }

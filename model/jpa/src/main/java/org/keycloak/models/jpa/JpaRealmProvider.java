@@ -54,6 +54,9 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupCreatedEvent;
+import org.keycloak.models.GroupModel.GroupPathChangeEvent;
+import org.keycloak.models.GroupModel.GroupUpdatedEvent;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -524,29 +527,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         String newPath = KeycloakModelUtils.buildGroupPath(group);
         String previousPath = KeycloakModelUtils.buildGroupPath(group, previousParent);
 
-        GroupModel.GroupPathChangeEvent event =
-                new GroupModel.GroupPathChangeEvent() {
-                    @Override
-                    public RealmModel getRealm() {
-                        return realm;
-                    }
-
-                    @Override
-                    public String getNewPath() {
-                        return newPath;
-                    }
-
-                    @Override
-                    public String getPreviousPath() {
-                        return previousPath;
-                    }
-
-                    @Override
-                    public KeycloakSession getKeycloakSession() {
-                        return session;
-                    }
-                };
-        session.getKeycloakSessionFactory().publish(event);
+        GroupPathChangeEvent.fire(group, newPath, previousPath, session);
+        fireGroupUpdatedEvent(group);
     }
 
     @Override
@@ -733,12 +715,17 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         em.persist(groupEntity);
         em.flush();
 
-        return new GroupAdapter(session, realm, em, groupEntity);
+        GroupAdapter group = new GroupAdapter(session, realm, em, groupEntity);
+
+        fireGroupCreatedEvent(group);
+
+        return group;
     }
 
     @Override
     public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
         subGroup.setParent(null);
+        fireGroupUpdatedEvent(subGroup);
     }
 
     public void preRemove(RealmModel realm, RoleModel role) {
@@ -1261,5 +1248,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     public Set<String> getClientSearchableAttributes() {
         return clientSearchableAttributes;
+    }
+
+    private void fireGroupUpdatedEvent(GroupModel group) {
+        GroupUpdatedEvent.fire(group, session);
+    }
+
+    private void fireGroupCreatedEvent(GroupAdapter group) {
+        GroupCreatedEvent.fire(group, session);
     }
 }
