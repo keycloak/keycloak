@@ -43,8 +43,8 @@ import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigurationException;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.smallrye.config.ConfigValue;
@@ -545,7 +545,7 @@ class KeycloakProcessor {
 
         if (profile != null) {
             properties.put(Environment.PROFILE, profile);
-            properties.put(ProfileManager.QUARKUS_PROFILE_PROP, profile);
+            properties.put(LaunchMode.current().getProfileKey(), profile);
         }
 
         properties.put(QUARKUS_PROPERTY_ENABLED, String.valueOf(QuarkusPropertiesConfigSource.getConfigurationFile() != null));
