@@ -28,6 +28,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupPathChangeEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -61,7 +62,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.utils.GroupUtils;
 
-import static org.keycloak.utils.OrganizationUtils.checkForOrgRelatedGroupRep;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
@@ -118,11 +118,14 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         String groupName = rep.getName();
+
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
-        checkForOrgRelatedGroupRep(session, rep);
+        if (rep.getId() != null && !group.getId().equals(rep.getId())) {
+            throw ErrorResponse.error("Invalid group id", Response.Status.BAD_REQUEST);
+        }
 
         if (!Objects.equals(groupName, group.getName())) {
             boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
@@ -197,8 +200,6 @@ public class GroupResource {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
-        checkForOrgRelatedGroupRep(session, rep);
-
         try {
             Response.ResponseBuilder builder = Response.status(204);
             GroupModel child = null;
@@ -246,29 +247,7 @@ public class GroupResource {
 
                 String newPath = KeycloakModelUtils.buildGroupPath(model);
 
-                GroupModel.GroupPathChangeEvent event =
-                        new GroupModel.GroupPathChangeEvent() {
-                            @Override
-                            public RealmModel getRealm() {
-                                return realm;
-                            }
-
-                            @Override
-                            public String getNewPath() {
-                                return newPath;
-                            }
-
-                            @Override
-                            public String getPreviousPath() {
-                                return previousPath;
-                            }
-
-                            @Override
-                            public KeycloakSession getKeycloakSession() {
-                                return session;
-                            }
-                        };
-                session.getKeycloakSessionFactory().publish(event);
+                GroupPathChangeEvent.fire(model, newPath, previousPath, session);
             }
         }
 

@@ -18,6 +18,9 @@
 package org.keycloak.organization.jpa;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupEvent;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.organization.authentication.authenticators.broker.IdpOrganizationAuthenticatorFactory;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -29,6 +32,7 @@ import org.keycloak.models.RealmModel.RealmPostCreateEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.OrganizationProviderFactory;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderEvent;
 
 public class JpaOrganizationProviderFactory implements OrganizationProviderFactory {
@@ -67,6 +71,14 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
             KeycloakSession session = ((RealmRemovedEvent) event).getKeycloakSession();
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
             provider.removeAll();
+        }
+        if (event instanceof GroupEvent) {
+            GroupEvent groupEvent = (GroupEvent) event;
+            KeycloakSession session = groupEvent.getKeycloakSession();
+            GroupModel group = groupEvent.getGroup();
+            if (!Organizations.canManageOrganizationGroup(session, group)) {
+                throw new ModelValidationException("Can not update organization group");
+            }
         }
     }
 
