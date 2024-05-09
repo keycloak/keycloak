@@ -449,27 +449,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>jpa</id>
-            <build>
-                <plugins>
-                    <!-- DB will be released after the test -->
-                    <plugin>
-                        <groupId>org.keycloak</groupId>
-                        <artifactId>db-allocator-plugin</artifactId>
-                        <inherited>false</inherited>
-                        <executions>
-                            <execution>
-                                <id>release-db</id>
-                                <goals>
-                                    <goal>release</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
         <profile>
             <id>app-server-undertow</id>
