@@ -50,9 +50,7 @@ export const AddRoleMappingModal = ({
 
   const [searchToggle, setSearchToggle] = useState(false);
 
-  const [filterType, setFilterType] = useState<FilterType>(
-    canViewRealmRoles ? "roles" : "clients",
-  );
+  const [filterType, setFilterType] = useState<FilterType>("clients");
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);

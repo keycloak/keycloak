@@ -5,6 +5,7 @@ export default class UserRegistration {
   #addDefaultGroupBtn = "no-default-groups-empty-action";
   #namesColumn = 'tbody td[data-label="Name"]:visible';
   #addBtn = "assign";
+  #filterTypeDropdown = "filter-type-dropdown";
 
   goToTab() {
     cy.findByTestId(this.#userRegistrationTab).click({ force: true });
@@ -23,6 +24,16 @@ export default class UserRegistration {
 
   addDefaultGroup() {
     cy.findByTestId(this.#addDefaultGroupBtn).click();
+    return this;
+  }
+
+  changeRoleTypeFilter(filter: string) {
+    // Invert the filter because the testid is the current selection
+    const option = filter == "roles" ? "clients" : "roles";
+
+    cy.findByTestId(this.#filterTypeDropdown).click();
+    cy.findByTestId(option).click();
+
     return this;
   }
 
