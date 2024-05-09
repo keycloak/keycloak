@@ -65,14 +65,6 @@ public class IoUtil {
         return content;
     }
 
-    public static void waitFor(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted");
-        }
-    }
-
     public static String readSecret(String prompt) {
         Console cons = System.console();
         if (cons == null) {

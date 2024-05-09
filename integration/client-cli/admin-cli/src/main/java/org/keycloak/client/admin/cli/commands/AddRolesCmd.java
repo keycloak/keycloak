@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.operations.ClientOperations;
 import org.keycloak.client.admin.cli.operations.GroupOperations;
 import org.keycloak.client.admin.cli.operations.RoleOperations;
@@ -264,10 +263,6 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " add-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]");
@@ -284,21 +279,7 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
         out.println("to a specific user. If group is specified using --gname, --gpath or --gid then roles are added to a specific group.");
         out.println("If composite role is specified using --rname or --rid then roles are added to a specific composite role.");
         out.println("One or more roles have to be specified using --rolename or --roleid so that they are added to a group, a user or a composite role.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + KcAdmMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
-        out.println("  Command specific options:");
+        globalOptions(out);
         out.println("    --uusername           User's 'username'. If more than one user exists with the same username");
         out.println("                          you'll have to use --uid to specify the target user");
         out.println("    --uid                 User's 'id' attribute");
@@ -333,4 +314,5 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
         out.println("Use '" + CMD + " help' for general information and a list of commands");
         return sb.toString();
     }
+
 }

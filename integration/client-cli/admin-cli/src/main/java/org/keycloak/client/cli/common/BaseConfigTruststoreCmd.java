@@ -115,7 +115,7 @@ public class BaseConfigTruststoreCmd extends BaseAuthOptionsCmd {
         out.println();
         out.println("  Command specific options:");
         out.println("    TRUSTSTORE              Path to truststore file");
-        out.println("    --trustpass PASSWORD    Truststore password to unlock truststore (prompted for if set to '-')");
+        out.println("    --trustpass PASSWORD    Truststore password to unlock truststore (prompted for if set to '-'), defaults to the env variable KC_CLI_TRUSTSTORE_PASSWORD");
         out.println("    -d, --delete            Remove truststore configuration");
         out.println();
         out.println();

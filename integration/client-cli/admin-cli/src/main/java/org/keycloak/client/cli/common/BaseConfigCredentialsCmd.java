@@ -113,10 +113,8 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
         } else if (keystore != null || secret != null || clientSet) {
             grantTypeForAuthentication = OAuth2Constants.CLIENT_CREDENTIALS;
             printErr("Logging into " + server + " as " + "service-account-" + clientId + " of realm " + realm);
-            if (keystore == null) {
-                if (secret == null) {
-                    secret = readSecret("Enter client secret: ");
-                }
+            if (keystore == null && secret == null) {
+                secret = readSecret("Enter client secret: ");
             }
         }
 
@@ -196,18 +194,18 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
         out.println("    -x                      Print full stack trace when exiting with error");
         out.println("    --config                Path to a config file (" + getDefaultConfigFilePath() + " by default)");
         out.println("    --truststore PATH       Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD    Truststore password (prompted for if not specified and --truststore is used)");
+        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified, --truststore is used, and the KC_CLI_TRUSTSTORE_PASSWORD env property is not defined)");
         out.println();
         out.println("  Command specific options:");
         out.println("    --server SERVER_URL     Server endpoint url (e.g. 'http://localhost:8080')");
         out.println("    --realm REALM           Realm name to use");
         out.println("    --user USER             Username to login with");
-        out.println("    --password PASSWORD     Password to login with (prompted for if not specified and --user is used)");
+        out.println("    --password PASSWORD     Password to login with (prompted for if not specified, --user is used, and the env variable KC_CLI_PASSWORD is not defined)");
         out.println("    --client CLIENT_ID      ClientId used by this client tool ('admin-cli' by default)");
-        out.println("    --secret SECRET         Secret to authenticate the client (prompted for if --client is specified, and no --keystore is specified)");
+        out.println("    --secret SECRET         Secret to authenticate the client (prompted for if no --user nor --keystore is specified, and the env variable KC_CLI_CLIENT_SECRET is not defined)");
         out.println("    --keystore PATH         Path to a keystore containing private key");
-        out.println("    --storepass PASSWORD    Keystore password (prompted for if not specified and --keystore is used)");
-        out.println("    --keypass PASSWORD      Key password (prompted for if not specified and --keystore is used without --storepass,");
+        out.println("    --storepass PASSWORD    Keystore password (prompted for if not specified, --keystore is used, and the env variable KC_CLI_STORE_PASSWORD)");
+        out.println("    --keypass PASSWORD      Key password (prompted for if not specified, --keystore is used without --storepass, and KC_CLI_KEY_PASSWORD");
         out.println("                            otherwise defaults to keystore password)");
         out.println("    --alias ALIAS           Alias of the key inside a keystore (defaults to the value of ClientId)");
         out.println();
