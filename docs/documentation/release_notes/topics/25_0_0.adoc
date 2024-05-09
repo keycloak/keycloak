@@ -40,10 +40,10 @@ Previous versions of {project_name} stored only offline user and offline client 
 The new feature `persistent-user-session` stores online user sessions and online client sessions not only in memory, but also in the database.
 This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
 
-The feature is a preview feature and disabled by default. To use it, enable the feature:
+The feature is a preview feature and disabled by default. To use it, add the following to your build command:
 
 ----
-bin/kc.sh start --features=persistent-user-session ...
+bin/kc.sh build --features=persistent-user-session ...
 ----
 
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
