@@ -12,7 +12,7 @@ import {
 import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../../admin-client";
 import { useAccess } from "../../context/access/Access";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
@@ -42,6 +42,8 @@ export const AddRoleMappingModal = ({
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
@@ -72,7 +74,7 @@ export const AddRoleMappingModal = ({
       params.search = search;
     }
 
-    const roles = await getAvailableRoles(type, { ...params, id });
+    const roles = await getAvailableRoles(adminClient, type, { ...params, id });
     const sorted = localeSort(roles, compareRow);
     return sorted.map((row) => {
       return {
@@ -87,7 +89,7 @@ export const AddRoleMappingModal = ({
     max?: number,
     search?: string,
   ): Promise<Row[]> => {
-    const roles = await getAvailableClientRoles({
+    const roles = await getAvailableClientRoles(adminClient, {
       id,
       type,
       first: first || 0,

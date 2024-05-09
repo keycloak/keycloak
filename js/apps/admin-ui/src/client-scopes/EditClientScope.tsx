@@ -15,8 +15,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useHelp } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   AllClientScopes,
@@ -43,10 +42,12 @@ import {
   ClientScopeTab,
   toClientScope,
 } from "./routes/ClientScope";
-import { toMapper } from "./routes/Mapper";
 import { toClientScopes } from "./routes/ClientScopes";
+import { toMapper } from "./routes/Mapper";
 
 export default function EditClientScope() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -118,7 +119,7 @@ export default function EditClientScope() {
 
     try {
       await adminClient.clientScopes.update({ id }, clientScope);
-      await changeScope({ ...clientScope, id }, clientScope.type);
+      await changeScope(adminClient, { ...clientScope, id }, clientScope.type);
 
       addAlert(t("updateSuccessClientScope"), AlertVariant.success);
     } catch (error) {

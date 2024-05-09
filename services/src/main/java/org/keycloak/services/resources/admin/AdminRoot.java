@@ -224,10 +224,7 @@ public class AdminRoot {
             logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
-        HttpResponse response = getHttpResponse();
-
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().build(
-                response);
+        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
 
         return new RealmsAdminResource(session, auth, tokenManager);
     }
@@ -236,13 +233,11 @@ public class AdminRoot {
     @OPTIONS
     @Operation(hidden = true)
     public Object preFlight() {
-        HttpRequest request = getHttpRequest();
-
         if (!isAdminApiEnabled()) {
             throw new NotFoundException();
         }
 
-        return new AdminCorsPreflightService(request);
+        return new AdminCorsPreflightService();
     }
 
     /**
@@ -261,7 +256,7 @@ public class AdminRoot {
         HttpRequest request = getHttpRequest();
 
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new AdminCorsPreflightService(request);
+            return new AdminCorsPreflightService();
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
@@ -273,8 +268,7 @@ public class AdminRoot {
             logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(
-                getHttpResponse());
+        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         return new ServerInfoAdminResource(session);
     }

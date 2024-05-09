@@ -42,27 +42,27 @@
   },
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@patternfly/react-core": "^5.3.0",
-    "@patternfly/react-icons": "^5.3.0",
-    "@patternfly/react-styles": "^5.3.0",
-    "i18next": "^23.11.2",
+    "@patternfly/react-core": "^5.3.3",
+    "@patternfly/react-icons": "^5.3.2",
+    "@patternfly/react-styles": "^5.3.1",
+    "i18next": "^23.11.3",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-hook-form": "7.51.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "7.51.4",
     "react-i18next": "^14.1.1"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
-    "@types/react": "^18.2.79",
-    "@types/react-dom": "^18.2.25",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^5.2.10",
+    "vite": "^5.2.11",
     "vite-plugin-checker": "^0.6.4",
-    "vite-plugin-dts": "^3.9.0",
+    "vite-plugin-dts": "^3.9.1",
     "vite-plugin-lib-inject-css": "^2.0.1",
-    "vitest": "^1.5.0"
+    "vitest": "^1.6.0"
   }
 }

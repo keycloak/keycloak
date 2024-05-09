@@ -13,8 +13,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
 import {
   SearchDropdown,
@@ -73,6 +72,8 @@ const TypeSelector = ({
   fineGrainedAccess,
   ...scope
 }: TypeSelectorProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -89,6 +90,7 @@ const TypeSelector = ({
       onSelect={async (value) => {
         try {
           await changeClientScope(
+            adminClient,
             clientId,
             scope,
             scope.type,
@@ -110,6 +112,8 @@ export const ClientScopes = ({
   clientName,
   fineGrainedAccess,
 }: ClientScopesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -205,6 +209,7 @@ export const ClientScopes = ({
     onConfirm: async () => {
       try {
         await removeClientScope(
+          adminClient,
           clientId,
           selectedRows[0],
           selectedRows[0].type as ClientScope,
@@ -230,7 +235,12 @@ export const ClientScopes = ({
               await Promise.all(
                 scopes.map(
                   async (scope) =>
-                    await addClientScope(clientId, scope.scope, scope.type!),
+                    await addClientScope(
+                      adminClient,
+                      clientId,
+                      scope.scope,
+                      scope.type!,
+                    ),
                 ),
               );
               addAlert(t("clientScopeSuccess"), AlertVariant.success);
@@ -301,6 +311,7 @@ export const ClientScopes = ({
                             await Promise.all(
                               selectedRows.map((row) =>
                                 removeClientScope(
+                                  adminClient,
                                   clientId,
                                   { ...row },
                                   row.type as ClientScope,

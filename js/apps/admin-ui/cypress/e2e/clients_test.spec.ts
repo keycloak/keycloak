@@ -32,6 +32,12 @@ const attributesTab = new AttributesTab();
 const dedicatedScopesMappersTab = new DedicatedScopesMappersTab();
 
 describe("Clients test", () => {
+  const realmName = `clients-realm-${uuid()}`;
+
+  before(() => adminClient.createRealm(realmName));
+
+  after(() => adminClient.deleteRealm(realmName));
+
   describe("Client details - Client scopes subtab", () => {
     const clientId = "client-scopes-subtab-test";
     const clientScopeName = "client-scope-test";
@@ -51,43 +57,60 @@ describe("Clients test", () => {
     const msgScopeMappingRemoved = "Scope mapping successfully removed";
 
     before(async () => {
-      adminClient.createClient({
-        clientId,
-        protocol: "openid-connect",
-        publicClient: false,
-      });
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createClient({
+          clientId,
+          protocol: "openid-connect",
+          publicClient: false,
+        }),
+      );
       for (let i = 0; i < 5; i++) {
         clientScope.name = clientScopeName + i;
-        await adminClient.createClientScope(clientScope);
-        await adminClient.addDefaultClientScopeInClient(
-          clientScopeName + i,
-          clientId,
+        await adminClient.inRealm(realmName, () =>
+          adminClient.createClientScope(clientScope),
+        );
+        await adminClient.inRealm(realmName, () =>
+          adminClient.addDefaultClientScopeInClient(
+            clientScopeName + i,
+            clientId,
+          ),
         );
       }
       clientScope.name = clientScopeNameDefaultType;
-      await adminClient.createClientScope(clientScope);
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createClientScope(clientScope),
+      );
       clientScope.name = clientScopeNameOptionalType;
-      await adminClient.createClientScope(clientScope);
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createClientScope(clientScope),
+      );
     });
 
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(clientId);
-      cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
+      cy.intercept(`/admin/realms/${realmName}/clients/*`).as("fetchClient");
       commonPage.tableUtils().clickRowItemLink(clientId);
       cy.wait("@fetchClient");
       clientDetailsPage.goToClientScopesTab();
     });
 
     after(async () => {
-      adminClient.deleteClient(clientId);
+      adminClient.inRealm(realmName, () => adminClient.deleteClient(clientId));
       for (let i = 0; i < 5; i++) {
-        await adminClient.deleteClientScope(clientScopeName + i);
+        await adminClient.inRealm(realmName, () =>
+          adminClient.deleteClientScope(clientScopeName + i),
+        );
       }
-      await adminClient.deleteClientScope(clientScopeNameDefaultType);
-      await adminClient.deleteClientScope(clientScopeNameOptionalType);
+      await adminClient.inRealm(realmName, () =>
+        adminClient.deleteClientScope(clientScopeNameDefaultType),
+      );
+      await adminClient.inRealm(realmName, () =>
+        adminClient.deleteClientScope(clientScopeNameOptionalType),
+      );
     });
 
     it("Should list client scopes", () => {
@@ -193,7 +216,7 @@ describe("Clients test", () => {
     it("Should remove multiple client scopes from search bar", () => {
       const itemName1 = clientScopeName + 1;
       const itemName2 = clientScopeName + 2;
-      cy.intercept("/admin/realms/master/client-scopes").as("load");
+      cy.intercept(`/admin/realms/${realmName}/client-scopes`).as("load");
       commonPage.tableToolbarUtils().clickSearchButton();
       cy.wait("@load");
       cy.wait(1000);
@@ -203,7 +226,7 @@ describe("Clients test", () => {
         .tableUtils()
         .selectRowItemCheckbox(itemName1)
         .selectRowItemCheckbox(itemName2);
-      cy.intercept("/admin/realms/master/client-scopes").as("load");
+      cy.intercept(`/admin/realms/${realmName}/client-scopes`).as("load");
       commonPage.tableToolbarUtils().clickSearchButton();
       cy.wait("@load");
       cy.wait(1000);
@@ -236,19 +259,30 @@ describe("Clients test", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
     });
 
     before(async () => {
-      await adminClient.createClient({
-        protocol: "openid-connect",
-        clientId: clientName,
-        publicClient: false,
-      });
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createClient({
+          protocol: "openid-connect",
+          clientId: clientName,
+          publicClient: false,
+        }),
+      );
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createUser({
+          username: "admin-a",
+          enabled: true,
+        }),
+      );
     });
 
     after(async () => {
-      await adminClient.deleteClient(clientName);
+      await adminClient.inRealm(realmName, () =>
+        adminClient.deleteClient(clientName),
+      );
     });
 
     it("check effective protocol mappers list is not empty and find effective protocol mapper locale", () => {
@@ -287,20 +321,24 @@ describe("Clients test", () => {
       clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
       cy.get("div#generatedUserInfo").contains("No generated user info");
 
-      cy.get("input#user-select-typeahead").type("admin");
+      cy.get("input#user-select-typeahead").type("admin-a");
       cy.get("li[id*=select-option-] > button:first-child").click();
 
       clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
       cy.get("div#generatedAccessToken").contains(
-        '"preferred_username": "admin"',
+        '"preferred_username": "admin-a"',
       );
       cy.get("div#generatedAccessToken").contains('"scope": "');
 
       clientDetailsPage.goToClientScopesEvaluateGeneratedIdTokenTab();
-      cy.get("div#generatedIdToken").contains('"preferred_username": "admin"');
+      cy.get("div#generatedIdToken").contains(
+        '"preferred_username": "admin-a"',
+      );
 
       clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
-      cy.get("div#generatedIdToken").contains('"preferred_username": "admin"');
+      cy.get("div#generatedIdToken").contains(
+        '"preferred_username": "admin-a"',
+      );
       cy.get("div#generatedIdToken").contains('"sid"');
     });
   });
@@ -309,6 +347,7 @@ describe("Clients test", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
     });
 
@@ -549,33 +588,51 @@ describe("Clients test", () => {
 
     it("should delete 'identical' client id", () => {
       commonPage.sidebar().goToClients();
-      adminClient.deleteClient(identicalClientId);
+      cy.wrap(null).then(() =>
+        adminClient.inRealm(realmName, () =>
+          adminClient.deleteClient(identicalClientId),
+        ),
+      );
     });
   });
 
   describe("Roles tab test", () => {
     const rolesTab = new ClientRolesTab();
     const client = "client_" + uuid();
+    const createRealmRoleName = `create-realm-${uuid()}`;
 
-    before(() =>
-      adminClient.createClient({
-        clientId: client,
-        protocol: "openid-connect",
-        publicClient: false,
-      }),
-    );
+    before(async () => {
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createClient({
+          clientId: client,
+          protocol: "openid-connect",
+          publicClient: false,
+        }),
+      );
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createRealmRole({
+          name: createRealmRoleName,
+        }),
+      );
+    });
 
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(client);
       commonPage.tableUtils().clickRowItemLink(client);
       rolesTab.goToRolesTab();
     });
 
-    after(() => {
-      adminClient.deleteClient(client);
+    after(async () => {
+      await adminClient.inRealm(realmName, () =>
+        adminClient.deleteClient(client),
+      );
+      await adminClient.inRealm(realmName, () =>
+        adminClient.deleteRealmRole(createRealmRoleName),
+      );
     });
 
     it("Should fail to create client role with empty name", () => {
@@ -660,7 +717,7 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(itemId);
 
       // Add associated realm role
-      associatedRolesPage.addAssociatedRealmRole("create-realm");
+      associatedRolesPage.addAssociatedRealmRole(createRealmRoleName);
       commonPage
         .masthead()
         .checkNotificationMessage("Associated roles have been added", true);
@@ -696,7 +753,9 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(itemId, false);
       commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAssociatedRolesTab();
-      commonPage.tableUtils().selectRowItemAction("create-realm", "Unassign");
+      commonPage
+        .tableUtils()
+        .selectRowItemAction(createRealmRoleName, "Unassign");
       commonPage.sidebar().waitForPageLoad();
       commonPage.modalUtils().checkModalTitle("Remove role?").confirmModal();
       commonPage.sidebar().waitForPageLoad();
@@ -760,6 +819,7 @@ describe("Clients test", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
       client = "client_" + uuid();
       commonPage.tableToolbarUtils().createClient();
@@ -777,9 +837,9 @@ describe("Clients test", () => {
       clientDetailsPage.goToAdvancedTab();
     });
 
-    afterEach(() => {
-      adminClient.deleteClient(client);
-    });
+    afterEach(() =>
+      adminClient.inRealm(realmName, () => adminClient.deleteClient(client)),
+    );
 
     it("Clustering", () => {
       advancedTab.expandClusterNode();
@@ -871,26 +931,40 @@ describe("Clients test", () => {
   describe("Service account tab test", () => {
     const serviceAccountTab = new RoleMappingTab("user");
     const serviceAccountName = "service-account-client";
+    const createRealmRoleName = `create-realm-${uuid()}`;
 
-    before(() =>
-      adminClient.createClient({
-        protocol: "openid-connect",
-        clientId: serviceAccountName,
-        publicClient: false,
-        authorizationServicesEnabled: true,
-        serviceAccountsEnabled: true,
-        standardFlowEnabled: true,
-      }),
-    );
+    before(async () => {
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createClient({
+          protocol: "openid-connect",
+          clientId: serviceAccountName,
+          publicClient: false,
+          authorizationServicesEnabled: true,
+          serviceAccountsEnabled: true,
+          standardFlowEnabled: true,
+        }),
+      );
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createRealmRole({
+          name: createRealmRoleName,
+        }),
+      );
+    });
 
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
     });
 
-    after(() => {
-      adminClient.deleteClient(serviceAccountName);
+    after(async () => {
+      await adminClient.inRealm(realmName, () =>
+        adminClient.deleteClient(serviceAccountName),
+      );
+      await adminClient.inRealm(realmName, () =>
+        adminClient.deleteRealmRole(createRealmRoleName),
+      );
     });
 
     it("List", () => {
@@ -899,14 +973,14 @@ describe("Clients test", () => {
       serviceAccountTab
         .goToServiceAccountTab()
         .checkRoles(["offline_access", "uma_authorization"], false)
-        .checkRoles(["default-roles-master", "uma_protection"])
+        .checkRoles([`default-roles-${realmName}`, "uma_protection"])
         .unhideInheritedRoles();
 
       commonPage.sidebar().waitForPageLoad();
 
       serviceAccountTab
         .checkRoles([
-          "default-roles-master",
+          `default-roles-${realmName}`,
           "offline_access",
           "uma_authorization",
           "uma_protection",
@@ -917,7 +991,7 @@ describe("Clients test", () => {
 
       serviceAccountTab
         .checkRoles(["offline_access", "uma_authorization"], false)
-        .checkRoles(["default-roles-master", "uma_protection"]);
+        .checkRoles([`default-roles-${realmName}`, "uma_protection"]);
 
       listingPage
         .searchItem("testing", false)
@@ -926,7 +1000,7 @@ describe("Clients test", () => {
 
       serviceAccountTab
         .checkRoles(["offline_access", "uma_authorization"], false)
-        .checkRoles(["default-roles-master", "uma_protection"]);
+        .checkRoles([`default-roles-${realmName}`, "uma_protection"]);
     });
 
     it("Assign", () => {
@@ -934,11 +1008,11 @@ describe("Clients test", () => {
       serviceAccountTab
         .goToServiceAccountTab()
         .assignRole(false)
-        .selectRow("create-realm", true)
+        .selectRow(createRealmRoleName, true)
         .assign();
       commonPage.masthead().checkNotificationMessage("Role mapping updated");
 
-      serviceAccountTab.selectRow("create-realm").unAssign();
+      serviceAccountTab.selectRow(createRealmRoleName).unAssign();
 
       commonPage.sidebar().waitForPageLoad();
       commonPage.modalUtils().checkModalTitle("Remove role?").confirmModal();
@@ -946,16 +1020,17 @@ describe("Clients test", () => {
         .masthead()
         .checkNotificationMessage("Scope mapping successfully removed");
 
-      //cy.intercept("/admin/realms/master/users").as("assignRoles");
-      serviceAccountTab.checkRoles(["create-realm"], false).assignRole(false);
+      //cy.intercept(`/admin/realms/${realmName}/users`).as("assignRoles");
+      serviceAccountTab
+        .checkRoles([createRealmRoleName], false)
+        .assignRole(false);
 
       //cy.wait("@assignRoles");
       commonPage.sidebar().waitForPageLoad();
 
       serviceAccountTab
         .selectRow("offline_access", true)
-        .selectRow("admin", true)
-        .selectRow("create-realm", true)
+        .selectRow(createRealmRoleName, true)
         .assign();
 
       commonPage.masthead().checkNotificationMessage("Role mapping updated");
@@ -967,18 +1042,15 @@ describe("Clients test", () => {
 
       serviceAccountTab.hideInheritedRoles();
 
-      serviceAccountTab
-        .selectRow("offline_access")
-        .selectRow("admin")
-        .unAssign();
+      serviceAccountTab.selectRow("offline_access").unAssign();
 
       commonPage.modalUtils().confirmModal();
 
       serviceAccountTab
-        .checkRoles(["admin"], false)
-        .checkRoles(["create-realm"]);
+        .checkRoles(["admin", "offline_access"], false)
+        .checkRoles([createRealmRoleName]);
 
-      listingPage.clickRowDetails("create-realm");
+      listingPage.clickRowDetails(createRealmRoleName);
       serviceAccountTab.unAssignFromDropdown();
 
       commonPage.modalUtils().confirmModal();
@@ -988,9 +1060,9 @@ describe("Clients test", () => {
       serviceAccountTab.unhideInheritedRoles();
 
       serviceAccountTab
-        .checkRoles(["create-realm"], false)
+        .checkRoles([createRealmRoleName], false)
         .checkRoles([
-          "default-roles-master",
+          `default-roles-${realmName}`,
           "offline_access",
           "uma_authorization",
           "uma_protection",
@@ -1004,22 +1076,27 @@ describe("Clients test", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(mappingClient);
       commonPage.tableUtils().clickRowItemLink(mappingClient);
     });
 
-    before(() => {
-      adminClient.createClient({
-        protocol: "openid-connect",
-        clientId: mappingClient,
-        publicClient: false,
-      });
-    });
+    before(() =>
+      adminClient.inRealm(realmName, () =>
+        adminClient.createClient({
+          protocol: "openid-connect",
+          clientId: mappingClient,
+          publicClient: false,
+        }),
+      ),
+    );
 
-    after(() => {
-      adminClient.deleteClient(mappingClient);
-    });
+    after(() =>
+      adminClient.inRealm(realmName, () =>
+        adminClient.deleteClient(mappingClient),
+      ),
+    );
 
     it("Add mapping to openid client", () => {
       clientDetailsPage
@@ -1037,25 +1114,29 @@ describe("Clients test", () => {
   describe("Keys tab test", () => {
     const keysName = "keys-client";
 
-    before(() =>
-      adminClient.createClient({
-        protocol: "openid-connect",
-        clientId: keysName,
-        publicClient: false,
-      }),
+    before(
+      async () =>
+        await adminClient.inRealm(realmName, () =>
+          adminClient.createClient({
+            protocol: "openid-connect",
+            clientId: keysName,
+            publicClient: false,
+          }),
+        ),
     );
 
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(keysName);
       commonPage.tableUtils().clickRowItemLink(keysName);
     });
 
-    after(() => {
-      adminClient.deleteClient(keysName);
-    });
+    after(() =>
+      adminClient.inRealm(realmName, () => adminClient.deleteClient(keysName)),
+    );
 
     it("Generate new keys", () => {
       const keysTab = clientDetailsPage.goToKeysTab();
@@ -1104,29 +1185,33 @@ describe("Clients test", () => {
   describe("Bearer only", () => {
     const clientId = "bearer-only";
 
-    before(() =>
-      adminClient.createClient({
-        clientId,
-        protocol: "openid-connect",
-        publicClient: false,
-        bearerOnly: true,
-      }),
+    before(
+      async () =>
+        await adminClient.inRealm(realmName, () =>
+          adminClient.createClient({
+            clientId,
+            protocol: "openid-connect",
+            publicClient: false,
+            bearerOnly: true,
+          }),
+        ),
     );
 
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
 
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
-      cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
+      cy.intercept(`/admin/realms/${realmName}/clients/*`).as("fetchClient");
       commonPage.tableToolbarUtils().searchItem(clientId);
       commonPage.tableUtils().clickRowItemLink(clientId);
       cy.wait("@fetchClient");
     });
 
-    after(() => {
-      adminClient.deleteClient(clientId);
-    });
+    after(() =>
+      adminClient.inRealm(realmName, () => adminClient.deleteClient(clientId)),
+    );
 
     it("Shows an explainer text for bearer only clients", () => {
       commonPage
@@ -1149,6 +1234,7 @@ describe("Clients test", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      commonPage.sidebar().goToRealm(realmName);
       commonPage.sidebar().goToClients();
       cy.injectAxe();
     });

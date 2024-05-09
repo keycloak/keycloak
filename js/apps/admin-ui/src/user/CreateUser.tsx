@@ -11,8 +11,7 @@ import {
   isUserProfileError,
   setUserProfileServerError,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -25,6 +24,8 @@ import { toUser } from "./routes/User";
 import "./user-section.css";
 
 export default function CreateUser() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();

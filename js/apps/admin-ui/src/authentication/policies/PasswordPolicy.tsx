@@ -7,15 +7,15 @@ import {
   ButtonVariant,
   Divider,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
+  EmptyStateHeader,
   EmptyStateIcon,
   PageSection,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
-  EmptyStateActions,
-  EmptyStateHeader,
-  EmptyStateFooter,
   Select,
   SelectOption,
   MenuToggle,
@@ -25,8 +25,7 @@ import { PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -94,6 +93,8 @@ export const PasswordPolicy = ({
   realm,
   realmUpdated,
 }: PasswordPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { passwordPolicies } = useServerInfo();
 

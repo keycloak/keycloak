@@ -19,8 +19,7 @@ import {
   HelpItem,
   SelectControl,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
@@ -34,6 +33,8 @@ const LoginFlow = ({
   defaultValue,
   labelForEmpty = "none",
 }: FieldProps & { defaultValue: string; labelForEmpty?: string }) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { control } = useFormContext();
 

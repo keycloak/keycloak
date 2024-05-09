@@ -273,10 +273,11 @@ public class AuthorizationTokenService {
     }
 
     private Response createSuccessfulResponse(Object response, KeycloakAuthorizationRequest request) {
-        return Cors.add(request.getHttpRequest(), Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
+        return Cors.builder()
                 .allowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
-                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS)
+                .add(Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response));
     }
 
     private boolean isPublicClientRequestingEntitlementWithClaims(KeycloakAuthorizationRequest request) {

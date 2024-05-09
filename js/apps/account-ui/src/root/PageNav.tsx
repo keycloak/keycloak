@@ -4,8 +4,8 @@ import {
   NavItem,
   NavList,
   PageSidebar,
-  Spinner,
   PageSidebarBody,
+  Spinner,
 } from "@patternfly/react-core";
 import {
   PropsWithChildren,
@@ -22,11 +22,15 @@ import {
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
+import {
+  AccountEnvironment,
+  environment,
+  useEnvironment,
+  type Feature,
+} from "@keycloak/keycloak-ui-shared";
 import fetchContentJson from "../content/fetchContent";
-import { environment, type Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
-import { useEnvironment } from "./KeycloakContext";
 
 type RootMenuItem = {
   label: TFuncKey;
@@ -45,7 +49,7 @@ export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
 export const PageNav = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>();
-  const context = useEnvironment();
+  const context = useEnvironment<AccountEnvironment>();
 
   usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
@@ -82,7 +86,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { t } = useTranslation();
   const {
     environment: { features },
-  } = useEnvironment();
+  } = useEnvironment<AccountEnvironment>();
   const { pathname } = useLocation();
   const isActive = useMemo(
     () => matchMenuItem(pathname, menuItem),

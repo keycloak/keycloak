@@ -1,5 +1,4 @@
-import { matchPath } from "react-router-dom";
-import { DEFAULT_REALM, ROOT_PATH } from "./constants";
+export const DEFAULT_REALM = "master";
 
 export type Feature = {
   isRegistrationEmailAsUsername: boolean;
@@ -15,7 +14,7 @@ export type Feature = {
   isViewGroupsEnabled: boolean;
 };
 
-export type Environment = {
+export type BaseEnvironment = {
   /** The URL to the root of the auth server. */
   authUrl: string;
   /** The URL to the root of the account console. */
@@ -30,6 +29,20 @@ export type Environment = {
   logo: string;
   /** Indicates the url to be followed when Brand image is clicked */
   logoUrl: string;
+};
+
+export type AdminEnvironment = BaseEnvironment & {
+  /** The URL to the root of the auth server. */
+  authServerUrl: string;
+  /** The name of the master realm. */
+  masterRealm: string;
+  /** The URL to the base of the Admin UI. */
+  consoleBaseUrl: string;
+  /** The version hash of the auth server. */
+  resourceVersion: string;
+};
+
+export type AccountEnvironment = BaseEnvironment & {
   /** The locale of the user */
   locale: string;
   /** Feature flags */
@@ -40,18 +53,24 @@ export type Environment = {
   referrerUrl?: string;
 };
 
-// Detect the current realm from the URL.
-const match = matchPath(ROOT_PATH, location.pathname);
+// During development the realm can be passed as a query parameter when redirecting back from Keycloak.
+const realm =
+  new URLSearchParams(window.location.search).get("realm") ||
+  location.pathname.match("/realms/(.*?)/account")?.[1];
 
-const defaultEnvironment: Environment = {
+const defaultEnvironment: AdminEnvironment & AccountEnvironment = {
   authUrl: "http://localhost:8180",
-  baseUrl: `http://localhost:8180/realms/${match?.params.realm ?? DEFAULT_REALM}/account/`,
-  realm: match?.params.realm ?? DEFAULT_REALM,
+  authServerUrl: "http://localhost:8180",
+  baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
+  realm: realm ?? DEFAULT_REALM,
   clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",
   logoUrl: "/",
   locale: "en",
+  consoleBaseUrl: "/admin/master/console/",
+  masterRealm: "master",
+  resourceVersion: "unknown",
   features: {
     isRegistrationEmailAsUsername: false,
     isEditUserNameAllowed: true,
@@ -68,7 +87,7 @@ const defaultEnvironment: Environment = {
 };
 
 // Merge the default and injected environment variables together.
-const environment: Environment = {
+const environment = {
   ...defaultEnvironment,
   ...getInjectedEnvironment(),
 };

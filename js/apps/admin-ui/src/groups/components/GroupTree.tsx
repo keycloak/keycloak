@@ -4,10 +4,10 @@ import {
   Button,
   Checkbox,
   InputGroup,
+  InputGroupItem,
   Tooltip,
   TreeView,
   TreeViewDataItem,
-  InputGroupItem,
 } from "@patternfly/react-core";
 import {
   Dropdown,
@@ -21,6 +21,7 @@ import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
@@ -138,6 +139,8 @@ export const GroupTree = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTreeProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
@@ -190,6 +193,7 @@ export const GroupTree = ({
   useFetch(
     async () => {
       const groups = await fetchAdminUI<GroupRepresentation[]>(
+        adminClient,
         "groups",
         Object.assign(
           {
@@ -204,6 +208,7 @@ export const GroupTree = ({
       let subGroups: GroupRepresentation[] = [];
       if (activeItem) {
         subGroups = await fetchAdminUI<GroupRepresentation[]>(
+          adminClient,
           `groups/${activeItem.id}/children`,
           {
             first: `${firstSub}`,

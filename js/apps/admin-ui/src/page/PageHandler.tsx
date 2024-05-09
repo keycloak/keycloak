@@ -6,7 +6,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -26,6 +26,8 @@ export const PageHandler = ({
   providerType,
   page: { id: providerId, ...page },
 }: PageHandlerProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<ComponentTypeRepresentation>();
   const { realm: realmName } = useRealm();

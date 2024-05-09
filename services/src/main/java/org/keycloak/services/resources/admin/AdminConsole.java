@@ -185,7 +185,7 @@ public class AdminConsole {
     @Path("whoami")
     @OPTIONS
     public Response whoAmIPreFlight() {
-        return new AdminCorsPreflightService(request).preflight();
+        return new AdminCorsPreflightService().preflight();
     }
 
     /**
@@ -239,10 +239,11 @@ public class AdminConsole {
 
         Locale locale = session.getContext().resolveLocale(user);
 
-        Cors.add(request).allowedOrigins(authResult.getToken()).allowedMethods("GET").auth()
-                .build(response);
-
-        return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)).build();
+        return Cors.builder()
+                .allowedOrigins(authResult.getToken())
+                .allowedMethods("GET")
+                .auth()
+                .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)));
     }
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {

@@ -6,8 +6,7 @@ import { InfoCircleIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
@@ -23,6 +22,8 @@ type ServiceAccountProps = {
 };
 
 export const ServiceAccount = ({ client }: ServiceAccountProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();

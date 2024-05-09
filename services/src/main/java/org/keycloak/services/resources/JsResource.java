@@ -127,7 +127,7 @@ public class JsResource {
         }
 
         String contentType = "text/javascript";
-        Cors cors = Cors.add(session.getContext().getHttpRequest()).allowAllOrigins();
+        Cors cors = Cors.builder().allowAllOrigins();
 
         ResourceEncodingProvider encodingProvider = ResourceEncodingHelper.getResourceEncodingProvider(session, contentType);
 
@@ -143,9 +143,9 @@ public class JsResource {
             if (encodingProvider != null) {
                 rb.encoding(encodingProvider.getEncoding());
             }
-            return cors.builder(rb).build();
+            return cors.add(rb);
         } else {
-            return cors.builder(Response.status(Response.Status.NOT_FOUND)).build();
+            return cors.add(Response.status(Response.Status.NOT_FOUND));
         }
     }
 }

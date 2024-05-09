@@ -13,6 +13,7 @@ team/core-clients:
   - area/adapter/jee
   - area/adapter/jee-saml
   - area/adapter/spring
+  - area/adapter/javascript
   - area/authentication
   - area/authentication/webauthn
   - area/login/ui
@@ -41,7 +42,6 @@ team/cross-dc:
 
 team/ui:
   - area/account/ui
-  - area/adapter/javascript
   - area/admin/client-js
   - area/admin/ui
   - area/welcome/ui

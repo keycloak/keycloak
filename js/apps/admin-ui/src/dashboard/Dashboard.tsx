@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import FeatureRepresentation, {
+  FeatureType,
+} from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { HelpItem, label, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
@@ -14,6 +17,7 @@ import {
   DescriptionListTerm,
   EmptyState,
   EmptyStateBody,
+  EmptyStateHeader,
   Grid,
   GridItem,
   Label,
@@ -27,32 +31,29 @@ import {
   TextContent,
   TextVariants,
   Title,
-  EmptyStateHeader,
 } from "@patternfly/react-core";
-
-import FeatureRepresentation, {
-  FeatureType,
-} from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { HelpItem, label } from "@keycloak/keycloak-ui-shared";
-import environment from "../environment";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useAdminClient } from "../admin-client";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { DashboardTab, toDashboard } from "./routes/Dashboard";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import helpUrls from "../help-urls";
+import { useFetch } from "../utils/useFetch";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { ProviderInfo } from "./ProviderInfo";
+import { DashboardTab, toDashboard } from "./routes/Dashboard";
 
 import "./dashboard.css";
-import { useFetch } from "../utils/useFetch";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { adminClient } from "../admin-client";
-import helpUrls from "../help-urls";
 
 const EmptyDashboard = () => {
+  const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
@@ -99,6 +100,8 @@ const FeatureItem = ({ feature }: FeatureItemProps) => {
 };
 
 const Dashboard = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();

@@ -128,7 +128,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     offlineSessionsCache,
                     clientSessionCache,
                     offlineClientSessionsCache,
-                    asyncQueuePersistentUpdate
+                    asyncQueuePersistentUpdate,
+                    serializerSession,
+                    serializerOfflineSession,
+                    serializerClientSession,
+                    serializerOfflineClientSession
             );
         }
         return new InfinispanUserSessionProvider(
@@ -399,11 +403,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
                         new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, maxErrors,
                         getStalledTimeoutInSeconds(defaultStateTransferTimeout));
-
-                initializer.initCache();
                 initializer.loadSessions();
             }
-
         });
 
         log.debugf("Pre-loading sessions from remote cache '%s' finished", cacheName);

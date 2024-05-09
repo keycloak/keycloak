@@ -14,8 +14,7 @@ import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { getProtocolName } from "../clients/utils";
 import { useAlerts } from "../components/alert/Alerts";
@@ -56,6 +55,8 @@ type TypeSelectorProps = ClientScopeDefaultOptionalType & {
 };
 
 const TypeSelector = (scope: TypeSelectorProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -66,7 +67,7 @@ const TypeSelector = (scope: TypeSelectorProps) => {
       all
       onSelect={async (value) => {
         try {
-          await changeScope(scope, value as AllClientScopeType);
+          await changeScope(adminClient, scope, value as AllClientScopeType);
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           scope.refresh();
         } catch (error) {
@@ -90,6 +91,8 @@ const ClientScopeDetailLink = ({
 };
 
 export default function ClientScopesSection() {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -165,7 +168,7 @@ export default function ClientScopesSection() {
         try {
           for (const scope of selectedScopes) {
             try {
-              await removeScope(scope);
+              await removeScope(adminClient, scope);
             } catch (error: any) {
               console.warn(
                 "could not remove scope",

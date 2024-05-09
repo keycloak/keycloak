@@ -11,8 +11,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -35,6 +34,8 @@ export const ClusteringPanel = ({
   save,
   client: { id, registeredNodes, access },
 }: AdvancedProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();

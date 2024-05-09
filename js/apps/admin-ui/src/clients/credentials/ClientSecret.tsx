@@ -4,15 +4,15 @@ import {
   Button,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Split,
   SplitItem,
-  InputGroupItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PasswordInput } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAccess } from "../../context/access/Access";
@@ -89,6 +89,8 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
 };
 
 export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 

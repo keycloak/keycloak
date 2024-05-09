@@ -96,7 +96,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         event.success();
 
-        return cors.allowAllOrigins().builder(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Override

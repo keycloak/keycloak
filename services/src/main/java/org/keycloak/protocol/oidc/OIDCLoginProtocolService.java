@@ -199,7 +199,7 @@ public class OIDCLoginProtocolService {
     @Path("certs")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getVersionPreflight() {
-        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
+        return Cors.builder().allowedMethods("GET").preflight().auth().add(Response.ok());
     }
 
     @GET
@@ -232,7 +232,7 @@ public class OIDCLoginProtocolService {
         keySet.setKeys(jwks);
 
         Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
-        return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+        return Cors.builder().allowedOrigins("*").auth().add(responseBuilder);
     }
 
     @Path("userinfo")
@@ -276,7 +276,7 @@ public class OIDCLoginProtocolService {
     private void checkSsl() {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
                 && realm.getSslRequired().isRequired(clientConnection)) {
-            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+            Cors cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required",
                     Response.Status.FORBIDDEN);
         }
