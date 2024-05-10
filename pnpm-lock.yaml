@@ -339,8 +339,8 @@ importers:
         specifier: ^20.12.11
         version: 20.12.11
       chai:
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.1.1
+        version: 5.1.1
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -2048,8 +2048,8 @@ packages:
     resolution: {integrity: sha512-13sOfMv2+DWduEU+/xbun3LScLoqN17nBeTLUsmDfKdoiC1fr0n9PU4guu4AhRcOVFk/sW8LyZWHuhWtQZiF+g==}
     engines: {node: '>=4'}
 
-  chai@5.1.0:
-    resolution: {integrity: sha512-kDZ7MZyM6Q1DhR9jy7dalKohXQ2yrlXkk59CR52aRKxJrobmlBNqnFQxX9xOX8w+4mz8SYlKJa/7D7ddltFXCw==}
+  chai@5.1.1:
+    resolution: {integrity: sha512-pT1ZgP8rPNqUgieVaEY+ryQr6Q4HXNg8Ei9UnLUrjN4IA7dvQC5JB+/kxVcPNDHyBcc/26CXPkbNzq3qwrOEKA==}
     engines: {node: '>=12'}
 
   chalk@2.4.2:
@@ -2071,8 +2071,8 @@ packages:
   check-error@1.0.3:
     resolution: {integrity: sha512-iKEoDYaRmd1mxM90a2OEfWhjsjPpYPuQ+lMYsoxB126+t8fw7ySEO48nmDg5COTjxDI65/Y2OWpeEHk3ZOe8zg==}
 
-  check-error@2.0.0:
-    resolution: {integrity: sha512-tjLAOBHKVxtPoHe/SA7kNOMvhCRdCJ3vETdeY0RuAc9popf+hyaSV6ZEg9hr4cpWF7jmo/JSWEnLDrnijS9Tog==}
+  check-error@2.1.1:
+    resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
 
   check-more-types@2.24.0:
@@ -6698,10 +6698,10 @@ snapshots:
       pathval: 1.1.1
       type-detect: 4.0.8
 
-  chai@5.1.0:
+  chai@5.1.1:
     dependencies:
       assertion-error: 2.0.1
-      check-error: 2.0.0
+      check-error: 2.1.1
       deep-eql: 5.0.1
       loupe: 3.1.0
       pathval: 2.0.0
@@ -6728,7 +6728,7 @@ snapshots:
     dependencies:
       get-func-name: 2.0.2
 
-  check-error@2.0.0: {}
+  check-error@2.1.1: {}
 
   check-more-types@2.24.0: {}
 
