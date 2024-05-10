@@ -486,6 +486,10 @@ public class RealmAdminResource {
     public void deleteRealm() {
         auth.realm().requireManageRealm();
 
+        if (Config.getAdminRealm().equals(realm.getName())) {
+            throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
+        }
+
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         }
