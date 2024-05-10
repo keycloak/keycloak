@@ -21,7 +21,9 @@ import static org.keycloak.models.OrganizationModel.ORGANIZATION_ATTRIBUTE;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,6 +31,11 @@ import java.util.stream.Stream;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
@@ -43,6 +50,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.GroupAttributeEntity;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -173,6 +182,32 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         return closing(paginateQuery(query, first, max).getResultStream()
                 .map(entity -> new OrganizationAdapter(realm, entity, this)));
+    }
+
+    @Override
+    public Stream<OrganizationModel> getAllStream(Map<String, String> attributes, Integer first, Integer max) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery query = builder.createQuery(OrganizationEntity.class);
+        Root<OrganizationEntity> org = query.from(OrganizationEntity.class);
+        Root<GroupEntity> group = query.from(GroupEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(org.get("realmId"), realm.getId()));
+        predicates.add(builder.equal(org.get("groupId"), group.get("id")));
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            if (StringUtil.isNotBlank(entry.getKey())) {
+                Join<GroupEntity, GroupAttributeEntity> groupJoin = group.join("attributes");
+                Predicate attrNamePredicate = builder.equal(groupJoin.get("name"), entry.getKey());
+                Predicate attrValuePredicate = builder.equal(groupJoin.get("value"), entry.getValue());
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+            }
+        }
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        TypedQuery<OrganizationEntity> typedQuery = em.createQuery(query.select(org).where(finalPredicate));
+        return closing(paginateQuery(typedQuery, first, max).getResultStream())
+                .map(entity -> new OrganizationAdapter(realm, entity, this));
     }
 
     @Override

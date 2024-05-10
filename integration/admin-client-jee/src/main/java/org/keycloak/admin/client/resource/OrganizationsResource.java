@@ -40,7 +40,7 @@ public interface OrganizationsResource {
     OrganizationResource get(@PathParam("id") String id);
 
     /**
-     * Return all organizations in the realm.
+     * Returns all organizations in the realm.
      *
      * @return a list containing the organizations.
      */
@@ -49,7 +49,17 @@ public interface OrganizationsResource {
     List<OrganizationRepresentation> getAll();
 
     /**
-     * Return all organizations that match the specified filters.
+     * Returns all organizations that match the specified filter.
+     *
+     * @param search a {@code String} representing either an organization name or domain.
+     * @return a list containing the matched organizations.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> search(@QueryParam("search") String search);
+
+    /**
+     * Returns all organizations that match the specified filters.
      *
      * @param search a {@code String} representing either an organization name or domain.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
@@ -69,12 +79,30 @@ public interface OrganizationsResource {
     );
 
     /**
-     * Return all organizations that match the specified filter.
+     * Returns all organizations that contain attributes matching the specified query.
      *
-     * @param search a {@code String} representing either an organization name or domain.
-     * @return a list containing the matched organizations.
+     * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
+     * @return a list containing the organizations that match the attribute query.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<OrganizationRepresentation> search(@QueryParam("search") String search);
+    List<OrganizationRepresentation> searchByAttribute(
+            @QueryParam("q") String searchQuery
+    );
+
+    /**
+     * Returns all organizations that contain attributes matching the specified query.
+     *
+     * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a list containing the organizations that match the attribute query.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> searchByAttribute(
+            @QueryParam("q") String searchQuery,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max
+    );
 }
