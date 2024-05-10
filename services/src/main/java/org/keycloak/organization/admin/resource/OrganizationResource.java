@@ -19,6 +19,7 @@ package org.keycloak.organization.admin.resource;
 
 import static java.util.Optional.ofNullable;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -39,6 +40,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
@@ -46,8 +49,10 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.StringUtil;
 
 @Provider
@@ -86,17 +91,39 @@ public class OrganizationResource {
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
+    /**
+     * Returns a stream of organizations, filtered according to query parameters.
+     *
+     * @param search a {@code String} representing either an organization name or domain.
+     * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
+     * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
+     *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
+     *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a non-null {@code Stream} of matched organizations.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation( summary = "Return a paginated list of organizations filtered according to the specified parameters")
     public Stream<OrganizationRepresentation> search(
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
             ) {
         auth.realm().requireManageRealm();
-        return provider.getAllStream(search, exact, first, max).map(this::toRepresentation);
+
+        // check if are searching orgs by attribute.
+        if(StringUtil.isNotBlank(searchQuery)) {
+            Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+            return provider.getAllStream(attributes, first, max).map(this::toRepresentation);
+        } else {
+            return provider.getAllStream(search, exact, first, max).map(this::toRepresentation);
+        }
     }
 
     @Path("{id}")

@@ -17,6 +17,7 @@
 package org.keycloak.organization;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
@@ -67,7 +68,7 @@ public interface OrganizationProvider extends Provider {
     }
 
     /**
-     * Returns the organizations in the realm using the specified filters.
+     * Returns all organizations in the realm filtered according to the specified parameters.
      *
      * @param search a {@code String} representing either an organization name or domain.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
@@ -78,6 +79,16 @@ public interface OrganizationProvider extends Provider {
      * @return a {@link Stream} of the matched organizations. Never returns {@code null}.
      */
     Stream<OrganizationModel> getAllStream(String search, Boolean exact, Integer first, Integer max);
+
+    /**
+     * Returns all organizations in the realm filtered according to the specified parameters.
+     *
+     * @param attributes a {@code Map} containig the attributes (name/value) that must match organization attributes.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a {@link Stream} of the matched organizations. Never returns {@code null}.
+     */
+    Stream<OrganizationModel> getAllStream(Map<String, String> attributes, Integer first, Integer max);
 
     /**
      * Removes the given organization from the realm together with the data associated with it, e.g. its members etc.
