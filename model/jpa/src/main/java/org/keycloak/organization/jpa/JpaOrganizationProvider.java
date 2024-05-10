@@ -98,13 +98,14 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public boolean remove(OrganizationModel organization) {
         OrganizationEntity entity = getEntity(organization.getId());
+        GroupModel group = getOrganizationGroup(entity);
 
-        GroupModel group = getOrganizationGroup(organization);
-
-        //TODO: won't scale, requires a better mechanism for bulk deleting users
-        userProvider.getGroupMembersStream(realm, group).forEach(userModel -> removeMember(organization, userModel));
-        groupProvider.removeGroup(realm, group);
-        organization.getIdentityProviders().forEach((model) -> removeIdentityProvider(organization, model));
+        if (group != null) {
+            //TODO: won't scale, requires a better mechanism for bulk deleting users
+            userProvider.getGroupMembersStream(realm, group).forEach(userModel -> removeMember(organization, userModel));
+            groupProvider.removeGroup(realm, group);
+            organization.getIdentityProviders().forEach((model) -> removeIdentityProvider(organization, model));
+        }
 
         em.remove(entity);
 
@@ -123,7 +124,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         throwExceptionIfObjectIsNull(user, "User");
 
         OrganizationEntity entity = getEntity(organization.getId());
-        GroupModel group = groupProvider.getGroupById(realm, entity.getGroupId());
+        GroupModel group = getOrganizationGroup(entity);
 
         if (user.isMemberOf(group)) {
             return false;
@@ -349,14 +350,17 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     private GroupModel getOrganizationGroup(OrganizationModel organization) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         OrganizationEntity entity = getEntity(organization.getId());
-
-        GroupModel group = groupProvider.getGroupById(realm, entity.getGroupId());
+        GroupModel group = getOrganizationGroup(entity);
 
         if (group == null) {
             throw new ModelException("Organization group " + entity.getGroupId() + " not found");
         }
 
         return group;
+    }
+
+    private GroupModel getOrganizationGroup(OrganizationEntity entity) {
+        return groupProvider.getGroupById(realm, entity.getGroupId());
     }
 
     private void throwExceptionIfObjectIsNull(Object object, String objectName) {
