@@ -1152,11 +1152,12 @@ describe("Clients test", () => {
   });
 
   describe("Realm client", () => {
-    const clientName = "master-realm";
+    const clientName = `${realmName}-realm`;
 
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
+      // Stay in master realm, do not switch to ${realmName} realm
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
