@@ -21,9 +21,9 @@
 <!--tag::keycloak-ispn-configmap[] -->
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:14.0 https://www.infinispan.org/schemas/infinispan-config-14.0.xsd
-            urn:infinispan:config:store:remote:14.0 https://www.infinispan.org/schemas/infinispan-cachestore-remote-config-14.0.xsd"
-        xmlns="urn:infinispan:config:14.0">
+        xsi:schemaLocation="urn:infinispan:config:15.0 https://www.infinispan.org/schemas/infinispan-config-15.0.xsd
+            urn:infinispan:config:store:remote:15.0 https://www.infinispan.org/schemas/infinispan-cachestore-remote-config-15.0.xsd"
+        xmlns="urn:infinispan:config:15.0">
     <!--end::keycloak-ispn-configmap[] -->
 
     <!-- the statistics="true" attribute is not part of the original KC config and was added by Keycloak Benchmark -->
@@ -47,8 +47,8 @@
         <!--tag::keycloak-ispn-remotestore[] -->
         <distributed-cache name="sessions" owners="2" statistics="true">
             <expiration lifespan="-1"/>
-            <persistence passivation="false"> <!--1-->
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500"> <!--1-->
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="sessions"
                               raw-values="true"
                               shared="true"
@@ -71,8 +71,8 @@
         <!--end::keycloak-ispn-remotestore[] -->
         <distributed-cache name="authenticationSessions" owners="2" statistics="true">
             <expiration lifespan="-1"/>
-            <persistence passivation="false">
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500">
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="authenticationSessions"
                               raw-values="true"
                               shared="true"
@@ -94,8 +94,8 @@
         </distributed-cache>
         <distributed-cache name="offlineSessions" owners="2" statistics="true">
             <expiration lifespan="-1"/>
-            <persistence passivation="false">
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500">
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="offlineSessions"
                               raw-values="true"
                               shared="true"
@@ -117,8 +117,8 @@
         </distributed-cache>
         <distributed-cache name="clientSessions" owners="2" statistics="true">
             <expiration lifespan="-1"/>
-            <persistence passivation="false">
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500">
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="clientSessions"
                               raw-values="true"
                               shared="true"
@@ -140,8 +140,8 @@
         </distributed-cache>
         <distributed-cache name="offlineClientSessions" owners="2" statistics="true">
             <expiration lifespan="-1"/>
-            <persistence passivation="false">
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500">
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="offlineClientSessions"
                               raw-values="true"
                               shared="true"
@@ -163,8 +163,8 @@
         </distributed-cache>
         <distributed-cache name="loginFailures" owners="2" statistics="true">
             <expiration lifespan="-1"/>
-            <persistence passivation="false">
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500">
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="loginFailures"
                               raw-values="true"
                               shared="true"
@@ -193,8 +193,8 @@
         </local-cache>
         <replicated-cache name="work" statistics="true">
             <expiration lifespan="-1"/>
-            <persistence passivation="false">
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500">
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="work"
                               raw-values="true"
                               shared="true"
@@ -229,8 +229,8 @@
             </encoding>
             <expiration max-idle="-1" lifespan="-1" interval="300000"/>
             <memory max-count="-1"/>
-            <persistence passivation="false">
-                <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
+            <persistence passivation="false" availability-interval="500">
+                <remote-store xmlns="urn:infinispan:config:store:remote:15.0"
                               cache="actionTokens"
                               raw-values="true"
                               shared="true"

@@ -8,8 +8,7 @@ import {
 import { PlusIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import type { ExpandableExecution } from "../execution-model";
 import { AddStepModal, FlowType } from "./modals/AddStepModal";
@@ -29,6 +28,8 @@ export const AddFlowDropdown = ({
   onAddExecution,
   onAddFlow,
 }: AddFlowDropdownProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [open, setOpen] = useState(false);

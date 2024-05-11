@@ -15,7 +15,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { FormPanel } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -32,6 +32,8 @@ type UserIdentityProviderLinksProps = {
 export const UserIdentityProviderLinks = ({
   userId,
 }: UserIdentityProviderLinksProps) => {
+  const { adminClient } = useAdminClient();
+
   const [key, setKey] = useState(0);
   const [federatedId, setFederatedId] = useState("");
   const [isLinkIdPModalOpen, setIsLinkIdPModalOpen] = useState(false);

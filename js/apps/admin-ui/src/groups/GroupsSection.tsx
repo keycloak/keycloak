@@ -18,12 +18,11 @@ import { AngleLeftIcon, TreeIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import { useAdminClient } from "../admin-client";
 import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { adminClient } from "../admin-client";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { useFetch } from "../utils/useFetch";
@@ -43,6 +42,8 @@ import { toGroups } from "./routes/Groups";
 import "./GroupsSection.css";
 
 export default function GroupsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
 

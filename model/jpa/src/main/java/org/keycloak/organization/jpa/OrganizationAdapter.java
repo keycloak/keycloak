@@ -36,6 +36,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.StringUtil;
@@ -46,6 +47,14 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     private final OrganizationEntity entity;
     private final OrganizationProvider provider;
     private GroupModel group;
+
+    public OrganizationAdapter(RealmModel realm, OrganizationProvider provider) {
+        entity = new OrganizationEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setRealmId(realm.getId());
+        this.realm = realm;
+        this.provider = provider;
+    }
 
     public OrganizationAdapter(RealmModel realm, OrganizationEntity entity, OrganizationProvider provider) {
         this.realm = realm;
@@ -64,6 +73,10 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     String getGroupId() {
         return entity.getGroupId();
+    }
+
+    void setGroupId(String id) {
+        entity.setGroupId(id);
     }
 
     @Override

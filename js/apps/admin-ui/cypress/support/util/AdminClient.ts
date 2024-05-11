@@ -16,12 +16,14 @@ class AdminClient {
   });
 
   #login() {
-    return this.#client.auth({
-      username: "admin",
-      password: "admin",
-      grantType: "password",
-      clientId: "admin-cli",
-    });
+    return this.inRealm("master", () =>
+      this.#client.auth({
+        username: "admin",
+        password: "admin",
+        grantType: "password",
+        clientId: "admin-cli",
+      }),
+    );
   }
 
   async auth(credentials: Credentials) {
@@ -351,6 +353,16 @@ class AdminClient {
         }),
       ),
     );
+  }
+
+  async inRealm<T>(realm: string, fn: () => Promise<T>) {
+    const prevRealm = this.#client.realmName;
+    this.#client.realmName = realm;
+    try {
+      return await fn();
+    } finally {
+      this.#client.realmName = prevRealm;
+    }
   }
 }
 

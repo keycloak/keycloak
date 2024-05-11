@@ -17,7 +17,6 @@
 package org.keycloak.services.resources.admin;
 
 import static org.keycloak.util.JsonSerialization.readValue;
-import static org.keycloak.utils.OrganizationUtils.checkForOrgRelatedGroupModel;
 
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
@@ -485,6 +484,10 @@ public class RealmAdminResource {
     @Operation( summary = "Delete the realm")
     public void deleteRealm() {
         auth.realm().requireManageRealm();
+
+        if (Config.getAdminRealm().equals(realm.getName())) {
+            throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
+        }
 
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
@@ -1052,8 +1055,6 @@ public class RealmAdminResource {
             throw new NotFoundException("Group not found");
         }
 
-        checkForOrgRelatedGroupModel(session, group);
-
         realm.addDefaultGroup(group);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -1071,8 +1072,6 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
-
-        checkForOrgRelatedGroupModel(session, group);
 
         realm.removeDefaultGroup(group);
 

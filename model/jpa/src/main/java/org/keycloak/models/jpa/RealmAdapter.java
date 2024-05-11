@@ -28,6 +28,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
+import org.keycloak.models.GroupModel.GroupUpdatedEvent;
 import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -722,6 +723,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
         groupsIds.add(group.getId());
         em.flush();
+        GroupUpdatedEvent.fire(group, session);
     }
 
     @Override
@@ -851,12 +853,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     public Stream<RoleModel> getRolesStream() {
         return session.roles().getRealmRolesStream(this);
     }
-    
+
     @Override
     public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
         return session.roles().getRealmRolesStream(this, first, max);
     }
-    
+
     @Override
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
         return session.roles().searchForRolesStream(this, search, first, max);

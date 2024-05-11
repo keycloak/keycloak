@@ -4,8 +4,7 @@ import { useState } from "react";
 import { FieldPathByValue, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SelectControl } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 
 export type RequiredActionMultiSelectProps<
@@ -25,6 +24,8 @@ export const RequiredActionMultiSelect = <
   label,
   help,
 }: RequiredActionMultiSelectProps<T, P>) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [requiredActions, setRequiredActions] = useState<
     RequiredActionProviderRepresentation[]

@@ -3,8 +3,7 @@ import type RequiredActionProviderSimpleRepresentation from "@keycloak/keycloak-
 import { AlertVariant, Switch } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { toKey } from "../util";
@@ -22,6 +21,8 @@ type Row = {
 };
 
 export const RequiredActions = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 

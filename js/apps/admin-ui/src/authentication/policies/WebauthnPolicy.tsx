@@ -22,7 +22,6 @@ import {
   TextControl,
   useHelp,
 } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
@@ -30,6 +29,7 @@ import { TimeSelectorControl } from "../../components/time-selector/TimeSelector
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
+import { useAdminClient } from "../../admin-client";
 import "./webauthn-policy.css";
 
 const SIGNATURE_ALGORITHMS = [
@@ -108,6 +108,8 @@ export const WebauthnPolicy = ({
   realmUpdated,
   isPasswordLess = false,
 }: WebauthnPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();

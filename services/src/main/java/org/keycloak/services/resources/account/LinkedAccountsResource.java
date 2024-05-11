@@ -99,7 +99,7 @@ public class LinkedAccountsResource {
     public Response linkedAccounts() {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         SortedSet<LinkedAccountRepresentation> linkedAccounts = getLinkedAccounts(this.session, this.realm, this.user);
-        return Cors.add(request, Response.ok(linkedAccounts)).auth().allowedOrigins(auth.getToken()).build();
+        return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.ok(linkedAccounts));
     }
     
     private Set<String> findSocialIds() {
@@ -183,7 +183,7 @@ public class LinkedAccountsResource {
             rep.setHash(hash);
             rep.setNonce(nonce);
             
-            return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
+            return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.ok(rep));
         } catch (Exception spe) {
             spe.printStackTrace();
             throw ErrorResponse.error(Messages.FAILED_TO_PROCESS_RESPONSE, Response.Status.INTERNAL_SERVER_ERROR);
@@ -221,7 +221,7 @@ public class LinkedAccountsResource {
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, link.getUserName())
                 .success();
 
-        return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();
+        return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.noContent());
     }
     
     private String checkCommonPreconditions(String providerAlias) {

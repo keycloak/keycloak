@@ -136,10 +136,10 @@ public class OAuth2Error {
                 bearer.setErrorDescription(errorDescription);
                 WWWAuthenticate wwwAuthenticate = new WWWAuthenticate(bearer);
                 wwwAuthenticate.build(builder::header);
-                cors.ifPresent(_cors -> _cors.addExposedHeaders(WWW_AUTHENTICATE));
+                cors.ifPresent(_cors -> _cors.exposedHeaders(WWW_AUTHENTICATE));
                 builder.entity("").type(MediaType.TEXT_PLAIN_UTF_8_TYPE);
             }
-            cors.ifPresent(_cors -> { _cors.build(builder::header); });
+            cors.ifPresent(Cors::add);
 
             return constructor.newInstance(builder.build());
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {

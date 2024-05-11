@@ -16,8 +16,7 @@ import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HelpItem, useHelp } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
@@ -38,6 +37,8 @@ export const DownloadDialog = ({
   toggleDialog,
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const { enabled } = useHelp();

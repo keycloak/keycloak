@@ -17,7 +17,7 @@ import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -38,6 +38,8 @@ type KeysProps = {
 const attr = "jwt.credential";
 
 export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const {
     control,

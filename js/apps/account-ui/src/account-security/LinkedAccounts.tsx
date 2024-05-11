@@ -7,7 +7,7 @@ import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
 import { AccountRow } from "./AccountRow";
-import { useEnvironment } from "../root/KeycloakContext";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 
 export const LinkedAccounts = () => {
   const { t } = useTranslation();

@@ -23,8 +23,7 @@ import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../../admin-client";
+import { useAdminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../../context/realm-context/RealmContext";
@@ -62,6 +61,8 @@ export const AttributeGeneralSettings = ({
   onHandlingTranslationData,
   onHandlingGeneratedDisplayName,
 }: AttributeGeneralSettingsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useFormContext();

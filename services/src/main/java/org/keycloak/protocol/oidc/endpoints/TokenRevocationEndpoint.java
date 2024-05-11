@@ -91,7 +91,7 @@ public class TokenRevocationEndpoint {
     public Response revoke() {
         event.event(EventType.REVOKE_GRANT);
 
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         checkSsl();
         checkRealm();
@@ -130,12 +130,12 @@ public class TokenRevocationEndpoint {
         }
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
-        return cors.builder(Response.ok()).build();
+        return cors.add(Response.ok());
     }
 
     @OPTIONS
     public Response preflight() {
-        return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
+        return Cors.builder().auth().preflight().allowedMethods("POST", "OPTIONS").add(Response.ok());
     }
 
     private void checkSsl() {

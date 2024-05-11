@@ -16,8 +16,7 @@ import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { GroupPath } from "../components/group/GroupPath";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -62,6 +61,8 @@ const UserDetailLink = (user: MembersOf) => {
 };
 
 export const Members = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();

@@ -26,8 +26,7 @@ import { useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
@@ -68,6 +67,8 @@ export const UserForm = ({
   save,
   onGroupsUpdate,
 }: UserFormProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const formatDate = useFormatDate();
   const { addAlert, addError } = useAlerts();

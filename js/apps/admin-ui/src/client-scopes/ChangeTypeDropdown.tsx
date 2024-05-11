@@ -2,7 +2,7 @@ import { AlertVariant } from "@patternfly/react-core";
 import { Select } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { useAlerts } from "../components/alert/Alerts";
 import {
@@ -24,6 +24,8 @@ export const ChangeTypeDropdown = ({
   selectedRows,
   refresh,
 }: ChangeTypeDropdownProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -44,12 +46,13 @@ export const ChangeTypeDropdown = ({
             selectedRows.map((row) => {
               return clientId
                 ? changeClientScope(
+                    adminClient,
                     clientId,
                     row,
                     row.type,
                     value as ClientScope,
                   )
-                : changeScope(row, value as ClientScope);
+                : changeScope(adminClient, row, value as ClientScope);
             }),
           );
           setOpen(false);

@@ -33,10 +33,12 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
 
     private static final Logger LOG = Logger.getLogger(EmbeddedCachesChangesPerformer.class);
     private final Cache<K, SessionEntityWrapper<V>> cache;
+    private final SerializeExecutionsByKey<K> serializer;
     private final List<Runnable> changes = new LinkedList<>();
 
-    public EmbeddedCachesChangesPerformer(Cache<K, SessionEntityWrapper<V>> cache) {
+    public EmbeddedCachesChangesPerformer(Cache<K, SessionEntityWrapper<V>> cache, SerializeExecutionsByKey<K> serializer) {
         this.cache = cache;
+        this.serializer = serializer;
     }
 
     private void runOperationInCluster(K key, MergedUpdate<V> task,  SessionEntityWrapper<V> sessionWrapper) {
@@ -82,33 +84,35 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
     }
 
     private void replace(K key, MergedUpdate<V> task, SessionEntityWrapper<V> oldVersionEntity, long lifespanMs, long maxIdleTimeMs) {
-        SessionEntityWrapper<V> oldVersion = oldVersionEntity;
-        SessionEntityWrapper<V> returnValue = null;
-        int iteration = 0;
-        V session = oldVersion.getEntity();
-        var writeCache = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache);
-        while (iteration++ < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
-            SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
-            returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+        serializer.runSerialized(key, () -> {
+            SessionEntityWrapper<V> oldVersion = oldVersionEntity;
+            SessionEntityWrapper<V> returnValue = null;
+            int iteration = 0;
+            V session = oldVersion.getEntity();
+            var writeCache = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache);
+            while (iteration++ < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+                SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
+                returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
-            if (returnValue == null) {
-                LOG.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
-                return;
-            }
-
-            if (returnValue.getVersion().equals(newVersionEntity.getVersion())){
-                if (LOG.isTraceEnabled()) {
-                    LOG.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                if (returnValue == null) {
+                    LOG.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
+                    return;
                 }
-                return;
+
+                if (returnValue.getVersion().equals(newVersionEntity.getVersion())) {
+                    if (LOG.isTraceEnabled()) {
+                        LOG.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                    }
+                    return;
+                }
+
+                oldVersion = returnValue;
+                session = oldVersion.getEntity();
+                task.runUpdate(session);
             }
 
-            oldVersion = returnValue;
-            session = oldVersion.getEntity();
-            task.runUpdate(session);
-        }
-
-        LOG.warnf("Failed to replace entity '%s' in cache '%s'. Expected: %s, Current: %s", key, cache.getName(), oldVersion, returnValue);
+            LOG.warnf("Failed to replace entity '%s' in cache '%s'. Expected: %s, Current: %s", key, cache.getName(), oldVersion, returnValue);
+        });
     }
 
     private SessionEntityWrapper<V> generateNewVersionAndWrapEntity(V entity, Map<String, String> localMetadata) {

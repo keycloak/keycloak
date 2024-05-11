@@ -7,7 +7,7 @@ import { SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
+import { useAdminClient } from "../admin-client";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAccess } from "../context/access/Access";
@@ -18,13 +18,14 @@ import { DeleteGroup } from "./components/DeleteGroup";
 import { GroupToolbar } from "./components/GroupToolbar";
 import { MoveDialog } from "./components/MoveDialog";
 import { getLastId } from "./groupIdUtils";
-import { adminClient } from "../admin-client";
 
 type GroupTableProps = {
   refresh: () => void;
 };
 
 export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);

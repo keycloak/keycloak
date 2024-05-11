@@ -9,8 +9,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import {
@@ -34,6 +33,8 @@ import { toUserFederationLdapMapper } from "./routes/UserFederationLdapMapper";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
 
 export default function UserFederationLdapSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<LdapComponentRepresentation>({ mode: "onChange" });
   const { realm } = useRealm();

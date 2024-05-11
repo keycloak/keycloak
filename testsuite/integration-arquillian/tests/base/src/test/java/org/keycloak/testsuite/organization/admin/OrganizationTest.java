@@ -31,27 +31,21 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.group.GroupSearchTest.buildSearchQuery;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.ManagementPermissionRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(Feature.ORGANIZATION)
@@ -175,6 +169,72 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testSearchByAttributes() {
+        List<OrganizationRepresentation> expected = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            expected.add(createOrganization("testorg." + i));
+        }
+
+        // set attributes to the orgs.
+        OrganizationRepresentation orgRep = expected.get(0);
+        orgRep.singleAttribute("attr1", "value1");
+        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+            assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
+        }
+
+        orgRep = expected.get(1);
+        orgRep.singleAttribute("attr1", "value1").singleAttribute("attr2", "value2");
+        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+            assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
+        }
+
+        orgRep = expected.get(2);
+        orgRep.singleAttribute("attr1", "value1").singleAttribute("attr3", "value3");
+        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+            assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
+        }
+
+        orgRep = expected.get(3);
+        orgRep.singleAttribute("attr2", "value2");
+        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+            assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
+        }
+
+        // search for "attr1:value1" - should match testorg.0, testorg.1, and testorg.2
+        List<OrganizationRepresentation> fetchedOrgs = testRealm().organizations().searchByAttribute("attr1:value1");
+        fetchedOrgs.sort(Comparator.comparing(OrganizationRepresentation::getName));
+        assertThat(fetchedOrgs, hasSize(3));
+        assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(0).getName())));
+        assertThat(fetchedOrgs.get(1).getName(), is(equalTo(expected.get(1).getName())));
+        assertThat(fetchedOrgs.get(2).getName(), is(equalTo(expected.get(2).getName())));
+
+        // search for "attr2:value2" - should match testorg.1 and testorg.3
+        fetchedOrgs = testRealm().organizations().searchByAttribute("attr2:value2");
+        fetchedOrgs.sort(Comparator.comparing(OrganizationRepresentation::getName));
+        assertThat(fetchedOrgs, hasSize(2));
+        assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(1).getName())));
+        assertThat(fetchedOrgs.get(1).getName(), is(equalTo(expected.get(3).getName())));
+
+        // search for "attr3:value3" - should match only testorg.2
+        fetchedOrgs = testRealm().organizations().searchByAttribute("attr3:value3");
+        assertThat(fetchedOrgs, hasSize(1));
+        assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(2).getName())));
+
+        // search for both "attr1:value1 attr2:value2" - should match only testorg.1
+        fetchedOrgs = testRealm().organizations().searchByAttribute("attr1:value1 attr2:value2");
+        assertThat(fetchedOrgs, hasSize(1));
+        assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(1).getName())));
+
+        // search for both "attr2:value2 attr3:value3" - not org has both of these attributes at the same time.
+        fetchedOrgs = testRealm().organizations().searchByAttribute("attr2:value2 attr3:value3");
+        assertThat(fetchedOrgs, hasSize(0));
+
+        // search for "anything:anyvalue" - should again match no org because no org has this attribute.
+        fetchedOrgs = testRealm().organizations().searchByAttribute("anything:anyvalue");
+        assertThat(fetchedOrgs, hasSize(0));
+    }
+
+    @Test
     public void testDelete() {
         OrganizationRepresentation expected = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(expected.getId());
@@ -227,6 +287,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         updated = organization.toRepresentation();
         assertEquals(0, updated.getAttributes().size());
+
     }
 
     @Test
@@ -305,152 +366,5 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertFalse(existing.getDomains().isEmpty());
         assertEquals(1, existing.getDomains().size());
         assertNotNull(existing.getDomain("acme.com"));
-    }
-
-    @Test
-    public void testManageOrgGroupsViaDifferentAPIs() {
-        // test realm contains some groups initially
-        List<GroupRepresentation> getAllBefore = testRealm().groups().groups();
-        long countBefore = testRealm().groups().count().get("count");
-
-        List<String> orgIds = new ArrayList<>();
-        // create 5 organizations
-        for (int i = 0; i < 5; i++) {
-            OrganizationRepresentation expected = createOrganization("myorg" + i);
-            OrganizationRepresentation existing = testRealm().organizations().get(expected.getId()).toRepresentation();
-            orgIds.add(expected.getId());
-            assertNotNull(existing);
-        }
-
-        // create one top-level group and one subgroup
-        GroupRepresentation topGroup = createGroup(testRealm(), "top");
-        GroupRepresentation level2Group = new GroupRepresentation();
-        level2Group.setName("level2");
-        testRealm().groups().group(topGroup.getId()).subGroup(level2Group);
-
-        // check that count queries include org related groups
-        assertEquals(countBefore + 7, (long) testRealm().groups().count().get("count"));
-
-        // check that search queries include org related groups but those can't be updated
-        assertEquals(getAllBefore.size() + 6, testRealm().groups().groups().size());
-        // we need to pull full representation of the group, otherwise org related attributes are lost in the representation
-        List<GroupRepresentation> groups = testRealm().groups().query(buildSearchQuery(OrganizationModel.ORGANIZATION_ATTRIBUTE, orgIds.get(0)), false, 0, 10, false);
-        assertEquals(1, groups.size());
-        GroupRepresentation orgGroupRep = groups.get(0);
-        GroupResource group = testRealm().groups().group(orgGroupRep.getId());
-
-        try {
-            // group to be updated is organization related group
-            group.update(topGroup);
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success, the group could not be updated
-        }
-
-        try {
-            // cannot update a group with the attribute reserved for organization related groups
-            testRealm().groups().group(topGroup.getId()).update(orgGroupRep);
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success, the group could not be updated
-        }
-
-        try {
-            // cannot remove organization related group
-            group.remove();
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success, the group could not be removed
-        }
-
-        try {
-            // cannot manage organization related group permissions
-            group.setPermissions(new ManagementPermissionRepresentation(true));
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success, the group's permissions cannot be managed
-        }
-
-        // try to add subgroup to an org related group
-        try (Response response = group.subGroup(topGroup)) {
-            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
-        }
-
-        // try to add org related group as a subgroup to a group
-        try (Response response = testRealm().groups().group(topGroup.getId()).subGroup(orgGroupRep)) {
-            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
-        }
-
-        try {
-            // cannot manage organization related group role mappers
-            group.roles().realmLevel().add(null);
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
-
-        try {
-            // cannot manage organization related group role mappers
-            group.roles().realmLevel().remove(null);
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
-
-        try {
-            // cannot manage organization related group role mappers
-            group.roles().clientLevel(testRealm().clients().findByClientId("test-app").get(0).getId()).add(null);
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
-
-        try {
-            // cannot manage organization related group role mappers
-            group.roles().clientLevel(testRealm().clients().findByClientId("test-app").get(0).getId()).remove(null);
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
-
-        // cannot add top level group with reserved attribute for organizations
-        try (Response response = testRealm().groups().add(orgGroupRep)) {
-            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
-        }
-
-        try {
-            // cannot add organization related group as a default group
-            testRealm().addDefaultGroup(orgGroupRep.getId());
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
-
-        try {
-            // cannot remove organization related group as a default group
-            testRealm().removeDefaultGroup(orgGroupRep.getId());
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
-
-        OrganizationRepresentation org = createOrganization();
-        UserRepresentation userRep = addMember(testRealm().organizations().get(org.getId()));
-
-        try {
-            // cannot join organization related group
-            testRealm().users().get(userRep.getId()).joinGroup(orgGroupRep.getId());
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
-
-        try {
-            // cannot leave organization related group
-            testRealm().users().get(userRep.getId()).leaveGroup(orgGroupRep.getId());
-            fail("Expected ForbiddenException");
-        } catch (ForbiddenException ex) {
-            // success
-        }
     }
 }
