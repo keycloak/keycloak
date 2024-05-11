@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import static org.keycloak.organization.utils.Organizations.resolveBroker;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -85,7 +87,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 return;
             }
 
-            IdentityProviderModel broker = resolveBroker(user);
+            IdentityProviderModel broker = resolveBroker(session, user);
 
             if (broker == null) {
                 // not a managed member, continue with the regular flow
@@ -147,42 +149,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
     private static boolean hasPublicBrokers(List<IdentityProviderModel> brokers) {
         return brokers.stream().anyMatch(p -> Boolean.parseBoolean(p.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString())));
-    }
-
-    private IdentityProviderModel resolveBroker(UserModel user) {
-        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-        RealmModel realm = session.getContext().getRealm();
-        OrganizationModel organization = provider.getByMember(user);
-
-        if (organization == null || !organization.isEnabled()) {
-            return null;
-        }
-
-        if (provider.isManagedMember(organization, user)) {
-            // user is a managed member, try to resolve the origin broker and redirect automatically
-            List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
-            List<IdentityProviderModel> brokers = session.users().getFederatedIdentitiesStream(realm, user)
-                    .map(f -> {
-                        IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
-
-                        if (!organizationBrokers.contains(broker)) {
-                            return null;
-                        }
-
-                        FederatedIdentityModel identity = session.users().getFederatedIdentity(realm, user, broker.getAlias());
-
-                        if (identity != null) {
-                            return broker;
-                        }
-
-                        return null;
-                    }).filter(Objects::nonNull)
-                    .toList();
-
-            return brokers.size() == 1 ? brokers.get(0) : null;
-        }
-
-        return null;
     }
 
     private OrganizationProvider getOrganizationProvider() {

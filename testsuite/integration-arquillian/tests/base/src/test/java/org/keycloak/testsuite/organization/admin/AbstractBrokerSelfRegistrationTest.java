@@ -769,6 +769,37 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         appPage.assertCurrent();
     }
 
+    @Test
+    public void testAllowUpdateEmailWithDifferentDomainThanOrgIfBrokerHasNoDomainSet() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        String email = bc.getUserEmail();
+        assertBrokerRegistration(organization, email);
+
+        IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
+        idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
+        UserRepresentation user = getUserRepresentation(email);
+        user.setEmail("user@someother.com");
+        testRealm().users().get(user.getId()).update(user);
+    }
+
+    @Test
+    public void testFailUpdateEmailWithDifferentDomainThanOrgIfBrokerHasDomainSet() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        String email = bc.getUserEmail();
+        assertBrokerRegistration(organization, email);
+        IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
+        assertEquals(email.substring(email.indexOf('@') + 1), idpRep.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE));
+        UserRepresentation user = getUserRepresentation(email);
+        user.setEmail("user@someother.com");
+        try {
+            testRealm().users().get(user.getId()).update(user);
+            fail("invalid email domain");
+        } catch (BadRequestException expected) {
+
+        }
+    }
+
     private void assertIsNotMember(String userEmail, OrganizationResource organization) {
         UsersResource users = adminClient.realm(bc.consumerRealmName()).users();
         List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
