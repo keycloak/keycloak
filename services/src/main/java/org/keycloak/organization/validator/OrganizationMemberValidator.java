@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.validator;
 
+import static java.util.Optional.ofNullable;
+import static org.keycloak.organization.utils.Organizations.resolveBroker;
 import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
 import java.util.List;
@@ -73,54 +75,81 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
     }
 
     private void validateEmailDomain(String email, String inputHint, ValidationContext context, OrganizationModel organization) {
-        if (UserModel.EMAIL.equals(inputHint)) {
-            if (StringUtil.isBlank(email)) {
-                context.addError(new ValidationError(ID, inputHint, "Email not set"));
-                return;
-            }
-
-            if (!emailValidator().validate(email, inputHint, context).isValid()) {
-                return;
-            }
-
-            UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
-            AttributeContext attributeContext = upContext.getAttributeContext();
-            UserModel user = attributeContext.getUser();
-            String emailDomain = email.substring(email.indexOf('@') + 1);
-            List<String> expectedDomains = organization.getDomains().map(OrganizationDomainModel::getName).toList();
-
-            if (UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext())) {
-                KeycloakSession session = attributeContext.getSession();
-                BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) session.getAttribute(BrokeredIdentityContext.class.getName());
-
-                if (brokerContext != null) {
-                    String alias = brokerContext.getIdpConfig().getAlias();
-                    IdentityProviderModel broker = organization.getIdentityProviders().filter((p) -> p.getAlias().equals(alias)).findAny().orElse(null);
-
-                    if (broker == null) {
-                        return;
-                    }
-
-                    String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-
-                    if (brokerDomain == null) {
-                        return;
-                    }
-
-                    expectedDomains = List.of(brokerDomain);
-                }
-            } else if (!organization.isManaged(user)) {
-                return;
-            }
-
-            if (expectedDomains.isEmpty()) {
-                return;
-            }
-
-            if (!expectedDomains.contains(emailDomain)) {
-                context.addError(new ValidationError(ID, inputHint, "Email domain does not match any domain from the organization"));
-            }
+        if (!UserModel.EMAIL.equals(inputHint)) {
+            return;
         }
+
+        if (StringUtil.isBlank(email)) {
+            context.addError(new ValidationError(ID, inputHint, "Email not set"));
+            return;
+        }
+
+        if (!emailValidator().validate(email, inputHint, context).isValid()) {
+            return;
+        }
+
+        UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
+        AttributeContext attributeContext = upContext.getAttributeContext();
+        UserModel user = attributeContext.getUser();
+        String emailDomain = email.substring(email.indexOf('@') + 1);
+        List<String> expectedDomains = organization.getDomains().map(OrganizationDomainModel::getName).toList();
+
+        if (expectedDomains.isEmpty()) {
+            // no domain to check
+            return;
+        }
+
+        if (UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext())) {
+            expectedDomains = resolveExpectedDomainsWhenReviewingFederatedUserProfile(organization, attributeContext);
+        } else if (organization.isManaged(user)) {
+            expectedDomains = resolveExpectedDomainsForManagedUser(context, user);
+        } else {
+            // no validation happens for unmanaged users as they are realm users linked to an organization
+            return;
+        }
+
+        if (expectedDomains.isEmpty() || expectedDomains.contains(emailDomain)) {
+            // valid email domain
+            return;
+        }
+
+        context.addError(new ValidationError(ID, inputHint, "Email domain does not match any domain from the organization"));
+    }
+
+    private static List<String> resolveExpectedDomainsForManagedUser(ValidationContext context, UserModel user) {
+        IdentityProviderModel broker = resolveBroker(context.getSession(), user);
+
+        if (broker == null) {
+            return List.of();
+        }
+
+        String domain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        return ofNullable(domain).map(List::of).orElse(List.of());
+    }
+
+    private static List<String> resolveExpectedDomainsWhenReviewingFederatedUserProfile(OrganizationModel organization, AttributeContext attributeContext) {
+        // validating in the context of the brokering flow
+        KeycloakSession session = attributeContext.getSession();
+        BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) session.getAttribute(BrokeredIdentityContext.class.getName());
+
+        if (brokerContext == null) {
+            return List.of();
+        }
+
+        String alias = brokerContext.getIdpConfig().getAlias();
+        IdentityProviderModel broker = organization.getIdentityProviders()
+                .filter((p) -> p.getAlias().equals(alias))
+                .findAny()
+                .orElse(null);
+
+        if (broker == null) {
+            // the broker the user is authenticating is not linked to the organization
+            return List.of();
+        }
+
+        // expect the email domain to match the domain set to the broker or none if not set
+        String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        return  ofNullable(brokerDomain).map(List::of).orElse(List.of());
     }
 
     private OrganizationModel resolveOrganization(ValidationContext context, KeycloakSession session) {

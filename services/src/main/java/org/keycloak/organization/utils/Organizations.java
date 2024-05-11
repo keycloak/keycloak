@@ -17,11 +17,19 @@
 
 package org.keycloak.organization.utils;
 
+import java.util.List;
+import java.util.Objects;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.utils.StringUtil;
 
 public class Organizations {
@@ -40,5 +48,41 @@ public class Organizations {
         }
 
         return true;
+    }
+
+    public static IdentityProviderModel resolveBroker(KeycloakSession session, UserModel user) {
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        RealmModel realm = session.getContext().getRealm();
+        OrganizationModel organization = provider.getByMember(user);
+
+        if (organization == null || !organization.isEnabled()) {
+            return null;
+        }
+
+        if (provider.isManagedMember(organization, user)) {
+            // user is a managed member, try to resolve the origin broker and redirect automatically
+            List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
+            List<IdentityProviderModel> brokers = session.users().getFederatedIdentitiesStream(realm, user)
+                    .map(f -> {
+                        IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
+
+                        if (!organizationBrokers.contains(broker)) {
+                            return null;
+                        }
+
+                        FederatedIdentityModel identity = session.users().getFederatedIdentity(realm, user, broker.getAlias());
+
+                        if (identity != null) {
+                            return broker;
+                        }
+
+                        return null;
+                    }).filter(Objects::nonNull)
+                    .toList();
+
+            return brokers.size() == 1 ? brokers.get(0) : null;
+        }
+
+        return null;
     }
 }
