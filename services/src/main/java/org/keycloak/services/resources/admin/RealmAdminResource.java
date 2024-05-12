@@ -486,7 +486,7 @@ public class RealmAdminResource {
         auth.realm().requireManageRealm();
 
         if (Config.getAdminRealm().equals(realm.getName())) {
-            throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Can't remove master realm", Status.BAD_REQUEST);
         }
 
         if (!new RealmManager(session).removeRealm(realm)) {
