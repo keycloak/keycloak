@@ -60,7 +60,7 @@ export default class IdentityProviderLinksTab {
   public assertNoIdentityProvidersLinkedMessageExist(exist: boolean) {
     cy.get(this.#linkedProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
-      "No identity providers linked. Choose one from the list below.",
+      "No identity providers linked.",
     );
 
     return this;
