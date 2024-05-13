@@ -18,15 +18,16 @@ import { usePromise } from "../utils/usePromise";
 import { Page } from "../components/page/Page";
 import { parseResponse } from "../api/parse-response";
 import { useEnvironment } from '../root/KeycloakContext';
+import { token } from '../api/request';
 
-interface CredentialsIssuer {
+type CredentialsIssuer = {
   credential_issuer: string;
   credential_endpoint: string;
   authorization_servers: string[]; 
   credential_configurations_supported: Map<string, SupportedCredentialConfiguration>
 }
 
-interface SupportedCredentialConfiguration {
+type SupportedCredentialConfiguration = {
   id: string,
   format: string,
   scope: string
@@ -66,7 +67,7 @@ export const Oid4Vci = () => {
     usePromise(
       (signal) =>
           getIssuer(wellKnownIssuer),
-      ([issuer]) => {
+      (issuer) => {
         const ccsMap = new Map(Object.entries(issuer.credential_configurations_supported))
         const ccsKeyArray = Array.from(ccsMap.keys());
         setState({...vcState , credentialIssuer: issuer, dropdownItems: ccsKeyArray, selectOptions: ccsMap});
@@ -79,26 +80,14 @@ export const Oid4Vci = () => {
       }
     }, [selected]);
 
-    const getAccessToken =  async () => {
-      try {
-        await context.keycloak.updateToken();
-      } catch (error) {
-        await context.keycloak.login();
+    async function fetchWithToken(url: string) {
+      var options = {  
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${await token(context.keycloak)?.()}`
+        }
       }
-      return context.keycloak.token;
-    }
-
-    const fetchWithToken = (url: string) => {
-      return getAccessToken()
-        .then(token => {
-          var options = {  
-            method: 'GET',
-            headers: {
-              'Authorization': 'Bearer ' +  token
-            }
-          }
-          return fetch(url, options)
-        })   
+      return fetch(url, options)
     }
     
     // retrieve the issuer information for the current session
