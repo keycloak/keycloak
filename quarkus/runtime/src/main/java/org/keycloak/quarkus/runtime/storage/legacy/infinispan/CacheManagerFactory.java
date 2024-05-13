@@ -113,12 +113,17 @@ public class CacheManagerFactory {
         }
 
         DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
-                (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+            if (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
                 ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
-                if (configurationBuilder.memory().maxSize() == null && configurationBuilder.memory().maxCount() == -1) {
-                    logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries", cacheName);
-                    configurationBuilder.memory().maxCount(10000);
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                    if (configurationBuilder.memory().maxSize() == null && configurationBuilder.memory().maxCount() == -1) {
+                        logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries", cacheName);
+                        configurationBuilder.memory().maxCount(10000);
+                    }
+                } else {
+                    if (configurationBuilder.memory().maxCount() != -1) {
+                        logger.warnf("Persistent user sessions NOT enabled and memory limit found in configuration for cache %s. This might be a misconfiguration!", cacheName);
+                    }
                 }
             }
         });
