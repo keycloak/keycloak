@@ -122,6 +122,32 @@
           "applicable": false
         }
       }
+    },
+    {
+      "name": "saml",
+      "provider": "default",
+      "config": {
+        "consentRequired": {
+          "applicable": true,
+          "default-value": false
+        },
+        "fullScopeAllowed": {
+          "applicable": true,
+          "default-value": true
+        },
+        "frontchannelLogout": {
+          "applicable": true,
+          "default-value": true
+        },
+        "protocol": {
+          "applicable": true,
+          "default-value": "saml",
+          "read-only": true
+        },
+        "redirectUris": {
+          "applicable": false
+        }
+      }
     }
   ]
 }
