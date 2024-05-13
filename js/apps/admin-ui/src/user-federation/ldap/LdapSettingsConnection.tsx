@@ -144,6 +144,7 @@ export const LdapSettingsConnection = ({
           />
         </FormGroup>
         <SelectControl
+          id="useTruststoreSpi"
           name="config.useTruststoreSpi[0]"
           label={t("useTruststoreSpi")}
           labelIcon={t("useTruststoreSpiHelp")}
