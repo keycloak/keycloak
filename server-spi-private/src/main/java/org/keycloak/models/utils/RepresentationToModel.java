@@ -415,7 +415,7 @@ public class RepresentationToModel {
     public static void updateClient(ClientRepresentation rep, ClientModel resource, KeycloakSession session) {
 
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
-            if (!ObjectUtil.isEqualOrBothNull(rep.getType(), rep.getType())) {
+            if (!ObjectUtil.isEqualOrBothNull(resource.getType(), rep.getType())) {
                 throw new ClientTypeException("Not supported to change client type");
             }
             if (rep.getType() != null) {
