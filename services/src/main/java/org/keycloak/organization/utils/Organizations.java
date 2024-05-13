@@ -19,6 +19,7 @@ package org.keycloak.organization.utils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -84,5 +85,33 @@ public class Organizations {
         }
 
         return null;
+    }
+
+    public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
+        return group -> {
+            if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+                realm.removeGroup(group);
+                return;
+            }
+
+            OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+
+            try {
+                String orgId = group.getFirstAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+
+                if (orgId != null) {
+                    session.setAttribute(OrganizationModel.class.getName(), provider.getById(orgId));
+                }
+
+                realm.removeGroup(group);
+            } finally {
+                if (current == null) {
+                    session.removeAttribute(OrganizationModel.class.getName());
+                } else {
+                    session.setAttribute(OrganizationModel.class.getName(), current);
+                }
+            }
+        };
     }
 }
