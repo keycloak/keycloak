@@ -43,10 +43,15 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationTest extends AbstractOrganizationTest {
@@ -366,5 +371,37 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertFalse(existing.getDomains().isEmpty());
         assertEquals(1, existing.getDomains().size());
         assertNotNull(existing.getDomain("acme.com"));
+    }
+
+    @Test
+    public void testDeleteRealm() {
+        RealmRepresentation realmRep = RealmBuilder.create().name(KeycloakModelUtils.generateId()).build();
+        RealmResource realm = realmsResouce().realm(realmRep.getRealm());
+
+        try {
+            realmRep.setEnabled(true);
+            realmsResouce().create(realmRep);
+            realm = realmsResouce().realm(realmRep.getRealm());
+            realm.toRepresentation();
+            OrganizationRepresentation org = new OrganizationRepresentation();
+            org.setName("test-org");
+            org.addDomain(new OrganizationDomainRepresentation("test.org"));
+            org.setEnabled(true);
+            Response response = realm.organizations().create(org);
+            response.close();
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            List<OrganizationRepresentation> orgs = realm.organizations().getAll();
+            assertEquals(1, orgs.size());
+            IdentityProviderRepresentation broker = bc.setUpIdentityProvider();
+            broker.setAlias(KeycloakModelUtils.generateId());
+            response = realm.identityProviders().create(broker);
+            response.close();
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            response = realm.organizations().get(orgs.get(0).getId()).identityProviders().addIdentityProvider(broker.getAlias());
+            response.close();
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        } finally {
+            realm.remove();
+        }
     }
 }
