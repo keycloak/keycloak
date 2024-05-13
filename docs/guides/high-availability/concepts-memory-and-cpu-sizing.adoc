@@ -39,11 +39,11 @@ Memory requirements increase with the number of client sessions per user session
 * In containers, Keycloak allocates 70% of the memory limit for heap based memory. It will also use approximately 300 MB of non-heap-based memory.
 To calculate the requested memory, use the calculation above. As memory limit, subtract the non-heap memory from the value above and divide the result by 0.7.
 
-* For each 8 password-based user logins per second, 1 vCPU per Pod in a three-node cluster (tested with up to 300 per second).
+* For each 45 password-based user logins per second, 1 vCPU per Pod in a three-node cluster (tested with up to 300 per second).
 +
 {project_name} spends most of the CPU time hashing the password provided by the user, and it is proportional to the number of hash iterations.
 
-* For each 450 client credential grants per second, 1 vCPU per Pod in a three node cluster (tested with up to 2000 per second).
+* For each 500 client credential grants per second, 1 vCPU per Pod in a three node cluster (tested with up to 2000 per second).
 +
 Most CPU time goes into creating new TLS connections, as each client runs only a single request.
 
@@ -58,17 +58,17 @@ Performance of {project_name} dropped significantly when its Pods were throttled
 Target size:
 
 * 50,000 active user sessions
-* 24 logins per seconds
-* 450 client credential grants per second
+* 45 logins per seconds
+* 500 client credential grants per second
 * 350 refresh token requests per second
 
 Limits calculated:
 
-* CPU requested: 5 vCPU
+* CPU requested: 3 vCPU
 +
-(24 logins per second = 3 vCPU, 450 client credential grants per second = 1 vCPU, 350 refresh token = 1 vCPU)
+(45 logins per second = 1 vCPU, 500 client credential grants per second = 1 vCPU, 350 refresh token = 1 vCPU)
 
-* CPU limit: 15 vCPU
+* CPU limit: 9 vCPU
 +
 (Allow for three times the CPU requested to handle peaks, startups and failover tasks)
 
@@ -102,9 +102,9 @@ The following setup was used to retrieve the settings above to run tests of abou
 * {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/passive mode.
 * OpenShift's reverse proxy running in passthrough mode were the TLS connection of the client is terminated at the Pod.
 * Database Amazon Aurora PostgreSQL in a multi-AZ setup, with the writer instance in the availability zone of the primary site.
-* Default user password hashing with PBKDF2(SHA512) 210,000 hash iterations which is the default https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[as recommended by OWASP].
+* Default user password hashing with Argon2 and 5 hash iterations which is the default https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[as recommended by OWASP].
 * Client credential grants don't use refresh tokens (which is the default).
-* Database seeded with 20,000 users and 20,000 clients.
+* Database seeded with 100,000 users and 100,000 clients.
 * Infinispan local caches at default of 10,000 entries, so not all clients and users fit into the cache, and some requests will need to fetch the data from the database.
 * All sessions in distributed caches as per default, with two owners per entries, allowing one failing Pod without losing data.
 

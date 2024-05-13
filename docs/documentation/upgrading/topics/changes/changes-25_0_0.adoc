@@ -100,6 +100,18 @@ http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri
 Use the new options `http-metrics-histograms-enabled` and `http-metrics-slos` to enable default histogram buckets or specific buckets for service level objectives (SLOs).
 Read more about histograms in the https://prometheus.io/docs/concepts/metric_types/#histogram[Prometheus documentation about histograms] on how to use the additional metrics series provided in `http_server_requests_seconds_bucket`.
 
+= Expected improvement in overall CPU usage and temporary increased database activity
+
+In {project_name} 24 release, we had a change in the password hashing algorithm which resulted in a increased CPU usage. To address that we opted to a different hashing algorithm Argon2 which brings the CPU usage back to where it was prior to the {project_name} 24 release.
+
+The Concepts for sizing CPU and memory resources in the {project_name} High Availability guide have been updated to reflect the new hashing defaults.
+
+After the upgrade, during a password-based login, the user's passwords will be re-hashed with the new hash algorithm and hash iterations as a one-off activity and updated in the database.
+As this clears the user from {project_name}'s internal cache, you'll also see an increased read activity on the database level.
+This increased database activity will decrease over time as more and more user's passwords have been re-hashed.
+
+To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization.Please monitor the JVM heap utilization closely after this upgrade. Additional tuning may be necessary depending on your specific workload.
+
 = Limiting memory usage when consuming HTTP responses
 
 In some scenarios like brokering Keycloak uses HTTP to talk to external servers.
