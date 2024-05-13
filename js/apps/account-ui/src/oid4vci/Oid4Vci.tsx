@@ -65,9 +65,7 @@ export const Oid4Vci = () => {
 
     usePromise(
       (signal) =>
-        Promise.all([
           getIssuer(wellKnownIssuer),
-        ]),
       ([issuer]) => {
         const ccsMap = new Map(Object.entries(issuer.credential_configurations_supported))
         const ccsKeyArray = Array.from(ccsMap.keys());
