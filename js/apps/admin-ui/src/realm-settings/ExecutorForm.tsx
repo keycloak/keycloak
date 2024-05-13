@@ -215,7 +215,9 @@ export default function ExecutorForm() {
                       key={option.id}
                       value={option.id}
                       description={option.helpText}
-                    />
+                    >
+                      {option.id}
+                    </SelectOption>
                   ))}
                 </KeycloakSelect>
               )}

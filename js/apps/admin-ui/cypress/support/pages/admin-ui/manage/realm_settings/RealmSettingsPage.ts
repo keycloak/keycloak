@@ -199,8 +199,8 @@ export default class RealmSettingsPage extends CommonPage {
   #clientPolicy = 'a[href*="realm-settings/client-policies/Test/edit-policy"]';
   #reloadBtn = "reloadProfile";
   #addExecutor = "addExecutor";
-  #addExecutorDrpDwn = ".pf-v5-c-menu-toggle";
-  #addExecutorDrpDwnOption = "executorType-select";
+  #addExecutorDrpDwn = "#kc-executor";
+  #addExecutorDrpDwnOption = ".pf-v5-c-menu__list";
   #addExecutorCancelBtn = ".pf-v5-c-form__actions a";
   #addExecutorSaveBtn = "addExecutor-saveBtn";
   #availablePeriodExecutorFld = "available-period";
@@ -210,8 +210,8 @@ export default class RealmSettingsPage extends CommonPage {
 
   #listingPage = new ListingPage();
   #addCondition = "addCondition";
-  #addConditionDrpDwn = ".pf-v5-c-menu-toggle";
-  #addConditionDrpDwnOption = "conditionType-select";
+  #addConditionDrpDwn = "#provider";
+  #addConditionDrpDwnOption = ".pf-v5-c-menu__list";
   #addConditionCancelBtn = "addCondition-cancelBtn";
   #addConditionSaveBtn = "addCondition-saveBtn";
   #clientRolesConditionLink = "client-roles-condition-link";
@@ -902,7 +902,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientProfileTwo).click();
     cy.findByTestId(this.#addExecutor).click();
     cy.get(this.#addExecutorDrpDwn).click();
-    cy.findByTestId(this.#addExecutorDrpDwnOption)
+    cy.get(this.#addExecutorDrpDwnOption)
       .contains("secure-ciba-signed-authn-req")
       .click();
     cy.get(this.#addExecutorCancelBtn).click();
@@ -916,7 +916,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientProfileTwo).click();
     cy.findByTestId(this.#addExecutor).click();
     cy.get(this.#addExecutorDrpDwn).click();
-    cy.findByTestId(this.#addExecutorDrpDwnOption)
+    cy.get(this.#addExecutorDrpDwnOption)
       .contains("secure-ciba-signed-authn-req")
       .click();
     cy.findByTestId(this.#addExecutorSaveBtn).click();
@@ -1130,9 +1130,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientPolicy).click();
     cy.findByTestId(this.#addCondition).click();
     cy.get(this.#addConditionDrpDwn).click();
-    cy.findByTestId(this.#addConditionDrpDwnOption)
-      .contains("any-client")
-      .click();
+    cy.get(this.#addConditionDrpDwnOption).contains("any-client").click();
     cy.findByTestId(this.#addConditionCancelBtn).click();
     cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
@@ -1144,9 +1142,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientPolicy).click();
     cy.findByTestId(this.#addCondition).click();
     cy.get(this.#addConditionDrpDwn).click();
-    cy.findByTestId(this.#addConditionDrpDwnOption)
-      .contains("client-roles")
-      .click();
+    cy.get(this.#addConditionDrpDwnOption).contains("client-roles").click();
     cy.findByTestId(this.#roleSelect).clear().type("manage-realm");
 
     cy.findByTestId(this.#addConditionSaveBtn).click();
@@ -1172,9 +1168,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientPolicy).click();
     cy.findByTestId(this.#addCondition).click();
     cy.get(this.#addConditionDrpDwn).click();
-    cy.findByTestId(this.#addConditionDrpDwnOption)
-      .contains("client-scopes")
-      .click();
+    cy.get(this.#addConditionDrpDwnOption).contains("client-scopes").click();
 
     this.addClientScopes();
 
