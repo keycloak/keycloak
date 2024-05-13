@@ -60,9 +60,10 @@ export default class ListingPage extends CommonElements {
   #tableNameColumnPrefix = "name-column-";
   #rowGroup = "table:visible tbody[role='rowgroup']";
   #tableHeaderCheckboxItemAllRows = "input[aria-label='Select all rows']";
-
   #searchBtnInModal =
     ".pf-v5-c-modal-box .pf-v5-c-toolbar__content-section button.pf-m-control:visible";
+  #menuContent = ".pf-v5-c-menu__content";
+  #menuItemText = ".pf-v5-c-menu__item-text";
 
   #getSearchInput() {
     return cy.findAllByTestId("table-search-input").last().find("input");
@@ -189,6 +190,14 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
+  clickMenuDelete() {
+    cy.get(this.#menuContent)
+      .find(this.#menuItemText)
+      .contains("Delete")
+      .click({ force: true });
+    return this;
+  }
+
   clickItemCheckbox(itemName: string) {
     cy.get(this.#itemsRows)
       .contains(itemName)
@@ -247,7 +256,7 @@ export default class ListingPage extends CommonElements {
 
   deleteItem(itemName: string) {
     this.clickRowDetails(itemName);
-    this.clickDetailMenu("Delete");
+    this.clickMenuDelete();
 
     return this;
   }

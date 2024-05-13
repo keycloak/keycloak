@@ -571,7 +571,9 @@ describe("Clients test", () => {
       cy.findByTestId("importClient").click();
       cy.findByTestId("realm-file").selectFile(
         "cypress/fixtures/partial-import-test-data/import-identical-client.json",
-        { action: "drag-drop" },
+        {
+          action: "drag-drop",
+        },
       );
 
       cy.wait(1000);
