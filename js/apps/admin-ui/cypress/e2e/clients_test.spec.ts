@@ -932,6 +932,7 @@ describe("Clients test", () => {
     const serviceAccountTab = new RoleMappingTab("user");
     const serviceAccountName = "service-account-client";
     const createRealmRoleName = `create-realm-${uuid()}`;
+    const createRealmRoleType = `roles`;
 
     before(async () => {
       await adminClient.inRealm(realmName, () =>
@@ -1008,6 +1009,7 @@ describe("Clients test", () => {
       serviceAccountTab
         .goToServiceAccountTab()
         .assignRole(false)
+        .changeRoleTypeFilter(createRealmRoleType)
         .selectRow(createRealmRoleName, true)
         .assign();
       commonPage.masthead().checkNotificationMessage("Role mapping updated");
@@ -1029,6 +1031,7 @@ describe("Clients test", () => {
       commonPage.sidebar().waitForPageLoad();
 
       serviceAccountTab
+        .changeRoleTypeFilter("roles")
         .selectRow("offline_access", true)
         .selectRow(createRealmRoleName, true)
         .assign();

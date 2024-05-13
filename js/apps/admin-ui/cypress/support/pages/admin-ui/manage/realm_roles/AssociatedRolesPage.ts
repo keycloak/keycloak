@@ -5,7 +5,7 @@ export default class AssociatedRolesPage {
   #addAssociatedRolesModalButton = "assign";
   #compositeRoleBadge = "composite-role-badge";
   #filterTypeDropdown = "filter-type-dropdown";
-  #filterTypeDropdownItem = "roles";
+  #filterTypeDropdownItem = "clients";
   #usersPage = "users-page";
   #removeRolesButton = "unAssignRole";
   #addRoleTable = '[aria-label="Roles"] td[data-label="Name"]';
@@ -14,6 +14,10 @@ export default class AssociatedRolesPage {
     cy.findByTestId(this.#actionDropdown).last().click();
 
     cy.findByTestId(this.#addRolesDropdownItem).click();
+
+    cy.findByTestId(this.#filterTypeDropdown).click();
+
+    cy.findByTestId(this.#filterTypeDropdownItem).click();
 
     cy.get(this.#addRoleTable)
       .contains(roleName)
@@ -36,7 +40,7 @@ export default class AssociatedRolesPage {
   addAssociatedRoleFromSearchBar(roleName: string, isClientRole?: boolean) {
     cy.findByTestId(this.#addRoleToolbarButton).click({ force: true });
 
-    if (isClientRole) {
+    if (!isClientRole) {
       cy.findByTestId(this.#filterTypeDropdown).click();
       cy.findByTestId(this.#filterTypeDropdownItem).click();
     }
@@ -58,10 +62,6 @@ export default class AssociatedRolesPage {
 
   addAssociatedClientRole(roleName: string) {
     cy.findByTestId(this.#addRoleToolbarButton).click();
-
-    cy.findByTestId(this.#filterTypeDropdown).click();
-
-    cy.findByTestId(this.#filterTypeDropdownItem).click();
 
     cy.findByTestId(".pf-v5-c-spinner__tail-ball").should("not.exist");
 
