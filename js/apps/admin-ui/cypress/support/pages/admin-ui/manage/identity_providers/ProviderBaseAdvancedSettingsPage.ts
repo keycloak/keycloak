@@ -4,7 +4,7 @@ import Masthead from "../../Masthead";
 const masthead = new Masthead();
 
 export enum LoginFlowOption {
-  empty = "",
+  empty = "First login flow override",
   none = "None",
   browser = "browser",
   directGrant = "direct grant",

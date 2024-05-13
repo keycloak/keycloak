@@ -117,7 +117,9 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
                     selected={option === field.value}
                     key={option}
                     value={option}
-                  />
+                  >
+                    {option}
+                  </SelectOption>
                 )),
               ]}
             </KeycloakSelect>

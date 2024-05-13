@@ -46,6 +46,7 @@ export const SingleSelect = ({
     <Select
       ref={ref}
       maxMenuHeight={propertyToString(maxHeight)}
+      isScrollable
       popperProps={{
         appendTo: append(),
         direction,
