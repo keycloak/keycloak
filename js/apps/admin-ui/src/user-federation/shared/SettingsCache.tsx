@@ -119,13 +119,13 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
       </FormGroup>
       {isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
         <SelectControl
+          id="kc-eviction-day"
           name="config.evictionDay[0]"
           label={t("evictionDay")}
           labelIcon={t("evictionDayHelp")}
           controller={{
             defaultValue: "1",
           }}
-          data-testid="cache-day"
           aria-label={t("selectEvictionDay")}
           options={[
             { key: "1", value: t("Sunday") },
