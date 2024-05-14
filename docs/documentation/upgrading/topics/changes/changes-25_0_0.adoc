@@ -110,7 +110,7 @@ After the upgrade, during a password-based login, the user's passwords will be r
 As this clears the user from {project_name}'s internal cache, you'll also see an increased read activity on the database level.
 This increased database activity will decrease over time as more and more user's passwords have been re-hashed.
 
-To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization.Please monitor the JVM heap utilization closely after this upgrade. Additional tuning may be necessary depending on your specific workload.
+To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization. Please monitor the JVM heap utilization closely after this upgrade. Additional tuning may be necessary depending on your specific workload.
 
 = Limiting memory usage when consuming HTTP responses
 
