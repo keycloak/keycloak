@@ -30,7 +30,6 @@ import jakarta.ws.rs.core.Response.Status;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.admin.client.resource.RealmResource;
