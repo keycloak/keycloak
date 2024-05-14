@@ -48,7 +48,6 @@ import javax.naming.directory.SearchResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -100,8 +99,7 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         BasicAttributes ldapAttributes = extractAttributesForSaving(ldapObject, true);
-        this.operationManager.createSubContext(ldapObject.getDn().getLdapName(), ldapAttributes);
-        ldapObject.setUuid(getEntryIdentifier(ldapObject));
+        ldapObject.setUuid(operationManager.createSubContext(ldapObject.getDn().getLdapName(), ldapAttributes));
 
         if (logger.isDebugEnabled()) {
             logger.debugf("Type with identifier [%s] and dn [%s] successfully added to LDAP store.", ldapObject.getUuid(), ldapObject.getDn());
@@ -603,23 +601,4 @@ public class LDAPIdentityStore implements IdentityStore {
         return attr;
     }
 
-    protected String getEntryIdentifier(final LDAPObject ldapObject) {
-        try {
-            // we need this to retrieve the entry's identifier from the ldap server
-            String uuidAttrName = getConfig().getUuidLDAPAttributeName();
-
-            List<SearchResult> search = this.operationManager.search(ldapObject.getDn().getLdapName(),
-                    new LDAPQueryConditionsBuilder().present(LDAPConstants.OBJECT_CLASS),
-                    Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
-            Attribute id = search.get(0).getAttributes().get(getConfig().getUuidLDAPAttributeName());
-
-            if (id == null) {
-                throw new ModelException("Could not retrieve identifier for entry [" + ldapObject.getDn().toString() + "].");
-            }
-
-            return this.operationManager.decodeEntryUUID(id.get());
-        } catch (NamingException ne) {
-            throw new ModelException("Could not retrieve identifier for entry [" + ldapObject.getDn().toString() + "].");
-        }
-    }
 }
