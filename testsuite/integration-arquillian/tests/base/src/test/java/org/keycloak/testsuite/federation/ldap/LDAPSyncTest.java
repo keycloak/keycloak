@@ -17,10 +17,7 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
@@ -449,6 +446,37 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         } catch (Exception e) {
             Assert.assertTrue(e instanceof BadRequestException);
         }
+    }
+
+
+    @Test
+    public void test10LDAPGroupSyncAfterDeletingFromKeycloak(){
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm=ctx.getRealm();
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            LDAPTestUtils.addOrUpdateGroupMapper(realm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY, descriptionAttrName);
+            LDAPTestUtils.createLDAPGroup(session, realm, ctx.getLdapModel(), "groupTest-1", descriptionAttrName, "group1 - description");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            ctx.getRealm().updateComponent(mapperModel);
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/groupTest-1");
+            ctx.getRealm().removeGroup(kcGroup1);
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+            LDAPObject group1Loaded = groupMapper.loadLDAPGroupByName("groupTest-1");
+            assertThat("Group not deleted from LDAP",group1Loaded==null);
+        });
     }
 
     @Test
