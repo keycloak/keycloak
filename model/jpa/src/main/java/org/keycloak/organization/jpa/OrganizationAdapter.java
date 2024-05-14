@@ -136,6 +136,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             throw new ModelValidationException("You must provide at least one domain");
         }
 
+        List<IdentityProviderModel> idps = this.getIdentityProviders().toList();
+
         Map<String, OrganizationDomainModel> modelMap = domains.stream()
                 .map(this::validateDomain)
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
@@ -149,6 +151,12 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             // remove domain that is not found in the new set.
             else {
                 this.entity.removeDomain(domainEntity);
+                // check if any idp is assigned to the removed domain, and unset the domain if that's the case.
+                idps.forEach(idp -> {
+                    if (Objects.equals(domainEntity.getName(), idp.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE))) {
+                        idp.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
+                    }
+                });
             }
         }
 
