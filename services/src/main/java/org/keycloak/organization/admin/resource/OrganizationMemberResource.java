@@ -118,6 +118,7 @@ public class OrganizationMemberResource {
     }
 
     @Path("invite-user")
+    @POST
     public Response inviteUser(String email) {
         return new OrganizationInvitationResource(session, organization, adminEvent).inviteUser(email);
     }
