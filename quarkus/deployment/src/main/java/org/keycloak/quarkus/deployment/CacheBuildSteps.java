@@ -25,6 +25,9 @@ import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
+
+import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
+import io.quarkus.deployment.logging.LoggingSetupBuildItem;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.keycloak.config.MetricsOptions;
@@ -39,12 +42,16 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 
 public class CacheBuildSteps {
 
     @Consume(ConfigBuildItem.class)
-    @Record(ExecutionTime.STATIC_INIT)
+    // Consume LoggingSetupBuildItem.class and record RUNTIME_INIT are necessary to ensure that logging is set up before the caches are initialized.
+    // This is to prevent the class TP in JGroups to pick up the trace logging at start up. While the logs will not appear on the console,
+    // they will still be created and use CPU cycles and create garbage collection.
+    // See: https://issues.redhat.com/browse/JGRP-2130 for the JGroups discussion, and https://github.com/keycloak/keycloak/issues/29129 for the issue Keycloak had with this.
+    @Consume(LoggingSetupBuildItem.class)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
     void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
         String configFile = getConfigValue("kc.spi-connections-infinispan-quarkus-config-file").getValue();
