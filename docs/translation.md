@@ -34,4 +34,4 @@ If you have any questions or need assistance, feel free to reach out to the lang
 
 English: [Coordinator Name]
 German: [[Robin Meese](https://github.com/robson90)]
-Dutch: [Coordinator Name]
+Dutch: [[Jon Koops](https://github.com/jonkoops)]
