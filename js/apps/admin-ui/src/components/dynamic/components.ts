@@ -16,6 +16,7 @@ import { StringComponent } from "./StringComponent";
 import { TextComponent } from "./TextComponent";
 import { UrlComponent } from "./UrlComponent";
 import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
+import { IntComponent } from "./IntComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
@@ -27,6 +28,7 @@ const ComponentTypes = [
   "String",
   "Text",
   "boolean",
+  "int",
   "List",
   "Role",
   "Script",
@@ -49,6 +51,7 @@ export const COMPONENTS: {
   String: StringComponent,
   Text: TextComponent,
   boolean: BooleanComponent,
+  int: IntComponent,
   List: ListComponent,
   Role: RoleComponent,
   Script: ScriptComponent,
