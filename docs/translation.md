@@ -22,7 +22,7 @@ To ensure consistency and quality across translations, please adhere to the foll
 - Maintain consistency with existing translations.
 - Translate text accurately, ensuring that the meaning is preserved.
 - Translations will be committed to github.com/Keycloak after they were inserted on Weblate.org(Update every hour or so). An Administrator for that language has the ability to approve or decline that translation.
-### Currently, we are actively supporting translations in the following languages:
+### Supported languages
 
 - English
 - German
