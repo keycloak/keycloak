@@ -62,7 +62,7 @@
     "vite": "^5.2.11",
     "vite-plugin-checker": "^0.6.4",
     "vite-plugin-dts": "^3.9.1",
-    "vite-plugin-lib-inject-css": "^2.1.0",
+    "vite-plugin-lib-inject-css": "^2.1.1",
     "vitest": "^1.6.0"
   }
 }
