@@ -37,6 +37,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -163,10 +164,11 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     @Override
-    public void sendOrgInviteEmail(String link, long expirationInMinutes) throws EmailException {
+    public void sendOrgInviteEmail(OrganizationModel organization, String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<>(this.attributes);
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
-        send("orgInviteSubject", "org-invite.ftl", attributes);
+        attributes.put("organization", organization);
+        send("orgInviteSubject", List.of(organization.getName()), "org-invite.ftl", attributes);
     }
 
     @Override
