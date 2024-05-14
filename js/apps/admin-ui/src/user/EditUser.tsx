@@ -368,17 +368,15 @@ export default function EditUser() {
               >
                 <UserConsents />
               </Tab>
-              {hasAccess("view-identity-providers") && (
-                <Tab
-                  data-testid="identity-provider-links-tab"
-                  title={
-                    <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
-                  }
-                  {...identityProviderLinksTab}
-                >
-                  <UserIdentityProviderLinks userId={user.id!} />
-                </Tab>
-              )}
+              <Tab
+                data-testid="identity-provider-links-tab"
+                title={
+                  <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
+                }
+                {...identityProviderLinksTab}
+              >
+                <UserIdentityProviderLinks userId={user.id!} />
+              </Tab>
               <Tab
                 data-testid="user-sessions-tab"
                 title={<TabTitleText>{t("sessions")}</TabTitleText>}

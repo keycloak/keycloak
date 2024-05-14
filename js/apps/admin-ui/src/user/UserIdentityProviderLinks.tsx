@@ -24,6 +24,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { toIdentityProvider } from "../identity-providers/routes/IdentityProvider";
 import { emptyFormatter, upperCaseFormatter } from "../util";
 import { UserIdpModal } from "./UserIdPModal";
+import { useAccess } from "../context/access/Access";
 
 type UserIdentityProviderLinksProps = {
   userId: string;
@@ -41,6 +42,12 @@ export const UserIdentityProviderLinks = ({
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
+  const { hasAccess, hasSomeAccess } = useAccess();
+
+  const canQueryIDPDetails = hasSomeAccess(
+    "manage-identity-providers",
+    "view-identity-providers",
+  );
 
   const refresh = () => setKey(new Date().getTime());
 
@@ -51,15 +58,17 @@ export const UserIdentityProviderLinks = ({
   const identityProviders = useServerInfo().identityProviders;
 
   const getFederatedIdentities = async () => {
-    const allProviders = await adminClient.identityProviders.find();
-
     const allFedIds = (await adminClient.users.listFederatedIdentities({
       id: userId,
     })) as WithProviderId[];
-    for (const element of allFedIds) {
-      element.providerId = allProviders.find(
-        (item) => item.alias === element.identityProvider,
-      )?.providerId!;
+
+    if (canQueryIDPDetails) {
+      const allProviders = await adminClient.identityProviders.find();
+      for (const element of allFedIds) {
+        element.providerId = allProviders.find(
+          (item) => item.alias === element.identityProvider,
+        )?.providerId!;
+      }
     }
 
     return allFedIds;
@@ -107,6 +116,9 @@ export const UserIdentityProviderLinks = ({
   });
 
   const idpLinkRenderer = (idp: WithProviderId) => {
+    if (!canQueryIDPDetails)
+      return <span>{capitalize(idp.identityProvider)}</span>;
+
     return (
       <Link
         to={toIdentityProvider({
@@ -148,6 +160,8 @@ export const UserIdentityProviderLinks = ({
   };
 
   const unlinkRenderer = (fedIdentity: FederatedIdentityRepresentation) => {
+    if (!hasAccess("manage-users")) return <span />;
+
     return (
       <Button
         variant="link"
@@ -175,6 +189,48 @@ export const UserIdentityProviderLinks = ({
     );
   };
 
+  const linkedIdpColumns = () => {
+    const columns = [
+      {
+        name: "identityProvider",
+        displayKey: "name",
+        cellFormatters: [emptyFormatter()],
+        cellRenderer: idpLinkRenderer,
+        transforms: [cellWidth(20)],
+      },
+
+      {
+        name: "userId",
+        displayKey: "userID",
+        cellFormatters: [emptyFormatter()],
+        transforms: [cellWidth(30)],
+      },
+      {
+        name: "userName",
+        displayKey: "username",
+        cellFormatters: [emptyFormatter()],
+        transforms: [cellWidth(20)],
+      },
+      {
+        name: "",
+        cellFormatters: [emptyFormatter()],
+        cellRenderer: unlinkRenderer,
+        transforms: [cellWidth(20)],
+      },
+    ];
+
+    if (canQueryIDPDetails)
+      columns.splice(1, 0, {
+        name: "type",
+        displayKey: "type",
+        cellFormatters: [emptyFormatter()],
+        cellRenderer: badgeRenderer1,
+        transforms: [cellWidth(10)],
+      });
+
+    return columns;
+  };
+
   return (
     <>
       {isLinkIdPModalOpen && (
@@ -199,40 +255,7 @@ export const UserIdentityProviderLinks = ({
             isPaginated={false}
             ariaLabelKey="LinkedIdPs"
             className="kc-linked-IdPs-table"
-            columns={[
-              {
-                name: "identityProvider",
-                displayKey: "name",
-                cellFormatters: [emptyFormatter()],
-                cellRenderer: idpLinkRenderer,
-                transforms: [cellWidth(20)],
-              },
-              {
-                name: "type",
-                displayKey: "type",
-                cellFormatters: [emptyFormatter()],
-                cellRenderer: badgeRenderer1,
-                transforms: [cellWidth(10)],
-              },
-              {
-                name: "userId",
-                displayKey: "userID",
-                cellFormatters: [emptyFormatter()],
-                transforms: [cellWidth(30)],
-              },
-              {
-                name: "userName",
-                displayKey: "username",
-                cellFormatters: [emptyFormatter()],
-                transforms: [cellWidth(20)],
-              },
-              {
-                name: "",
-                cellFormatters: [emptyFormatter()],
-                cellRenderer: unlinkRenderer,
-                transforms: [cellWidth(20)],
-              },
-            ]}
+            columns={linkedIdpColumns()}
             emptyState={
               <TextContent className="kc-no-providers-text">
                 <Text>{t("noProvidersLinked")}</Text>
@@ -240,45 +263,47 @@ export const UserIdentityProviderLinks = ({
             }
           />
         </FormPanel>
-        <FormPanel className="kc-available-idps" title={t("availableIdPs")}>
-          <TextContent>
-            <Text className="kc-available-idps-text">
-              {t("availableIdPsText")}
-            </Text>
-          </TextContent>
-          <KeycloakDataTable
-            loader={availableIdPsLoader}
-            key={key}
-            isPaginated={false}
-            ariaLabelKey="LinkedIdPs"
-            className="kc-linked-IdPs-table"
-            columns={[
-              {
-                name: "alias",
-                displayKey: "name",
-                cellFormatters: [emptyFormatter(), upperCaseFormatter()],
-                transforms: [cellWidth(20)],
-              },
-              {
-                name: "type",
-                displayKey: "type",
-                cellFormatters: [emptyFormatter()],
-                cellRenderer: badgeRenderer2,
-                transforms: [cellWidth(60)],
-              },
-              {
-                name: "",
-                cellFormatters: [emptyFormatter()],
-                cellRenderer: linkRenderer,
-              },
-            ]}
-            emptyState={
-              <TextContent className="kc-no-providers-text">
-                <Text>{t("noAvailableIdentityProviders")}</Text>
-              </TextContent>
-            }
-          />
-        </FormPanel>
+        {hasAccess("manage-users") && canQueryIDPDetails && (
+          <FormPanel className="kc-available-idps" title={t("availableIdPs")}>
+            <TextContent>
+              <Text className="kc-available-idps-text">
+                {t("availableIdPsText")}
+              </Text>
+            </TextContent>
+            <KeycloakDataTable
+              loader={availableIdPsLoader}
+              key={key}
+              isPaginated={false}
+              ariaLabelKey="LinkedIdPs"
+              className="kc-linked-IdPs-table"
+              columns={[
+                {
+                  name: "alias",
+                  displayKey: "name",
+                  cellFormatters: [emptyFormatter(), upperCaseFormatter()],
+                  transforms: [cellWidth(20)],
+                },
+                {
+                  name: "type",
+                  displayKey: "type",
+                  cellFormatters: [emptyFormatter()],
+                  cellRenderer: badgeRenderer2,
+                  transforms: [cellWidth(60)],
+                },
+                {
+                  name: "",
+                  cellFormatters: [emptyFormatter()],
+                  cellRenderer: linkRenderer,
+                },
+              ]}
+              emptyState={
+                <TextContent className="kc-no-providers-text">
+                  <Text>{t("noAvailableIdentityProviders")}</Text>
+                </TextContent>
+              }
+            />
+          </FormPanel>
+        )}
       </PageSection>
     </>
   );
