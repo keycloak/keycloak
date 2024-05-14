@@ -182,7 +182,7 @@ export default class ProviderPage {
 
   fillSelect(selectField: string, value: string) {
     cy.get(selectField).click();
-    cy.get(`${selectField} + ul`).contains(value).click();
+    cy.get(selectField).parent().find("ul").contains(value).click();
   }
 
   fillTextField(textField: string, value: string) {

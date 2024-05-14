@@ -10,6 +10,7 @@ import {
   FlexItem,
   Label,
   MenuToggle,
+  MenuToggleElement,
 } from "@patternfly/react-core";
 import { ReactElement, useState } from "react";
 import { Link, To } from "react-router-dom";
@@ -41,7 +42,7 @@ export const KeycloakCard = ({
   };
 
   return (
-    <Card isSelectable>
+    <Card isSelectable isClickable>
       <CardHeader
         actions={{
           actions: dropdownItems ? (
@@ -49,14 +50,12 @@ export const KeycloakCard = ({
               popperProps={{
                 position: "right",
               }}
-              data-testid={`${title}-dropdown`}
-              isPlain
-              toggle={(ref) => (
+              toggle={(ref: React.Ref<MenuToggleElement>) => (
                 <MenuToggle
                   ref={ref}
                   onClick={onDropdownToggle}
                   variant="plain"
-                  isExpanded={isDropdownOpen}
+                  data-testid={`${title}-dropdown`}
                 >
                   <EllipsisVIcon />
                 </MenuToggle>
