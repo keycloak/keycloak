@@ -45,7 +45,11 @@ import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -390,4 +394,23 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existing.get(1).getUsername(), is(equalTo("thejoker@neworg.org")));
     }
 
+    @Test
+    public void testAddMemberFromDifferentRealm() {
+        String orgId = createOrganization().getId();
+
+        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = provider.getById(orgId);
+
+            RealmModel realm = session.realms().getRealmByName("master");
+            session.users().addUser(realm, "master-test-user");
+            UserModel user = null;
+            try {
+                user = session.users().getUserByUsername(realm, "master-test-user");
+                assertFalse(provider.addMember(organization, user));
+            } finally {
+                session.users().removeUser(realm, user);
+            }
+        });
+    }
 }

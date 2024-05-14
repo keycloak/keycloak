@@ -19,6 +19,7 @@ package org.keycloak.testsuite.organization.admin;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -30,7 +31,10 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -193,6 +197,27 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         try (Response response = testRealm().identityProviders().create(idpRep)) {
             Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
+    }
+
+    @Test
+    public void testAddIdpFromDifferentRealm() {
+        String orgId = createOrganization().getId();
+        IdentityProviderRepresentation idpRepresentation = createRep("master-identity-provider", "oidc");
+        adminClient.realm("master").identityProviders().create(idpRepresentation).close();
+
+        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = provider.getById(orgId);
+
+            RealmModel realm = session.realms().getRealmByName("master");
+            IdentityProviderModel idp = realm.getIdentityProviderByAlias("master-identity-provider");
+
+            try {
+                assertFalse(provider.addIdentityProvider(organization, idp));
+            } finally {
+                realm.removeIdentityProviderByAlias("master-identity-provider");
+            }
+        });
     }
 
     private IdentityProviderRepresentation createRep(String alias, String providerId) {
