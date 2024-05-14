@@ -107,7 +107,9 @@ export const PageNav = () => {
           <Divider />
           {showManage && !isOnAddRealm && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
-              <LeftNav title="organizations" path="/organizations" />
+              {isFeatureEnabled(Feature.Organizations) && (
+                <LeftNav title="organizations" path="/organizations" />
+              )}
               <LeftNav title="clients" path="/clients" />
               <LeftNav title="clientScopes" path="/client-scopes" />
               <LeftNav title="realmRoles" path="/roles" />

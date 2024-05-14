@@ -1,6 +1,11 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
+
+type OrganizationsRouteParams = {
+  realm: string;
+};
 
 const OrganizationsSection = lazy(() => import("../OrganizationsSection"));
 
@@ -13,10 +18,12 @@ export const OrganizationsRoute: AppRouteObject = {
   },
 };
 
-export const toClients = (): Partial<Path> => {
+export const toOrganizations = (
+  params: OrganizationsRouteParams,
+): Partial<Path> => {
   const path = OrganizationsRoute.path;
 
   return {
-    pathname: path,
+    pathname: generateEncodedPath(path, params),
   };
 };
