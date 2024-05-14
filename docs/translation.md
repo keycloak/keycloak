@@ -28,7 +28,7 @@ To ensure consistency and quality across translations, please adhere to the foll
 - German
 - Dutch
 
-Please note that while we aspire to support more languages in the future, our current focus is on these three languages. We rely on volunteers like you to take the initiative in steering the translation efforts for additional languages. If you're interested in contributing translations for a language not listed above, we encourage you to register on Weblate and reach out to join the community to kickstart the translation process for your language.
+Please note that while we aspire to support more languages in the future, our current focus is on these languages. We rely on volunteers like you to take the initiative in steering the translation efforts for additional languages. If you're interested in contributing translations for a language not listed above, we encourage you to register on Weblate and reach out to join the community to kickstart the translation process for your language.
 
 If you have any questions or need assistance, feel free to reach out to the language coordinators listed below:
 
