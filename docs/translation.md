@@ -21,7 +21,7 @@ To ensure consistency and quality across translations, please adhere to the foll
 - Use formal or informal language as appropriate for the context.
 - Maintain consistency with existing translations.
 - Translate text accurately, ensuring that the meaning is preserved.
-- Translations will be committed to github.com/Keycloak after they were inserted on Weblate.org(Update every hour or so). An Administrator for that language has the ability to approve or decline that translation.
+- Translations will be committed to the [Keycloak repository](https://github.com/keycloak/keycloak) after they were updated on Weblate (updated every hour or so). A maintainer for that language has the ability to approve or decline that translation.
 ### Supported languages
 
 - English
