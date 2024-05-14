@@ -127,6 +127,38 @@
       "name": "saml",
       "provider": "default",
       "config": {
+        "attributes.saml.allow.ecp.flow": {
+          "applicable": true,
+          "default-value": "false"
+        },
+        "attributes.saml.authnstatement": {
+          "applicable": true,
+          "default-value": "true"
+        },
+        "attributes.saml.client.signature": {
+          "applicable": true,
+          "default-value": "true"
+        },
+        "attributes.saml.force.post.binding": {
+          "applicable": true,
+          "default-value": "true"
+        },
+        "attributes.saml_force_name_id_format": {
+          "applicable": true,
+          "default-value": "false"
+        },
+        "attributes.saml_name_id_format": {
+          "applicable": true,
+          "default-value": "username"
+        },
+        "attributes.saml.server.signature": {
+          "applicable": true,
+          "default-value": "true"
+        },
+        "attributes.saml.signature.algorithm": {
+          "applicable": true,
+          "default-value": "RSA_SHA256"
+        },
         "consentRequired": {
           "applicable": true,
           "default-value": false
