@@ -114,7 +114,7 @@ export default function OrganizationSection() {
         subKey="organizationsExplain"
         divider
       />
-      <PageSection variant="light">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <DeleteConfirm />
         <KeycloakDataTable
           key={key}

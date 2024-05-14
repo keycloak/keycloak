@@ -16,6 +16,7 @@ import {
   toEditOrganization,
 } from "./routes/EditOrganization";
 import { AttributesForm } from "../components/key-value-form/AttributeForm";
+import { Members } from "./Members";
 
 export default function DetailOrganization() {
   // const { adminClient } = useAdminClient();
@@ -29,15 +30,6 @@ export default function DetailOrganization() {
     console.log("save");
   };
 
-  const useTab = (tab: OrganizationTab) =>
-    useRoutableTab(
-      toEditOrganization({
-        realm,
-        id,
-        tab,
-      }),
-    );
-
   useFetch(
     () => Promise.resolve({ id: "12", name: "redhat", enabled: false }), //adminClient.organisations.findOne({ id }),
     (org) => {
@@ -49,8 +41,19 @@ export default function DetailOrganization() {
     [id],
   );
 
+  const useTab = (tab: OrganizationTab) =>
+    useRoutableTab(
+      toEditOrganization({
+        realm,
+        id,
+        tab,
+      }),
+    );
+
   const settingsTab = useTab("settings");
   const attributesTab = useTab("attributes");
+  const membersTab = useTab("members");
+
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">
       <FormProvider {...form}>
@@ -88,6 +91,16 @@ export default function DetailOrganization() {
                 }
                 name="attributes"
               />
+            </PageSection>
+          </Tab>
+          <Tab
+            id="members"
+            data-testid="membersTab"
+            title={<TabTitleText>{t("members")}</TabTitleText>}
+            {...membersTab}
+          >
+            <PageSection variant="light">
+              <Members />
             </PageSection>
           </Tab>
         </RoutableTabs>
