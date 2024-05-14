@@ -207,6 +207,7 @@ export const RealmSettingsEmailTab = ({
               defaultValue=""
               labelOn={t("enabled")}
               labelOff={t("disabled")}
+              stringify
             />
             {authenticationEnabled === "true" && (
               <>
