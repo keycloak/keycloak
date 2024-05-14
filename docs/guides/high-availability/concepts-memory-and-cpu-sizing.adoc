@@ -102,7 +102,7 @@ The following setup was used to retrieve the settings above to run tests of abou
 * {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/passive mode.
 * OpenShift's reverse proxy running in passthrough mode were the TLS connection of the client is terminated at the Pod.
 * Database Amazon Aurora PostgreSQL in a multi-AZ setup, with the writer instance in the availability zone of the primary site.
-* Default user password hashing with Argon2 and 5 hash iterations which is the default https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[as recommended by OWASP].
+* Default user password hashing with Argon2 and 5 hash iterations and minimum memory size 7 MiB https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[as recommended by OWASP].
 * Client credential grants don't use refresh tokens (which is the default).
 * Database seeded with 100,000 users and 100,000 clients.
 * Infinispan local caches at default of 10,000 entries, so not all clients and users fit into the cache, and some requests will need to fetch the data from the database.

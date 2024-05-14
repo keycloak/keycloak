@@ -8,7 +8,7 @@ In {project_name} 24, the Welcome page is updated to use https://www.patternfly.
 
 = Argon2 password hashing
 
-Argon2 is now the default password hashing algorithm used by {project_name}
+Argon2 is now the default password hashing algorithm used by {project_name} in a non-FIPS environment.
 
 Argon2 was the winner of the [2015 password hashing competition](https://en.wikipedia.org/wiki/Password_Hashing_Competition)
 and is the recommended hashing algorithm by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
