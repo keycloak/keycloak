@@ -4,6 +4,7 @@ import { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/us
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   FormErrorText,
+  FormSubmitButton,
   HelpItem,
   SwitchControl,
   TextControl,
@@ -78,14 +79,9 @@ export const UserForm = ({
   const { whoAmI } = useWhoAmI();
   const currentLocale = whoAmI.getLocale();
 
-  const {
-    handleSubmit,
-    setValue,
-    watch,
-    control,
-    reset,
-    formState: { errors },
-  } = form;
+  const { handleSubmit, setValue, watch, control, reset, formState } = form;
+  const { errors } = formState;
+
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
@@ -330,18 +326,19 @@ export const UserForm = ({
         )}
 
         <ActionGroup>
-          <Button
+          <FormSubmitButton
+            formState={formState}
             data-testid={!user?.id ? "create-user" : "save-user"}
             isDisabled={
               !user?.id &&
               !watchUsernameInput &&
               realm.registrationEmailAsUsername === false
             }
-            variant="primary"
-            type="submit"
+            allowNonDirty
+            allowInvalid
           >
             {user?.id ? t("save") : t("create")}
-          </Button>
+          </FormSubmitButton>
           <Button
             data-testid="cancel-create-user"
             variant="link"
