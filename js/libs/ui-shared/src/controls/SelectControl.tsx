@@ -115,7 +115,7 @@ export const SelectControl = <
             }
             onSelect={(event, v) => {
               event.stopPropagation();
-              if (Array.isArray(value)) {
+              if (variant.includes("multi") && Array.isArray(value)) {
                 const option = v.toString();
                 const key = isSelectBasedOptions(options)
                   ? options.find((o) => o.value === option)?.key
