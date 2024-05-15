@@ -75,18 +75,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${version.compiler.plugin}</version>
                 <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.infinispan.protostream</groupId>
-                            <artifactId>protostream-processor</artifactId>
-                            <version>${infinispan.protostream.processor.version}</version>
-                        </path>
-                        <path>
-                            <groupId>org.keycloak</groupId>
-                            <artifactId>keycloak-model-build-processor</artifactId>
-                            <version>${project.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
                     <annotationProcessors>
                         <annotationProcessor>org.infinispan.protostream.annotations.impl.processor.AutoProtoSchemaBuilderAnnotationProcessor</annotationProcessor>
                         <annotationProcessor>org.keycloak.models.map.processor.GenerateHotRodEntityImplementationsProcessor</annotationProcessor>
