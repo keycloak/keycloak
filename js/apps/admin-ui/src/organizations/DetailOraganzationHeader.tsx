@@ -45,7 +45,7 @@ export const DetailOrganizationHeader = ({
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.organization.del({ id });
+        await adminClient.organizations.delById({ id });
         addAlert(t("organizationDeletedSuccess"));
         navigate(toOrganizations({ realm }));
       } catch (error) {

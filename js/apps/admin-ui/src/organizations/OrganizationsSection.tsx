@@ -1,3 +1,4 @@
+import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
   Badge,
   Button,
@@ -7,9 +8,10 @@ import {
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { TableText } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -18,7 +20,6 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toAddOrganization } from "./routes/AddOrganization";
-import { TableText } from "@patternfly/react-table";
 import { toEditOrganization } from "./routes/EditOrganization";
 
 const OrgDetailLink = (organization: any) => {
@@ -49,7 +50,7 @@ const OrgDetailLink = (organization: any) => {
   );
 };
 
-const Domains = (org: any) => {
+const Domains = (org: OrganizationRepresentation) => {
   const { t } = useTranslation();
   return (
     <ChipGroup
@@ -57,9 +58,9 @@ const Domains = (org: any) => {
       expandedText={t("hide")}
       collapsedText={t("showRemaining")}
     >
-      {org.domains.map((dn: string) => (
-        <Chip key={dn} isReadOnly>
-          {dn}
+      {org.domains?.map((dn) => (
+        <Chip key={dn.name} isReadOnly>
+          {dn.name}
         </Chip>
       ))}
     </ChipGroup>
@@ -71,22 +72,15 @@ export default function OrganizationSection() {
   const { realm } = useRealm();
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
+  const navigate = useNavigate();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
-  const [selectedOrg, setSelectedOrg] = useState();
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationRepresentation>();
 
-  function loader() {
-    return Promise.resolve([
-      {
-        id: 12,
-        name: "test",
-        domains: ["one.ch", "two.ch"],
-        description: "my domain",
-        enabled: false,
-      },
-    ]);
+  async function loader(first?: number, max?: number, search?: string) {
+    return await adminClient.organizations.find({ first, max, search });
   }
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -96,7 +90,7 @@ export default function OrganizationSection() {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.orginization.del({
+        await adminClient.organizations.delById({
           id: selectedOrg!.id!,
         });
         addAlert(t("organizationDeletedSuccess"));
@@ -162,6 +156,8 @@ export default function OrganizationSection() {
             <ListEmptyState
               message={t("emptyOrganizations")}
               instructions={t("emptyOrganizationsInstructions")}
+              primaryActionText={t("createOrganization")}
+              onPrimaryAction={() => navigate(toAddOrganization({ realm }))}
             />
           }
         />

@@ -1,27 +1,32 @@
+import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
   HelpItem,
   TextAreaControl,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
 import { FormGroup } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
-import { FormAccess } from "../components/form/FormAccess";
-import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 import { useTranslation } from "react-i18next";
+import { AttributeForm } from "../components/key-value-form/AttributeForm";
+import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
+import { keyValueToArray } from "../components/key-value-form/key-value-convert";
 
-type OrganizationFormProps = {
-  save: (org: any) => void;
-};
+export type OrganizationFormType = AttributeForm &
+  Omit<OrganizationRepresentation, "domains" | "attributes"> & {
+    domains?: string[];
+  };
 
-export const OrganizationForm = ({ save }: OrganizationFormProps) => {
+export const convertToOrg = (
+  org: OrganizationFormType,
+): OrganizationRepresentation => ({
+  ...org,
+  domains: org.domains?.map((d) => ({ name: d, verified: false })),
+  attributes: keyValueToArray(org.attributes),
+});
+
+export const OrganizationForm = () => {
   const { t } = useTranslation();
-  const form = useFormContext();
   return (
-    <FormAccess
-      isHorizontal
-      role="manage-users"
-      onSubmit={form.handleSubmit(save)}
-    >
+    <>
       <TextControl
         label={t("name")}
         name="name"
@@ -39,12 +44,12 @@ export const OrganizationForm = ({ save }: OrganizationFormProps) => {
       >
         <MultiLineInput
           id="domain"
-          name="domain"
+          name="domains"
           aria-label={t("domain")}
           addButtonLabel="addDomain"
         />
       </FormGroup>
       <TextAreaControl name="description" label={t("description")} />
-    </FormAccess>
+    </>
   );
 };

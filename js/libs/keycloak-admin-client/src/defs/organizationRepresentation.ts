@@ -5,6 +5,6 @@ export default interface OrganizationRepresentation {
   name?: string;
   description?: string;
   enabled?: boolean;
-  attributes?: { [index: string]: string[] };
+  attributes?: Record<string, string[]>;
   domains?: OrganizationDomainRepresentation[];
 }

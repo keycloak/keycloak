@@ -18,7 +18,7 @@ export class Organizations extends Resource<{ realm?: string }> {
 
   constructor(client: KeycloakAdminClient) {
     super(client, {
-      path: "/admin/realms/{realm}",
+      path: "/admin/realms/{realm}/organizations",
       getUrlParams: () => ({
         realm: client.realmName,
       }),
@@ -31,18 +31,26 @@ export class Organizations extends Resource<{ realm?: string }> {
     OrganizationRepresentation[]
   >({
     method: "GET",
-    path: "/organizations",
+    path: "/",
   });
+
+  public findOne = this.makeRequest<{ id: string }, OrganizationRepresentation>(
+    {
+      method: "GET",
+      path: "/{id}",
+      urlParamKeys: ["id"],
+    },
+  );
 
   public create = this.makeRequest<OrganizationRepresentation, { id: string }>({
     method: "POST",
-    path: "/organizations",
+    path: "/",
     returnResourceIdInLocationHeader: { field: "id" },
   });
 
   public delById = this.makeRequest<{ id: string }, void>({
     method: "DELETE",
-    path: "/organizations/{id}",
+    path: "/{id}",
     urlParamKeys: ["id"],
   });
 
@@ -52,7 +60,7 @@ export class Organizations extends Resource<{ realm?: string }> {
     void
   >({
     method: "PUT",
-    path: "/organizations/{id}",
+    path: "/{id}",
     urlParamKeys: ["id"],
   });
 }
