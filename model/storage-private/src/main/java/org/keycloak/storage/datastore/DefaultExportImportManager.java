@@ -874,6 +874,40 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getFirstBrokerLoginFlow() != null) {
             realm.setFirstBrokerLoginFlow(realm.getFlowByAlias(rep.getFirstBrokerLoginFlow()));
         }
+
+        if (rep.getAuthenticatorConfig() != null) {
+            for (AuthenticatorConfigRepresentation acRep : rep.getAuthenticatorConfig()) {
+                AuthenticatorConfigModel authenticatorConfigModel = RepresentationToModel.toModel(acRep);
+                realm.updateAuthenticatorConfig(authenticatorConfigModel);
+            }
+        }
+        if (rep.getAuthenticationFlows() != null) {
+            for (AuthenticationFlowRepresentation afRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel authenticationFlowModel = RepresentationToModel.toModel(afRep);
+                realm.updateAuthenticationFlow(authenticationFlowModel);
+            }
+        }
+
+        if (rep.getRequiredActions() != null) {
+            for (RequiredActionProviderRepresentation raRep : rep.getRequiredActions()) {
+                RequiredActionProviderModel model = toModel(raRep);
+
+                MigrationUtils.updateOTPRequiredAction(model);
+                RequiredActionProviderModel originalRA = realm.getRequiredActionProviderByAlias(model.getAlias());
+                if (originalRA != null) {
+                    model.setId(originalRA.getId());
+                    realm.updateRequiredActionProvider(model);
+                } else {
+                    realm.addRequiredActionProvider(model);
+                }
+            }
+        }
+
+        if (rep.getComponents() != null) {
+            MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
+            String parentId = realm.getId();
+            updateComponents(realm, components, parentId);
+        }
     }
 
     @Override
@@ -1146,6 +1180,26 @@ public class DefaultExportImportManager implements ExportImportManager {
             }
         }
         return model;
+    }
+
+    private void updateComponents(RealmModel realm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
+        for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {
+            String providerType = entry.getKey();
+            for (ComponentExportRepresentation compRep : entry.getValue()) {
+                ComponentModel component = new ComponentModel();
+                component.setId(compRep.getId());
+                component.setName(compRep.getName());
+                component.setConfig(compRep.getConfig());
+                component.setProviderType(providerType);
+                component.setProviderId(compRep.getProviderId());
+                component.setSubType(compRep.getSubType());
+                component.setParentId(realm.getId());
+                realm.updateComponent(component);
+                if (compRep.getSubComponents() != null) {
+                    updateComponents(realm, compRep.getSubComponents(), component.getId());
+                }
+            }
+        }
     }
 
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {

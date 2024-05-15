@@ -96,19 +96,24 @@ public class ImportUtils {
             if (strategy == Strategy.IGNORE_EXISTING) {
                 logger.infof("Realm '%s' already exists. Import skipped", realmName);
                 return false;
+            } else if (strategy == Strategy.MERGE_EXISTING) {
+                logger.infof("Realm '%s' already exists. Merging existing realm with new import", realmName);
+                RealmManager realmManager = new RealmManager(session);
+                realmManager.mergeRealm(rep, skipUserDependent);
             } else {
                 logger.infof("Realm '%s' already exists. Removing it before import", realmName);
                 if (Config.getAdminRealm().equals(realm.getId())) {
                     // Delete all masterAdmin apps due to foreign key constraints
                    model.getRealmsStream().forEach(r -> r.setMasterAdminClient(null));
                 }
-                // TODO: For migration between versions, it should be possible to delete just realm but keep it's users
                 model.removeRealm(realm.getId());
+                RealmManager realmManager = new RealmManager(session);
+                realmManager.importRealm(rep, skipUserDependent);
             }
+        } else {
+            RealmManager realmManager = new RealmManager(session);
+            realmManager.importRealm(rep, skipUserDependent);
         }
-
-        RealmManager realmManager = new RealmManager(session);
-        realmManager.importRealm(rep, skipUserDependent);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
             logger.infof("Realm '%s' imported", realmName);
