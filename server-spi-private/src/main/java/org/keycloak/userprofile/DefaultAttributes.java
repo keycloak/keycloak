@@ -98,18 +98,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             return !isAllowEditUnmanagedAttribute();
         }
 
-        if (UserModel.USERNAME.equals(name)) {
-            if (isServiceAccountUser()) {
-                return true;
-            }
-        }
-
-        if (UserModel.EMAIL.equals(name)) {
-            if (isServiceAccountUser()) {
-                return false;
-            }
-        }
-
         if (isReadOnlyFromMetadata(name) || isReadOnlyInternalAttribute(name)) {
             return true;
         }
@@ -311,10 +299,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return Collections.unmodifiableMap(this);
     }
 
-    protected boolean isServiceAccountUser() {
-        return user != null && user.getServiceAccountClientLink() != null;
-    }
-
     private AttributeContext createAttributeContext(Entry<String, List<String>> attribute, AttributeMetadata metadata) {
         return new AttributeContext(context, session, attribute, user, metadata, this);
     }
@@ -482,7 +466,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return valuesStream.collect(Collectors.toList());
     }
 
-    private boolean isAllowUnmanagedAttribute() {
+    protected boolean isAllowUnmanagedAttribute() {
         UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
 
         if (unmanagedAttributePolicy == null) {
@@ -501,11 +485,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy);
     }
 
-    private void setUserName(Map<String, List<String>> newAttributes, List<String> lowerCaseEmailList) {
-        if (isServiceAccountUser()) {
-            return;
-        }
-        newAttributes.put(UserModel.USERNAME, lowerCaseEmailList);
+    protected void setUserName(Map<String, List<String>> newAttributes, List<String> values) {
+        newAttributes.put(UserModel.USERNAME, values);
     }
 
     protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
@@ -527,10 +508,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         if (isManagedAttribute(name)) {
-            return true;
-        }
-
-        if (isServiceAccountUser()) {
             return true;
         }
 
@@ -575,7 +552,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return unmanagedAttributes;
     }
 
-    private AttributeMetadata createUnmanagedAttributeMetadata(String name) {
+    protected AttributeMetadata createUnmanagedAttributeMetadata(String name) {
         return new AttributeMetadata(name, Integer.MAX_VALUE) {
             final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
 
