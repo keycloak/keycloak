@@ -69,6 +69,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
                 result = JsonSerialization.readValue(asStr, ClientTypesRepresentation.class);
                 result.setGlobalClientTypes(globalClientTypes);
             } catch (IOException ioe) {
+                logger.errorf("Failed to load client type for realm '%s'.", realm.getName());
                 throw ClientTypeException.Message.CLIENT_TYPE_FAILED_TO_LOAD.exception(ioe);
             }
         }
@@ -86,6 +87,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
             String asStr = JsonSerialization.writeValueAsString(noGlobalsCopy);
             realm.setAttribute(CLIENT_TYPE_REALM_ATTRIBUTE, asStr);
         } catch (IOException ioe) {
+            logger.errorf("Failed to load global client type.");
             throw ClientTypeException.Message.CLIENT_TYPE_FAILED_TO_LOAD.exception(ioe);
         }
     }
@@ -108,15 +110,15 @@ public class DefaultClientTypeManager implements ClientTypeManager {
     public ClientModel augmentClient(ClientModel client) throws ClientTypeException {
         if (client.getType() == null) {
             return client;
-        } else {
-            try {
-                ClientType clientType = getClientType(client.getRealm(), client.getType());
-                return new TypeAwareClientModelDelegate(clientType, () -> client);
-            } catch(ClientTypeException cte) {
-                logger.errorf("Could not augment client, %s, due to client type exception: %s",
-                        client, cte);
-                throw cte;
-            }
+        }
+
+        try {
+            ClientType clientType = getClientType(client.getRealm(), client.getType());
+            return new TypeAwareClientModelDelegate(clientType, () -> client);
+        } catch(ClientTypeException cte) {
+            logger.errorf("Could not augment client, %s, due to client type exception: %s",
+                    client, cte);
+            throw cte;
         }
     }
 
