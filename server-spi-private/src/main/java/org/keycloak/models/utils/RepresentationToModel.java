@@ -414,7 +414,7 @@ public class RepresentationToModel {
 
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
             if (!ObjectUtil.isEqualOrBothNull(resource.getType(), rep.getType())) {
-                throw new ClientTypeException("Not supported to change client type");
+                throw ClientTypeException.Message.CANNOT_CHANGE_CLIENT_TYPE.exception();
             }
             if (rep.getType() != null) {
                 RealmModel realm = session.getContext().getRealm();
@@ -545,9 +545,8 @@ public class RepresentationToModel {
                 .collect(Collectors.toList());
 
         if (propertyUpdateExceptions.size() > 0) {
-            throw new ClientTypeException(
-                    "Cannot change property of client as it is not allowed by the specified client type.",
-                    propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
+            Object[] paramsWithFailures = propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray();
+            throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception(paramsWithFailures);
         }
     }
 
@@ -698,7 +697,6 @@ public class RepresentationToModel {
                 .map(Optional::get);
         return updateProperty(modelSetter, () -> firstNonNullSupplied.findFirst().orElse(null));
     }
-
 
     private static String generateProtocolNameKey(String protocol, String name) {
         return String.format("%s%%%s", protocol, name);

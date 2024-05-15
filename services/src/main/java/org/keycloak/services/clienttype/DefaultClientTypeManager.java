@@ -69,7 +69,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
                 result = JsonSerialization.readValue(asStr, ClientTypesRepresentation.class);
                 result.setGlobalClientTypes(globalClientTypes);
             } catch (IOException ioe) {
-                throw new ClientTypeException("Failed to deserialize client types from JSON string", ioe);
+                throw ClientTypeException.Message.CLIENT_TYPE_FAILED_TO_LOAD.exception(ioe);
             }
         }
         return result;
@@ -86,7 +86,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
             String asStr = JsonSerialization.writeValueAsString(noGlobalsCopy);
             realm.setAttribute(CLIENT_TYPE_REALM_ATTRIBUTE, asStr);
         } catch (IOException ioe) {
-            throw new ClientTypeException("Failed to serialize client types to String", ioe);
+            throw ClientTypeException.Message.CLIENT_TYPE_FAILED_TO_LOAD.exception(ioe);
         }
     }
 
@@ -97,7 +97,7 @@ public class DefaultClientTypeManager implements ClientTypeManager {
         ClientTypeRepresentation clientType = getClientTypeByName(clientTypes, typeName);
         if (clientType == null) {
             logger.errorf("Referenced client type '%s' not found", typeName);
-            throw new ClientTypeException("Client type not found");
+            throw ClientTypeException.Message.CLIENT_TYPE_NOT_FOUND.exception();
         }
 
         ClientTypeProvider provider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
@@ -136,13 +136,13 @@ public class DefaultClientTypeManager implements ClientTypeManager {
         ClientTypeProvider clientTypeProvider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
         if (clientTypeProvider == null) {
             logger.errorf("Did not find client type provider '%s' for the client type '%s'", clientType.getProvider(), clientType.getName());
-            throw new ClientTypeException("Did not find client type provider");
+            throw ClientTypeException.Message.INVALID_CLIENT_TYPE_PROVIDER.exception();
         }
 
         // Validate name is not duplicated
         if (currentNames.contains(clientType.getName())) {
             logger.errorf("Duplicated client type name '%s'", clientType.getName());
-            throw new ClientTypeException("Duplicated client type name");
+            throw ClientTypeException.Message.DUPLICATE_CLIENT_TYPE.exception();
         }
 
         clientType = clientTypeProvider.checkClientTypeConfig(clientType);
