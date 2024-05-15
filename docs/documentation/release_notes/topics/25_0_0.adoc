@@ -50,9 +50,9 @@ bin/kc.sh build --features=persistent-user-session ...
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
 
-NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the sessions will not be migrated to the database.
+NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the existing online user and client sessions will not be migrated to the database. It will only affect newly created online user and online client sessions.
 
-With persistent sessions enabled, the in-memory caches for online user sessions, offline user sessions, online client sessions and offline client sessions are limited to 10000 entries by default which will reduce the overall memory usage of Keycloak for larger installations.
+With persistent sessions enabled, the in-memory caches for online user sessions, offline user sessions, online client sessions and offline client sessions are limited to 10000 entries per node by default which will reduce the overall memory usage of Keycloak for larger installations.
 Items which are evicted from memory will be loaded on-demand from the database when needed.
 To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
 Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.

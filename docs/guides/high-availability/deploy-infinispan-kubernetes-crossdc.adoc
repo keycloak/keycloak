@@ -165,11 +165,12 @@ include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <14> The secret with the access token to authenticate into the remote site.
 --
 +
-When using persistent sessions, limit the cache size limit for `sessions`, `offlineSessions`, `clientSessions`, and `offlineClientSessions` by extending  the configuration as follow:
+When using persistent sessions, limit the cache size limit for `sessions`, `offlineSessions`, `clientSessions`, and `offlineClientSessions` by extending the configuration as follows:
 
 [source,yaml]
 ----
 distributedCache:
+  owners: "1"
   memory:
     maxCount: 10000
   # ...
