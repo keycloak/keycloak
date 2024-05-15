@@ -183,10 +183,18 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
             cliArgs.append("--ignore-ssl-errors=true ");
             cliArgs.append("--web-security=false ");
-            cliArgs.append("--ssl-certificates-path=").append(authServerHome).append(certificatesPath).append(" ");
-            cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append(clientCertificateFile).append(" ");
-            cliArgs.append("--ssl-client-key-file=").append(authServerHome).append(clientKeyFile).append(" ");
-            cliArgs.append("--ssl-client-key-passphrase=" + clientKeyPassword).append(" ");
+            if (certificatesPath != null) {
+                cliArgs.append("--ssl-certificates-path=").append(authServerHome).append(certificatesPath).append(" ");
+            }
+            if (clientCertificateFile != null) {
+                cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append(clientCertificateFile).append(" ");
+            }
+            if (clientKeyFile != null) {
+                cliArgs.append("--ssl-client-key-file=").append(authServerHome).append(clientKeyFile).append(" ");
+            }
+            if (clientKeyPassword != null) {
+                cliArgs.append("--ssl-client-key-passphrase=").append(clientKeyPassword).append(" ");
+            }
 
             phantomjsCliArgs = new SetSystemProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
         }
