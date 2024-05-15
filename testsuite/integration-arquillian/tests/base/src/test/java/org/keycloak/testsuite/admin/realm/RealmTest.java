@@ -524,10 +524,19 @@ public class RealmTest extends AbstractAdminTest {
 
     private void reCreateRealm() {
         // Re-create realm
-        RealmRepresentation realmRep = testContext.getTestRealmReps().stream().filter((RealmRepresentation realm) -> {
-            return realm.getRealm().equals(REALM_NAME);
-        }).findFirst().get();
+        RealmRepresentation realmRep = testContext.getTestRealmReps().stream()
+                .filter(realm -> realm.getRealm().equals(REALM_NAME)).findFirst().get();
         importRealm(realmRep);
+    }
+
+    @Test
+    public void removeMasterRealm() {
+        // any attempt to remove the master realm should fail.
+        try {
+            adminClient.realm("master").remove();
+            fail("It should not be possible to remove the master realm");
+        } catch(BadRequestException ignored) {
+        }
     }
 
     @Test

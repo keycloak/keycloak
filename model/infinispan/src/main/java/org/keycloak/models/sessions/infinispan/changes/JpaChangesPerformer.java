@@ -550,7 +550,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         } else {
             PersistentUserSessionAdapter userSessionModel = (PersistentUserSessionAdapter) userSessionPersister.loadUserSession(realm, entry.getKey().toString(), entity.isOffline());
             if (userSessionModel != null) {
-                UserSessionEntity userSessionEntity = new UserSessionEntity() {
+                UserSessionEntity userSessionEntity = new UserSessionEntity(userSessionModel.getId()) {
                     @Override
                     public Map<String, String> getNotes() {
                         return new HashMap<>() {
@@ -609,16 +609,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     @Override
                     public void setRealmId(String realmId) {
                         userSessionModel.setRealm(innerSession.realms().getRealm(realmId));
-                    }
-
-                    @Override
-                    public String getId() {
-                        return userSessionModel.getId();
-                    }
-
-                    @Override
-                    public void setId(String id) {
-                        throw new IllegalStateException("not supported");
                     }
 
                     @Override

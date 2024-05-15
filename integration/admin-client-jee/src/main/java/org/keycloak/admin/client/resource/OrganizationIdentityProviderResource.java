@@ -17,10 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
-import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -31,10 +29,6 @@ public interface OrganizationIdentityProviderResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     IdentityProviderRepresentation toRepresentation();
-
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    Response update(IdentityProviderRepresentation idpRepresentation);
 
     @DELETE
     Response delete();

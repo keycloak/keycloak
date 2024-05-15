@@ -36,6 +36,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.StringUtil;
@@ -46,6 +47,14 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     private final OrganizationEntity entity;
     private final OrganizationProvider provider;
     private GroupModel group;
+
+    public OrganizationAdapter(RealmModel realm, OrganizationProvider provider) {
+        entity = new OrganizationEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setRealmId(realm.getId());
+        this.realm = realm;
+        this.provider = provider;
+    }
 
     public OrganizationAdapter(RealmModel realm, OrganizationEntity entity, OrganizationProvider provider) {
         this.realm = realm;
@@ -66,6 +75,10 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         return entity.getGroupId();
     }
 
+    void setGroupId(String id) {
+        entity.setGroupId(id);
+    }
+
     @Override
     public void setName(String name) {
         entity.setName(name);
@@ -84,6 +97,16 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     @Override
     public void setEnabled(boolean enabled) {
         entity.setEnabled(enabled);
+    }
+
+    @Override
+    public String getDescription() {
+        return entity.getDescription();
+    }
+
+    @Override
+    public void setDescription(String description) {
+        entity.setDescription(description);
     }
 
     @Override
@@ -113,6 +136,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             throw new ModelValidationException("You must provide at least one domain");
         }
 
+        List<IdentityProviderModel> idps = this.getIdentityProviders().toList();
+
         Map<String, OrganizationDomainModel> modelMap = domains.stream()
                 .map(this::validateDomain)
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
@@ -126,6 +151,12 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             // remove domain that is not found in the new set.
             else {
                 this.entity.removeDomain(domainEntity);
+                // check if any idp is assigned to the removed domain, and unset the domain if that's the case.
+                idps.forEach(idp -> {
+                    if (Objects.equals(domainEntity.getName(), idp.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE))) {
+                        idp.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
+                    }
+                });
             }
         }
 

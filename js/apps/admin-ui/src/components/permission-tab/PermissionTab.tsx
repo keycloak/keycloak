@@ -21,8 +21,7 @@ import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -45,6 +44,8 @@ type PermissionsTabProps = {
 };
 
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();

@@ -23,8 +23,6 @@ import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../../context/realm-context/RealmContext";
@@ -33,8 +31,11 @@ import { useParams } from "../../../utils/useParams";
 import useToggle from "../../../utils/useToggle";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
 import { AttributeParams } from "../../routes/Attribute";
-import { AddTranslationsDialog } from "./AddTranslationsDialog";
-
+import {
+  AddTranslationsDialog,
+  TranslationsType,
+} from "./AddTranslationsDialog";
+import { useAdminClient } from "../../../admin-client";
 import "../../realm-settings-section.css";
 
 const REQUIRED_FOR = [
@@ -62,6 +63,7 @@ export const AttributeGeneralSettings = ({
   onHandlingTranslationData,
   onHandlingGeneratedDisplayName,
 }: AttributeGeneralSettingsProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useFormContext();
@@ -78,6 +80,7 @@ export const AttributeGeneralSettings = ({
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [newAttributeName, setNewAttributeName] = useState("");
   const [generatedDisplayName, setGeneratedDisplayName] = useState("");
+  const [type, setType] = useState<TranslationsType>();
   const [translationsData, setTranslationsData] = useState<Translations>({
     key: "",
     translations: [],
@@ -183,6 +186,7 @@ export const AttributeGeneralSettings = ({
               : `profile.attributes.${newAttributeName}`
           }
           translations={translationsData}
+          type={type ?? "displayName"}
           onTranslationsAdded={handleTranslationsAdded}
           toggleDialog={handleToggleDialog}
           onCancel={() => {
@@ -264,6 +268,7 @@ export const AttributeGeneralSettings = ({
                   aria-label={t("addAttributeTranslationBtn")}
                   isDisabled={!newAttributeName && !editMode}
                   onClick={() => {
+                    setType("displayName");
                     toggleModal();
                   }}
                   icon={<GlobeRouteIcon />}

@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -44,7 +45,11 @@ import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -201,15 +206,26 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // fetching users from the users endpoint should have the same result.
+        UserRepresentation disabledUser = null;
         existing = testRealm().users().search("*neworg*",0, 10);
         assertThat(existing, not(empty()));
         assertThat(existing, hasSize(6));
         for (UserRepresentation user : existing) {
             if (user.getEmail().equals(bc.getUserEmail())) {
                 assertThat(user.isEnabled(), is(false));
+                disabledUser = user;
             } else {
                 assertThat(user.isEnabled(), is(true));
             }
+        }
+
+        assertThat(disabledUser, notNullValue());
+        // try to update the disabled user (for example, try to re-enable the user) - should not be possible.
+        disabledUser.setEnabled(true);
+        try {
+            testRealm().users().get(disabledUser.getId()).update(disabledUser);
+            fail("Should not be possible to update disabled org user");
+        } catch(BadRequestException ignored) {
         }
     }
 
@@ -289,11 +305,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         addMember(organization);
 
-        assertTrue(testRealm().groups().groups().stream().anyMatch(group -> group.getName().startsWith("kc.org.")));
+        assertTrue(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
 
         organization.delete().close();
 
-        assertFalse(testRealm().groups().groups().stream().anyMatch(group -> group.getName().startsWith("kc.org.")));
+        assertFalse(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
     }
 
     @Test
@@ -378,4 +394,23 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existing.get(1).getUsername(), is(equalTo("thejoker@neworg.org")));
     }
 
+    @Test
+    public void testAddMemberFromDifferentRealm() {
+        String orgId = createOrganization().getId();
+
+        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = provider.getById(orgId);
+
+            RealmModel realm = session.realms().getRealmByName("master");
+            session.users().addUser(realm, "master-test-user");
+            UserModel user = null;
+            try {
+                user = session.users().getUserByUsername(realm, "master-test-user");
+                assertFalse(provider.addMember(organization, user));
+            } finally {
+                session.users().removeUser(realm, user);
+            }
+        });
+    }
 }

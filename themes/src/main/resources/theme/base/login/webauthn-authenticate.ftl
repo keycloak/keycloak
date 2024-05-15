@@ -30,19 +30,19 @@
 
                         <div class="${properties.kcFormClass!}">
                             <#list authenticators.authenticators as authenticator>
-                                <div id="kc-webauthn-authenticator" class="${properties.kcSelectAuthListItemClass!}">
+                                <div class="kc-webauthn-authenticator ${properties.kcSelectAuthListItemClass!}">
                                     <div class="${properties.kcSelectAuthListItemIconClass!}">
                                         <i class="${(properties['${authenticator.transports.iconClass}'])!'${properties.kcWebAuthnDefaultIcon!}'} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
                                     </div>
                                     <div class="${properties.kcSelectAuthListItemBodyClass!}">
-                                        <div id="kc-webauthn-authenticator-label"
-                                             class="${properties.kcSelectAuthListItemHeadingClass!}">
+                                        <div
+                                             class=" kc-webauthn-authenticator-label ${properties.kcSelectAuthListItemHeadingClass!}">
                                             ${kcSanitize(msg('${authenticator.label}'))?no_esc}
                                         </div>
 
                                         <#if authenticator.transports?? && authenticator.transports.displayNameProperties?has_content>
-                                            <div id="kc-webauthn-authenticator-transport"
-                                                 class="${properties.kcSelectAuthListItemDescriptionClass!}">
+                                            <div
+                                                 class="kc-webauthn-authenticator-transport ${properties.kcSelectAuthListItemDescriptionClass!}">
                                                 <#list authenticator.transports.displayNameProperties as nameProperty>
                                                     <span>${kcSanitize(msg('${nameProperty!}'))?no_esc}</span>
                                                     <#if nameProperty?has_next>
@@ -53,10 +53,10 @@
                                         </#if>
 
                                         <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
-                                            <span id="kc-webauthn-authenticator-created-label">
+                                            <span class="kc-webauthn-authenticator-created-label">
                                                 ${kcSanitize(msg('webauthn-createdAt-label'))?no_esc}
                                             </span>
-                                            <span id="kc-webauthn-authenticator-created">
+                                            <span class="kc-webauthn-authenticator-created">
                                                 ${kcSanitize(authenticator.createdAt)?no_esc}
                                             </span>
                                         </div>

@@ -466,8 +466,10 @@ describe("Group test", () => {
 
     it("Assign roles from empty state", () => {
       roleMappingTab.assignRole();
-      groupDetailPage.createRoleMapping();
-      roleMappingTab.assign();
+      roleMappingTab
+        .changeRoleTypeFilter("roles")
+        .selectRow("default-roles-")
+        .assign();
     });
 
     it("Show and search roles", () => {

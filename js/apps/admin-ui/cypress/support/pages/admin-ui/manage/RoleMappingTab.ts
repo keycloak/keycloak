@@ -13,6 +13,7 @@ export default class RoleMappingTab {
   #assignedRolesTable = "assigned-roles";
   #namesColumn = 'td[data-label="Name"]:visible';
   #roleMappingTab = "role-mapping-tab";
+  #filterTypeDropdown = "filter-type-dropdown";
 
   constructor(type: string) {
     this.#type = type;
@@ -57,6 +58,16 @@ export default class RoleMappingTab {
 
   unhideInheritedRoles() {
     cy.get(this.#hideInheritedRolesBtn).uncheck({ force: true });
+    return this;
+  }
+
+  changeRoleTypeFilter(filter: string) {
+    // Invert the filter because the testid of the DropdownItem is the current filter
+    const option = filter == "roles" ? "clients" : "roles";
+
+    cy.findByTestId(this.#filterTypeDropdown).click();
+    cy.findByTestId(option).click();
+
     return this;
   }
 

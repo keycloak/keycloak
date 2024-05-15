@@ -18,19 +18,22 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core/deprecated";
-import { TableVariant, cellWidth } from "@patternfly/react-table";
 import {
   Table,
-  TableBody,
-  TableHeader,
-} from "@patternfly/react-table/deprecated";
+  TableVariant,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  cellWidth,
+} from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
@@ -93,6 +96,8 @@ const DisplayDialog = ({
 };
 
 export const AdminEvents = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
@@ -204,16 +209,31 @@ export const AdminEvents = () => {
             aria-label="authData"
             data-testid="auth-dialog"
             variant={TableVariant.compact}
-            cells={[t("attribute"), t("value")]}
-            rows={[
-              [t("realm"), authEvent.authDetails?.realmId],
-              [t("client"), authEvent.authDetails?.clientId],
-              [t("user"), authEvent.authDetails?.userId],
-              [t("ipAddress"), authEvent.authDetails?.ipAddress],
-            ]}
           >
-            <TableHeader />
-            <TableBody />
+            <Thead>
+              <Tr>
+                <Th>{t("attribute")}</Th>
+                <Th>{t("value")}</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              <Tr>
+                <Td>{t("realm")}</Td>
+                <Td>{authEvent.authDetails?.realmId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("client")}</Td>
+                <Td>{authEvent.authDetails?.clientId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("user")}</Td>
+                <Td>{authEvent.authDetails?.userId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("ipAddress")}</Td>
+                <Td>{authEvent.authDetails?.ipAddress}</Td>
+              </Tr>
+            </Tbody>
           </Table>
         </DisplayDialog>
       )}

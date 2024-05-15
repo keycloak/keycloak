@@ -47,7 +47,7 @@ public class UserSessionEntity extends SessionEntity {
     // Metadata attribute, which contains the lastSessionRefresh available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
     public static final String LAST_SESSION_REFRESH_REMOTE = "lsrr";
 
-    private String id;
+    private final String id;
 
     private String user;
 
@@ -68,12 +68,12 @@ public class UserSessionEntity extends SessionEntity {
 
     private UserSessionModel.State state;
 
-    public String getId() {
-        return id;
+    public UserSessionEntity(String id) {
+        this.id = id;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public String getId() {
+        return id;
     }
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
@@ -279,13 +279,13 @@ public class UserSessionEntity extends SessionEntity {
         }
 
         public UserSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            UserSessionEntity sessionEntity = new UserSessionEntity();
-
-            sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
-            sessionEntity.setBrokerSessionId(MarshallUtil.unmarshallString(input));
-            sessionEntity.setBrokerUserId(MarshallUtil.unmarshallString(input));
-            final String userSessionId = MarshallUtil.unmarshallString(input);
-            sessionEntity.setId(userSessionId);
+            String authMethod = MarshallUtil.unmarshallString(input);
+            String brokerSessionId = MarshallUtil.unmarshallString(input);
+            String brokerUserId = MarshallUtil.unmarshallString(input);
+            UserSessionEntity sessionEntity = new UserSessionEntity(MarshallUtil.unmarshallString(input));
+            sessionEntity.setAuthMethod(authMethod);
+            sessionEntity.setBrokerSessionId(brokerSessionId);
+            sessionEntity.setBrokerUserId(brokerUserId);
             sessionEntity.setIpAddress(MarshallUtil.unmarshallString(input));
             sessionEntity.setLoginUsername(MarshallUtil.unmarshallString(input));
             sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));

@@ -490,6 +490,7 @@ describe("User creation", () => {
   describe("Accessibility tests for users", () => {
     const a11yUser = "a11y-user";
     const role = "admin";
+    const roleType = "roles";
     const roleMappingTab = new RoleMappingTab("");
 
     beforeEach(() => {
@@ -552,7 +553,7 @@ describe("User creation", () => {
       roleMappingTab.goToRoleMappingTab();
       cy.findByTestId("assignRole").click();
       cy.checkA11y();
-      roleMappingTab.selectRow(role).assign();
+      roleMappingTab.changeRoleTypeFilter(roleType).selectRow(role).assign();
     });
 
     it("Check a11y violations on user groups tab", () => {

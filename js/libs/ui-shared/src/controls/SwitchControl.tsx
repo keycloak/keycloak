@@ -25,11 +25,15 @@ export type SwitchControlProps<
 export const SwitchControl = <
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
->(
-  props: SwitchControlProps<T, P>,
-) => {
-  const fallbackValue = props.stringify ? "false" : false;
-  const defaultValue = props.defaultValue ?? (fallbackValue as PathValue<T, P>);
+>({
+  labelOn,
+  stringify,
+  defaultValue,
+  labelIcon,
+  ...props
+}: SwitchControlProps<T, P>) => {
+  const fallbackValue = stringify ? "false" : false;
+  const defValue = defaultValue ?? (fallbackValue as PathValue<T, P>);
   const { control } = useFormContext();
   return (
     <FormLabel
@@ -37,21 +41,21 @@ export const SwitchControl = <
       name={props.name}
       isRequired={props.rules?.required === true}
       label={props.label}
-      labelIcon={props.labelIcon}
+      labelIcon={labelIcon}
     >
       <Controller
         control={control}
         name={props.name}
-        defaultValue={defaultValue}
+        defaultValue={defValue}
         render={({ field: { onChange, value } }) => (
           <Switch
             {...props}
             id={props.name}
             data-testid={props.name}
-            label={props.labelOn}
-            isChecked={props.stringify ? value === "true" : value}
+            label={labelOn}
+            isChecked={stringify ? value === "true" : value}
             onChange={(e, checked) => {
-              const value = props.stringify ? checked.toString() : checked;
+              const value = stringify ? checked.toString() : checked;
               props.onChange?.(e, checked);
               onChange(value);
             }}

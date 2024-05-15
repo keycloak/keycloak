@@ -10,6 +10,9 @@ outputs:
   ci:
     description: Should "ci.yml" execute
     value: ${{ steps.changes.outputs.ci }}
+  ci-quarkus:
+    description: Should "ci.yml" execute
+    value: ${{ steps.changes.outputs.ci-quarkus }}
   ci-store:
     description: Should "ci.yml" execute
     value: ${{ steps.changes.outputs.ci-store }}

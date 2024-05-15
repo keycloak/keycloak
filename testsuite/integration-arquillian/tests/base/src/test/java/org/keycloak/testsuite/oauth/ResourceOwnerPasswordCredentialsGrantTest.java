@@ -653,6 +653,38 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
+    public void grantAccessTokenInvalidUserCredentialsPerf() throws Exception {
+        int count = 5;
+
+        // Measure the times when username exists, but password is invalid
+        long sumInvalidPasswordMs = perfTest(count, "Invalid password", this::grantAccessTokenInvalidUserCredentials);
+
+        // Measure the times when username does not exists
+        long sumInvalidUsernameMs = perfTest(count, "User not found", this::grantAccessTokenUserNotFound);
+
+        String errorMessage = String.format("Times in ms of %d attempts: For invalid password: %d. For invalid username: %d", count, sumInvalidPasswordMs, sumInvalidUsernameMs);
+
+        // The times should be very similar. Using the bigger difference just to avoid flakiness (Before the fix, the difference was like 3 times shorter time for invalid-username, which allowed quite accurate username enumeration)
+        Assert.assertTrue(errorMessage, sumInvalidUsernameMs * 2 > sumInvalidPasswordMs);
+    }
+
+    private long perfTest(int actionsCount, String actionMessage, RunnableWithException action) throws Exception {
+        long sumTimeMs = 0;
+        for (int i = 0 ; i < actionsCount ; i++) {
+            long start = System.currentTimeMillis();
+            action.run();
+            long took = System.currentTimeMillis() - start;
+            getLogger().infof("%s %d: %d ms", actionMessage, i + 1, took);
+            sumTimeMs = sumTimeMs + took;
+        }
+        return sumTimeMs;
+    }
+
+    private interface RunnableWithException {
+        void run() throws Exception;
+    }
+
+    @Test
     public void grantAccessTokenInvalidUserCredentials() throws Exception {
         oauth.clientId("resource-owner");
 

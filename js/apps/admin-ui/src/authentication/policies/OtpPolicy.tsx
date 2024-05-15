@@ -19,7 +19,7 @@ import {
   SelectControl,
   SwitchControl,
 } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
@@ -43,6 +43,8 @@ type FormFields = Omit<
 >;
 
 export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<FormFields>({ mode: "onChange", defaultValues: realm });
   const {

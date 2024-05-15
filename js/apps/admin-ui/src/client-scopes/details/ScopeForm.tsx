@@ -6,6 +6,7 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
+  FormSubmitButton,
   SelectControl,
   TextAreaControl,
   TextControl,
@@ -32,12 +33,7 @@ type ScopeFormProps = {
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    formState: { isDirty, isValid },
-  } = form;
+  const { control, handleSubmit, setValue, formState } = form;
   const { realm } = useRealm();
 
   const providers = useLoginProviders();
@@ -194,13 +190,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           min={0}
         />
         <ActionGroup>
-          <Button
-            variant="primary"
-            type="submit"
-            isDisabled={!isDirty || !isValid}
-          >
-            {t("save")}
-          </Button>
+          <FormSubmitButton formState={formState}>{t("save")}</FormSubmitButton>
           <Button
             variant="link"
             component={(props) => (

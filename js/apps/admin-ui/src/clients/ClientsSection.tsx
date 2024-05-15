@@ -14,8 +14,7 @@ import { IRowData, TableText, cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormattedLink } from "../components/external-link/FormattedLink";
@@ -74,6 +73,7 @@ const ClientDescription = (client: ClientRepresentation) => (
 );
 
 const ClientHomeLink = (client: ClientRepresentation) => {
+  const { adminClient } = useAdminClient();
   const href = convertClientToUrl(client, adminClient.baseUrl);
 
   if (!href) {
@@ -117,6 +117,8 @@ const ToolbarItems = () => {
 };
 
 export default function ClientsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();

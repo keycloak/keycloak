@@ -21,12 +21,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -100,21 +99,9 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return challengeResponse;
     }
 
-    protected void dummyHash(AuthenticationFlowContext context) {
-        PasswordPolicy passwordPolicy = context.getRealm().getPasswordPolicy();
-        PasswordHashProvider provider;
-        if (passwordPolicy != null && passwordPolicy.getHashAlgorithm() != null) {
-            provider = context.getSession().getProvider(PasswordHashProvider.class, passwordPolicy.getHashAlgorithm());
-        } else {
-            provider = context.getSession().getProvider(PasswordHashProvider.class);
-        }
-        int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
-        provider.encode("SlightlyLongerDummyPassword", iterations);
-    }
-
     public void testInvalidUser(AuthenticationFlowContext context, UserModel user) {
         if (user == null) {
-            dummyHash(context);
+            AuthenticatorUtils.dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);

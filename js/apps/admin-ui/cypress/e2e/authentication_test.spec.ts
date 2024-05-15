@@ -220,16 +220,13 @@ describe("Authentication test", () => {
     diagramView.edgesExist([
       { from: "Start", to: "Cookie" },
       { from: "Cookie", to: "End" },
-      { from: "Start", to: "Kerberos" },
-      { from: "Kerberos", to: "End" },
-      { from: "Start", to: "Identity Provider Redirector" },
+      { from: "Cookie", to: "Identity Provider Redirector" },
       { from: "Identity Provider Redirector", to: "End" },
-      { from: "Start", to: "Start forms" },
-      { from: "Start forms", to: "Username Password Form" },
+      { from: "Identity Provider Redirector", to: "Username Password Form" },
       { from: "Username Password Form", to: "Condition - user configured" },
       { from: "Condition - user configured", to: "OTP Form" },
-      { from: "Condition - user configured", to: "End forms" },
-      { from: "End forms", to: "End" },
+      { from: "Condition - user configured", to: "End" },
+      { from: "OTP Form", to: "End" },
     ]);
   });
 });

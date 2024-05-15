@@ -49,7 +49,7 @@ public class CorsErrorResponseException extends WebApplicationException {
     public Response getResponse() {
         OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
         Response.ResponseBuilder builder = Response.status(status).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE);
-        return cors.builder(builder).build();
+        return cors.add(builder);
     }
 
 }

@@ -36,6 +36,7 @@ import jakarta.persistence.Table;
 @Entity
 @NamedQueries({
         @NamedQuery(name="getByRealm", query="select o from OrganizationEntity o where o.realmId = :realmId order by o.name ASC"),
+        @NamedQuery(name="getByOrgName", query="select distinct o from OrganizationEntity o where o.realmId = :realmId AND o.name = :name"),
         @NamedQuery(name="getByNameOrDomain", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
                 " where o.realmId = :realmId AND (o.name = :search OR d.name = :search) order by o.name ASC"),
         @NamedQuery(name="getByNameOrDomainContained", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
@@ -53,6 +54,9 @@ public class OrganizationEntity {
 
     @Column(name = "ENABLED")
     private boolean enabled;
+
+    @Column(name = "DESCRIPTION")
+    private String description;
 
     @Column(name = "REALM_ID")
     private String realmId;
@@ -81,6 +85,14 @@ public class OrganizationEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getRealmId() {

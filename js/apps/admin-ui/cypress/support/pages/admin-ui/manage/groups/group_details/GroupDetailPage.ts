@@ -151,10 +151,6 @@ export default class GroupDetailPage extends GroupPage {
     return this;
   }
 
-  createRoleMapping() {
-    listingPage.clickItemCheckbox("default-roles-");
-  }
-
   checkDefaultRole() {
     listingPage.itemExist("default-roles");
   }

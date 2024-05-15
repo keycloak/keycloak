@@ -41,7 +41,7 @@ public class RealmsAdminResourcePreflight extends RealmsAdminResource {
     @Path("{any:.*}")
     @OPTIONS
     public Response preFlight() {
-        return Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
+        return Cors.builder().preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().add(Response.ok());
     }
 
 }

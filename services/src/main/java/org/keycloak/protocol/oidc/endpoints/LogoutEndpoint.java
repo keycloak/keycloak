@@ -130,7 +130,7 @@ public class LogoutEndpoint {
     @Path("/")
     @OPTIONS
     public Response issueUserInfoPreflight() {
-        return Cors.add(this.request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     /**
@@ -496,7 +496,7 @@ public class LogoutEndpoint {
      * @return
      */
     private Response logoutToken() {
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         checkSsl();
@@ -550,7 +550,7 @@ public class LogoutEndpoint {
             }
         }
 
-        return cors.builder(Response.noContent()).build();
+        return cors.add(Response.noContent());
     }
 
     /**
@@ -618,18 +618,16 @@ public class LogoutEndpoint {
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
 
         if (oneOrMoreDownstreamLogoutsFailed(backchannelLogoutResponse)) {
-            return Cors.add(request)
+            return Cors.builder()
                     .auth()
-                    .builder(Response.status(Response.Status.GATEWAY_TIMEOUT)
-                            .type(MediaType.APPLICATION_JSON_TYPE))
-                    .build();
+                    .add(Response.status(Response.Status.GATEWAY_TIMEOUT)
+                            .type(MediaType.APPLICATION_JSON_TYPE));
         }
 
-        return Cors.add(request)
+        return Cors.builder()
                 .auth()
-                .builder(Response.ok()
-                        .type(MediaType.APPLICATION_JSON_TYPE))
-                .build();
+                .add(Response.ok()
+                        .type(MediaType.APPLICATION_JSON_TYPE));
     }
 
     private BackchannelLogoutResponse backchannelLogoutWithSessionId(String sessionId,

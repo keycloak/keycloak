@@ -39,7 +39,7 @@ export default class TablePage extends CommonElements {
         this.#tableRowItem,
     )
       .contains(itemName)
-      .click();
+      .click({ force: true });
     return this;
   }
 

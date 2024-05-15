@@ -28,6 +28,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupPathChangeEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -117,8 +118,13 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         String groupName = rep.getName();
+
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
+        if (rep.getId() != null && !group.getId().equals(rep.getId())) {
+            throw ErrorResponse.error("Invalid group id", Response.Status.BAD_REQUEST);
         }
 
         if (!Objects.equals(groupName, group.getName())) {
@@ -241,29 +247,7 @@ public class GroupResource {
 
                 String newPath = KeycloakModelUtils.buildGroupPath(model);
 
-                GroupModel.GroupPathChangeEvent event =
-                        new GroupModel.GroupPathChangeEvent() {
-                            @Override
-                            public RealmModel getRealm() {
-                                return realm;
-                            }
-
-                            @Override
-                            public String getNewPath() {
-                                return newPath;
-                            }
-
-                            @Override
-                            public String getPreviousPath() {
-                                return previousPath;
-                            }
-
-                            @Override
-                            public KeycloakSession getKeycloakSession() {
-                                return session;
-                            }
-                        };
-                session.getKeycloakSessionFactory().publish(event);
+                GroupPathChangeEvent.fire(model, newPath, previousPath, session);
             }
         }
 
@@ -367,6 +351,7 @@ public class GroupResource {
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
         auth.groups().requireManage(group);
+
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.groups().setPermissionsEnabled(group, ref.isEnabled());
         if (ref.isEnabled()) {
@@ -375,6 +360,5 @@ public class GroupResource {
             return new ManagementPermissionReference();
         }
     }
-
 }
 

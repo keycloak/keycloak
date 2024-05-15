@@ -22,31 +22,31 @@
   },
   "dependencies": {
     "@keycloak/keycloak-ui-shared": "workspace:*",
-    "@patternfly/patternfly": "^5.3.0",
-    "@patternfly/react-core": "^5.3.0",
-    "@patternfly/react-icons": "^5.3.0",
-    "@patternfly/react-table": "^5.3.0",
-    "i18next": "^23.11.2",
+    "@patternfly/patternfly": "^5.3.1",
+    "@patternfly/react-core": "^5.3.3",
+    "@patternfly/react-icons": "^5.3.2",
+    "@patternfly/react-table": "^5.3.3",
+    "i18next": "^23.11.4",
     "i18next-http-backend": "^2.5.1",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-hook-form": "^7.51.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.51.4",
     "react-i18next": "^14.1.1",
-    "react-router-dom": "^6.23.0"
+    "react-router-dom": "^6.23.1"
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@playwright/test": "^1.43.1",
+    "@playwright/test": "^1.44.0",
     "@types/lodash-es": "^4.17.12",
-    "@types/react": "^18.2.79",
-    "@types/react-dom": "^18.2.25",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "lightningcss": "^1.24.1",
-    "vite": "^5.2.10",
+    "vite": "^5.2.11",
     "vite-plugin-checker": "^0.6.4",
-    "vite-plugin-dts": "^3.9.0"
+    "vite-plugin-dts": "^3.9.1"
   },
   "wireit": {
     "dev": {

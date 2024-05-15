@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import static org.keycloak.organization.utils.Organizations.resolveBroker;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -24,6 +26,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticator;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.FederatedIdentityModel;
@@ -32,8 +36,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareAuthenticationContextBean;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
+import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareRealmBean;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
@@ -68,8 +77,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
-        OrganizationProvider provider = getOrganizationProvider();
-        OrganizationModel organization = null;
         RealmModel realm = context.getRealm();
         UserModel user = session.users().getUserByEmail(realm, username);
 
@@ -80,67 +87,31 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 return;
             }
 
-            organization = provider.getByMember(user);
+            IdentityProviderModel broker = resolveBroker(session, user);
 
-            if (organization != null) {
-                if (provider.isManagedMember(organization, user)) {
-                    // user is a managed member, try to resolve the origin broker and redirect automatically
-                    List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
-                    List<IdentityProviderModel> originBrokers = session.users().getFederatedIdentitiesStream(realm, user)
-                            .map(f -> {
-                                IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
-
-                                if (!organizationBrokers.contains(broker)) {
-                                    return null;
-                                }
-
-                                FederatedIdentityModel identity = session.users().getFederatedIdentity(realm, user, broker.getAlias());
-
-                                if (identity != null) {
-                                    return broker;
-                                }
-
-                                return null;
-                            }).filter(Objects::nonNull)
-                            .toList();
-
-
-                    if (originBrokers.size() == 1) {
-                        redirect(context, originBrokers.get(0).getAlias());
-                        return;
-                    }
-                } else {
-                    context.attempted();
-                    return;
-                }
+            if (broker == null) {
+                // not a managed member, continue with the regular flow
+                context.attempted();
+            } else {
+                // user is a managed member and associated with a broker, redirect automatically
+                redirect(context, broker.getAlias(), user.getEmail());
             }
+
+            return;
         }
 
-        if (organization == null) {
-            organization = provider.getByDomainName(emailDomain);
-        }
+        OrganizationProvider provider = getOrganizationProvider();
+        OrganizationModel organization = provider.getByDomainName(emailDomain);
 
-        if (organization == null) {
+        if (organization == null || !organization.isEnabled()) {
             // request does not map to any organization, go to the next step/sub-flow
             context.attempted();
             return;
         }
 
-        List<IdentityProviderModel> domainBrokers = organization.getIdentityProviders().toList();
+        List<IdentityProviderModel> brokers = organization.getIdentityProviders().toList();
 
-        if (domainBrokers.isEmpty()) {
-            // no organization brokers to automatically redirect the user, go to the next step/sub-flow
-            context.attempted();
-            return;
-        }
-
-        if (domainBrokers.size() == 1) {
-            // there is a single broker, redirect the user to authenticate
-            redirect(context, domainBrokers.get(0).getAlias(), username);
-            return;
-        }
-
-        for (IdentityProviderModel broker : domainBrokers) {
+        for (IdentityProviderModel broker : brokers) {
             String idpDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
 
             if (emailDomain.equals(idpDomain)) {
@@ -150,31 +121,62 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             }
         }
 
-        // the user is authenticating in the scope of the organization, show the identity-first login page and the
+        if (!hasPublicBrokers(brokers)) {
+            // the user does not exist, and there is no broker available for selection, redirect the user to the identity-first login page at the realm
+            challenge(username, context);
+            return;
+        }
+
+        // the user does not exist and is authenticating in the scope of the organization, show the identity-first login page and the
         // public organization brokers for selection
-        context.challenge(context.form()
+        LoginFormsProvider form = context.form()
                 .setAttributeMapper(attributes -> {
                     attributes.computeIfPresent("social",
                             (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, session, true)
                     );
+                    attributes.computeIfPresent("auth",
+                            (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
+                    );
+                    attributes.computeIfPresent("realm",
+                            (key, bean) -> new OrganizationAwareRealmBean(realm)
+                    );
                     return attributes;
-                })
+                });
+        form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
+        context.challenge(form
                 .createLoginUsername());
+    }
+
+    private static boolean hasPublicBrokers(List<IdentityProviderModel> brokers) {
+        return brokers.stream().anyMatch(p -> Boolean.parseBoolean(p.getConfig().getOrDefault(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString())));
     }
 
     private OrganizationProvider getOrganizationProvider() {
         return session.getProvider(OrganizationProvider.class);
     }
 
-    private void challenge(AuthenticationFlowContext context){
+    private void challenge(AuthenticationFlowContext context) {
+        challenge(null, context);
+    }
+
+    private void challenge(String username, AuthenticationFlowContext context){
         // the default challenge won't show any broker but just the identity-first login page and the option to try a different authentication mechanism
-        context.challenge(context.form()
+        LoginFormsProvider form = context.form()
                 .setAttributeMapper(attributes -> {
-                    // removes identity provider related attributes from forms
-                    attributes.remove("social");
+                    attributes.computeIfPresent("social",
+                            (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, session, false, true)
+                    );
+                    attributes.computeIfPresent("auth",
+                            (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
+                    );
                     return attributes;
-                })
-                .createLoginUsername());
+                });
+
+        if (username != null) {
+            form.addError(new FormMessage(Validation.FIELD_USERNAME, Messages.INVALID_USER));
+        }
+
+        context.challenge(form.createLoginUsername());
     }
 
     private String getEmailDomain(String email) {

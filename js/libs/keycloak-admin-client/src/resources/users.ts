@@ -29,6 +29,7 @@ interface UserBaseQuery {
   firstName?: string;
   lastName?: string;
   username?: string;
+  q?: string;
 }
 
 export interface UserQuery extends PaginationQuery, SearchQuery, UserBaseQuery {

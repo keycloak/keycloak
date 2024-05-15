@@ -11,9 +11,8 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { FormSubmitButton, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
@@ -34,11 +33,13 @@ import { toClients } from "../routes/Clients";
 const isXml = (text: string) => text.match(/(<.[^(><.)]+>)/g);
 
 export default function ImportForm() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const form = useForm<FormFields>();
-  const { handleSubmit, setValue } = form;
+  const { handleSubmit, setValue, formState } = form;
   const [imported, setImported] = useState<ClientRepresentation>({});
 
   const { addAlert, addError } = useAlerts();
@@ -118,9 +119,13 @@ export default function ImportForm() {
             <TextControl name="protocol" label={t("type")} readOnly />
             <CapabilityConfig unWrap={true} />
             <ActionGroup>
-              <Button variant="primary" type="submit">
+              <FormSubmitButton
+                formState={formState}
+                allowInvalid
+                allowNonDirty
+              >
                 {t("save")}
-              </Button>
+              </FormSubmitButton>
               <Button
                 variant="link"
                 component={(props) => (

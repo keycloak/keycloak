@@ -1,8 +1,7 @@
 import { LanguageDetectorModule, createInstance } from "i18next";
 import HttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
-
-import { environment } from "./environment";
+import { environment } from "@keycloak/keycloak-ui-shared";
 import { joinPath } from "./utils/joinPath";
 
 const DEFAULT_LOCALE = "en";

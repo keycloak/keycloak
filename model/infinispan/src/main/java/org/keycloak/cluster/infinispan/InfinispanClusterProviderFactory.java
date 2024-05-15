@@ -20,13 +20,11 @@ package org.keycloak.cluster.infinispan;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.lifecycle.ComponentStatus;
-import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.remoting.transport.Transport;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
@@ -35,10 +33,10 @@ import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -47,7 +45,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -72,7 +69,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
     // Just to extract notifications related stuff to separate class
     private InfinispanNotificationsManager notificationsManager;
 
-    private ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
+    private final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
         thread.setName(this.getClass().getName() + "-" + thread.getName());
         return thread;
@@ -140,7 +137,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
     static <V extends Serializable> V putIfAbsentWithRetries(CrossDCAwareCacheFactory crossDCAwareCacheFactory, String key, V value, int taskTimeoutInSeconds) {
         AtomicReference<V> resultRef = new AtomicReference<>();
 
-        Retry.executeWithBackoff((int iteration) -> {
+        Retry.executeWithBackoff(iteration -> {
 
             try {
                 V result;
@@ -196,17 +193,14 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
         @ViewChanged
         public void viewChanged(ViewChangedEvent event) {
-            final Set<String> removedNodesAddresses = convertAddresses(event.getOldMembers());
-            final Set<String> newAddresses = convertAddresses(event.getNewMembers());
+            Set<String> removedNodesAddresses = convertAddresses(event.getOldMembers());
+            Set<String> newAddresses = convertAddresses(event.getNewMembers());
 
             // Use separate thread to avoid potential deadlock
             localExecutor.execute(() -> {
                 try {
-                    EmbeddedCacheManager cacheManager = workCache.getCacheManager();
-                    Transport transport = cacheManager.getTransport();
-
                     // Coordinator makes sure that entries for outdated nodes are cleaned up
-                    if (transport != null && transport.isCoordinator()) {
+                    if (workCache.getCacheManager().isCoordinator()) {
 
                         removedNodesAddresses.removeAll(newAddresses);
 
@@ -230,14 +224,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
         }
 
         private Set<String> convertAddresses(Collection<Address> addresses) {
-            return addresses.stream().map(new Function<Address, String>() {
-
-                @Override
-                public String apply(Address address) {
-                    return address.toString();
-                }
-
-            }).collect(Collectors.toSet());
+            return addresses.stream().map(Object::toString).collect(Collectors.toSet());
         }
 
     }

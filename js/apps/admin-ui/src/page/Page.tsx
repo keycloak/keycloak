@@ -2,17 +2,19 @@ import { ButtonVariant } from "@patternfly/react-core";
 import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PageHandler } from "./PageHandler";
 import { PAGE_PROVIDER } from "./PageList";
 import { PageParams, toPage } from "./routes";
-import { useRealm } from "../context/realm-context/RealmContext";
 
 export default function Page() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { componentTypes } = useServerInfo();
   const { realm } = useRealm();

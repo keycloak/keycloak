@@ -107,6 +107,23 @@ to any node without losing their state. However, production-ready deployments sh
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
 
+ifeval::[{project_community}==true]
+
+The feature `persistent-user-session` stores online user and client sessions also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+The feature is disabled by default. To use it, enable the feature:
+
+----
+bin/kc.sh start --features=persistent-user-session ...
+----
+
+With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to by default 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+
+endif::[]
+
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
 when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
 of offline tokens, offline sessions are handled differently as they are long-lived and should survive a complete cluster shutdown. Because of that, they are also persisted to the database.
@@ -117,6 +134,14 @@ The following caches are used to store offline sessions:
 * offlineClientSessions
 
 Upon a cluster restart, offline sessions are lazily loaded from the database and kept in a shared cache using the two caches above.
+
+ifeval::[{project_community}==true]
+
+With feature `persistent-user-session` enabled, the in-memory caches for offline user sessions and offline client sessions are limited to 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+
+endif::[]
 
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.

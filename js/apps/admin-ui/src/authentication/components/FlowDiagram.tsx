@@ -29,19 +29,44 @@ type FlowDiagramProps = {
   executionList: ExecutionList;
 };
 
-type ConditionLabel = "true" | "false";
+type ConditionLabel = "true" | "false" | "success" | "attempted";
 
 const nodeTypes = {
   conditional: ConditionalNode,
   startSubFlow: StartSubFlowNode,
   endSubFlow: EndSubFlowNode,
-} as const;
+};
 
-type NodeType = keyof typeof nodeTypes;
+const inOutClasses = new Map<string, string>([
+  ["input", "keycloak__authentication__input_node"],
+  ["output", "keycloak__authentication__output_node"],
+]);
+
+type NodeType =
+  | "conditional"
+  | "startSubFlow"
+  | "endSubFlow"
+  | "input"
+  | "output";
+
+type IntermediateFlowResult = {
+  startId: string;
+  nodes: Node[];
+  edges: Edge[];
+  nextLinkFns: ((id: string) => Edge)[];
+};
+
+function pairwise<T, U>(fn: (x: T, y: T) => U, arr: T[]): U[] {
+  const result: U[] = [];
+  for (let index = 0; index < arr.length - 1; index++) {
+    result.push(fn(arr[index], arr[index + 1]));
+  }
+  return result;
+}
 
 const isBypassable = (execution: ExpandableExecution) =>
   execution.requirement === "ALTERNATIVE" ||
-  execution.requirement === "DISABLED";
+  execution.requirement === "CONDITIONAL";
 
 const createEdge = (
   fromNode: string,
@@ -71,190 +96,177 @@ const createNode = (
   return {
     id: ex.id!,
     type: nodeType,
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
+    sourcePosition: nodeType === "output" ? undefined : Position.Right,
+    targetPosition: nodeType === "input" ? undefined : Position.Left,
     data: { label: ex.displayName! },
     position: { x: 0, y: 0 },
+    className: inOutClasses.get(nodeType || ""),
   };
 };
 
-const renderSubFlowNodes = (execution: ExpandableExecution): Node[] => {
-  const nodes: Node[] = [];
-
-  if (execution.requirement !== "CONDITIONAL") {
-    nodes.push(createNode(execution, "startSubFlow"));
-
-    const endSubFlowId = `flow-end-${execution.id}`;
-    nodes.push(
-      createNode(
-        {
-          id: endSubFlowId,
-          displayName: execution.displayName!,
-        },
-        "endSubFlow",
-      ),
-    );
-  }
-
-  return nodes.concat(renderFlowNodes(execution.executionList || []));
-};
-
-const renderFlowNodes = (executionList: ExpandableExecution[]): Node[] => {
-  let elements: Node[] = [];
-
+const consecutiveBypassableFlows = (
+  executionList: ExpandableExecution[],
+): ExpandableExecution[] => {
+  const result = [];
   for (let index = 0; index < executionList.length; index++) {
     const execution = executionList[index];
-    if (execution.executionList) {
-      elements = elements.concat(renderSubFlowNodes(execution));
-    } else {
-      elements.push(
-        createNode(
-          execution,
-          providerConditionFilter(execution) ? "conditional" : undefined,
-        ),
-      );
+    if (!isBypassable(execution)) {
+      break;
     }
+    result.push(execution);
   }
-
-  return elements;
+  return result;
 };
 
-const renderSubFlowEdges = (
+const borderStep = (
+  node: Node,
+  continuing: boolean = true,
+): IntermediateFlowResult => ({
+  startId: node.id,
+  nodes: [node],
+  edges: [],
+  nextLinkFns: continuing ? [(id: string) => createEdge(node.id, id)] : [],
+});
+
+const renderSubFlow = (
   execution: ExpandableExecution,
-  flowEndId: string,
-): { startId: string; edges: Edge[]; endId: string } => {
+): IntermediateFlowResult => {
   if (!execution.executionList)
     throw new Error("Execution list is required for subflow");
 
-  if (execution.requirement === "CONDITIONAL") {
-    const startId = execution.executionList![0].id!;
+  const graph = createGraph(createConcurrentGroupings(execution.executionList));
 
-    return {
-      startId: startId,
-      edges: renderFlowEdges(startId, execution.executionList!, flowEndId),
-      endId: execution.executionList![execution.executionList!.length - 1].id!,
-    };
-  }
-  const elements: Edge[] = [];
-  const subFlowEndId = `flow-end-${execution.id}`;
-
-  return {
-    startId: execution.id!,
-    edges: elements.concat(
-      renderFlowEdges(execution.id!, execution.executionList!, subFlowEndId),
-    ),
-    endId: subFlowEndId,
-  };
+  graph.nextLinkFns.push(
+    ...execution.executionList
+      .filter((e) => providerConditionFilter(e))
+      .map((e) => (id: string) => createEdge(e.id!, id, "false")),
+  );
+  return graph;
 };
 
-const renderFlowEdges = (
-  startId: string,
+const groupConcurrentSteps = (
   executionList: ExpandableExecution[],
-  endId: string,
-): Edge[] => {
-  let elements: Edge[] = [];
-  let prevExecutionId = startId;
-  let isLastExecutionBypassable = false;
-  const conditionals = [];
+): ExpandableExecution[] => {
+  const executions = consecutiveBypassableFlows(executionList);
+  if (executions.length > 0) {
+    return executions;
+  }
+  return [executionList[0]];
+};
 
-  for (let index = 0; index < executionList.length; index++) {
-    const execution = executionList[index];
-    let executionId = execution.id!;
-    const isPrevConditional =
-      conditionals[conditionals.length - 1] === prevExecutionId;
-    const connectToPrevious = (id: string) =>
-      elements.push(
-        createEdge(prevExecutionId, id, isPrevConditional ? "true" : undefined),
-      );
+const createConcurrentSteps = (
+  executionList: ExpandableExecution[],
+): IntermediateFlowResult[] => {
+  if (executionList.length === 0) {
+    return [];
+  }
 
-    if (providerConditionFilter(execution)) {
-      conditionals.push(executionId);
-    }
-    if (startId === executionId) {
-      continue;
-    }
-
+  const executions = groupConcurrentSteps(executionList);
+  return executions.map((execution) => {
     if (execution.executionList) {
-      const nextRequired =
-        executionList.slice(index + 1).find((e) => !isBypassable(e))?.id ??
-        endId;
-      const {
-        startId: subFlowStartId,
-        edges,
-        endId: subflowEndId,
-      } = renderSubFlowEdges(execution, nextRequired);
-
-      connectToPrevious(subFlowStartId);
-      elements = elements.concat(edges);
-      executionId = subflowEndId;
-    } else {
-      connectToPrevious(executionId);
+      return renderSubFlow(execution);
     }
 
-    const isExecutionBypassable = isBypassable(execution);
+    const isConditional = providerConditionFilter(execution);
+    const edgeLabel = (() => {
+      if (isConditional) {
+        return "true";
+      }
+      if (execution.requirement === "ALTERNATIVE") {
+        return "success";
+      }
+    })();
 
-    if (isExecutionBypassable) {
-      elements.push(createEdge(executionId, endId));
-    } else {
-      prevExecutionId = executionId;
-    }
+    return {
+      startId: execution.id!,
+      nodes: [createNode(execution, isConditional ? "conditional" : undefined)],
+      edges: [],
+      nextLinkFns: [(id: string) => createEdge(execution.id!, id, edgeLabel)],
+    };
+  });
+};
 
-    isLastExecutionBypassable = isExecutionBypassable;
+const createConcurrentGroupings = (
+  executionList: ExpandableExecution[],
+): IntermediateFlowResult[][] => {
+  if (executionList.length === 0) {
+    return [];
+  }
+  const steps = createConcurrentSteps(executionList);
+  return [
+    steps,
+    ...createConcurrentGroupings(executionList.slice(steps.length)),
+  ];
+};
+
+const createGraph = (
+  groupings: IntermediateFlowResult[][],
+): IntermediateFlowResult => {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  let nextLinkFns: ((id: string) => Edge)[] = [];
+
+  for (const group of groupings) {
+    nodes.push(...group.flatMap((g) => g.nodes));
+    edges.push(
+      ...group.flatMap((g) => g.edges),
+      ...nextLinkFns.map((fn) => fn(group[0].startId)),
+      ...pairwise(
+        (prev, current) =>
+          createEdge(prev.startId, current.startId, "attempted"),
+        group,
+      ),
+    );
+    nextLinkFns = group.flatMap((g) => g.nextLinkFns);
   }
 
-  // subflows with conditionals automatically connect to the end, so don't do it twice
-  if (!isLastExecutionBypassable && conditionals.length === 0) {
-    elements.push(createEdge(prevExecutionId, endId));
-  }
-  elements = elements.concat(
-    conditionals.map((id) => createEdge(id, endId, "false")),
-  );
-
-  return elements;
+  return {
+    startId: groupings[0][0].startId,
+    nodes,
+    edges,
+    nextLinkFns,
+  };
 };
 
 const edgeTypes: ButtonEdges = {
   buttonEdge: ButtonEdge,
 };
 
-function renderNodes(expandableList: ExpandableExecution[]) {
-  return getLayoutedNodes([
-    {
-      id: "start",
-      sourcePosition: Position.Right,
-      type: "input",
-      data: { label: "Start" },
-      position: { x: 0, y: 0 },
-      className: "keycloak__authentication__input_node",
-    },
-    {
-      id: "end",
-      targetPosition: Position.Left,
-      type: "output",
-      data: { label: "End" },
-      position: { x: 0, y: 0 },
-      className: "keycloak__authentication__output_node",
-    },
-    ...renderFlowNodes(expandableList),
-  ]);
-}
+function renderGraph(executionList: ExpandableExecution[]): [Node[], Edge[]] {
+  const executionListNoDisabled = executionList.filter(
+    (e) => e.requirement !== "DISABLED",
+  );
+  const groupings = [
+    [borderStep(createNode({ id: "start", displayName: "Start" }, "input"))],
+    ...createConcurrentGroupings(executionListNoDisabled),
+    [
+      borderStep(
+        createNode({ id: "end", displayName: "End" }, "output"),
+        false,
+      ),
+    ],
+  ];
 
-function renderEdges(expandableList: ExpandableExecution[]): Edge[] {
-  return getLayoutedEdges(renderFlowEdges("start", expandableList, "end"));
+  const { nodes, edges } = createGraph(groupings);
+
+  return [getLayoutedNodes(nodes), getLayoutedEdges(edges)];
 }
 
 export const FlowDiagram = ({
   executionList: { expandableList },
 }: FlowDiagramProps) => {
   const [expandDrawer, setExpandDrawer] = useState(false);
-  const initialNodes = useMemo(() => renderNodes(expandableList), []);
-  const initialEdges = useMemo(() => renderEdges(expandableList), []);
+  const [initialNodes, initialEdges] = useMemo(
+    () => renderGraph(expandableList),
+    [],
+  );
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   useUpdateEffect(() => {
-    setNodes(renderNodes(expandableList));
-    setEdges(renderEdges(expandableList));
+    const [nodes, edges] = renderGraph(expandableList);
+    setNodes(nodes);
+    setEdges(edges);
   }, [expandableList]);
 
   const onInit = (reactFlowInstance: ReactFlowInstance) =>

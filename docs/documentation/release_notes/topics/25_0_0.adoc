@@ -8,7 +8,7 @@ In {project_name} 24, the Welcome page is updated to use https://www.patternfly.
 
 = Argon2 password hashing
 
-Argon2 is now the default password hashing algorithm used by {project_name}
+Argon2 is now the default password hashing algorithm used by {project_name} in a non-FIPS environment.
 
 Argon2 was the winner of the [2015 password hashing competition](https://en.wikipedia.org/wiki/Password_Hashing_Competition)
 and is the recommended hashing algorithm by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
@@ -19,6 +19,7 @@ better security, with almost the same CPU time as previous releases of {project_
 memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in {project_name} requires 7MB
 per-hashing request.
 To prevent excessive memory and CPU usage, the parallel computation of hashes by Argon2 is by default limited to the number of cores available to the JVM.
+To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization.
 
 = New Hostname options
 
@@ -33,6 +34,38 @@ You should migrate to them as soon as possible.
 New options are activated by default, so {project_name} will not recognize the old ones.
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Persistent user sessions
+
+Previous versions of {project_name} stored only offline user and offline client sessions in the databases.
+The new feature `persistent-user-session` stores online user sessions and online client sessions not only in memory, but also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+The feature is a preview feature and disabled by default. To use it, add the following to your build command:
+
+----
+bin/kc.sh build --features=persistent-user-session ...
+----
+
+For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
+
+NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the sessions will not be migrated to the database.
+
+With persistent sessions enabled, the in-memory caches for online user sessions, offline user sessions, online client sessions and offline client sessions are limited to 10000 entries by default which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.
+
+To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, for those caches, consult the updated https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+
+With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available which were used to override the time offline sessions are kept in memory.
+
+To log out all online users sessions of a realm with the `persistent-user-session` feature enabled, use the following steps as before:
+
+. Login to the Admin Console.
+. Select the menu entry *Sessions*.
+. Select the action *Sign out all active sessions*.
 
 = Cookies updates
 

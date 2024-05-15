@@ -9,8 +9,8 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../admin-client";
+import { FormSubmitButton, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 
 type GroupsModalProps = {
@@ -26,13 +26,15 @@ export const GroupsModal = ({
   handleModalToggle,
   refresh,
 }: GroupsModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const form = useForm({
     defaultValues: { name: rename?.name },
   });
-  const { handleSubmit } = form;
+  const { handleSubmit, formState } = form;
 
   const submitForm = async (group: GroupRepresentation) => {
     group.name = group.name?.trim();
@@ -69,15 +71,16 @@ export const GroupsModal = ({
       isOpen={true}
       onClose={handleModalToggle}
       actions={[
-        <Button
+        <FormSubmitButton
+          formState={formState}
           data-testid={`${rename ? "rename" : "create"}Group`}
           key="confirm"
-          variant="primary"
-          type="submit"
           form="group-form"
+          allowInvalid
+          allowNonDirty
         >
           {t(rename ? "rename" : "create")}
-        </Button>,
+        </FormSubmitButton>,
         <Button
           id="modal-cancel"
           data-testid="cancel"

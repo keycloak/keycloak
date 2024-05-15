@@ -216,12 +216,28 @@ jobs:
           path: ~/server.log
 
 
+  generate-test-seed:
+    name: Generate Test Seed
+    needs:
+      - conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      seed: ${{ steps.generate-random-number.outputs.value }}
+    steps:
+      - name: Generate random number
+        id: generate-random-number
+        shell: bash
+        run: |
+          echo "value=$(shuf -i 1-100 -n 1)" >> $GITHUB_OUTPUT
+
   admin-ui-e2e:
     name: Admin UI E2E
     needs:
       - conditional
       - build-keycloak
-    if: needs.conditional.outputs.js-ci == 'true' && github.repository == 'keycloak/keycloak'
+      - generate-test-seed
+    if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
       WORKSPACE: admin-ui
@@ -286,6 +302,7 @@ jobs:
           CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
           SPLIT: ${{ strategy.job-total }}
           SPLIT_INDEX: ${{ strategy.job-index }}
+          SPLIT_RANDOM_SEED: ${{ needs.generate-test-seed.outputs.seed }}
 
       - name: Upload server logs
         if: always()

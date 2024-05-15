@@ -68,7 +68,7 @@ public class PublicRealmResource {
     @Path("/")
     @OPTIONS
     public Response accountPreflight() {
-        return Cors.add(request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     /**
@@ -80,7 +80,7 @@ public class PublicRealmResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public PublishedRealmRepresentation getRealm() {
-        Cors.add(request).allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().build(response);
+        Cors.builder().allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().add();
         return realmRep(session, realm, session.getContext().getUri());
     }
 

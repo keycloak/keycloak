@@ -80,7 +80,7 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         ProfileHelper.requireFeature(Profile.Feature.PAR);
 
-        cors = Cors.add(httpRequest).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         event.event(EventType.PUSHED_AUTHORIZATION_REQUEST);
 
@@ -163,10 +163,9 @@ public class ParEndpoint extends AbstractParEndpoint {
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
-        return cors.builder(Response.status(Response.Status.CREATED)
-                       .entity(parResponse)
-                       .type(MediaType.APPLICATION_JSON_TYPE))
-                       .build();
+        return cors.add(Response.status(Response.Status.CREATED)
+                .entity(parResponse)
+                .type(MediaType.APPLICATION_JSON_TYPE));
     }
 
 }

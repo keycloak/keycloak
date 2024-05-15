@@ -38,6 +38,10 @@ public interface OrganizationModel {
 
     void setEnabled(boolean enabled);
 
+    String getDescription();
+
+    void setDescription(String description);
+
     Map<String, List<String>> getAttributes();
 
     void setAttributes(Map<String, List<String>> attributes);
