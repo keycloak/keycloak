@@ -23,7 +23,7 @@ Here's how you can get started:
 
 - Sign Up: Visit Weblate to create an account.
 - Configuration: After signing up, configure your Weblate account settings according to your preferences. Please note that the committer email is set to the login email address by default. You can adjust this in your Weblate profile under Account settings.
-- Joining the Translation Team: Join the Keycloak translation team on Weblate to start contributing translations.
+- Join the Keycloak translation team on Weblate to start contributing translations.
 
 ### Guidelines and Conventions
 
