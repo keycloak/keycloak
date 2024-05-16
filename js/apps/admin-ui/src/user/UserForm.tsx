@@ -274,7 +274,7 @@ export const UserForm = ({
                 setLocked(value);
                 save({
                   enabled: !value,
-                })
+                });
               }}
               isChecked={locked}
               isDisabled={!locked}
