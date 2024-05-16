@@ -34,5 +34,8 @@
               </dsig:X509Data>
           </dsig:KeyInfo>
       </KeyDescriptor>
+      <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+        Location="http://localhost:8080/auth/realms/master/protocol/saml"
+        index="0"/>
    </IDPSSODescriptor>
 </EntityDescriptor>

@@ -36,5 +36,8 @@
         <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
         <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
                              Location="http://localhost:8080/auth/realms/master/protocol/saml" />
+        <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+          Location="http://localhost:8080/auth/realms/master/protocol/saml"
+          index="0"/>
     </IDPSSODescriptor>
 </EntityDescriptor>

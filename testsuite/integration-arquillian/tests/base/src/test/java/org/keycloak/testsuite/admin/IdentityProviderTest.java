@@ -1045,8 +1045,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
           "singleLogoutServiceUrl",
           "postBindingLogout",
           "postBindingResponse",
+          "artifactBindingResponse",
           "postBindingAuthnRequest",
           "singleSignOnServiceUrl",
+          "artifactResolutionServiceUrl",
           "wantAuthnRequestsSigned",
           "nameIDPolicyFormat",
           "signingCertificate",
@@ -1057,7 +1059,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         ));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
+        assertThat(config, hasEntry("artifactResolutionServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("postBindingResponse", "true"));
+        assertThat(config, hasEntry("artifactBindingResponse", "true"));
         assertThat(config, hasEntry("postBindingAuthnRequest", "true"));
         assertThat(config, hasEntry("singleSignOnServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
