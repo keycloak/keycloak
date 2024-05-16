@@ -157,6 +157,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                     KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
                         @Override
                         protected void runExportImportTask(KeycloakSession session) throws IOException {
+                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
                             ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
                             logger.infof("Imported users from %s", userFile.getAbsolutePath());
                         }
@@ -168,6 +169,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                     KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
                         @Override
                         protected void runExportImportTask(KeycloakSession session) throws IOException {
+                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
                             ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
                             logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
                         }
@@ -182,6 +184,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
                 @Override
                 public void runExportImportTask(KeycloakSession session) {
+                    session.getContext().setRealm(session.realms().getRealmByName(realmName));
                     RealmManager realmManager = new RealmManager(session);
                     realmManager.setupClientServiceAccountsAndAuthorizationOnImport(realmRep, false);
                 }
