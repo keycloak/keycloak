@@ -51,7 +51,7 @@ public class LDAPTransaction extends AbstractKeycloakTransaction {
             logger.trace("Transaction commit! Updating LDAP attributes for object " + ldapUser.getDn() + ", attributes: " + ldapUser.getAttributes());
         }
         if (ldapUser.isWaitingForExecutionOnMandatoryAttributesComplete()) {
-            throw new ModelValidationException("LDAPObject cannot be commited because some mandatory attributes are not set: "
+            throw new ModelValidationException("LDAPObject cannot be committed because some mandatory attributes are not set: "
                     + ldapUser.getMandatoryAttributeNamesRemaining());
         }
 

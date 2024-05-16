@@ -129,7 +129,7 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         out.println("Usage: " + CMD + " update-token CLIENT [ARGUMENTS]");
         out.println();
         out.println("Command to reissue, and set a new registration access token if an old one is lost or becomes invalid.");
-        out.println("It requires an authenticated session using an account with administrator priviliges.");
+        out.println("It requires an authenticated session using an account with administrator privileges.");
         out.println();
         out.println("Arguments:");
         out.println();

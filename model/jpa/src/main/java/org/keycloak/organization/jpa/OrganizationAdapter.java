@@ -155,6 +155,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 idps.forEach(idp -> {
                     if (Objects.equals(domainEntity.getName(), idp.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE))) {
                         idp.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
+                        realm.updateIdentityProvider(idp);
                     }
                 });
             }
