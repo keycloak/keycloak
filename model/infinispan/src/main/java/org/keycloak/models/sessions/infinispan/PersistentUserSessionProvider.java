@@ -17,12 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import io.reactivex.rxjava3.core.Flowable;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
-import org.infinispan.commons.util.CloseableIterator;
 import org.infinispan.context.Flag;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
@@ -997,24 +999,19 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName(), new ArrayBlockingQueue<>(1));
         JpaChangesPerformer<UUID, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName(), new ArrayBlockingQueue<>(1));
         AtomicInteger currentBatch = new AtomicInteger(0);
-        RemoteCache<String, SessionEntityWrapper<UserSessionEntity>> remoteCache = InfinispanUtil.getRemoteCache(sessionCache);
-        if (remoteCache != null) {
-            try (CloseableIterator<Map.Entry<Object, Object>> it = remoteCache.retrieveEntries(null, 100)) {
-                while (it.hasNext()) {
-                    Map.Entry<Object, Object> next = it.next();
-                    //noinspection unchecked
-                    SessionEntityWrapper<UserSessionEntity> userSession = (SessionEntityWrapper<UserSessionEntity>) next.getValue();
-                    processEntryFromCache(userSession, userSessionPerformer, clientSessionPerformer, currentBatch);
-                }
-            }
-            flush(userSessionPerformer, clientSessionPerformer);
-            remoteCache.clear();
+        var persistence = ComponentRegistry.componentOf(sessionCache, PersistenceManager.class);
+        if (persistence != null && !persistence.getStoresAsString().isEmpty()) {
+            Flowable.fromPublisher(persistence.<String, SessionEntityWrapper<UserSessionEntity>>publishEntries(true, false))
+                    .blockingSubscribe(e -> processEntryFromCache(e.getValue(), userSessionPerformer, clientSessionPerformer, currentBatch));
         } else {
+            // Usually we assume sessions are stored in a persistence. To be extra safe, iterate over local sessions if no persistent is available.
             sessionCache.forEach((key, value) -> processEntryFromCache(value, userSessionPerformer, clientSessionPerformer, currentBatch));
-            flush(userSessionPerformer, clientSessionPerformer);
         }
+        flush(userSessionPerformer, clientSessionPerformer);
+        // Clear existing sessions as the IDs of the client sessions have changed.
         sessionCache.clear();
         clientSessionCache.clear();
+        // Even though offline sessions haven't been migrated, they are cleared as the IDs of the client sessions have changed. It is safe to clear them as they are already stored in the database.
         offlineSessionCache.clear();
         offlineClientSessionCache.clear();
         log.infof("Migrated %d user sessions total.", currentBatch.intValue());
