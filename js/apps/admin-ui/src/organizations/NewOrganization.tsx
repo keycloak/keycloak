@@ -27,7 +27,7 @@ export default function NewOrganization() {
     try {
       const organization = convertToOrg(org);
       await adminClient.organizations.create(organization);
-      addAlert("organizationSaveSuccess");
+      addAlert(t("organizationSaveSuccess"));
     } catch (error) {
       addError("organizationSaveError", error);
     }

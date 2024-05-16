@@ -1,3 +1,4 @@
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   Button,
   Dropdown,
@@ -6,14 +7,20 @@ import {
   MenuToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useAdminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import useToggle from "../utils/useToggle";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { MemberModal } from "../groups/MembersModal";
 import { toUser } from "../user/routes/User";
+import { useParams } from "../utils/useParams";
+import useToggle from "../utils/useToggle";
+import { EditOrganizationParams } from "./routes/EditOrganization";
+import { InviteMemberModal } from "./InviteMemberModal";
 
 const UserDetailLink = (user: any) => {
   const { realm } = useRealm();
@@ -26,92 +33,168 @@ const UserDetailLink = (user: any) => {
 
 export const Members = () => {
   const { t } = useTranslation();
+  const { adminClient } = useAdminClient();
+  const { id: orgId } = useParams<EditOrganizationParams>();
+  const { addAlert, addError } = useAlerts();
 
-  // const [key, setKey] = useState(0);
-  // const refresh = () => setKey(key + 1);
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
 
   const [open, toggle] = useToggle();
-  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [openAddMembers, toggleAddMembers] = useToggle();
+  const [openInviteMembers, toggleInviteMembers] = useToggle();
+  const [selectedMembers, setSelectedMembers] = useState<UserRepresentation[]>(
+    [],
+  );
 
-  const loader = () =>
-    Promise.resolve([
-      {
-        id: "0ddbc3b9-ffa2-4800-89d2-7f272f049871",
-        username: "a-member",
-        email: "one@one.ch",
-        firstName: "Alex",
-        lastName: "Muster",
-      },
-    ]);
+  const loader = (first?: number, max?: number, search?: string) =>
+    adminClient.organizations.listMembers({ orgId, first, max, search });
+
+  const removeMember = async (selectedMembers: UserRepresentation[]) => {
+    try {
+      await Promise.all(
+        selectedMembers.map((user) =>
+          adminClient.organizations.delMember({
+            orgId,
+            userId: user.id!,
+          }),
+        ),
+      );
+      addAlert(t("organizationUsersLeft", { count: selectedMembers.length }));
+    } catch (error) {
+      addError("organizationUsersLeftError", error);
+    }
+
+    refresh();
+  };
   return (
-    <KeycloakDataTable
-      // key={key}
-      loader={loader}
-      isPaginated
-      ariaLabelKey="membersList"
-      searchPlaceholderKey="searchMember"
-      onSelect={(members) => selectedMembers([...members])}
-      canSelectAll
-      toolbarItem={
-        <>
-          <ToolbarItem>
-            <Dropdown
-              toggle={(ref) => (
-                <MenuToggle
-                  ref={ref}
-                  onClick={toggle}
-                  isExpanded={open}
-                  variant="primary"
-                >
-                  {t("addMember")}
-                </MenuToggle>
-              )}
-              isOpen={open}
-            >
-              <DropdownList>
-                <DropdownItem>{t("addRealmUser")}</DropdownItem>
-                <DropdownItem>{t("inviteMember")}</DropdownItem>
-              </DropdownList>
-            </Dropdown>
-          </ToolbarItem>
-          <ToolbarItem>
-            <Button variant="plain" isDisabled={selectedMembers.length === 0}>
-              {t("removeMember")}
-            </Button>
-          </ToolbarItem>
-        </>
-      }
-      actions={[
-        {
-          title: t("delete"),
-          onRowClick: (member) => {
-            setSelectedMembers([member]);
-            // toggleDeleteDialog();
-          },
-        },
-      ]}
-      columns={[
-        {
-          name: "username",
-          cellRenderer: UserDetailLink,
-        },
-        {
-          name: "email",
-          // cellRenderer: Domains,
-        },
-        {
-          name: "firstName",
-        },
-        {
-          name: "lastName",
-        },
-      ]}
-      emptyState={
-        <ListEmptyState
-          message={t("emptyOrganizations")}
-          instructions={t("emptyOrganizationsInstructions")}
+    <>
+      {openAddMembers && (
+        <MemberModal
+          membersQuery={async () =>
+            await adminClient.organizations.listMembers({ orgId })
+          }
+          onAdd={async (selectedRows) => {
+            try {
+              await Promise.all(
+                selectedRows.map((user) =>
+                  adminClient.organizations.addMember({
+                    orgId,
+                    userId: user.id!,
+                  }),
+                ),
+              );
+              addAlert(
+                t("organizationUsersAdded", { count: selectedRows.length }),
+              );
+            } catch (error) {
+              addError("organizationUsersAddedError", error);
+            }
+          }}
+          onClose={() => {
+            toggleAddMembers();
+            refresh();
+          }}
         />
-      }
-    />
+      )}
+      {openInviteMembers && (
+        <InviteMemberModal orgId={orgId} onClose={toggleInviteMembers} />
+      )}
+      <KeycloakDataTable
+        key={key}
+        loader={loader}
+        isPaginated
+        ariaLabelKey="membersList"
+        searchPlaceholderKey="searchMember"
+        onSelect={(members) => setSelectedMembers([...members])}
+        canSelectAll
+        toolbarItem={
+          <>
+            <ToolbarItem>
+              <Dropdown
+                toggle={(ref) => (
+                  <MenuToggle
+                    ref={ref}
+                    onClick={toggle}
+                    isExpanded={open}
+                    variant="primary"
+                  >
+                    {t("addMember")}
+                  </MenuToggle>
+                )}
+                isOpen={open}
+              >
+                <DropdownList>
+                  <DropdownItem
+                    onClick={() => {
+                      toggleAddMembers();
+                      toggle();
+                    }}
+                  >
+                    {t("addRealmUser")}
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() => {
+                      toggleInviteMembers();
+                      toggle();
+                    }}
+                  >
+                    {t("inviteMember")}
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Button
+                variant="plain"
+                isDisabled={selectedMembers.length === 0}
+                onClick={() => removeMember(selectedMembers)}
+              >
+                {t("removeMember")}
+              </Button>
+            </ToolbarItem>
+          </>
+        }
+        actions={[
+          {
+            title: t("remove"),
+            onRowClick: async (member) => {
+              await removeMember([member]);
+            },
+          },
+        ]}
+        columns={[
+          {
+            name: "username",
+            cellRenderer: UserDetailLink,
+          },
+          {
+            name: "email",
+          },
+          {
+            name: "firstName",
+          },
+          {
+            name: "lastName",
+          },
+        ]}
+        emptyState={
+          <ListEmptyState
+            message={t("emptyMembers")}
+            instructions={t("emptyMembersInstructions")}
+            secondaryActions={[
+              {
+                text: t("addRealmUser"),
+                onClick: toggleAddMembers,
+              },
+              {
+                text: t("inviteMember"),
+                onClick: () => toggleInviteMembers,
+              },
+            ]}
+          />
+        }
+      />
+    </>
   );
 };

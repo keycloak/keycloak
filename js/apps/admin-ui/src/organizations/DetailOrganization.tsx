@@ -47,7 +47,7 @@ export default function DetailOrganization() {
     try {
       const organization = convertToOrg(org);
       await adminClient.organizations.updateById({ id }, organization);
-      addAlert("organizationSaveSuccess");
+      addAlert(t("organizationSaveSuccess"));
     } catch (error) {
       addError("organizationSaveError", error);
     }

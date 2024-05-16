@@ -1,14 +1,20 @@
-import Resource from "./resource.js";
-import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
-
 import type { KeycloakAdminClient } from "../client.js";
+import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
+import UserRepresentation from "../defs/userRepresentation.js";
+import Resource from "./resource.js";
 
-export interface OrganizationQuery {
+interface PaginatedQuery {
   first?: number; // The position of the first result to be processed (pagination offset)
   max?: number; // The maximum number of results to be returned - defaults to 10
-  search?: string; // A String representing either an organization name or domain
+  search?: string;
+}
+export interface OrganizationQuery extends PaginatedQuery {
   q?: string; // A query to search for custom attributes, in the format 'key1:value2 key2:value2'
   exact?: boolean; // Boolean which defines whether the param 'search' must match exactly or not
+}
+
+interface MemberQuery extends PaginatedQuery {
+  orgId: string; //Id of the organization to get the members of
 }
 
 export class Organizations extends Resource<{ realm?: string }> {
@@ -62,5 +68,37 @@ export class Organizations extends Resource<{ realm?: string }> {
     method: "PUT",
     path: "/{id}",
     urlParamKeys: ["id"],
+  });
+
+  public listMembers = this.makeRequest<MemberQuery, UserRepresentation[]>({
+    method: "GET",
+    path: "/{orgId}/members",
+    urlParamKeys: ["orgId"],
+  });
+
+  public addMember = this.makeRequest<
+    { orgId: string; userId: string },
+    string
+  >({
+    method: "POST",
+    path: "/{orgId}/members",
+    urlParamKeys: ["orgId"],
+    payloadKey: "userId",
+  });
+
+  public delMember = this.makeRequest<
+    { orgId: string; userId: string },
+    string
+  >({
+    method: "DELETE",
+    path: "/{orgId}/members/{userId}",
+    urlParamKeys: ["orgId", "userId"],
+  });
+
+  public invite = this.makeRequest<{ orgId: string; email: string }, string>({
+    method: "POST",
+    path: "/{orgId}/members/invite-user",
+    urlParamKeys: ["orgId"],
+    payloadKey: "email",
   });
 }
