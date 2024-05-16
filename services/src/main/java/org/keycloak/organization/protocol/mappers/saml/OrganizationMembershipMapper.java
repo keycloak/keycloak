@@ -70,7 +70,6 @@ public class OrganizationMembershipMapper extends AbstractSAMLProtocolMapper imp
 
         UserModel user = userSession.getUser();
         Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
-        Map<String, Map<String, Object>> claim = new HashMap<>();
         AttributeType attribute = new AttributeType(ORGANIZATION_ATTRIBUTE_NAME);
 
         attribute.setFriendlyName(ORGANIZATION_ATTRIBUTE_NAME);

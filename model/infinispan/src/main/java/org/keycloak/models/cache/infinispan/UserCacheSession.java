@@ -343,7 +343,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
             OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
             if (organizationProvider.getByMember(delegate)
-                    .anyMatch((org) -> org.isManaged(delegate) && !org.isEnabled() ||
+                    .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
                     (!organizationProvider.isEnabled() && org.isManaged(delegate)))) {
                 return new ReadOnlyUserModelDelegate(delegate) {
                     @Override

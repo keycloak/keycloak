@@ -18,13 +18,10 @@
 package org.keycloak.testsuite.organization.mapper;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.keycloak.models.OrganizationModel.ORGANIZATION_ATTRIBUTE;
 
-import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
