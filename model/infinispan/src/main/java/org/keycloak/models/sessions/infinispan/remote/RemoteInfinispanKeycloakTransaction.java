@@ -1,10 +1,21 @@
-package org.keycloak.models.sessions.infinispan.remote;
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakTransaction;
+package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
 import java.util.LinkedHashMap;
@@ -12,67 +23,53 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
-public class RemoteInfinispanKeycloakTransaction<K, V> implements KeycloakTransaction {
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import org.infinispan.client.hotrod.MetadataValue;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.jboss.logging.Logger;
+import org.keycloak.models.AbstractKeycloakTransaction;
+
+public class RemoteInfinispanKeycloakTransaction<K, V> extends AbstractKeycloakTransaction {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
-    private boolean active;
-    private boolean rollback;
     private final Map<K, Operation<K, V>> tasks = new LinkedHashMap<>();
     private final RemoteCache<K, V> cache;
+    private Predicate<V> removePredicate;
 
     public RemoteInfinispanKeycloakTransaction(RemoteCache<K, V> cache) {
         this.cache = Objects.requireNonNull(cache);
     }
 
     @Override
-    public void begin() {
-        active = true;
-        tasks.clear();
-    }
-
-    @Override
-    public void commit() {
-        active = false;
-        if (rollback) {
-            throw new RuntimeException("Rollback only!");
-        }
+    protected void commitImpl() {
         AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
+        if (removePredicate != null) {
+            // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
+            var rmStage = Flowable.fromPublisher(cache.publishEntriesWithMetadata(null, 2048))
+                    .filter(this::shouldRemoveEntry)
+                    .map(Map.Entry::getKey)
+                    .flatMapCompletable(this::removeKey)
+                    .toCompletionStage(null);
+            stage.dependsOn(rmStage);
+        }
         tasks.values().stream()
+                .filter(this::shouldCommitOperation)
                 .map(this::commitOperation)
                 .forEach(stage::dependsOn);
-        try {
-            CompletionStages.await(stage.freeze());
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void rollback() {
-        active = false;
+        CompletionStages.join(stage.freeze());
         tasks.clear();
     }
 
     @Override
-    public void setRollbackOnly() {
-        rollback = true;
-    }
-
-    @Override
-    public boolean getRollbackOnly() {
-        return rollback;
-    }
-
-    @Override
-    public boolean isActive() {
-        return active;
+    protected void rollbackImpl() {
+        tasks.clear();
     }
 
     public void put(K key, V value, long lifespan, TimeUnit timeUnit) {
@@ -124,6 +121,39 @@ public class RemoteInfinispanKeycloakTransaction<K, V> implements KeycloakTransa
 
     public RemoteCache<K, V> getCache() {
         return cache;
+    }
+
+    /**
+     * Removes all Infinispan cache values that satisfy the given predicate.
+     *
+     * @param predicate The {@link Predicate} which returns {@code true} for elements to be removed.
+     */
+    public void removeIf(Predicate<V> predicate) {
+        if (removePredicate == null) {
+            removePredicate = predicate;
+            return;
+        }
+        removePredicate = removePredicate.or(predicate);
+    }
+
+    private Completable removeKey(K key) {
+        return Completable.fromCompletionStage(cache.removeAsync(key));
+    }
+
+    private boolean shouldCommitOperation(Operation<K, V> operation) {
+        // Commit if any:
+        // 1. it is a removal operation (no value to test the predicate).
+        // 2. remove predicate is not present.
+        // 3. value does not match the remove predicate.
+        return !operation.hasValue() ||
+                removePredicate == null ||
+                !removePredicate.test(operation.getValue());
+    }
+
+    private boolean shouldRemoveEntry(Map.Entry<K, MetadataValue<V>> entry) {
+        // invoked by stream, so removePredicate is not null
+        assert removePredicate != null;
+        return removePredicate.test(entry.getValue().getValue());
     }
 
     private CompletionStage<?> commitOperation(Operation<K, V> operation) {

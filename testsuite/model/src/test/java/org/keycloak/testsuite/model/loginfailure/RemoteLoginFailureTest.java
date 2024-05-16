@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.model.loginfailure;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.infinispan.client.hotrod.RemoteCache;
@@ -61,7 +60,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
                     user.setEmail(username + "@localhost");
                     return user.getId();
                 })
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
     }
 
@@ -90,9 +89,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
         Assume.assumeTrue(InfinispanUtils.isRemoteInfinispan());
         var cache = getLoginFailureCache();
         var key = new LoginFailureKey(realmId, userIds.get(0));
-        var entity = new LoginFailureEntity();
-        entity.setRealmId(realmId);
-        entity.setUserId(userIds.get(0));
+        var entity = new LoginFailureEntity(realmId, userIds.get(0));
         entity.setLastFailure(1000);
         entity.setNumFailures(2);
         entity.setNumTemporaryLockouts(10);
@@ -122,9 +119,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
         Assume.assumeTrue(InfinispanUtils.isRemoteInfinispan());
         var cache = getLoginFailureCache();
         var key = new LoginFailureKey(realmId, userIds.get(0));
-        var entity = new LoginFailureEntity();
-        entity.setRealmId(realmId);
-        entity.setUserId(userIds.get(0));
+        var entity = new LoginFailureEntity(realmId, userIds.get(0));
         entity.setLastFailure(1000);
         entity.setNumFailures(2);
         entity.setNumTemporaryLockouts(10);
@@ -156,9 +151,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
         Assume.assumeTrue(InfinispanUtils.isRemoteInfinispan());
         var cache = getLoginFailureCache();
         var key = new LoginFailureKey(realmId, userIds.get(0));
-        var entity = new LoginFailureEntity();
-        entity.setRealmId(realmId);
-        entity.setUserId(userIds.get(0));
+        var entity = new LoginFailureEntity(realmId, userIds.get(0));
         entity.setLastFailure(1000);
         entity.setNumFailures(2);
         entity.setNumTemporaryLockouts(10);
@@ -186,7 +179,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
         Assume.assumeTrue(InfinispanUtils.isRemoteInfinispan());
         var cache = getLoginFailureCache();
         var key = new LoginFailureKey(realmId, userIds.get(0));
-        var entity = new LoginFailureEntity();
+        var entity = new LoginFailureEntity(realmId, userIds.get(0));
 
         cache.put(key, entity);
 
@@ -208,9 +201,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
         cache.clear();
 
         for (var userId : userIds) {
-            var entity = new LoginFailureEntity();
-            entity.setRealmId(realmId);
-            entity.setUserId(userId);
+            var entity = new LoginFailureEntity(realmId, userId);
             cache.put(new LoginFailureKey(realmId, userId), entity);
         }
 
@@ -226,9 +217,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
 
     private static void createRandomEntityInCache(RemoteCache<LoginFailureKey, LoginFailureEntity> cache, int failures, int temporaryLockouts, String realmId, String userId) {
         var key = new LoginFailureKey(realmId, userId);
-        var entity = new LoginFailureEntity();
-        entity.setRealmId(realmId);
-        entity.setUserId(userId);
+        var entity = new LoginFailureEntity(realmId, userId);
         entity.setLastFailure(5000); // does not matter
         entity.setNumFailures(failures);
         entity.setNumTemporaryLockouts(temporaryLockouts);

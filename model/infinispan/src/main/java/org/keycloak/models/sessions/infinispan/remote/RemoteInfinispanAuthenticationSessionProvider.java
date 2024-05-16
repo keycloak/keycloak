@@ -20,8 +20,8 @@ package org.keycloak.models.sessions.infinispan.remote;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
-import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -96,17 +96,7 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     @Override
     public void onRealmRemoved(RealmModel realm) {
         // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
-        var cache = transaction.getCache();
-        var stage = CompletionStages.aggregateCompletionStage();
-        try (var iterator = cache.retrieveEntries(null, 256)) {
-            while (iterator.hasNext()) {
-                var entry = iterator.next();
-                if (realm.getId().equals(((RootAuthenticationSessionEntity) entry.getValue()).getRealmId())) {
-                    stage.dependsOn(cache.removeAsync(entry.getKey()));
-                }
-            }
-        }
-        CompletionStages.join(stage.freeze());
+        transaction.removeIf(new RealmFilter(realm.getId()));
     }
 
     @Override
@@ -150,6 +140,14 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
         @Override
         public void onEntityRemoved() {
             transaction.remove(entity.getId());
+        }
+    }
+
+    private record RealmFilter(String realmId) implements Predicate<RootAuthenticationSessionEntity> {
+
+        @Override
+        public boolean test(RootAuthenticationSessionEntity entity) {
+            return Objects.equals(realmId, entity.getRealmId());
         }
     }
 }

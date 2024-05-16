@@ -57,10 +57,7 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
         }
 
         var key = new LoginFailureKey(realm.getId(), userId);
-        var entity = new LoginFailureEntity();
-        entity.setRealmId(realm.getId());
-        entity.setUserId(userId);
-
+        var entity = new LoginFailureEntity(realm.getId(), userId);
         return transaction.create(key, entity);
     }
 
