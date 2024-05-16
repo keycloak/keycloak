@@ -65,7 +65,7 @@ function doAuthenticate(allowCredentials, challenge, userVerification, rpId, cre
     return navigator.credentials.get({publicKey});
 }
 
-function returnSuccess(result) {
+export function returnSuccess(result) {
     document.getElementById("clientDataJSON").value = base64url.stringify(new Uint8Array(result.response.clientDataJSON), { pad: false });
     document.getElementById("authenticatorData").value = base64url.stringify(new Uint8Array(result.response.authenticatorData), { pad: false });
     document.getElementById("signature").value = base64url.stringify(new Uint8Array(result.response.signature), { pad: false });
@@ -76,7 +76,7 @@ function returnSuccess(result) {
     document.getElementById("webauth").submit();
 }
 
-function returnFailure(err) {
+export function returnFailure(err) {
     document.getElementById("error").value = err;
     document.getElementById("webauth").submit();
 }

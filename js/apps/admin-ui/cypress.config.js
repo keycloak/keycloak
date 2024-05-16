@@ -35,7 +35,7 @@ export default defineConfig({
 
           if (!failures) {
             // delete the video if the spec passed and no tests retried
-            fs.unlinkSync(results.video);
+            fs.rmSync(results.video, { force: true });
           }
         }
       }

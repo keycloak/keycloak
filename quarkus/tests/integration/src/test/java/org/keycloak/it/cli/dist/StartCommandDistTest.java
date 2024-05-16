@@ -159,6 +159,16 @@ public class StartCommandDistTest {
     }
 
     @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void testWarningWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build", "--features=preview");
+        cliResult.assertBuild();
+        dist.setEnvVar("KC_DB", "postgres");
+        cliResult = dist.run("start", "--optimized", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertMessage("The following build time non-cli options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
+    }
+
+    @Test
     @Launch({CONFIG_FILE_LONG_NAME + "=src/test/resources/non-existing.conf", "start"})
     void testInvalidConfigFileOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

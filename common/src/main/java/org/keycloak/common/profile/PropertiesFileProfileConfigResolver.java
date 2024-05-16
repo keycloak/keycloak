@@ -24,7 +24,7 @@ public class PropertiesFileProfileConfigResolver extends PropertiesProfileConfig
                 }
             }
         } catch (IOException e) {
-            throw new ProfileException("Failed to load profile propeties file", e);
+            throw new ProfileException("Failed to load profile properties file", e);
         }
         return properties;
     }

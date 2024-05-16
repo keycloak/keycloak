@@ -328,10 +328,12 @@ export default function DetailSettings() {
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = savedProvider || getValues();
+    const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
         p.config.authnContextClassRefs,
       );
+    const origAuthnContextDeclRefs = p.config?.authnContextDeclRefs;
     if (p.config?.authnContextDeclRefs)
       p.config.authnContextDeclRefs = JSON.stringify(
         p.config.authnContextDeclRefs,
@@ -347,6 +349,12 @@ export default function DetailSettings() {
           providerId,
         },
       );
+      if (origAuthnContextClassRefs) {
+        p.config!.authnContextClassRefs = origAuthnContextClassRefs;
+      }
+      if (origAuthnContextDeclRefs) {
+        p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
+      }
       reset(p);
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {

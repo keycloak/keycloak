@@ -122,7 +122,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println();
         out.println();
-        out.println("Nested attributes are supported by using '.' to separate components of a KEY. Optionaly, the KEY components ");
+        out.println("Nested attributes are supported by using '.' to separate components of a KEY. Optionally, the KEY components ");
         out.println("can be quoted with double quotes - e.g. my_client.attributes.\"external.user.id\". If VALUE starts with [ and ");
         out.println("ends with ] the attribute will be set as a JSON array. If VALUE starts with { and ends with } the attribute ");
         out.println("will be set as a JSON object. If KEY ends with an array index - e.g. clients[3]=VALUE - then the specified item");

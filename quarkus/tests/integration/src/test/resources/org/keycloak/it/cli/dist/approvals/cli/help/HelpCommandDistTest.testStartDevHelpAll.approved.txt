@@ -366,7 +366,7 @@ Logging:
                      DEPRECATED. Include message parameters from the log event. Default: true.
                        Available only when GELF is activated.
 --log-gelf-include-stack-trace <true|false>
-                     DEPRECATED. If set to true, occuring stack traces are included in the
+                     DEPRECATED. If set to true, occurring stack traces are included in the
                        'StackTrace' field in the GELF output. Default: true. Available only when
                        GELF is activated.
 --log-gelf-level <level>

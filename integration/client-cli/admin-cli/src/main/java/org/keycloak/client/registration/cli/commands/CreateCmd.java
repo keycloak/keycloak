@@ -173,7 +173,7 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
                 printOut("Response from server: " + readFully(response));
             }
         } catch (UnrecognizedPropertyException e) {
-            throw new RuntimeException("Failed to process HTTP reponse - " + e.getMessage(), e);
+            throw new RuntimeException("Failed to process HTTP response - " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Failed to process HTTP response", e);
         }
