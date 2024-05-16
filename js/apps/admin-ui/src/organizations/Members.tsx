@@ -5,6 +5,7 @@ import {
   DropdownItem,
   DropdownList,
   MenuToggle,
+  PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -19,8 +20,8 @@ import { MemberModal } from "../groups/MembersModal";
 import { toUser } from "../user/routes/User";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
-import { EditOrganizationParams } from "./routes/EditOrganization";
 import { InviteMemberModal } from "./InviteMemberModal";
+import { EditOrganizationParams } from "./routes/EditOrganization";
 
 const UserDetailLink = (user: any) => {
   const { realm } = useRealm();
@@ -68,7 +69,7 @@ export const Members = () => {
     refresh();
   };
   return (
-    <>
+    <PageSection variant="light">
       {openAddMembers && (
         <MemberModal
           membersQuery={async () =>
@@ -189,12 +190,12 @@ export const Members = () => {
               },
               {
                 text: t("inviteMember"),
-                onClick: () => toggleInviteMembers,
+                onClick: toggleInviteMembers,
               },
             ]}
           />
         }
       />
-    </>
+    </PageSection>
   );
 };

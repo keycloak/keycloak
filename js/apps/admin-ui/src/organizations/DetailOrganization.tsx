@@ -32,6 +32,7 @@ import {
   OrganizationTab,
   toEditOrganization,
 } from "./routes/EditOrganization";
+import { IdentityProviders } from "./IdentityProviders";
 
 export default function DetailOrganization() {
   const { adminClient } = useAdminClient();
@@ -80,6 +81,7 @@ export default function DetailOrganization() {
   const settingsTab = useTab("settings");
   const attributesTab = useTab("attributes");
   const membersTab = useTab("members");
+  const identityProvidersTab = useTab("identityProviders");
 
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">
@@ -143,9 +145,15 @@ export default function DetailOrganization() {
             title={<TabTitleText>{t("members")}</TabTitleText>}
             {...membersTab}
           >
-            <PageSection variant="light">
-              <Members />
-            </PageSection>
+            <Members />
+          </Tab>
+          <Tab
+            id="identityProviders"
+            data-testid="identityProvidersTab"
+            title={<TabTitleText>{t("identityProviders")}</TabTitleText>}
+            {...identityProvidersTab}
+          >
+            <IdentityProviders />
           </Tab>
         </RoutableTabs>
       </FormProvider>

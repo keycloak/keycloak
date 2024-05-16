@@ -2,7 +2,7 @@ import { FormSubmitButton } from "@keycloak/keycloak-ui-shared";
 import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
@@ -13,12 +13,14 @@ import {
   OrganizationFormType,
   convertToOrg,
 } from "./OrganizationForm";
+import { toEditOrganization } from "./routes/EditOrganization";
 import { toOrganizations } from "./routes/Organizations";
 
 export default function NewOrganization() {
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { realm } = useRealm();
   const form = useForm();
   const { handleSubmit, formState } = form;
@@ -26,8 +28,9 @@ export default function NewOrganization() {
   const save = async (org: OrganizationFormType) => {
     try {
       const organization = convertToOrg(org);
-      await adminClient.organizations.create(organization);
+      const { id } = await adminClient.organizations.create(organization);
       addAlert(t("organizationSaveSuccess"));
+      navigate(toEditOrganization({ realm, id, tab: "settings" }));
     } catch (error) {
       addError("organizationSaveError", error);
     }
