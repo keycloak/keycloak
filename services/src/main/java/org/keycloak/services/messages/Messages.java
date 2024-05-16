@@ -25,6 +25,7 @@ public class Messages {
     public static final String LOGIN_TIMEOUT = "loginTimeout";
 
     public static final String REAUTHENTICATE = "reauthenticate";
+    public static final String AUTHENTICATE_STRONG = "authenticateStrong";
 
     public static final String INVALID_USER = "invalidUserMessage";
 
@@ -35,6 +36,12 @@ public class Messages {
     public static final String INVALID_PASSWORD = "invalidPasswordMessage";
 
     public static final String INVALID_EMAIL = "invalidEmailMessage";
+
+    public static final String ORG_NOT_FOUND = "orgNotFoundMessage";
+
+    public static final String ORG_MEMBER_ALREADY = "orgMemberAlready";
+
+    public static final String INVALID_ORG_INVITE = "invalidOrgInviteMessage";
 
     public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
 
@@ -88,6 +95,8 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_CONFIRM_LINK_MESSAGE = "federatedIdentityConfirmLinkMessage";
 
+    public static final String FEDERATED_IDENTITY_CONFIRM_OVERRIDE_MESSAGE = "federatedIdentityConfirmOverrideMessage";
+
     public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE = "federatedIdentityConfirmReauthenticateMessage";
 
     public static final String NESTED_FIRST_BROKER_FLOW_MESSAGE = "nestedFirstBrokerFlowMessage";
@@ -109,6 +118,7 @@ public class Messages {
     public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
+    public static final String EMAIL_VERIFIED_ALREADY = "emailVerifiedAlreadyMessage";
 
     public static final String EMAIL_SENT = "emailSentMessage";
 
@@ -179,6 +189,8 @@ public class Messages {
 
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
 
+    public static final String STALE_INVITE_ORG_LINK = "staleInviteOrgLink";
+
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
     
     public static final String IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR = "federatedIdentityUnmatchedEssentialClaimMessage";
@@ -246,6 +258,8 @@ public class Messages {
     public static final String INVALID_PARAMETER = "invalidParameterMessage";
 
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
+
+    public static final String IDENTITY_PROVIDER_LOGOUT_FAILURE = "identityProviderLogoutFailure";
 
     public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
 

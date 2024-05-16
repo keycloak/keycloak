@@ -3,19 +3,17 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
-  FormGroup,
   PageSection,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -27,10 +25,11 @@ import { ExtendedHeader } from "../shared/ExtendedHeader";
 import { SettingsCache } from "../shared/SettingsCache";
 import { SyncSettings } from "./SyncSettings";
 
-import { adminClient } from "../../admin-client";
 import "./custom-provider-settings.css";
 
 export default function CustomProviderSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id, providerId } = useParams<CustomUserFederationRouteParams>();
   const navigate = useNavigate();
@@ -38,11 +37,10 @@ export default function CustomProviderSettings() {
     mode: "onChange",
   });
   const {
-    register,
     reset,
     setValue,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { isDirty },
   } = form;
 
   const { addAlert, addError } = useAlerts();
@@ -125,33 +123,16 @@ export default function CustomProviderSettings() {
           className="keycloak__user-federation__custom-form"
           onSubmit={handleSubmit(save)}
         >
-          <FormGroup
+          <TextControl
+            name="name"
             label={t("uiDisplayName")}
-            labelIcon={
-              <HelpItem
-                helpText={t("uiDisplayNameHelp")}
-                fieldLabelId="uiDisplayName"
-              />
-            }
-            helperTextInvalid={t("validateName")}
-            validated={errors.name ? "error" : "default"}
-            fieldId="kc-ui-display-name"
-            isRequired
-          >
-            <KeycloakTextInput
-              isRequired
-              id="kc-ui-display-name"
-              data-testid="ui-name"
-              validated={errors.name ? "error" : "default"}
-              {...register("name", {
-                required: true,
-              })}
-            />
-          </FormGroup>
-          <FormProvider {...form}>
-            <DynamicComponents properties={provider?.properties || []} />
-            {provider?.metadata.synchronizable && <SyncSettings />}
-          </FormProvider>
+            labelIcon={t("uiDisplayNameHelp")}
+            rules={{
+              required: t("validateName"),
+            }}
+          />
+          <DynamicComponents properties={provider?.properties || []} />
+          {provider?.metadata.synchronizable && <SyncSettings />}
           <SettingsCache form={form} unWrap />
           <ActionGroup>
             <Button

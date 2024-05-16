@@ -34,43 +34,83 @@ import static org.hamcrest.Matchers.matchesPattern;
 @WithEnvVars({"PRINT_ENV", "true"})
 public class JavaOptsScriptTest {
 
-    private static final String DEFAULT_OPTS = "(?:-\\S+ )*-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8(?: -\\S+)*";
+    private static final String DEFAULT_OPTS = "(?:-\\S+ )*-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8(?: -\\S+)*";
 
     @Test
-    @Launch({ "start-dev" })
+    @Launch({"start", "--optimized"})
     void testDefaultJavaOpts(LaunchResult result) {
         String output = result.getOutput();
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + ".*"));
+        assertThat(output, containsString("-Xms64m -Xmx512m"));
     }
 
     @Test
-    @Launch({ "start-dev" })
+    @Launch({"start", "--optimized"})
+    @WithEnvVars({"KC_RUN_IN_CONTAINER", "true"})
+    void testDefaultJavaHeapContainerOpts(LaunchResult result) {
+        String output = result.getOutput();
+        assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + ".*"));
+        assertThat(output, not(containsString("-Xms64m -Xmx512m")));
+        assertThat(output, containsString("-XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"));
+    }
+
+    @Test
+    @Launch({"start", "--optimized"})
+    @WithEnvVars({"JAVA_OPTS_KC_HEAP", "-Xms128m"})
+    void testCustomJavaHeapContainerOpts(LaunchResult result) {
+        String output = result.getOutput();
+        assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + ".*"));
+        assertThat(output, not(containsString("-Xms64m -Xmx512m")));
+        assertThat(output, not(containsString("-XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50")));
+        assertThat(output, containsString("JAVA_OPTS_KC_HEAP already set in environment; overriding default settings"));
+        assertThat(output, containsString(" -Xms128m "));
+    }
+
+    @Test
+    @Launch({"start", "--optimized"})
+    @WithEnvVars({"JAVA_OPTS_KC_HEAP", "-Xms128m", "JAVA_OPTS", "-Xmx256m"})
+    void testCustomJavaHeapContainerOptsWithCustomJavaOpts(LaunchResult result) {
+        String output = result.getOutput();
+        assertThat(output, not(containsString("JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values")));
+        assertThat(output, not(containsString("-Xms128m")));
+
+        assertThat(output, containsString("JAVA_OPTS already set in environment; overriding default settings"));
+        assertThat(output, containsString("Using JAVA_OPTS: -Xmx256m"));
+    }
+
+    @Test
+    @Launch({"start", "--optimized"})
     @WithEnvVars({ "JAVA_OPTS", "-Dfoo=bar"})
     void testJavaOpts(LaunchResult result) {
         String output = result.getOutput();
-        assertThat(output, containsString("JAVA_OPTS already set in environment; overriding default settings with values: -Dfoo=bar"));
+        assertThat(output, containsString("JAVA_OPTS already set in environment; overriding default settings"));
         assertThat(output, containsString("Using JAVA_OPTS: -Dfoo=bar"));
     }
 
     @Test
-    @Launch({ "start-dev" })
+    @Launch({"start", "--optimized"})
     @WithEnvVars({ "JAVA_OPTS_APPEND", "-Dfoo=bar"})
     void testJavaOptsAppend(LaunchResult result) {
         String output = result.getOutput();
-        assertThat(output, containsString("Appending additional Java properties to JAVA_OPTS: -Dfoo=bar"));
+        assertThat(output, containsString("Appending additional Java properties to JAVA_OPTS"));
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + " -Dfoo=bar\\n.*"));
     }
 
-
-
     @Test
-    @Launch({ "start-dev" })
+    @Launch({"start", "--optimized"})
     @WithEnvVars({ "JAVA_ADD_OPENS", "-Dfoo=bar"})
     void testJavaAddOpens(LaunchResult result) {
         String output = result.getOutput();
-        assertThat(output, containsString("JAVA_ADD_OPENS already set in environment; overriding default settings with values: -Dfoo=bar"));
+        assertThat(output, containsString("JAVA_ADD_OPENS already set in environment; overriding default settings"));
         assertThat(output, not(containsString("--add-opens")));
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + " -Dfoo=bar.*"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "-Dpicocli.trace=info" })
+    void testPicocliClosuresDisabled(LaunchResult result) {
+        String output = result.getErrorOutput(); // not sure why picocli logs are printed to err
+        assertThat(output, containsString("DefaultFactory: groovy Closures in annotations are disabled and will not be loaded"));
     }
 
 }

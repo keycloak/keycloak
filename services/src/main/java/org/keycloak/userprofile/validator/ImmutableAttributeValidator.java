@@ -17,23 +17,20 @@
 package org.keycloak.userprofile.validator;
 
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
-import static org.keycloak.validate.Validators.notBlankValidator;
+import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.AttributeContext;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.Validators;
 
 /**
  * A validator that fails when the attribute is marked as read only and its value has changed.
@@ -78,7 +75,7 @@ public class ImmutableAttributeValidator implements SimpleValidator {
                     return context;
                 }
 
-                List<String> email = attributeContext.getAttributes().getValues(UserModel.EMAIL);
+                List<String> email = attributeContext.getAttributes().get(UserModel.EMAIL);
 
                 if (UserModel.USERNAME.equals(attributeName) && collectionEquals(values, email)) {
                     return context;

@@ -1,8 +1,8 @@
-import { Select, SelectOption } from "@patternfly/react-core";
+import { TextInput } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { useMemo, useState } from "react";
 import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { KeycloakTextInput } from "ui-shared";
 
 import { DefaultValue } from "./KeyValueInput";
 
@@ -27,7 +27,7 @@ export const ValueSelect = ({
 
   return defaultItem?.values ? (
     <Select
-      onToggle={(isOpen) => setOpen(isOpen)}
+      onToggle={(_event, isOpen) => setOpen(isOpen)}
       isOpen={open}
       onSelect={(_, value) => {
         field.onChange(value);
@@ -41,6 +41,10 @@ export const ValueSelect = ({
       ))}
     </Select>
   ) : (
-    <KeycloakTextInput id="customValue" data-testid={rest.name} {...field} />
+    <TextInput
+      aria-label={t("customValue")}
+      data-testid={rest.name}
+      {...field}
+    />
   );
 };

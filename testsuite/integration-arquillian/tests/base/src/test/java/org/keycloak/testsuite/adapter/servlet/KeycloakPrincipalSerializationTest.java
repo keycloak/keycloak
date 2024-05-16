@@ -9,16 +9,12 @@ import org.keycloak.testsuite.adapter.page.SerializationServletPage;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 // The purpose of this class is to test KeycloakPrincipal serialization on different app-server-jdks
 public class KeycloakPrincipalSerializationTest extends AbstractServletsAdapterTest {
     @Page

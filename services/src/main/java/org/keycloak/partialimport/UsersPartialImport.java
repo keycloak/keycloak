@@ -110,7 +110,9 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
 
     @Override
     public void create(RealmModel realm, KeycloakSession session, UserRepresentation user) {
-        user.setId(KeycloakModelUtils.generateId());
+        if (user.getId() == null) {
+            user.setId(KeycloakModelUtils.generateId());
+        }
         UserModel userModel = RepresentationToModel.createUser(session, realm, user);
         if (userModel == null) throw new RuntimeException("Unable to create user " + getName(user));
         createdIds.put(getName(user), userModel.getId());

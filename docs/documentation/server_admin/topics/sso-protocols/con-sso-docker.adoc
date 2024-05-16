@@ -9,10 +9,10 @@
 Docker authentication is disabled by default. To enable docker authentication, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 ====
 [role="_abstract"]
-link:https://docs.docker.com/registry/spec/auth/[Docker Registry V2 Authentication] is a protocol, similar to OIDC, that authenticates users against Docker registries.  {project_name}'s implementation of this protocol lets Docker clients use a {project_name} authentication server authenticate against a registry. This protocol uses standard token and signature mechanisms but it does deviate from a true OIDC implementation. It deviates by using a very specific JSON format for requests and responses as well as mapping repository names and permissions to the OAuth scope mechanism.
+link:https://distribution.github.io/distribution/spec/auth/[Docker Registry V2 Authentication] is a protocol, similar to OIDC, that authenticates users against Docker registries.  {project_name}'s implementation of this protocol lets Docker clients use a {project_name} authentication server authenticate against a registry. This protocol uses standard token and signature mechanisms but it does deviate from a true OIDC implementation. It deviates by using a very specific JSON format for requests and responses as well as mapping repository names and permissions to the OAuth scope mechanism.
 
 ==== Docker authentication flow
-The authentication flow is described in the link:https://docs.docker.com/registry/spec/auth/token/[Docker API documentation]. The following is a summary from the perspective of the {project_name} authentication server:
+The authentication flow is described in the link:https://distribution.github.io/distribution/spec/auth/token/[Docker API documentation]. The following is a summary from the perspective of the {project_name} authentication server:
 
 * Perform a `docker login`.
 * The Docker client requests a resource from the Docker registry.  If the resource is protected and no authentication token is in the request, the Docker registry server responds with a 401 HTTP message with some information on the permissions that are required and the location of the authorization server.
@@ -27,4 +27,4 @@ NOTE: {project_name} does not create a browser SSO session after successful auth
 
 {project_name} has one endpoint for all Docker auth v2 requests.
 
-`http(s)://authserver.host{kc_realms_path}/{realm-name}/protocol/docker-v2`
+`http(s)://authserver.host{kc_realms_path}/{realm-name}/protocol/docker-v2/auth`

@@ -3,9 +3,9 @@ import {
   AlertVariant,
   ButtonVariant,
   CardTitle,
-  DropdownItem,
   Gallery,
   GalleryItem,
+  Icon,
   PageSection,
   Split,
   SplitItem,
@@ -13,12 +13,12 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
@@ -38,6 +38,8 @@ import { toUserFederationLdap } from "./routes/UserFederationLdap";
 import "./user-federation.css";
 
 export default function UserFederationSection() {
+  const { adminClient } = useAdminClient();
+
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
@@ -200,11 +202,11 @@ export default function UserFederationSection() {
               <Text component={TextVariants.p}>{t("getStarted")}</Text>
             </TextContent>
             <TextContent>
-              <Text className="pf-u-mt-lg" component={TextVariants.h2}>
+              <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
                 {t("providers")}
               </Text>
             </TextContent>
-            <hr className="pf-u-mb-lg" />
+            <hr className="pf-v5-u-mb-lg" />
             <Gallery hasGutter>
               {providers.map((p) => (
                 <ClickableCard
@@ -219,7 +221,9 @@ export default function UserFederationSection() {
                   <CardTitle>
                     <Split hasGutter>
                       <SplitItem>
-                        <DatabaseIcon size="lg" />
+                        <Icon size="lg">
+                          <DatabaseIcon />
+                        </Icon>
                       </SplitItem>
                       <SplitItem isFilled>
                         {t("addProvider", {

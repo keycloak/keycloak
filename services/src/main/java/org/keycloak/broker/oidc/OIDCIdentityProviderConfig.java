@@ -61,6 +61,22 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         getConfig().put("logoutUrl", url);
     }
 
+    public boolean isSendClientIdOnLogout() {
+        return Boolean.parseBoolean(getConfig().getOrDefault("sendClientIdOnLogout", Boolean.FALSE.toString()));
+    }
+
+    public void setSendClientOnLogout(boolean value) {
+        getConfig().put("sendClientIdOnLogout", Boolean.valueOf(value).toString());
+    }
+
+    public boolean isSendIdTokenOnLogout() {
+        return Boolean.parseBoolean(getConfig().getOrDefault("sendIdTokenOnLogout", Boolean.TRUE.toString()));
+    }
+
+    public void setSendIdTokenOnLogout(boolean value) {
+        getConfig().put("sendIdTokenOnLogout", Boolean.valueOf(value).toString());
+    }
+
     public String getPublicKeySignatureVerifier() {
         return getConfig().get("publicKeySignatureVerifier");
     }

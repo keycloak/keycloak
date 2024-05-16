@@ -7,15 +7,19 @@ import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
 import { AccountRow } from "./AccountRow";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 
-const LinkedAccounts = () => {
+export const LinkedAccounts = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const [accounts, setAccounts] = useState<LinkedAccountRepresentation[]>([]);
 
   const [key, setKey] = useState(1);
   const refresh = () => setKey(key + 1);
 
-  usePromise((signal) => getLinkedAccounts({ signal }), setAccounts, [key]);
+  usePromise((signal) => getLinkedAccounts({ signal, context }), setAccounts, [
+    key,
+  ]);
 
   const linkedAccounts = useMemo(
     () => accounts.filter((account) => account.connected),
@@ -34,7 +38,7 @@ const LinkedAccounts = () => {
     >
       <Stack hasGutter>
         <StackItem>
-          <Title headingLevel="h2" className="pf-u-mb-lg" size="xl">
+          <Title headingLevel="h2" className="pf-v5-u-mb-lg" size="xl">
             {t("linkedLoginProviders")}
           </Title>
           <DataList id="linked-idps" aria-label={t("linkedLoginProviders")}>
@@ -53,7 +57,11 @@ const LinkedAccounts = () => {
           </DataList>
         </StackItem>
         <StackItem>
-          <Title headingLevel="h2" className="pf-u-mt-xl pf-u-mb-lg" size="xl">
+          <Title
+            headingLevel="h2"
+            className="pf-v5-u-mt-xl pf-v5-u-mb-lg"
+            size="xl"
+          >
             {t("unlinkedLoginProviders")}
           </Title>
           <DataList id="unlinked-idps" aria-label={t("unlinkedLoginProviders")}>

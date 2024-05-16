@@ -3,21 +3,22 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
   Popover,
   Text,
   TextContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { useHelp } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
@@ -33,6 +34,8 @@ import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 
 export const DefaultsGroupsTab = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [isKebabOpen, toggleKebab] = useToggle();
@@ -132,7 +135,7 @@ export const DefaultsGroupsTab = () => {
       {enabled && (
         <Popover
           bodyContent={
-            <Trans i18nKey="realm-settings-help:defaultGroups">
+            <Trans i18nKey="defaultGroupsHelp">
               {" "}
               <Link to={toUserFederation({ realm })} />.
             </Trans>
@@ -141,7 +144,7 @@ export const DefaultsGroupsTab = () => {
           <TextContent
             className="keycloak__section_intro__help"
             style={{
-              paddingLeft: "var(--pf-c-page__main-section--PaddingLeft)",
+              paddingLeft: "var(--pf-v5-c-page__main-section--PaddingLeft)",
             }}
           >
             <Text>
@@ -222,8 +225,10 @@ export const DefaultsGroupsTab = () => {
               <Trans i18nKey="noDefaultGroupsInstructions">
                 {" "}
                 <Link
-                  className="pf-u-font-weight-light"
+                  className="pf-v5-u-font-weight-light"
                   to={toUserFederation({ realm })}
+                  role="navigation"
+                  aria-label={t("identityBrokeringLink")}
                 />
                 Add groups...
               </Trans>

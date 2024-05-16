@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -53,12 +54,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  * @author tkyjovsk
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -105,7 +100,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         driver2.findElement(By.id("password")).submit();
         assertCurrentUrlEquals(sessionPortalPage, driver2);
         String pageSource = driver2.getPageSource();
-        assertThat(pageSource, containsString("Counter=1"));
+        MatcherAssert.assertThat(pageSource, containsString("Counter=1"));
         // Counter increased now
         driver2.navigate().to(sessionPortalPage.toString());
         pageSource = driver2.getPageSource();
@@ -129,7 +124,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         driver2.navigate().to(sessionPortalPage.toString());
         assertCurrentUrlEquals(sessionPortalPage, driver2);
         pageSource = driver2.getPageSource();
-        assertThat(pageSource, containsString("Counter=3"));
+        MatcherAssert.assertThat(pageSource, containsString("Counter=3"));
 
         // Logout in driver2
         driver2.navigate().to(logoutUri);

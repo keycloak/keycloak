@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.federation.ldap.noimport;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -45,7 +44,6 @@ public class LDAPMultipleAttributesNoImportTest extends LDAPMultipleAttributesTe
 
     @Test
     public void testUserImport() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             UserStorageUtil.userCache(session).clear();

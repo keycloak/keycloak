@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,17 @@ import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
@@ -84,6 +90,10 @@ public class CRSerializationTest {
         assertEquals("usernameSecretKey", databaseSpec.getUsernameSecret().getKey());
         assertEquals("passwordSecret", databaseSpec.getPasswordSecret().getName());
         assertEquals("passwordSecretKey", databaseSpec.getPasswordSecret().getKey());
+
+        HttpManagementSpec managementSpec = keycloak.getSpec().getHttpManagementSpec();
+        assertNotNull(managementSpec);
+        assertEquals(9003, managementSpec.getPort());
     }
 
     @Test
@@ -127,4 +137,80 @@ public class CRSerializationTest {
         assertThat(hostnameSpec.isStrict(), nullValue());
         assertThat(hostnameSpec.isStrictBackchannel(), nullValue());
     }
+
+    @Test
+    public void resourcesSpecification() {
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+
+        ResourceRequirements resourceRequirements = keycloak.getSpec().getResourceRequirements();
+        assertThat(resourceRequirements, notNullValue());
+
+        assertThat(resourceRequirements.getClaims(), is(Collections.emptyList()));
+        assertThat(resourceRequirements.getAdditionalProperties(), is(Collections.emptyMap()));
+
+        // Requests
+        assertThat(resourceRequirements.getRequests(), notNullValue());
+        final var reqCpuQuantity = resourceRequirements.getRequests().get("cpu");
+        assertThat(reqCpuQuantity, notNullValue());
+        assertThat(reqCpuQuantity.getAmount(), is("500"));
+        assertThat(reqCpuQuantity.getFormat(), is("m"));
+        final var reqMemQuantity = resourceRequirements.getRequests().get("memory");
+        assertThat(reqMemQuantity, notNullValue());
+        assertThat(reqMemQuantity.getAmount(), is("500"));
+        assertThat(reqMemQuantity.getFormat(), is("M"));
+
+        // Limits
+        assertThat(resourceRequirements.getLimits(), notNullValue());
+        final var limitCpuQuantity = resourceRequirements.getLimits().get("cpu");
+        assertThat(limitCpuQuantity, notNullValue());
+        assertThat(limitCpuQuantity.getAmount(), is("2"));
+        assertThat(limitCpuQuantity.getFormat(), emptyString());
+        final var limitMemQuantity = resourceRequirements.getLimits().get("memory");
+        assertThat(limitMemQuantity, notNullValue());
+        assertThat(limitMemQuantity.getAmount(), is("1500"));
+        assertThat(limitMemQuantity.getFormat(), is("M"));
+    }
+
+    @Test
+    public void resourcesSpecificationOnlyLimit() {
+        final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
+
+        ResourceRequirements resourceRequirements = keycloak.getSpec().getResourceRequirements();
+        assertThat(resourceRequirements, notNullValue());
+        assertThat(resourceRequirements.getRequests(), is(Collections.emptyMap()));
+
+        assertThat(resourceRequirements.getLimits(), notNullValue());
+        final var limitCpuQuantity = resourceRequirements.getLimits().get("cpu");
+        assertThat(limitCpuQuantity, notNullValue());
+        assertThat(limitCpuQuantity.getAmount(), is("3"));
+        assertThat(limitCpuQuantity.getFormat(), emptyString());
+        final var limitMemQuantity = resourceRequirements.getLimits().get("memory");
+        assertThat(limitMemQuantity, notNullValue());
+        assertThat(limitMemQuantity.getAmount(), is("5"));
+        assertThat(limitMemQuantity.getFormat(), is("Gi"));
+    }
+
+    @Test
+    public void resourcesSpecificationRealmImport() {
+        final KeycloakRealmImport keycloak = K8sUtils.getResourceFromFile("test-serialization-realmimport-cr.yml", KeycloakRealmImport.class);
+
+        ResourceRequirements resourceRequirements = keycloak.getSpec().getResourceRequirements();
+        assertThat(resourceRequirements, notNullValue());
+
+        var requests = resourceRequirements.getRequests();
+        assertThat(requests, notNullValue());
+        assertThat(requests, is(Collections.emptyMap()));
+
+        var limits = resourceRequirements.getLimits();
+        assertThat(limits, notNullValue());
+        final var limitCpuQuantity = limits.get("cpu");
+        assertThat(limitCpuQuantity, notNullValue());
+        assertThat(limitCpuQuantity.getAmount(), is("4"));
+        assertThat(limitCpuQuantity.getFormat(), emptyString());
+        final var limitMemQuantity = limits.get("memory");
+        assertThat(limitMemQuantity, notNullValue());
+        assertThat(limitMemQuantity.getAmount(), is("8"));
+        assertThat(limitMemQuantity.getFormat(), is("Gi"));
+    }
+
 }

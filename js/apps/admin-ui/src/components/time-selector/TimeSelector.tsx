@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  DropdownProps,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
   TextInput,
   TextInputProps,
 } from "@patternfly/react-core";
+import {
+  DropdownProps,
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 
 export type Unit = "second" | "minute" | "hour" | "day";
 
@@ -22,7 +24,10 @@ const allTimes: TimeUnit[] = [
   { unit: "day", label: "times.days", multiplier: 86400 },
 ];
 
-export type TimeSelectorProps = Omit<TextInputProps, "onChange"> &
+export type TimeSelectorProps = Omit<
+  TextInputProps,
+  "onChange" | "defaultValue"
+> &
   Pick<DropdownProps, "menuAppendTo"> & {
     value?: number;
     units?: Unit[];
@@ -30,17 +35,17 @@ export type TimeSelectorProps = Omit<TextInputProps, "onChange"> &
     className?: string;
   };
 
-export const getTimeUnit = (value: number | undefined = 0) =>
-  allTimes.reduce(
+const getTimeUnit = (units: TimeUnit[], value = 0) =>
+  units.reduce(
     (v, time) =>
       value % time.multiplier === 0 && v.multiplier < time.multiplier
         ? time
         : v,
-    allTimes[0],
+    units[0],
   );
 
 export const toHumanFormat = (value: number, locale: string) => {
-  const timeUnit = getTimeUnit(value);
+  const timeUnit = getTimeUnit(allTimes, value);
   const formatter = new Intl.NumberFormat(locale, {
     style: "unit",
     unit: timeUnit.unit,
@@ -59,6 +64,8 @@ export const TimeSelector = ({
   ...rest
 }: TimeSelectorProps) => {
   const { t } = useTranslation();
+
+  const [lastMultiplier, setLastMultiplier] = useState<number>();
 
   const defaultMultiplier = useMemo(
     () => allTimes.find((time) => time.unit === units[0])?.multiplier,
@@ -83,14 +90,16 @@ export const TimeSelector = ({
   }, [units, multiplier]);
 
   useEffect(() => {
-    const multiplier = getTimeUnit(value).multiplier;
+    const multiplier = getTimeUnit(times, value).multiplier;
 
     if (value) {
       setMultiplier(multiplier);
       setTimeValue(value / multiplier);
+      setLastMultiplier(multiplier);
     } else {
       setTimeValue(value || "");
-      setMultiplier(defaultMultiplier);
+      setMultiplier(lastMultiplier ?? defaultMultiplier);
+      setLastMultiplier(lastMultiplier ?? defaultMultiplier);
     }
   }, [value, defaultMultiplier]);
 
@@ -116,7 +125,7 @@ export const TimeSelector = ({
           min={min || 0}
           value={timeValue}
           className={`${className}-input`}
-          onChange={(value) => {
+          onChange={(_event, value) => {
             updateTimeout("" === value ? value : parseInt(value));
           }}
         />

@@ -18,6 +18,10 @@
 package org.keycloak.quarkus.runtime.hostname;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
+import static org.keycloak.config.ProxyOptions.PROXY;
+import static org.keycloak.config.ProxyOptions.PROXY_HEADERS;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 import static org.keycloak.urls.UrlType.ADMIN;
 import static org.keycloak.urls.UrlType.LOCAL_ADMIN;
 import static org.keycloak.urls.UrlType.BACKEND;
@@ -33,17 +37,21 @@ import java.util.function.Function;
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.config.HostnameOptions;
+import org.keycloak.config.HostnameV1Options;
+import org.keycloak.config.ProxyOptions;
+import org.keycloak.config.ProxyOptions.Mode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 import org.keycloak.urls.UrlType;
+import org.keycloak.utils.KeycloakSessionUtil;
 
-public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory {
+public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(DefaultHostnameProvider.class);
     private static final String REALM_URI_SESSION_ATTRIBUTE = DefaultHostnameProvider.class.getName() + ".realmUrl";
@@ -187,7 +195,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     }
 
     protected URI getRealmFrontEndUrl() {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
 
         if (session == null) {
             return null;
@@ -237,15 +245,15 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     @Override
     public void init(Config.Scope config) {
-        boolean isHttpEnabled = Boolean.parseBoolean(Configuration.getConfigValue("kc.http-enabled").getValue());
-        String configPath = Configuration.getConfigValue("kc.http-relative-path").getValue();
+        boolean isHttpEnabled = Boolean.parseBoolean(getConfigValue("kc.http-enabled").getValue());
+        String configPath = getConfigValue("kc.http-relative-path").getValue();
 
         if (!configPath.startsWith("/")) {
             configPath = "/" + configPath;
         }
 
-        String httpPort = Configuration.getConfigValue("kc.https-port").getValue();
-        String configPort = isHttpEnabled ? Configuration.getConfigValue("kc.http-port").getValue() : httpPort ;
+        String httpsPort = getConfigValue("kc.https-port").getValue();
+        String configPort = isHttpEnabled ? getConfigValue("kc.http-port").getValue() : httpsPort ;
 
         String scheme = isHttpEnabled ? "http://" : "https://";
 
@@ -264,7 +272,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         if (frontEndHostName != null && frontEndBaseUri != null) {
-            throw new RuntimeException("You can not set both '" + HostnameOptions.HOSTNAME.getKey() + "' and '" + HostnameOptions.HOSTNAME_URL.getKey() + "' options");
+            throw new RuntimeException("You can not set both '" + HostnameV1Options.HOSTNAME.getKey() + "' and '" + HostnameV1Options.HOSTNAME_URL.getKey() + "' options");
         }
 
         if (config.getBoolean("strict", false) && (frontEndHostName == null && frontEndBaseUri == null)) {
@@ -285,15 +293,21 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         defaultPath = config.get("path", frontEndBaseUri == null ? null : frontEndBaseUri.getPath());
-        noProxy = Configuration.getConfigValue("kc.proxy").getValue().equals("false");
-        defaultTlsPort = Integer.parseInt(httpPort);
+
+        if (getKcConfigValue(PROXY_HEADERS.getKey()).getValue() != null) { // proxy-headers option was explicitly configured
+            noProxy = false;
+        } else { // falling back to proxy option
+            noProxy = Mode.none.equals(ProxyOptions.Mode.valueOf(getKcConfigValue(PROXY.getKey()).getValue()));
+        }
+
+        defaultTlsPort = Integer.parseInt(httpsPort);
 
         if (defaultTlsPort == DEFAULT_HTTPS_PORT_VALUE) {
             defaultTlsPort = RESTEASY_DEFAULT_PORT_VALUE;
         }
 
         if (frontEndBaseUri == null) {
-            hostnamePort = Integer.parseInt(Configuration.getConfigValue("kc.hostname-port").getValue());
+            hostnamePort = Integer.parseInt(getConfigValue("kc.hostname-port").getValue());
         } else {
             hostnamePort = frontEndBaseUri.getPort();
         }
@@ -311,7 +325,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         if (adminHostName != null && adminBaseUri != null) {
-            throw new RuntimeException("You can not set both '" + HostnameOptions.HOSTNAME_ADMIN.getKey() + "' and '" + HostnameOptions.HOSTNAME_ADMIN_URL.getKey() + "' options");
+            throw new RuntimeException("You can not set both '" + HostnameV1Options.HOSTNAME_ADMIN.getKey() + "' and '" + HostnameV1Options.HOSTNAME_ADMIN_URL.getKey() + "' options");
         }
 
         if (adminBaseUri != null) {
@@ -342,5 +356,10 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         return defaultValue;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Feature.HOSTNAME_V1);
     }
 }

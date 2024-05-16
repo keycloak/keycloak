@@ -5,11 +5,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -70,18 +71,27 @@ public class PkceUtils {
     public static void checkParamsForPkceEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername, EventBuilder event, Cors cors) {
         // check whether code verifier is specified
         if (codeVerifier == null) {
-            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorMessage = "PKCE code verifier not specified";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
         verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername, event, cors);
     }
 
     public static void checkParamsForPkceNotEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername, EventBuilder event, Cors cors) {
         if (codeChallenge != null && codeVerifier == null) {
-            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorMessage = "PKCE code verifier not specified";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        if (codeChallenge == null && codeVerifier != null) {
+            String errorMessage = "PKCE code verifier specified but challenge not present in authorization";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CODE_VERIFIER);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (codeChallenge != null) {
@@ -93,9 +103,11 @@ public class PkceUtils {
         // check whether code verifier is formatted along with the PKCE specification
 
         if (!isValidPkceCodeVerifier(codeVerifier)) {
-            logger.infof("PKCE invalid code verifier");
+            String errorReason = "Invalid code verifier";
+            String errorMessage = "PKCE verification failed: " + errorReason;
+            event.detail(Details.REASON, errorReason);
             event.error(Errors.INVALID_CODE_VERIFIER);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE invalid code verifier", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
@@ -111,14 +123,18 @@ public class PkceUtils {
                 codeVerifierEncoded = codeVerifier;
             }
         } catch (Exception nae) {
-            logger.infof("PKCE code verification failed, not supported algorithm specified");
+            String errorReason = "Unsupported algorithm specified";
+            String errorMessage = "PKCE verification failed: " + errorReason;
+            event.detail(Details.REASON, errorReason);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verification failed, not supported algorithm specified", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
         if (!codeChallenge.equals(codeVerifierEncoded)) {
-            logger.warnf("PKCE verification failed. authUserId = %s, authUsername = %s", authUserId, authUsername);
+            String errorReason = "Code mismatch";
+            String errorMessage = "PKCE verification failed: " + errorReason;
+            event.detail(Details.REASON, errorReason);
             event.error(Errors.PKCE_VERIFICATION_FAILED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE verification failed", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         } else {
             logger.debugf("PKCE verification success. codeVerifierEncoded = %s, codeChallenge = %s", codeVerifierEncoded, codeChallenge);
         }
@@ -126,11 +142,11 @@ public class PkceUtils {
 
     private static boolean isValidPkceCodeVerifier(String codeVerifier) {
         if (codeVerifier.length() < OIDCLoginProtocol.PKCE_CODE_VERIFIER_MIN_LENGTH) {
-            logger.infof(" Error: PKCE codeVerifier length under lower limit , codeVerifier = %s", codeVerifier);
+            logger.debugf(" Error: PKCE codeVerifier length under lower limit , codeVerifier = %s", codeVerifier);
             return false;
         }
         if (codeVerifier.length() > OIDCLoginProtocol.PKCE_CODE_VERIFIER_MAX_LENGTH) {
-            logger.infof(" Error: PKCE codeVerifier length over upper limit , codeVerifier = %s", codeVerifier);
+            logger.debugf(" Error: PKCE codeVerifier length over upper limit , codeVerifier = %s", codeVerifier);
             return false;
         }
         Matcher m = VALID_CODE_VERIFIER_PATTERN.matcher(codeVerifier);

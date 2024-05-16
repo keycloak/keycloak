@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -100,6 +101,16 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         samlApp.setSecret("secret2");
         samlApp.setServiceAccountsEnabled(Boolean.TRUE);
         samlApp.setProtocol("saml");
+
+        ClientRepresentation noScopeApp = KeycloakModelUtils.createClient(testRealm, "no-scope");
+        noScopeApp.setEnabled(true);
+        noScopeApp.setSecret("password");
+        noScopeApp.setRedirectUris(List.of(
+            "http://localhost:8180/auth/realms/master/app/auth/*",
+            "https://localhost:8543/auth/realms/master/app/auth/*"
+        ));
+        noScopeApp.setOptionalClientScopes(List.of());
+        noScopeApp.setDefaultClientScopes(List.of());
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("no-permissions");
@@ -160,9 +171,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
         assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf"), rep.getNbf());
+        assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
+        assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
+        assertEquals(Optional.ofNullable(jsonNode.get("nbf")).map(JsonNode::asLong).orElse(null), rep.getNbf());
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
 
         List<String> audiences = new ArrayList<>();
@@ -200,7 +211,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
 
         assertTrue(jsonNode.get("active").asBoolean());
-        assertEquals(sessionId, jsonNode.get("session_state").asText());
+        assertEquals(sessionId, jsonNode.get("sid").asText());
         assertEquals("test-app", jsonNode.get("client_id").asText());
         assertTrue(jsonNode.has("exp"));
         assertTrue(jsonNode.has("iat"));
@@ -215,10 +226,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(rep.isActive());
         assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("session_state").asText(), rep.getSessionState());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf"), rep.getNbf());
+        assertEquals(jsonNode.get("sid").asText(), rep.getSessionState());
+        assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
+        assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
+        assertEquals(Optional.ofNullable(jsonNode.get("nbf")).map(JsonNode::asLong).orElse(null), rep.getNbf());
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
         assertEquals(jsonNode.get("typ").asText(), "Refresh");
@@ -322,7 +333,29 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         AbstractOIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
+    @Test
+    public void testIntrospectAccessTokenWithoutScope() throws Exception {
+        oauth.clientId("no-scope").openid(false).doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        RealmRepresentation testRealm = adminClient.realm("test").toRepresentation();
+        List<ClientScopeRepresentation> preExistingClientScopes = testRealm.getClientScopes();
+        testRealm.setClientScopes(List.of());
+        adminClient.realm("test").update(testRealm);
+        try {
+            EventRepresentation loginEvent = events.expectLogin().client("no-scope").assertEvent();
+            AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("no-scope", "password", accessTokenResponse.getAccessToken());
+            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
 
+            assertTrue(rep.isActive());
+            assertEquals("test-user@localhost", rep.getUserName());
+            assertEquals("no-scope", rep.getClientId());
+            assertNull(rep.getScope());
+        } finally {
+            testRealm.setClientScopes(preExistingClientScopes);
+            adminClient.realm("test").update(testRealm);
+        }
+    }
 
     @Test
     public void testIntrospectAccessTokenES256() throws Exception {

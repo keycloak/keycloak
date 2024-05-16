@@ -23,6 +23,7 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.LDAPConstants;
@@ -31,6 +32,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -38,16 +42,20 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
+import org.keycloak.validate.validators.LengthValidator;
+
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -86,6 +94,10 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
             appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
 
         });
+
+        // User profile unmanaged attributes supported
+        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
     }
 
 
@@ -147,14 +159,23 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
     public void test03WritableMapper() {
         String mapperId = addPhotoMapper(testingClient);
 
-        // Create user joe with jpegPHoto
+        // Allow long attribute for photos
+        UPConfig upc = adminClient.realm("test").users().userProfile().getConfiguration();
+        UPAttribute upa = new UPAttribute("jpegPhoto");
+        upa.setValidations(Map.of(LengthValidator.ID, Map.of(LengthValidator.KEY_MIN, "0", LengthValidator.KEY_MAX, JPEG_PHOTO_BASE64.length() * 2)));
+        upa.setPermissions(new UPAttributePermissions(Set.of("user", "admin"), Set.of("user", "admin")));
+        upc.getAttributes().add(upa);
+        adminClient.realm("test").users().userProfile().update(upc);
+
+        // Create user joe with jpegPhoto
         UserRepresentation joe = new UserRepresentation();
         joe.setUsername("joephoto");
         joe.setEmail("joe@photo.org");
-        joe.setAttributes(Collections.singletonMap(LDAPConstants.JPEG_PHOTO, Arrays.asList(JPEG_PHOTO_BASE64)));
-        Response response = adminClient.realm("test").users().create(joe);
-        response.close();
+        joe.setAttributes(Collections.singletonMap(LDAPConstants.JPEG_PHOTO, List.of(JPEG_PHOTO_BASE64)));
 
+        try (Response response = adminClient.realm("test").users().create(joe)) {
+            assertThat(response.getStatusInfo().getStatusCode(), equalTo(201));
+        }
 
         // Assert he is found including jpegPhoto
         joe = getUserAndAssertPhoto("joephoto", true);

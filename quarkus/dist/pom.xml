@@ -60,7 +60,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-${project.version}</finalName>
+        <finalName>${dist.archive.file}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

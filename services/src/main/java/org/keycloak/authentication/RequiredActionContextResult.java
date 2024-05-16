@@ -137,6 +137,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
+    public String getAction() {
+        return getFactory().getId();
+    }
+
+    @Override
     public URI getActionUrl(String code) {
         ClientModel client = authenticationSession.getClient();
         return LoginActionsService.requiredActionProcessor(getUriInfo())
@@ -144,6 +149,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
                 .queryParam(Constants.EXECUTION, getExecution())
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, authenticationSession.getTabId())
+                .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession))
                 .build(getRealm().getName());
     }
 

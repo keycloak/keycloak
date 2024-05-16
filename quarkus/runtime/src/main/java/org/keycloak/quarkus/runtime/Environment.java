@@ -31,12 +31,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.quarkus.runtime.LaunchMode;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.SmallRyeConfig;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -49,6 +50,9 @@ public final class Environment {
     public static final String DEV_PROFILE_VALUE = "dev";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
+
+    private static volatile AbstractCommand parsedCommand;
+
     private Environment() {}
 
     public static Boolean isRebuild() {
@@ -101,7 +105,7 @@ public final class Environment {
 
     public static String getProfile() {
         String profile = System.getProperty(PROFILE);
-        
+
         if (profile == null) {
             profile = System.getenv(ENV_PROFILE);
         }
@@ -111,7 +115,7 @@ public final class Environment {
 
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
-        System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
+        System.setProperty(LaunchMode.current().getProfileKey(), profile);
         System.setProperty(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, profile);
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
@@ -132,7 +136,7 @@ public final class Environment {
         if (profile == null) {
             profile = defaultProfile;
         }
-        
+
         return profile;
     }
 
@@ -249,9 +253,24 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesFileProfileConfigResolver());
+            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesProfileConfigResolver(QuarkusProfileConfigResolver::getConfig), new PropertiesFileProfileConfigResolver());
         }
 
         return profile;
+    }
+
+    /**
+     * Get parsed AbstractCommand we obtained from the CLI
+     */
+    public static Optional<AbstractCommand> getParsedCommand() {
+        return Optional.ofNullable(parsedCommand);
+    }
+
+    public static boolean isParsedCommand(String commandName) {
+        return getParsedCommand().filter(f -> f.getName().equals(commandName)).isPresent();
+    }
+
+    public static void setParsedCommand(AbstractCommand command) {
+        Environment.parsedCommand = command;
     }
 }

@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
@@ -47,11 +48,13 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -72,17 +75,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -120,6 +125,10 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
         oauth.clientId("test-app");
+
+        // enable user profile unmanaged attributes
+        UserProfileResource upResource = adminClient.realm("test").users().userProfile();
+        VerifyProfileTest.enableUnmanagedAttributes(upResource);
     }
 
 
@@ -153,11 +162,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             reconnectAdminClient();
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "script-scripts/test-script-mapper1.js", false)).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "script-scripts/test-script-mapper2.js", true)).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3","computed-json-via-script", "computed-json-via-script", "JSON", true, true, "script-scripts/test-script-mapper3.js", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, true,"script-scripts/test-script-mapper1.js", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, true, "script-scripts/test-script-mapper2.js", true)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3","computed-json-via-script", "computed-json-via-script", "JSON", true, true, true, "script-scripts/test-script-mapper3.js", false)).close();
 
-            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "script-scripts/test-bad-script-mapper3.js", false));
+            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, true, "script-scripts/test-bad-script-mapper3.js", false));
             assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
             response.close();
         }
@@ -190,6 +199,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("country", "USA");
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
+            user.getAttributes().put("multi1", Stream.of("abc","bcd").collect(Collectors.toList()));
+            user.getAttributes().put("multi2", Stream.of("abc","cde").collect(Collectors.toList()));
             user.singleAttribute("json-attribute", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}");
             user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 3, \"b\": 4, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
 
@@ -199,31 +210,33 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
-            ProtocolMapperRepresentation mapper = createAddressMapper(true, true, true);
+            ProtocolMapperRepresentation mapper = createAddressMapper(true, true, true, true);
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.REGION), "region_some");
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.COUNTRY), "country_some");
             mapper.getConfig().remove(AddressMapper.getModelPropertyName(AddressClaimSet.POSTAL_CODE)); // Even if we remove protocolMapper config property, it should still default to postal_code
             app.getProtocolMappers().createMapper(mapper).close();
 
-            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", true, true);
+            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", true, true, true);
             app.getProtocolMappers().createMapper(hard).close();
-            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("dotted phone", "phone", "home\\.phone", "String", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("dotted phone", "phone", "home\\.phone", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("multi1", "multi1", "multi", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("multi2", "multi2", "multi", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, true, true,false)).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded")).close();
             app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, true, "'hello_' + user.username", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, true, "new java.util.ArrayList(['A','B'])", true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("json-attribute-mapper", "json-attribute", "claim-from-json-attribute",
-                    "JSON", true, true, false)).close();
+                    "JSON", true, true, true, false)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("json-attribute-mapper-multi", "json-attribute-multi", "claim-from-json-attribute-multi",
-                    "JSON", true, true, true)).close();
+                    "JSON", true, true, true, true)).close();
 
-            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
+            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, true, "func_tion foo(){ return 'fail';} foo()", false));
             assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
             response.close();
         }
@@ -303,6 +316,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertThat(jsonClaim.get("c"), instanceOf(Collection.class));
             assertThat(jsonClaim.get("d"), instanceOf(Map.class));
 
+            //assert that token claim is combination of two protocol mappers values
+            List <String> multiClaim = ( List <String>) accessToken.getOtherClaims().get("multi");
+            assertEquals(3, multiClaim.size());
+            assertThat(multiClaim, containsInAnyOrder("abc", "bcd", "cde"));
+
             oauth.idTokenHint(response.getIdToken()).openLogout();
         }
 
@@ -360,10 +378,10 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create a user attr mapping for some claims that exist as properties in the tokens
         ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-        app.getProtocolMappers().createMapper(createClaimMapper("userid-as-sub", "userid", "sub", "String", true, true, false)).close();
-        app.getProtocolMappers().createMapper(createClaimMapper("useraud", "useraud", "aud", "String", true, true, true)).close();
-        app.getProtocolMappers().createMapper(createHardcodedClaim("website-hardcoded", "website", "http://localhost", "String", true, true)).close();
-        app.getProtocolMappers().createMapper(createHardcodedClaim("iat-hardcoded", "iat", "123", "long", true, false)).close();
+        app.getProtocolMappers().createMapper(createClaimMapper("userid-as-sub", "userid", "sub", "String", false, true, true,false)).close();
+        app.getProtocolMappers().createMapper(createClaimMapper("useraud", "useraud", "aud", "String", true, true, true, true)).close();
+        app.getProtocolMappers().createMapper(createHardcodedClaim("website-hardcoded", "website", "http://localhost", "String", true, true, true)).close();
+        app.getProtocolMappers().createMapper(createHardcodedClaim("iat-hardcoded", "iat", "123", "long", true, false, true)).close();
 
         // login
         OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
@@ -376,7 +394,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         assertThat(Arrays.asList(idToken.getAudience()), hasItems("test-app", "other"));
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals(user.firstAttribute("userid"), accessToken.getSubject());
+        assertNotEquals(user.firstAttribute("userid"), accessToken.getSubject());
         assertEquals("http://localhost", accessToken.getWebsite());
         assertNotNull(accessToken.getAudience());
         assertThat(Arrays.asList(accessToken.getAudience()), hasItems("test-app", "other"));
@@ -432,6 +450,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                 "claim-name",
                 String.class.getSimpleName(),
                 true,
+                true,
                 true
         )))) {
             mapperId = getCreatedId(response);
@@ -481,6 +500,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                 "claim-name",
                 String.class.getSimpleName(),
                 true,
+                true,
                 true
         )))) {
             mapperId = getCreatedId(response);
@@ -519,8 +539,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             userResource.update(user);
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, true, false)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, true, true,false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, true, true,false)).close();
         }
 
         {
@@ -528,7 +548,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             Object empty = idToken.getOtherClaims().get("empty");
-            assertThat((empty == null ? null : (String) empty), isEmptyOrNullString());
+            assertThat((empty == null ? null : (String) empty), is(emptyOrNullString()));
             Object nulll = idToken.getOtherClaims().get("null");
             assertNull(nulll);
 
@@ -569,8 +589,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     
     public void testUserRoleToAttributeMappers() throws Exception {
         // Add mapper for realm roles
-        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
-        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper("test-app", null, "Client roles mapper", "roles-custom.test-app", true, true);
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper("test-app", null, "Client roles mapper", "roles-custom.test-app", true, true, true);
 
         ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
@@ -792,7 +812,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     public void testRoleMapperWithRoleInheritedFromMoreGroups() throws Exception {
         // Create client-mapper
         String clientId = "test-app";
-        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app", true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app", true, true, true);
 
         ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(clientMapper));
@@ -825,8 +845,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     public void testUserGroupRoleToAttributeMappers() throws Exception {
         // Add mapper for realm roles
         String clientId = "test-app";
-        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
-        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, "ta.", "Client roles mapper", "roles-custom.test-app", true, true);
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, "ta.", "Client roles mapper", "roles-custom.test-app", true, true, true);
 
         ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
@@ -861,8 +881,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     @Test
     public void testUserGroupRoleToAttributeMappersNotScopedOtherApp() throws Exception {
         String clientId = "test-app-authz";
-        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
-        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom." + clientId, true, true);
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom." + clientId, true, true, true);
 
         ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
@@ -901,8 +921,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     @Test
     public void testUserGroupRoleToAttributeMappersScoped() throws Exception {
         String clientId = "test-app-scope";
-        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
-        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app-scope", true, true);
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, true);
 
         ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
@@ -935,8 +955,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     @Test
     public void testUserGroupRoleToAttributeMappersScopedClientNotSet() throws Exception {
         String clientId = "test-app-scope";
-        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
-        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true);
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, true);
 
         ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
@@ -971,8 +991,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     @Test
     public void testSingleValuedRoleMapping() throws Exception {
         String clientId = "test-app-scope";
-        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, false);
-        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, false);
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true,false);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, true, false);
 
         ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
@@ -1008,8 +1028,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         final String diffClient = "test-app";
         final String realmName = "test";
 
-        final ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
-        final ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(diffClient, null, "Client roles mapper", "roles-custom.test-app", true, true);
+        final ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
+        final ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(diffClient, null, "Client roles mapper", "roles-custom.test-app", true, true, true);
 
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, realmName, clientId).setDirectAccessGrantsEnabled(true);
              ProtocolMappersUpdater protocolMappers = new ProtocolMappersUpdater(cau.getResource().getProtocolMappers())) {
@@ -1057,7 +1077,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         userResource.joinGroup(group1.getId());
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, false, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true,false, false)).close();
 
         try {
             // test it
@@ -1097,7 +1117,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         userResource.joinGroup(group1.getId());
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true, false)).close();
 
         try {
             // test it
@@ -1138,7 +1158,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         userResource.joinGroup(group1.getId());
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true, true)).close();
 
         try {
             // test it
@@ -1177,7 +1197,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         userResource.joinGroup(group1.getId());
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, false, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false, false)).close();
 
         try {
             // test it
@@ -1212,7 +1232,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true, false)).close();
 
         try {
             // test it
@@ -1248,7 +1268,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true, true)).close();
 
         try {
             // test it
@@ -1291,7 +1311,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, false, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false, false)).close();
 
         try {
             // test it
@@ -1336,7 +1356,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true, false)).close();
 
         try {
             // test it
@@ -1383,7 +1403,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true, true)).close();
 
         try {
             // test it
@@ -1434,7 +1454,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, false, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false, false)).close();
 
         try {
             // test it
@@ -1483,7 +1503,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, false, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false, false)).close();
 
         try {
             // test it
@@ -1532,7 +1552,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true, false)).close();
 
         try {
             // test it
@@ -1586,7 +1606,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create the attribute mapper
         ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
-        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true)).close();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true,true, true)).close();
 
         try {
             // test it
@@ -1776,7 +1796,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dyn-scope-with-mapper:*");
         }});
         // create the attribute mapper
-        ProtocolMapperRepresentation protocolMapperRepresentation = createHardcodedClaim("dynamic-scope-hardcoded-mapper", "hardcoded-foo", "hardcoded-bar", "String", true, true);
+        ProtocolMapperRepresentation protocolMapperRepresentation = createHardcodedClaim("dynamic-scope-hardcoded-mapper", "hardcoded-foo", "hardcoded-bar", "String", true, true, true);
         scopeRep.setProtocolMappers(Collections.singletonList(protocolMapperRepresentation));
 
         try (Response resp = adminClient.realm("test").clientScopes().create(scopeRep)) {

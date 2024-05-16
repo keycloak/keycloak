@@ -22,6 +22,22 @@
 *CLI:* `${option.keyCli}` +
 *Env:* `${option.keyEnv}`
 --
+
+<#if option.enabledWhen?has_content>
+${option.enabledWhen!}
+</#if>
+
+<#if option.deprecated?has_content>
+<#-- Either mark the whole option as deprecated, or just selected values -->
+<#if !option.deprecated.deprecatedValues?has_content>
+*DEPRECATED.*
+</#if>
+${option.deprecated.note!}<#if option.deprecated.newOptionsKeys?has_content><#if option.deprecated.note?has_content> </#if>Use: <#list option.deprecated.newOptionsKeys as key>`+${key}+`<#if key?has_next>, </#if></#list>.</#if>
+<#if option.deprecated.deprecatedValues?has_content>
+*Deprecated values: <#list option.deprecated.deprecatedValues as value>`+${value}+`<#if value?has_next>, </#if></#list>*
+</#if>
+</#if>
+
 |<#if option.expectedValues?has_content>
 <#list option.expectedValues as value>`+${value!}+`<#if option.defaultValue?has_content && value = option.defaultValue> (default)</#if><#if value?has_next>, </#if></#list>
 <#else>

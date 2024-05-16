@@ -19,10 +19,8 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.StickySessionEncoderProvider;
@@ -34,7 +32,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory {
+public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanStickySessionEncoderProviderFactory.class);
 
@@ -88,10 +86,5 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
                 .defaultValue(true)
                 .add()
                 .build();
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

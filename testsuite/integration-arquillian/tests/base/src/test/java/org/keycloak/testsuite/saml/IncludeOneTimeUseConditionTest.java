@@ -18,14 +18,11 @@ package org.keycloak.testsuite.saml;
 
 import com.google.common.collect.Collections2;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.dom.saml.v2.assertion.ConditionAbstractType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient.Binding;

@@ -84,6 +84,10 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>
 
+        <!-- Organization -->
+        <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationDomainEntity</class>
+
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>

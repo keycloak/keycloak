@@ -40,6 +40,7 @@ import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import io.undertow.server.handlers.proxy.RouteIteratorFactory;
@@ -50,9 +51,6 @@ import org.xnio.OptionMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
-
-import static org.keycloak.services.managers.AuthenticationSessionManager.AUTH_SESSION_ID;
-import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 
 /**
  * Loadbalancer on embedded undertow. Supports sticky session over "AUTH_SESSION_ID" cookie and failover to different node when sticky node not available.
@@ -177,7 +175,7 @@ public class SimpleUndertowLoadBalancer {
     private HttpHandler createHandler() throws Exception {
 
         // TODO: configurable options if needed
-        String[] sessionIds = {AUTH_SESSION_ID, AUTH_SESSION_ID + LEGACY_COOKIE};
+        String[] sessionIds = {CookieType.AUTH_SESSION_ID.getName(), CookieType.AUTH_SESSION_ID.getSameSiteLegacyName()};
         int connectionsPerThread = 20;
         int problemServerRetry = 5; // In case of unavailable node, we will try to ping him every 5 seconds to check if it's back
         int maxTime = 3600000; // 1 hour for proxy request timeout, so we can debug the backend keycloak servers

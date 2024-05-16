@@ -123,7 +123,7 @@ public class ClaimsParameterWithValueIdTokenMapper extends AbstractOIDCProtocolM
         }
 
         HardcodedClaim hardcodedClaimMapper = new HardcodedClaim();
-        hardcodedClaimMapper.setClaim(token, HardcodedClaim.create("hard", claimName, claim, "String", false, true), userSession);
+        hardcodedClaimMapper.setClaim(token, HardcodedClaim.create("hard", claimName, claim, "String", false, true, false), userSession);
     }
 
     public static ProtocolMapperModel createMapper(String name, String attributeValue, boolean idToken) {

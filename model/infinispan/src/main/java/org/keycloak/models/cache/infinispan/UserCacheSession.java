@@ -19,10 +19,12 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -54,15 +56,19 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.OnCreateComponent;
 import org.keycloak.storage.OnUpdateComponent;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.UserProfileDecorator;
+import org.keycloak.userprofile.UserProfileMetadata;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,7 +84,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateComponent {
+public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateComponent, UserProfileDecorator {
     protected static final Logger logger = Logger.getLogger(UserCacheSession.class);
     protected UserCacheManager cache;
     protected KeycloakSession session;
@@ -92,13 +98,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
     protected Map<String, UserModel> managedUsers = new HashMap<>();
-    private LegacyStoreManagers datastoreProvider;
+    private StoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
-        this.datastoreProvider = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
+        this.datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistAfterCompletion(getTransaction());
     }
 
@@ -117,7 +123,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return delegate;
     }
 
-    public void registerUserInvalidation(RealmModel realm,CachedUser user) {
+    public void registerUserInvalidation(CachedUser user) {
         cache.userUpdatedInvalidations(user.getId(), user.getUsername(), user.getEmail(), user.getRealm(), invalidations);
         invalidationEvents.add(UserUpdatedEvent.create(user.getId(), user.getUsername(), user.getEmail(), user.getRealm()));
     }
@@ -323,7 +329,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
             // its also hard to test stuff
             if (model.shouldInvalidate(cached)) {
-                registerUserInvalidation(realm, cached);
+                registerUserInvalidation(cached);
                 return getDelegate().getUserById(realm, cached.getId());
             }
         }
@@ -332,6 +338,20 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            // check if user is member of a disabled organization.
+            OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizationProvider.getByMember(delegate);
+            if (organization != null && organization.isManaged(delegate) && !organization.isEnabled()) {
+                return new ReadOnlyUserModelDelegate(delegate) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+        }
 
         StorageId storageId = delegate.getFederationLink() != null ?
                 new StorageId(delegate.getFederationLink(), delegate.getId()) : new StorageId(delegate.getId());
@@ -467,6 +487,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         return getDelegate().getGroupMembersStream(realm, group, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        return getDelegate().getGroupMembersStream(realm, group, search, exact, firstResult, maxResults);
     }
 
     @Override
@@ -945,5 +970,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (getDelegate() instanceof OnCreateComponent) {
             ((OnCreateComponent) getDelegate()).onCreate(session, realm, model);
         }
+    }
+
+    @Override
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
+        if (getDelegate() instanceof UserProfileDecorator) {
+            return ((UserProfileDecorator) getDelegate()).decorateUserProfile(providerId, metadata);
+        }
+        return List.of();
     }
 }

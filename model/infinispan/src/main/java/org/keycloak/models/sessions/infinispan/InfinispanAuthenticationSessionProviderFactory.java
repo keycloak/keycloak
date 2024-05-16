@@ -28,7 +28,6 @@ import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNote
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
-import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -68,8 +67,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     public static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
 
     public static final String REALM_REMOVED_AUTHSESSION_EVENT = "REALM_REMOVED_EVENT_AUTHSESSIONS";
-
-    public static final String CLIENT_REMOVED_AUTHSESSION_EVENT = "CLIENT_REMOVED_SESSION_AUTHSESSIONS";
 
     @Override
     public void init(Config.Scope config) {
@@ -117,18 +114,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
         cluster.registerListener(REALM_REMOVED_AUTHSESSION_EVENT, new AbstractAuthSessionClusterListener<RealmRemovedSessionEvent>(sessionFactory) {
 
             @Override
-            protected void eventReceived(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, RealmRemovedSessionEvent sessionEvent) {
+            protected void eventReceived(InfinispanAuthenticationSessionProvider provider, RealmRemovedSessionEvent sessionEvent) {
                 provider.onRealmRemovedEvent(sessionEvent.getRealmId());
             }
 
-        });
-
-        cluster.registerListener(CLIENT_REMOVED_AUTHSESSION_EVENT, new AbstractAuthSessionClusterListener<ClientRemovedSessionEvent>(sessionFactory) {
-
-            @Override
-            protected void eventReceived(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, ClientRemovedSessionEvent sessionEvent) {
-                provider.onClientRemovedEvent(sessionEvent.getRealmId(), sessionEvent.getClientUuid());
-            }
         });
 
         log.debug("Registered cluster listeners");

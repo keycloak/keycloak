@@ -4,16 +4,16 @@ const additionalUsersProfile_input_test_value =
   "additionalUsersProfile_input_test_value";
 
 export default class ProviderFacebookGeneralSettings extends ProviderBaseGeneralSettingsPage {
-  private additionalUsersProfileFieldsInput = "fetchedFields";
+  #additionalUsersProfileFieldsInput = "fetchedFields";
 
   public typeAdditionalUsersProfileFieldsInput(value: string) {
-    cy.findByTestId(this.additionalUsersProfileFieldsInput).type(value);
-    cy.findByTestId(this.additionalUsersProfileFieldsInput).blur();
+    cy.findByTestId(this.#additionalUsersProfileFieldsInput).type(value);
+    cy.findByTestId(this.#additionalUsersProfileFieldsInput).blur();
     return this;
   }
 
   public assertAdditionalUsersProfileFieldsInputEqual(value: string) {
-    cy.findByTestId(this.additionalUsersProfileFieldsInput).should(
+    cy.findByTestId(this.#additionalUsersProfileFieldsInput).should(
       "have.value",
       value,
     );

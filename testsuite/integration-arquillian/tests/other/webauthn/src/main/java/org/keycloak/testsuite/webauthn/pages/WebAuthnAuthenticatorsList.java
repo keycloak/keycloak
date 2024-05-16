@@ -37,17 +37,22 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElementOrNull;
  */
 public class WebAuthnAuthenticatorsList {
 
-    @FindBy(id = "kc-webauthn-authenticator")
+    @FindBy(xpath = "//div[contains(@id,'kc-webauthn-authenticator-item-')]")
     private List<WebElement> authenticators;
 
     public List<WebAuthnAuthenticatorItem> getItems() {
         try {
             List<WebAuthnAuthenticatorItem> items = new ArrayList<>();
-            for (WebElement auth : authenticators) {
-                String name = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-label")));
-                String createdAt = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-created")));
-                String createdAtLabel = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-created-label")));
-                String transport = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-transport")));
+            for (int i = 0; i < authenticators.size(); i++) {
+                WebElement auth = authenticators.get(i);
+                final String nameId = "kc-webauthn-authenticator-label-" + i;
+                String name = getTextFromElementOrNull(() -> auth.findElement(By.id(nameId)));
+                final String createdAtId = "kc-webauthn-authenticator-created-" + i;
+                String createdAt = getTextFromElementOrNull(() -> auth.findElement(By.id(createdAtId)));
+                final String createdAtLabelId = "kc-webauthn-authenticator-createdlabel-" + i;
+                String createdAtLabel = getTextFromElementOrNull(() -> auth.findElement(By.id(createdAtLabelId)));
+                final String transportId = "kc-webauthn-authenticator-transport-" + i;
+                String transport = getTextFromElementOrNull(() -> auth.findElement(By.id(transportId)));
                 items.add(new WebAuthnAuthenticatorItem(name, createdAt, createdAtLabel, transport));
             }
             return items;

@@ -1,16 +1,14 @@
+import { FormGroup, Split, SplitItem } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Split,
-  SplitItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   TimeSelector,
   Unit,
@@ -49,9 +47,7 @@ export const TokenLifespan = ({
     <FormGroup
       label={t(id)}
       fieldId={id}
-      labelIcon={
-        <HelpItem helpText={t(`${id}Help`)} fieldLabelId={`clients:${id}`} />
-      }
+      labelIcon={<HelpItem helpText={t(`${id}Help`)} fieldLabelId={id} />}
     >
       <Controller
         name={name}
@@ -62,7 +58,7 @@ export const TokenLifespan = ({
             <SplitItem>
               <Select
                 variant={SelectVariant.single}
-                onToggle={setOpen}
+                onToggle={(_event, val) => setOpen(val)}
                 isOpen={open}
                 onSelect={(_, value) => {
                   field.onChange(value);
@@ -76,7 +72,7 @@ export const TokenLifespan = ({
                 <SelectOption value={60}>{t(expires)}</SelectOption>
               </Select>
             </SplitItem>
-            <SplitItem>
+            <SplitItem hidden={!isExpireSet(field.value)}>
               <TimeSelector
                 validated={
                   isExpireSet(field.value) && field.value! < 1

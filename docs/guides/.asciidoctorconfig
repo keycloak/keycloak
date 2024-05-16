@@ -4,3 +4,6 @@
 :icons: font
 :section: guide
 :sections: guides
+
+ifndef::asciidoctorconfigdir[:asciidoctorconfigdir: .]
+include::{asciidoctorconfigdir}/attributes.adoc[]

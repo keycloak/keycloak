@@ -3,27 +3,31 @@
 	
 	<#list profile.attributes as attribute>
 
-		<#assign groupName = attribute.group!"">
-		<#if groupName != currentGroup>
-			<#assign currentGroup=groupName>
-			<#if currentGroup != "" >
-				<div class="${properties.kcFormGroupClass!}">
+		<#assign group = (attribute.group)!"">
+		<#if group != currentGroup>
+			<#assign currentGroup=group>
+			<#if currentGroup != "">
+				<div class="${properties.kcFormGroupClass!}"
+				<#list group.html5DataAnnotations as key, value>
+					data-${key}="${value}"
+				</#list>
+				>
 	
-					<#assign groupDisplayHeader=attribute.groupDisplayHeader!"">
+					<#assign groupDisplayHeader=group.displayHeader!"">
 					<#if groupDisplayHeader != "">
-						<#assign groupHeaderText=advancedMsg(attribute.groupDisplayHeader)!groupName>
+						<#assign groupHeaderText=advancedMsg(groupDisplayHeader)!group>
 					<#else>
-						<#assign groupHeaderText=groupName>
+						<#assign groupHeaderText=group.name!"">
 					</#if>
 					<div class="${properties.kcContentWrapperClass!}">
-						<label id="header-${groupName}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
+						<label id="header-${attribute.group.name}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
 					</div>
 	
-					<#assign groupDisplayDescription=attribute.groupDisplayDescription!"">
+					<#assign groupDisplayDescription=group.displayDescription!"">
 					<#if groupDisplayDescription != "">
-						<#assign groupDescriptionText=advancedMsg(attribute.groupDisplayDescription)!"">
+						<#assign groupDescriptionText=advancedMsg(groupDisplayDescription)!"">
 						<div class="${properties.kcLabelWrapperClass!}">
-							<label id="description-${groupName}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
+							<label id="description-${group.name}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
 						</div>
 					</#if>
 				</div>
@@ -53,6 +57,10 @@
 		</div>
 		<#nested "afterField" attribute>
 	</#list>
+
+	<#list profile.html5DataAnnotations?keys as key>
+		<script type="module" src="${url.resourcesPath}/js/${key}.js"></script>
+	</#list>
 </#macro>
 
 <#macro inputFieldByType attribute>
@@ -69,16 +77,22 @@
 		<@inputTagSelects attribute=attribute/>
 		<#break>
 	<#default>
-		<@inputTag attribute=attribute/>
+		<#if attribute.multivalued && attribute.values?has_content>
+			<#list attribute.values as value>
+				<@inputTag attribute=attribute value=value!''/>
+			</#list>
+		<#else>
+			<@inputTag attribute=attribute value=attribute.value!''/>
+		</#if>
 	</#switch>
 </#macro>
 
-<#macro inputTag attribute>
-	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(attribute.value!'')}" class="${properties.kcInputClass!}"
+<#macro inputTag attribute value>
+	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 		<#if attribute.readOnly>disabled</#if>
 		<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
-		<#if attribute.annotations.inputTypePlaceholder??>placeholder="${attribute.annotations.inputTypePlaceholder}"</#if>
+		<#if attribute.annotations.inputTypePlaceholder??>placeholder="${advancedMsg(attribute.annotations.inputTypePlaceholder)}"</#if>
 		<#if attribute.annotations.inputTypePattern??>pattern="${attribute.annotations.inputTypePattern}"</#if>
 		<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
 		<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>
@@ -86,6 +100,10 @@
 		<#if attribute.annotations.inputTypeMax??>max="${attribute.annotations.inputTypeMax}"</#if>
 		<#if attribute.annotations.inputTypeMin??>min="${attribute.annotations.inputTypeMin}"</#if>
 		<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
+		<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
+		<#list attribute.html5DataAnnotations as key, value>
+    		data-${key}="${value}"
+		</#list>
 	/>
 </#macro>
 
@@ -128,13 +146,14 @@
 		<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
 	<#elseif attribute.validators.options?? && attribute.validators.options.options??>
 		<#assign options=attribute.validators.options.options>
+	<#else>
+		<#assign options=[]>
 	</#if>
 
-	<#if options??>
-		<#list options as option>
+	<#list options as option>
 		<option value="${option}" <#if attribute.values?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
-		</#list>
-	</#if>	
+	</#list>
+
 	</select>
 </#macro>
 
@@ -144,21 +163,22 @@
 		<#assign classDiv=properties.kcInputClassRadio!>
 		<#assign classInput=properties.kcInputClassRadioInput!>
 		<#assign classLabel=properties.kcInputClassRadioLabel!>
-	<#else>	
+	<#else>
 		<#assign inputType='checkbox'>
 		<#assign classDiv=properties.kcInputClassCheckbox!>
 		<#assign classInput=properties.kcInputClassCheckboxInput!>
 		<#assign classLabel=properties.kcInputClassCheckboxLabel!>
 	</#if>
-	
+
 	<#if attribute.annotations.inputOptionsFromValidation?? && attribute.validators[attribute.annotations.inputOptionsFromValidation]?? && attribute.validators[attribute.annotations.inputOptionsFromValidation].options??>
 		<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
 	<#elseif attribute.validators.options?? && attribute.validators.options.options??>
 		<#assign options=attribute.validators.options.options>
+	<#else>
+		<#assign options=[]>
 	</#if>
 
-	<#if options??>
-		<#list options as option>
+	<#list options as option>
 		<div class="${classDiv}">
 			<input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
 				aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
@@ -167,8 +187,7 @@
 			/>
 			<label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
 		</div>
-		</#list>
-	</#if>	
+	</#list>
 </#macro>
 
 <#macro selectOptionLabelText attribute option>

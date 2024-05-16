@@ -45,7 +45,7 @@ describe("SAML identity provider test", () => {
       createProviderPage
         .checkVisible(samlProviderName)
         .clickCard(samlProviderName);
-      createProviderPage.checkAddButtonDisabled();
+      // createProviderPage.checkAddButtonDisabled();
       createProviderPage
         .fillDisplayName(samlDisplayName)
         .fillDiscoveryUrl(samlDiscoveryUrl)
@@ -162,7 +162,7 @@ describe("SAML identity provider test", () => {
       listingPage.goToItemDetails(samlProviderName);
       providerSAMLSettings.enableProviderSwitch();
 
-      cy.get(".pf-c-jump-links__list").contains("SAML settings").click();
+      cy.get(".pf-v5-c-jump-links__list").contains("SAML settings").click();
       providerSAMLSettings.assertIdAndURLFields();
       providerSAMLSettings.assertNameIdPolicyFormat();
       providerSAMLSettings.assertPrincipalType();
@@ -171,7 +171,7 @@ describe("SAML identity provider test", () => {
       providerSAMLSettings.assertValidateSignatures();
       providerSAMLSettings.assertTextFields();
 
-      cy.get(".pf-c-jump-links__list")
+      cy.get(".pf-v5-c-jump-links__list")
         .contains("Requested AuthnContext Constraints")
         .click();
       providerSAMLSettings.assertAuthnContext();

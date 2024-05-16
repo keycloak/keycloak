@@ -15,10 +15,11 @@
                                    type="password" autocomplete="on" autofocus
                                    aria-invalid="<#if messagesPerField.existsError('password')>true</#if>"
                             />
-                            <button class="pf-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+                            <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
                                     aria-controls="password"  data-password-toggle
+                                    data-icon-show="${properties.kcFormPasswordVisibilityIconShow!}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide!}"
                                     data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
-                                <i class="fa fa-eye" aria-hidden="true"></i>
+                                <i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
                             </button>
                         </div>
                         <#if messagesPerField.existsError('password')>

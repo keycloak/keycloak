@@ -16,25 +16,19 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.http.entity.ContentType;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.client.admin.cli.common.AttributeOperation;
-import org.keycloak.client.admin.cli.common.CmdStdinContext;
-import org.keycloak.client.admin.cli.config.ConfigData;
-import org.keycloak.client.admin.cli.util.AccessibleBufferOutputStream;
-import org.keycloak.client.admin.cli.util.Header;
-import org.keycloak.client.admin.cli.util.Headers;
-import org.keycloak.client.admin.cli.util.HeadersBody;
-import org.keycloak.client.admin.cli.util.HeadersBodyStatus;
-import org.keycloak.client.admin.cli.util.HttpUtil;
-import org.keycloak.client.admin.cli.util.OutputFormat;
-import org.keycloak.client.admin.cli.util.ReflectionUtil;
-import org.keycloak.client.admin.cli.util.ReturnFields;
+import org.keycloak.client.admin.cli.CmdStdinContext;
+import org.keycloak.client.admin.cli.ReflectionUtil;
+import org.keycloak.client.cli.common.AttributeOperation;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.util.AccessibleBufferOutputStream;
+import org.keycloak.client.cli.util.Header;
+import org.keycloak.client.cli.util.Headers;
+import org.keycloak.client.cli.util.HeadersBody;
+import org.keycloak.client.cli.util.HeadersBodyStatus;
+import org.keycloak.client.cli.util.HttpUtil;
+import org.keycloak.client.cli.util.OutputFormat;
+import org.keycloak.client.cli.util.ReturnFields;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -44,29 +38,33 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.DELETE;
-import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.SET;
-import static org.keycloak.client.admin.cli.util.AuthUtil.ensureToken;
-import static org.keycloak.client.admin.cli.util.ConfigUtil.credentialsAvailable;
-import static org.keycloak.client.admin.cli.util.ConfigUtil.loadConfig;
-import static org.keycloak.client.admin.cli.util.HttpUtil.checkSuccess;
-import static org.keycloak.client.admin.cli.util.HttpUtil.composeResourceUrl;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doGet;
-import static org.keycloak.client.admin.cli.util.IoUtil.copyStream;
-import static org.keycloak.client.admin.cli.util.IoUtil.printErr;
-import static org.keycloak.client.admin.cli.util.IoUtil.printOut;
-import static org.keycloak.client.admin.cli.util.OutputUtil.MAPPER;
-import static org.keycloak.client.admin.cli.util.OutputUtil.printAsCsv;
-import static org.keycloak.client.admin.cli.util.ParseUtil.mergeAttributes;
-import static org.keycloak.client.admin.cli.util.ParseUtil.parseFileOrStdin;
-import static org.keycloak.client.admin.cli.util.ParseUtil.parseKeyVal;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import static org.keycloak.client.cli.common.AttributeOperation.Type.DELETE;
+import static org.keycloak.client.cli.common.AttributeOperation.Type.SET;
+import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
+import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
+import static org.keycloak.client.cli.util.HttpUtil.checkSuccess;
+import static org.keycloak.client.cli.util.HttpUtil.composeResourceUrl;
+import static org.keycloak.client.cli.util.HttpUtil.doGet;
+import static org.keycloak.client.cli.util.IoUtil.copyStream;
+import static org.keycloak.client.cli.util.IoUtil.printErr;
+import static org.keycloak.client.cli.util.IoUtil.printOut;
+import static org.keycloak.client.cli.util.OutputUtil.MAPPER;
+import static org.keycloak.client.cli.util.OutputUtil.printAsCsv;
+import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -103,100 +101,52 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
 
     String httpVerb;
 
-    Headers headers = new Headers();
+    @Option(names = {"-h", "--header"}, description = "Set request header NAME to VALUE")
+    List<String> rawHeaders = new LinkedList<>();
 
-    List<AttributeOperation> attrs = new LinkedList<>();
-
-    Map<String, String> filter = new HashMap<>();
-
-    String url = null;
-
-
-    @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            initOptions();
-
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            processGlobalOptions();
-
-            processOptions(commandInvocation);
-
-            return process(commandInvocation);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
-        }
+    // to maintain relative positions of set and delete operations
+    static class AttributeOperations {
+        @Option(names = {"-s", "--set"}, required = true) String set;
+        @Option(names = {"-d", "--delete"}, required = true) String delete;
     }
 
-    abstract void initOptions();
+    @ArgGroup(exclusive = true, multiplicity = "0..*")
+    List<AttributeOperations> rawAttributeOperations = new ArrayList<>();
 
-    abstract String suggestHelp();
+    @Option(names = {"-q", "--query"}, description = "Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin")
+    List<String> rawFilters = new LinkedList<>();
 
+    @Parameters(arity = "0..1")
+    String uri;
 
-    void processOptions(CommandInvocation commandInvocation) {
+    List<AttributeOperation> attrs = new LinkedList<>();
+    Headers headers = new Headers();
+    Map<String, String> filter = new HashMap<>();
 
-        if (args == null || args.isEmpty()) {
-            throw new IllegalArgumentException("URI not specified");
-        }
+    @Override
+    protected void processOptions() {
+        super.processOptions();
 
-        Iterator<String> it = args.iterator();
-
-        while (it.hasNext()) {
-            String option = it.next();
-            switch (option) {
-                case "-s":
-                case "--set": {
-                    if (!it.hasNext()) {
-                        throw new IllegalArgumentException("Option " + option + " requires a value");
-                    }
-                    String[] keyVal = parseKeyVal(it.next());
-                    attrs.add(new AttributeOperation(SET, keyVal[0], keyVal[1]));
-                    break;
-                }
-                case "-d":
-                case "--delete": {
-                    attrs.add(new AttributeOperation(DELETE, it.next()));
-                    break;
-                }
-                case "-h":
-                case "--header": {
-                    requireValue(it, option);
-                    String[] keyVal = parseKeyVal(it.next());
-                    headers.add(keyVal[0], keyVal[1]);
-                    break;
-                }
-                case "-q":
-                case "--query": {
-                    if (!it.hasNext()) {
-                        throw new IllegalArgumentException("Option " + option + " requires a value");
-                    }
-                    String arg = it.next();
-                    String[] keyVal;
-                    if (arg.indexOf("=") == -1) {
-                        keyVal = new String[] {"", arg};
-                    } else {
-                        keyVal = parseKeyVal(arg);
-                    }
-                    filter.put(keyVal[0], keyVal[1]);
-                    break;
-                }
-                default: {
-                    if (url == null) {
-                        url = option;
-                    } else {
-                        throw new IllegalArgumentException("Invalid option: " + option);
-                    }
-                }
+        for (AttributeOperations entry : rawAttributeOperations) {
+            if (entry.delete != null) {
+                attrs.add(new AttributeOperation(DELETE, entry.delete));
+            } else {
+                String[] keyVal = parseKeyVal(entry.set);
+                attrs.add(new AttributeOperation(SET, keyVal[0], keyVal[1]));
             }
         }
 
+        for (String header : rawHeaders) {
+            String[] keyVal = parseKeyVal(header);
+            headers.add(keyVal[0], keyVal[1]);
+        }
 
-        if (url == null) {
+        for (String arg : rawFilters) {
+            String[] keyVal = parseKeyVal(arg);
+            filter.put(keyVal[0], keyVal[1]);
+        }
+
+        if (uri == null) {
             throw new IllegalArgumentException("Resource URI not specified");
         }
 
@@ -207,7 +157,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         try {
             outputFormat = OutputFormat.valueOf(format.toUpperCase());
         } catch (Exception e) {
-            throw new RuntimeException("Unsupported output format: " + format);
+            throw new IllegalArgumentException("Unsupported output format: " + format);
         }
 
         if (mergeMode && noMerge) {
@@ -223,10 +173,14 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         }
     }
 
+    @Override
+    protected boolean nothingToDo() {
+        return super.nothingToDo() && file == null && body == null && uri == null && fields == null
+                && rawAttributeOperations.isEmpty() && rawFilters.isEmpty() && rawHeaders.isEmpty();
+    }
 
-
-    public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-
+    @Override
+    protected void process() {
         // see if Content-Type header is explicitly set to non-json value
         Header ctype = headers.get("content-type");
 
@@ -246,7 +200,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                     }
                 }
             } else {
-                ctx = parseFileOrStdin(file);
+                ctx = CmdStdinContext.parseFileOrStdin(file);
             }
         } else if (body != null) {
             content = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
@@ -255,11 +209,11 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         ConfigData config = loadConfig();
         config = copyWithServerInfo(config);
 
-        setupTruststore(config, commandInvocation);
+        setupTruststore(config);
 
         String auth = null;
 
-        config = ensureAuthInfo(config, commandInvocation);
+        config = ensureAuthInfo(config);
         config = copyWithServerInfo(config);
         if (credentialsAvailable(config)) {
             auth = ensureToken(config);
@@ -277,7 +231,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         final String adminRoot = adminRestRoot != null ? adminRestRoot : composeAdminRoot(server);
 
 
-        String resourceUrl = composeResourceUrl(adminRoot, realm, url);
+        String resourceUrl = composeResourceUrl(adminRoot, realm, uri);
         String typeName = extractTypeNameFromUri(resourceUrl);
 
 
@@ -318,7 +272,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                 throw new RuntimeException("Can't set attributes on content of type other than application/json");
             }
 
-            ctx = mergeAttributes(ctx, MAPPER.createObjectNode(), attrs);
+            ctx = CmdStdinContext.mergeAttributes(ctx, MAPPER.createObjectNode(), attrs);
         }
 
         if (content == null && ctx.getContent() != null) {
@@ -385,8 +339,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         }
 
         if (outputResult) {
-
-            if (isCreateOrUpdate() && (response.getStatusCode() == 204 || id != null)) {
+            if (isCreateOrUpdate() && (response.getStatusCode() == 204 || id != null) && isGetByID(uri)) {
                 // get object for id
                 headers = new Headers();
                 if (auth != null) {
@@ -424,7 +377,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
             } else {
                 if (outputFormat != OutputFormat.JSON || returnFields != null) {
                     printErr("Cannot create CSV nor filter returned fields because the response is " + (compressed ? "compressed":"not json"));
-                    return CommandResult.SUCCESS;
+                    return;
                 }
                 // in theory the user could explicitly request json, but this could be a non-json response
                 // since there's no option for raw and we don't differentiate the default, there's no error about this
@@ -436,8 +389,6 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         if (lastByte != -1 && lastByte != 13 && lastByte != 10) {
             printErr("");
         }
-
-        return CommandResult.SUCCESS;
     }
 
     private boolean isUpdate() {
@@ -446,5 +397,9 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
 
     private boolean isCreateOrUpdate() {
         return "post".equals(httpVerb) || "put".equals(httpVerb);
+    }
+
+    private boolean isGetByID(String url) {
+        return !"clients-initial-access".equals(url);
     }
 }

@@ -6,6 +6,7 @@ import {
   Button,
   ButtonVariant,
   InputGroup,
+  InputGroupItem,
   PageSection,
   TextInput,
   Toolbar,
@@ -16,8 +17,7 @@ import { SearchIcon } from "@patternfly/react-icons";
 import { KeyboardEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -49,6 +49,8 @@ export const KeysProvidersTab = ({
   realmComponents,
   refresh,
 }: KeysProvidersTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -161,23 +163,29 @@ export const KeysProvidersTab = ({
           <ToolbarGroup className="providers-toolbar">
             <ToolbarItem>
               <InputGroup>
-                <TextInput
-                  name={"inputGroupName"}
-                  id={"inputGroupName"}
-                  data-testid="provider-search-input"
-                  type="search"
-                  aria-label={t("search")}
-                  placeholder={t("search")}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                />
-                <Button
-                  variant={ButtonVariant.control}
-                  aria-label={t("search")}
-                  onClick={onSearch}
-                >
-                  <SearchIcon />
-                </Button>
+                <InputGroupItem isFill>
+                  <TextInput
+                    name={"inputGroupName"}
+                    id={"inputGroupName"}
+                    data-testid="provider-search-input"
+                    type="search"
+                    aria-label={t("search")}
+                    placeholder={t("search")}
+                    onChange={(_event, value: string) =>
+                      handleInputChange(value)
+                    }
+                    onKeyDown={handleKeyDown}
+                  />
+                </InputGroupItem>
+                <InputGroupItem>
+                  <Button
+                    variant={ButtonVariant.control}
+                    aria-label={t("search")}
+                    onClick={onSearch}
+                  >
+                    <SearchIcon />
+                  </Button>
+                </InputGroupItem>
               </InputGroup>
             </ToolbarItem>
             <ToolbarItem>

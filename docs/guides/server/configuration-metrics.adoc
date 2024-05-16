@@ -4,11 +4,11 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Enabling Keycloak Metrics"
+title="Enabling {project_name} Metrics"
 summary="Learn how to enable and expose metrics from the server"
-includedOptions="metrics-enabled">
+includedOptions="metrics-enabled http-metrics-* cache-metrics-*">
 
-Keycloak has built in support for metrics. This {section} describes how to enable and configure server metrics.
+{project_name} has built in support for metrics. This {section} describes how to enable and configure server metrics.
 
 == Enabling Metrics
 
@@ -18,11 +18,12 @@ It is possible to enable metrics using the build time option `metrics-enabled`:
 
 == Querying Metrics
 
-Keycloak exposes metrics at the following endpoint:
+{project_name} exposes metrics at the following endpoint on the management interface at:
 
 * `/metrics`
 
-The response from the endpoint uses a `text/plain` content type and it is based on the Prometheus text format. The snippet bellow
+For more information about the management interface, see <@links.server id="management-interface" />.
+The response from the endpoint uses a `application/openmetrics-text` content type and it is based on the Prometheus (OpenMetrics) text format. The snippet below
 is an example of a response:
 
 [source]

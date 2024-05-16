@@ -91,6 +91,8 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<
             case PUSHED_AUTHORIZATION_REQUEST:
             case REGISTERED:
             case UPDATED:
+            case SAML_AUTHN_REQUEST:
+            case SAML_LOGOUT_REQUEST:
                 if (isRolesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:

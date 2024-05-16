@@ -1,9 +1,12 @@
+import { v4 as uuid } from "uuid";
+
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
+import adminClient from "../support/util/AdminClient";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -93,14 +96,22 @@ const userImportingDisabledFailMessage =
   "User federation provider could not be saved: Can not disable Importing users when LDAP provider mode is UNSYNCED";
 
 const ldapTestSuccessMsg = "Successfully connected to LDAP";
-const ldapTestFailMsg = "Error when trying to connect to LDAP: 'SocketReset'";
+const ldapTestFailMsg =
+  "Error when trying to connect to LDAP: 'CommunicationError'";
 
 describe("User Federation LDAP tests", () => {
+  const realmName = `ldap-realm-${uuid()}`;
+
+  before(() => adminClient.createRealm(realmName));
+
+  after(() => adminClient.deleteRealm(realmName));
+
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
+    sidebarPage.goToRealm(realmName);
     sidebarPage.goToUserFederation();
-    cy.intercept("GET", "/admin/realms/master").as("getProvider");
+    cy.intercept("GET", `/admin/realms/${realmName}`).as("getProvider");
   });
 
   it("Should create LDAP provider from empty state", () => {

@@ -32,7 +32,10 @@ import org.jboss.arquillian.graphene.proxy.InvocationContext;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
@@ -84,8 +87,20 @@ public class KeycloakDronePostSetup {
         driver.manage().timeouts().implicitlyWait(implicitWaitMillis, TimeUnit.MILLISECONDS);
         driver.manage().timeouts().pageLoadTimeout(pageLoadTimeoutMillis, TimeUnit.MILLISECONDS);
         driver.manage().window().maximize();
+
+        configureFirefoxDriver(driver);
     }
 
+    private void configureFirefoxDriver(WebDriver driver) {
+        if (driver instanceof FirefoxDriver) {
+            FirefoxDriver firefoxDriver = (FirefoxDriver) driver;
+            Capabilities capabilities = firefoxDriver.getCapabilities();
+            FirefoxOptions options = new FirefoxOptions(capabilities);
+            // disables extension automatic updates as we don't need it when running the test suite
+            options.addPreference("extensions.update.enabled", "false");
+            firefoxDriver.getCapabilities().merge(options);
+        }
+    }
 
     public static class HtmlUnitInterceptor implements Interceptor {
 
@@ -133,6 +148,6 @@ public class KeycloakDronePostSetup {
         public int getPrecedence() {
             return -1;
         }
-    }
 
+    }
 }

@@ -3,8 +3,9 @@ import { Button, Form } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { useRealm } from "../context/realm-context/RealmContext";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
@@ -15,7 +16,6 @@ import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
 import { toUserFederation } from "./routes/UserFederation";
 import { SettingsCache } from "./shared/SettingsCache";
-import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 
 export type LdapComponentRepresentation = ComponentRepresentation & {
   config?: {
@@ -42,6 +42,7 @@ export const UserFederationLdapForm = ({
   return (
     <>
       <ScrollForm
+        label={t("jumpToSection")}
         sections={[
           {
             title: t("generalOptions"),

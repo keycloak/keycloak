@@ -18,11 +18,8 @@
 
 package org.keycloak.authorization.model;
 
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
-import org.keycloak.storage.SearchableModelField;
-
 
 /**
  * Represents a resource server, whose resources are managed and protected. A resource server is basically an existing
@@ -31,13 +28,6 @@ import org.keycloak.storage.SearchableModelField;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface ResourceServer {
-
-    public static class SearchableFields {
-        public static final SearchableModelField<ResourceServer> ID =           new SearchableModelField<>("id", String.class);
-        /** ID of the client (not the clientId) associated with resource server*/
-        public static final SearchableModelField<ResourceServer> CLIENT_ID =    new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<ResourceServer> REALM_ID =     new SearchableModelField<>("realmId", String.class);
-    }
 
     /**
      * Returns the unique identifier for this instance.
@@ -94,11 +84,4 @@ public interface ResourceServer {
      * @return id of client
      */
     String getClientId();
-
-    /**
-     * Returns reference of a realm that this {@link ResourceServer} belongs to.
-     *
-     * @return reference of a realm
-     */
-    RealmModel getRealm();
 }

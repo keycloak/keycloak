@@ -36,6 +36,7 @@ import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 
@@ -69,6 +70,12 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
+    public static String userProfilePath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "users")
+                .path(UsersResource.class, "userProfile")
+                .build();
+        return uri.toString();
+    }
 
     // CLIENT RESOURCE
 

@@ -9,10 +9,10 @@ public class BasicAuthHelperTest {
     @Test
     public void createHeader() {
         String username = "Aladdin";
-        String password = "open sesame";
+        String password = "open sesameopen sesameopen sesameopen sesameopen sesameopen sesame";
 
         String actual = BasicAuthHelper.createHeader(username, password);
-        String expect = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==";
+        String expect = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZW9wZW4gc2VzYW1lb3BlbiBzZXNhbWVvcGVuIHNlc2FtZW9wZW4gc2VzYW1lb3BlbiBzZXNhbWU=";
 
         assertEquals(expect, actual);
     }
@@ -20,7 +20,7 @@ public class BasicAuthHelperTest {
     @Test
     public void parseHeader() {
         String username = "Aladdin";
-        String password = "open sesame";
+        String password = "open sesameopen sesameopen sesameopen sesameopen sesameopen sesameopen sesame";
 
         String header = BasicAuthHelper.createHeader(username, password);
         String[] actual = BasicAuthHelper.parseHeader(header);

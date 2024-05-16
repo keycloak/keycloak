@@ -1,4 +1,4 @@
-import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   ButtonVariant,
@@ -18,10 +18,22 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { toEditAttributesGroup } from "../routes/EditAttributesGroup";
 import { toNewAttributesGroup } from "../routes/NewAttributesGroup";
 import { useUserProfile } from "./UserProfileContext";
+import useLocale from "../../utils/useLocale";
+import { useAdminClient } from "../../admin-client";
 
-export const AttributesGroupTab = () => {
+type AttributesGroupTabProps = {
+  setTableData: React.Dispatch<
+    React.SetStateAction<Record<string, string>[] | undefined>
+  >;
+};
+
+export const AttributesGroupTab = ({
+  setTableData,
+}: AttributesGroupTabProps) => {
+  const { adminClient } = useAdminClient();
   const { config, save } = useUserProfile();
   const { t } = useTranslation();
+  const combinedLocales = useLocale();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
@@ -44,18 +56,69 @@ export const AttributesGroupTab = () => {
     ),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
-    onConfirm() {
+    onConfirm: async () => {
       const groups = (config?.groups ?? []).filter(
         (group) => group !== groupToDelete,
       );
+      const translationsForDisplayHeaderToDelete =
+        groupToDelete?.displayHeader?.substring(
+          2,
+          groupToDelete?.displayHeader.length - 1,
+        );
+      const translationsForDisplayDescriptionToDelete =
+        groupToDelete?.displayDescription?.substring(
+          2,
+          groupToDelete?.displayDescription.length - 1,
+        );
 
-      save(
-        { ...config, groups },
-        {
-          successMessageKey: "deleteSuccess",
-          errorMessageKey: "deleteAttributeGroupError",
-        },
-      );
+      try {
+        await Promise.all(
+          combinedLocales.map(async (locale) => {
+            try {
+              const response =
+                await adminClient.realms.getRealmLocalizationTexts({
+                  realm,
+                  selectedLocale: locale,
+                });
+
+              if (response) {
+                await adminClient.realms.deleteRealmLocalizationTexts({
+                  realm,
+                  selectedLocale: locale,
+                  key: translationsForDisplayHeaderToDelete,
+                });
+
+                await adminClient.realms.deleteRealmLocalizationTexts({
+                  realm,
+                  selectedLocale: locale,
+                  key: translationsForDisplayDescriptionToDelete,
+                });
+
+                const updatedData =
+                  await adminClient.realms.getRealmLocalizationTexts({
+                    realm,
+                    selectedLocale: locale,
+                  });
+                setTableData([updatedData]);
+              }
+            } catch (error) {
+              console.error(`Error removing translations for ${locale}`);
+            }
+          }),
+        );
+
+        save(
+          { ...config, groups },
+          {
+            successMessageKey: "deleteSuccess",
+            errorMessageKey: "deleteAttributeGroupError",
+          },
+        );
+      } catch (error) {
+        console.error(
+          `Error removing translations or updating attributes group: ${error}`,
+        );
+      }
     },
   });
 
@@ -65,7 +128,7 @@ export const AttributesGroupTab = () => {
   }
 
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       <KeycloakDataTable
         key={key}
@@ -75,7 +138,11 @@ export const AttributesGroupTab = () => {
           <ToolbarItem>
             <Button
               component={(props) => (
-                <Link {...props} to={toNewAttributesGroup({ realm })} />
+                <Link
+                  data-testid="create-attributes-groups-action"
+                  {...props}
+                  to={toNewAttributesGroup({ realm })}
+                />
               )}
             >
               {t("createGroupText")}
@@ -87,7 +154,12 @@ export const AttributesGroupTab = () => {
             name: "name",
             displayKey: "columnName",
             cellRenderer: (group) => (
-              <Link to={toEditAttributesGroup({ realm, name: group.name! })}>
+              <Link
+                to={toEditAttributesGroup({
+                  realm,
+                  name: group.name!,
+                })}
+              >
                 {group.name}
               </Link>
             ),

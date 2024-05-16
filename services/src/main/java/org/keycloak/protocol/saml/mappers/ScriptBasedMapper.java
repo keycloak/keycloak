@@ -1,6 +1,7 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -12,7 +13,11 @@ import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptCompilationException;
 import org.keycloak.scripting.ScriptingProvider;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 
 /**
  * This class provides a mapper that uses javascript to attach a value to an attribute for SAML tokens.
@@ -95,7 +100,7 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
     }
 

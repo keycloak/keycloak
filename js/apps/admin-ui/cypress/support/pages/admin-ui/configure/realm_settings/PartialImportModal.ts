@@ -1,8 +1,8 @@
 export default class GroupModal {
-  private openPartialImport = "openPartialImportModal";
+  #openPartialImport = "openPartialImportModal";
 
   open() {
-    cy.findByTestId(this.openPartialImport).click();
+    cy.findByTestId(this.#openPartialImport).click();
     return this;
   }
 
@@ -14,7 +14,7 @@ export default class GroupModal {
   };
 
   textArea() {
-    return cy.get(".pf-c-code-editor__code textarea");
+    return cy.get(".pf-v5-c-code-editor__code textarea");
   }
 
   importButton() {

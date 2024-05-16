@@ -39,12 +39,16 @@ final class ServerOptions extends ArrayList<String> {
             .or("-h"::equals)
             .or(ShowConfig.NAME::equals);
 
-    ServerOptions(LegacyStore legacyStoreConfig, WithDatabase withDatabase, List<String> rawOptions) {
+    private boolean isBuildPhase = false;
+
+    ServerOptions(Storage storageConfig, WithDatabase withDatabase, List<String> rawOptions) {
         if (rawOptions.isEmpty()) {
             return;
         }
 
-        for (Map.Entry<String, Predicate<String>> entry : getDefaultOptions(legacyStoreConfig, withDatabase).entrySet()) {
+        this.isBuildPhase = rawOptions.contains("build");
+
+        for (Map.Entry<String, Predicate<String>> entry : getDefaultOptions(storageConfig, withDatabase).entrySet()) {
             if (contains(entry.getKey())) {
                 continue;
             }
@@ -57,28 +61,21 @@ final class ServerOptions extends ArrayList<String> {
         addAll(0, rawOptions);
     }
 
-    private Map<String, Predicate<String>> getDefaultOptions(LegacyStore legacyStoreConfig, WithDatabase withDatabase) {
+    private Map<String, Predicate<String>> getDefaultOptions(Storage storageConfig, WithDatabase withDatabase) {
         Map<String, Predicate<String>> defaultOptions = new HashMap<>();
 
-        defaultOptions.put("--cache=local", ignoreCacheLocal(legacyStoreConfig));
+        if (!isBuildPhase) {
+            defaultOptions.put("--cache=local", ignoreCacheLocal(storageConfig));
+        }
 
         return defaultOptions;
     }
 
-    private Predicate<String> ignoreCacheLocal(LegacyStore legacyStoreConfig) {
+    private Predicate<String> ignoreCacheLocal(Storage storageConfig) {
         return new Predicate<String>() {
             @Override
             public boolean test(String arg) {
-                return arg.contains("--cache") || legacyStoreConfig == null || !legacyStoreConfig.defaultLocalCache();
-            }
-        }.or(IGNORED_ARGUMENTS);
-    }
-
-    private Predicate<String> ignoreStorageChm(LegacyStore legacyStoreConfig, WithDatabase withDatabase) {
-        return new Predicate<String>() {
-            @Override
-            public boolean test(String arg) {
-                return arg.contains("--storage") || legacyStoreConfig != null || withDatabase != null;
+                return arg.contains("--cache") || storageConfig == null || !storageConfig.defaultLocalCache();
             }
         }.or(IGNORED_ARGUMENTS);
     }

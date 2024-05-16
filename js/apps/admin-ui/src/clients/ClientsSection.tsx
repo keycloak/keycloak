@@ -14,8 +14,7 @@ import { IRowData, TableText, cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormattedLink } from "../components/external-link/FormattedLink";
@@ -45,17 +44,19 @@ const ClientDetailLink = (client: ClientRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
   return (
-    <Link
-      key={client.id}
-      to={toClient({ realm, clientId: client.id!, tab: "settings" })}
-    >
-      {client.clientId}
-      {!client.enabled && (
-        <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
-          {t("disabled")}
-        </Badge>
-      )}
-    </Link>
+    <TableText wrapModifier="truncate">
+      <Link
+        key={client.id}
+        to={toClient({ realm, clientId: client.id!, tab: "settings" })}
+      >
+        {client.clientId}
+        {!client.enabled && (
+          <Badge key={`${client.id}-disabled`} isRead className="pf-v5-u-ml-sm">
+            {t("disabled")}
+          </Badge>
+        )}
+      </Link>
+    </TableText>
   );
 };
 
@@ -72,6 +73,7 @@ const ClientDescription = (client: ClientRepresentation) => (
 );
 
 const ClientHomeLink = (client: ClientRepresentation) => {
+  const { adminClient } = useAdminClient();
   const href = convertClientToUrl(client, adminClient.baseUrl);
 
   if (!href) {
@@ -115,6 +117,8 @@ const ToolbarItems = () => {
 };
 
 export default function ClientsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -170,7 +174,7 @@ export default function ClientsSection() {
         helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           mountOnEnter
           isBox

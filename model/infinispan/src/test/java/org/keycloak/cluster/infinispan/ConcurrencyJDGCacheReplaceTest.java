@@ -81,8 +81,7 @@ public class ConcurrencyJDGCacheReplaceTest {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache2 = createManager(2).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
 
         // Create initial item
-        UserSessionEntity session = new UserSessionEntity();
-        session.setId("123");
+        UserSessionEntity session = new UserSessionEntity("123");
         session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);

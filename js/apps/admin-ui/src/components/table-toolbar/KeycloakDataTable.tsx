@@ -1,4 +1,4 @@
-import { ButtonVariant } from "@patternfly/react-core";
+import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
   IAction,
@@ -7,12 +7,14 @@ import {
   IFormatter,
   IRow,
   ITransform,
+  TableVariant,
+} from "@patternfly/react-table";
+import {
   Table,
   TableBody,
   TableHeader,
   TableProps,
-  TableVariant,
-} from "@patternfly/react-table";
+} from "@patternfly/react-table/deprecated";
 import { cloneDeep, differenceBy, get } from "lodash-es";
 import {
   ComponentClass,
@@ -26,11 +28,12 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useStoredState } from "ui-shared";
+import { useStoredState } from "@keycloak/keycloak-ui-shared";
 import { useFetch } from "../../utils/useFetch";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
+import { SyncAltIcon } from "@patternfly/react-icons";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;
@@ -220,7 +223,8 @@ export function KeycloakDataTable<T>({
   const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const prevKey = useRef<number>();
+  const refresh = () => setKey(key + 1);
   const id = useId();
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
@@ -301,7 +305,7 @@ export function KeycloakDataTable<T>({
   useEffect(() => {
     if (canSelectAll) {
       const checkboxes = document
-        .getElementsByClassName("pf-c-table__check")
+        .getElementsByClassName("pf-v5-c-table__check")
         .item(0);
       if (checkboxes) {
         const checkAllCheckbox = checkboxes.children!.item(
@@ -324,11 +328,13 @@ export function KeycloakDataTable<T>({
       }
       prevSearch.current = search;
       return typeof loader === "function"
-        ? unPaginatedData ||
-            (await loader(newSearch ? 0 : first, max + 1, search))
+        ? key === prevKey.current && unPaginatedData
+          ? unPaginatedData
+          : await loader(newSearch ? 0 : first, max + 1, search)
         : loader;
     },
     (data) => {
+      prevKey.current = key;
       if (!isPaginated) {
         setUnPaginatedData(data);
         if (data.length > first) {
@@ -434,7 +440,16 @@ export function KeycloakDataTable<T>({
           inputGroupOnEnter={setSearch}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
-          toolbarItem={toolbarItem}
+          toolbarItem={
+            <>
+              {toolbarItem} <ToolbarItem variant="separator" />{" "}
+              <ToolbarItem>
+                <Button variant="link" onClick={refresh}>
+                  <SyncAltIcon /> {t("refresh")}
+                </Button>
+              </ToolbarItem>
+            </>
+          }
           subToolbar={subToolbar}
         >
           {!loading && !noData && (

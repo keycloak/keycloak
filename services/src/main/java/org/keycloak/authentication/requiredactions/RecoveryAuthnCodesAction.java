@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -21,8 +22,9 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
-public class RecoveryAuthnCodesAction implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
+public class RecoveryAuthnCodesAction implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory, CredentialRegistrator {
 
     private static final String FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN = "generatedRecoveryAuthnCodes";
     private static final String FIELD_GENERATED_AT_HIDDEN = "generatedAt";
@@ -33,6 +35,11 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public String getCredentialType(KeycloakSession session, AuthenticationSessionModel authenticationSession) {
+        return RecoveryAuthnCodesCredentialModel.TYPE;
     }
 
     @Override
@@ -113,7 +120,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
     }
 }

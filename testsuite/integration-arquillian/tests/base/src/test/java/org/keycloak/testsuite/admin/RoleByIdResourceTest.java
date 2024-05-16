@@ -67,6 +67,10 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
     public void before() {
         adminClient.realm(REALM_NAME).roles().create(RoleBuilder.create().name("role-a").description("Role A").build());
         adminClient.realm(REALM_NAME).roles().create(RoleBuilder.create().name("role-b").description("Role B").build());
+        // add a role that is a composite role
+        RoleRepresentation roleD = RoleBuilder.create().name("role-d").description("Role D").build();
+        adminClient.realm(REALM_NAME).roles().create(roleD);
+        adminClient.realm(REALM_NAME).roles().create(RoleBuilder.create().name("composite-role-with-d").description("Composite Role with Role D").composite().realmComposite(roleD).build());
 
         clientId = "client-a";
         Response response = adminClient.realm(REALM_NAME).clients().create(ClientBuilder.create().clientId(clientId).build());
@@ -86,6 +90,8 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         getCleanup().addRoleId(ids.get("role-a"));
         getCleanup().addRoleId(ids.get("role-b"));
         getCleanup().addRoleId(ids.get("role-c"));
+        getCleanup().addRoleId(ids.get("role-d"));
+        getCleanup().addRoleId(ids.get("composite-role-with-d"));
 
         resource = adminClient.realm(REALM_NAME).rolesById();
 
@@ -184,7 +190,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
     @Test
     public void createNewMixedRealmCompositeRole() {
 
-        RoleRepresentation newRoleComp = RoleBuilder.create().name("role-mixed-comp").composite().realmComposite("role-a").clientComposite(clientId, "role-c").build();
+        RoleRepresentation newRoleComp = RoleBuilder.create().name("role-mixed-comp").composite().realmComposite("role-a").realmComposite("composite-role-with-d").clientComposite(clientId, "role-c").build();
         adminClient.realm(REALM_NAME).roles().create(newRoleComp);
 
         RoleRepresentation roleMixedComp = adminClient.realm(REALM_NAME).roles().get(newRoleComp.getName()).toRepresentation();
@@ -196,10 +202,15 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         Set<RoleRepresentation> containedRealmRoles = roleComposites.stream().filter(isClientRole.negate()).collect(Collectors.toSet());
         assertFalse(containedRealmRoles.isEmpty());
         assertTrue(containedRealmRoles.stream().anyMatch(r -> r.getName().equals("role-a")));
+        assertTrue(containedRealmRoles.stream().anyMatch(r -> r.getName().equals("composite-role-with-d")));
 
         Set<RoleRepresentation> containedClientRoles = roleComposites.stream().filter(isClientRole).collect(Collectors.toSet());
         assertFalse(containedClientRoles.isEmpty());
         assertTrue(containedClientRoles.stream().anyMatch(r -> r.getContainerId().equals(clientUuid) && r.getName().equals("role-c")));
+
+        // check that there are no unexpected roles contained
+        int expectedCompositeCount = newRoleComp.getComposites().getRealm().size() + newRoleComp.getComposites().getClient().size();
+        assertEquals(expectedCompositeCount, roleComposites.size());
     }
 
     /**

@@ -20,7 +20,6 @@ import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.junit.Assert;
@@ -38,68 +37,38 @@ public class UPConfigUtilsTest {
 
     @Test
     public void canBeAuthFlowContext() {
-        Assert.assertFalse(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.ACCOUNT));
-        Assert.assertFalse(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.USER_API));
+        Assert.assertFalse(UserProfileContext.ACCOUNT.canBeAuthFlowContext());
+        Assert.assertFalse(UserProfileContext.USER_API.canBeAuthFlowContext());
 
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.IDP_REVIEW));
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION_PROFILE));
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION_USER_CREATION));
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.UPDATE_PROFILE));
+        Assert.assertTrue(UserProfileContext.IDP_REVIEW.canBeAuthFlowContext());
+        Assert.assertTrue(UserProfileContext.REGISTRATION.canBeAuthFlowContext());
+        Assert.assertTrue(UserProfileContext.UPDATE_PROFILE.canBeAuthFlowContext());
     }
 
     @Test
     public void isRoleForContext() {
 
-        Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, null));
+        Assert.assertFalse(UserProfileContext.ACCOUNT.isRoleForContext( null));
 
         Set<String> roles = new HashSet<>();
         roles.add(ROLE_ADMIN);
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
-        Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
-        Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.UPDATE_PROFILE, roles));
+        Assert.assertTrue(UserProfileContext.USER_API.isRoleForContext(roles));
+        Assert.assertFalse(UserProfileContext.ACCOUNT.isRoleForContext(roles));
+        Assert.assertFalse(UserProfileContext.UPDATE_PROFILE.isRoleForContext(roles));
 
         roles = new HashSet<>();
         roles.add(ROLE_USER);
-        Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
+        Assert.assertFalse(UserProfileContext.USER_API.isRoleForContext(roles));
+        Assert.assertTrue(UserProfileContext.ACCOUNT.isRoleForContext(roles));
+        Assert.assertTrue(UserProfileContext.IDP_REVIEW.isRoleForContext(roles));
+        Assert.assertTrue(UserProfileContext.REGISTRATION.isRoleForContext(roles));
 
         // both in roles
         roles.add(ROLE_ADMIN);
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
-    }
-
-    @Test
-    public void breakString() {
-        List<String> ret = UPConfigUtils.getChunks(null, 2);
-        Assert.assertEquals(0, ret.size());
-
-        ret = UPConfigUtils.getChunks("", 2);
-        assertListContent(ret, "");
-
-        ret = UPConfigUtils.getChunks("1234567", 3);
-        assertListContent(ret, "123", "456", "7");
-
-        ret = UPConfigUtils.getChunks("12345678", 3);
-        assertListContent(ret, "123", "456", "78");
-
-        ret = UPConfigUtils.getChunks("123456789", 3);
-        assertListContent(ret, "123", "456", "789");
-    }
-
-    /**
-     * Assert list exactly contains all expected parts in given order
-     */
-    private void assertListContent(List<String> actual, String... expectedParts) {
-        int i = 0;
-        Assert.assertEquals(expectedParts.length, actual.size());
-        for (String ep : expectedParts) {
-            Assert.assertEquals(ep, actual.get(i++));
-        }
+        Assert.assertTrue(UserProfileContext.USER_API.isRoleForContext(roles));
+        Assert.assertTrue(UserProfileContext.ACCOUNT.isRoleForContext(roles));
+        Assert.assertTrue(UserProfileContext.IDP_REVIEW.isRoleForContext(roles));
+        Assert.assertTrue(UserProfileContext.REGISTRATION.isRoleForContext(roles));
     }
 
     @Test

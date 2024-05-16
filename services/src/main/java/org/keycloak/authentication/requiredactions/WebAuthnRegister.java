@@ -54,6 +54,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.converter.util.ObjectConverter;
@@ -168,6 +169,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
     protected WebAuthnPolicy getWebAuthnPolicy(RequiredActionContext context) {
         return context.getRealm().getWebAuthnPolicy();
+    }
+
+    @Override
+    public String getCredentialType(KeycloakSession session, AuthenticationSessionModel authenticationSession) {
+        return getCredentialType();
     }
 
     protected String getCredentialType() {
@@ -320,6 +326,9 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 break;
             case Algorithm.RS512 :
                 algs.add(COSEAlgorithmIdentifier.RS512.getValue());
+                break;
+            case Algorithm.Ed25519:
+                algs.add(COSEAlgorithmIdentifier.EdDSA.getValue());
                 break;
             case "RS1" :
                 algs.add(COSEAlgorithmIdentifier.RS1.getValue());

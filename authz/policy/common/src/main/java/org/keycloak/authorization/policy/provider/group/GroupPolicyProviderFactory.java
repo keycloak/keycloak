@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -154,7 +154,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     }
 
     private void updatePolicy(Policy policy, String groupsClaim, Set<GroupPolicyRepresentation.GroupDefinition> groups, AuthorizationProvider authorization) {
-        if (groups == null || groups.isEmpty()) {
+        if (groups == null) {
             throw new RuntimeException("You must provide at least one group");
         }
 
@@ -164,7 +164,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
             config.put("groupsClaim", groupsClaim);
         }
 
-        List<GroupModel> topLevelGroups = authorization.getRealm().getTopLevelGroupsStream().collect(Collectors.toList());
+        List<GroupModel> topLevelGroups = authorization.getKeycloakSession().groups().getTopLevelGroupsStream(authorization.getRealm()).collect(Collectors.toList());
 
         for (GroupPolicyRepresentation.GroupDefinition definition : groups) {
             GroupModel group = null;
@@ -221,6 +221,8 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
             return Collections.emptySet();
         }
 
-        return new HashSet<>(Arrays.asList(JsonSerialization.readValue(groups, GroupPolicyRepresentation.GroupDefinition[].class)));
+        return Arrays.stream(JsonSerialization.readValue(groups, GroupPolicyRepresentation.GroupDefinition[].class))
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

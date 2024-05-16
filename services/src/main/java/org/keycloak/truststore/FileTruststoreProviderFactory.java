@@ -19,6 +19,7 @@ package org.keycloak.truststore;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -26,9 +27,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -45,6 +43,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -52,6 +52,8 @@ import javax.security.auth.x500.X500Principal;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class FileTruststoreProviderFactory implements TruststoreProviderFactory {
+
+    static final String HOSTNAME_VERIFICATION_POLICY = "hostname-verification-policy";
 
     private static final Logger log = Logger.getLogger(FileTruststoreProviderFactory.class);
 
@@ -72,37 +74,55 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
 
         String storepath = config.get("file");
         String pass = config.get("password");
-        String policy = config.get("hostname-verification-policy");
+        String policy = config.get(HOSTNAME_VERIFICATION_POLICY);
         String configuredType = config.get("type");
 
-        // if "truststore" . "file" is not configured then it is disabled
-        if (storepath == null && pass == null && policy == null) {
-            return;
+        if (storepath != null || pass != null || configuredType != null) {
+            log.warn("Using deprecated 'spi-truststore-file-*' options. Consider using 'truststore-paths' option.");
         }
 
         HostnameVerificationPolicy verificationPolicy = null;
         KeyStore truststore = null;
-
+        boolean system = false;
         if (storepath == null) {
-            throw new RuntimeException("Attribute 'file' missing in 'truststore':'file' configuration");
+            storepath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
+            if (storepath == null) {
+                File defaultTrustStore = TruststoreBuilder.getJRETruststore();
+                if (!defaultTrustStore.exists()) {
+                    throw new RuntimeException("Attribute 'file' missing in 'truststore':'file' configuration, and could not find the system truststore");
+                }
+                storepath = defaultTrustStore.getAbsolutePath();
+                system = true;
+            }
+            // should there be an exception if pass / type are configured for the spi-truststore
+            pass = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, system ? "changeit" : null);
+            configuredType = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY);
         }
-        if (pass == null) {
-            throw new RuntimeException("Attribute 'password' missing in 'truststore':'file' configuration");
-        }
-
         String type = KeystoreUtil.getKeystoreType(configuredType, storepath, KeyStore.getDefaultType());
         try {
-            truststore = loadStore(storepath, type, pass == null ? null :pass.toCharArray());
+            truststore = KeystoreUtil.loadKeyStore(storepath, pass, type);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize TruststoreProviderFactory: " + new File(storepath).getAbsolutePath() + ", truststore type: " + type, e);
+            // in fips mode the default truststore type can be pkcs12, but the cacerts file will still be jks
+            if (system && !"jks".equalsIgnoreCase(type)) {
+                try {
+                    truststore = KeystoreUtil.loadKeyStore(storepath, pass, "jks");
+                } catch (Exception e1) {
+                }
+            }
+            if (truststore == null) {
+                throw new RuntimeException("Failed to initialize TruststoreProviderFactory: " + new File(storepath).getAbsolutePath() + ", truststore type: " + type, e);
+            }
         }
         if (policy == null) {
-            verificationPolicy = HostnameVerificationPolicy.WILDCARD;
+            verificationPolicy = HostnameVerificationPolicy.DEFAULT;
         } else {
             try {
                 verificationPolicy = HostnameVerificationPolicy.valueOf(policy);
             } catch (Exception e) {
-                throw new RuntimeException("Invalid value for 'hostname-verification-policy': " + policy + " (must be one of: ANY, WILDCARD, STRICT)");
+                throw new RuntimeException("Invalid value for 'hostname-verification-policy': " + policy
+                        + " (must be one of: " + Stream.of(HostnameVerificationPolicy.values())
+                                .map(HostnameVerificationPolicy::name).collect(Collectors.joining(", "))
+                        + ")");
             }
         }
 
@@ -111,20 +131,6 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 , Collections.unmodifiableMap(certsLoader.intermediateCerts));
         TruststoreProviderSingleton.set(provider);
         log.debugf("File truststore provider initialized: %s, Truststore type: %s",  new File(storepath).getAbsolutePath(), type);
-    }
-
-    private KeyStore loadStore(String path, String type, char[] password) throws Exception {
-        KeyStore ks = KeyStore.getInstance(type);
-        InputStream is = new FileInputStream(path);
-        try {
-            ks.load(is, password);
-            return ks;
-        } finally {
-            try {
-                is.close();
-            } catch (IOException ignored) {
-            }
-        }
     }
 
     @Override
@@ -146,24 +152,24 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 .property()
                 .name("file")
                 .type("string")
-                .helpText("The file path of the trust store from where the certificates are going to be read from to validate TLS connections.")
+                .helpText("DEPRECATED: The file path of the trust store from where the certificates are going to be read from to validate TLS connections.")
                 .add()
                 .property()
                 .name("password")
                 .type("string")
-                .helpText("The trust store password.")
+                .helpText("DEPRECATED: The trust store password.")
                 .add()
                 .property()
-                .name("hostname-verification-policy")
+                .name(HOSTNAME_VERIFICATION_POLICY)
                 .type("string")
-                .helpText("The hostname verification policy.")
-                .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).map(String::toLowerCase).toArray(String[]::new))
-                .defaultValue(HostnameVerificationPolicy.WILDCARD.name().toLowerCase())
+                .helpText("DEPRECATED: The hostname verification policy.")
+                .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).toArray(String[]::new))
+                .defaultValue(HostnameVerificationPolicy.DEFAULT.name())
                 .add()
                 .property()
                 .name("type")
                 .type("string")
-                .helpText("Type of the truststore. If not provided, the type would be detected based on the truststore file extension or platform default type.")
+                .helpText("DEPRECATED: Type of the truststore. If not provided, the type would be detected based on the truststore file extension or platform default type.")
                 .add()
                 .build();
     }
@@ -184,14 +190,14 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         private void readTruststore(KeyStore truststore) {
 
             //Reading truststore aliases & certificates
-            Enumeration enumeration;
+            Enumeration<String> enumeration;
 
             try {
 
                 enumeration = truststore.aliases();
                 log.trace("Checking " + truststore.size() + " entries from the truststore.");
                 while(enumeration.hasMoreElements()) {
-                    String alias = (String)enumeration.nextElement();
+                    String alias = enumeration.nextElement();
                     readTruststoreEntry(truststore, alias);
                 }
             } catch (KeyStoreException e) {
@@ -208,11 +214,11 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                     if (isSelfSigned(cax509cert)) {
                         X500Principal principal = cax509cert.getSubjectX500Principal();
                         trustedRootCerts.put(principal, cax509cert);
-                        log.debug("Trusted root CA found in trustore : alias : " + alias + " | Subject DN : " + principal);
+                        log.debug("Trusted root CA found in truststore : alias : " + alias + " | Subject DN : " + principal);
                     } else {
                         X500Principal principal = cax509cert.getSubjectX500Principal();
                         intermediateCerts.put(principal, cax509cert);
-                        log.debug("Intermediate CA found in trustore : alias : " + alias + " | Subject DN : " + principal);
+                        log.debug("Intermediate CA found in truststore : alias : " + alias + " | Subject DN : " + principal);
                     }
                 } else
                     log.info("Skipping certificate with alias [" + alias + "] from truststore, because it's not an X509Certificate");

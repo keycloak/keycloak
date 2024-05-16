@@ -85,7 +85,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
             UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
@@ -221,7 +221,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.READ_ONLY.toString());
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.READ_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
             GroupModel group1 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1");
@@ -402,7 +402,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString());
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString());
             appRealm.updateComponent(mapperModel);
 
             // Add some group mappings directly in LDAP
@@ -486,7 +486,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
             // Ignoring this test on ActiveDirectory as it's not allowed to have LDAP group referencing nonexistent member. KEYCLOAK-2682 was related to OpenLDAP TODO: Better solution than programmatic...
@@ -513,7 +513,13 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             nonExistentLdapUser.setDn(nonExistentDn);
             LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, nonExistentLdapUser);
 
-            // 4 - Check group members. Just existing user rob should be present
+            // 4 - Add an empty member to the same LDAP group
+            LDAPDn emptyDn = LDAPDn.fromString("");
+            LDAPObject emptyUser = new LDAPObject();
+            emptyUser.setDn(emptyDn);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, emptyUser);
+
+            // 5 - Check group members. Just existing user rob should be present
             groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);
             GroupModel kcGroup2 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group2");
             List<UserModel> groupUsers = session.users().getGroupMembersStream(appRealm, kcGroup2, 0, 5)
@@ -551,7 +557,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), carlos, "Password1");
 
             // Update group mapper
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel,
+            LDAPTestUtils.updateConfigOptions(mapperModel,
                     GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE,
                     GroupMapperConfig.MEMBEROF_LDAP_ATTRIBUTE, LDAPConstants.STREET);
             appRealm.updateComponent(mapperModel);
@@ -665,7 +671,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString());
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString());
             appRealm.updateComponent(mapperModel);
 
             UserModel david = session.users().addUser(appRealm, "davidkeycloak");
@@ -713,7 +719,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
             // Ignoring this test on ActiveDirectory and rhds as it's currently impossible to import more than 60 users without timeout
@@ -721,10 +727,17 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             if (ldapConfig.isActiveDirectory() || LDAPConstants.VENDOR_RHDS.equals(ldapConfig.getVendor())) {
                 return;
             }
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.MAX_CONDITIONS, "15");
 
             // create big grups that use ranged search
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
             LDAPObject bigGroup = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "biggroup", descriptionAttrName, "biggroup - description");
+            // create a non-exitent group member first to check pagination is OK
+            LDAPDn nonExistentDn = LDAPDn.fromString(ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsersDn());
+            nonExistentDn.addFirst(ctx.getLdapProvider().getLdapIdentityStore().getConfig().getRdnLdapAttribute(), "nonexistent");
+            LDAPObject nonExistentLdapUser = new LDAPObject();
+            nonExistentLdapUser.setDn(nonExistentDn);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", bigGroup, nonExistentLdapUser);
             // create the users to use range search and add them to the group
             for (int i = 0; i < membersToTest; i++) {
                 String username = String.format("user%02d", i);
@@ -759,6 +772,18 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             for (int i = 0; i < membersToTest; i++) {
                 Assert.assertTrue("Group contains user " + i, usernames.contains(String.format("user%02d", i)));
             }
+            // check group members are paginated OK using page size 10
+            usernames.clear();
+            for (int i = 0; i < membersToTest; i += 10) {
+                groupMembers = session.users().getGroupMembersStream(appRealm, kcBigGroup, i, 10)
+                    .collect(Collectors.toList());
+                usernames.addAll(groupMembers.stream().map(u -> u.getUsername()).collect(Collectors.toSet()));
+                Assert.assertEquals("Incorrect number of users after pagination " + i, membersToTest < i + 10? membersToTest : i + 10, usernames.size());
+            }
+            for (int i = 0; i < membersToTest; i++) {
+                Assert.assertTrue("Group contains user after pagination " + i, usernames.contains(String.format("user%02d", i)));
+            }
+            ctx.getLdapModel().getConfig().remove(LDAPConstants.MAX_CONDITIONS);
         });
     }
 

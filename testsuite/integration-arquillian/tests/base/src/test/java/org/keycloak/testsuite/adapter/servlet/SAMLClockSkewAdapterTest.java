@@ -24,11 +24,9 @@ import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -41,7 +39,6 @@ import static org.hamcrest.Matchers.not;
 import org.jboss.arquillian.graphene.page.Page;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
 import org.keycloak.testsuite.adapter.page.SalesPostClockSkewServlet;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 
@@ -49,9 +46,7 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Page protected SalesPostClockSkewServlet salesPostClockSkewServletPage;
@@ -130,33 +125,6 @@ public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
              assertOutcome(-10, allOf(containsString("request-path:"), containsString("principal=bburke")));
         } finally {
             deployer.undeploy(DEPLOYMENT_NAME_30_SEC);
-        }
-    }
-
-    @Test
-    @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-    @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-    @AppServerContainer(value = ContainerConstants.APP_SERVER_UNDERTOW, skip = true)
-    @AppServerContainer(value = ContainerConstants.APP_SERVER_WILDFLY, skip = true)
-    @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP, skip = true)
-    @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP6, skip = true)
-    @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP71, skip = true)
-    @AppServerContainer(value = ContainerConstants.APP_SERVER_JETTY94, skip = true)
-    public void testClockSkewTomcat() throws Exception {
-
-        /*
-         * Tomcat by default determines context path from name of hot deployed war,
-         * because of that we need to have this specific test for tomcat containers
-         */
-
-        deployer.deploy(SalesPostClockSkewServlet.DEPLOYMENT_NAME);
-
-        try {
-             assertOutcome(-4, allOf(containsString("request-path:"), containsString("principal=bburke")));
-             assertTokenIsNotValid(65);
-             assertTokenIsNotValid(-65);
-        } finally {
-            deployer.undeploy(SalesPostClockSkewServlet.DEPLOYMENT_NAME);
         }
     }
 }

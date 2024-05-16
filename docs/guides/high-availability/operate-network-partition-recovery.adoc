@@ -1,0 +1,79 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Recover from an out-of-sync passive site"
+summary="This describes the automatic and operational procedures necessary" >
+
+This {section} describes the procedures required to synchronize the secondary site with the primary site in a setup as outlined in <@links.ha id="concepts-active-passive-sync" /> together with the blueprints outlined in <@links.ha id="bblocks-active-passive-sync" />.
+
+include::partials/infinispan/infinispan-attributes.adoc[]
+
+// used by the CLI commands to avoid duplicating the code.
+:stale-site: secondary
+:keep-site: primary
+:keep-site-name: {site-a-cr}
+:stale-site-name: {site-b-cr}
+
+== When to use procedure
+
+Use this after a temporary disconnection between sites where {jdgserver_name} was disconnected and the contents of the caches are out-of-sync.
+
+At the end of the procedure, the session contents on the secondary site have been discarded and replaced by the session contents of the primary site.
+All caches in the secondary site have been cleared to prevent invalid cached contents.
+
+See the <@links.ha id="introduction" /> {section} for different operational procedures.
+
+== Procedures
+
+=== {jdgserver_name} Cluster
+
+For the context of this {section}, `{site-a}` is the primary site and is active, and `{site-b}` is the secondary site and is passive.
+
+Network partitions may happen between the site and the replication between the {jdgserver_name} cluster will stop.
+These procedures bring both sites back in sync.
+
+WARNING: Transferring the full state may impact the {jdgserver_name} cluster performance by increasing the response time and/or resources usage.
+
+The first procedure is to delete the stale data from the secondary site.
+
+. Login into your secondary site.
+
+. Shutdown {project_name}.
+This will clear all {project_name} caches, and it prevents the state of {project_name} from being out-of-sync with {jdgserver_name}.
++
+When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to 0.
+
+<#include "partials/infinispan/infinispan-cli-connect.adoc" />
+
+include::partials/infinispan/infinispan-cli-clear-caches.adoc[]
+
+Now we are ready to transfer the state from the primary site to the secondary site.
+
+. Login into your primary site
+
+<#include "partials/infinispan/infinispan-cli-connect.adoc" />
+
+include::partials/infinispan/infinispan-cli-state-transfer.adoc[]
+
+As now the state is available in the secondary site, {project_name} can be started again:
+
+. Login into your secondary site.
+
+. Startup {project_name}.
++
+When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to the original value.
+
+=== AWS Aurora Database
+
+No action required.
+
+=== Route53
+
+No action required.
+
+== Further reading
+
+See <@links.ha id="concepts-infinispan-cli-batch" /> on how to automate Infinispan CLI commands.
+
+</@tmpl.guide>

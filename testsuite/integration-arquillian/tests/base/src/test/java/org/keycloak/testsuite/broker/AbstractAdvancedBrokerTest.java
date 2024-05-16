@@ -4,7 +4,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderSyncMode;
@@ -19,7 +18,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -48,7 +46,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.disablePostBrokerLoginFlow;
@@ -97,6 +97,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      */
     @Test
     public void testAccountManagementLinkIdentity() {
+        assumeFalse("Account linking does not apply to transient sessions", isUsingTransientSessions());
+
         createUser("consumer");
         TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
 
@@ -171,6 +173,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      */
     @Test
     public void testRetrieveToken() throws Exception {
+        assumeFalse("There is no user to update once the user has logged in using transient sessions", isUsingTransientSessions());
+
         updateExecutions(AbstractBrokerTest::enableRequirePassword);
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
@@ -220,13 +224,15 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     // KEYCLOAK-3267
     @Test
     public void loginWithExistingUserWithBruteForceEnabled() {
+        assumeFalse("Brute force protection does not apply to transient sessions", isUsingTransientSessions());
+
         adminClient.realm(bc.consumerRealmName()).update(RealmBuilder.create().bruteForceProtected(true).failureFactor(2).build());
 
         loginWithExistingUser();
 
         Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), "password"));
 
-        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         oauth.clientId("broker-app");
@@ -307,13 +313,15 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      */
     @Test
     public void testDisabledUser() {
+        assumeFalse("There is no user to update after user logout when using transient sessions", isUsingTransientSessions());
+
         loginUser();
 
-        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        UserRepresentation userRep = realm.users().search(bc.getUserLogin()).get(0);
+        UserRepresentation userRep = getConsumerUserRepresentation(bc.getUserLogin());
         UserResource user = realm.users().get(userRep.getId());
 
         userRep.setEnabled(false);
@@ -366,8 +374,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInAsUserInIDPForFirstTime();
 
-        UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
-                adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0).getId());
+        UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(getConsumerUserRepresentation(bc.getUserLogin()).getId());
         Set<String> currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toSet());
@@ -375,12 +382,17 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER)));
 
-        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
 
-        logInAsUserInIDP();
+        if (isUsingTransientSessions()) {
+            // Transient sessions never update user, the rest of the test applies to persistent users only
+            return;
+        } else {
+            logInAsUserInIDP();
+        }
 
         currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
                 .map(RoleRepresentation::getName)
@@ -392,12 +404,14 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             assertThat(currentRoles, not(hasItems(ROLE_USER)));
         }
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        logoutFromConsumerRealm();
         logoutFromRealm(getProviderRoot(), bc.providerRealmName());
     }
 
     @Test
     public void differentMappersCanHaveDifferentSyncModes() {
+        assumeFalse("Sync mode does not apply to transient sessions as the mappers are applied only once and there is nothing to update", isUsingTransientSessions());
+
         createRolesForRealm(bc.providerRealmName());
         createRolesForRealm(bc.consumerRealmName());
 
@@ -466,6 +480,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      */
     @Test
     public void testPostBrokerLoginFlowWithOTP() {
+        assumeFalse("Password / OTP setup does not apply to transient sessions as there is no persistent user to log in twice", isUsingTransientSessions());
+
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
 
@@ -506,6 +522,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     // KEYCLOAK-12986
     @Test
     public void testPostBrokerLoginFlowWithOTP_bruteForceEnabled() {
+        assumeFalse("Brute force protection does not apply to transient sessions", isUsingTransientSessions());
+
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
 
@@ -594,7 +612,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             updateAccountInformationPage.assertCurrent();
             updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+            logoutFromConsumerRealm();
 
             oauth.clientId("broker-app");
             loginPage.open(bc.consumerRealmName());
@@ -612,9 +630,6 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      */
     @Test
     public void testWithLinkedFederationProvider() {
-        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         try {
             updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
@@ -633,6 +648,11 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             loginPage.clickSocial(bc.getIDPAlias());
             loginPage.login("test-user", "password");
 
+            if (isUsingTransientSessions()) {
+                assertThat(getConsumerUserRepresentation("test-user"), notNullValue());
+                // Updating password and the rest of the test is irrelevant for transient sessions
+                return;
+            }
             Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user", "new-password"));
 
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "test-user");

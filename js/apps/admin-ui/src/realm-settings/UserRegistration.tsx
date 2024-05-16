@@ -3,8 +3,7 @@ import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/ro
 import { AlertVariant, Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping } from "../components/role-mapping/RoleMapping";
@@ -13,6 +12,8 @@ import { useFetch } from "../utils/useFetch";
 import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(10);
@@ -56,6 +57,7 @@ export const UserRegistration = () => {
         id="roles"
         eventKey={10}
         title={<TabTitleText>{t("defaultRoles")}</TabTitleText>}
+        data-testid="default-roles-tab"
       >
         <RoleMapping
           name={realm.defaultRole!.name!}
@@ -69,6 +71,7 @@ export const UserRegistration = () => {
         id="groups"
         eventKey={20}
         title={<TabTitleText>{t("defaultGroups")}</TabTitleText>}
+        data-testid="default-groups-tab"
       >
         <DefaultsGroupsTab />
       </Tab>

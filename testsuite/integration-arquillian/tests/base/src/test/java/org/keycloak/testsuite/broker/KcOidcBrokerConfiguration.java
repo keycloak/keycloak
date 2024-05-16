@@ -37,6 +37,8 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     public static final String USER_INFO_CLAIM = "user-claim";
     public static final String HARDOCDED_CLAIM = "test";
     public static final String HARDOCDED_VALUE = "value";
+    public static final String CONSUMER_BROKER_APP_CLIENT_ID = "broker-app";
+    public static final String CONSUMER_BROKER_APP_SECRET = "broker-app-secret";
 
     @Override
     public RealmRepresentation createProviderRealm() {
@@ -73,10 +75,10 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         client.setSecret(CLIENT_SECRET);
 
         client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + getIDPAlias() + "/endpoint/*"));
+                "/auth/realms/" + consumerRealmName() + "/broker/" + getIDPAlias() + "/endpoint/*"));
 
         client.setAdminUrl(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + getIDPAlias() + "/endpoint");
+                "/auth/realms/" + consumerRealmName() + "/broker/" + getIDPAlias() + "/endpoint");
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
 
@@ -166,9 +168,9 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createConsumerClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setClientId("broker-app");
+        client.setClientId(CONSUMER_BROKER_APP_CLIENT_ID);
         client.setName("broker-app");
-        client.setSecret("broker-app-secret");
+        client.setSecret(CONSUMER_BROKER_APP_SECRET);
         client.setEnabled(true);
         client.setDirectAccessGrantsEnabled(true);
 
@@ -179,13 +181,14 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
                 "/auth/realms/" + REALM_CONS_NAME + "/app");
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseRefreshTokenForClientCredentialsGrant(true);
 
         return Collections.singletonList(client);
     }
 
     @Override
     public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-        IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
+        IdentityProviderRepresentation idp = createIdentityProvider(getIDPAlias(), IDP_OIDC_PROVIDER_ID);
 
         Map<String, String> config = idp.getConfig();
         applyDefaultConfiguration(config, syncMode);

@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.ws.rs.core.Response;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ResourcesResource;

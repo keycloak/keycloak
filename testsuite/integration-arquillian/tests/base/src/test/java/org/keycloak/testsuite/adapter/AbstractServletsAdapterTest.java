@@ -23,6 +23,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
@@ -35,6 +36,9 @@ import java.util.List;
 import org.jboss.shrinkwrap.api.asset.UrlAsset;
 
 import org.junit.Assert;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -88,8 +92,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         if (keycloakJSON != null) {
             deployment.addAsWebInfResource(keycloakJSON, "keycloak.json");
         }
-
-        addContextXml(deployment, name);
 
         return deployment;
     }
@@ -150,7 +152,9 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
             deployment.addAsWebInfResource(keystore, "keystore.jks");
         }
 
-        addContextXml(deployment, name);
+        if (AppServerTestEnricher.isJBossJakartaAppServer()) {
+            DeploymentArchiveProcessorUtils.useJakartaEEServletClass(deployment, "/WEB-INF/web.xml");
+        }
 
         return deployment;
     }
@@ -194,8 +198,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         Assert.assertNotNull("keystore2Url should be in " + webInfPath + keystore2, keystore2Url);
         deployment.add(new UrlAsset(keystore2Url), "/WEB-INF/classes/" + keystore2);
 
-        addContextXml(deployment, name);
-
         return deployment;
     }
 
@@ -226,7 +228,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         DroneUtils.getCurrentDriver().navigate().to(timeOffsetUri);
         waitForPageToLoad();
         String pageSource = DroneUtils.getCurrentDriver().getPageSource();
-        log.info(pageSource);
+        assertThat(pageSource, containsString("Offset set successfully"));
     }
 
 }

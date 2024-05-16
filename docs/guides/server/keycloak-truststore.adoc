@@ -2,52 +2,37 @@
 <#import "/templates/kc.adoc" as kc>
 
 <@tmpl.guide
-title="Configuring trusted certificates for outgoing requests"
-summary="How to configure the Keycloak Truststore to communicate with external services through TLS."
-includedOptions="">
+title="Configuring trusted certificates"
+summary="How to configure the {project_name} Truststore to communicate through TLS."
+includedOptions="truststore-paths tls-hostname-verifier">
 
-When Keycloak communicates with external services through TLS, it has to validate the remote server’s certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks. The certificates of these remote server’s or the CA that signed these certificates must be put in a truststore. This truststore is managed by the Keycloak server.
+When {project_name} communicates with external services or has an incoming connection through TLS, it has to validate the remote certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks.
 
-The truststore is used when connecting securely to identity brokers, LDAP identity providers, when sending emails, and for backchannel communication with client applications. It is also useful
-when you want to change the policy on how host names are verified and trusted by the server.
+The certificates of these clients or servers, or the CA that signed these certificates, must be put in a truststore. This truststore is then configured for use by {project_name}.
 
-By default, a truststore provider is not configured, and any TLS/HTTPS connections fall back to standard Java Truststore configuration. If there is no trust established, then these outgoing requests will fail.
+== Configuring the System Truststore
 
-== Configuring the Keycloak Truststore
+The existing Java default truststore certs will always be trusted.  If you need additional certificates, which will be the case if you have self-signed or internal certificate authorities that are not recognized by the JRE, they can be included in the `conf/truststores` directory or subdirectories.  The certs may be in PEM files, or PKCS12 files with extension `.p12` or `.pfx`.  If in PKCS12, the certs must be unencrypted - meaning no password is expected.
 
-You can add your truststore configuration by entering this command:
+If you need an alternative path, use the `--truststore-paths` option to specify additional files or directories where PEM or PKCS12 files are located. Paths are relative to where you launched {project_name}, so absolute paths are recommended instead. If a directory is specified, it will be recursively scanned for truststore files.
 
-<@kc.start parameters="--spi-truststore-file-file=myTrustStore.jks --spi-truststore-file-password=password --spi-truststore-file-hostname-verification-policy=ANY"/>
+After all applicable certs are included, the truststore will be used as the system default truststore via the `javax.net.ssl` properties, and as the default for internal usage within {project_name}.  
 
-The following are possible configuration options for this setting:
+For example:
 
-file::
-The path to a Java keystore file.
-TLS requests need a way to verify the host of the server to which they are talking.
-This is what the truststore does.
-The keystore contains one or more trusted host certificates or certificate authorities.
-This truststore file should only contain public certificates of your secured hosts.
-This is _REQUIRED_ if any of these properties are defined.
+<@kc.start parameters="--truststore-paths=/opt/truststore/myTrustStore.pfx,/opt/other-truststore/myOtherTrustStore.pem" />
 
-password::
-Password of the keystore.
-This option is _REQUIRED_ if any of these properties are defined.
+It is still possible to directly set your own `javax.net.ssl` truststore System properties, but it's recommended to use the `--truststore-paths` instead.
 
-hostname-verification-policy::
-For HTTPS requests, this option verifies the hostname of the server's certificate. Default: `WILDCARD`
+== Hostname Verification Policy
+
+You may refine how hostnames are verified by TLS connections with the `tls-hostname-verifier` property.
+
+* `DEFAULT` (the default) allows wildcards in subdomain names (e.g. *.foo.com) to match names with the same number of levels (e.g. a.foo.com, but not a.b.foo.com) - with rules and exclusions for public suffixes based upon https://publicsuffix.org/list/
 * `ANY` means that the hostname is not verified.
-* `WILDCARD` allows wildcards in subdomain names, such as *.foo.com.
-* When using `STRICT`, the Common Name (CN) must match the hostname exactly.
+* `WILDCARD` (deprecated) allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com). Use DEFAULT instead.
+* `STRICT` (deprecated) allows wildcards in subdomain names (e.g. *.foo.com) to match names with the same number of levels (e.g. a.foo.com, but not a.b.foo.com) - with some limited exclusions. Use DEFAULT instead.
 +
 Please note that this setting does not apply to LDAP secure connections, which require strict hostname checking.
-
-type::
-The type of truststore, such as `jks`, `pkcs12` or `bcfks`. If not provided, the type would be detected based on the truststore
-file extension or platform default type.
-
-=== Example of a truststore configuration
-The following is an example configuration for a truststore that allows you to create trustful connections to all `mycompany.org` domains and its subdomains:
-
-<@kc.start parameters="--spi-truststore-file-file=path/to/truststore.jks --spi-truststore-file-password=change_me --spi-truststore-file-hostname-verification-policy=WILDCARD"/>
 
 </@tmpl.guide>

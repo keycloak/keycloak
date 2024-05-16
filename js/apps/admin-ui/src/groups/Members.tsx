@@ -1,20 +1,22 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
   AlertVariant,
   Button,
   Checkbox,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import {
   Dropdown,
   DropdownItem,
   KebabToggle,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { GroupPath } from "../components/group/GroupPath";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -41,7 +43,7 @@ const MemberOfRenderer = (member: MembersOf) => {
     <>
       {member.membership.map((group, index) => (
         <>
-          <GroupPath key={group.id} group={group} />
+          <GroupPath key={group.id + "-" + member.id} group={group} />
           {member.membership[index + 1] ? ", " : ""}
         </>
       ))}
@@ -59,6 +61,8 @@ const UserDetailLink = (user: MembersOf) => {
 };
 
 export const Members = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
@@ -87,30 +91,51 @@ export const Members = () => {
   const getMembership = async (id: string) =>
     await adminClient.users.listGroups({ id: id! });
 
-  const getSubGroups = (groups: GroupRepresentation[]) => {
-    let subGroups: GroupRepresentation[] = [];
-    for (const group of groups!) {
-      subGroups.push(group);
-      const subs = getSubGroups(group.subGroups!);
-      subGroups = subGroups.concat(subs);
+  // this queries the subgroups using the new search paradigm but doesn't
+  // account for pagination and therefore isn't going to scale well
+  const getSubGroups = async (groupId?: string, count = 0) => {
+    let nestedGroups: GroupRepresentation[] = [];
+    if (!count || !groupId) {
+      return nestedGroups;
     }
-    return subGroups;
+    const args: SubGroupQuery = {
+      parentId: groupId,
+      first: 0,
+      max: count,
+    };
+    const subGroups: GroupRepresentation[] =
+      await adminClient.groups.listSubGroups(args);
+    nestedGroups = nestedGroups.concat(subGroups);
+
+    await Promise.all(
+      subGroups.map((g) => getSubGroups(g.id, g.subGroupCount)),
+    ).then((values: GroupRepresentation[][]) => {
+      values.forEach((groups) => (nestedGroups = nestedGroups.concat(groups)));
+    });
+    return nestedGroups;
   };
 
   const loader = async (first?: number, max?: number) => {
+    if (!id) {
+      return [];
+    }
+
     let members = await adminClient.groups.listMembers({
       id: id!,
       first,
       max,
     });
 
-    if (includeSubGroup) {
-      const subGroups = getSubGroups(currentGroup?.subGroups || []);
-      for (const group of subGroups) {
-        members = members.concat(
-          await adminClient.groups.listMembers({ id: group.id! }),
-        );
-      }
+    if (includeSubGroup && currentGroup?.subGroupCount && currentGroup.id) {
+      const subGroups = await getSubGroups(
+        currentGroup.id,
+        currentGroup.subGroupCount,
+      );
+      await Promise.all(
+        subGroups.map((g) => adminClient.groups.listMembers({ id: g.id! })),
+      ).then((values: UserRepresentation[][]) => {
+        values.forEach((users) => (members = members.concat(users)));
+      });
       members = uniqBy(members, (member) => member.username);
     }
 

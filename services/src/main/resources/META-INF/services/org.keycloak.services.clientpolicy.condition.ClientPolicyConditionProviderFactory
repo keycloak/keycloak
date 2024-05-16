@@ -6,3 +6,4 @@ org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsConditionFa
 org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory
 org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory
 org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory
+org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory

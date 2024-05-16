@@ -38,6 +38,6 @@ public class ExportDistTest {
         cliResult.assertNoMessage("Listening on: http");
 
         cliResult = dist.run("export", "--realm=master");
-        cliResult.assertMessage("Must specify either --dir or --file options.");
+        cliResult.assertError("Must specify either --dir or --file options.");
     }
 }

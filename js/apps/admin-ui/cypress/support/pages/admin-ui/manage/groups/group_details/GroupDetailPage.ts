@@ -7,45 +7,45 @@ const listingPage = new ListingPage();
 const groupPage = new GroupPage();
 
 export default class GroupDetailPage extends GroupPage {
-  private groupNamesColumn = '[data-label="Group name"] > a';
-  private memberTab = "members";
-  private childGroupsTab = "groups";
-  private attributesTab = "attributes";
-  private roleMappingTab = "role-mapping-tab";
-  private permissionsTab = "permissionsTab";
-  private memberNameColumn =
+  #groupNamesColumn = '[data-label="Group name"] > a';
+  #memberTab = "members";
+  #childGroupsTab = "groups";
+  #attributesTab = "attributes";
+  #roleMappingTab = "role-mapping-tab";
+  #permissionsTab = "permissionsTab";
+  #memberNameColumn =
     '[data-testid="members-table"] > tbody > tr > [data-label="Name"]';
-  private addMembers = "addMember";
-  private memberUsernameColumn = 'tbody > tr > [data-label="Username"]';
-  private actionDrpDwnItemRenameGroup = "renameGroupAction";
-  private actionDrpDwnItemDeleteGroup = "deleteGroup";
-  private headerGroupName = ".pf-l-level.pf-m-gutter";
-  private renameGroupModalGroupNameInput = "groupNameInput";
-  private renameGroupModalRenameBtn = "renameGroup";
-  private permissionSwitch = "permissionSwitch";
+  #addMembers = "addMember";
+  #memberUsernameColumn = 'tbody > tr > [data-label="Username"]';
+  #actionDrpDwnItemRenameGroup = "renameGroupAction";
+  #actionDrpDwnItemDeleteGroup = "deleteGroup";
+  #headerGroupName = ".pf-v5-l-level.pf-m-gutter";
+  #renameGroupModalGroupNameInput = "name";
+  #renameGroupModalRenameBtn = "renameGroup";
+  #permissionSwitch = "permissionSwitch";
 
   public goToChildGroupsTab() {
-    cy.findByTestId(this.childGroupsTab).click();
+    cy.findByTestId(this.#childGroupsTab).click();
     return this;
   }
 
   public goToMembersTab() {
-    cy.findByTestId(this.memberTab).click();
+    cy.findByTestId(this.#memberTab).click();
     return this;
   }
 
   public goToAttributesTab() {
-    cy.findByTestId(this.attributesTab).click();
+    cy.findByTestId(this.#attributesTab).click();
     return this;
   }
 
   public goToRoleMappingTab() {
-    cy.findByTestId(this.roleMappingTab).click();
+    cy.findByTestId(this.#roleMappingTab).click();
     return this;
   }
 
   public goToPermissionsTab() {
-    cy.findByTestId(this.permissionsTab).click();
+    cy.findByTestId(this.#permissionsTab).click();
     return this;
   }
 
@@ -53,7 +53,7 @@ export default class GroupDetailPage extends GroupPage {
     super.openDropdownMenu("", cy.findByTestId(this.actionDrpDwnButton));
     super.clickDropdownMenuItem(
       "",
-      cy.findByTestId(this.actionDrpDwnItemRenameGroup),
+      cy.findByTestId(this.#actionDrpDwnItemRenameGroup),
     );
     return this;
   }
@@ -62,7 +62,7 @@ export default class GroupDetailPage extends GroupPage {
     super.openDropdownMenu("", cy.findByTestId(this.actionDrpDwnButton));
     super.clickDropdownMenuItem(
       "",
-      cy.findByTestId(this.actionDrpDwnItemDeleteGroup),
+      cy.findByTestId(this.#actionDrpDwnItemDeleteGroup),
     );
     modalUtils.confirmModal();
     return this;
@@ -71,10 +71,10 @@ export default class GroupDetailPage extends GroupPage {
   public renameGroup(newGroupName: string) {
     this.headerActionRenameGroup();
     modalUtils.checkModalTitle("Rename group");
-    cy.findByTestId(this.renameGroupModalGroupNameInput)
+    cy.findByTestId(this.#renameGroupModalGroupNameInput)
       .clear()
       .type(newGroupName);
-    cy.findByTestId(this.renameGroupModalRenameBtn).click();
+    cy.findByTestId(this.#renameGroupModalRenameBtn).click();
     return this;
   }
 
@@ -84,12 +84,12 @@ export default class GroupDetailPage extends GroupPage {
   }
 
   public assertHeaderGroupNameEqual(groupName: string) {
-    cy.get(this.headerGroupName).find("h1").should("have.text", groupName);
+    cy.get(this.#headerGroupName).find("h1").should("have.text", groupName);
     return this;
   }
 
   checkListSubGroup(subGroups: string[]) {
-    cy.get(this.groupNamesColumn).should((groups) => {
+    cy.get(this.#groupNamesColumn).should((groups) => {
       expect(groups).to.have.length(subGroups.length);
       for (let index = 0; index < subGroups.length; index++) {
         const subGroup = subGroups[index];
@@ -100,12 +100,12 @@ export default class GroupDetailPage extends GroupPage {
   }
 
   clickMembersTab() {
-    cy.findByTestId(this.memberTab).click();
+    cy.findByTestId(this.#memberTab).click();
     return this;
   }
 
   checkListMembers(members: string[]) {
-    cy.get(this.memberNameColumn).should((member) => {
+    cy.get(this.#memberNameColumn).should((member) => {
       expect(member).to.have.length(members.length);
       for (let index = 0; index < members.length; index++) {
         expect(member.eq(index)).to.contain(members[index]);
@@ -115,7 +115,7 @@ export default class GroupDetailPage extends GroupPage {
   }
 
   checkSelectableMembers(members: string[]) {
-    cy.get(this.memberUsernameColumn).should((member) => {
+    cy.get(this.#memberUsernameColumn).should((member) => {
       for (const user of members) {
         expect(member).to.contain(user);
       }
@@ -125,7 +125,7 @@ export default class GroupDetailPage extends GroupPage {
 
   selectUsers(users: string[]) {
     for (const user of users) {
-      cy.get(this.memberUsernameColumn)
+      cy.get(this.#memberUsernameColumn)
         .contains(user)
         .parent()
         .find("input")
@@ -135,24 +135,20 @@ export default class GroupDetailPage extends GroupPage {
   }
 
   clickAddMembers() {
-    cy.findByTestId(this.addMembers).click();
+    cy.findByTestId(this.#addMembers).click();
     return this;
   }
 
   enablePermissionSwitch() {
-    cy.findByTestId(this.permissionSwitch).parent().click();
-    this.assertSwitchStateOn(cy.findByTestId(this.permissionSwitch));
-    cy.findByTestId(this.permissionSwitch).parent().click();
+    cy.findByTestId(this.#permissionSwitch).parent().click();
+    this.assertSwitchStateOn(cy.findByTestId(this.#permissionSwitch));
+    cy.findByTestId(this.#permissionSwitch).parent().click();
     modalUtils
       .checkModalTitle("Disable permissions?")
       .checkConfirmButtonText("Confirm")
       .confirmModal();
-    this.assertSwitchStateOff(cy.findByTestId(this.permissionSwitch));
+    this.assertSwitchStateOff(cy.findByTestId(this.#permissionSwitch));
     return this;
-  }
-
-  createRoleMapping() {
-    listingPage.clickItemCheckbox("default-roles-");
   }
 
   checkDefaultRole() {

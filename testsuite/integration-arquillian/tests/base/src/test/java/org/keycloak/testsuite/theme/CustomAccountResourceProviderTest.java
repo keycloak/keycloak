@@ -1,13 +1,11 @@
 package org.keycloak.testsuite.theme;
 
-import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.theme.CustomAccountResourceProviderFactory;
-import org.keycloak.theme.Theme;
 
 public class CustomAccountResourceProviderTest extends AbstractTestRealmKeycloakTest {
 

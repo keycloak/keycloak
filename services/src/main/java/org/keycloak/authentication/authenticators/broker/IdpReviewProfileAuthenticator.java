@@ -145,12 +145,52 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             }
 
             @Override
+            public String getFirstName() {
+                return userCtx.getFirstName();
+            }
+
+            @Override
+            public void setFirstName(String firstName) {
+                userCtx.setFirstName(firstName);
+            }
+
+            @Override
+            public String getEmail() {
+                return userCtx.getEmail();
+            }
+
+            @Override
+            public void setEmail(String email) {
+                userCtx.setEmail(email);
+            }
+
+            @Override
+            public String getLastName() {
+                return userCtx.getLastName();
+            }
+
+            @Override
+            public void setLastName(String lastName) {
+                userCtx.setLastName(lastName);
+            }
+
+            @Override
             public String getUsername() {
                 return userCtx.getUsername();
             }
 
             @Override
+            public void setUsername(String username) {
+                userCtx.setUsername(username);
+            }
+
+            @Override
             public String getServiceAccountClientLink() {
+                return null;
+            }
+
+            @Override
+            public String getFederationLink() {
                 return null;
             }
         };
@@ -166,7 +206,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             profile.update((attributeName, userModel, oldValue) -> {
                 if (attributeName.equals(UserModel.EMAIL)) {
                     context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
-                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name()).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL)).success();
+                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name()).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirst(UserModel.EMAIL)).success();
                 }
             });
         } catch (ValidationException pve) {
@@ -187,7 +227,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
         logger.debugf("Profile updated successfully after first authentication with identity provider '%s' for broker user '%s'.", brokerContext.getIdpConfig().getAlias(), userCtx.getUsername());
 
-        String newEmail = profile.getAttributes().getFirstValue(UserModel.EMAIL);
+        String newEmail = profile.getAttributes().getFirst(UserModel.EMAIL);
 
         event.detail(Details.UPDATED_EMAIL, newEmail);
 

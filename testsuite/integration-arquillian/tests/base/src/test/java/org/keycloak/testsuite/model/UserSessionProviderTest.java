@@ -304,6 +304,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         String userSessionId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
             UserSessionModel userSession = createSessions(kcSession)[0];
+            userSession = kcSession.sessions().getUserSession(realm, userSession.getId());
 
             kcSession.sessions().removeUserSession(realm, userSession);
             return userSession.getId();
@@ -559,9 +560,11 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
      public void testRemovingExpiredSession(KeycloakSession session) {
         UserSessionModel[] sessions = createSessions(session);
         try {
-            Time.setOffset(3600000);
             UserSessionModel userSession = sessions[0];
             RealmModel realm = userSession.getRealm();
+            // reload userSession in current session
+            userSession = session.sessions().getUserSession(realm, userSession.getId());
+            Time.setOffset(3600000);
             session.sessions().removeExpired(realm);
 
             // Assert no exception is thrown here

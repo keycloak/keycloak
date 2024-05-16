@@ -24,6 +24,8 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+
 import java.io.Serializable;
 
 /**
@@ -76,6 +78,9 @@ public class PersistentClientSessionEntity {
 
     @Column(name="TIMESTAMP")
     protected int timestamp;
+
+    @Version
+    private int version;
 
     @Id
     @Column(name = "OFFLINE_FLAG")
@@ -205,6 +210,17 @@ public class PersistentClientSessionEntity {
             result = 37 * result + (this.clientStorageProvider != null ? this.clientStorageProvider.hashCode() : 0);
             result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return "PersistentClientSessionEntity$Key[" +
+                   "userSessionId='" + userSessionId + '\'' +
+                   ", clientId='" + clientId + '\'' +
+                   ", clientStorageProvider='" + clientStorageProvider + '\'' +
+                   ", externalClientId='" + externalClientId + '\'' +
+                   ", offline='" + offline + '\'' +
+                   ']';
         }
     }
 }

@@ -1,0 +1,20 @@
+
+=== {project_name} Java adapters
+
+{project_name} comes with a range of different adapters for Java application. Selecting the correct adapter depends on the target platform.
+
+[[_saml_jboss_adapter]]
+==== Red Hat JBoss Enterprise Application Platform
+
+===== 8.0 Beta
+
+{project_name} provides a SAML adapter for Red Hat Enterprise Application Platform 8.0 Beta. However, the documentation
+is not currently available, and will be added in the near future.
+
+===== 6.4 and 7.x
+
+Existing applications deployed to Red Hat JBoss Enterprise Application Platform 6.4 and 7.x can leverage adapters from
+Red Hat Single Sign-On 7.6 in combination with the {project_name} server.
+
+For more information, see the
+https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html/securing_applications_and_services_guide/using_saml_to_secure_applications_and_services#saml_jboss_adapter[Red Hat Single Sign-On documentation].

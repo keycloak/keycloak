@@ -27,6 +27,12 @@ public interface KeycloakDistribution {
 
     boolean isManualStop();
 
+    void assertStopped();
+
+    void setRequestPort();
+
+    void setRequestPort(int port);
+
     default String[] getCliArgs(List<String> arguments) {
         throw new RuntimeException("Not implemented");
     }

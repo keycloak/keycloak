@@ -4,15 +4,16 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Enabling Keycloak Health checks"
-summary="Learn how to enable and use Keycloak health checks"
+title="Enabling {project_name} Health checks"
+summary="Learn how to enable and use {project_name} health checks"
 includedOptions="health-enabled">
 
-Keycloak has built in support for health checks. This {section} describes how to enable and use the Keycloak health checks.
+{project_name} has built in support for health checks. This {section} describes how to enable and use the {project_name} health checks.
+The {project_name} health checks are exposed on the management port `9000` by default. For more details, see <@links.server id="management-interface" />
 
-== Keycloak health check endpoints
+== {project_name} health check endpoints
 
-Keycloak exposes 4 health endpoints:
+{project_name} exposes 4 health endpoints:
 
 * `/health/live`
 * `/health/ready`
@@ -55,22 +56,22 @@ By default, no check is returned from the health endpoints.
 
 == Using the health checks
 
-It is recommended that the health endpoints be monitored by external HTTP requests. Due to security measures that remove `curl` and other packages from the Keycloak container image, local command-based monitoring will not function easily.
+It is recommended that the health endpoints be monitored by external HTTP requests. Due to security measures that remove `curl` and other packages from the {project_name} container image, local command-based monitoring will not function easily.
 
-If you are not using Keycloak in a container, use whatever you want to access the health check endpoints.
+If you are not using {project_name} in a container, use whatever you want to access the health check endpoints.
 
 === curl
 
-You may use a simple HTTP HEAD request to determine the `+live+` or `+ready+` state of Keycloak. `+curl+` is a good HTTP client for this purpose.
+You may use a simple HTTP HEAD request to determine the `+live+` or `+ready+` state of {project_name}. `+curl+` is a good HTTP client for this purpose.
 
-If Keycloak is deployed in a container, you must run this command from outside it due to the previously mentioned security measures. For example:
+If {project_name} is deployed in a container, you must run this command from outside it due to the previously mentioned security measures. For example:
 
 [source, bash]
 ----
-curl --head -fsS http://localhost:8080/health/ready
+curl --head -fsS http://localhost:9000/health/ready
 ----
 
-If the command returns with status 0, then Keycloak is `+live+` or `+ready+`, depending on which endpoint you called. Otherwise there is a problem.
+If the command returns with status 0, then {project_name} is `+live+` or `+ready+`, depending on which endpoint you called. Otherwise there is a problem.
 
 === Kubernetes
 
@@ -78,7 +79,7 @@ Define a https://kubernetes.io/docs/tasks/configure-pod-container/configure-live
 
 === HEALTHCHECK
 
-The Dockerfile image `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. The Keycloak container does not have any CLI HTTP clients installed. Consider installing `+curl+` as an additional RPM, as detailed by the <@links.server id="containers" /> {section}. Note that your container may be less secure because of this.
+The Dockerfile image `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. The {project_name} container does not have any CLI HTTP clients installed. Consider installing `+curl+` as an additional RPM, as detailed by the <@links.server id="containers" /> {section}. Note that your container may be less secure because of this.
 
 == Available Checks
 

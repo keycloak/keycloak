@@ -18,30 +18,31 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.Map;
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -53,6 +54,7 @@ import jakarta.ws.rs.ClientErrorException;
 
 import java.util.Collections;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -76,12 +78,6 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     protected LoginConfigTotpPage totpPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
-
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-    }
 
     @Override
     protected void afterImportTestRealm() {
@@ -164,6 +160,58 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setFirstName("Jane");
         user.update(userRepresentation);
+    }
+
+    // issue #28580
+    @Test
+    public void testReadOnlyUserGetsPermanentlyLocked(){
+        int failureFactor = 2;
+        RealmRepresentation realm = testRealm().toRepresentation();
+        try {
+            // Set permanent lockout for the test
+            realm.setBruteForceProtected(true);
+            realm.setPermanentLockout(true);
+            realm.setFailureFactor(failureFactor);
+            testRealm().update(realm);
+
+            UserRepresentation user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
+            assertTrue(user.isEnabled());
+
+            // Lock user (permanently) and make sure the number of failures matches failure factor
+            loginInvalidPassword("johnkeycloak");
+            loginInvalidPassword("johnkeycloak");
+            assertUserNumberOfFailures(user.getId(), failureFactor);
+
+            // Make sure user is now disabled
+            user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
+            assertFalse(user.isEnabled());
+
+            events.clear();
+        } finally {
+            realm.setBruteForceProtected(false);
+            realm.setPermanentLockout(false);
+            realm.setFailureFactor(30);
+            testRealm().update(realm);
+            UserRepresentation user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
+    public void loginInvalidPassword(String username) {
+        loginPage.open();
+        loginPage.login(username, "invalid");
+
+        loginPage.assertCurrent();
+
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+
+        events.clear();
+    }
+
+    private void assertUserNumberOfFailures(String userId, Integer numberOfFailures) {
+        Map<String, Object> userAttackInfo = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
+        MatcherAssert.assertThat((Integer) userAttackInfo.get("numFailures"), is(numberOfFailures));
     }
 
     private void setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement requirement) {

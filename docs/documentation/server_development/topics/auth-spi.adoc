@@ -1,6 +1,7 @@
 [[_auth_spi]]
 == Authentication SPI
 
+
 {project_name} includes a range of different authentication mechanisms: kerberos, password, otp and others.
 These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.
 {project_name} provides an authentication SPI that you can use to write new plugins.
@@ -8,7 +9,7 @@ The Admin Console supports applying, ordering, and configuring these new mechani
 
 {project_name} also supports a simple registration form.
 Different aspects of this form can be enabled and disabled for example
-Recaptcha support can be turned off and on.
+reCAPTCHA support can be turned off and on.
 The same authentication SPI can be used to add another page to the registration flow or reimplement it entirely.
 There's also an additional fine-grained SPI you can use to add specific validations and user extensions to the built-in registration form.
 
@@ -18,7 +19,7 @@ After the action is performed successfully, the user doesn't have to perform the
 You can write and plug in your own required actions.
 
 WARNING: If your authenticator or required action implementation is using some user attributes as the metadata attributes for linking/establishing the user identity,
-then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
 
 === Terms
 
@@ -150,7 +151,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
 
 In this section, we'll take a look at the Authenticator interface.
 For this, we are going to implement an authenticator that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".
-This example is fully implemented and contained in the examples/providers/authenticator directory of the demo distribution of {project_name}.
+This example is fully implemented and contained in the {quickstartRepo_link}[{quickstartRepo_name}] repository under `extension/authenticator`.
 
 To create an authenticator, you must at minimum implement the org.keycloak.authentication.AuthenticatorFactory and Authenticator interfaces.
 The Authenticator interface defines the logic. The AuthenticatorFactory is responsible for creating instances of an Authenticator.
@@ -940,7 +941,7 @@ It is entirely possible for you to implement your own flow with a set of Authent
 But what you'll usually want to do is just add a bit of validation to the out-of-the-box registration page.
 An additional SPI was created to be able to do this.
 It basically allows you to add validation of form elements on the page as well as to initialize UserModel attributes and data after the user has been registered.
-We'll look at both the implementation of the user profile registration processing as well as the registration Google Recaptcha plugin.
+We'll look at both the implementation of the user profile registration processing as well as the registration Google reCAPTCHA Enterprise plugin.
 
 ==== Implementation FormAction interface
 
@@ -953,18 +954,24 @@ Rendering is done in the buildPage() method, validation is done in the validate(
 
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
-        AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
-        if (captchaConfig == null || captchaConfig.getConfig() == null
-                || captchaConfig.getConfig().get(SITE_KEY) == null
-                || captchaConfig.getConfig().get(SITE_SECRET) == null
-                ) {
+        Map<String, String> config = context.getAuthenticatorConfig().getConfig();
+        if (config == null
+                || Stream.of(PROJECT_ID, SITE_KEY, API_KEY, ACTION)
+                        .anyMatch(key -> Strings.isNullOrEmpty(config.get(key)))
+                || parseDoubleFromConfig(config, SCORE_THRESHOLD) == null) {
             form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
             return;
         }
-        String siteKey = captchaConfig.getConfig().get(SITE_KEY);
+
+        String userLanguageTag = context.getSession().getContext().resolveLocale(context.getUser())
+                .toLanguageTag();
+        boolean invisible = Boolean.parseBoolean(config.getOrDefault(INVISIBLE, "true"));
+
         form.setAttribute("recaptchaRequired", true);
-        form.setAttribute("recaptchaSiteKey", siteKey);
-        form.addScript("https://www.google.com/recaptcha/api.js");
+        form.setAttribute("recaptchaSiteKey", config.get(SITE_KEY));
+        form.setAttribute("recaptchaAction", config.get(ACTION));
+        form.setAttribute("recaptchaVisible", !invisible);
+        form.addScript("https://www.google.com/recaptcha/enterprise.js?hl=" + userLanguageTag);
     }
 ----
 
@@ -975,11 +982,11 @@ You can add additional attributes to the form provider so that they can be displ
 The code above is from the registration recaptcha plugin.
 Recaptcha requires some specific settings that must be obtained from configuration.
 FormActions are configured in the exact same as Authenticators are.
-In this example, we pull the Google Recaptcha site key from configuration and add it as an attribute to the form provider.
-Our registration template file can read this attribute now.
+In this example, we pull the Google Recaptcha site key and other options from Recaptcha configuration and add them as attributes to the form provider.
+Our registration template file, register.ftl, can now have access to those attributes.
 
 Recaptcha also has the requirement of loading a JavaScript script.
-You can do this by calling LoginFormsProvider.addScript() passing in the URL.
+You can do this by calling LoginFormsProvider.addScript(), passing in the URL.
 
 For user profile processing, there is no additional information that it needs to add to the form, so its buildPage() method is empty.
 
@@ -993,33 +1000,25 @@ Let's look at the Recaptcha's plugin first.
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        List<FormMessage> errors = new ArrayList<>();
-        boolean success = false;
-
         String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
-        if (!Validation.isBlank(captcha)) {
-            AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
-            String secret = captchaConfig.getConfig().get(SITE_SECRET);
 
-            success = validateRecaptcha(context, success, captcha, secret);
-        }
-        if (success) {
+        if (!Validation.isBlank(captcha) && validateRecaptcha(context, captcha)) {
             context.success();
         } else {
+            List<FormMessage> errors = new ArrayList<>();
             errors.add(new FormMessage(null, Messages.RECAPTCHA_FAILED));
             formData.remove(G_RECAPTCHA_RESPONSE);
             context.validationError(formData, errors);
-            return;
-
-
         }
     }
+
 ----
 
 Here we obtain the form data that the Recaptcha widget adds to the form.
 We obtain the Recaptcha secret key from configuration.
 We then validate the recaptcha.
 If successful, ValidationContext.success() is called.
+We clear the captcha token from the form using formData.remove, but keep other form data untouched.
 If not, we invoke ValidationContext.validationError() passing in the formData (so the user doesn't have to re-enter data), we also specify an error message we want displayed.
 The error message must point to a message bundle property in the internationalized message bundles.
 For other registration extensions validate() might be validating the format of a form element, for example an alternative email attribute.
@@ -1032,51 +1031,43 @@ Let's also look at the user profile plugin that is used to validate email addres
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        List<FormMessage> errors = new ArrayList<>();
+        context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
-        String eventError = Errors.INVALID_REGISTRATION;
+        UserProfile profile = getOrCreateUserProfile(context, formData);
 
-        if (Validation.isBlank(formData.getFirst((RegistrationPage.FIELD_FIRST_NAME)))) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_FIRST_NAME, Messages.MISSING_FIRST_NAME));
-        }
+        try {
+            profile.validate();
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 
-        if (Validation.isBlank(formData.getFirst((RegistrationPage.FIELD_LAST_NAME)))) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_LAST_NAME, Messages.MISSING_LAST_NAME));
-        }
+            if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
+                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL));
+            }
 
-        String email = formData.getFirst(Validation.FIELD_EMAIL);
-        if (Validation.isBlank(email)) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
-        } else if (!Validation.isEmailValid(email)) {
-            formData.remove(Validation.FIELD_EMAIL);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
-        }
+            if (pve.hasError(Messages.EMAIL_EXISTS)) {
+                context.error(Errors.EMAIL_IN_USE);
+            } else if (pve.hasError(Messages.USERNAME_EXISTS)) {
+                context.error(Errors.USERNAME_IN_USE);
+            } else {
+                context.error(Errors.INVALID_REGISTRATION);
+            }
 
-        if (context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
-            formData.remove(Validation.FIELD_EMAIL);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
-        }
-
-        if (errors.size() > 0) {
             context.validationError(formData, errors);
             return;
-
-        } else {
-            context.success();
         }
+        context.success();
     }
 ----
 
-As you can see, this validate() method of user profile processing makes sure that the email, first, and last name are filled in the form.
-It also makes sure that email is in the right format.
-If any of these validations fail, an error message is queued up for rendering.
-Any fields in error are removed from the form data.
-Error messages are represented by the FormMessage class.
-The first parameter of the constructor of this class takes the HTML element id.
-The input in error will be highlighted when the form is re-rendered.
-The second parameter is a message reference id.
-This id must correspond to a property in one of the localized message bundle files.
-in the theme.
+As you can see, this validate() method of user profile processing makes sure that the email and all other attributes are filled in the form.
+It delegates to User Profile SPI, which makes sure that email is in the right format and does all other validations.
+If any of these validations fail, an error message is queued up for rendering. It would contain the message for every field where the validation failed.
+
+NOTE: As you can see, the user profile makes sure that registration form contains all the needed user profile fields. User profile also makes sure that correct validations
+are used, attributes are correctly grouped on the page.  There is a correct type used for each field (such as if a user needs to choose from predefined values), fields
+are "conditionally" rendered just for some scopes (Progressive profiling) and others. So usually you will not need to implement new `FormAction` or registration fields, but
+you can just properly configure user-profile to reflect this. For more details, see link:{adminguide_link}#user-profile[User Profile documentation].
+In general, new FormAction might be useful for instance if you want to add new credentials to the registration form (such as ReCaptcha support as mentioned here) rather than new user profile fields.
 
 After all validations have been processed then, the form flow then invokes the FormAction.success() method.
 For recaptcha this is a no-op, so we won't go over it.
@@ -1087,17 +1078,44 @@ For user profile processing, this method fills in values in the registered user.
 
     @Override
     public void success(FormContext context) {
-        UserModel user = context.getUser();
+        checkNotOtherUserAuthenticating(context);
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        user.setFirstName(formData.getFirst(RegistrationPage.FIELD_FIRST_NAME));
-        user.setLastName(formData.getFirst(RegistrationPage.FIELD_LAST_NAME));
-        user.setEmail(formData.getFirst(RegistrationPage.FIELD_EMAIL));
+
+        String email = formData.getFirst(UserModel.EMAIL);
+        String username = formData.getFirst(UserModel.USERNAME);
+
+        if (context.getRealm().isRegistrationEmailAsUsername()) {
+            username = email;
+        }
+
+        context.getEvent().detail(Details.USERNAME, username)
+                .detail(Details.REGISTER_METHOD, "form")
+                .detail(Details.EMAIL, email);
+
+        UserProfile profile = getOrCreateUserProfile(context, formData);
+        UserModel user = profile.create();
+
+        user.setEnabled(true);
+
+        // This means that following actions can retrieve user from the context by context.getUser() method
+        context.setUser(user);
     }
 ----
 
-Pretty simple implementation.
-The UserModel of the newly registered user is obtained from the FormContext.
-The appropriate methods are called to initialize UserModel data.
+The new user is created and the UserModel of the newly registered user is added to the FormContext.
+The appropriate methods are called to initialize UserModel data. In your own FormAction, you can possibly obtain user by using something like:
+[source,java]
+----
+
+    @Override
+    public void success(FormContext context) {
+        UserModel user = context.getUser();
+        if (user != null) {
+            // Do something useful with the user here ...
+        }
+    }
+----
 
 Finally, you are also required to define a FormActionFactory class.
 This class is implemented similarly to AuthenticatorFactory, so we won't go over it.
@@ -1112,7 +1130,7 @@ For example:
 [source]
 ----
 
-org.keycloak.authentication.forms.RegistrationProfile
+org.keycloak.authentication.forms.RegistrationUserCreation
 org.keycloak.authentication.forms.RegistrationRecaptcha
 ----
 

@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util.javascript;
 
 import org.jboss.logging.Logger;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -134,7 +133,12 @@ public class JavascriptTestExecutor {
     }
 
     public JavascriptTestExecutor logout(JavascriptStateValidator validator, LogoutConfirmPage logoutConfirmPage) {
-        jsExecutor.executeScript("keycloak.logout()");
+        return logout(validator, logoutConfirmPage, null);
+    }
+
+    public JavascriptTestExecutor logout(JavascriptStateValidator validator, LogoutConfirmPage logoutConfirmPage, JSObjectBuilder logoutOptions) {
+        String logoutOptionsString = logoutOptions == null ? "" : logoutOptions.toString();
+        jsExecutor.executeScript("keycloak.logout(" + logoutOptionsString + ")");
 
         try {
             // simple check if we are at the logout confirm page, if so just click 'Yes'

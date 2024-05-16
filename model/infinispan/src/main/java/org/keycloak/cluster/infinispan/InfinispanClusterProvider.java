@@ -39,7 +39,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProvider.class);
 
     public static final String CLUSTER_STARTUP_TIME_KEY = "cluster-start-time";
-    private static final String TASK_KEY_PREFIX = "task::";
+    public static final String TASK_KEY_PREFIX = "task::";
 
     private final int clusterStartupTime;
     private final String myAddress;

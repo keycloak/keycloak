@@ -1,16 +1,17 @@
+import FormValidation from "../../../../forms/FormValidation";
 import PageObject from "../../components/PageObject";
 import Masthead from "../../Masthead";
 
 const masthead = new Masthead();
 
 export default class ProviderBaseGeneralSettingsPage extends PageObject {
-  private redirectUriGroup = ".pf-c-clipboard-copy__group";
-  protected clientIdInput = "#kc-client-id";
-  protected clientSecretInput = "#kc-client-secret";
-  private displayOrderInput = "#kc-display-order";
-  private addBtn = "createProvider";
-  private cancelBtn = "cancel";
-  private requiredFieldErrorMsg = ".pf-c-form__helper-text.pf-m-error";
+  #redirectUriGroup = ".pf-v5-c-clipboard-copy__group";
+  protected clientIdInput = "config.clientId";
+  protected clientSecretInput = "config.clientSecret";
+  #displayOrderInput = "#kc-display-order";
+  #addBtn = "createProvider";
+  #cancelBtn = "cancel";
+  #requiredFieldErrorMsg = ".pf-v5-c-form__helper-text.pf-m-error";
   protected requiredFields: string[] = [
     this.clientIdInput,
     this.clientSecretInput,
@@ -22,58 +23,66 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   };
 
   public typeClientId(clientId: string) {
-    cy.get(this.clientIdInput).type(clientId).blur();
+    if (clientId) {
+      cy.findByTestId(this.clientIdInput).type(clientId);
+    } else {
+      cy.findByTestId(this.clientIdInput).clear();
+    }
     return this;
   }
 
   public typeClientSecret(clientSecret: string) {
-    cy.get(this.clientSecretInput).type(clientSecret).blur();
+    if (clientSecret) {
+      cy.findByTestId(this.clientSecretInput).type(clientSecret);
+    } else {
+      cy.findByTestId(this.clientSecretInput).clear();
+    }
     return this;
   }
 
   public typeDisplayOrder(displayOrder: string) {
-    cy.get(this.displayOrderInput).type(displayOrder).blur();
+    cy.get(this.#displayOrderInput).type(displayOrder).blur();
 
     return this;
   }
 
   public clickShowPassword() {
-    cy.get(this.clientSecretInput).parent().find("button").click();
+    cy.findByTestId(this.clientSecretInput).parent().find("button").click();
     return this;
   }
 
   public clickCopyToClipboard() {
-    cy.get(this.redirectUriGroup).find("button").click();
+    cy.get(this.#redirectUriGroup).find("button").click();
     return this;
   }
 
   public clickAdd() {
-    cy.findByTestId(this.addBtn).click();
+    cy.findByTestId(this.#addBtn).click();
     return this;
   }
 
   public clickCancel() {
-    cy.findByTestId(this.cancelBtn).click();
+    cy.findByTestId(this.#cancelBtn).click();
     return this;
   }
 
   public assertRedirectUriInputEqual(value: string) {
-    cy.get(this.redirectUriGroup).find("input").should("have.value", value);
+    cy.get(this.#redirectUriGroup).find("input").should("have.value", value);
     return this;
   }
 
   public assertClientIdInputEqual(text: string) {
-    cy.get(this.clientIdInput).should("have.text", text);
+    cy.findByTestId(this.clientIdInput).should("have.text", text);
     return this;
   }
 
   public assertClientSecretInputEqual(text: string) {
-    cy.get(this.clientSecretInput).should("have.text", text);
+    cy.findByTestId(this.clientSecretInput).should("have.text", text);
     return this;
   }
 
   public assertDisplayOrderInputEqual(text: string) {
-    cy.get(this.clientSecretInput).should("have.text", text);
+    cy.findByTestId(this.clientSecretInput).should("have.text", text);
     return this;
   }
 
@@ -85,17 +94,9 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   protected assertCommonRequiredFields(requiredFields: string[]) {
     requiredFields.forEach((elementLocator) => {
       if (elementLocator.includes("#")) {
-        cy.get(elementLocator)
-          .parent()
-          .parent()
-          .find(this.requiredFieldErrorMsg)
-          .should("exist");
+        FormValidation.assertRequired(cy.get(elementLocator));
       } else {
-        cy.findByTestId(elementLocator)
-          .parent()
-          .parent()
-          .find(this.requiredFieldErrorMsg)
-          .should("exist");
+        FormValidation.assertRequired(cy.findByTestId(elementLocator));
       }
     });
     return this;
@@ -120,12 +121,12 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   protected assertCommonFilledDataEqual(idpName: string) {
-    cy.get(this.clientIdInput).should(
+    cy.findByTestId(this.clientIdInput).should(
       "have.value",
       this.testData["ClientId"] + idpName,
     );
-    cy.get(this.clientSecretInput).should("contain.value", "****");
-    cy.get(this.displayOrderInput).should(
+    cy.findByTestId(this.clientSecretInput).should("contain.value", "****");
+    cy.get(this.#displayOrderInput).should(
       "have.value",
       this.testData["DisplayOrder"],
     );

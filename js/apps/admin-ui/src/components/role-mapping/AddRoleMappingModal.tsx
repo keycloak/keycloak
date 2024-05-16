@@ -1,16 +1,18 @@
 import {
   Button,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   Modal,
   ModalVariant,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../../admin-client";
 import { useAccess } from "../../context/access/Access";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
@@ -40,15 +42,15 @@ export const AddRoleMappingModal = ({
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
-  const { t } = useTranslation(type);
+  const { adminClient } = useAdminClient();
+
+  const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
 
   const [searchToggle, setSearchToggle] = useState(false);
 
-  const [filterType, setFilterType] = useState<FilterType>(
-    canViewRealmRoles ? "roles" : "clients",
-  );
+  const [filterType, setFilterType] = useState<FilterType>("clients");
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -70,7 +72,7 @@ export const AddRoleMappingModal = ({
       params.search = search;
     }
 
-    const roles = await getAvailableRoles(type, { ...params, id });
+    const roles = await getAvailableRoles(adminClient, type, { ...params, id });
     const sorted = localeSort(roles, compareRow);
     return sorted.map((row) => {
       return {
@@ -85,7 +87,7 @@ export const AddRoleMappingModal = ({
     max?: number,
     search?: string,
   ): Promise<Row[]> => {
-    const roles = await getAvailableClientRoles({
+    const roles = await getAvailableClientRoles(adminClient, {
       id,
       type,
       first: first || 0,
@@ -151,7 +153,7 @@ export const AddRoleMappingModal = ({
                 data-testid="filter-type-dropdown"
                 toggle={
                   <DropdownToggle
-                    onToggle={setSearchToggle}
+                    onToggle={(_event, val) => setSearchToggle(val)}
                     icon={<FilterIcon />}
                   >
                     {filterType === "roles"

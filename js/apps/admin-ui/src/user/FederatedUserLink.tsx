@@ -3,8 +3,7 @@ import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/us
 import { Button } from "@patternfly/react-core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toCustomUserFederation } from "../user-federation/routes/CustomUserFederation";
@@ -15,6 +14,8 @@ type FederatedUserLinkProps = {
 };
 
 export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
+  const { adminClient } = useAdminClient();
+
   const access = useAccess();
   const { realm } = useRealm();
 
@@ -35,10 +36,11 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
 
   if (!component) return null;
 
+  if (!access.hasAccess("view-realm")) return <span>{component.name}</span>;
+
   return (
     <Button
       variant="link"
-      isDisabled={!access.hasAccess("view-realm")}
       component={(props) => (
         <Link
           {...props}

@@ -3,7 +3,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <version.log4j>2.17.1</version.log4j>
         <!-- this property prevents the warning "WARN FilenoUtil: Native subprocess control requires open access" when using JRuby for the unit tests on JDK17 -->
         <surefire.system.args>
             --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
@@ -125,18 +124,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${version.log4j}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${version.log4j}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.asciidoctor</groupId>
             <artifactId>asciidoctorj</artifactId>
             <version>2.5.10</version>
@@ -147,10 +134,6 @@
             <artifactId>httpclient5</artifactId>
             <version>5.0.1</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
         </dependency>
     </dependencies>
 

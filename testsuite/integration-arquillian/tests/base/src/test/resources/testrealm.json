@@ -164,6 +164,18 @@
           "credentialData" : "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\",\"subType\":\"totp\"}"
         }
       ]
+    },
+    {
+      "username" : "special>>character",
+      "enabled": true,
+      "email" : "special-character@localhost",
+      "firstName": "Special",
+      "lastName": "Character",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "<password>" }
+      ],
+      "realmRoles": ["user", "offline_access"]
     }
   ],
   "scopeMappings": [

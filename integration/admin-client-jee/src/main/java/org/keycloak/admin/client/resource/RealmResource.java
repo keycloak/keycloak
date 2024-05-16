@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import jakarta.ws.rs.DefaultValue;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -268,7 +269,7 @@ public interface RealmResource {
 
     @Path("sessions/{session}")
     @DELETE
-    void deleteSession(@PathParam("session") String sessionId);
+    void deleteSession(@PathParam("session") String sessionId, @DefaultValue("false") @QueryParam("isOffline") boolean offline);
 
     @Path("components")
     ComponentsResource components();
@@ -288,4 +289,10 @@ public interface RealmResource {
 
     @Path("client-policies/profiles")
     ClientPoliciesProfilesResource clientPoliciesProfilesResource();
+
+    @Path("organizations")
+    OrganizationsResource organizations();
+
+    @Path("client-types")
+    ClientTypesResource clientTypes();
 }

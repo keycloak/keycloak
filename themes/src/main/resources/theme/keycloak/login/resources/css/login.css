@@ -53,7 +53,17 @@ h1#kc-page-title {
     font-size: var(--pf-global--FontSize--sm);
 }
 
-a#kc-current-locale-link::after {
+#kc-locale-dropdown button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--pf-global--Color--200);
+    text-align: right;
+    font-size: var(--pf-global--FontSize--sm);
+}
+
+button#kc-current-locale-link::after {
     content: "\2c5";
     margin-left: var(--pf-global--spacer--xs)
 }
@@ -274,6 +284,10 @@ ul#kc-totp-supported-apps {
     color: var(--pf-global--Color--200);
 }
 
+.kc-social-gray h2 {
+    font-size: 1em;
+}
+
 .kc-social-item {
     margin-bottom: var(--pf-global--spacer--sm);
     font-size: 15px;
@@ -465,6 +479,12 @@ ul#kc-totp-supported-apps {
     padding-top: 1rem;
     padding-bottom: 1rem;
     cursor: pointer;
+    text-align: left;
+    align-items: unset;
+    background-color: unset;
+    border-right: unset;
+    border-bottom: unset;
+    border-left: unset;
 }
 
 .select-auth-box-parent:hover{
@@ -601,5 +621,9 @@ ul#kc-totp-supported-apps {
 .kc-recovery-codes-confirmation {
     align-items: baseline;
     margin-bottom: 16px;
+}
+
+#certificate_subjectDN {
+    overflow-wrap: break-word
 }
 /* End Recovery codes */

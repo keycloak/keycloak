@@ -6,14 +6,7 @@ import {
   Text,
   TextVariants,
 } from "@patternfly/react-core";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import { isValidComponentType } from "./policy/PolicyDetails";
@@ -42,7 +35,7 @@ export const NewPolicyDialog = ({
 
   return (
     <Modal
-      aria-labelledby={t("addPredefinedMappers")}
+      aria-label={t("createPolicy")}
       variant={ModalVariant.medium}
       header={
         <TextContent>
@@ -53,7 +46,7 @@ export const NewPolicyDialog = ({
       isOpen
       onClose={toggleDialog}
     >
-      <TableComposable aria-label={t("policies")} variant="compact">
+      <Table aria-label={t("policies")} variant="compact">
         <Thead>
           <Tr>
             <Th>{t("name")}</Th>
@@ -66,7 +59,7 @@ export const NewPolicyDialog = ({
               key={provider.type}
               data-testid={provider.type}
               onRowClick={() => onSelect(provider)}
-              isHoverable
+              isClickable
             >
               <Td>{provider.name}</Td>
               <Td>
@@ -76,7 +69,7 @@ export const NewPolicyDialog = ({
             </Tr>
           ))}
         </Tbody>
-      </TableComposable>
+      </Table>
     </Modal>
   );
 };

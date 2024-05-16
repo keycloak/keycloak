@@ -3,25 +3,24 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
-  FormGroup,
   PageSection,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { TextAreaControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { useFetch } from "../../utils/useFetch";
 import { prettyPrintJSON } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import type { ClientParams } from "../routes/Client";
 
 export const AuthorizationExport = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { clientId } = useParams<ClientParams>();
   const { addAlert, addError } = useAlerts();
@@ -63,26 +62,20 @@ export const AuthorizationExport = () => {
 
   return (
     <PageSection>
-      <FormAccess isHorizontal role="view-realm" className="pf-u-mt-lg">
-        <FormGroup
+      <FormAccess
+        isHorizontal
+        role="manage-authorization"
+        className="pf-v5-u-mt-lg"
+      >
+        <TextAreaControl
+          name="authDetails"
           label={t("authDetails")}
-          labelIcon={
-            <HelpItem
-              helpText={t("authDetailsHelp")}
-              fieldLabelId="authDetails"
-            />
-          }
-          fieldId="client"
-        >
-          <KeycloakTextArea
-            id="authorizationDetails"
-            readOnly
-            resizeOrientation="vertical"
-            value={code}
-            aria-label={t("authDetails")}
-            rows={10}
-          />
-        </FormGroup>
+          labelIcon={t("authDetailsHelp")}
+          resizeOrientation="vertical"
+          defaultValue={code!}
+          readOnly
+          rows={10}
+        />
         <ActionGroup>
           <Button
             data-testid="authorization-export-download"

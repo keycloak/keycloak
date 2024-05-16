@@ -55,7 +55,7 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
                 .property().name(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE)
                 .label("User Model Attribute")
                 .helpText("Name of the UserModel property or attribute you want to map the LDAP attribute into. For example 'firstName', 'lastName, 'email', 'street' etc.")
-                .type(ProviderConfigProperty.STRING_TYPE)
+                .type(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE)
                 .required(true)
                 .add()
                 .property().name(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE).label("LDAP Attribute").helpText("Name of mapped attribute on LDAP object. For example 'cn', 'sn, 'mail', 'street' etc.")

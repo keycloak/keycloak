@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type CreateInitialAccessTokenParams = { realm: string };
@@ -21,5 +21,5 @@ export const CreateInitialAccessTokenRoute: AppRouteObject = {
 export const toCreateInitialAccessToken = (
   params: CreateInitialAccessTokenParams,
 ): Partial<Path> => ({
-  pathname: generatePath(CreateInitialAccessTokenRoute.path, params),
+  pathname: generateEncodedPath(CreateInitialAccessTokenRoute.path, params),
 });

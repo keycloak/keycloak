@@ -4,23 +4,15 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  FormGroup,
-  InputGroup,
-  InputGroupText,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
 } from "@patternfly/react-core";
-import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
@@ -41,25 +33,15 @@ type FormFields = Omit<
 >;
 
 export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
-  const {
-    control,
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors, isValid, isDirty },
-  } = useForm<FormFields>({ mode: "onChange" });
+  const form = useForm<FormFields>({ mode: "onChange" });
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const [
-    backchannelTokenDeliveryModeOpen,
-    setBackchannelTokenDeliveryModeOpen,
-  ] = useState(false);
-  const [authRequestedUserHintOpen, setAuthRequestedUserHintOpen] =
-    useState(false);
 
   const setupForm = (realm: RealmRepresentation) =>
-    convertToFormValues(realm, setValue);
+    convertToFormValues(realm, form.setValue);
 
   useEffect(() => setupForm(realm), []);
 
@@ -87,165 +69,82 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
       <FormAccess
         role="manage-realm"
         isHorizontal
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
-        <FormGroup
-          fieldId="cibaBackchannelTokenDeliveryMode"
-          label={t("cibaBackchannelTokenDeliveryMode")}
-          labelIcon={
-            <HelpItem
-              helpText={t("cibaBackchannelTokenDeliveryModeHelp")}
-              fieldLabelId="cibaBackchannelTokenDeliveryMode"
-            />
-          }
-        >
-          <Controller
+        <FormProvider {...form}>
+          <SelectControl
             name="attributes.cibaBackchannelTokenDeliveryMode"
-            defaultValue={CIBA_BACKHANNEL_TOKEN_DELIVERY_MODES[0]}
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="cibaBackchannelTokenDeliveryMode"
-                onSelect={(_, value) => {
-                  setBackchannelTokenDeliveryModeOpen(false);
-                  field.onChange(value.toString());
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-                isOpen={backchannelTokenDeliveryModeOpen}
-                onToggle={(isExpanded) =>
-                  setBackchannelTokenDeliveryModeOpen(isExpanded)
-                }
-              >
-                {CIBA_BACKHANNEL_TOKEN_DELIVERY_MODES.map((value) => (
-                  <SelectOption
-                    key={value}
-                    value={value}
-                    selected={value === field.value}
-                  >
-                    {t(`cibaBackhannelTokenDeliveryModes.${value}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
+            label={t("cibaBackchannelTokenDeliveryMode")}
+            labelIcon={t("cibaBackchannelTokenDeliveryModeHelp")}
+            options={CIBA_BACKHANNEL_TOKEN_DELIVERY_MODES.map((mode) => ({
+              key: mode,
+              value: t(`cibaBackhannelTokenDeliveryModes.${mode}`),
+            }))}
+            controller={{ defaultValue: "" }}
           />
-        </FormGroup>
-        <FormGroup
-          fieldId="cibaExpiresIn"
-          label={t("cibaExpiresIn")}
-          labelIcon={
-            <HelpItem
-              helpText={t("cibaExpiresInHelp")}
-              fieldLabelId="cibaExpiresIn"
-            />
-          }
-          validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
-          helperTextInvalid={
-            errors.attributes?.cibaExpiresIn?.message as string
-          }
-          isRequired
-        >
-          <InputGroup>
-            <KeycloakTextInput
-              id="cibaExpiresIn"
-              type="number"
-              min={CIBA_EXPIRES_IN_MIN}
-              max={CIBA_EXPIRES_IN_MAX}
-              {...register("attributes.cibaExpiresIn", {
-                min: {
+          <TextControl
+            name="attributes.cibaExpiresIn"
+            type="number"
+            min={CIBA_EXPIRES_IN_MIN}
+            max={CIBA_EXPIRES_IN_MAX}
+            label={t("cibaExpiresIn")}
+            labelIcon={t("cibaExpiresInHelp")}
+            rules={{
+              min: {
+                value: CIBA_EXPIRES_IN_MIN,
+                message: t("greaterThan", {
                   value: CIBA_EXPIRES_IN_MIN,
-                  message: t("greaterThan", {
-                    value: CIBA_EXPIRES_IN_MIN,
-                  }),
-                },
-                max: {
-                  value: CIBA_EXPIRES_IN_MAX,
-                  message: t("lessThan", { value: CIBA_EXPIRES_IN_MAX }),
-                },
-                required: {
-                  value: true,
-                  message: t("required"),
-                },
-              })}
-              validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
-            />
-            <InputGroupText variant="plain">
-              {t("times:seconds")}
-            </InputGroupText>
-          </InputGroup>
-        </FormGroup>
-        <FormGroup
-          fieldId="cibaInterval"
-          label={t("cibaInterval")}
-          labelIcon={
-            <HelpItem
-              helpText={t("cibaIntervalHelp")}
-              fieldLabelId="cibaInterval"
-            />
-          }
-          validated={errors.attributes?.cibaInterval ? "error" : "default"}
-          helperTextInvalid={errors.attributes?.cibaInterval?.message as string}
-          isRequired
-        >
-          <InputGroup>
-            <KeycloakTextInput
-              id="cibaInterval"
-              type="number"
-              min={CIBA_INTERVAL_MIN}
-              max={CIBA_INTERVAL_MAX}
-              {...register("attributes.cibaInterval", {
-                min: {
+                }),
+              },
+              max: {
+                value: CIBA_EXPIRES_IN_MAX,
+                message: t("lessThan", { value: CIBA_EXPIRES_IN_MAX }),
+              },
+              required: {
+                value: true,
+                message: t("required"),
+              },
+            }}
+          />
+          <TextControl
+            name="attributes.cibaInterval"
+            type="number"
+            min={CIBA_EXPIRES_IN_MIN}
+            max={CIBA_EXPIRES_IN_MAX}
+            label={t("cibaInterval")}
+            labelIcon={t("cibaIntervalHelp")}
+            rules={{
+              min: {
+                value: CIBA_INTERVAL_MIN,
+                message: t("greaterThan", {
                   value: CIBA_INTERVAL_MIN,
-                  message: t("greaterThan", {
-                    value: CIBA_INTERVAL_MIN,
-                  }),
-                },
-                max: {
-                  value: CIBA_INTERVAL_MAX,
-                  message: t("lessThan", { value: CIBA_INTERVAL_MAX }),
-                },
-                required: {
-                  value: true,
-                  message: t("required"),
-                },
-              })}
-              validated={errors.attributes?.cibaInterval ? "error" : "default"}
-            />
-            <InputGroupText variant="plain">
-              {t("times:seconds")}
-            </InputGroupText>
-          </InputGroup>
-        </FormGroup>
-        <FormGroup
-          fieldId="cibaAuthRequestedUserHint"
-          label={t("cibaAuthRequestedUserHint")}
-          labelIcon={
-            <HelpItem
-              helpText={t("cibaAuthRequestedUserHintHelp")}
-              fieldLabelId="cibaAuthRequestedUserHint"
-            />
-          }
-        >
-          <Select
-            toggleId="cibaAuthRequestedUserHint"
-            selections="login_hint"
-            isOpen={authRequestedUserHintOpen}
-            onToggle={(isExpanded) => setAuthRequestedUserHintOpen(isExpanded)}
+                }),
+              },
+              max: {
+                value: CIBA_INTERVAL_MAX,
+                message: t("lessThan", { value: CIBA_INTERVAL_MAX }),
+              },
+              required: {
+                value: true,
+                message: t("required"),
+              },
+            }}
+          />
+          <SelectControl
+            name="attributes.cibaAuthRequestedUserHint"
+            label={t("cibaAuthRequestedUserHint")}
+            labelIcon={t("cibaAuthRequestedUserHintHelp")}
+            options={["login_hint", "id_token_hint", "login_hint_token"]}
+            controller={{ defaultValue: "" }}
             isDisabled
-          >
-            <SelectOption value="login_hint">login_hint</SelectOption>
-            <SelectOption value="id_token_hint">id_token_hint</SelectOption>
-            <SelectOption value="login_hint_token">
-              login_hint_token
-            </SelectOption>
-          </Select>
-        </FormGroup>
+          />
+        </FormProvider>
         <ActionGroup>
           <Button
             data-testid="save"
             variant="primary"
             type="submit"
-            isDisabled={!isValid || !isDirty}
+            isDisabled={!form.formState.isValid || !form.formState.isDirty}
           >
             {t("save")}
           </Button>

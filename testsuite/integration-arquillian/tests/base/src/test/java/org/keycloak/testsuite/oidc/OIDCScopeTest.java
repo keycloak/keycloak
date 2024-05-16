@@ -222,7 +222,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
             Assert.assertEquals("John", idToken.getGivenName());
             Assert.assertEquals("Doe", idToken.getFamilyName());
             Assert.assertEquals("John Doe", idToken.getName());
-            Assert.assertEquals(new Long(1643282255L),idToken.getUpdatedAt());
+            Assert.assertEquals(Long.valueOf(1643282255L),idToken.getUpdatedAt());
         } else {
             Assert.assertNull(idToken.getPreferredUsername());
             Assert.assertNull(idToken.getGivenName());
@@ -517,7 +517,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertEquals(400, refreshResponse.getStatusCode());
         events.expectRefresh(refreshToken1.getId(), idToken.getSessionState())
                 .client("third-party")
-                .user(userId)
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
@@ -579,6 +579,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         Assert.assertTrue(tokens2.accessToken.getRealmAccess().isUserInRole("role-2"));
 
         // Ensure I can refresh refreshToken1. Just role1 is present
+        oauth.scope(null);
         OAuthClient.AccessTokenResponse refreshResponse1 = oauth.doRefreshTokenRequest(tokens1.refreshToken, "password");
         Assert.assertEquals(200, refreshResponse1.getStatusCode());
         AccessToken accessToken1 = oauth.verifyToken(refreshResponse1.getAccessToken());

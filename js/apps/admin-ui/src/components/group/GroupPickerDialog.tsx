@@ -1,5 +1,9 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
+  GroupQuery,
+  SubGroupQuery,
+} from "@keycloak/keycloak-admin-client/lib/resources/groups";
+import {
   Breadcrumb,
   BreadcrumbItem,
   Button,
@@ -14,17 +18,15 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { AngleRightIcon } from "@patternfly/react-icons";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";
-import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -32,6 +34,7 @@ export type GroupPickerDialogProps = {
   filterGroups?: GroupRepresentation[];
   text: { title: string; ok: string };
   canBrowse?: boolean;
+  isMove?: boolean;
   onConfirm: (groups: GroupRepresentation[] | undefined) => void;
   onClose: () => void;
 };
@@ -46,9 +49,12 @@ export const GroupPickerDialog = ({
   filterGroups,
   text,
   canBrowse = true,
+  isMove = false,
   onClose,
   onConfirm,
 }: GroupPickerDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<SelectableGroup[]>([]);
 
@@ -71,29 +77,30 @@ export const GroupPickerDialog = ({
       let group;
       let groups;
       let existingUserGroups;
-      let count = 0;
-      if (!groupId) {
-        groups = await fetchAdminUI<GroupRepresentation[]>(
-          "ui-ext/groups",
-          Object.assign(
-            {
-              first: `${first}`,
-              max: `${max + 1}`,
-            },
-            isSearching ? { search: filter } : null,
-          ),
-        );
-      } else if (!navigation.map(({ id }) => id).includes(groupId)) {
-        group = await adminClient.groups.findOne({ id: groupId });
-        if (!group) {
-          throw new Error(t("notFound"));
-        }
-        groups = group.subGroups!;
-      }
 
-      if (isSearching) {
-        count = (await adminClient.groups.count({ search: filter, top: true }))
-          .count;
+      if (!groupId) {
+        const args: GroupQuery = {
+          first,
+          max: max + 1,
+        };
+        if (isSearching) {
+          args.search = filter;
+        }
+        groups = await adminClient.groups.find(args);
+      } else {
+        if (!navigation.map(({ id }) => id).includes(groupId)) {
+          group = await adminClient.groups.findOne({ id: groupId });
+          if (!group) {
+            throw new Error(t("notFound"));
+          }
+        }
+
+        const args: SubGroupQuery = {
+          first,
+          max,
+          parentId: groupId,
+        };
+        groups = await adminClient.groups.listSubGroups(args);
       }
 
       if (id) {
@@ -102,21 +109,22 @@ export const GroupPickerDialog = ({
         });
       }
 
-      return { group, groups, existingUserGroups, count };
+      return { group, groups, existingUserGroups };
     },
-    async ({ group: selectedGroup, groups, existingUserGroups, count }) => {
+    async ({ group: selectedGroup, groups, existingUserGroups }) => {
       setJoinedGroups(existingUserGroups || []);
       if (selectedGroup) {
         setNavigation([...navigation, selectedGroup]);
+        setCount(selectedGroup.subGroupCount!);
       }
 
-      if (groups) {
-        groups.forEach((group: SelectableGroup) => {
-          group.checked = !!selectedRows.find((r) => r.id === group.id);
-        });
-        setGroups(groups);
+      groups.forEach((group: SelectableGroup) => {
+        group.checked = !!selectedRows.find((r) => r.id === group.id);
+      });
+      setGroups(groups);
+      if (isSearching || !groupId) {
+        setCount(groups.length);
       }
-      setCount(count);
     },
     [groupId, filter, first, max],
   );
@@ -148,8 +156,8 @@ export const GroupPickerDialog = ({
               type === "selectMany"
                 ? selectedRows
                 : navigation.length
-                ? [currentGroup()]
-                : undefined,
+                  ? [currentGroup()]
+                  : undefined,
             );
           }}
           isDisabled={type === "selectMany" && selectedRows.length === 0}
@@ -159,10 +167,7 @@ export const GroupPickerDialog = ({
       ]}
     >
       <PaginatingTableToolbar
-        count={
-          (isSearching ? count : groups.length) -
-          (groupId || isSearching ? first : 0)
-        }
+        count={count - (groupId || isSearching ? first : 0)}
         first={first}
         max={max}
         onNextClick={setFirst}
@@ -218,10 +223,9 @@ export const GroupPickerDialog = ({
           ))}
         </Breadcrumb>
         <DataList aria-label={t("groups")} isCompact>
-          {groups
-            .slice(groupId ? first : 0, max + (groupId ? first : 0))
-            .map((group: SelectableGroup) => (
-              <>
+          {groups.slice(0, max).map((group: SelectableGroup) => (
+            <Fragment key={group.id}>
+              {(!isSearching || group.name?.includes(filter)) && (
                 <GroupRow
                   key={group.id}
                   group={group}
@@ -234,30 +238,30 @@ export const GroupPickerDialog = ({
                   setSelectedRows={setSelectedRows}
                   canBrowse={canBrowse}
                 />
-                {isSearching &&
-                  group.subGroups?.length !== 0 &&
-                  group.subGroups!.map((g) => (
-                    <GroupRow
-                      key={g.id}
-                      group={g}
-                      isRowDisabled={isRowDisabled}
-                      onSelect={setGroupId}
-                      type={type}
-                      isSearching={isSearching}
-                      setIsSearching={setIsSearching}
-                      selectedRows={selectedRows}
-                      setSelectedRows={setSelectedRows}
-                      canBrowse={canBrowse}
-                    />
-                  ))}
-              </>
-            ))}
+              )}
+              {isSearching &&
+                group.subGroups?.map((g) => (
+                  <GroupRow
+                    key={g.id}
+                    group={g}
+                    isRowDisabled={isRowDisabled}
+                    onSelect={setGroupId}
+                    type={type}
+                    isSearching={isSearching}
+                    setIsSearching={setIsSearching}
+                    selectedRows={selectedRows}
+                    setSelectedRows={setSelectedRows}
+                    canBrowse={canBrowse}
+                  />
+                ))}
+            </Fragment>
+          ))}
         </DataList>
         {groups.length === 0 && !isSearching && (
           <ListEmptyState
             hasIcon={false}
             message={t("moveGroupEmpty")}
-            instructions={t("moveGroupEmptyInstructions")}
+            instructions={isMove ? t("moveGroupEmptyInstructions") : undefined}
           />
         )}
         {groups.length === 0 && isSearching && (
@@ -296,9 +300,6 @@ const GroupRow = ({
 }: GroupRowProps) => {
   const { t } = useTranslation();
 
-  const hasSubgroups = (group: GroupRepresentation) =>
-    group.subGroups?.length !== 0;
-
   return (
     <DataListItem
       aria-labelledby={group.name}
@@ -308,8 +309,8 @@ const GroupRow = ({
         if (type === "selectOne") {
           onSelect(group.id!);
         } else if (
-          hasSubgroups(group) &&
-          (e.target as HTMLInputElement).type !== "checkbox"
+          (e.target as HTMLInputElement).type !== "checkbox" &&
+          group.subGroupCount !== 0
         ) {
           onSelect(group.id!);
           setIsSearching(false);
@@ -317,8 +318,8 @@ const GroupRow = ({
       }}
     >
       <DataListItemRow
-        className={`join-group-dialog-row-${
-          isRowDisabled(group) ? "m-disabled" : ""
+        className={`join-group-dialog-row${
+          isRowDisabled(group) ? "-m-disabled" : ""
         }`}
         data-testid={group.name}
       >
@@ -329,7 +330,7 @@ const GroupRow = ({
             aria-label={group.name}
             checked={group.checked}
             isDisabled={isRowDisabled(group)}
-            onChange={(checked) => {
+            onChange={(_event, checked) => {
               group.checked = checked;
               let newSelectedRows: SelectableGroup[] = [];
               if (!group.checked) {
@@ -364,7 +365,7 @@ const GroupRow = ({
           aria-label={t("groupName")}
           isPlainButtonAction
         >
-          {((hasSubgroups(group) && canBrowse) || type === "selectOne") && (
+          {(canBrowse || type === "selectOne") && group.subGroupCount !== 0 && (
             <Button variant="link" aria-label={t("select")}>
               <AngleRightIcon />
             </Button>

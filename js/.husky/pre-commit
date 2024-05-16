@@ -1,14 +1,10 @@
-#!/bin/sh
-
 # Get the path the the Husky script.
-FILE="$(dirname "$0")/_/husky.sh"
+DIRNAME="$(dirname "$0")"
+FILE="$DIRNAME/_/husky.sh"
 
 # Exit if Husky is not installed.
 if [ ! -f "$FILE" ]; then
   exit 0;
 fi
 
-# Run the Husky script, and pre-commit hooks.
-. $FILE
-cd js
-npx lint-staged
+pnpm exec lint-staged

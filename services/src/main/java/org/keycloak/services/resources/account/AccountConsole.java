@@ -17,7 +17,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
@@ -92,76 +92,72 @@ public class AccountConsole implements AccountResourceProvider {
 
     @GET
     @NoCache
+    @Path("{any:.*}")
     public Response getMainPage() throws IOException, FreeMarkerException {
         UriInfo uriInfo = session.getContext().getUri(UrlType.FRONTEND);
         URI accountBaseUrl = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(realm.getName())
                 .path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).path("/").build(realm);
 
-        if (!session.getContext().getUri().getRequestUri().getPath().endsWith("/")) {
-            UriBuilder redirectUri = session.getContext().getUri().getRequestUriBuilder().uri(accountBaseUrl);
-            return Response.status(302).location(redirectUri.build()).build();
-        } else {
-            Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
 
-            URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
-            URI authUrl = uriInfo.getBaseUri();
-            map.put("authUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
-            map.put("baseUrl", accountBaseUrl);
-            map.put("realm", realm);
-            map.put("clientId", Constants.ACCOUNT_CONSOLE_CLIENT_ID);
-            map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
-            map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
-            map.put("resourceVersion", Version.RESOURCES_VERSION);
-            
-            String[] referrer = getReferrer();
-            if (referrer != null) {
-                map.put("referrer", referrer[0]);
-                map.put("referrerName", referrer[1]);
-                map.put("referrer_uri", referrer[2]);
-            }
-            
-            UserModel user = null;
-            if (auth != null) user = auth.getUser();
-            Locale locale = session.getContext().resolveLocale(user);
-            map.put("locale", locale.toLanguageTag());
-            Properties messages = theme.getEnhancedMessages(realm, locale);
-            map.put("msg", new MessageFormatterMethod(locale, messages));
-            map.put("msgJSON", messagesToJsonString(messages));
-            map.put("supportedLocales", supportedLocales(messages));
-            map.put("properties", theme.getProperties());
-            map.put("theme", (Function<String, String>) file -> {
-                try {
-                    final InputStream resource = theme.getResourceAsStream(file);
-                    return new Scanner(resource, "UTF-8").useDelimiter("\\A").next();
-                } catch (IOException e) {
-                    throw new RuntimeException("could not load file", e);
-                }
-            });
+        URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
+        URI authUrl = uriInfo.getBaseUri();
+        map.put("authUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
+        map.put("baseUrl", accountBaseUrl.getPath().endsWith("/") ? accountBaseUrl : accountBaseUrl + "/");
+        map.put("realm", realm);
+        map.put("clientId", Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+        map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
+        map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
+        map.put("resourceVersion", Version.RESOURCES_VERSION);
 
-            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
-            
-            boolean deleteAccountAllowed = false;
-            boolean isViewGroupsEnabled= false;
-            if (user != null) {
-                RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
-                deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
-                RoleModel viewGrouRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.VIEW_GROUPS);
-                isViewGroupsEnabled = viewGrouRole != null && user.hasRole(viewGrouRole);
-            }
-
-            map.put("deleteAccountAllowed", deleteAccountAllowed);
-
-            map.put("isViewGroupsEnabled", isViewGroupsEnabled);
-            
-            map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
-            RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
-            map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
-
-            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
-            String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
-            Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
-            return builder.build();
+        String[] referrer = getReferrer();
+        if (referrer != null) {
+            map.put("referrer", referrer[0]);
+            map.put("referrerName", referrer[1]);
+            map.put("referrer_uri", referrer[2]);
         }
+
+        UserModel user = null;
+        if (auth != null) user = auth.getUser();
+        Locale locale = session.getContext().resolveLocale(user);
+        map.put("locale", locale.toLanguageTag());
+        Properties messages = theme.getEnhancedMessages(realm, locale);
+        map.put("msg", new MessageFormatterMethod(locale, messages));
+        map.put("msgJSON", messagesToJsonString(messages));
+        map.put("supportedLocales", supportedLocales(messages));
+        map.put("properties", theme.getProperties());
+        map.put("theme", (Function<String, String>) file -> {
+            try {
+                final InputStream resource = theme.getResourceAsStream(file);
+                return new Scanner(resource, "UTF-8").useDelimiter("\\A").next();
+            } catch (IOException e) {
+                throw new RuntimeException("could not load file", e);
+            }
+        });
+
+        map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+
+        boolean deleteAccountAllowed = false;
+        boolean isViewGroupsEnabled= false;
+        if (user != null) {
+            RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
+            deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
+            RoleModel viewGrouRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.VIEW_GROUPS);
+            isViewGroupsEnabled = viewGrouRole != null && user.hasRole(viewGrouRole);
+        }
+
+        map.put("deleteAccountAllowed", deleteAccountAllowed);
+
+        map.put("isViewGroupsEnabled", isViewGroupsEnabled);
+
+        map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
+        RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
+        map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
+
+        FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
+        String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
+        Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
+        return builder.build();
     }
     
     private Map<String, String> supportedLocales(Properties messages) {
@@ -205,40 +201,45 @@ public class AccountConsole implements AccountResourceProvider {
 
         return propertyValue;
     }
-    
+
     @GET
     @Path("index.html")
     public Response getIndexHtmlRedirect() {
         return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("../").build()).build();
     }
 
-
     private String[] getReferrer() {
         String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
+
         if (referrer == null) {
+            return null;
+        }
+
+        ClientModel referrerClient = realm.getClientByClientId(referrer);
+
+        if (referrerClient == null) {
             return null;
         }
 
         String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
 
-        ClientModel referrerClient = realm.getClientByClientId(referrer);
-        if (referrerClient != null) {
-            if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
-            } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(session, referrerClient.getRootUrl(), referrerClient.getBaseUrl());
-            }
-            
-            if (referrerUri != null) {
-                String referrerName = referrerClient.getName();
-                if (Validation.isBlank(referrerName)) {
-                    referrerName = referrer;
-                }
-                return new String[]{referrer, referrerName, referrerUri};
-            }
+        if (referrerUri != null) {
+            referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
+        } else {
+            referrerUri = ResolveRelative.resolveRelativeUri(session, referrerClient.getRootUrl(), referrerClient.getBaseUrl());
         }
 
-        return null;
+        if (referrerUri == null) {
+            return null;
+        }
+
+        String referrerName = referrerClient.getName();
+
+        if (Validation.isBlank(referrerName)) {
+            referrerName = referrer;
+        }
+
+        return new String[]{referrer, referrerName, referrerUri};
     }
 
 }

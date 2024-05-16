@@ -1,55 +1,56 @@
+import FormValidation from "../../forms/FormValidation";
+
 export default class CreateRealmPage {
-  private clearBtn = ".pf-c-file-upload__file-select button:last-child";
-  private modalClearBtn = "clear-button";
-  private realmNameInput = "#kc-realm-name";
-  private enabledSwitch =
-    '[for="kc-realm-enabled-switch"] span.pf-c-switch__toggle';
-  private createBtn = '.pf-c-form__group:last-child button[type="submit"]';
-  private cancelBtn = '.pf-c-form__group:last-child button[type="button"]';
-  private codeEditor = ".pf-c-code-editor__code";
+  #modalClearBtn = "clear-button";
+  #realmNameInput = "realm";
+  #enabledSwitch = ".pf-v5-c-toolbar .pf-v5-c-switch__toggle";
+  #createBtn = '.pf-v5-c-form__group:last-child button[type="submit"]';
+  #cancelBtn = '.pf-v5-c-form__group:last-child button[type="button"]';
+  #codeEditor = ".pf-v5-c-code-editor__code";
+
+  #getClearBtn() {
+    return cy.findByText("Clear");
+  }
 
   fillRealmName(realmName: string) {
-    cy.get(this.realmNameInput).clear().type(realmName);
+    cy.findByTestId(this.#realmNameInput).clear().type(realmName);
 
     return this;
   }
 
   fillCodeEditor() {
-    cy.get(this.codeEditor).click().type("clear this field");
+    cy.get(this.#codeEditor).click().type("clear this field");
 
     return this;
   }
 
   createRealm() {
-    cy.get(this.createBtn).click();
+    cy.get(this.#createBtn).click();
 
     return this;
   }
 
   disableRealm() {
-    cy.get(this.enabledSwitch).click();
+    cy.get(this.#enabledSwitch).click();
 
     return this;
   }
 
   cancelRealmCreation() {
-    cy.get(this.cancelBtn).click();
+    cy.get(this.#cancelBtn).click();
 
     return this;
   }
 
   clearTextField() {
-    cy.get(this.clearBtn).click();
-    cy.findByTestId(this.modalClearBtn).click();
+    this.#getClearBtn().click();
+    cy.findByTestId(this.#modalClearBtn).click();
 
     return this;
   }
 
   verifyRealmNameFieldInvalid() {
-    cy.get(this.realmNameInput)
-      .next("div")
-      .contains("Required field")
-      .should("have.class", "pf-m-error");
+    FormValidation.assertRequired(cy.findByTestId(this.#realmNameInput));
 
     return this;
   }

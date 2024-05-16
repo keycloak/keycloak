@@ -63,15 +63,23 @@ public abstract class KeycloakDependencyProcessor implements DeploymentUnitProce
          // Next phase, need to detect if this is a Keycloak deployment.  If not, don't add the modules.
 
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-        final ModuleLoader moduleLoader = Module.getBootModuleLoader();
+        ModuleLoader moduleLoader = Module.getCallerModuleLoader();
+        if (moduleLoader == null) {
+            moduleLoader = Module.getSystemModuleLoader();
+        }
+
+        addCoreModules(moduleSpecification, moduleLoader);
         addCommonModules(moduleSpecification, moduleLoader);
         addPlatformSpecificModules(phaseContext, moduleSpecification, moduleLoader);
+    }
+
+    protected void addCoreModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
+        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE_ADAPTER, false, false, false, false));
     }
 
     private void addCommonModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
         // ModuleDependency(ModuleLoader moduleLoader, ModuleIdentifier identifier, boolean optional, boolean export, boolean importServices, boolean userSpecified)
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_JBOSS_CORE_ADAPTER, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE_ADAPTER, false, false, false, false));
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_API_ADAPTER, false, false, false, false));
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_COMMON, false, false, false, false));
     }

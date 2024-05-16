@@ -11,7 +11,7 @@ image::images/login-sunrise.png[caption="",title="Login page with sunrise exampl
 
 A theme can provide one or more types to customize different aspects of {project_name}. The types available are:
 
-* Account - Account management
+* Account - Account Console
 * Admin - Admin Console
 * Email - Emails
 * Login - Login forms
@@ -59,9 +59,8 @@ A theme consists of:
 * Scripts
 * Theme properties
 
-Unless you plan to replace every single page you should extend another theme. Most likely you will want to extend the {project_name} theme, but you could also
-consider extending the base theme if you are significantly changing the look and feel of the pages. The base theme primarily consists of HTML templates and
-message bundles, while the {project_name} theme primarily contains images and stylesheets.
+Unless you plan to replace every single page you should extend another theme. Most likely you will want to extend some existing theme. Alternatively, if you intend to provide your own implementation of the admin or account console,
+consider extending the `base` theme. The `base` theme consists of a message bundle and therefore such implementation needs to start from scratch, including implementation of the main `index.ftl` Freemarker template, but it can leverage existing translations from the message bundle.
 
 When extending a theme you can override individual resources (templates, stylesheets, etc.). If you decide to override HTML templates bear in mind that you may
 need to update your custom template when upgrading to a new release.
@@ -89,7 +88,7 @@ For example, to add the login type to the `mytheme` theme, create the directory 
 
 . For each type create a file `theme.properties` which allows setting some configuration for the theme.
 +
-For example, to configure the theme `themes/mytheme/login` to extend the base theme and import some common resources, create the file `themes/mytheme/login/theme.properties` with following contents:
+For example, to configure the theme `themes/mytheme/login` to extend the `base` theme and import some common resources, create the file `themes/mytheme/login/theme.properties` with following contents:
 +
 [source]
 ----
@@ -106,7 +105,7 @@ You have now created a theme with support for the login type.
 . For *Login Theme* select *mytheme* and click *Save*.
 . Open the login page for the realm.
 +
-You can do this either by logging in through your application or by opening the Account Management console (`/realms/{realm name}/account`).
+You can do this either by logging in through your application or by opening the Account Console (`/realms/{realm name}/account`).
 
 . To see the effect of changing the parent theme, set `parent=keycloak` in `theme.properties` and refresh the login page.
 
@@ -154,6 +153,7 @@ unixHome=${env.HOME:Unix home not found}
 windowsHome=${env.HOMEPATH:Windows home not found}
 ----
 
+[[_theme_stylesheet]]
 ==== Add a stylesheet to a theme
 
 You can add one or more stylesheets to a theme.
@@ -188,7 +188,7 @@ You will notice that the only styles being applied are those from your custom st
 +
 [source]
 ----
-styles=web_modules/@fontawesome/fontawesome-free/css/icons/all.css web_modules/@patternfly/react-core/dist/styles/base.css web_modules/@patternfly/react-core/dist/styles/app.css node_modules/patternfly/dist/css/patternfly.min.css node_modules/patternfly/dist/css/patternfly-additions.min.css css/login.css css/styles.css
+styles=css/login.css css/styles.css
 ----
 +
 NOTE: To override styles from the parent stylesheets, ensure that your stylesheet is listed last.
@@ -238,7 +238,20 @@ Or to use directly in HTML templates add the following to a custom HTML template
 
 [source,html]
 ----
-<img src="${url.resourcesPath}/img/image.jpg">
+<img src="${url.resourcesPath}/img/image.jpg" alt="My image description">
+----
+
+==== Adding an image to a email theme
+
+To make images available to the theme add them to the `<THEME TYPE>/email/resources/img` directory of your theme. These can be used from within directly in HTML templates.
+
+For example to add an image to the `mytheme` copy an image to `themes/mytheme/email/resources/img/logo.jpg`.
+
+To use directly in HTML templates add the following to a custom HTML template:
+
+[source,html]
+----
+<img src="${url.resourcesUrl}/img/image.jpg" alt="My image description">
 ----
 
 ==== Messages
@@ -278,7 +291,7 @@ following content:
 [source]
 ----
 usernameOrEmail=Brukernavn
-password=Passord
+password=Password
 ----
 +
 If you omit a translation for messages, they will use English.
@@ -329,12 +342,24 @@ kcLogoIdP-myProvider = fa fa-lock
 ----
 
 All icons are available on the official website of PatternFly4.
-Icons for social providers are already defined in base login theme properties (`themes/keycloak/login/theme.properties`), where you can inspire yourself.
+Icons for social providers are already defined in `base` login theme properties (`themes/keycloak/login/theme.properties`), where you can inspire yourself.
 
 ==== Creating a custom HTML template
 
-{project_name} uses https://freemarker.apache.org/[Apache Freemarker] templates to generate HTML. You can override individual templates in your own theme by
-creating `<THEME TYPE>/<TEMPLATE>.ftl`. For a list of templates used see `themes/base/<THEME TYPE>`.
+{project_name} uses https://freemarker.apache.org/[Apache Freemarker] templates to generate HTML and render pages.
+
+Although it is possible to create custom templates to change completely how pages are rendered, the recommendation is to leverage the built-in
+templates as much as possible. The reasons are:
+
+* During upgrades, you might be forced to update your custom templates to get the latest updates from newer versions
+* link:#_theme_stylesheet[Configuring CSS styles] to your themes allows you to adapt the UI to match your UI design standards and guidelines.
+* link:{adminguide_link}#user-profile[User Profile] allows you to support custom user attributes and configure how they are rendered.
+
+In most cases, you won't need to change templates to adapt {project_name} to your needs, but you can override individual
+templates in your own theme by creating `<THEME TYPE>/<TEMPLATE>.ftl`.
+Admin and account console use a single template `index.ftl` for rendering the application.
+
+For a list of templates in other theme types look at the `theme/base/<THEME_TYPE>` directory in the JAR file at `$KEYCLOAK_HOME/lib/lib/main/org.keycloak.keycloak-themes-<VERSION>.jar`.
 
 .Procedure
 

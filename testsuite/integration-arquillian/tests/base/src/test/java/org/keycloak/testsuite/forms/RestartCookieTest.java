@@ -17,25 +17,31 @@
 
 package org.keycloak.testsuite.forms;
 
+import jakarta.ws.rs.core.Response;
+import java.io.IOException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.keys.Attributes;
+import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.openqa.selenium.Cookie;
-
-import java.io.IOException;
-
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -74,6 +80,24 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
+    @Override
+    protected void afterAbstractKeycloakTestRealmImport() {
+        // create a HS256 for the compatibility tests for previous RESTART cookie formats
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setName(GeneratedHmacKeyProviderFactory.ID + "-256");
+        rep.setParentId(testRealm().toRepresentation().getId());
+        rep.setProviderId(GeneratedHmacKeyProviderFactory.ID);
+        rep.setProviderType(KeyProvider.class.getName());
+
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.addFirst(Attributes.PRIORITY_KEY, DefaultKeyProviders.DEFAULT_PRIORITY);
+        config.addFirst(Attributes.ALGORITHM_KEY, Algorithm.HS256);
+        rep.setConfig(config);
+
+        try (Response res = testRealm().components().add(rep)) {
+            Assert.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
+        }
+    }
 
     // KEYCLOAK-5440 -- migration from Keycloak 3.1.0
     @Test
@@ -109,7 +133,6 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
                 .assertEvent();
     }
 
@@ -149,7 +172,6 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
                 .assertEvent();
     }
 }

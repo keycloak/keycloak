@@ -1,20 +1,17 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
+import { Button, ButtonVariant, PageSection } from "@patternfly/react-core";
 import {
-  Button,
-  ButtonVariant,
-  PageSection,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
@@ -22,12 +19,11 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { emptyFormatter } from "../../util";
 import { useFetch } from "../../utils/useFetch";
+import useFormatDate from "../../utils/useFormatDate";
 import useToggle from "../../utils/useToggle";
 import { toKeysTab } from "../routes/KeysTab";
 
 import "../realm-settings-section.css";
-
-import useFormatDate from "../../utils/useFormatDate";
 
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
 type FilterType = (typeof FILTER_OPTIONS)[number];
@@ -67,6 +63,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
         toggleFilter();
       }}
       selections={filterType}
+      aria-label={t("selectFilterType")}
     >
       {FILTER_OPTIONS.map((option) => (
         <SelectOption
@@ -82,6 +79,8 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 };
 
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const formatDate = useFormatDate();
@@ -233,6 +232,19 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                       {t("certificate")}
                     </Button>
                   </div>
+                );
+              } else if (type === "OKP") {
+                return (
+                  <Button
+                    onClick={() => {
+                      togglePublicKeyDialog();
+                      setPublicKey(publicKey!);
+                    }}
+                    variant="secondary"
+                    id="kc-public-key"
+                  >
+                    {t("publicKeys").slice(0, -1)}
+                  </Button>
                 );
               } else return "";
             },

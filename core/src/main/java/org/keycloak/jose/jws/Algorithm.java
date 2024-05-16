@@ -39,7 +39,10 @@ public enum Algorithm {
     PS512(AlgorithmType.RSA, null),
     ES256(AlgorithmType.ECDSA, null),
     ES384(AlgorithmType.ECDSA, null),
-    ES512(AlgorithmType.ECDSA, null)
+    ES512(AlgorithmType.ECDSA, null),
+    EdDSA(AlgorithmType.EDDSA, null),
+    Ed25519(AlgorithmType.EDDSA, null),
+    Ed448(AlgorithmType.EDDSA, null)
     ;
 
     private AlgorithmType type;

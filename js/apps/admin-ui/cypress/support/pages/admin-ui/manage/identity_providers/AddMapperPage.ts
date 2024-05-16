@@ -1,45 +1,46 @@
+import Select from "../../../../forms/Select";
 import LegacyKeyValueInput from "../LegacyKeyValueInput";
 
 export default class AddMapperPage {
-  private mappersTab = "mappers-tab";
-  private noMappersAddMapperButton = "no-mappers-empty-action";
-  private idpMapperSelectToggle = "#identityProviderMapper";
-  private idpMapperSelect = "idp-mapper-select";
-  private addMapperButton = "#add-mapper-button";
+  #mappersTab = "mappers-tab";
+  #noMappersAddMapperButton = "no-mappers-empty-action";
+  #idpMapperSelectToggle = "#identityProviderMapper";
+  #idpMapperSelect = "idp-mapper-select";
+  #addMapperButton = "#add-mapper-button";
 
-  private mapperNameInput = "#kc-name";
-  private attribute = "user.attribute";
-  private attributeName = "attribute.name";
-  private attributeFriendlyName = "attribute.friendly.name";
-  private claimInput = "claim";
-  private socialProfileJSONfieldPath = "jsonField";
-  private userAttribute = "attribute";
-  private userAttributeName = "userAttribute";
-  private userAttributeValue = "attribute.value";
-  private userSessionAttribute = "attribute";
-  private userSessionAttributeValue = "attribute.value";
-  private newMapperSaveButton = "new-mapper-save-button";
-  private newMapperCancelButton = "new-mapper-cancel-button";
-  private mappersUrl = "/oidc/mappers";
-  private regexAttributeValuesSwitch = "are.attribute.values.regex";
-  private syncmodeSelectToggle = "#syncMode";
-  private attributesKeyInput = '[data-testid="config.attributes.0.key"]';
-  private attributesValueInput = '[data-testid="config.attributes.0.value"]';
-  private template = "template";
-  private target = "#target";
+  #mapperNameInput = "name";
+  #attribute = "config.user🍺attribute";
+  #attributeName = "attribute.name";
+  #attributeFriendlyName = "attribute.friendly.name";
+  #claimInput = "claim";
+  #socialProfileJSONfieldPath = "jsonField";
+  #userAttribute = "config.attribute";
+  #userAttributeName = "config.userAttribute";
+  #userAttributeValue = "attribute.value";
+  #userSessionAttribute = "attribute";
+  #userSessionAttributeValue = "attribute.value";
+  #newMapperSaveButton = "new-mapper-save-button";
+  #newMapperCancelButton = "new-mapper-cancel-button";
+  #mappersUrl = "/oidc/mappers";
+  #regexAttributeValuesSwitch = "are.attribute.values.regex";
+  #syncmodeSelectToggle = "#syncMode";
+  #attributesKeyInput = '[data-testid="config.attributes.0.key"]';
+  #attributesValueInput = '[data-testid="config.attributes.0.value"]';
+  #template = "template";
+  #target = "#target";
 
   goToMappersTab() {
-    cy.findByTestId(this.mappersTab).click();
+    cy.findByTestId(this.#mappersTab).click();
     return this;
   }
 
   emptyStateAddMapper() {
-    cy.findByTestId(this.noMappersAddMapperButton).click();
+    cy.findByTestId(this.#noMappersAddMapperButton).click();
     return this;
   }
 
   addMapper() {
-    cy.get(this.addMapperButton).click();
+    cy.get(this.#addMapperButton).click();
     return this;
   }
 
@@ -49,12 +50,12 @@ export default class AddMapperPage {
   }
 
   saveNewMapper() {
-    cy.findByTestId(this.newMapperSaveButton).click();
+    cy.findByTestId(this.#newMapperSaveButton).click();
     return this;
   }
 
   cancelNewMapper() {
-    cy.findByTestId(this.newMapperCancelButton).click();
+    cy.findByTestId(this.#newMapperCancelButton).click();
     return this;
   }
 
@@ -64,29 +65,29 @@ export default class AddMapperPage {
     return this;
   }
 
+  typeName(name: string) {
+    cy.findByTestId(this.#mapperNameInput).clear();
+    cy.findByTestId(this.#mapperNameInput).type(name);
+  }
+
   fillSocialMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Legacy");
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("legacy").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Attribute Importer")
       .click();
 
-    cy.findByTestId(this.socialProfileJSONfieldPath).clear();
-    cy.findByTestId(this.socialProfileJSONfieldPath).type(
+    cy.findByTestId(this.#socialProfileJSONfieldPath).clear();
+    cy.findByTestId(this.#socialProfileJSONfieldPath).type(
       "social profile JSON field path",
     );
 
-    cy.findByTestId(this.userAttributeName).clear();
+    cy.findByTestId(this.#userAttributeName).clear();
 
-    cy.findByTestId(this.userAttributeName).type("user attribute name");
+    cy.findByTestId(this.#userAttributeName).type("user attribute name");
 
     this.saveNewMapper();
 
@@ -101,27 +102,23 @@ export default class AddMapperPage {
   }
 
   addAdvancedAttrToRoleMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Advanced Attribute to Role")
       .click();
 
-    cy.get(this.attributesKeyInput).clear();
-    cy.get(this.attributesKeyInput).type("key");
+    cy.findByTestId("attributes-add-row").click();
+    cy.get(this.#attributesKeyInput).clear();
+    cy.get(this.#attributesKeyInput).type("key");
 
-    cy.get(this.attributesValueInput).clear();
-    cy.get(this.attributesValueInput).type("value");
+    cy.get(this.#attributesValueInput).clear();
+    cy.get(this.#attributesValueInput).type("value");
 
-    this.toggleSwitch(this.regexAttributeValuesSwitch);
+    this.toggleSwitch(this.#regexAttributeValuesSwitch);
 
     this.addRoleToMapperForm();
 
@@ -131,24 +128,19 @@ export default class AddMapperPage {
   }
 
   addUsernameTemplateImporterMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Username Template Importer")
       .click();
 
-    cy.findByTestId(this.template).clear();
-    cy.findByTestId(this.template).type("Template");
+    cy.findByTestId(this.#template).clear();
+    cy.findByTestId(this.#template).type("Template");
 
-    cy.get(this.target).click().parent().contains("BROKER_ID").click();
+    cy.get(this.#target).click().parent().contains("BROKER_ID").click();
 
     this.saveNewMapper();
 
@@ -156,25 +148,20 @@ export default class AddMapperPage {
   }
 
   addHardcodedUserSessionAttrMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Hardcoded User Session Attribute")
       .click();
 
-    cy.findByTestId(this.userSessionAttribute).clear();
-    cy.findByTestId(this.userSessionAttribute).type("user session attribute");
+    cy.findByTestId(this.#userSessionAttribute).clear();
+    cy.findByTestId(this.#userSessionAttribute).type("user session attribute");
 
-    cy.findByTestId(this.userSessionAttributeValue).clear();
-    cy.findByTestId(this.userSessionAttributeValue).type(
+    cy.findByTestId(this.#userSessionAttributeValue).clear();
+    cy.findByTestId(this.#userSessionAttributeValue).type(
       "user session attribute value",
     );
 
@@ -184,27 +171,25 @@ export default class AddMapperPage {
   }
 
   addSAMLAttrImporterMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.syncmodeSelectToggle).click();
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Attribute Importer")
       .click();
 
-    cy.findByTestId(this.attributeName).clear();
-    cy.findByTestId(this.attributeName).type("attribute name");
+    cy.findByTestId(this.#attributeName).clear();
+    cy.findByTestId(this.#attributeName).type("attribute name");
 
-    cy.findByTestId(this.attributeFriendlyName).clear();
-    cy.findByTestId(this.attributeFriendlyName).type("attribute friendly name");
+    cy.findByTestId(this.#attributeFriendlyName).clear();
+    cy.findByTestId(this.#attributeFriendlyName).type(
+      "attribute friendly name",
+    );
 
-    cy.findByTestId(this.attribute).clear().type("user attribute name");
+    cy.findByTestId(this.#attribute).clear().type("user attribute name");
 
     this.saveNewMapper();
 
@@ -212,22 +197,17 @@ export default class AddMapperPage {
   }
 
   addOIDCAttrImporterMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Attribute Importer")
       .click();
 
-    cy.findByTestId(this.claimInput).clear().type("claim");
-    cy.findByTestId(this.attribute).clear().type("user attribute name");
+    cy.findByTestId(this.#claimInput).clear().type("claim");
+    cy.findByTestId(this.#attribute).clear().type("user attribute name");
 
     this.saveNewMapper();
 
@@ -235,17 +215,12 @@ export default class AddMapperPage {
   }
 
   addHardcodedRoleMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect).contains("Hardcoded Role").click();
+    cy.findByTestId(this.#idpMapperSelect).contains("Hardcoded Role").click();
 
     this.addRoleToMapperForm();
     this.saveNewMapper();
@@ -254,23 +229,18 @@ export default class AddMapperPage {
   }
 
   addHardcodedAttrMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Hardcoded Attribute")
       .click();
 
-    cy.findByTestId(this.userAttribute).clear().type("user session attribute");
+    cy.findByTestId(this.#userAttribute).clear().type("user session attribute");
 
-    cy.findByTestId(this.userAttributeValue)
+    cy.findByTestId(this.#userAttributeValue)
       .clear()
       .type("user session attribute value");
 
@@ -280,17 +250,13 @@ export default class AddMapperPage {
   }
 
   addSAMLAttributeToRoleMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.syncmodeSelectToggle).click();
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("SAML Attribute to Role")
       .click();
 
@@ -302,13 +268,11 @@ export default class AddMapperPage {
   }
 
   editUsernameTemplateImporterMapper() {
-    cy.get(this.syncmodeSelectToggle).click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Legacy");
 
-    cy.findByTestId("legacy").click();
+    cy.findByTestId(this.#template).type("_edited");
 
-    cy.findByTestId(this.template).type("_edited");
-
-    cy.get(this.target).click().parent().contains("BROKER_USERNAME").click();
+    cy.get(this.#target).click().parent().contains("BROKER_USERNAME").click();
 
     this.saveNewMapper();
 
@@ -316,19 +280,17 @@ export default class AddMapperPage {
   }
 
   editSocialMapper() {
-    cy.get(this.syncmodeSelectToggle).click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.findByTestId("inherit").click();
+    cy.findByTestId(this.#socialProfileJSONfieldPath).clear();
 
-    cy.findByTestId(this.socialProfileJSONfieldPath).clear();
-
-    cy.findByTestId(this.socialProfileJSONfieldPath).type(
+    cy.findByTestId(this.#socialProfileJSONfieldPath).type(
       "social profile JSON field path edited",
     );
 
-    cy.findByTestId(this.userAttributeName).clear();
+    cy.findByTestId(this.#userAttributeName).clear();
 
-    cy.findByTestId(this.userAttributeName).type("user attribute name edited");
+    cy.findByTestId(this.#userAttributeName).type("user attribute name edited");
 
     this.saveNewMapper();
 
@@ -336,17 +298,15 @@ export default class AddMapperPage {
   }
 
   editSAMLorOIDCMapper() {
-    cy.get(this.syncmodeSelectToggle).click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.findByTestId("legacy").click();
+    cy.get(this.#attributesKeyInput).clear();
+    cy.get(this.#attributesKeyInput).type("key_edited");
 
-    cy.get(this.attributesKeyInput).clear();
-    cy.get(this.attributesKeyInput).type("key_edited");
+    cy.get(this.#attributesValueInput).clear();
+    cy.get(this.#attributesValueInput).type("value_edited");
 
-    cy.get(this.attributesValueInput).clear();
-    cy.get(this.attributesValueInput).type("value_edited");
-
-    this.toggleSwitch(this.regexAttributeValuesSwitch);
+    this.toggleSwitch(this.#regexAttributeValuesSwitch);
 
     this.saveNewMapper();
 
@@ -354,25 +314,20 @@ export default class AddMapperPage {
   }
 
   addOIDCAttributeImporterMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.get(this.syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect)
+    cy.findByTestId(this.#idpMapperSelect)
       .contains("Attribute Importer")
       .click();
 
-    cy.findByTestId(this.claimInput).clear();
-    cy.findByTestId(this.claimInput).type("claim");
+    cy.findByTestId(this.#claimInput).clear();
+    cy.findByTestId(this.#claimInput).type("claim");
 
-    cy.findByTestId(this.userAttributeName).clear();
-    cy.findByTestId(this.userAttributeName).type("user attribute name");
+    cy.findByTestId(this.#userAttributeName).clear();
+    cy.findByTestId(this.#userAttributeName).type("user attribute name");
 
     this.saveNewMapper();
 
@@ -380,18 +335,15 @@ export default class AddMapperPage {
   }
 
   addOIDCClaimToRoleMapper(name: string) {
-    cy.get(this.mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.mapperNameInput).clear().type(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
-    cy.get(this.syncmodeSelectToggle).click();
+    cy.get(this.#idpMapperSelectToggle).click();
 
-    cy.findByTestId("inherit").click();
+    cy.findByTestId(this.#idpMapperSelect).contains("Claim to Role").click();
 
-    cy.get(this.idpMapperSelectToggle).click();
-
-    cy.findByTestId(this.idpMapperSelect).contains("Claim to Role").click();
-
+    cy.findByTestId("claims-add-row").click();
     const keyValue = new LegacyKeyValueInput("config.claims");
 
     keyValue.fillKeyValue({ key: "key", value: "value" });
@@ -405,7 +357,7 @@ export default class AddMapperPage {
   }
 
   shouldGoToMappersTab() {
-    cy.url().should("include", this.mappersUrl);
+    cy.url().should("include", this.#mappersUrl);
 
     return this;
   }

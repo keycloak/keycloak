@@ -1,4 +1,4 @@
-[[_extensions]]
+ExampleSpi[[_extensions]]
 
 == Extending the server
 
@@ -24,12 +24,14 @@ Object getResource();
 
 ----
 
-Use this method to return an object, which acts as a https://github.com/jax-rs[JAX-RS Resource]. For more details, see the Javadoc and our examples.
-There is a very simple example in the example distribution in `providers/rest` and there is a more advanced example in `providers/domain-extension`,
-which shows how to add an authenticated REST endpoint and other functionalities like <<_extensions_spi, Adding your own SPI>>
-or <<_extensions_jpa,Extending the datamodel with custom JPA entities>>.
+Use this method to return an object, which acts as a https://github.com/jax-rs[JAX-RS Resource].
+Your JAX-RS resource is only recognized by the server and registered as a valid endpoint if it includes the following configuration:
+- adding an empty file named `beans.xml` under `META-INF`
+- annotating the JAX-RS class with the annotation `jakarta.ws.rs.ext.Provider`.
 
 For details on how to package and deploy a custom provider, refer to the <<_providers,Service Provider Interfaces>> chapter.
+
+NOTE: While it is possible to install other JAX-RS components via the providers extension mechanism, such as filters and interceptors, these are not officially supported.
 
 [[_extensions_spi]]
 === Add your own custom SPI
@@ -42,10 +44,6 @@ A custom SPI is especially useful with Custom REST endpoints. Use this procedure
 +
 [source,java]
 ----
-package org.keycloak.examples.domainextension.spi;
-
-import ...
-
 public class ExampleSpi implements Spi {
 
     @Override
@@ -77,7 +75,7 @@ public class ExampleSpi implements Spi {
 +
 [source]
 ----
-org.keycloak.examples.domainextension.spi.ExampleSpi
+ExampleSpi
 ----
 
 . Create the interfaces `ExampleServiceProviderFactory`, which extends from `ProviderFactory` and `ExampleService`, which extends from `Provider`.
@@ -85,8 +83,6 @@ The `ExampleService` will usually contain the business methods you need for your
 is always scoped per application, however `ExampleService` is scoped per-request (or more accurately per `KeycloakSession` lifecycle).
 
 . Finally you need to implement your providers in the same manner as described in the <<_providers,Service Provider Interfaces>> chapter.
-
-For more details, take a look at the example distribution at `providers/domain-extension`, which shows an Example SPI similar to the one above.
 
 [role="_additional-resources"]
 .Additional resources
@@ -141,7 +137,7 @@ EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityMan
 Company myCompany = em.find(Company.class, "123");
 ----
 
-The methods `getChangelogLocation` and `getFactoryId` are important to support automatic updating of your entities by Liquibase. https://www.liquibase.org/[Liquibase]
+The methods `getChangelogLocation` and `getFactoryId` are important to support automatic updating of your entities by Liquibase. https://www.liquibase.com/community/contributors[Liquibase]
 is a framework for updating the database schema, which {project_name} internally uses to create the DB schema and update the DB schema among versions. You may need to use
 it as well and create a changelog for your entities. Note that versioning of your own Liquibase changelog is independent
 of {project_name} versions. In other words, when you update to a new {project_name} version, you are not forced to update your
@@ -149,7 +145,5 @@ schema at the same time. And vice versa, you can update your schema even without
 is always done at the server startup, so to trigger a DB update of your schema, you just need to add the new changeset to your Liquibase changelog file (in the example above
 it's the file `META-INF/example-changelog.xml` which must be packed in same JAR as the JPA entities and `ExampleJpaEntityProvider`) and then restart server.
 The DB schema will be automatically updated at startup.
-
-For more details, take a look at the example distribution at example `providers/domain-extension`, which shows the `ExampleJpaEntityProvider` and `example-changelog.xml` described above.
 
 NOTE: Don't forget to always back up your database before doing any changes in the Liquibase changelog and triggering a DB update.

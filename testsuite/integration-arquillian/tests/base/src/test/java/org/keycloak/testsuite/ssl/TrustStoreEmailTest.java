@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -39,7 +40,6 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SslMailServer;
-import org.keycloak.truststore.HostnameVerificationPolicy;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
@@ -71,7 +71,6 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         testRealm.setVerifyEmail(true);
     }
 
-
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
@@ -85,14 +84,20 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         SslMailServer.stop();
     }
 
-    @Test
-    public void verifyEmailWithSslEnabled() {
+    public void verifyEmailWithSslEnabled(Boolean opportunistic) {
         UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation user = userResource.toRepresentation();
         user.setEmailVerified(false);
         userResource.update(user);
 
-        SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
+        String privateKey = this.getClass().getClassLoader().getResource(opportunistic ? SslMailServer.INVALID_KEY : SslMailServer.PRIVATE_KEY).getFile();
+
+        if (opportunistic) {
+            SslMailServer.startWithOpportunisticSsl(privateKey);
+        } else {
+            SslMailServer.startWithSsl(privateKey);
+        }
+
         driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(user.getUsername(), "password");
 
@@ -137,6 +142,11 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(user.getUsername(), "password");
         assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
+    }
+
+    @Test
+    public void verifyEmailWithSslEnabled() {
+        verifyEmailWithSslEnabled(false);
     }
 
     @Test
@@ -204,4 +214,22 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
             testingClient.testing().reenableTruststoreSpi();
         }
     }
+
+    @Test
+    public void verifyEmailOpportunisticEncryptionWithAnyHostnamePolicy() throws Exception {
+        testingClient.testing().modifyTruststoreSpiHostnamePolicy(HostnameVerificationPolicy.ANY);
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+                .setSmtpServer("host", "localhost.localdomain")
+                .setSmtpServer("auth", "true")
+                .setSmtpServer("ssl", "false")
+                .setSmtpServer("starttls", "false")
+                .setSmtpServer("user", "user")
+                .setSmtpServer("password", "password")
+                .update()) {
+            verifyEmailWithSslEnabled(true);
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
 }

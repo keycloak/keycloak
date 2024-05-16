@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type SessionsParams = { realm: string };
@@ -17,5 +17,5 @@ export const SessionsRoute: AppRouteObject = {
 };
 
 export const toSessions = (params: SessionsParams): Partial<Path> => ({
-  pathname: generatePath(SessionsRoute.path, params),
+  pathname: generateEncodedPath(SessionsRoute.path, params),
 });

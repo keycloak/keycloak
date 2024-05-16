@@ -1,0 +1,11 @@
+keycloak:
+  children:
+    {{ cluster_name }}_{{ region  | replace('-','_') }}:
+      vars:
+        ansible_user: ec2-user
+        ansible_become: yes
+        ansible_ssh_private_key_file: {{ cluster_name }}_{{ region }}.pem
+      hosts:
+{% for instance in instances.instances %}
+        {{ instance.public_ip_address }}:
+{% endfor %}

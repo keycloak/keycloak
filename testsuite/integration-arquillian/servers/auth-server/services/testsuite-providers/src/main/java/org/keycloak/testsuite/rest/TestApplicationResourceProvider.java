@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.HtmlUtils;
@@ -59,7 +59,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     private final BlockingQueue<LogoutAction> adminLogoutActions;
     private final BlockingQueue<LogoutToken> frontChannelLogoutTokens;
-    private final BlockingQueue<LogoutToken> backChannelLogoutTokens;
+    private final BlockingQueue<String> backChannelLogoutTokens;
     private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions;
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
@@ -71,7 +71,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final HttpRequest request;
 
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
-            BlockingQueue<LogoutToken> backChannelLogoutTokens,
+            BlockingQueue<String> backChannelLogoutTokens,
             BlockingQueue<LogoutToken> frontChannelLogoutTokens,
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
             BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
@@ -102,8 +102,8 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Path("/admin/backchannelLogout")
-    public void backchannelLogout() throws JWSInputException {
-        backChannelLogoutTokens.add(new JWSInput(request.getDecodedFormParameters().getFirst(OAuth2Constants.LOGOUT_TOKEN)).readJsonContent(LogoutToken.class));
+    public void backchannelLogout() {
+        backChannelLogoutTokens.add(request.getDecodedFormParameters().getFirst(OAuth2Constants.LOGOUT_TOKEN));
     }
 
     @GET
@@ -139,7 +139,14 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/poll-backchannel-logout")
-    public LogoutToken getBackChannelLogoutAction() throws InterruptedException {
+    public LogoutToken getBackChannelLogoutAction() throws InterruptedException, JWSInputException {
+        return new JWSInput(backChannelLogoutTokens.poll(20, TimeUnit.SECONDS)).readJsonContent(LogoutToken.class);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-backchannel-raw-logout")
+    public String getBackChanneRawlLogoutAction() throws InterruptedException {
         return backChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
     }
 

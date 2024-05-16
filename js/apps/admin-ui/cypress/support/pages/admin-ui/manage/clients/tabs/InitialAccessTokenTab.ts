@@ -1,29 +1,28 @@
 import CommonPage from "../../../../CommonPage";
 
 export default class InitialAccessTokenTab extends CommonPage {
-  private initialAccessTokenTab = "initialAccessToken";
+  #initialAccessTokenTab = "initialAccessToken";
 
-  private emptyAction = "no-initial-access-tokens-empty-action";
+  #emptyAction = "no-initial-access-tokens-empty-action";
 
-  private expirationNumberInput = "expiration";
-  private expirationInput = 'input[name="count"]';
-  private expirationText = "#expiration-helper";
-  private countInput = '[data-testid="count"] input';
-  private countPlusBtn = '[data-testid="count"] [aria-label="Plus"]';
-  private saveBtn = "save";
+  #expirationNumberInput = "expiration";
+  #expirationText = ".pf-v5-c-helper-text__item-text";
+  #countInput = "#count input";
+  #countPlusBtn = '#count [aria-label="Plus"]';
+  #saveBtn = "save";
 
   goToInitialAccessTokenTab() {
-    cy.findByTestId(this.initialAccessTokenTab).click();
+    cy.findByTestId(this.#initialAccessTokenTab).click();
     return this;
   }
 
   shouldBeEmpty() {
-    cy.findByTestId(this.emptyAction).should("exist");
+    cy.findByTestId(this.#emptyAction).should("exist");
     return this;
   }
 
   shouldNotBeEmpty() {
-    cy.findByTestId(this.emptyAction).should("not.exist");
+    cy.findByTestId(this.#emptyAction).should("not.exist");
     return this;
   }
 
@@ -37,28 +36,29 @@ export default class InitialAccessTokenTab extends CommonPage {
   }
 
   goToCreateFromEmptyList() {
-    cy.findByTestId(this.emptyAction).click();
+    cy.findByTestId(this.#emptyAction).click();
     return this;
   }
 
   fillNewTokenData(expiration: number, count: number) {
-    cy.findByTestId(this.expirationNumberInput).clear().type(`${expiration}`);
-    cy.get(this.countInput).clear();
+    cy.findByTestId(this.#expirationNumberInput).clear();
+    cy.findByTestId(this.#expirationNumberInput).type(`${expiration}`);
+    cy.get(this.#countInput).clear();
 
     for (let i = 0; i < count; i++) {
-      cy.get(this.countPlusBtn).click();
+      cy.get(this.#countPlusBtn).click();
     }
 
     return this;
   }
 
   save() {
-    cy.findByTestId(this.saveBtn).click();
+    cy.findByTestId(this.#saveBtn).click();
     return this;
   }
 
   checkExpirationGreaterThanZeroError() {
-    cy.get(this.expirationText).should(
+    cy.get(this.#expirationText).should(
       "have.text",
       "Value should should be greater or equal to 1",
     );
@@ -66,12 +66,12 @@ export default class InitialAccessTokenTab extends CommonPage {
   }
 
   checkCountValue(value: number) {
-    cy.get(this.expirationInput).should("have.value", value);
+    cy.get(this.#countInput).should("have.value", value);
     return this;
   }
 
   checkSaveButtonIsDisabled() {
-    cy.findByTestId(this.saveBtn).should("be.disabled");
+    cy.findByTestId(this.#saveBtn).should("be.disabled");
     return this;
   }
 }

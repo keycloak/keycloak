@@ -1,159 +1,231 @@
-import Select from "../../../../forms/Select";
+import Masthead from "../../Masthead";
+import ValidatorConfigDialogue from "./ValidatorConfigDialogue";
 
 export default class UserProfile {
-  private userProfileTab = "rs-user-profile-tab";
-  private attributesTab = "attributesTab";
-  private attributesGroupTab = "attributesGroupTab";
-  private jsonEditorTab = "jsonEditorTab";
-  private createAttributeButton = "createAttributeBtn";
-  private actionsDrpDwn = "actions-dropdown";
-  private deleteDrpDwnOption = "deleteDropdownAttributeItem";
-  private editDrpDwnOption = "editDropdownAttributeItem";
-  private cancelNewAttribute = "attribute-cancel";
-  private newAttributeNameInput = "attribute-name";
-  private newAttributeDisplayNameInput = "attribute-display-name";
-  private newAttributeEnabledWhen = 'input[name="enabledWhen"]';
-  private newAttributeCheckboxes = 'input[type="checkbox"]';
-  private newAttributeRequiredFor = 'input[name="roles"]';
-  private newAttributeRequiredWhen = 'input[name="requiredWhen"]';
-  private newAttributeEmptyValidators = ".kc-emptyValidators";
-  private newAttributeAnnotationBtn = "annotations-add-row";
-  private newAttributeAnnotationKey = "annotations.0.key";
-  private newAttributeAnnotationValue = "annotations.0.value";
-  private validatorRolesList = "#validator";
-  private validatorsList = 'tbody [data-label="name"]';
-  private saveNewAttributeBtn = "attribute-create";
-  private addValidatorBtn = "addValidator";
-  private saveValidatorBtn = "save-validator-role-button";
-  private removeValidatorBtn = "deleteValidator";
-  private deleteValidatorBtn = "confirm";
-  private cancelAddingValidatorBtn = "cancel-validator-role-button";
-  private cancelRemovingValidatorBtn = "cancel";
-  private validatorDialogCloseBtn = 'button[aria-label="Close"]';
+  readonly masthead = new Masthead();
+  readonly validatorConfigDialogue = new ValidatorConfigDialogue(this);
+
+  #userProfileTab = "rs-user-profile-tab";
+  #attributesTab = "attributesTab";
+  #attributesGroupTab = "attributesGroupTab";
+  #jsonEditorTab = "jsonEditorTab";
+  #createAttributeButton = "createAttributeBtn";
+  #actionsDrpDwn = "actions-dropdown";
+  #deleteDrpDwnOption = "deleteDropdownAttributeItem";
+  #editDrpDwnOption = "editDropdownAttributeItem";
+  #cancelNewAttribute = "attribute-cancel";
+  #newAttributeNameInput = "attribute-name";
+  #newAttributeDisplayNameInput = "attribute-display-name";
+  #newAttributeEnabledWhen = 'input[name="enabledWhen"]';
+  #newAttributeEmptyValidators = ".kc-emptyValidators";
+  #newAttributeAnnotationBtn = "annotations-add-row";
+  #newAttributeAnnotationKey = "annotations.0.key";
+  #newAttributeAnnotationValue = "annotations.0.value";
+  #validatorsList = 'tbody [data-label="name"]';
+  #saveNewAttributeBtn = "attribute-create";
+  #addValidatorBtn = "addValidator";
+  #removeValidatorBtn = "deleteValidator";
+  #deleteValidatorBtn = "confirm";
+  #cancelRemovingValidatorBtn = "cancel";
+  #newAttributeRequiredField = "input#kc-required.pf-v5-c-switch__input";
+  #newAttributeUserEdit = "user-edit";
+  #newAttributeAdminEdit = "admin-edit";
+  #newAttributeUserView = "user-view";
+  #newAttributeAdminView = "admin-view";
+  #createAttributesGroupButton = "create-attributes-groups-action";
+  #newAttributesGroupNameInput = "name";
+  #newAttributesGroupDisplayNameInput = 'input[name="displayHeader"]';
+  #saveNewAttributesGroupBtn = "saveGroupBtn";
 
   goToTab() {
-    cy.findByTestId(this.userProfileTab).click();
+    cy.findByTestId(this.#userProfileTab).click();
     return this;
   }
 
   goToAttributesTab() {
-    cy.findByTestId(this.attributesTab).click();
+    cy.findByTestId(this.#attributesTab).click();
     return this;
   }
 
   goToAttributesGroupTab() {
-    cy.findByTestId(this.attributesGroupTab).click();
+    cy.findByTestId(this.#attributesGroupTab).click();
     return this;
   }
 
   goToJsonEditorTab() {
-    cy.findByTestId(this.jsonEditorTab).click();
+    cy.findByTestId(this.#jsonEditorTab).click();
     return this;
   }
 
-  createAttributeButtonClick() {
-    cy.findByTestId(this.createAttributeButton).click();
+  clickOnCreateAttributeButton() {
+    cy.findByTestId(this.#createAttributeButton).click();
     return this;
   }
 
   selectDropdown() {
-    cy.findByTestId(this.actionsDrpDwn).click();
+    cy.findByTestId(this.#actionsDrpDwn).click();
     return this;
   }
 
   selectDeleteOption() {
-    cy.findByTestId(this.deleteDrpDwnOption).click();
+    cy.findByTestId(this.#deleteDrpDwnOption).click();
     return this;
   }
 
   selectEditOption() {
-    cy.findByTestId(this.editDrpDwnOption).click();
+    cy.findByTestId(this.#editDrpDwnOption).click();
     return this;
   }
 
   cancelAttributeCreation() {
-    cy.findByTestId(this.cancelNewAttribute).click();
+    cy.findByTestId(this.#cancelNewAttribute).click();
     return this;
   }
 
-  createAttribute(name: string, displayName: string) {
-    cy.findByTestId(this.newAttributeNameInput).type(name);
-    cy.findByTestId(this.newAttributeDisplayNameInput).type(displayName);
+  setAttributeNames(name: string, displayName: string) {
+    cy.findByTestId(this.#newAttributeNameInput).type(name);
+    cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
     return this;
   }
 
   checkElementNotInList(name: string) {
-    cy.get(this.validatorsList).should("not.contain.text", name);
+    cy.get(this.#validatorsList).should("not.contain.text", name);
     return this;
   }
 
   saveAttributeCreation() {
-    cy.findByTestId(this.saveNewAttributeBtn).click();
+    cy.findByTestId(this.#saveNewAttributeBtn).click();
+    return this;
+  }
+
+  setAttributeRequired() {
+    cy.get(this.#newAttributeRequiredField).first().check({ force: true });
+
+    return this;
+  }
+
+  setAllAttributePermissions() {
+    cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
+
+    return this;
+  }
+
+  setNoAttributePermissions() {
+    cy.findByTestId(this.#newAttributeAdminEdit)
+      .first()
+      .uncheck({ force: true });
+
+    return this;
+  }
+
+  clickOnCreatesAttributesGroupButton() {
+    cy.findByTestId(this.#createAttributesGroupButton).click();
+    return this;
+  }
+
+  createAttributeGroup(name: string, displayName: string) {
+    cy.findByTestId(this.#newAttributesGroupNameInput).type(name);
+    cy.get(this.#newAttributesGroupDisplayNameInput).type(displayName);
+    return this;
+  }
+
+  saveAttributesGroupCreation() {
+    cy.findByTestId(this.#saveNewAttributesGroupBtn).click();
     return this;
   }
 
   selectElementInList(name: string) {
-    cy.get(this.validatorsList).contains(name).click();
+    cy.get(this.#validatorsList).contains(name).click();
     return this;
+  }
+
+  setAttributeGroup(group: string) {
+    cy.get("#kc-attributeGroup").click();
+    cy.get("button.pf-v5-c-select__menu-item").contains(group).click();
+
+    return this;
+  }
+
+  resetAttributeGroup() {
+    return this.setAttributeGroup("None");
   }
 
   editAttribute(displayName: string) {
-    cy.findByTestId(this.newAttributeDisplayNameInput)
+    cy.findByTestId(this.#newAttributeDisplayNameInput)
       .click()
       .clear()
       .type(displayName);
-    cy.get(this.newAttributeEnabledWhen).first().check();
-    cy.get(this.newAttributeCheckboxes).check({ force: true });
-    cy.get(this.newAttributeRequiredFor).first().check({ force: true });
-    cy.get(this.newAttributeRequiredWhen).first().check();
-    cy.get(this.newAttributeEmptyValidators).contains("No validators.");
-    cy.findByTestId(this.newAttributeAnnotationBtn).click();
-    cy.findByTestId(this.newAttributeAnnotationKey).type("test");
-    cy.findByTestId(this.newAttributeAnnotationValue).type("123");
+    cy.get(this.#newAttributeEnabledWhen).first().check();
+    cy.get(this.#newAttributeEmptyValidators).contains("No validators.");
+    cy.findByTestId(this.#newAttributeAnnotationBtn).click();
+    cy.findByTestId(this.#newAttributeAnnotationKey).type("test");
+    cy.findByTestId(this.#newAttributeAnnotationValue).type("123");
     return this;
   }
 
-  addValidator() {
-    cy.findByTestId(this.addValidatorBtn).click();
-    Select.selectItem(cy.get(this.validatorRolesList), "email");
-    cy.findByTestId(this.saveValidatorBtn).click();
+  addValidator(type: string) {
+    this.clickAddValidator().selectValidatorType(type).clickSave();
+
     return this;
   }
 
   removeValidator() {
-    cy.findByTestId(this.removeValidatorBtn).click();
-    cy.findByTestId(this.deleteValidatorBtn).click();
+    cy.findByTestId(this.#removeValidatorBtn).click();
+    cy.findByTestId(this.#deleteValidatorBtn).click();
     return this;
   }
 
-  cancelAddingValidator() {
-    cy.findByTestId(this.addValidatorBtn).click();
-    Select.selectItem(cy.get(this.validatorRolesList), "email");
-    cy.findByTestId(this.cancelAddingValidatorBtn).click();
+  cancelAddingValidator(type: string) {
+    this.clickAddValidator().selectValidatorType(type).clickCancel();
+
     return this;
+  }
+
+  clickAddValidator() {
+    cy.findByTestId(this.#addValidatorBtn).click();
+
+    return this.validatorConfigDialogue;
   }
 
   cancelRemovingValidator() {
-    cy.findByTestId(this.removeValidatorBtn).click();
-    cy.findByTestId(this.cancelRemovingValidatorBtn).click();
+    cy.findByTestId(this.#removeValidatorBtn).click();
+    cy.findByTestId(this.#cancelRemovingValidatorBtn).click();
     return this;
   }
 
-  private textArea() {
-    return cy.get(".pf-c-code-editor__code textarea");
+  #textArea() {
+    return cy.get(".pf-v5-c-code-editor__code textarea");
   }
 
-  private getText() {
-    return this.textArea().get(".view-lines");
+  #getText() {
+    return this.#textArea().get(".view-lines");
   }
 
   typeJSON(text: string) {
-    this.textArea().type(text, { force: true });
+    this.#textArea().type(text, { force: true });
+    return this;
+  }
+
+  assertNotificationSaved() {
+    this.masthead.checkNotificationMessage(
+      "Success! User Profile configuration has been saved.",
+    );
+
+    return this;
+  }
+
+  assertNotificationUpdated() {
+    this.masthead.checkNotificationMessage(
+      "User profile settings successfully updated.",
+    );
+
     return this;
   }
 
   shouldHaveText(text: string) {
-    this.getText().should("have.text", text);
+    this.#getText().should("have.text", text);
     return this;
   }
 

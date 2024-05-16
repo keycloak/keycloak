@@ -1,5 +1,8 @@
 <?xml version="1.0" ?>
-<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="keycloak-client-saml">
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:2.0" name="keycloak-client-saml">
+    <props>
+        <prop name="org.wildfly.rule.inclusion-mode" value="all-dependencies"/>
+    </props>
     <dependencies>
         <layer name="keycloak-saml"/>
     </dependencies>

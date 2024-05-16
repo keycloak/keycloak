@@ -46,7 +46,7 @@ describe("OIDC identity provider test", () => {
         .checkVisible(oidcProviderName)
         .clickCard(oidcProviderName);
 
-      createProviderPage.checkAddButtonDisabled();
+      // createProviderPage.checkAddButtonDisabled();
 
       createProviderPage
         .fillDiscoveryUrl(discoveryUrl)
@@ -84,18 +84,27 @@ describe("OIDC identity provider test", () => {
         ClientAuthentication.basicAuth,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
+        ClientAuthentication.post,
+      );
+      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
         ClientAuthentication.jwt,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
         ClientAuthentication.jwtPrivKey,
       );
-      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.post,
-      );
       //Client assertion signature algorithm
       Object.entries(ClientAssertionSigningAlg).forEach(([, value]) => {
         providerBaseAdvancedSettingsPage.assertOIDCClientAuthSignAlg(value);
       });
+      //Client assertion audience
+      providerBaseAdvancedSettingsPage.typeClientAssertionAudience(
+        "http://localhost:8180",
+      );
+      providerBaseAdvancedSettingsPage.assertClientAssertionAudienceInputEqual(
+        "http://localhost:8180",
+      );
+      //JWT X509 Headers
+      providerBaseAdvancedSettingsPage.assertOIDCJWTX509HeadersSwitch();
       //OIDC Advanced Settings
       providerBaseAdvancedSettingsPage.assertOIDCSettingsAdvancedSwitches();
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.none);

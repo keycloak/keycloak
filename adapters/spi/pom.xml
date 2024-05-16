@@ -32,11 +32,7 @@
 
     <modules>
         <module>adapter-spi</module>
-        <module>tomcat-adapter-spi</module>
         <module>undertow-adapter-spi</module>
-        <module>servlet-adapter-spi</module>
-        <module>jakarta-servlet-adapter-spi</module>
         <module>jboss-adapter-core</module>
-        <module>jetty-adapter-spi</module>
     </modules>
 </project>

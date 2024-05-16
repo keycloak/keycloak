@@ -2,23 +2,19 @@
 
 == Account Console
 
-{project_name} users can manage their accounts through the Account Console. Users can configure their profiles, add two-factor authentication, include identity provider accounts, and oversee device activity.
+{project_name} users can manage their accounts through the Account Console. They can configure their profiles, add two-factor authentication, include identity provider accounts, and oversee device activity.
 
 [role="_additional-resources"]
 .Additional resources
 
-* The Account Console can be configured in terms of appearance and language preferences. An example is adding attributes to the *Personal info* page by clicking *Personal info* link and completing and saving details. For more information, see reference:{developerguide_link}[{developerguide_name}].
+* The Account Console can be configured in terms of appearance and language preferences. An example is adding additional attributes to the *Personal info* page. For more information, see the {developerguide_link}[{developerguide_name}].
 
 === Accessing the Account Console
-
-Any user can access the Account Console.
 
 .Procedure
 
 . Make note of the realm name and IP address for the {project_name} server where your account exists.
-
 . In a web browser, enter a URL in this format: _server-root_{kc_realms_path}/{realm-name}/account.
-
 . Enter your login name and password.
 
 .Account Console
@@ -37,21 +33,15 @@ You can sign in to this console using basic authentication (a login name and pas
 .Procedure
 
 . Click *Account security* in the menu.
-
 . Click *Signing in*.
-
-. Click *Set up authenticator application*.
+. Click *Set up Authenticator application*.
 +
 .Signing in
 image:images/account-console-signing-in.png[Signing in]
 
-. Follow the directions that appear on the screen to use either
- https://freeotp.github.io/[FreeOTP] or https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2[Google Authenticator] on your mobile device as your OTP generator.
-
+. Follow the directions that appear on the screen to use your mobile device as your OTP generator.
 . Scan the QR code in the screen shot into the OTP generator on your mobile device.
-
 . Log out and log in again.
-
 . Respond to the prompt by entering an OTP that is provided on your mobile device.
 
 ==== Two-factor authentication with WebAuthn
@@ -63,21 +53,16 @@ image:images/account-console-signing-in.png[Signing in]
 .Procedure
 
 . Click *Account Security* in the menu.
-
 . Click *Signing In*.
-
-. Click *Set up Security Key*.
+. Click *Set up a Passkey*.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Security Key]
+image:images/account-console-signing-in-webauthn-2factor.png[Signing in with a Passkey]
 
-. Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
-
-. Click *Register* to register your security key.
-
+. Prepare your Passkey. How you prepare this key depends on the type of Passkey you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Click *Register* to register your Passkey.
 . Log out and log in again.
-
-. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Security Key as second factor.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Passkey as second factor.
 
 ==== Passwordless authentication with WebAuthn
 
@@ -88,21 +73,16 @@ image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Sec
 .Procedure
 
 . Click *Account Security* in the menu.
-
 . Click *Signing In*.
-
-. Click *Set up Security Key* in the *Passwordless* section.
+. Click *Set up a Passkey* in the *Passwordless* section.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-passwordless.png[Signing In With Security Key]
+image:images/account-console-signing-in-webauthn-passwordless.png[Signing in with a Passkey]
 
-. Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
-
-. Click *Register* to register your security key.
-
+. Prepare your Passkey. How you prepare this key depends on the type of Passkey you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Click *Register* to register your Passkey.
 . Log out and log in again.
-
-. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Security Key as second factor. You no longer need to provide your password to log in.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Passkey as second factor. You no longer need to provide your password to log in.
 
 === Viewing device activity
 
@@ -124,15 +104,10 @@ You can link your account with an <<_identity_broker, identity broker>>. This op
 .Procedure
 
 . Log into the Admin Console.
-
 . Click *Identity providers* in the menu.
-
 . Select a provider and complete the fields.
-
 . Return to the Account Console.
-
 . Click *Account security* in the menu.
-
 . Click *Linked accounts*.
 
 The identity provider you added appears in this page.
@@ -158,4 +133,5 @@ If you select *Direct membership* checkbox, you will see only the groups you are
 * You need to have the *view-groups* account role for being able to view *Groups* menu.
 
 .View group memberships
-image:images/groups_account_console.png[View group memberships]
+.View group memberships
+image:images/account-console-groups.png[View group memberships]

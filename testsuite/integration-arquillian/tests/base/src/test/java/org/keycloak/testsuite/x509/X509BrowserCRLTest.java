@@ -30,7 +30,6 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.Matchers.containsString;

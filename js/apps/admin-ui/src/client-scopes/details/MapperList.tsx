@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Path } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { Dropdown, DropdownItem, DropdownToggle } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { CaretDownIcon } from "@patternfly/react-icons";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
@@ -112,7 +116,7 @@ export const MapperList = ({
             onSelect={() => setMapperAction(false)}
             toggle={
               <DropdownToggle
-                isPrimary
+                toggleVariant="primary"
                 id="mapperAction"
                 onToggle={() => setMapperAction(!mapperAction)}
                 toggleIndicator={CaretDownIcon}

@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
@@ -95,28 +95,44 @@ public class AttackDetectionResource {
         Map<String, Object> data = new HashMap<>();
         data.put("disabled", false);
         data.put("numFailures", 0);
+        data.put("numTemporaryLockouts", 0);
         data.put("lastFailure", 0);
         data.put("lastIPFailure", "n/a");
+        data.put("failedLoginNotBefore", 0);
         if (!realm.isBruteForceProtected()) return data;
 
 
         UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, userId);
         if (model == null) return data;
 
-        boolean disabled;
-        if (user == null) {
-            disabled = Time.currentTime() < model.getFailedLoginNotBefore();
-        } else {
-            disabled = session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user);
-        }
+        boolean disabled = isUserDisabled(model, user);
         if (disabled) {
             data.put("disabled", true);
+            if(session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                data.put("failedLoginNotBefore", model.getFailedLoginNotBefore());
+            } else {
+                data.put("failedLoginNotBefore", Long.MAX_VALUE);
+            }
         }
 
         data.put("numFailures", model.getNumFailures());
+        data.put("numTemporaryLockouts", model.getNumTemporaryLockouts());
         data.put("lastFailure", model.getLastFailure());
         data.put("lastIPFailure", model.getLastIPFailure());
         return data;
+    }
+
+    private boolean isUserDisabled(UserLoginFailureModel model, UserModel user) {
+        if(user == null) {
+            return Time.currentTime() < model.getFailedLoginNotBefore();
+        }
+
+        return isUserDisabledOrLockedByBruteForce(session, realm, user);
+    }
+
+    private boolean isUserDisabledOrLockedByBruteForce(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user) 
+        || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user);
     }
 
     /**

@@ -1,19 +1,19 @@
 export default class PageObject {
-  private selectItemSelectedIcon = ".pf-c-select__menu-item-icon";
-  private drpDwnMenuList = ".pf-c-dropdown__menu";
-  private drpDwnMenuItem = ".pf-c-dropdown__menu-item";
-  private drpDwnMenuToggleBtn = ".pf-c-dropdown__toggle";
-  private selectMenuList = ".pf-c-select__menu";
-  private selectMenuItem = ".pf-c-select__menu-item";
-  private selectMenuToggleBtn = ".pf-c-select__toggle";
-  private switchInput = ".pf-c-switch__input";
-  private formLabel = ".pf-c-form__label";
-  private chipGroup = ".pf-c-chip-group";
-  private chipGroupCloseBtn = ".pf-c-chip-group__close";
-  private chipItem = ".pf-c-chip-group__list-item";
-  private emptyStateDiv = ".pf-c-empty-state:visible";
-  private toolbarActionsButton = ".pf-c-toolbar button[aria-label='Actions']";
-  private breadcrumbItem = ".pf-c-breadcrumb .pf-c-breadcrumb__item";
+  #selectItemSelectedIcon = ".pf-v5-c-select__menu-item-icon";
+  #drpDwnMenuList = ".pf-v5-c-dropdown__menu";
+  #drpDwnMenuItem = ".pf-v5-c-dropdown__menu-item";
+  #drpDwnMenuToggleBtn = ".pf-v5-c-select__toggle";
+  #selectMenuList = ".pf-v5-c-select__menu";
+  #selectMenuItem = ".pf-v5-c-select__menu-item";
+  #selectMenuToggleBtn = ".pf-v5-c-select__toggle";
+  #switchInput = ".pf-v5-c-switch__input";
+  #formLabel = ".pf-v5-c-form__label";
+  #chipGroup = ".pf-v5-c-chip-group";
+  #chipGroupCloseBtn = ".pf-v5-c-chip-group__close";
+  #chipItem = ".pf-v5-c-chip-group__list-item";
+  #emptyStateDiv = ".pf-v5-c-empty-state:visible";
+  #toolbarActionsButton = ".pf-v5-c-toolbar button[aria-label='Actions']";
+  #breadcrumbItem = ".pf-v5-c-breadcrumb .pf-v5-c-breadcrumb__item";
 
   protected assertExist(element: Cypress.Chainable<JQuery>, exist: boolean) {
     element.should((!exist ? "not." : "") + "exist");
@@ -63,7 +63,7 @@ export default class PageObject {
     element?: Cypress.Chainable<JQuery>,
     isOn = true,
   ) {
-    (element ?? cy.get(this.switchInput))
+    (element ?? cy.get(this.#switchInput))
       .parent()
       .contains(isOn ? "On" : "Off")
       .should("be.visible");
@@ -78,14 +78,14 @@ export default class PageObject {
     isOpen = true,
     element?: Cypress.Chainable<JQuery>,
   ) {
-    this.assertExist(element ?? cy.get(this.drpDwnMenuList), isOpen);
+    this.assertExist(element ?? cy.get(this.#drpDwnMenuList), isOpen);
     return this;
   }
 
   protected assertDropdownMenuIsClosed(element?: Cypress.Chainable<JQuery>) {
     return this.assertDropdownMenuIsOpen(
       false,
-      element ?? cy.get(this.drpDwnMenuList),
+      element ?? cy.get(this.#drpDwnMenuList),
     );
   }
 
@@ -93,7 +93,7 @@ export default class PageObject {
     itemName: string,
     element?: Cypress.Chainable<JQuery>,
   ) {
-    (element ?? cy.get(this.drpDwnMenuItem).contains(itemName)).click();
+    (element ?? cy.get(this.#drpDwnMenuItem).contains(itemName)).click();
     return this;
   }
 
@@ -103,7 +103,7 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
     element.click();
     return this;
   }
@@ -114,7 +114,7 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertDropdownMenuIsOpen(true);
     return this;
@@ -126,7 +126,7 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertDropdownMenuIsOpen(false);
     return this;
@@ -137,9 +137,9 @@ export default class PageObject {
     isSelected: boolean,
     element?: Cypress.Chainable<JQuery>,
   ) {
-    element = element ?? cy.get(this.drpDwnMenuItem);
+    element = element ?? cy.get(this.#drpDwnMenuItem);
     this.assertExist(
-      element.contains(itemName).find(this.selectItemSelectedIcon),
+      element.contains(itemName).find(this.#selectItemSelectedIcon),
       isSelected,
     );
     return this;
@@ -151,8 +151,8 @@ export default class PageObject {
   ) {
     const initialElement = element;
     for (const item of items) {
-      element = initialElement ?? cy.get(this.drpDwnMenuList);
-      this.assertExist(element.find(this.drpDwnMenuItem).contains(item), true);
+      element = initialElement ?? cy.get(this.#drpDwnMenuList);
+      this.assertExist(element.find(this.#drpDwnMenuItem).contains(item), true);
     }
     return this;
   }
@@ -163,8 +163,8 @@ export default class PageObject {
   ) {
     const initialElement = element;
     for (const item of items) {
-      element = initialElement ?? cy.get(this.drpDwnMenuList);
-      this.assertExist(element.find(this.formLabel).contains(item), true);
+      element = initialElement ?? cy.get(this.#drpDwnMenuList);
+      this.assertExist(element.find(this.#formLabel).contains(item), true);
     }
     return this;
   }
@@ -173,8 +173,8 @@ export default class PageObject {
     number: number,
     element?: Cypress.Chainable<JQuery>,
   ) {
-    element = element ?? cy.get(this.drpDwnMenuList);
-    element.find(this.drpDwnMenuItem).should(($item) => {
+    element = element ?? cy.get(this.#drpDwnMenuList);
+    element.find(this.#drpDwnMenuItem).should(($item) => {
       expect($item).to.have.length(number);
     });
     return this;
@@ -184,12 +184,12 @@ export default class PageObject {
     isOpen = true,
     element?: Cypress.Chainable<JQuery>,
   ) {
-    element = element ?? cy.get(this.selectMenuList);
+    element = element ?? cy.get(this.#selectMenuList);
     return this.assertDropdownMenuIsOpen(isOpen, element);
   }
 
   protected assertSelectMenuIsClosed(element?: Cypress.Chainable<JQuery>) {
-    element = element ?? cy.get(this.selectMenuList);
+    element = element ?? cy.get(this.#selectMenuList);
     return this.assertDropdownMenuIsClosed(element);
   }
 
@@ -199,7 +199,7 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.selectMenuItem).contains(new RegExp(`^${itemName}$`));
+      cy.get(this.#selectMenuItem).contains(new RegExp(`^${itemName}$`));
     return this.clickDropdownMenuItem(itemName, element);
   }
 
@@ -209,14 +209,14 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.selectMenuToggleBtn).contains(itemName).parent().parent();
+      cy.get(this.#selectMenuToggleBtn).contains(itemName).parent().parent();
     return this.clickDropdownMenuToggleButton(itemName, element);
   }
 
   protected openSelectMenu(itemName: string, element?: Cypress.Chainable<any>) {
     element =
       element ??
-      cy.get(this.selectMenuToggleBtn).contains(itemName).parent().parent();
+      cy.get(this.#selectMenuToggleBtn).contains(itemName).parent().parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertSelectMenuIsOpen(true);
     return this;
@@ -228,7 +228,7 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.selectMenuToggleBtn).contains(itemName).parent().parent();
+      cy.get(this.#selectMenuToggleBtn).contains(itemName).parent().parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertSelectMenuIsOpen(false);
     return this;
@@ -239,7 +239,7 @@ export default class PageObject {
     isSelected: boolean,
     element?: Cypress.Chainable<JQuery>,
   ) {
-    element = element ?? cy.get(this.selectMenuItem);
+    element = element ?? cy.get(this.#selectMenuItem);
     return this.assertDropdownMenuItemIsSelected(itemName, isSelected, element);
   }
 
@@ -249,8 +249,8 @@ export default class PageObject {
   ) {
     const initialElement = element;
     for (const item of items) {
-      element = initialElement ?? cy.get(this.selectMenuList);
-      this.assertExist(element.find(this.selectMenuItem).contains(item), true);
+      element = initialElement ?? cy.get(this.#selectMenuList);
+      this.assertExist(element.find(this.#selectMenuItem).contains(item), true);
     }
     return this;
   }
@@ -259,59 +259,59 @@ export default class PageObject {
     number: number,
     element?: Cypress.Chainable<JQuery>,
   ) {
-    element = element ?? cy.get(this.selectMenuList);
-    element.find(this.selectMenuItem).should(($item) => {
+    element = element ?? cy.get(this.#selectMenuList);
+    element.find(this.#selectMenuItem).should(($item) => {
       expect($item).to.have.length(number);
     });
     return this;
   }
 
-  private getChipGroup(groupName: string) {
-    return cy.get(this.chipGroup).contains(groupName).parent().parent();
+  #getChipGroup(groupName: string) {
+    return cy.get(this.#chipGroup).contains(groupName).parent().parent();
   }
 
-  private getChipItem(itemName: string) {
-    return cy.get(this.chipItem).contains(itemName).parent();
+  #getChipItem(itemName: string) {
+    return cy.get(this.#chipItem).contains(itemName).parent();
   }
 
-  private getChipGroupItem(groupName: string, itemName: string) {
-    return this.getChipGroup(groupName)
-      .find(this.chipItem)
+  #getChipGroupItem(groupName: string, itemName: string) {
+    return this.#getChipGroup(groupName)
+      .find(this.#chipItem)
       .contains(itemName)
       .parent();
   }
 
   protected removeChipGroup(groupName: string) {
-    this.getChipGroup(groupName)
-      .find(this.chipGroupCloseBtn)
+    this.#getChipGroup(groupName)
+      .find(this.#chipGroupCloseBtn)
       .find("button")
       .click();
     return this;
   }
 
   protected removeChipItem(itemName: string) {
-    this.getChipItem(itemName).find("button").click();
+    this.#getChipItem(itemName).find("button").click();
     return this;
   }
 
   protected removeChipGroupItem(groupName: string, itemName: string) {
-    this.getChipGroupItem(groupName, itemName).find("button").click();
+    this.#getChipGroupItem(groupName, itemName).find("button").click();
     return this;
   }
 
   protected assertChipGroupExist(groupName: string, exist: boolean) {
-    this.assertExist(cy.contains(this.chipGroup, groupName), exist);
+    this.assertExist(cy.contains(this.#chipGroup, groupName), exist);
     return this;
   }
 
   protected clickToolbarAction(itemName: string) {
-    cy.get(this.toolbarActionsButton).click();
+    cy.get(this.#toolbarActionsButton).click();
     this.clickDropdownMenuItem(itemName);
     return this;
   }
 
   protected assertChipItemExist(itemName: string, exist: boolean) {
-    cy.get(this.chipItem).within(() => {
+    cy.get(this.#chipItem).within(() => {
       cy.contains(itemName).should((exist ? "" : "not.") + "exist");
     });
     return this;
@@ -323,23 +323,23 @@ export default class PageObject {
     exist: boolean,
   ) {
     this.assertExist(
-      this.getChipGroup(groupName).contains(this.chipItem, itemName),
+      this.#getChipGroup(groupName).contains(this.#chipItem, itemName),
       exist,
     );
     return this;
   }
 
-  protected assertEmptyStateExist(exist: boolean) {
+  assertEmptyStateExist(exist: boolean) {
     if (exist) {
-      cy.get(this.emptyStateDiv).should("exist").should("be.visible");
+      cy.get(this.#emptyStateDiv).should("exist").should("be.visible");
     } else {
-      cy.get(this.emptyStateDiv).should("not.exist");
+      cy.get(this.#emptyStateDiv).should("not.exist");
     }
     return this;
   }
 
   protected clickBreadcrumbItem(itemName: string) {
-    cy.get(this.breadcrumbItem).contains(itemName).click();
+    cy.get(this.#breadcrumbItem).contains(itemName).click();
     return this;
   }
 

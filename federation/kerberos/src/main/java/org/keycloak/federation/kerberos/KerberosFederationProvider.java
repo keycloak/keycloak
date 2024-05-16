@@ -24,7 +24,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.LegacyUserCredentialManager;
+import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
@@ -42,8 +42,15 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.userprofile.AttributeGroupMetadata;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.UserProfileDecorator;
+import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.UserProfileUtil;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -57,7 +64,8 @@ public class KerberosFederationProvider implements UserStorageProvider,
         CredentialInputValidator,
         CredentialInputUpdater,
         CredentialAuthentication,
-        ImportedUserValidation {
+        ImportedUserValidation,
+        UserProfileDecorator {
 
     private static final Logger logger = Logger.getLogger(KerberosFederationProvider.class);
     public static final String KERBEROS_PRINCIPAL = KerberosConstants.KERBEROS_PRINCIPAL;
@@ -160,7 +168,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((LegacyUserCredentialManager) user.credentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((UserCredentialManager) user.credentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
             return validPassword(user.getFirstAttribute(KERBEROS_PRINCIPAL), input.getChallengeResponse());
         } else {
             return false; // invalid cred type
@@ -291,5 +299,16 @@ public class KerberosFederationProvider implements UserStorageProvider,
     @Override
     public String toString() {
         return "KerberosFederationProvider - " + model.getName();
+    }
+
+    @Override
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
+        int guiOrder = (int) metadata.getAttributes().stream()
+                .map(AttributeMetadata::getName)
+                .distinct()
+                .count();
+
+        AttributeGroupMetadata metadataGroup = UserProfileUtil.lookupUserMetadataGroup(session);
+        return Collections.singletonList(UserProfileUtil.createAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL, metadata, metadataGroup, guiOrder++, model.getName()));
     }
 }

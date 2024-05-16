@@ -5,16 +5,16 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Keycloak Operator Installation"
+title="{project_name} Operator Installation"
 priority=10
-summary="How to install the Keycloak Operator on Kubernetes and OpenShift">
+summary="How to install the {project_name} Operator on Kubernetes and OpenShift">
 
-== Installing the Keycloak Operator
-This {section} describes how to install the Keycloak Operator in a Kubernetes or OpenShift cluster.
+== Installing the {project_name} Operator
+This {section} describes how to install the {project_name} Operator in a Kubernetes or OpenShift cluster.
 
 === Installing by using the Operator Lifecycle Manager
 
-The recommended way to install the Keycloak Operator in Kubernetes environments is to use the Operator Lifecycle Manager (OLM).
+The recommended way to install the {project_name} Operator in Kubernetes environments is to use the Operator Lifecycle Manager (OLM).
 
 ==== Prerequisites
 *  Make sure OLM is installed in your environment. For details, see https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md#install-a-release[Installing OLM].
@@ -23,7 +23,7 @@ The recommended way to install the Keycloak Operator in Kubernetes environments 
 
 ==== Using the OpenShift web console
 
-The following procedure describes how to install the Keycloak Operator. However, for general instructions on installing Operators using OLM, see https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[Install your operator with OLM]. In the default Catalog, the Keycloak Operator is named `keycloak-operator`. Make sure to use the `fast` channel to find the operator.
+The following procedure describes how to install the {project_name} Operator. However, for general instructions on installing Operators using OLM, see https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[Install your operator with OLM]. In the default Catalog, the Keycloak Operator is named `keycloak-operator`. Make sure to use the `fast` channel to find the operator.
 
 Perform this procedure on an OpenShift cluster.
 
@@ -33,14 +33,14 @@ Perform this procedure on an OpenShift cluster.
 
 . Search for "keycloak" on the search input box.
 +
-image::select-operator.jpeg["Select the Keycloak Operator in the UI"]
+image::select-operator.jpeg["Select the {project_name} Operator in the UI"]
 
-. Select the Keycloak Operator from the list of results.
+. Select the {project_name} Operator from the list of results.
 . Follow the instructions on the screen.
 +
 Make sure you are installing from the *fast* channel:
 +
-image::configure-operator.png["Configure Keycloak Operator"]
+image::configure-operator.png["Configure {project_name} Operator"]
 
 <@profile.ifCommunity>
 === Installing by using kubectl without Operator Lifecycle Manager
@@ -55,7 +55,7 @@ kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resourc
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
 ----
 
-. Install the Keycloak Operator deployment by entering the following command:
+. Install the {project_name} Operator deployment by entering the following command:
 +
 [source,bash,subs="attributes+"]
 ----

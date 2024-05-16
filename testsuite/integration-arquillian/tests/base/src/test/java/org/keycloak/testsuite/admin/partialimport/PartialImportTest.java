@@ -57,6 +57,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -247,6 +248,17 @@ public class PartialImportTest extends AbstractAuthTest {
         piRep.setUsers(users);
     }
 
+    private void addUsersWithIds() {
+        List<UserRepresentation> users = new ArrayList<>();
+
+        for (int i = 0; i < NUM_ENTITIES; i++) {
+            UserRepresentation user = createUserRepresentation(UUID.randomUUID().toString(), USER_PREFIX + i, USER_PREFIX + i + "@foo.com", "foo", "bar", null, true);
+            users.add(user);
+        }
+
+        piRep.setUsers(users);
+    }
+
     private void addUsersWithTermsAndConditions() {
         List<UserRepresentation> users = new ArrayList<>();
         List<String> requiredActions = new ArrayList<>();
@@ -415,6 +427,46 @@ public class PartialImportTest extends AbstractAuthTest {
             UserRepresentation user = userRsc.toRepresentation();
             assertThat(user.getUsername(), startsWith(USER_PREFIX));
             assertThat(userIds, hasItem(id));
+        }
+    }
+
+    @Test
+    public void testAddUsersWithIds() {
+        assertAdminEvents.clear();
+
+        setFail();
+        addUsersWithIds();
+
+        Set<String> userRepIds = new HashSet<>();
+        for (UserRepresentation userRep : piRep.getUsers()) {
+            userRepIds.add(userRep.getId());
+        }
+
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES, results.getAdded());
+
+        // Need to do this way as admin events from partial import are unsorted
+        Set<String> userIds = new HashSet<>();
+        for (int i=0 ; i<NUM_ENTITIES ; i++) {
+            AdminEventRepresentation adminEvent = assertAdminEvents.poll();
+            Assert.assertEquals(realmId, adminEvent.getRealmId());
+            Assert.assertEquals(OperationType.CREATE.name(), adminEvent.getOperationType());
+            Assert.assertTrue(adminEvent.getResourcePath().startsWith("users/"));
+            assertThat(adminEvent.getResourceType(), equalTo(org.keycloak.events.admin.ResourceType.REALM.name()));
+            String userId = adminEvent.getResourcePath().substring(6);
+            userIds.add(userId);
+            assertThat(userRepIds, hasItem(userId));
+        }
+
+        assertAdminEvents.assertEmpty();
+
+        for (PartialImportResult result : results.getResults()) {
+            String id = result.getId();
+            UserResource userRsc = testRealmResource().users().get(id);
+            UserRepresentation user = userRsc.toRepresentation();
+            assertThat(user.getUsername(), startsWith(USER_PREFIX));
+            assertThat(userIds, hasItem(id));
+            assertThat(userRepIds, hasItem(id));
         }
     }
 

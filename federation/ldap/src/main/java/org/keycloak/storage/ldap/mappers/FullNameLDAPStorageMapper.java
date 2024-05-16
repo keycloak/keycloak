@@ -25,7 +25,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 
@@ -229,10 +228,13 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
             return;
         }
 
-        EscapeStrategy escapeStrategy = firstNameCondition != null ? firstNameCondition.getEscapeStrategy() : lastNameCondition.getEscapeStrategy();
-
-        EqualCondition fullNameCondition = new EqualCondition(ldapFullNameAttrName, fullName, escapeStrategy);
+        EqualCondition fullNameCondition = new EqualCondition(ldapFullNameAttrName, fullName);
         query.addWhereCondition(fullNameCondition);
+    }
+
+    @Override
+    public Set<String> getUserAttributes() {
+        return new HashSet<>(List.of(UserModel.FIRST_NAME, UserModel.LAST_NAME));
     }
 
     protected String getLdapFullNameAttrName() {

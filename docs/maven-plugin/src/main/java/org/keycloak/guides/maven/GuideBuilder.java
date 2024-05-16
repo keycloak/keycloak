@@ -2,13 +2,13 @@ package org.keycloak.guides.maven;
 
 import freemarker.template.TemplateException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
 import org.keycloak.common.Version;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 public class GuideBuilder {
 
@@ -17,7 +17,7 @@ public class GuideBuilder {
     private final File targetDir;
     private final Log log;
 
-    public GuideBuilder(File srcDir, File targetDir, Log log, MavenProject project) throws IOException {
+    public GuideBuilder(File srcDir, File targetDir, Log log, Properties properties) throws IOException {
         this.srcDir = srcDir;
         this.targetDir = targetDir;
         this.log = log;
@@ -25,7 +25,7 @@ public class GuideBuilder {
         Map<String, Object> globalAttributes = new HashMap<>();
         globalAttributes.put("ctx", new Context(srcDir));
         globalAttributes.put("version", Version.VERSION);
-        globalAttributes.put("properties", project.getProperties());
+        globalAttributes.put("properties", properties);
 
         this.freeMarker = new FreeMarker(srcDir.getParentFile(), globalAttributes);
     }

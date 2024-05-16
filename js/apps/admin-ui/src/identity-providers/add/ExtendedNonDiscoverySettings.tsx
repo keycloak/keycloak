@@ -3,15 +3,17 @@ import {
   Form,
   FormGroup,
   NumberInput,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
@@ -44,6 +46,15 @@ export const ExtendedNonDiscoverySettings = () => {
         <SwitchField
           field="config.backchannelSupported"
           label="backchannelLogout"
+        />
+        <SwitchField
+          field="config.sendIdTokenOnLogout"
+          label="sendIdTokenOnLogout"
+          defaultValue={"true"}
+        />
+        <SwitchField
+          field="config.sendClientIdOnLogout"
+          label="sendClientIdOnLogout"
         />
         <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
         <SwitchField field="config.disableNonce" label="disableNonce" />

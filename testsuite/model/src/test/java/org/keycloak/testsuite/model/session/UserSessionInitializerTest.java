@@ -17,10 +17,13 @@
 
 package org.keycloak.testsuite.model.session;
 
+import org.hamcrest.Matchers;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -33,7 +36,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -155,7 +157,6 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     }
 
     @Test
-    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testUserSessionPropagationBetweenSites() throws InterruptedException {
         AtomicInteger index = new AtomicInteger();
         AtomicReference<String> userSessionId = new AtomicReference<>();

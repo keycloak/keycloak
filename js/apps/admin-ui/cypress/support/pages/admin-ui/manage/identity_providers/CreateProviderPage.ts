@@ -1,19 +1,19 @@
 export default class CreateProviderPage {
-  private github = "github";
-  private clientIdField = "clientId";
-  private clientIdError = "#kc-client-secret-helper";
-  private clientSecretField = "clientSecret";
-  private displayName = "displayName";
-  private discoveryEndpoint = "discoveryEndpoint";
-  private authorizationUrl = "authorizationUrl";
-  private addButton = "createProvider";
-  private saveButton = "idp-details-save";
-  private ssoServiceUrl = "sso-service-url";
-  private authnContextClassRefs = "classref-field";
-  private authnContextDeclRefs = "declref-field";
-  private addProvider = "Add provider";
-  private addClassRef = "Add AuthnContext ClassRef";
-  private addDeclRef = "Add AuthnContext DeclRef";
+  #github = "github";
+  #clientIdField = "config.clientId";
+  #clientIdError = "#config\\.clientSecret-helper";
+  #clientSecretField = "config.clientSecret";
+  #displayName = "displayName";
+  #discoveryEndpoint = "discoveryEndpoint";
+  #authorizationUrl = "config.authorizationUrl";
+  #addButton = "createProvider";
+  #saveButton = "idp-details-save";
+  #ssoServiceUrl = "sso-service-url";
+  #authnContextClassRefs = "classref-field";
+  #authnContextDeclRefs = "declref-field";
+  #addProvider = "Add provider";
+  #addClassRef = "Add AuthnContext ClassRef";
+  #addDeclRef = "Add AuthnContext DeclRef";
 
   checkVisible(name: string) {
     cy.findByTestId(`${name}-card`).should("exist");
@@ -26,50 +26,50 @@ export default class CreateProviderPage {
   }
 
   clickGitHubCard() {
-    this.clickCard(this.github);
+    this.clickCard(this.#github);
     return this;
   }
 
   checkGitHubCardVisible() {
-    this.checkVisible(this.github);
+    this.checkVisible(this.#github);
     return this;
   }
 
   checkClientIdRequiredMessage(exist = true) {
-    cy.get(this.clientIdError).should((!exist ? "not." : "") + "exist");
+    cy.get(this.#clientIdError).should((!exist ? "not." : "") + "exist");
 
     return this;
   }
 
   checkAddButtonDisabled(disabled = true) {
-    cy.findByTestId(this.addButton).should(
+    cy.findByTestId(this.#addButton).should(
       !disabled ? "not." : "" + "be.disabled",
     );
     return this;
   }
 
   clickAdd() {
-    cy.findByTestId(this.addButton).click();
+    cy.findByTestId(this.#addButton).click();
     return this;
   }
 
   clickSave() {
-    cy.findByTestId(this.saveButton).click();
+    cy.findByTestId(this.#saveButton).click();
     return this;
   }
 
   clickClassRefsAdd() {
-    cy.contains(this.addClassRef).click();
+    cy.contains(this.#addClassRef).click();
     return this;
   }
 
   clickDeclRefsAdd() {
-    cy.contains(this.addDeclRef).click();
+    cy.contains(this.#addDeclRef).click();
     return this;
   }
 
   clickCreateDropdown() {
-    cy.contains(this.addProvider).click();
+    cy.contains(this.#addProvider).click();
     return this;
   }
 
@@ -79,59 +79,58 @@ export default class CreateProviderPage {
   }
 
   fill(id: string, secret = "") {
-    cy.findByTestId(this.clientIdField).clear();
+    cy.findByTestId(this.#clientIdField).clear();
 
     if (id) {
-      cy.findByTestId(this.clientIdField).type(id);
+      cy.findByTestId(this.#clientIdField).type(id);
     }
 
     if (secret) {
-      cy.findByTestId(this.clientSecretField).type(secret);
+      cy.findByTestId(this.#clientSecretField).type(secret);
     }
 
     return this;
   }
 
   fillDisplayName(value: string) {
-    cy.findByTestId(this.displayName).type("x");
-    cy.findByTestId(this.displayName).clear().type(value).blur();
+    cy.findByTestId(this.#displayName).type("x");
+    cy.findByTestId(this.#displayName).clear().type(value).blur();
     return this;
   }
 
   fillDiscoveryUrl(value: string) {
-    cy.findByTestId(this.discoveryEndpoint).type("x");
-    cy.findByTestId(this.discoveryEndpoint).clear().type(value).blur();
+    cy.findByTestId(this.#discoveryEndpoint).type("x");
+    cy.findByTestId(this.#discoveryEndpoint).clear().type(value).blur();
     return this;
   }
 
   fillAuthnContextClassRefs(value: string) {
-    cy.findByTestId(this.authnContextClassRefs).type("x");
-    cy.findByTestId(this.authnContextClassRefs).clear().type(value).blur();
+    cy.findByTestId(this.#authnContextClassRefs).type("x");
+    cy.findByTestId(this.#authnContextClassRefs).clear().type(value).blur();
     return this;
   }
 
   fillAuthnContextDeclRefs(value: string) {
-    cy.findByTestId(this.authnContextDeclRefs).type("x");
-    cy.findByTestId(this.authnContextDeclRefs).clear().type(value).blur();
+    cy.findByTestId(this.#authnContextDeclRefs).type("x");
+    cy.findByTestId(this.#authnContextDeclRefs).clear().type(value).blur();
     return this;
   }
 
   fillSsoServiceUrl(value: string) {
-    cy.findByTestId(this.ssoServiceUrl).type("x");
-    cy.findByTestId(this.ssoServiceUrl).clear().type(value).blur();
+    cy.findByTestId(this.#ssoServiceUrl).type("x");
+    cy.findByTestId(this.#ssoServiceUrl).clear().type(value).blur();
     return this;
   }
 
   shouldBeSuccessful() {
-    cy.findByTestId(this.discoveryEndpoint).should(
-      "have.class",
-      "pf-m-success",
-    );
+    cy.findByTestId(this.#discoveryEndpoint)
+      .parent()
+      .should("have.class", "pf-m-success");
     return this;
   }
 
   shouldHaveAuthorizationUrl(value: string) {
-    cy.findByTestId(this.authorizationUrl).should("have.value", value);
+    cy.findByTestId(this.#authorizationUrl).should("have.value", value);
     return this;
   }
 }

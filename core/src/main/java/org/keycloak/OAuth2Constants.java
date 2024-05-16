@@ -92,6 +92,8 @@ public interface OAuth2Constants {
     String SCOPE_ADDRESS = "address";
     String SCOPE_PHONE = "phone";
 
+    String ORGANIZATION = "organization";
+
     String UI_LOCALES_PARAM = "ui_locales";
 
     String PROMPT = "prompt";
@@ -148,6 +150,8 @@ public interface OAuth2Constants {
 
     // https://www.rfc-editor.org/rfc/rfc9207.html
     String ISSUER = "iss";
+
+    String AUTHENTICATOR_METHOD_REFERENCE = "amr";
 }
 
 

@@ -3,24 +3,37 @@ package org.keycloak.testsuite.broker;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.authentication.authenticators.broker.IdpConfirmLinkAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.AccountHelper;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
@@ -62,35 +75,75 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
-        UserRepresentation userRep = AccountHelper.getUserRepresentation(
+        if (isUsingTransientSessions()) {
+            UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
+
+            List<UserRepresentation> userCount = consumerUsers.list();
+            assertThat("There must be at no users", userCount, empty());
+        } else {
+            UserRepresentation userRep = AccountHelper.getUserRepresentation(
                 adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-        userRep.setFirstName("Firstname");
-        userRep.setLastName("Lastname");
+            userRep.setFirstName("Firstname");
+            userRep.setLastName("Lastname");
 
-        AccountHelper.updateUser(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), userRep);
+            AccountHelper.updateUser(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), userRep);
 
-        UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
+            UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
-        int userCount = consumerUsers.count();
-        Assert.assertTrue("There must be at least one user", userCount > 0);
-
-        List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
-
-        boolean isUserFound = false;
-        for (UserRepresentation user : users) {
-            if (user.getUsername().equals(bc.getUserLogin()) && user.getEmail().equals(bc.getUserEmail())) {
-                isUserFound = true;
-                break;
-            }
+            int userCount = consumerUsers.count();
+            Assert.assertTrue("There must be at least one user", userCount > 0);
         }
+
+        boolean isUserFound = getConsumerUserRepresentations()
+          .anyMatch(user -> user.getUsername().equals(bc.getUserLogin()) && user.getEmail().equals(bc.getUserEmail()));
 
         Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
           isUserFound);
     }
 
+    protected boolean isUsingTransientSessions() {
+        return "true".equals(identityProviderResource.toRepresentation().getConfig().getOrDefault(IdentityProviderModel.DO_NOT_STORE_USERS, "false"));
+    }
+
+    protected Stream<UserResource> getConsumerUserResources() {
+        return getConsumerUserRepresentations()
+          .map(UserRepresentation::getId)
+          .map(adminClient.realm(bc.consumerRealmName()).users()::get);
+    }
+
+    protected UserRepresentation getConsumerUserRepresentation(String userName) {
+        Objects.requireNonNull(userName);
+        Iterator<UserRepresentation> it = getConsumerUserRepresentations()
+          .peek(userRep -> log.debugf("UserRep: %s .. %s", userRep.getId(), userRep.getUsername()))
+          .filter(userRep -> userName.equals(userRep.getUsername()))
+          .iterator();
+
+        assertTrue("At least one user expected with username " + userName, it.hasNext());
+        UserRepresentation res = it.next();
+        assertFalse("At most one user expected with username " + userName, it.hasNext());
+
+        return res;
+    }
+
+    protected Stream<UserRepresentation> getConsumerUserRepresentations() {
+        String consumerClientBrokerAppId = adminClient.realm(bc.consumerRealmName()).clients().findByClientId("broker-app").get(0).getId();
+        List<UserSessionRepresentation> brokeredSessions = adminClient.realm(bc.consumerRealmName()).clients().get(consumerClientBrokerAppId).getUserSessions(0, 10);
+
+        final List<UserRepresentation> persistentUsers = adminClient.realm(bc.consumerRealmName()).users().list();
+        final Set<String> persistentUsersId = persistentUsers.stream().map(UserRepresentation::getId).collect(Collectors.toSet());
+        return Stream.concat(persistentUsers.stream(),
+          brokeredSessions.stream()
+            .map(userSession -> userSession.getUserId())
+            .filter(id -> ! persistentUsersId.contains(id))
+            .map(adminClient.realm(bc.consumerRealmName()).users()::get)
+            .map(UserResource::toRepresentation)
+        );
+    }
 
     @Test
     public void loginWithExistingUser() {
+        Integer userCountBefore = adminClient.realm(bc.consumerRealmName()).users().count();
+
         testLogInAsUserInIDP();
 
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
@@ -98,10 +151,15 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
 
-        logInWithBroker(bc);
+        if (isUsingTransientSessions()) {
+            // Assert that there has been no persistent user created
+            assertThat(userCount, is(userCountBefore));
+        } else {
+            logInWithBroker(bc);
 
-        assertTrue(driver.getCurrentUrl().contains(getConsumerRoot() + "/auth/realms/master/app/"));
-        assertEquals(userCount, adminClient.realm(bc.consumerRealmName()).users().count());
+            assertThat(driver.getCurrentUrl(), containsString(getConsumerRoot() + "/auth/realms/master/app/"));
+            assertEquals(userCount, adminClient.realm(bc.consumerRealmName()).users().count());
+        }
     }
 
 
@@ -114,7 +172,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
         Assert.assertTrue("Should be logged in", driver.getTitle().endsWith("AUTH_RESPONSE"));
 
-        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         oauth.clientId("broker-app");
@@ -122,6 +180,14 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
         Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"));
+    }
+
+    protected void logoutFromConsumerRealm() {
+        if (isUsingTransientSessions()) {
+            getConsumerUserResources().forEach(UserResource::logout);
+        } else {
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        }
     }
 
     protected void createRolesForRealm(String realm) {

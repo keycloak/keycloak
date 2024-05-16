@@ -27,14 +27,20 @@ In case you want to use <<_backchannel_authentication_endpoint,CIBA>> in a FAPI 
 There is a need to use the `fapi-1-advanced` profile, or other client profile containing the requested executors, as the `fapi-ciba` profile contains just CIBA-specific executors.
 When enforcing the requirements of the FAPI CIBA specification, there is a need for more requirements, such as enforcement of confidential clients or certificate-bound access tokens.
 
-==== Open Banking Brasil Financial-grade API Security Profile
+==== Open Finance Brasil Financial-grade API Security Profile
 
-{project_name} is compliant with the https://openbanking-brasil.github.io/specs-seguranca/open-banking-brasil-dynamic-client-registration-1_ID2-ptbr.html[Open Banking Brasil Financial-grade API Security Profile 1.0 Implementers Draft 2].
+{project_name} is compliant with the https://openfinancebrasil.atlassian.net/wiki/spaces/OF/pages/245760001/EN+Open+Finance+Brasil+Financial-grade+API+Security+Profile+1.0+Implementers+Draft+3[Open Finance Brasil Financial-grade API Security Profile 1.0 Implementers Draft 3].
 This one is stricter in some requirements than the <<_fapi-support,FAPI 1 Advanced>> specification and hence it may be needed to configure link:{adminguide_link}#_client_policies[Client Policies]
 in the more strict way to enforce some of the requirements. Especially:
 
 * If your client does not use PAR, make sure that it uses encrypted OIDC request objects. This can be achieved by using a client profile with the `secure-request-object` executor configured with `Encryption Required` enabled.
 * Make sure that for JWS, the client uses the `PS256` algorithm. For JWE, the client should use the `RSA-OAEP` with `A256GCM`. This may need to be set in all the link:{adminguide_link}#_oidc_clients[Client Settings] where these algorithms are applicable.
+
+==== Australia Consumer Data Right (CDR) Security Profile
+
+{project_name} is compliant with the https://consumerdatastandardsaustralia.github.io/standards/#security-profile[Australia Consumer Data Right Security Profile].
+
+If you want to apply the Australia CDR security profile, you need to use `fapi-1-advanced` profile because the Australia CDR security profile is based on FAPI 1.0 Advanced security profile. If your client also applies PAR, make sure that client applies RFC 7637 Proof Key for Code Exchange (PKCE) because the Australia CDR security profile requires that you apply PKCE when applying PAR. This can be achieved by using a client profile with the `pkce-enforcer` executor.
 
 ==== TLS considerations
 

@@ -17,8 +17,8 @@
 
 package org.keycloak.storage.ldap.idm.model;
 
-import java.util.List;
-
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,7 +45,7 @@ public class LDAPDnTest {
         Assert.assertFalse(dn.isDescendantOf(LDAPDn.fromString("dc=keycloakk, dc=org")));
         Assert.assertFalse(dn.isDescendantOf(dn));
 
-        Assert.assertEquals("uid", dn.getFirstRdn().getAllKeys().get(0));
+        MatcherAssert.assertThat(dn.getFirstRdn().getAllKeys(), Matchers.containsInAnyOrder("uid"));
         Assert.assertEquals("uid=Johny\\,Depp\\+Pepp\\\\Foo", dn.getFirstRdn().toString());
         Assert.assertEquals("uid=Johny,Depp+Pepp\\Foo", dn.getFirstRdn().toString(false));
         Assert.assertEquals("Johny,Depp+Pepp\\Foo", dn.getFirstRdn().getAttrValue("uid"));
@@ -56,7 +56,7 @@ public class LDAPDnTest {
         LDAPDn dn = LDAPDn.fromString("dc=keycloak, dc=org");
         dn.addFirst("ou", "");
 
-        Assert.assertEquals("ou", dn.getFirstRdn().getAllKeys().get(0));
+        MatcherAssert.assertThat(dn.getFirstRdn().getAllKeys(), Matchers.containsInAnyOrder("ou"));
         Assert.assertEquals("", dn.getFirstRdn().getAttrValue("ou"));
 
         Assert.assertEquals("ou=,dc=keycloak,dc=org", dn.toString());
@@ -86,25 +86,32 @@ public class LDAPDnTest {
         dn.addFirst("cn", "Johny,Džýa ");
         Assert.assertEquals("cn=Johny\\,Džýa\\ ,dc=keycloak,dc=org", dn.toString());
         Assert.assertEquals("Johny,Džýa ", dn.getFirstRdn().getAttrValue("cn"));
+
+        dn = LDAPDn.fromString("CN=Test User\\\\,OU=Users,DC=example,DC=com");
+        Assert.assertEquals("CN=Test User\\\\,OU=Users,DC=example,DC=com", dn.toString());
+        Assert.assertEquals("Test User\\", dn.getFirstRdn().getAttrValue("CN"));
+
+        dn = LDAPDn.fromString("CN=Test User\\ ,OU=Users,DC=example,DC=com");
+        Assert.assertEquals("CN=Test User\\ ,OU=Users,DC=example,DC=com", dn.toString());
+        Assert.assertEquals("Test User ", dn.getFirstRdn().getAttrValue("CN"));
     }
 
     @Test
     public void testDNWithMultivaluedRDN() throws Exception {
-        LDAPDn dn = LDAPDn.fromString("uid=john+cn=John Do\\+eř,dc=keycloak+ou=foo, dc=org");
+        LDAPDn dn = LDAPDn.fromString("cn=John Do\\+eř+uid=john,dc=keycloak+ou=foo, dc=org");
 
-        Assert.assertEquals("uid=john+cn=John Do\\+eř", dn.getFirstRdn().toString());
-        List<String> keys = dn.getFirstRdn().getAllKeys();
-        Assert.assertEquals("uid", keys.get(0));
-        Assert.assertEquals("cn", keys.get(1));
+        Assert.assertEquals("cn=John Do\\+eř+uid=john", dn.getFirstRdn().toString());
+        MatcherAssert.assertThat(dn.getFirstRdn().getAllKeys(), Matchers.containsInAnyOrder("uid", "cn"));
         Assert.assertEquals("john", dn.getFirstRdn().getAttrValue("UiD"));
         Assert.assertEquals("John Do+eř", dn.getFirstRdn().getAttrValue("CN"));
 
         Assert.assertEquals("dc=keycloak+ou=foo,dc=org", dn.getParentDn().toString());
 
-        dn.getFirstRdn().setAttrValue("UID", "john2");
-        Assert.assertEquals("uid=john2+cn=John Do\\+eř", dn.getFirstRdn().toString());
+        LDAPDn.RDN rdn = dn.getFirstRdn();
+        rdn.setAttrValue("UID", "john2");
+        Assert.assertEquals("cn=John Do\\+eř+uid=john2", rdn.toString());
 
-        dn.getFirstRdn().setAttrValue("some", "somet+hing");
-        Assert.assertEquals("uid=john2+cn=John Do\\+eř+some=somet\\+hing", dn.getFirstRdn().toString());
+        rdn.setAttrValue("some", "somet+hing");
+        Assert.assertEquals("cn=John Do\\+eř+some=somet\\+hing+uid=john2", rdn.toString());
     }
 }

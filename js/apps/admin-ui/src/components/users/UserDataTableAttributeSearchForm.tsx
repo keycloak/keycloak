@@ -1,4 +1,4 @@
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   ActionGroup,
   Alert,
@@ -6,21 +6,25 @@ import {
   Button,
   ButtonVariant,
   InputGroup,
+  InputGroupItem,
+  Text,
+  TextContent,
+  TextInput,
+  TextVariants,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Text,
-  TextContent,
-  TextVariants,
-} from "@patternfly/react-core";
-import { Form } from "react-router-dom";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { isBundleKey, unWrap } from "../../user/utils";
+} from "@patternfly/react-core/deprecated";
 import { CheckIcon } from "@patternfly/react-icons";
-import { useAlerts } from "../alert/Alerts";
 import { ReactNode, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Form } from "react-router-dom";
+import { label } from "@keycloak/keycloak-ui-shared";
+
+import { useAlerts } from "../alert/Alerts";
 import { UserAttribute } from "./UserDataTable";
 
 type UserDataTableAttributeSearchFormProps = {
@@ -131,7 +135,7 @@ export function UserDataTableAttributeSearchForm({
         <Select
           data-testid="search-attribute-name"
           variant={SelectVariant.typeahead}
-          onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
+          onToggle={(_event, isOpen) => setSelectAttributeKeyOpen(isOpen)}
           selections={getValues().displayName}
           onSelect={(_, selectedValue) => {
             setValue("displayName", selectedValue.toString());
@@ -153,11 +157,7 @@ export function UserDataTableAttributeSearchForm({
           {profile.attributes?.map((option) => (
             <SelectOption
               key={option.name}
-              value={
-                (isBundleKey(option.displayName)
-                  ? t(unWrap(option.displayName!))
-                  : option.displayName) || option.name
-              }
+              value={label(t, option.displayName!, option.name)}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectAttributeKeyOpen(false);
@@ -169,7 +169,7 @@ export function UserDataTableAttributeSearchForm({
       );
     } else {
       return (
-        <KeycloakTextInput
+        <TextInput
           id="name"
           placeholder={t("keyPlaceholder")}
           validated={errors.name && "error"}
@@ -186,20 +186,21 @@ export function UserDataTableAttributeSearchForm({
   return (
     <Form className="user-attribute-search-form">
       <TextContent className="user-attribute-search-form-headline">
-        <Text component={TextVariants.h6}>{t("selectAttributes")}</Text>
+        <Text component={TextVariants.h2}>{t("selectAttributes")}</Text>
       </TextContent>
       <Alert
         isInline
         className="user-attribute-search-form-alert"
         variant="info"
         title={t("searchUserByAttributeDescription")}
+        component="h3"
       />
       <TextContent className="user-attribute-search-form-key-value">
         <div className="user-attribute-search-form-left">
-          <Text component={TextVariants.h6}>{t("key")}</Text>
+          <Text component={TextVariants.h3}>{t("key")}</Text>
         </div>
         <div className="user-attribute-search-form-right">
-          <Text component={TextVariants.h6}>{t("value")}</Text>
+          <Text component={TextVariants.h3}>{t("value")}</Text>
         </div>
       </TextContent>
       <div className="user-attribute-search-form-left">
@@ -207,26 +208,31 @@ export function UserDataTableAttributeSearchForm({
       </div>
       <div className="user-attribute-search-form-right">
         <InputGroup>
-          <KeycloakTextInput
-            id="value"
-            placeholder={t("valuePlaceholder")}
-            validated={errors.value && "error"}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addToFilter();
-              }
-            }}
-            {...register("value", {
-              required: true,
-              validate: isAttributeValueValid,
-            })}
-          />
-          <Button
-            variant="control"
-            icon={<CheckIcon />}
-            onClick={addToFilter}
-          />
+          <InputGroupItem>
+            <TextInput
+              id="value"
+              placeholder={t("valuePlaceholder")}
+              validated={errors.value && "error"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addToFilter();
+                }
+              }}
+              {...register("value", {
+                required: true,
+                validate: isAttributeValueValid,
+              })}
+            />
+          </InputGroupItem>
+          <InputGroupItem>
+            <Button
+              variant="control"
+              icon={<CheckIcon />}
+              onClick={addToFilter}
+              aria-label={t("addToFilter")}
+            />
+          </InputGroupItem>
         </InputGroup>
       </div>
       {createAttributeSearchChips()}

@@ -9,9 +9,6 @@ import {
   Grid,
   GridItem,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
   Tab,
@@ -21,21 +18,25 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, useHelp } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { HelpItem, useHelp } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { UserSelect } from "../../components/users/UserSelect";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../../util";
 import { useFetch } from "../../utils/useFetch";
 import { GeneratedCodeTab } from "./GeneratedCodeTab";
-import { useAccess } from "../../context/access/Access";
 
 import "./evaluate.css";
 
@@ -59,6 +60,7 @@ const ProtocolMappers = ({
       loader={() => Promise.resolve(protocolMappers)}
       ariaLabelKey="effectiveProtocolMappers"
       searchPlaceholderKey="searchForProtocol"
+      data-testid="effective-protocol-mappers"
       columns={[
         {
           name: "mapperName",
@@ -97,6 +99,7 @@ const EffectiveRoles = ({
       loader={() => Promise.resolve(effectiveRoles)}
       ariaLabelKey="effectiveRoleScopeMappings"
       searchPlaceholderKey="searchForRole"
+      data-testid="effective-role-scope-mappings"
       columns={[
         {
           name: "name",
@@ -112,6 +115,8 @@ const EffectiveRoles = ({
 };
 
 export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
+  const { adminClient } = useAdminClient();
+
   const prefix = "openid";
   const { t } = useTranslation();
   const { enabled } = useHelp();
@@ -362,6 +367,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveProtocolMappers"
               aria-controls="effectiveProtocolMappers"
+              data-testid="effective-protocol-mappers-tab"
               eventKey={0}
               title={
                 <TabTitleText>
@@ -379,6 +385,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveRoleScopeMappings"
               aria-controls="effectiveRoleScopeMappings"
+              data-testid="effective-role-scope-mappings-tab"
               eventKey={1}
               title={
                 <TabTitleText>
@@ -396,6 +403,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedAccessToken"
               aria-controls="generatedAccessToken"
+              data-testid="generated-access-token-tab"
               eventKey={2}
               title={
                 <TabTitleText>
@@ -413,6 +421,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedIdToken"
               aria-controls="generatedIdToken"
+              data-testid="generated-id-token-tab"
               eventKey={3}
               title={
                 <TabTitleText>
@@ -430,6 +439,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedUserInfo"
               aria-controls="generatedUserInfo"
+              data-testid="generated-user-info-tab"
               eventKey={4}
               title={
                 <TabTitleText>

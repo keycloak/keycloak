@@ -22,13 +22,11 @@ import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 
 @DistributionTest
 @WithDatabase(alias = "postgres")
-@LegacyStore
 public class DatabaseOptionsDistTest {
 
     @Test

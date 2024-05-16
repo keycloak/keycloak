@@ -200,7 +200,7 @@ public class LocaleUtil {
         return mergeGroupedMessages(locale, realmLocalizationMessages, themeMessages);
     }
 
-    private static Map<Locale, Properties> getRealmLocalizationTexts(RealmModel realm, Locale locale) {
+    public static Map<Locale, Properties> getRealmLocalizationTexts(RealmModel realm, Locale locale) {
         LinkedHashMap<Locale, Properties> groupedMessages = new LinkedHashMap<>();
 
         List<Locale> applicableLocales = getApplicableLocales(locale);

@@ -72,12 +72,33 @@ The _Client Credentials Grant_ creates a token based on the metadata and permiss
 
 See the <<_service_accounts,Service Accounts>> chapter for more information.
 
+[[_refresh_token_grant]]
+===== Refresh token grant
+
+By default, {project_name} returns refresh tokens in the token responses from most of the flows. Some exceptions are implicit flow or client credentials grant described above.
+
+Refresh token is tied to the user session of the SSO browser session and can be valid for the lifetime of the user session. However, that client should send a refresh-token request at least once per
+specified interval. Otherwise, the session can be considered "idle" and can expire. See the <<_timeouts,timeouts section>> for more information.
+
+{project_name} supports <<_offline-access,offline tokens>>, which can be used typically when client needs to use refresh token even if corresponding browser SSO session is already expired.
+
+[[_refresh_token_rotation]]
+====== Refresh token rotation
+
+It is possible to specify that the refresh token is considered invalid once it is used. This means that client must always save the refresh token from the last refresh response because older refresh tokens,
+which were already used, would not be considered valid anymore by {project_name}. This is possible to set with the use of _Revoke Refresh token_ option as specified in the <<_timeouts,timeouts section>>.
+
+{project_name} also supports the situation that no refresh token rotation exists. In this case, a refresh token is returned during login, but subsequent responses from refresh-token requests will not
+return new refresh tokens. This practice is recommended for instance in the link:{adapterguide_link}#_fapi-support[FAPI 2 draft specification].
+In {project_name}, it is possible to skip refresh token rotation with the use of <<_client_policies,client policies>>. You can add executor `suppress-refresh-token-rotation` to some client
+profile and configure client policy to specify for which clients would be the profile triggered, which means that for those clients the refresh token rotation is going to be skipped.
+
 ===== Device authorization grant
 
 This is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser. Here's a brief summary of the protocol:
 
 . The application requests {project_name} a device code and a user code. {project_name} creates a device code and a user code. {project_name} returns a response including the device code and the user code to the application.
-. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. You could define a short verification_uri that will be redirected to Keycloak verification URI (/realms/realm_name/device)outside Keycloak - fe in a proxy.
+. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. You could define a short verification_uri that will be redirected to {project_name} verification URI (/realms/realm_name/device)outside {project_name} - fe in a proxy.
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
 
 [[_client_initiated_backchannel_authentication_grant]]
@@ -292,7 +313,7 @@ User Resolver Provider is provided as SPI provider so that users of {project_nam
 
 ==== OIDC Logout
 
-OIDC has four specifications relevant to logout mechanisms. These specifications are in draft status:
+OIDC has four specifications relevant to logout mechanisms:
 
 . https://openid.net/specs/openid-connect-session-1_0.html[Session Management]
 . https://openid.net/specs/openid-connect-rpinitiated-1_0.html[RP-Initiated Logout]

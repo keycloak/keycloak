@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
@@ -59,10 +60,11 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
 
     public InfinispanUserLoginFailureProvider(KeycloakSession session,
                                               RemoteCacheInvoker remoteCacheInvoker,
-                                              Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache) {
+                                              Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache,
+                                              SerializeExecutionsByKey<LoginFailureKey> serializer) {
         this.session = session;
         this.loginFailureCache = loginFailureCache;
-        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, loginFailureCache, remoteCacheInvoker, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs);
+        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, loginFailureCache, remoteCacheInvoker, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs, serializer);
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
@@ -118,7 +120,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
 
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCache = CacheDecorators.localCache(loginFailureCache);
 
-        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
+        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(localCache);
 
         localCacheStoreIgnore
                 .entrySet()

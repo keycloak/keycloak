@@ -41,7 +41,7 @@ import static org.keycloak.testsuite.util.WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
  * @author tkyjovsk
  */
 public abstract class AbstractPatternFlyAlert {
-    public static final String ALERT_CLASS_NAME = "alert";
+    public static final String ALERT_CLASS_NAME = "pf-v5-c-alert";
 
     protected final Logger log = Logger.getLogger(this.getClass());
 

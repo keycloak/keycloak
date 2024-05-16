@@ -13,11 +13,17 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import "./user-section.css";
+import { useAccess } from "../context/access/Access";
 
 export default function UsersSection() {
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
+  const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
+
+  const canViewPermissions =
+    isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
+    hasAccess("manage-authorization", "manage-users", "manage-clients");
 
   const useTab = (tab: UserTab) =>
     useRoutableTab(
@@ -41,7 +47,7 @@ export default function UsersSection() {
       <PageSection
         data-testid="users-page"
         variant="light"
-        className="pf-u-p-0"
+        className="pf-v5-u-p-0"
       >
         <RoutableTabs
           data-testid="user-tabs"
@@ -60,7 +66,7 @@ export default function UsersSection() {
           >
             <UserDataTable />
           </Tab>
-          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
+          {canViewPermissions && (
             <Tab
               id="permissions"
               data-testid="permissionsTab"

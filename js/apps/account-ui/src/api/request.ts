@@ -1,23 +1,21 @@
-import { environment } from "../environment";
-import { keycloak } from "../keycloak";
+import { KeycloakContext } from "@keycloak/keycloak-ui-shared";
+import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
+import Keycloak from "keycloak-js";
 import { joinPath } from "../utils/joinPath";
 import { CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON } from "./constants";
 
 export type RequestOptions = {
   signal?: AbortSignal;
+  getAccessToken?: () => Promise<string | undefined>;
   method?: "POST" | "PUT" | "DELETE";
   searchParams?: Record<string, string>;
   body?: unknown;
 };
 
-export async function request(
-  path: string,
-  { signal, method, searchParams, body }: RequestOptions = {},
+async function _request(
+  url: URL,
+  { signal, getAccessToken, method, searchParams, body }: RequestOptions = {},
 ): Promise<Response> {
-  const url = new URL(
-    joinPath(environment.authUrl, "realms", environment.realm, "account", path),
-  );
-
   if (searchParams) {
     Object.entries(searchParams).forEach(([key, value]) =>
       url.searchParams.set(key, value),
@@ -30,17 +28,34 @@ export async function request(
     body: body ? JSON.stringify(body) : undefined,
     headers: {
       [CONTENT_TYPE_HEADER]: CONTENT_TYPE_JSON,
-      authorization: `Bearer ${await getAccessToken()}`,
+      authorization: `Bearer ${await getAccessToken?.()}`,
     },
   });
 }
 
-async function getAccessToken() {
-  try {
-    await keycloak.updateToken(5);
-  } catch (error) {
-    await keycloak.login();
-  }
-
-  return keycloak.token;
+export async function request(
+  path: string,
+  { environment, keycloak }: KeycloakContext<BaseEnvironment>,
+  opts: RequestOptions = {},
+) {
+  return _request(url(environment, path), {
+    ...opts,
+    getAccessToken: token(keycloak),
+  });
 }
+
+export const url = (environment: BaseEnvironment, path: string) =>
+  new URL(
+    joinPath(environment.authUrl, "realms", environment.realm, "account", path),
+  );
+
+export const token = (keycloak: Keycloak) =>
+  async function getAccessToken() {
+    try {
+      await keycloak.updateToken(5);
+    } catch (error) {
+      await keycloak.login();
+    }
+
+    return keycloak.token;
+  };

@@ -10,11 +10,11 @@ endif::[]
 
 To use the Node.js adapter, first you must create a client for your application in the {project_name} Admin Console. The adapter supports public, confidential, and bearer-only access type. Which one to choose depends on the use-case scenario.
 
-Once the client is created click the `Installation` tab, select `{project_name} OIDC JSON` for `Format Option`, and then click `Download`. The downloaded `keycloak.json` file should be at the root folder of your project.
+Once the client is created, click *Action* at the top right and choose *Download adapter config*. For *Format, choose *Keycloak OIDC JSON* and click *Download*. The downloaded `keycloak.json` file is at the root folder of your project.
 
 ==== Installation
 
-Assuming you've already installed https://nodejs.org[Node.js], create a folder for your application:
+Assuming you have already installed https://nodejs.org[Node.js], create a folder for your application:
 
     mkdir myapp && cd myapp
 
@@ -82,12 +82,12 @@ Now we have the ability to run our server with following command:
 ----
 
 By default, this will locate a file named `keycloak.json` alongside
-the main executable of your application, in our case on the root folder, to initialize keycloak-specific
+the main executable of your application, in our case on the root folder, to initialize {project_name} specific
 settings such as public key, realm name, various URLs.
 
-In that case a Keycloak deployment is necessary to access Keycloak admin console.
+In that case a {project_name} deployment is necessary to access {project_name} admin console.
 
-Please visit links on how to deploy a Keycloak admin console with 
+Please visit links on how to deploy a {project_name} admin console with
 https://www.keycloak.org/getting-started/getting-started-podman[Podman] or https://www.keycloak.org/getting-started/getting-started-docker[Docker]
 
 Now we are ready to obtain the `keycloak.json` file by visiting the {project_name} Admin Console -> clients (left sidebar) -> choose your client -> Installation -> Format Option -> Keycloak OIDC JSON -> Download

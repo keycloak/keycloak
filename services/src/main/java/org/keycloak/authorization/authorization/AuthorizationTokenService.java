@@ -91,16 +91,14 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.services.util.DefaultClientSessionContext;
-
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -275,10 +273,11 @@ public class AuthorizationTokenService {
     }
 
     private Response createSuccessfulResponse(Object response, KeycloakAuthorizationRequest request) {
-        return Cors.add(request.getHttpRequest(), Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
+        return Cors.builder()
                 .allowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
-                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS)
+                .add(Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response));
     }
 
     private boolean isPublicClientRequestingEntitlementWithClaims(KeycloakAuthorizationRequest request) {
@@ -318,7 +317,7 @@ public class AuthorizationTokenService {
             userSessionModel = new UserSessionManager(keycloakSession).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
                     ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         } else {
-            userSessionModel = lockUserSessionsForModification(keycloakSession, () -> sessions.getUserSession(realm, accessToken.getSessionState()));
+            userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
 
             if (userSessionModel == null) {
                 userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
@@ -367,7 +366,7 @@ public class AuthorizationTokenService {
 
         if (accessToken.getSessionState() == null) {
             // Skip generating refresh token for accessToken without sessionState claim. This is "stateless" accessToken not pointing to any real persistent userSession
-            rpt.setSessionState(null);
+            rpt.setSessionId(null);
         } else {
             if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
                 responseBuilder.generateRefreshToken();
@@ -510,7 +509,6 @@ public class AuthorizationTokenService {
                                                    Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore, ScopeStore scopeStore,
                                                    AtomicInteger limit) {
         AccessToken rpt = request.getRpt();
-        RealmModel realm = resourceServer.getRealm();
 
         if (rpt != null && rpt.isActive()) {
             Authorization authorizationData = rpt.getAuthorization();
@@ -524,7 +522,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(realm, resourceServer, grantedPermission.getResourceId());
+                        Resource resource = resourceStore.findById(resourceServer, grantedPermission.getResourceId());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
@@ -608,7 +606,7 @@ public class AuthorizationTokenService {
         Resource resource;
 
         if (resourceId.indexOf('-') != -1) {
-            resource = resourceStore.findById(resourceServer.getRealm(), resourceServer, resourceId);
+            resource = resourceStore.findById(resourceServer, resourceId);
         } else {
             resource = null;
         }
@@ -659,7 +657,12 @@ public class AuthorizationTokenService {
                     ResourcePermission resourcePermission = addPermission(request, resourceServer, authorization,
                             permissionsToEvaluate, limit,
                             requestedScopesModel, grantedResource);
-                    
+                    if (resourcePermission != null) {
+                        Collection<Scope> permissionScopes = resourcePermission.getScopes();
+                        if (permissionScopes != null) {
+                            permissionScopes.retainAll(scopes);
+                        }
+                    }
                     // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
                     resourcePermission.setGranted(true);
                 }
@@ -892,7 +895,7 @@ public class AuthorizationTokenService {
             search.put(Resource.FilterOption.URI, new String[] { uri });
             ResourceServer resourceServer = storeFactory.getResourceServerStore()
                 .findByClient(getRealm().getClientByClientId(getAudience()));
-            List<Resource> resources = storeFactory.getResourceStore().find(getRealm(), resourceServer, search, -1,
+            List<Resource> resources = storeFactory.getResourceStore().find(resourceServer, search, -1,
                 Constants.DEFAULT_MAX_RESULTS);
 
             if (!matchingUri || !resources.isEmpty()) {
@@ -903,7 +906,7 @@ public class AuthorizationTokenService {
             search.put(Resource.FilterOption.URI_NOT_NULL, new String[] { "true" });
             search.put(Resource.FilterOption.OWNER, new String[] { resourceServer.getClientId() });
 
-            List<Resource> serverResources = storeFactory.getResourceStore().find(getRealm(), resourceServer, search, -1, -1);
+            List<Resource> serverResources = storeFactory.getResourceStore().find(resourceServer, search, -1, -1);
 
             PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
                 @Override

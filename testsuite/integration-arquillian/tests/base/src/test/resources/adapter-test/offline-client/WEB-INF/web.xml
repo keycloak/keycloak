@@ -55,6 +55,13 @@
 
     <security-constraint>
         <web-resource-collection>
+            <web-resource-name>Unsecured</web-resource-name>
+            <url-pattern>/unsecured/*</url-pattern>
+        </web-resource-collection>
+        <!-- No auth-constraint = everybody has access -->
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
             <web-resource-name>Users</web-resource-name>
             <url-pattern>/*</url-pattern>
         </web-resource-collection>

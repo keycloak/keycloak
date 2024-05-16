@@ -12,6 +12,7 @@ features
 configuration-provider
 logging
 fips
+management-interface
 health
 configuration-metrics
 importExport

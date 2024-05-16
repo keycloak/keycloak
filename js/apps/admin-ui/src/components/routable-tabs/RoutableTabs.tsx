@@ -1,4 +1,5 @@
 import {
+  Tab,
   TabProps,
   Tabs,
   TabsComponent,
@@ -6,11 +7,23 @@ import {
 } from "@patternfly/react-core";
 import {
   Children,
-  isValidElement,
   JSXElementConstructor,
+  PropsWithChildren,
   ReactElement,
+  isValidElement,
 } from "react";
-import { Path, useHref, useLocation } from "react-router-dom";
+import {
+  Path,
+  generatePath,
+  matchPath,
+  useHref,
+  useLocation,
+  useParams,
+} from "react-router-dom";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { PageHandler } from "../../page/PageHandler";
+import { TAB_PROVIDER } from "../../page/PageList";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 // TODO: Remove the custom 'children' props and type once the following issue has been resolved:
 // https://github.com/patternfly/patternfly-react/issues/6766
@@ -32,14 +45,32 @@ export const RoutableTabs = ({
   ...otherProps
 }: RoutableTabsProps) => {
   const { pathname } = useLocation();
+  const params = useParams();
+  const { componentTypes } = useServerInfo();
+  const tabs = componentTypes?.[TAB_PROVIDER] || [];
+  const isFeatureEnabled = useIsFeatureEnabled();
 
-  // Extract event keys from children.
+  const matchedTabs = tabs
+    .filter((tab) => matchPath({ path: tab.metadata.path }, pathname))
+    .map((t) => ({
+      ...t,
+      pathname: generatePath(t.metadata.path, {
+        ...params,
+        ...t.metadata.params,
+      }),
+    }));
+  // Extract all keys from matchedTabs
+  const matchedTabsKeys = matchedTabs.map((t) => t.pathname);
+
+  // Extract event keys from children
   const eventKeys = Children.toArray(children)
     .filter((child): child is ChildElement => isValidElement(child))
     .map((child) => child.props.eventKey.toString());
 
+  const allKeys = [...eventKeys, ...matchedTabsKeys];
+
   // Determine if there is an exact match.
-  const exactMatch = eventKeys.find(
+  const exactMatch = allKeys.find(
     (eventKey) => eventKey === decodeURI(pathname),
   );
 
@@ -62,8 +93,32 @@ export const RoutableTabs = ({
       }}
       {...otherProps}
     >
-      {children}
+      {children as any}
+      {isFeatureEnabled(Feature.DeclarativeUI) &&
+        matchedTabs.map<any>((t) => (
+          <DynamicTab key={t.id} eventKey={t.pathname} title={t.id}>
+            <PageHandler page={t} providerType={TAB_PROVIDER} />
+          </DynamicTab>
+        ))}
     </Tabs>
+  );
+};
+
+type DynamicTabProps = {
+  title: string;
+  eventKey: string;
+};
+
+const DynamicTab = ({
+  children,
+  ...props
+}: PropsWithChildren<DynamicTabProps>) => {
+  const href = useHref(props.eventKey);
+
+  return (
+    <Tab href={href} {...props}>
+      {children}
+    </Tab>
   );
 };
 

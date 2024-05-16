@@ -1,4 +1,4 @@
-[[_read_only_user_attributes]]
+[[read_only_user_attributes]]
 === Read-only user attributes
 
 Typical users who are stored in {project_name} have various attributes related to their user profiles. Such attributes include email, firstName or lastName.

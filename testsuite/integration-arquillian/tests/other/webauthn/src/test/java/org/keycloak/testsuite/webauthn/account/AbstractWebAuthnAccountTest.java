@@ -25,7 +25,6 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorF
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -33,10 +32,10 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
-import org.keycloak.testsuite.ui.account2.page.SigningInPage;
-import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
+import org.keycloak.testsuite.webauthn.pages.SigningInPage;
+import org.keycloak.testsuite.webauthn.utils.SigningInPageUtils;
+import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
@@ -66,6 +65,9 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     @Page
     protected WebAuthnLoginPage webAuthnLoginPage;
+
+    @Page
+    private DeleteCredentialPage deleteCredentialPage;
 
     private VirtualAuthenticatorManager webAuthnManager;
     protected SigningInPage.CredentialType webAuthnCredentialType;
@@ -188,7 +190,7 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     protected void testRemoveCredential(SigningInPage.UserCredential userCredential) {
         AbstractPatternFlyAlert.waitUntilHidden();
-        SigningInPageUtils.testRemoveCredential(signingInPage, userCredential);
+        SigningInPageUtils.testRemoveCredential(signingInPage, deleteCredentialPage, userCredential);
     }
 
     protected SigningInPage.UserCredential getNewestUserCredential(SigningInPage.CredentialType credentialType) {

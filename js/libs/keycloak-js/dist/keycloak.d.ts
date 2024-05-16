@@ -22,7 +22,7 @@ export type KeycloakOnLoad = 'login-required'|'check-sso';
 export type KeycloakResponseMode = 'query'|'fragment';
 export type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 export type KeycloakFlow = 'standard'|'implicit'|'hybrid';
-export type KeycloakPkceMethod = 'S256';
+export type KeycloakPkceMethod = 'S256' | false;
 
 export interface KeycloakConfig {
 	/**
@@ -169,11 +169,17 @@ export interface KeycloakInitOptions {
 	flow?: KeycloakFlow;
 
 	/**
-	 * Configures the Proof Key for Code Exchange (PKCE) method to use.
-	 * The currently allowed method is 'S256'.
-	 * If not configured, PKCE will not be used.
+	 * Configures the Proof Key for Code Exchange (PKCE) method to use. This will default to 'S256'.
+	 * Can be disabled by passing `false`.
 	 */
 	pkceMethod?: KeycloakPkceMethod;
+
+	/**
+	 * Configures the 'acr_values' query param in compliance with section 3.1.2.1
+	 * of the OIDC 1.0 specification.
+	 * Used to tell Keycloak what level of authentication the user needs.
+	 */
+	acrValues?: string;
 
 	/**
 	 * Enables logging messages from Keycloak to the console.
@@ -201,6 +207,11 @@ export interface KeycloakInitOptions {
 	 * of the OIDC 1.0 specification.
 	 */
 	locale?: string;
+
+	/**
+	 * HTTP method for calling the end_session endpoint. Defaults to 'GET'.
+	 */
+	logoutMethod?: 'GET' | 'POST';
 }
 
 export interface KeycloakLoginOptions {
@@ -251,6 +262,13 @@ export interface KeycloakLoginOptions {
 	acr?: Acr;
 
 	/**
+	 * Configures the 'acr_values' query param in compliance with section 3.1.2.1
+	 * of the OIDC 1.0 specification.
+	 * Used to tell Keycloak what level of authentication the user needs.
+	 */
+	acrValues?: string;
+
+	/**
 	 * Used to tell Keycloak which IDP the user wants to authenticate with.
 	 */
 	idpHint?: string;
@@ -275,6 +293,11 @@ export interface KeycloakLogoutOptions {
 	 * Specifies the uri to redirect to after logout.
 	 */
 	redirectUri?: string;
+
+	/**
+	 * HTTP method for calling the end_session endpoint. Defaults to 'GET'.
+	 */
+	logoutMethod?: 'GET' | 'POST';
 }
 
 export interface KeycloakRegisterOptions extends Omit<KeycloakLoginOptions, 'action'> { }
@@ -308,6 +331,7 @@ export interface KeycloakProfile {
 	emailVerified?: boolean;
 	totp?: boolean;
 	createdTimestamp?: number;
+	attributes?: Record<string, unknown>;
 }
 
 export interface KeycloakTokenParsed {
@@ -445,11 +469,6 @@ declare class Keycloak {
 	* @private Undocumented.
 	*/
 	clientId?: string;
-
-	/**
-	* @private Undocumented.
-	*/
-	clientSecret?: string;
 
 	/**
 	* @private Undocumented.

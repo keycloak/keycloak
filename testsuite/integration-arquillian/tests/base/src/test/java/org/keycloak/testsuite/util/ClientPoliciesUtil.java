@@ -21,7 +21,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureException;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.ECPublicJWK;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
@@ -39,6 +52,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCon
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
+import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
@@ -46,6 +60,7 @@ import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
@@ -54,10 +69,23 @@ import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseException
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 public final class ClientPoliciesUtil {
 
@@ -235,6 +263,21 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
+    public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure) {
+        DPoPBindEnforcerExecutor.Configuration config = new DPoPBindEnforcerExecutor.Configuration();
+        config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
+    public static SecureRedirectUrisEnforcerExecutor.Configuration createSecureRedirectUrisEnforcerExecutorConfig(
+            Consumer<SecureRedirectUrisEnforcerExecutor.Configuration> apply) {
+        SecureRedirectUrisEnforcerExecutor.Configuration config = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
     public static class ClientPoliciesBuilder {
         private final ClientPoliciesRepresentation policiesRep;
 
@@ -290,6 +333,9 @@ public final class ClientPoliciesUtil {
         }
 
         public ClientPolicyBuilder addCondition(String providerId, ClientPolicyConditionConfigurationRepresentation config) throws Exception {
+            if (config == null) {
+                config = new ClientPolicyConditionConfigurationRepresentation();
+            }
             ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
             condition.setConditionProviderId(providerId);
             condition.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
@@ -380,5 +426,79 @@ public final class ClientPoliciesUtil {
         ClientUpdaterSourceRolesCondition.Configuration config = new ClientUpdaterSourceRolesCondition.Configuration();
         config.setRoles(roles);
         return config;
+    }
+
+    // DPoP
+    public static  JWK createRsaJwk(Key publicKey) {
+        RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
+
+        RSAPublicJWK k = new RSAPublicJWK();
+        k.setKeyType(KeyType.RSA);
+        k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
+        k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
+
+        return k;
+    }
+
+    public static JWK createEcJwk(Key publicKey) {
+        ECPublicKey ecKey = (ECPublicKey) publicKey;
+
+        int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
+        ECPublicJWK k = new ECPublicJWK();
+        k.setKeyType(KeyType.EC);
+        k.setCrv("P-" + fieldSize);
+        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
+        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
+
+        return k;
+    }
+
+    public static KeyPair generateEcdsaKey(String ecDomainParamName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+        SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+        ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
+        keyGen.initialize(ecSpec, randomGen);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        return keyPair;
+    }
+
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey) throws IOException {
+
+        String dpopProofHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
+
+        DPoP dpop = new DPoP();
+        dpop.id(jti);
+        dpop.setHttpMethod(htm);
+        dpop.setHttpUri(htu);
+        dpop.iat(iat);
+
+        String dpopProofPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(dpop));
+
+        try {
+            KeyWrapper keyWrapper = new KeyWrapper();
+            keyWrapper.setKid(jwsHeader.getKeyId());
+            keyWrapper.setAlgorithm(algorithm);
+            keyWrapper.setPrivateKey(privateKey);
+            keyWrapper.setType(privateKey.getAlgorithm());
+            keyWrapper.setUse(KeyUse.SIG);
+            SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
+
+            String data = dpopProofHeaderEncoded + "." + dpopProofPayloadEncoded;
+            byte[] signatureByteArray = sigCtx.sign(data.getBytes());
+            return data + "." + Base64Url.encode(signatureByteArray);
+        } catch (SignatureException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
+        switch (keyWrapper.getType()) {
+            case KeyType.RSA:
+                return new AsymmetricSignatureSignerContext(keyWrapper);
+            case KeyType.EC:
+                return new ECDSASignatureSignerContext(keyWrapper);
+            default:
+                throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
+        }
     }
 }

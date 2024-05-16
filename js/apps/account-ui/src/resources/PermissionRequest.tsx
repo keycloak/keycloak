@@ -2,23 +2,16 @@ import {
   Badge,
   Button,
   Chip,
+  Icon,
   Modal,
   ModalVariant,
   Text,
 } from "@patternfly/react-core";
 import { UserCheckIcon } from "@patternfly/react-icons";
-
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAlerts } from "ui-shared";
+import { useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { fetchPermission, updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
 
@@ -32,6 +25,7 @@ export const PermissionRequest = ({
   refresh,
 }: PermissionRequestProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [open, setOpen] = useState(false);
@@ -43,12 +37,13 @@ export const PermissionRequest = ({
     approve: boolean = false,
   ) => {
     try {
-      const permissions = await fetchPermission({}, resource._id);
+      const permissions = await fetchPermission({ context }, resource._id);
       const { scopes, username } = permissions.find(
         (p) => p.username === shareRequest.username,
-      )!;
+      ) || { scopes: [], username: shareRequest.username };
 
       await updateRequest(
+        context,
         resource._id,
         username,
         approve
@@ -66,7 +61,9 @@ export const PermissionRequest = ({
   return (
     <>
       <Button variant="link" onClick={toggle}>
-        <UserCheckIcon size="lg" />
+        <Icon size="lg">
+          <UserCheckIcon />
+        </Icon>
         <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
       <Modal
@@ -80,7 +77,7 @@ export const PermissionRequest = ({
           </Button>,
         ]}
       >
-        <TableComposable aria-label={t("resources")}>
+        <Table aria-label={t("resources")}>
           <Thead>
             <Tr>
               <Th>{t("requestor")}</Th>
@@ -116,7 +113,7 @@ export const PermissionRequest = ({
                     onClick={() => {
                       approveDeny(shareRequest);
                     }}
-                    className="pf-u-ml-sm"
+                    className="pf-v5-u-ml-sm"
                     variant="danger"
                   >
                     {t("deny")}
@@ -125,7 +122,7 @@ export const PermissionRequest = ({
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       </Modal>
     </>
   );

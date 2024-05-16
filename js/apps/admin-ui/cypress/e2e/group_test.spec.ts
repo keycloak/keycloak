@@ -454,6 +454,7 @@ describe("Group test", () => {
 
   describe("Role mappings", () => {
     const roleMappingTab = new RoleMappingTab("group");
+
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
       groupDetailPage.goToRoleMappingTab();
@@ -465,8 +466,10 @@ describe("Group test", () => {
 
     it("Assign roles from empty state", () => {
       roleMappingTab.assignRole();
-      groupDetailPage.createRoleMapping();
-      roleMappingTab.assign();
+      roleMappingTab
+        .changeRoleTypeFilter("roles")
+        .selectRow("default-roles-")
+        .assign();
     });
 
     it("Show and search roles", () => {

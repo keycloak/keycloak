@@ -47,15 +47,6 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>run-build</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>pack</id>
                         <phase>package</phase>
                         <goals>
@@ -63,13 +54,9 @@
                         </goals>
                         <configuration>
                             <arguments>pack --pack-destination=target</arguments>
-                            <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <installDirectory>../..</installDirectory>
-                </configuration>
             </plugin>
         </plugins>
     </build>

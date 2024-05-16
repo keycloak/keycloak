@@ -235,6 +235,11 @@ public final class LDAPContextManager implements AutoCloseable {
             env.put("java.naming.ldap.attributes.binary", binaryAttrs);
         }
 
+        String referral = ldapConfig.getReferral();
+        if (referral != null) {
+            env.put(Context.REFERRAL, referral);
+        }
+
         return new Hashtable<>(env);
     }
 

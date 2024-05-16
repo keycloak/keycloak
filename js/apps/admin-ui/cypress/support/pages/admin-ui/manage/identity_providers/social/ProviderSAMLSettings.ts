@@ -1,75 +1,64 @@
+import Select from "../../../../../forms/Select";
 import PageObject from "../../../components/PageObject";
 import Masthead from "../../../Masthead";
 
 const masthead = new Masthead();
 
 export default class ProviderSAMLSettings extends PageObject {
-  private samlSwitch = "Saml-switch";
-  private modalConfirm = "#modal-confirm";
-  private serviceProviderEntityID = "serviceProviderEntityId";
-  private identityProviderEntityId = "identityProviderEntityId";
-  private ssoServiceUrl = "sso-service-url";
-  private singleLogoutServiceUrl = "single-logout-service-url";
-  private nameIdPolicyFormat = "#kc-nameIdPolicyFormat";
-  private principalType = "#kc-principalType";
-  private principalAttribute = "principalAttribute";
-  private principalSubjectNameId = "subjectNameId-option";
-  private principalAttributeName = "attributeName-option";
-  private principalFriendlyAttribute = "attributeFriendlyName-option";
+  #samlSwitch = "Saml-switch";
+  #modalConfirm = "#modal-confirm";
+  #serviceProviderEntityID = "config.entityId";
+  #identityProviderEntityId = "identityProviderEntityId";
+  #ssoServiceUrl = "config.singleSignOnServiceUrl";
+  #singleLogoutServiceUrl = "config.singleLogoutServiceUrl";
+  #nameIdPolicyFormat = "#nameIDPolicyFormat";
+  #principalType = "#principalType";
 
-  private transientPolicy = "transient-option";
-  private emailPolicy = "email-option";
-  private kerberosPolicy = "kerberos-option";
-  private x509Policy = "x509-option";
-  private windowsDomainQNPolicy = "windowsDomainQN-option";
-  private unspecifiedPolicy = "unspecified-option";
-  private persistentPolicy = "persistent-option";
+  #allowCreate = "config.allowCreate";
+  #httpPostBindingResponse = "config.postBindingResponse";
+  #httpPostBindingAuthnRequest = "config.postBindingAuthnRequest";
+  #httpPostBindingLogout = "config.postBindingLogout";
+  #wantAuthnRequestsSigned = "config.wantAuthnRequestsSigned";
 
-  private allowCreate = "#allowCreate";
-  private httpPostBindingResponse = "#httpPostBindingResponse";
-  private httpPostBindingAuthnRequest = "#httpPostBindingAuthnRequest";
-  private httpPostBindingLogout = "#httpPostBindingLogout";
-  private wantAuthnRequestsSigned = "#wantAuthnRequestsSigned";
+  #signatureAlgorithm = "#signatureAlgorithm";
+  #samlSignatureKeyName = "#xmlSigKeyInfoKeyNameTransformer";
 
-  private signatureAlgorithm = "#kc-signatureAlgorithm";
-  private samlSignatureKeyName = "#kc-samlSignatureKeyName";
+  #wantAssertionsSigned = "config.wantAssertionsSigned";
+  #wantAssertionsEncrypted = "config.wantAssertionsEncrypted";
+  #forceAuthentication = "config.forceAuthn";
+  #validateSignature = "config.validateSignature";
+  #validatingX509Certs = "config.signingCertificate";
+  #signServiceProviderMetadata = "config.signSpMetadata";
+  #passSubject = "config.loginHint";
+  #allowedClockSkew = "#config\\.allowedClockSkew";
+  #attributeConsumingServiceIndex = "#config\\.attributeConsumingServiceIndex";
+  #attributeConsumingServiceName = "config.attributeConsumingServiceName";
 
-  private wantAssertionsSigned = "#wantAssertionsSigned";
-  private wantAssertionsEncrypted = "#wantAssertionsEncrypted";
-  private forceAuthentication = "#forceAuthentication";
-  private validateSignature = "#validateSignature";
-  private validatingX509Certs = "validatingX509Certs";
-  private signServiceProviderMetadata = "#signServiceProviderMetadata";
-  private passSubject = "#passSubject";
-  private allowedClockSkew = "allowedClockSkew";
-  private attributeConsumingServiceIndex = "attributeConsumingServiceIndex";
-  private attributeConsumingServiceName = "attributeConsumingServiceName";
-
-  private comparison = "#comparison";
-  private saveBtn = "idp-details-save";
-  private revertBtn = "idp-details-revert";
+  #comparison = "#comparison";
+  #saveBtn = "idp-details-save";
+  #revertBtn = "idp-details-revert";
 
   public clickSaveBtn() {
-    cy.findByTestId(this.saveBtn).click();
+    cy.findByTestId(this.#saveBtn).click();
   }
 
   public clickRevertBtn() {
-    cy.findByTestId(this.revertBtn).click();
+    cy.findByTestId(this.#revertBtn).click();
   }
 
   public enableProviderSwitch() {
-    cy.findByTestId(this.samlSwitch).parent().click();
+    cy.findByTestId(this.#samlSwitch).parent().click();
     masthead.checkNotificationMessage("Provider successfully updated");
   }
 
   public disableProviderSwitch() {
-    cy.findByTestId(this.samlSwitch).parent().click();
-    cy.get(this.modalConfirm).click();
+    cy.findByTestId(this.#samlSwitch).parent().click();
+    cy.get(this.#modalConfirm).click();
     masthead.checkNotificationMessage("Provider successfully updated");
   }
 
   public typeServiceProviderEntityId(entityId: string) {
-    cy.findByTestId(this.serviceProviderEntityID)
+    cy.findByTestId(this.#serviceProviderEntityID)
       .click()
       .clear()
       .type(entityId);
@@ -77,7 +66,7 @@ export default class ProviderSAMLSettings extends PageObject {
   }
 
   public typeIdentityProviderEntityId(entityId: string) {
-    cy.findByTestId(this.identityProviderEntityId)
+    cy.findByTestId(this.#identityProviderEntityId)
       .click()
       .clear()
       .type(entityId);
@@ -85,40 +74,47 @@ export default class ProviderSAMLSettings extends PageObject {
   }
 
   public typeSsoServiceUrl(url: string) {
-    cy.findByTestId(this.ssoServiceUrl).clear().type(url);
+    cy.findByTestId(this.#ssoServiceUrl).clear().type(url);
     return this;
   }
 
   public typeSingleLogoutServiceUrl(url: string) {
-    cy.findByTestId(this.singleLogoutServiceUrl).clear().type(url);
+    cy.findByTestId(this.#singleLogoutServiceUrl).clear().type(url);
     return this;
   }
 
   public typeX509Certs(cert: string) {
-    cy.findByTestId(this.validatingX509Certs).clear().type(cert);
+    cy.findByTestId(this.#validatingX509Certs).clear();
+    cy.findByTestId(this.#validatingX509Certs).type(cert);
     return this;
   }
 
-  public selectNamePolicyIdFormat() {
-    cy.get(this.nameIdPolicyFormat).scrollIntoView().click();
+  public selectNamePolicyIdFormat(option: string) {
+    cy.get(this.#nameIdPolicyFormat).scrollIntoView();
+    Select.selectItem(cy.get(this.#nameIdPolicyFormat), option);
+    Select.assertSelectedItem(cy.get(this.#nameIdPolicyFormat), option);
+    return this;
   }
 
-  public selectPrincipalFormat() {
-    cy.get(this.principalType).scrollIntoView().click();
+  public selectPrincipalFormat(option: string) {
+    cy.get(this.#principalType).scrollIntoView();
+    Select.selectItem(cy.get(this.#principalType), option);
+    Select.assertSelectedItem(cy.get(this.#principalType), option);
+    return this;
   }
 
   public selectSignatureAlgorithm(algorithm: string) {
-    cy.get(this.signatureAlgorithm).scrollIntoView().click();
-    cy.findByText(algorithm).click();
+    cy.get(this.#signatureAlgorithm).scrollIntoView();
+    Select.selectItem(cy.get(this.#signatureAlgorithm), algorithm);
   }
 
   public selectSAMLSignature(key: string) {
-    cy.get(this.samlSignatureKeyName).scrollIntoView().click();
-    cy.findByText(key).click();
+    cy.get(this.#samlSignatureKeyName).scrollIntoView();
+    Select.selectItem(cy.get(this.#samlSignatureKeyName), key);
   }
 
   public selectComparison(comparison: string) {
-    cy.get(this.comparison).scrollIntoView().click();
+    cy.get(this.#comparison).scrollIntoView().click();
     cy.findByText(comparison).scrollIntoView().click();
   }
 
@@ -143,30 +139,23 @@ export default class ProviderSAMLSettings extends PageObject {
   }
 
   public assertNameIdPolicyFormat() {
-    this.selectNamePolicyIdFormat();
-    cy.findByTestId(this.transientPolicy).click();
-    this.selectNamePolicyIdFormat();
-    cy.findByTestId(this.emailPolicy).click();
-    this.selectNamePolicyIdFormat();
-    cy.findByTestId(this.kerberosPolicy).click();
-    this.selectNamePolicyIdFormat();
-    cy.findByTestId(this.x509Policy).click();
-    this.selectNamePolicyIdFormat();
-    cy.findByTestId(this.windowsDomainQNPolicy).click();
-    this.selectNamePolicyIdFormat();
-    cy.findByTestId(this.unspecifiedPolicy).click();
-    this.selectNamePolicyIdFormat();
-    cy.findByTestId(this.persistentPolicy).click();
+    this.selectNamePolicyIdFormat("Transient");
+    this.selectNamePolicyIdFormat("Email");
+    this.selectNamePolicyIdFormat("Kerberos");
+    this.selectNamePolicyIdFormat("X.509 Subject Name");
+    this.selectNamePolicyIdFormat("Windows Domain Qualified Name");
+    this.selectNamePolicyIdFormat("Unspecified");
+    this.selectNamePolicyIdFormat("Persistent");
     return this;
   }
 
   public assertSignatureAlgorithm() {
-    cy.get(this.wantAuthnRequestsSigned).parent().click();
-    cy.get(this.signatureAlgorithm).should("not.exist");
-    cy.get(this.samlSignatureKeyName).should("not.exist");
+    cy.findByTestId(this.#wantAuthnRequestsSigned).parent().click();
+    cy.get(this.#signatureAlgorithm).should("not.exist");
+    cy.get(this.#samlSignatureKeyName).should("not.exist");
     this.clickRevertBtn();
-    cy.get(this.signatureAlgorithm).should("exist");
-    cy.get(this.samlSignatureKeyName).should("exist");
+    cy.get(this.#signatureAlgorithm).should("exist");
+    cy.get(this.#samlSignatureKeyName).should("exist");
 
     this.selectSignatureAlgorithm("RSA_SHA1");
     this.selectSignatureAlgorithm("RSA_SHA256");
@@ -183,59 +172,53 @@ export default class ProviderSAMLSettings extends PageObject {
   }
 
   public assertPrincipalType() {
-    this.selectPrincipalFormat();
-    cy.findByTestId(this.principalAttributeName).click();
-    cy.findByTestId(this.principalAttribute).should("exist").scrollIntoView();
-    this.selectPrincipalFormat();
-    cy.findByTestId(this.principalFriendlyAttribute).click();
-    cy.findByTestId(this.principalAttribute).should("exist");
-    this.selectPrincipalFormat();
-    cy.findByTestId(this.principalSubjectNameId).click();
-    cy.findByTestId(this.principalAttribute).should("not.exist");
+    this.selectPrincipalFormat("Subject NameID");
+    this.selectPrincipalFormat("Attribute [Name]");
+    this.selectPrincipalFormat("Attribute [Friendly Name]");
     return this;
   }
 
   public assertSAMLSwitches() {
-    cy.get(this.allowCreate).parent().click();
-    cy.get(this.httpPostBindingResponse).parent().click();
-    cy.get(this.httpPostBindingLogout).parent().click();
-    cy.get(this.httpPostBindingAuthnRequest).parent().click();
+    cy.findByTestId(this.#allowCreate).parent().click();
+    cy.findByTestId(this.#httpPostBindingResponse).parent().click();
+    cy.findByTestId(this.#httpPostBindingLogout).parent().click();
+    cy.findByTestId(this.#httpPostBindingAuthnRequest).parent().click();
 
-    cy.get(this.wantAssertionsSigned).parent().click();
-    cy.get(this.wantAssertionsEncrypted).parent().click();
-    cy.get(this.forceAuthentication).parent().click();
+    cy.findByTestId(this.#wantAssertionsSigned).parent().click();
+    cy.findByTestId(this.#wantAssertionsEncrypted).parent().click();
+    cy.findByTestId(this.#forceAuthentication).parent().click();
 
-    cy.get(this.signServiceProviderMetadata).parent().click();
-    cy.get(this.passSubject).parent().click();
+    cy.findByTestId(this.#signServiceProviderMetadata).parent().click();
+    cy.findByTestId(this.#passSubject).parent().click();
 
     return this;
   }
 
   public assertValidateSignatures() {
-    cy.get(this.validateSignature).parent().click();
-    cy.findByTestId(this.validatingX509Certs).should("not.exist");
-    cy.get(this.validateSignature).parent().click();
+    cy.findByTestId(this.#validateSignature).parent().click();
+    cy.findByTestId(this.#validatingX509Certs).should("not.exist");
+    cy.findByTestId(this.#validateSignature).parent().click();
     this.typeX509Certs("X509 Certificate");
     this.clickRevertBtn();
-    cy.findByTestId(this.validatingX509Certs);
+    cy.findByTestId(this.#validatingX509Certs);
     this.clickSaveBtn();
     return this;
   }
 
   public assertTextFields() {
-    cy.findByTestId(this.allowedClockSkew)
+    cy.get(this.#allowedClockSkew)
       .find("input")
       .should("have.value", 0)
       .clear()
       .type("111");
 
-    cy.findByTestId(this.attributeConsumingServiceIndex)
+    cy.get(this.#attributeConsumingServiceIndex)
       .find("input")
       .should("have.value", 0)
       .clear()
       .type("111");
 
-    cy.findByTestId(this.attributeConsumingServiceName).click().type("name");
+    cy.findByTestId(this.#attributeConsumingServiceName).click().type("name");
   }
 
   public assertAuthnContext() {

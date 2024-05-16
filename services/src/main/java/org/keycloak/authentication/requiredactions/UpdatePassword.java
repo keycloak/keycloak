@@ -35,6 +35,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.policy.MaxAuthAgePasswordPolicyProviderFactory;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -49,14 +50,30 @@ import java.util.concurrent.TimeUnit;
  */
 public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
     private static final Logger logger = Logger.getLogger(UpdatePassword.class);
-    
+    private final KeycloakSession session;
+
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
     }
+
+    /**
+     * @deprecated use {@link #UpdatePassword(KeycloakSession)} instead
+     */
+    @Deprecated
+    public UpdatePassword() {
+        this(null);
+    }
+
+    public UpdatePassword(KeycloakSession session) {
+        this.session = session;
+    }
     
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
+        if(!AuthenticatorUtil.isPasswordValidated(context.getAuthenticationSession())) {
+            return;
+        }
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();
         if(daysToExpirePassword != -1) {
             PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider)context.getSession().getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
@@ -151,7 +168,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
-        return this;
+        return new UpdatePassword(session);
     }
 
     @Override
@@ -178,5 +195,22 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     @Override
     public boolean isOneTimeAction() {
         return true;
+    }
+
+    @Override
+    public int getMaxAuthAge() {
+
+        if (session == null) {
+            // session is null, support for legacy implementation, fallback to default maxAuthAge
+            return MaxAuthAgePasswordPolicyProviderFactory.DEFAULT_MAX_AUTH_AGE;
+        }
+
+        int maxAge = session.getContext().getRealm().getPasswordPolicy().getMaxAuthAge();
+        if (maxAge < 0) {
+            // passwordPolicy is not present fallback to default maxAuthAge
+            return MaxAuthAgePasswordPolicyProviderFactory.DEFAULT_MAX_AUTH_AGE;
+        }
+
+        return maxAge;
     }
 }

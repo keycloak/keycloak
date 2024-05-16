@@ -58,6 +58,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-rest-admin-ui-ext</artifactId>
         </dependency>
         <dependency>
@@ -160,11 +165,6 @@
             <artifactId>keycloak-kerberos-federation</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>keycloak-undertow-adapter-jakarta</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-servlet</artifactId>
             <version>${undertow-jakarta.version}</version>
@@ -182,21 +182,9 @@
             <artifactId>keycloak-authz-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-servlet-filter-adapter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>keycloak-saml-undertow-adapter-jakarta</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jaxrs-oauth-client</artifactId>
         </dependency>
         <!-- Dependency on services from integration-arquillian -->
         <dependency>
@@ -239,7 +227,7 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -264,8 +252,9 @@
         </dependency>
 
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql-jdbc.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -307,41 +296,6 @@
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${keycloak.additionalClasspathElement}</additionalClasspathElement>
                             </additionalClasspathElements>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>map-storage</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <systemProperties>
-                                <systemProperty><key>keycloak.profile.feature.map_storage</key><value>enabled</value></systemProperty>
-                                <systemProperty><key>keycloak.globalLock.provider</key><value>none</value></systemProperty>
-                                <systemProperty><key>keycloak.realm.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.client.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.clientScope.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.group.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.role.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.user.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.deploymentState.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.authSession.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.userSession.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.loginFailure.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.authorization.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.singleUseObject.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.eventsStore.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.publicKeyStorage.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.authorizationCache.enabled</key><value>false</value></systemProperty>
-                                <systemProperty><key>keycloak.realmCache.enabled</key><value>false</value></systemProperty>
-                                <systemProperty><key>keycloak.userCache.enabled</key><value>false</value></systemProperty>
-                                <systemProperty><key>keycloak.publicKeyCache.enabled</key><value>false</value></systemProperty>
-                            </systemProperties>
                         </configuration>
                     </plugin>
                 </plugins>

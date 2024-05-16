@@ -9,32 +9,42 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import { extract } from "tar-fs";
+import { parseArgs } from "node:util";
 
 const DIR_NAME = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = path.resolve(DIR_NAME, "../server");
+const LOCAL_QUARKUS = path.resolve(DIR_NAME, "../../../../quarkus/dist/target");
+const LOCAL_DIST_NAME = "keycloak-999.0.0-SNAPSHOT.tar.gz";
 const SCRIPT_EXTENSION = process.platform === "win32" ? ".bat" : ".sh";
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin";
-const AUTH_DELAY = 5000;
+const AUTH_DELAY = 10000;
 const AUTH_RETRY_LIMIT = 3;
+
+const options = {
+  local: {
+    type: "boolean",
+  },
+};
 
 await startServer();
 
 async function startServer() {
-  await downloadServer();
+  let { scriptArgs, keycloakArgs } = handleArgs(process.argv.slice(2));
+
+  await downloadServer(scriptArgs.local);
 
   console.info("Starting server…");
-
-  const args = process.argv.slice(2);
   const child = spawn(
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
     [
       "start-dev",
       "--http-port=8180",
-      "--features=account3,admin-fine-grained-authz,declarative-user-profile",
-      ...args,
+      `--features="login2,account3,admin-fine-grained-authz,transient-users"`,
+      ...keycloakArgs,
     ],
     {
+      shell: true,
       env: {
         KEYCLOAK_ADMIN: ADMIN_USERNAME,
         KEYCLOAK_ADMIN_PASSWORD: ADMIN_PASSWORD,
@@ -50,7 +60,27 @@ async function startServer() {
   await importClient();
 }
 
-async function downloadServer() {
+function handleArgs(args) {
+  const { values, tokens } = parseArgs({
+    args,
+    options,
+    strict: false,
+    tokens: true,
+  });
+  // we need to remove the args that belong to the script so that we can pass the rest through to keycloak
+  tokens
+    .filter((token) => Object.hasOwn(options, token.name))
+    .forEach((token) => {
+      let tokenRaw = token.rawName;
+      if (token.value) {
+        tokenRaw += `=${token.value}`;
+      }
+      args.splice(args.indexOf(tokenRaw), 1);
+    });
+  return { scriptArgs: values, keycloakArgs: args };
+}
+
+async function downloadServer(local) {
   const directoryExists = fs.existsSync(SERVER_DIR);
 
   if (directoryExists) {
@@ -58,11 +88,17 @@ async function downloadServer() {
     return;
   }
 
-  console.info("Downloading and extracting server…");
-
-  const nightlyAsset = await getNightlyAsset();
-  const assetStream = await getAssetAsStream(nightlyAsset);
-
+  let assetStream;
+  if (local) {
+    console.info(`Looking for ${LOCAL_DIST_NAME} at ${LOCAL_QUARKUS}`);
+    assetStream = fs.createReadStream(
+      path.join(LOCAL_QUARKUS, LOCAL_DIST_NAME),
+    );
+  } else {
+    console.info("Downloading and extracting server…");
+    const nightlyAsset = await getNightlyAsset();
+    assetStream = await getAssetAsStream(nightlyAsset);
+  }
   await extractTarball(assetStream, SERVER_DIR, { strip: 1 });
 }
 

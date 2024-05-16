@@ -1,16 +1,8 @@
-import {
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
-import { useState } from "react";
-import { Controller, Path, PathValue, useFormContext } from "react-hook-form";
+import { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -20,89 +12,35 @@ type ToggleProps = {
 };
 export const Toggle = ({ name, label }: ToggleProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext<FormFields>();
 
   return (
-    <FormGroup
-      hasNoPaddingTop
+    <DefaultSwitchControl
+      name={name}
       label={t(label)}
-      fieldId={label}
-      labelIcon={
-        <HelpItem
-          helpText={t(`${label}Help`)}
-          fieldLabelId={`clients:${label}`}
-        />
-      }
-    >
-      <Controller
-        name={name}
-        defaultValue="false"
-        control={control}
-        render={({ field }) => (
-          <Switch
-            id={name!}
-            data-testid={label}
-            label={t("on")}
-            labelOff={t("off")}
-            isChecked={field.value === "true"}
-            onChange={(value) => field.onChange(value.toString())}
-            aria-label={t(label)}
-          />
-        )}
-      />
-    </FormGroup>
+      labelIcon={t(`${label}Help`)}
+      stringify
+    />
   );
 };
 
 export const SamlConfig = () => {
   const { t } = useTranslation();
-  const { control } = useFormContext<FormFields>();
 
-  const [nameFormatOpen, setNameFormatOpen] = useState(false);
   return (
     <FormAccess
       isHorizontal
       role="manage-clients"
       className="keycloak__capability-config__form"
     >
-      <FormGroup
+      <SelectControl
+        name="attributes.saml_name_id_format"
         label={t("nameIdFormat")}
-        fieldId="nameIdFormat"
-        labelIcon={
-          <HelpItem
-            helpText={t("nameIdFormatHelp")}
-            fieldLabelId="nameIdFormat"
-          />
-        }
-      >
-        <Controller
-          name="attributes.saml_name_id_format"
-          defaultValue="username"
-          control={control}
-          render={({ field }) => (
-            <Select
-              toggleId="samlNameIdFormat"
-              onToggle={setNameFormatOpen}
-              onSelect={(_, value) => {
-                field.onChange(value.toString());
-                setNameFormatOpen(false);
-              }}
-              selections={field.value}
-              variant={SelectVariant.single}
-              aria-label={t("nameIdFormat")}
-              isOpen={nameFormatOpen}
-            >
-              {["username", "email", "transient", "persistent"].map((name) => (
-                <SelectOption
-                  selected={name === field.value}
-                  key={name}
-                  value={name}
-                />
-              ))}
-            </Select>
-          )}
-        />
-      </FormGroup>
+        labelIcon={t("nameIdFormatHelp")}
+        controller={{
+          defaultValue: "username",
+        }}
+        options={["username", "email", "transient", "persistent"]}
+      />
       <Toggle
         name="attributes.saml_force_name_id_format"
         label="forceNameIdFormat"

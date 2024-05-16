@@ -69,7 +69,7 @@ export const EmptyExecutionState = ({
               <Title headingLevel="h2" size={TitleSizes.md}>
                 {t(`${section}Title`)}
               </Title>
-              <p>{t(`authentication-help:${section}`)}</p>
+              <p>{t(section)}</p>
             </FlexItem>
             <Flex alignSelf={{ default: "alignSelfCenter" }}>
               <FlexItem>

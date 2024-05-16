@@ -59,7 +59,6 @@ Users can log in with WebAuthn if they have a WebAuthn credential registered onl
 . Click *+* menu of the *WebAuthn Browser Forms* row.
 . Click *Add sub-flow*.
 . Enter "Conditional 2FA" for the _name_ field.
-. On the *WebAuthn Browser Forms* row, click the plus sign + and select *Add step*.
 . Select *Conditional* for the *Conditional 2FA* to set its requirement to conditional.
 . On the *Conditional 2FA* row, click the plus sign + and select *Add condition*.
 . Click *Add condition*.
@@ -75,7 +74,6 @@ The user can choose between using WebAuthn and OTP for the second factor:
 
 .Procedure
 . On the *Conditional 2FA* row, click the plus sign + and select *Add step*.
-. Click *Add step*.
 . Select *OTP Form* from the list.
 . Click *Add*.
 . Select *Alternative* for the *OTP Form* to set its requirement to alternative.
@@ -132,8 +130,8 @@ The configurable items and their description are as follows:
 |Authenticator Attachment
 |The acceptable attachment pattern of a WebAuthn authenticator for the WebAuthn Client. This pattern is an optional configuration item applying to the registration of the WebAuthn authenticator. For more details, see https://www.w3.org/TR/webauthn/#enumdef-authenticatorattachment[WebAuthn Specification].
 
-|Require Resident Key
-|The option requiring that the WebAuthn authenticator generates the Public Key Credential as https://www.w3.org/TR/webauthn/[Client-side-resident Public Key Credential Source]. This option applies to the registration of the WebAuthn authenticator. If left blank, its behavior is the same as selecting "No". For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-requireresidentkey[WebAuthn Specification].
+|Require Discoverable Credential
+|The option requiring that the WebAuthn authenticator generates the Public Key Credential as https://www.w3.org/TR/webauthn-3/[Client-side discoverable Credential]. This option applies to the registration of the WebAuthn authenticator. If left blank, its behavior is the same as selecting "No". For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-requireresidentkey[WebAuthn Specification].
 
 |User Verification Requirement
 |The option requiring that the WebAuthn authenticator confirms the verification of a user. This is an optional configuration item applying to the registration of a WebAuthn authenticator and the authentication of a user by a WebAuthn authenticator. If no option exists, its behavior is the same as selecting "preferred". For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-userverification[WebAuthn Specification for registering a WebAuthn authenticator] and https://www.w3.org/TR/webauthn/#dom-publickeycredentialrequestoptions-userverification[WebAuthn Specification for authenticating the user by a WebAuthn authenticator].
@@ -164,7 +162,7 @@ The appropriate method to register a WebAuthn authenticator depends on whether t
 
 ===== New user
 
-If the *WebAuthn Register* required action is *Default Action* in a realm, new users must set up the WebAuthn security key after their first login.
+If the *WebAuthn Register* required action is *Default Action* in a realm, new users must set up the Passkey after their first login.
 
 .Procedure
 
@@ -193,7 +191,7 @@ After successful registration, the user's browser asks the user to enter the tex
 
 {project_name} uses WebAuthn for two-factor authentication, but you can use WebAuthn as the first-factor authentication. In this case, users with `passwordless` WebAuthn credentials can authenticate to {project_name} without a password. {project_name} can use WebAuthn as both the passwordless and two-factor authentication mechanism in the context of a realm and a single authentication flow.
 
-An administrator typically requires that Security Keys registered by users for the WebAuthn passwordless authentication meet different requirements. For example, the security keys may require users to authenticate to the security key using a PIN, or the security key attests with a stronger certificate authority.
+An administrator typically requires that Passkeys registered by users for the WebAuthn passwordless authentication meet different requirements. For example, the Passkeys may require users to authenticate to the Passkey using a PIN, or the Passkey attests with a stronger certificate authority.
 
 Because of this, {project_name} permits administrators to configure a separate `WebAuthn Passwordless Policy`. There is a required `Webauthn Register Passwordless` action of type  and separate authenticator of type `WebAuthn Passwordless Authenticator`.
 
@@ -203,7 +201,7 @@ Set up WebAuthn passwordless support as follows:
 
 . (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `Webauthn Register Passwordless` action.
 
-. Configure the policy. You can use the steps and configuration options described in <<_webauthn-policy, Managing Policy>>. Perform the configuration in the Admin Console in the tab *WebAuthn Passwordless Policy*. Typically the requirements for the security key will be stronger than for the two-factor policy. For example, you can set the *User Verification Requirement* to *Required* when you configure the passwordless policy.
+. Configure the policy. You can use the steps and configuration options described in <<_webauthn-policy, Managing Policy>>. Perform the configuration in the Admin Console in the tab *WebAuthn Passwordless Policy*. Typically the requirements for the Passkey will be stronger than for the two-factor policy. For example, you can set the *User Verification Requirement* to *Required* when you configure the passwordless policy.
 
 . Configure the authentication flow. Use the *WebAuthn Browser* flow described in <<_webauthn-authenticator-setup, Adding WebAuthn Authentication to a Browser Flow>>. Configure the flow as follows:
 +
@@ -227,7 +225,7 @@ You can now add *WebAuthn Register Passwordless* as the required action to a use
 
 {project_name} uses WebAuthn for two-factor authentication, but you can use WebAuthn as the first-factor authentication. In this case, users with `passwordless` WebAuthn credentials can authenticate to {project_name} without submitting a login or a password. {project_name} can use WebAuthn as both the loginless/passwordless and two-factor authentication mechanism in the context of a realm.
 
-An administrator typically requires that Security Keys registered by users for the WebAuthn loginless authentication meet different requirements. Loginless authentication requires users to authenticate to the security key (for example by using a PIN code or a fingerprint) and that the cryptographic keys associated with the loginless credential are stored physically on the security key. Not all security keys meet that kind of requirements. Check with your security key vendor if your device supports 'user verification' and 'resident key'. See <<_webauthn-supported-keys, Supported Security Keys>>.
+An administrator typically requires that Passkeys registered by users for the WebAuthn loginless authentication meet different requirements. Loginless authentication requires users to authenticate to the Passkey (for example by using a PIN code or a fingerprint) and that the cryptographic keys associated with the loginless credential are stored physically on the Passkey. Not all Passkeys meet that kind of requirement. Check with your Passkey vendor if your device supports 'user verification' and 'discoverable credential'. See <<_webauthn-supported-keys, Supported Passkeys>>.
 
 {project_name} permits administrators to configure the `WebAuthn Passwordless Policy` in a way that allows loginless authentication. Note that loginless authentication can only be configured with `WebAuthn Passwordless Policy` and with `WebAuthn Passwordless` credentials. WebAuthn loginless authentication and WebAuthn passwordless authentication can be configured on the same realm but will share the same policy `WebAuthn Passwordless Policy`.
 
@@ -238,7 +236,7 @@ Set up WebAuthn Loginless support as follows:
 
 . (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `Webauthn Register Passwordless` action.
 
-. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Resident Key* to *Yes* when you configure the policy for loginless scenario. Note that since there isn't a dedicated Loginless policy it won't be possible to mix authentication scenarios with user verification=no/resident key=no and loginless scenarios (user verification=yes/resident key=yes). Storage capacity is usually very limited on security keys meaning that you won't be able to store many resident keys on your security key.
+. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* when you configure the policy for loginless scenario. Note that since there isn't a dedicated Loginless policy it won't be possible to mix authentication scenarios with user verification=no/discoverable credential=no and loginless scenarios (user verification=yes/discoverable credential=yes). Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
 
 . Configure the authentication flow. Create a new authentication flow, add the "WebAuthn Passwordless" execution and set the Requirement setting of the execution to *Required*
 
@@ -247,26 +245,26 @@ The final configuration of the flow looks similar to this:
 .LoginLess flow
 image:images/webauthn-loginless-flow.png[LoginLess flow]
 
-You can now add the required action `WebAuthn Register Passwordless` to a user, already known to {project_name}, to test this. The user with the required action configured will have to authenticate (with a username/password for example) and will then be prompted to register a security key to be used for loginless authentication.
+You can now add the required action `WebAuthn Register Passwordless` to a user, already known to {project_name}, to test this. The user with the required action configured will have to authenticate (with a username/password for example) and will then be prompted to register a Passkey to be used for loginless authentication.
 
 ===== Vendor specific remarks
 
 ====== Compatibility check list
 
-Loginless authentication with {project_name} requires the security key to meet the following features
+Loginless authentication with {project_name} requires the Passkey to meet the following features
 
 ** FIDO2 compliance: not to be confused with FIDO/U2F
-** User verification: the ability for the security key to authenticate the user (prevents someone finding your security key to be able to authenticate loginless and passwordless)
-** Resident key: the ability for the security key to store the login and the cryptographic keys associated with the client application
+** User verification: the ability for the Passkey to authenticate the user (prevents someone finding your Passkey to be able to authenticate loginless and passwordless)
+** Discoverable Credential: the ability for the Passkey to store the login and the cryptographic keys associated with the client application
 
 ====== Windows Hello
 
-To use Windows Hello based credentials to authenticate against {project_name}, configure the *Signature Algorithms* setting of the `WebAuthn Passwordless Policy` to include the *RS256* value. Note that some browsers don't allow access to platform security key (like Windows Hello) inside private windows.
+To use Windows Hello based credentials to authenticate against {project_name}, configure the *Signature Algorithms* setting of the `WebAuthn Passwordless Policy` to include the *RS256* value. Note that some browsers don't allow access to platform Passkey (like Windows Hello) inside private windows.
 
 [[_webauthn-supported-keys]]
-====== Supported security keys
+====== Supported Passkeys
 
-The following security keys have been successfully tested for loginless authentication with {project_name}:
+The following Passkeys have been successfully tested for loginless authentication with {project_name}:
 
 * Windows Hello (Windows 10 21H1/21H2)
 * Yubico Yubikey 5 NFC

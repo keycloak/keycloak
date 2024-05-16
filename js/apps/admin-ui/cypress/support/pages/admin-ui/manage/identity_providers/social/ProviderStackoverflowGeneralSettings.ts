@@ -3,20 +3,20 @@ import ProviderBaseGeneralSettingsPage from "../ProviderBaseGeneralSettingsPage"
 const key_input_test_value = "key_input_test_value";
 
 export default class ProviderStackoverflowGeneralSettings extends ProviderBaseGeneralSettingsPage {
-  private keyInput = "key";
+  #keyInput = "key";
 
   constructor() {
     super();
   }
 
   public typeKeyInput(value: string) {
-    cy.findByTestId(this.keyInput).type(value);
-    cy.findByTestId(this.keyInput).blur();
+    cy.findByTestId(this.#keyInput).type(value);
+    cy.findByTestId(this.#keyInput).blur();
     return this;
   }
 
   public assertKeyInputEqual(value: string) {
-    cy.findByTestId(this.keyInput).should("have.value", value);
+    cy.findByTestId(this.#keyInput).should("have.value", value);
     return this;
   }
 

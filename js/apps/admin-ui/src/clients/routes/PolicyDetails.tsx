@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type PolicyDetailsParams = {
@@ -19,12 +19,17 @@ export const PolicyDetailsRoute: AppRouteObject = {
   element: <PolicyDetails />,
   breadcrumb: (t) => t("policyDetails"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny(
+        "manage-clients",
+        "view-authorization",
+        "manage-authorization",
+      ),
   },
 };
 
 export const toPolicyDetails = (
   params: PolicyDetailsParams,
 ): Partial<Path> => ({
-  pathname: generatePath(PolicyDetailsRoute.path, params),
+  pathname: generateEncodedPath(PolicyDetailsRoute.path, params),
 });

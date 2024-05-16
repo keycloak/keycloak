@@ -1,24 +1,23 @@
 import UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
+import { PageSection } from "@patternfly/react-core";
 import {
   DropdownItem,
-  PageSection,
   Select,
   SelectOption,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
+import useToggle from "../utils/useToggle";
 import { RevocationModal } from "./RevocationModal";
 import SessionsTable from "./SessionsTable";
-import useToggle from "../utils/useToggle";
 
 import "./SessionsSection.css";
 
@@ -61,6 +60,8 @@ const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
 };
 
 export default function SessionsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [key, setKey] = useState(0);
@@ -78,6 +79,7 @@ export default function SessionsSection() {
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const data = await fetchAdminUI<UserSessionRepresentation[]>(
+      adminClient,
       "ui-ext/sessions",
       {
         first: `${first}`,
@@ -133,7 +135,7 @@ export default function SessionsSection() {
         subKey="sessionExplain"
         helpUrl={helpUrls.sessionsUrl}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         {revocationModalOpen && (
           <RevocationModal
             handleModalToggle={handleRevocationModalToggle}

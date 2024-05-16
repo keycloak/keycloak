@@ -18,7 +18,7 @@
 package org.keycloak.services;
 
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -49,7 +49,7 @@ public class CorsErrorResponseException extends WebApplicationException {
     public Response getResponse() {
         OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
         Response.ResponseBuilder builder = Response.status(status).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE);
-        return cors.builder(builder).build();
+        return cors.add(builder);
     }
 
 }

@@ -1,8 +1,12 @@
 # Coding Guidelines
 
-## Package managers
+## Package management
 
-The default package manager for the Keycloak UI projects is PNPM, we recommend installing it with [Corepack](https://nodejs.org/api/corepack.html) for the best compatibility.
+The default package manager is PNPM, we recommend enabling [Corepack](https://nodejs.org/api/corepack.html) for the best compatibility, which will automatically ensure the correct version of PNPM is used:
+
+```sh
+corepack enable
+```
 
 There are several reasons why PNPM is used over other package managers (such as NPM and Yarn):
 
@@ -14,32 +18,38 @@ If you submit a pull request that changes the dependencies, make sure that you a
 
 Since this project relies greatly on [PNPM workspaces](https://pnpm.io/workspaces) it is recommended you familiarize yourself with features such as [`--filter`](https://pnpm.io/filtering).
 
-## Typescript
+## Code-style
 
-The Keycloak UI projects uses best practices based off the official [React TypeScript Cheat sheet](https://react-typescript-cheatsheet.netlify.app/), with modifications for this project. The React TypeScript Cheat sheet is maintained and used by developers through out the world, and is a place where developers can bring together lessons learned using TypeScript and React.
+### Linting
+
+To ensure code-style is consistent between various contributions [ESLint](https://eslint.org/) is used to enforce a common set of guidelines. The [recommended rules](https://eslint.org/docs/latest/rules/) of ESLint are used as a foundation.
+
+For TypeScript code-style the recommendations of [`typescript-eslint`](https://typescript-eslint.io/) are adhered to as much as possible, specifically the [`strict-type-checked`](https://typescript-eslint.io/users/configs#strict-type-checked) and [`stylistic-type-checked`](https://typescript-eslint.io/users/configs#stylistic-type-checked) configurations.
+
+Deviations from, or additions to these rules should be documented by comments in the [ESLint configuration](.eslintrc.cjs).
 
 ### Non-null assertion operator
 
-In the project you will sometimes see the [non-null assertion operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator) (`!`) used to tell the TypeScript compiler that you guarantee that a value is not `null` or `undefined`. Because this might possibly introduce errors at run-time if you have not checked this value yourself it should be used sparingly.
+The [non-null assertion operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator) (`!`) is sometimes used to tell the TypeScript compiler that it is guaranteed that a value is not `null` or `undefined`. Because this might possibly introduce errors at run-time it should be used sparingly.
 
-The only place where it is valid to use the non-null assertion operator is on the types that are provided by the [Admin API client](https://github.com/keycloak/keycloak-nodejs-admin-client). The reason for this is that the types are generated from Java code, which does not explicitly provide information about the nullability of fields (more on that [here](https://github.com/keycloak/keycloak-nodejs-admin-client/issues/187)). 
+The only place where it is valid to use the non-null assertion operator is on the types that are provided by the [Admin API client](https://github.com/keycloak/keycloak-nodejs-admin-client). The reason for this is that the types are generated from Java code, which does not explicitly provide information about the nullability of fields (more on that [here](https://github.com/keycloak/keycloak-nodejs-admin-client/issues/187)).
 
+## State management
 
-### State management
+We have made a conscious decision to stay away from state management technologies such as Redux. These overarching state management schemes tend to be overly complex and encourage dumping everything into the global state.
 
-We have made a conscious decision to stay away from state management technologies such as Redux.  These overarching state management schemes tend to be overly complex and encourage dumping everything into the global state.  
- 
-Instead, we are following a simple philosophy that state should remain close to where it is used and moved to a wider scope only as truly needed.  This encourages encapsulation and makes management of the state much simpler.
- 
-The way this plays out in our application is that we first prefer state to remain in the scope of the component that uses it.  If the state is required by more than one component, we move to a more complex strategy for management of that state.  In other words, in order of preference, state should be managed by:
+Instead, we are following a simple philosophy that state should remain close to where it is used and moved to a wider scope only as truly needed. This encourages encapsulation and makes management of the state much simpler.
+
+The way this plays out in our application is that we first prefer state to remain in the scope of the component that uses it. If the state is required by more than one component, we move to a more complex strategy for management of that state. In other words, in order of preference, state should be managed by:
+
 1. Storing in the component that uses it.
 2. If #1 is not sufficient, [lift state up](https://reactjs.org/docs/lifting-state-up.html).
 3. If #2 is not sufficient, try [component composition](https://reactjs.org/docs/context.html#before-you-use-context).
 4. If #3, is not sufficient, use a [global context](https://reactjs.org/docs/context.html).
- 
+
 A good tutorial on this approach is found in [Kent Dodds’ blog](https://kentcdodds.com/blog/application-state-management-with-react).
 
-### Hooks
+## Hooks
 
 When using hooks with Typescript there are few recommendations that we follow below. Additional recommendations besides the ones mentioned in this document can be found [here](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks).
 
@@ -63,17 +73,13 @@ setUser(newUser);
 
 ```
 
-#### useReducers
+### useReducers
 
 When using reducers make sure you specify the [return type and not use inference](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks#usereducer).
 
-#### useEffect
+### useEffect
 
 For useEffect only [return the function or undefined](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks#useeffect).
-
-### Additional Typescript Pointers
-
-Besides the details outlined above a list of recommendations for Typescript is maintained by several Typescript React developers [here](https://react-typescript-cheatsheet.netlify.app/). This is a great reference to use for any additional questions that are not outlined within the coding standards.
 
 ## CSS
 
@@ -83,9 +89,9 @@ We will use one global CSS file to surface customization variables. Styles parti
 
 ### Location of files, location of classes
 
-* Global styling should be located…?  *./public/index.css*.
+- Global styling should be located…? _./public/index.css_.
 
-* The CSS relating to a single component should be located in a file within each component’s folder.
+- The CSS relating to a single component should be located in a file within each component’s folder.
 
 ### Naming CSS classes
 
@@ -94,24 +100,26 @@ PatternFly reference https://pf4.patternfly.org/guidelines#variables
 For the Admin UI, we modify the PatternFly convention to namespace the classes and variables to the Keycloak packages.
 
 **Class name**
+
 ```css
 .keycloak-admin--block[__element][--modifier][--state][--breakpoint][--pseudo-element]
 ```
 
 **Examples of custom CSS classes**
+
 ```css
-// Modification to all data tables throughout Keycloak admin 
+// Modification to all data tables throughout Keycloak admin
 .keycloak-admin--data-table {
 ...
 }
 
-// Data tables throughout keycloak that are marked as compact 
+// Data tables throughout keycloak that are marked as compact
 .keycloak-admin--data-table--compact {
 ...
 }
 
 // Child elements of a compact data-table
-// Don’t increase specificity with a selector like this: 
+// Don’t increase specificity with a selector like this:
 // .keycloak-admin--data-table--compact .data-table-item
 // Instead, follow the pattern for a single class on the child
 .keycloak-admin--data-table__data-table-item--compact {
@@ -123,6 +131,7 @@ For the Admin UI, we modify the PatternFly convention to namespace the classes a
 ...
 }
 ```
+
 ### Naming CSS custom properties and using PatternFly’s custom properties
 
 Usually, PatternFly components will properly style components. Sometimes problems with the spacing or other styling indicate that a wrapper component is missing or that components haven’t been put together quite as intended. Often there is a variant of the component available that will accomplish the design.
@@ -134,89 +143,90 @@ These values can be seen in the [PatternFly design guidelines](https://v4-archiv
 For the Admin UI, we modify the PatternFly convention to namespace the classes and variables to the Keycloak packages.
 
 **Custom property**
+
 ```css
 --keycloak-admin--block[__element][--modifier][--state][--breakpoint][--pseudo-element]--PropertyCamelCase
 ```
 
 **Example of a CSS custom property**
+
 ```css
 // Modify the height of the brand image
---keycloak-admin--brand--Height: var(--pf-global--spacer--xl); 
+--keycloak-admin--brand--Height: var(--pf-v5-global--spacer--xl);
 ```
 
 **Example**
+
 ```css
 // Don’t increase specificity
 // Don’t use pixel values
-.keycloak-admin--manage-columns__modal .pf-c-dropdown {
-   margin-bottom: 24px
+.keycloak-admin--manage-columns__modal .pf-v5-c-dropdown {
+  margin-bottom: 24px;
 }
 
 // Do use a new class
 // Do use a PatternFly global spacer variable
 .keycloak-admin--manage-columns__dropdown {
-   margin-bottom: var(--pf-global--spacer--xl);
+  margin-bottom: var(--pf-v5-global--spacer--xl);
 }
 ```
+
 ### Using utility classes
 
-Utility classes can be used to add specific styling to a component, such as margin-bottom or padding. However, their use should be limited to one-off styling needs.  
+Utility classes can be used to add specific styling to a component, such as margin-bottom or padding. However, their use should be limited to one-off styling needs.
 
-For example, instead of using the utility class for margin-right multiple times, we should define a new Admin UI class that adds this *margin-right: var(--pf-global--spacer--sm);* and in this example, the new class can set the color appropriately as well.
+For example, instead of using the utility class for margin-right multiple times, we should define a new Admin UI class that adds this _margin-right: var(--pf-v5-global--spacer--sm);_ and in this example, the new class can set the color appropriately as well.
 
 **Using a utility class **
-```css
+
+```js
 switch (titleStatus) {
-   case "success":
-     return (
-       <>
-         <InfoCircleIcon
-           className="pf-u-mr-sm" // utility class 
-           color="var(--pf-global--info-color--100)"
-         />{" "}
-         {titleText}{" "}
-       </>
-     );
-   case "failure":
-     return (
-       <>
-         <InfoCircleIcon
-           className="pf-u-mr-sm"
-           color="var(--pf-global--danger-color--100)"
-         />{" "}
-         {titleText}{" "}
-       </>
-     );
- } 
- ``` 
+  case "success":
+    return (
+      <>
+        <InfoCircleIcon
+          className="pf-v5-u-mr-sm" // utility class
+          color="var(--pf-v5-global--info-color--100)"
+        />{" "}
+        {titleText}
+      </>
+    );
+  case "failure":
+    return (
+      <>
+        <InfoCircleIcon
+          className="pf-v5-u-mr-sm"
+          color="var(--pf-v5-global--danger-color--100)"
+        />{" "}
+        {titleText}
+      </>
+    );
+}
+```
+
 **Better way with a custom class**
-```css
+
+```js
 switch (titleStatus) {
-   case "success":
-     return (
-       <>
-         <InfoCircleIcon
-           className="keycloak-admin--icon--info" // use a new keycloak class 
-         />{" "}
-         {titleText}{" "}
-       </>
-     );
-   case "failure":
-     return (
-       <>
-         <InfoCircleIcon
-           className="keycloak-admin--icon--info"
-         />{" "}
-         {titleText}{" "}
-       </>
-     );
- }
+  case "success":
+    return (
+      <>
+        <InfoCircleIcon
+          className="keycloak-admin--icon--info" // use a new keycloak class
+        />{" "}
+        {titleText}{" "}
+      </>
+    );
+  case "failure":
+    return (
+      <>
+        <InfoCircleIcon className="keycloak-admin--icon--info" /> {titleText}{" "}
+      </>
+    );
+}
 ```
 
 ## Resources
 
-* [PatternFly Docs](https://v4-archive.patternfly.org/v4/)
-* [Katacoda PatternFly tutorials](https://v4-archive.patternfly.org/v4/training/react)
-* [PatternFly global CSS variables](https://v4-archive.patternfly.org/v4/developer-resources/global-css-variables)
-* [PatternFly CSS utility classes](https://v4-archive.patternfly.org/v4/utilities/accessibility)
-* [React Typescript Cheat sheet](https://react-typescript-cheatsheet.netlify.app/)
+- [PatternFly Docs](https://www.patternfly.org/)
+- [Learn React](https://react.dev/learn)

@@ -37,11 +37,16 @@
 
     <modules>
         <module>app-server-spi</module>
-        <module>jboss</module>
-        <module>karaf</module>
-        <module>tomcat</module>
-        <module>undertow</module>
-        <module>jetty</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>build-app-servers</id>
+            <modules>
+                <module>jboss</module>
+                <module>undertow</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

@@ -1,31 +1,30 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.config.FeatureOptions;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 
-import static java.util.Optional.of;
-import static org.keycloak.config.StorageOptions.STORAGE;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+public final class FeaturePropertyMappers {
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
-
-final class FeaturePropertyMappers {
+    private static final Pattern VERSIONED_PATTERN = Pattern.compile("([^:]+):v(\\d+)");
 
     private FeaturePropertyMappers() {
     }
 
-    public static PropertyMapper[] getMappers() {
+    public static PropertyMapper<?>[] getMappers() {
         return new PropertyMapper[] {
                 fromOption(FeatureOptions.FEATURES)
                         .paramLabel("feature")
-                        .transformer(FeaturePropertyMappers::transformFeatures)
+                        .validator((mapper, value) -> mapper.validateExpectedValues(value,
+                                (c, v) -> validateEnabledFeature(v)))
                         .build(),
                 fromOption(FeatureOptions.FEATURES_DISABLED)
                         .paramLabel("feature")
@@ -33,15 +32,34 @@ final class FeaturePropertyMappers {
         };
     }
 
-    private static Optional<String> transformFeatures(Optional<String> features, ConfigSourceInterceptorContext context) {
-        if (Configuration.getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).isEmpty()) {
-            return features;
+    public static void validateEnabledFeature(String feature) {
+        if (!Profile.getFeatureVersions(feature).isEmpty()) {
+            return;
         }
-
-        Set<String> featureSet = new HashSet<>(List.of(features.orElse("").split(",")));
-
-        featureSet.add(Profile.Feature.MAP_STORAGE.getKey());
-
-        return of(String.join(",", featureSet));
+        if (feature.equals(Profile.Feature.Type.PREVIEW.name().toLowerCase())) {
+            return;
+        }
+        Matcher matcher = VERSIONED_PATTERN.matcher(feature);
+        if (!matcher.matches()) {
+            if (feature.contains(":")) {
+                throw new PropertyException(String.format(
+                        "%s has an invalid format for enabling a feature, expected format is feature:v{version}, e.g. docker:v1",
+                        feature));
+            }
+            throw new PropertyException(String.format("%s is an unrecognized feature, it should be one of %s", feature,
+                    FeatureOptions.getFeatureValues(false)));
+        }
+        String unversionedFeature = matcher.group(1);
+        Set<Feature> featureVersions = Profile.getFeatureVersions(unversionedFeature);
+        if (featureVersions.isEmpty()) {
+            throw new PropertyException(String.format("%s has an unrecognized feature, it should be one of %s",
+                    feature, FeatureOptions.getFeatureValues(false)));
+        }
+        int version = Integer.parseInt(matcher.group(2));
+        if (!featureVersions.stream().anyMatch(f -> f.getVersion() == version)) {
+            throw new PropertyException(
+                    String.format("%s has an unrecognized feature version, it should be one of %s", feature,
+                            featureVersions.stream().map(Feature::getVersion).map(String::valueOf).collect(Collectors.toList())));
+        }
     }
 }

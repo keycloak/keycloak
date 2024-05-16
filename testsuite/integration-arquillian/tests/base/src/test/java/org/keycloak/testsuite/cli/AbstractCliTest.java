@@ -7,7 +7,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -44,20 +43,12 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
     public void assertExitCodeAndStreamSizes(AbstractExec exe, int exitCode, int stdOutLineCount, int stdErrLineCount) {
         Assert.assertEquals("exitCode == " + exitCode, exitCode, exe.exitCode());
         if (stdOutLineCount != -1) {
-            try {
-                assertLineCount("stdout output", exe.stdoutLines(), stdOutLineCount);
-            } catch (Throwable e) {
-                throw new AssertionError("STDOUT: " + exe.stdoutString(), e);
-            }
+            assertLineCount("STDOUT: " + exe.stdoutString(), exe.stdoutLines(), stdOutLineCount);
         }
         // There is additional logging in case that BC FIPS libraries are used, so the count of logged lines don't match with the case with plain BC used
         // Hence we test count of lines just with FIPS disabled
         if (stdErrLineCount != -1 && isFipsDisabled()) {
-            try {
-                assertLineCount("stderr output", exe.stderrLines(), stdErrLineCount);
-            } catch (Throwable e) {
-                throw new AssertionError("STDERR: " + exe.stderrString(), e);
-            }
+            assertLineCount("STDERR: " + exe.stderrString(), exe.stderrLines(), stdErrLineCount);
         }
     }
 

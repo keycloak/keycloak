@@ -19,18 +19,25 @@ package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.utils.RoleResolveUtil;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION;
 
 /**
  * Protocol mapper, which adds all client_ids of "allowed" clients to the audience field of the token. Allowed client means the client
@@ -38,10 +45,12 @@ import org.keycloak.utils.RoleResolveUtil;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AudienceResolveProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
+public class AudienceResolveProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-
+    static {
+        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, AudienceResolveProtocolMapper.class);
+    }
 
     public static final String PROVIDER_ID = "oidc-audience-resolve-mapper";
 
@@ -79,6 +88,59 @@ public class AudienceResolveProtocolMapper extends AbstractOIDCProtocolMapper im
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        boolean shouldUseLightweightToken = getShouldUseLightweightToken(session);
+        boolean includeInAccessToken = shouldUseLightweightToken ?  OIDCAttributeMapperHelper.includeInLightweightAccessToken(mappingModel) : includeInAccessToken(mappingModel);
+        if (!includeInAccessToken){
+            return token;
+        }
+        setAudience(token, clientSessionCtx, session);
+        return token;
+    }
+
+    private boolean includeInAccessToken(ProtocolMapperModel mappingModel) {
+        String includeInAccessToken = mappingModel.getConfig().get(INCLUDE_IN_ACCESS_TOKEN);
+
+        // Backwards compatibility
+        if (includeInAccessToken == null) {
+            return true;
+        }
+
+        return "true".equals(includeInAccessToken);
+    }
+
+    @Override
+    public AccessToken transformIntrospectionToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                                   UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        if (!includeInIntrospection(mappingModel)) {
+            return token;
+        }
+        setAudience(token, clientSessionCtx, session);
+        return token;
+    }
+
+    private boolean includeInIntrospection(ProtocolMapperModel mappingModel) {
+        String includeInIntrospection = mappingModel.getConfig().get(INCLUDE_IN_INTROSPECTION);
+
+        // Backwards compatibility
+        if (includeInIntrospection == null) {
+            return true;
+        }
+
+        return "true".equals(includeInIntrospection);
+    }
+
+    @Override
+    public ProtocolMapperModel getEffectiveModel(KeycloakSession session, RealmModel realm, ProtocolMapperModel protocolMapperModel) {
+        // Effectively clone
+        ProtocolMapperModel copy = RepresentationToModel.toModel(ModelToRepresentation.toRepresentation(protocolMapperModel));
+
+        copy.getConfig().put(INCLUDE_IN_ACCESS_TOKEN, String.valueOf(includeInAccessToken(copy)));
+        copy.getConfig().put(INCLUDE_IN_INTROSPECTION, String.valueOf(includeInIntrospection(copy)));
+
+        return copy;
+    }
+
+    private void setAudience(AccessToken token, ClientSessionContext clientSessionCtx, KeycloakSession session) {
         String clientId = clientSessionCtx.getClientSession().getClient().getClientId();
 
         for (Map.Entry<String, AccessToken.Access> entry : RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx).entrySet()) {
@@ -92,16 +154,25 @@ public class AudienceResolveProtocolMapper extends AbstractOIDCProtocolMapper im
                 token.addAudience(entry.getKey());
             }
         }
-
-        return token;
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name) {
+    public static ProtocolMapperModel createClaimMapper(String name, boolean accessToken, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        mapper.setConfig(Collections.emptyMap());
+        Map<String, String> config = new HashMap<>();
+        if (accessToken) {
+            config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
+        } else {
+            config.put(INCLUDE_IN_ACCESS_TOKEN, "false");
+        }
+        if (introspectionEndpoint) {
+            config.put(INCLUDE_IN_INTROSPECTION, "true");
+        } else {
+            config.put(INCLUDE_IN_INTROSPECTION, "false");
+        }
+        mapper.setConfig(config);
         return mapper;
     }
 }

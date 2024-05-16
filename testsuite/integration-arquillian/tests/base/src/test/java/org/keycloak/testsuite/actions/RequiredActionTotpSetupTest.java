@@ -160,6 +160,15 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         // KEYCLOAK-11753 - Verify OTP label element present on "Configure OTP" required action form
         driver.findElement(By.id("userLabel"));
 
+        String totpSecret = totpPage.getTotpSecret();
+
+        //submit with wrong otp
+        totpPage.configure("wrongOtp");
+        totpPage.assertCurrent();
+
+        //assert totpSecret doesn't change after a wrong submit
+        assertEquals(totpSecret, totpPage.getTotpSecret());
+
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
@@ -329,7 +338,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String pageSource = driver.getPageSource();
 
             assertTrue(pageSource.contains("FreeOTP"));
-            assertFalse(pageSource.contains("Google Authenticator"));
+            assertTrue(pageSource.contains("Google Authenticator"));
             assertFalse(pageSource.contains("Microsoft Authenticator"));
 
             totpPage.clickManual();
@@ -662,6 +671,13 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        if (logoutOtherSessions) {
+            events.expectLogout(event1.getSessionId())
+                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_TOTP.name())
+                    .assertEvent();
+        }
+
         EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_TOTP).user(event1.getUserId()).detail(Details.USERNAME, "test-user@localhost").assertEvent();
         event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID)).detail(Details.USERNAME, "test-user@localhost").assertEvent();
 

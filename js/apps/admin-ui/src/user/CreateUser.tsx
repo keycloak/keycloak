@@ -2,34 +2,34 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
+import { TFunction } from "i18next";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import {
+  isUserProfileError,
+  setUserProfileServerError,
+} from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UserForm } from "./UserForm";
-import {
-  isUserProfileError,
-  userProfileErrorToString,
-} from "./UserProfileFields";
 import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
 
 import "./user-section.css";
 
 export default function CreateUser() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm: realmName } = useRealm();
-  const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<UserFormFields>({ mode: "onChange" });
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
   const [realm, setRealm] = useState<RealmRepresentation>();
@@ -48,14 +48,8 @@ export default function CreateUser() {
       }
 
       setRealm(realm);
-
-      const isUserProfileEnabled =
-        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-        realm.attributes?.userProfileEnabled === "true";
-
-      setUserProfileMetadata(
-        isUserProfileEnabled ? userProfileMetadata : undefined,
-      );
+      form.setValue("attributes.locale", realm.defaultLocale || "");
+      setUserProfileMetadata(userProfileMetadata);
     },
     [],
   );
@@ -74,7 +68,8 @@ export default function CreateUser() {
       );
     } catch (error) {
       if (isUserProfileError(error)) {
-        addError(userProfileErrorToString(error), error);
+        setUserProfileServerError(error, form.setError, ((key, param) =>
+          t(key as string, param as any)) as TFunction);
       } else {
         addError("userCreateError", error);
       }

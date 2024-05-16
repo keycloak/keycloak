@@ -1,16 +1,15 @@
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 
 type Scope = {
@@ -19,6 +18,8 @@ type Scope = {
 };
 
 export const ScopePicker = ({ clientId }: { clientId: string }) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { control } = useFormContext();
 
@@ -69,7 +70,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
               expandedText: t("hide"),
               collapsedText: t("showRemaining"),
             }}
-            onToggle={setOpen}
+            onToggle={(_event, val) => setOpen(val)}
             isOpen={open}
             selections={field.value.map((o: Scope) => o.name)}
             onFilter={(_, value) => {

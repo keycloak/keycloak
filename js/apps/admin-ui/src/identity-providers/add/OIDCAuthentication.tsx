@@ -1,17 +1,19 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { ClientIdSecret } from "../component/ClientIdSecret";
+import { SwitchField } from "../component/SwitchField";
 import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { TextField } from "../component/TextField";
 
 const clientAuthentications = [
   "client_secret_post",
@@ -105,6 +107,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
               }}
               selections={field.value || t("algorithmNotSpecified")}
               variant={SelectVariant.single}
+              aria-label={t("selectClientAssertionSigningAlg")}
               isOpen={openClientAuthSigAlg}
             >
               {[
@@ -123,6 +126,19 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
           )}
         />
       </FormGroup>
+      {(clientAuthMethod === "private_key_jwt" ||
+        clientAuthMethod === "client_secret_jwt") && (
+        <TextField
+          field="config.clientAssertionAudience"
+          label="clientAssertionAudience"
+        />
+      )}
+      {clientAuthMethod === "private_key_jwt" && (
+        <SwitchField
+          field="config.jwtX509HeadersEnabled"
+          label="jwtX509HeadersEnabled"
+        />
+      )}
     </>
   );
 };

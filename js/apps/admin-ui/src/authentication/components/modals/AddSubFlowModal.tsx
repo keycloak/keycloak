@@ -3,21 +3,14 @@ import {
   Button,
   ButtonVariant,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../../admin-client";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../../admin-client";
 import { useFetch } from "../../../utils/useFetch";
 
 type AddSubFlowProps = {
@@ -40,16 +33,10 @@ export const AddSubFlowModal = ({
   onConfirm,
   onCancel,
 }: AddSubFlowProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
-  const {
-    register,
-    control,
-    setValue,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Flow>();
-  const [open, setOpen] = useState(false);
-  const [openProvider, setOpenProvider] = useState(false);
+  const form = useForm<Flow>();
   const [formProviders, setFormProviders] =
     useState<AuthenticationProviderRepresentation[]>();
 
@@ -61,7 +48,7 @@ export const AddSubFlowModal = ({
 
   useEffect(() => {
     if (formProviders?.length === 1) {
-      setValue("provider", formProviders[0].id!);
+      form.setValue("provider", formProviders[0].id!);
     }
   }, [formProviders]);
 
@@ -90,123 +77,46 @@ export const AddSubFlowModal = ({
       ]}
       isOpen
     >
-      <Form id="sub-flow-form" onSubmit={handleSubmit(onConfirm)} isHorizontal>
-        <FormGroup
-          label={t("name")}
-          fieldId="name"
-          helperTextInvalid={t("required")}
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          labelIcon={
-            <HelpItem helpText={t("flowNameHelp")} fieldLabelId="name" />
-          }
-          isRequired
-        >
-          <KeycloakTextInput
-            id="name"
-            data-testid="name"
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            {...register("name", { required: true })}
+      <Form
+        id="sub-flow-form"
+        onSubmit={form.handleSubmit(onConfirm)}
+        isHorizontal
+      >
+        <FormProvider {...form}>
+          <TextControl
+            name="name"
+            label={t("name")}
+            labelIcon={t("clientIdHelp")}
+            rules={{ required: { value: true, message: t("required") } }}
           />
-        </FormGroup>
-        <FormGroup
-          label={t("description")}
-          fieldId="description"
-          labelIcon={
-            <HelpItem
-              helpText={t("flowNameDescriptionHelp")}
-              fieldLabelId="description"
-            />
-          }
-        >
-          <KeycloakTextInput
-            id="description"
-            data-testid="description"
-            {...register("description")}
+          <TextControl
+            name="description"
+            label={t("description")}
+            labelIcon={t("flowNameDescriptionHelp")}
           />
-        </FormGroup>
-        <FormGroup
-          label={t("flowType")}
-          fieldId="flowType"
-          labelIcon={
-            <HelpItem helpText={t("flowTypeHelp")} fieldLabelId="flowType" />
-          }
-        >
-          <Controller
+          <SelectControl
             name="type"
-            defaultValue={types[0]}
-            control={control}
-            render={({ field }) => (
-              <Select
-                menuAppendTo="parent"
-                toggleId="flowType"
-                onToggle={setOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value.toString());
-                  setOpen(false);
-                }}
-                selections={t(`flow-type.${field.value}`)}
-                variant={SelectVariant.single}
-                isOpen={open}
-              >
-                {types.map((type) => (
-                  <SelectOption
-                    key={type}
-                    value={type}
-                    selected={type === field.value}
-                  >
-                    {t(`flow-type.${type}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
-        {formProviders && formProviders.length > 1 && (
-          <FormGroup
+            menuAppendTo="parent"
             label={t("flowType")}
-            labelIcon={
-              <HelpItem
-                helpText={t("authenticationFlowTypeHelp")}
-                fieldLabelId="flowType"
-              />
-            }
-            fieldId="flowType"
-          >
-            <Controller
+            options={types.map((type) => ({
+              key: type,
+              value: t(`flow-type.${type}`),
+            }))}
+            controller={{ defaultValue: types[0] }}
+          />
+          {formProviders && formProviders.length > 1 && (
+            <SelectControl
               name="provider"
-              defaultValue=""
-              control={control}
-              render={({ field }) => (
-                <Select
-                  menuAppendTo="parent"
-                  toggleId="provider"
-                  onToggle={setOpenProvider}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setOpenProvider(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                  isOpen={openProvider}
-                >
-                  {formProviders.map((provider) => (
-                    <SelectOption
-                      key={provider.id}
-                      value={provider.id}
-                      selected={provider.displayName === field.value}
-                    >
-                      {provider.displayName}
-                    </SelectOption>
-                  ))}
-                </Select>
-              )}
+              label={t("provider")}
+              labelIcon={t("authenticationFlowTypeHelp")}
+              options={formProviders.map((provider) => ({
+                key: provider.id!,
+                value: provider.displayName!,
+              }))}
+              controller={{ defaultValue: "" }}
             />
-          </FormGroup>
-        )}
+          )}
+        </FormProvider>
       </Form>
     </Modal>
   );

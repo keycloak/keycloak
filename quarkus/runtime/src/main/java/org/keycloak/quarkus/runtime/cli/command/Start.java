@@ -73,6 +73,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
         return Environment.isDevProfile();
     }
 
+    @Override
     public List<OptionCategory> getOptionCategories() {
         return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
     }
@@ -80,5 +81,10 @@ public final class Start extends AbstractStartCommand implements Runnable {
     @Override
     public boolean includeRuntime() {
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 }

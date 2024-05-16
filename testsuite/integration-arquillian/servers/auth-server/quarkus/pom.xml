@@ -13,7 +13,7 @@
     <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
 
     <properties>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
+        <auth.server.home>${project.build.directory}/unpacked/${dist.archive.dir}</auth.server.home>
         <common.resources>${basedir}/../common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
@@ -376,6 +376,37 @@
                                             <groupId>com.microsoft.sqlserver</groupId>
                                             <artifactId>mssql-jdbc</artifactId>
                                             <version>${mssql-jdbc.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>db-aurora-postgres</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>includeProprietaryDependencies</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>software.amazon.jdbc</groupId>
+                                            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                                            <version>${aws-jdbc-wrapper.version}</version>
                                             <type>jar</type>
                                             <outputDirectory>${auth.server.home}/providers</outputDirectory>
                                         </artifactItem>

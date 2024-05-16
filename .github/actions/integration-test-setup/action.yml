@@ -29,9 +29,13 @@ runs:
       name: PhantomJS cache
       uses: ./.github/actions/phantomjs-cache
 
+    - id: frontend-plugin-cache
+      name: Frontend Plugin Cache
+      uses: ./.github/actions/frontend-plugin-cache
+
     - id: download-keycloak
       name: Download Keycloak Maven artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: m2-keycloak.tzts
 

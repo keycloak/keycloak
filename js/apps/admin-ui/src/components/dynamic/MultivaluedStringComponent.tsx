@@ -2,9 +2,13 @@ import { useTranslation } from "react-i18next";
 import { FormGroup } from "@patternfly/react-core";
 
 import type { ComponentProps } from "./components";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { MultiLineInput } from "../multi-line-input/MultiLineInput";
 import { convertToName } from "./DynamicComponents";
+
+function convertDefaultValue(formValue?: any): string[] {
+  return formValue && Array.isArray(formValue) ? formValue : [formValue];
+}
 
 export const MultiValuedStringComponent = ({
   name,
@@ -29,7 +33,7 @@ export const MultiValuedStringComponent = ({
         aria-label={t(label!)}
         name={fieldName}
         isDisabled={isDisabled}
-        defaultValue={[defaultValue]}
+        defaultValue={convertDefaultValue(defaultValue)}
         addButtonLabel={t("addMultivaluedLabel", {
           fieldLabel: t(label!).toLowerCase(),
         })}

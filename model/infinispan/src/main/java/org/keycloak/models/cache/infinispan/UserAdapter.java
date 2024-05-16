@@ -18,7 +18,6 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -100,7 +99,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
-            userProviderCache.registerUserInvalidation(realm, cached);
+            userProviderCache.registerUserInvalidation(cached);
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -193,8 +192,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeAttribute(String name) {
-        getDelegateForUpdate();
-        updated.removeAttribute(name);
+        if (getFirstAttribute(name) != null) {
+            getDelegateForUpdate();
+            updated.removeAttribute(name);
+        }
     }
 
     @Override
@@ -230,8 +231,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override
@@ -242,8 +245,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(String action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override

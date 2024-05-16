@@ -6,14 +6,13 @@ import {
   Split,
   SplitItem,
   Switch,
+  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 
 import "./policy-row.css";
 
@@ -33,32 +32,30 @@ export const PolicyRow = ({
     formState: { errors },
   } = useFormContext();
 
+  const error = errors[id!];
+
   return (
     <FormGroup
       label={displayName}
       fieldId={id!}
       isRequired
-      helperTextInvalid={t("required")}
-      validated={
-        errors[id!] ? ValidatedOptions.error : ValidatedOptions.default
-      }
       labelIcon={
         <HelpItem
           helpText={t(`passwordPoliciesHelp.${id}`)}
-          fieldLabelId={`authentication:${id}`}
+          fieldLabelId={id!}
         />
       }
     >
       <Split>
         <SplitItem isFilled>
           {configType && configType !== "int" && (
-            <KeycloakTextInput
+            <TextInput
               id={id}
               data-testid={id}
               {...register(id!, { required: true })}
               defaultValue={defaultValue}
               validated={
-                errors[id!] ? ValidatedOptions.error : ValidatedOptions.default
+                error ? ValidatedOptions.error : ValidatedOptions.default
               }
             />
           )}
@@ -113,6 +110,7 @@ export const PolicyRow = ({
           </Button>
         </SplitItem>
       </Split>
+      {error && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

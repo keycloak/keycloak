@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
@@ -98,12 +99,19 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     }
 
     @Override
+    public Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScope) {
         if (defaultScope) {
                 ClientScopeModel rolesScope = KeycloakModelUtils.getClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE);
                 ClientScopeModel webOriginsScope = KeycloakModelUtils.getClientScopeByName(realm, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE);
-                return Arrays.asList(rolesScope, webOriginsScope)
+                ClientScopeModel basicScope = KeycloakModelUtils.getClientScopeByName(realm, OIDCLoginProtocolFactory.BASIC_SCOPE);
+                return Arrays.asList(rolesScope, webOriginsScope, basicScope)
                         .stream()
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toMap(ClientScopeModel::getName, clientScope -> clientScope));
 
             } else {

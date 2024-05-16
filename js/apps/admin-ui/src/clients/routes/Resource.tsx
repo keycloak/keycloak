@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type ResourceDetailsParams = {
@@ -16,7 +16,12 @@ export const ResourceDetailsRoute: AppRouteObject = {
   element: <ResourceDetails />,
   breadcrumb: (t) => t("resourceDetails"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny(
+        "manage-clients",
+        "view-authorization",
+        "manage-authorization",
+      ),
   },
 };
 
@@ -33,6 +38,6 @@ export const toResourceDetails = (
     : ResourceDetailsRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

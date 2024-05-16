@@ -6,6 +6,7 @@ import type ClientRepresentation from "../src/defs/clientRepresentation.js";
 import type GroupRepresentation from "../src/defs/groupRepresentation.js";
 import type RoleRepresentation from "../src/defs/roleRepresentation.js";
 import { credentials } from "./constants.js";
+import { SubGroupQuery } from "../src/resources/groups.js";
 
 const expect = chai.expect;
 
@@ -93,11 +94,20 @@ describe("Groups", () => {
     const group = (await kcAdminClient.groups.findOne({
       id: groupId!,
     }))!;
-    expect(group.subGroups![0]).to.deep.include({
-      id: childGroup.id,
-      name: groupName,
-      path: `/${group.name}/${groupName}`,
-    });
+    expect(group).to.be.ok;
+  });
+
+  it("list subgroups", async () => {
+    if (currentGroup.id) {
+      const args: SubGroupQuery = {
+        parentId: currentGroup!.id,
+        first: 0,
+        max: 10,
+        briefRepresentation: false,
+      };
+      const groups = await kcAdminClient.groups.listSubGroups(args);
+      expect(groups.length).to.equal(1);
+    }
   });
 
   /**

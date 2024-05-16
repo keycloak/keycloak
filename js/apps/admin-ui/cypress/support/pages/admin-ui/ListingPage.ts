@@ -28,82 +28,90 @@ export enum FilterSession {
 }
 
 export default class ListingPage extends CommonElements {
-  private searchInput =
-    ".pf-c-toolbar__item .pf-c-text-input-group__text-input:visible";
-  private tableToolbar = ".pf-c-toolbar";
-  private itemsRows = "table:visible";
-  private deleteUserButton = "delete-user-btn";
-  private emptyListImg =
-    '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
-  public emptyState = "empty-state";
-  private itemRowDrpDwn = ".pf-c-dropdown__toggle";
-  private itemRowSelect = ".pf-c-select__toggle:nth-child(1)";
-  private itemRowSelectItem = ".pf-c-select__menu-item";
-  private itemCheckbox = ".pf-c-table__check";
+  #tableToolbar = ".pf-v5-c-toolbar";
+  #itemsRows = "table:visible";
+  #deleteUserButton = "delete-user-btn";
+  #emptyListImg = '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
+  #emptyState = "empty-state";
+  #itemRowDrpDwn = ".pf-v5-c-menu-toggle";
+  #itemRowSelect = ".pf-v5-c-select__toggle:nth-child(1)";
+  #itemRowSelectItem = ".pf-v5-c-select__menu-item";
+  #itemCheckbox = ".pf-v5-c-table__check";
   public exportBtn = '[role="menuitem"]:nth-child(1)';
   public deleteBtn = '[role="menuitem"]:nth-child(2)';
-  private searchBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
-  private listHeaderPrimaryBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-primary:visible";
-  private listHeaderSecondaryBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-link";
-  private previousPageBtn =
-    "div[class=pf-c-pagination__nav-control] button[data-action=previous]:visible";
-  private nextPageBtn =
-    "div[class=pf-c-pagination__nav-control] button[data-action=next]:visible";
+  #searchBtn =
+    ".pf-v5-c-page__main .pf-v5-c-toolbar__content-section button.pf-m-control:visible";
+  #listHeaderPrimaryBtn =
+    ".pf-v5-c-page__main .pf-v5-c-toolbar__content-section .pf-m-primary:visible";
+  #listHeaderSecondaryBtn =
+    ".pf-v5-c-page__main .pf-v5-c-toolbar__content-section .pf-m-link";
+  #previousPageBtn =
+    ".pf-v5-c-pagination:not([class*=pf-m-bottom]) button[data-action=previous]";
+  #nextPageBtn =
+    ".pf-v5-c-pagination:not([class*=pf-m-bottom]) button[data-action=next]";
   public tableRowItem = "tbody tr[data-ouia-component-type]:visible";
-  private table = "table[aria-label]";
-  private filterSessionDropdownButton = ".pf-c-select button:nth-child(1)";
-  private filterDropdownButton = "[class*='searchtype'] button";
-  private dropdownItem = ".pf-c-dropdown__menu-item";
-  private changeTypeToButton = ".pf-c-select__toggle";
-  private toolbarChangeType = "#change-type-dropdown";
-  private tableNameColumnPrefix = "name-column-";
-  private rowGroup = "table:visible tbody[role='rowgroup']";
-  private tableHeaderCheckboxItemAllRows =
-    "input[aria-label='Select all rows']";
+  #table = "table[aria-label]";
+  #filterSessionDropdownButton = ".pf-v5-c-select button:nth-child(1)";
+  #filterDropdownButton = "[class*='searchtype'] button";
+  #kebabMenu = ".pf-v5-c-dropdown__toggle";
+  #dropdownItem = ".pf-v5-c-dropdown__menu-item";
+  #changeTypeToButton = ".pf-v5-c-select__toggle";
+  #toolbarChangeType = "#change-type-dropdown";
+  #tableNameColumnPrefix = "name-column-";
+  #rowGroup = "table:visible tbody[role='rowgroup']";
+  #tableHeaderCheckboxItemAllRows = "input[aria-label='Select all rows']";
+  #searchBtnInModal =
+    ".pf-v5-c-modal-box .pf-v5-c-toolbar__content-section button.pf-m-control:visible";
+  #menuContent = ".pf-v5-c-menu__content";
+  #menuItemText = ".pf-v5-c-menu__item-text";
 
-  private searchBtnInModal =
-    ".pf-c-modal-box .pf-c-toolbar__content-section button.pf-m-control:visible";
+  #getSearchInput() {
+    return cy.findAllByTestId("table-search-input").last().find("input");
+  }
 
   showPreviousPageTableItems() {
-    cy.get(this.previousPageBtn).first().click();
+    cy.get(this.#previousPageBtn).first().click();
 
     return this;
   }
 
   showNextPageTableItems() {
-    cy.get(this.nextPageBtn).first().click();
+    cy.get("body").then(($body) => {
+      if (!$body.find('[data-testid="' + this.#nextPageBtn + '"]').length) {
+        cy.get(this.#nextPageBtn).scrollIntoView();
+        cy.get(this.#nextPageBtn).click();
+      }
+    });
 
     return this;
   }
 
   goToCreateItem() {
-    cy.get(this.listHeaderPrimaryBtn).click();
+    cy.get(this.#listHeaderPrimaryBtn).click();
 
     return this;
   }
 
   goToImportItem() {
-    cy.get(this.listHeaderSecondaryBtn).click();
+    cy.get(this.#listHeaderSecondaryBtn).click();
 
     return this;
   }
 
-  searchItem(searchValue: string, wait = true) {
+  searchItem(searchValue: string, wait = true, realm = "master") {
     if (wait) {
-      const searchUrl = `/admin/realms/master/**/*${searchValue}*`;
+      const searchUrl = `/admin/realms/${realm}/**/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
 
-    cy.get(this.searchInput).clear();
+    this.#getSearchInput().click({ force: true });
+    this.#getSearchInput().clear();
     if (searchValue) {
-      cy.get(this.searchInput).type(searchValue);
-      cy.get(this.searchBtn).click({ force: true });
+      this.#getSearchInput().type(searchValue);
+      cy.get(this.#searchBtn).click({ force: true });
     } else {
       // TODO: Remove else and move clickSearchButton outside of the if
-      cy.get(this.searchInput).type("{enter}");
+      this.#getSearchInput().type("{enter}");
     }
 
     if (wait) {
@@ -114,11 +122,12 @@ export default class ListingPage extends CommonElements {
   }
 
   searchItemInModal(searchValue: string) {
-    cy.get(this.searchInput).clear();
+    this.#getSearchInput().click({ force: true });
+    this.#getSearchInput().clear();
     if (searchValue) {
-      cy.get(this.searchInput).type(searchValue);
+      this.#getSearchInput().type(searchValue);
     }
-    cy.get(this.searchBtnInModal).click({ force: true });
+    cy.get(this.#searchBtnInModal).click({ force: true });
   }
 
   checkTableLength(length: number, identifier: string) {
@@ -130,14 +139,14 @@ export default class ListingPage extends CommonElements {
   }
 
   clickSearchBarActionButton() {
-    cy.get(this.tableToolbar).find(this.itemRowDrpDwn).last().click();
+    cy.get(this.#tableToolbar).find(this.#kebabMenu).last().click();
 
     return this;
   }
 
   clickSearchBarActionItem(itemName: string) {
-    cy.get(this.tableToolbar)
-      .find(this.dropdownItem)
+    cy.get(this.#tableToolbar)
+      .find(this.#dropdownItem)
       .contains(itemName)
       .click();
 
@@ -145,16 +154,16 @@ export default class ListingPage extends CommonElements {
   }
 
   clickRowDetails(itemName: string) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(this.itemRowDrpDwn)
+      .find(this.#itemRowDrpDwn)
       .click({ force: true });
     return this;
   }
 
   markItemRow(itemName: string) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
       .find('input[name*="checkrow"]')
@@ -163,12 +172,12 @@ export default class ListingPage extends CommonElements {
   }
 
   removeMarkedItems(name: string = "Remove") {
-    cy.get(this.listHeaderSecondaryBtn).contains(name).click();
+    cy.get(this.#listHeaderSecondaryBtn).contains(name).click();
     return this;
   }
 
   checkRowColumnValue(itemName: string, column: number, value: string) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
       .find("td:nth-child(" + column + ")")
@@ -177,48 +186,56 @@ export default class ListingPage extends CommonElements {
   }
 
   clickDetailMenu(name: string) {
-    cy.get(this.itemsRows).contains(name).click();
+    cy.get(this.#itemsRows).contains(name).click();
+    return this;
+  }
+
+  clickMenuDelete() {
+    cy.get(this.#menuContent)
+      .find(this.#menuItemText)
+      .contains("Delete")
+      .click({ force: true });
     return this;
   }
 
   clickItemCheckbox(itemName: string) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(this.itemCheckbox)
+      .find(this.#itemCheckbox)
       .click();
     return this;
   }
 
   clickTableHeaderItemCheckboxAllRows() {
-    cy.get(this.tableHeaderCheckboxItemAllRows).click();
+    cy.get(this.#tableHeaderCheckboxItemAllRows).click();
     return this;
   }
 
   clickRowSelectButton(itemName: string) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(this.itemRowSelect)
+      .find(this.#itemRowSelect)
       .click();
     return this;
   }
 
   clickPrimaryButton() {
-    cy.get(this.listHeaderPrimaryBtn).click();
+    cy.get(this.#listHeaderPrimaryBtn).click();
 
     return this;
   }
 
   clickRowSelectItem(rowItemName: string, selectItemName: string) {
     this.clickRowSelectButton(rowItemName);
-    cy.get(this.itemRowSelectItem).contains(selectItemName).click();
+    cy.get(this.#itemRowSelectItem).contains(selectItemName).click();
 
     return this;
   }
 
   itemExist(itemName: string, exist = true) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .should((!exist ? "not." : "") + "exist");
 
@@ -226,20 +243,20 @@ export default class ListingPage extends CommonElements {
   }
 
   goToItemDetails(itemName: string) {
-    cy.get(this.itemsRows).contains(itemName).click();
+    cy.get(this.#itemsRows).contains(itemName).click({ force: true });
 
     return this;
   }
 
   checkEmptyList() {
-    cy.get(this.emptyListImg).should("be.visible");
+    cy.get(this.#emptyListImg).should("be.visible");
 
     return this;
   }
 
   deleteItem(itemName: string) {
     this.clickRowDetails(itemName);
-    this.clickDetailMenu("Delete");
+    this.clickMenuDelete();
 
     return this;
   }
@@ -253,7 +270,7 @@ export default class ListingPage extends CommonElements {
 
   deleteItemFromSearchBar(itemName: string) {
     this.markItemRow(itemName);
-    cy.findByTestId(this.deleteUserButton).click();
+    cy.findByTestId(this.#deleteUserButton).click();
 
     return this;
   }
@@ -261,6 +278,20 @@ export default class ListingPage extends CommonElements {
   exportItem(itemName: string) {
     this.clickRowDetails(itemName);
     this.clickDetailMenu("Export");
+
+    return this;
+  }
+
+  checkEmptySearch() {
+    cy.get(this.tableRowItem).its("length").as("initialCount");
+    this.searchItem("", false);
+    cy.get(this.tableRowItem).its("length").as("finalCount");
+
+    cy.get("@initialCount").then((initial) => {
+      cy.get("@finalCount").then((final) => {
+        expect(initial).to.eq(final);
+      });
+    });
 
     return this;
   }
@@ -278,7 +309,7 @@ export default class ListingPage extends CommonElements {
   }
 
   itemContainValue(itemName: string, colIndex: number, value: string) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
       .find("td")
@@ -289,15 +320,15 @@ export default class ListingPage extends CommonElements {
   }
 
   selectFilter(filter: Filter) {
-    cy.get(this.filterDropdownButton).first().click();
-    cy.get(this.dropdownItem).contains(filter).click();
+    cy.get(this.#filterDropdownButton).first().click();
+    cy.get(this.#dropdownItem).contains(filter).click();
 
     return this;
   }
 
   selectSecondaryFilter(itemName: string) {
-    cy.get(this.filterDropdownButton).last().click();
-    cy.get(this.itemRowSelectItem).contains(itemName).click();
+    cy.get(this.#filterDropdownButton).last().click();
+    cy.get(this.#itemRowSelectItem).contains(itemName).click();
 
     return this;
   }
@@ -315,32 +346,32 @@ export default class ListingPage extends CommonElements {
   }
 
   selectSecondaryFilterSession(sessionName: FilterSession) {
-    cy.get(this.filterSessionDropdownButton).click();
-    cy.get(this.itemRowSelectItem).contains(sessionName);
+    cy.get(this.#filterSessionDropdownButton).click();
+    cy.get(this.#itemRowSelectItem).contains(sessionName);
 
     return this;
   }
 
   changeTypeToOfSelectedItems(assignedType: FilterAssignedType) {
     cy.intercept("/admin/realms/master/client-scopes").as("load");
-    cy.get(this.toolbarChangeType).click();
-    cy.get(this.itemRowSelectItem).contains(assignedType).click();
+    cy.get(this.#toolbarChangeType).click();
+    cy.get(this.#itemRowSelectItem).contains(assignedType).click();
     cy.wait("@load");
     return this;
   }
 
   changeTypeToOfItem(assignedType: FilterAssignedType, itemName: string) {
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(this.changeTypeToButton)
+      .find(this.#changeTypeToButton)
       .first()
       .click();
 
-    cy.get(this.itemsRows)
+    cy.get(this.#itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(this.changeTypeToButton)
+      .find(this.#changeTypeToButton)
       .contains(assignedType)
       .click();
 
@@ -352,13 +383,13 @@ export default class ListingPage extends CommonElements {
     if (!disabled) {
       condition = "be.enabled";
     }
-    cy.get(this.changeTypeToButton).first().should(condition);
+    cy.get(this.#changeTypeToButton).first().should(condition);
 
     return this;
   }
 
   checkDropdownItemIsDisabled(itemName: string, disabled: boolean = true) {
-    cy.get(this.dropdownItem)
+    cy.get(this.#dropdownItem)
       .contains(itemName)
       .should("have.attr", "aria-disabled", String(disabled));
 
@@ -370,18 +401,22 @@ export default class ListingPage extends CommonElements {
     if (!exists) {
       condition = "not.be.visible";
     }
-    cy.get(this.table).should(condition);
+    cy.get(this.#table).should(condition);
 
     return this;
   }
 
-  private getResourceLink(name: string) {
-    return cy.findByTestId(this.tableNameColumnPrefix + name);
+  #getResourceLink(name: string) {
+    return cy.findByTestId(this.#tableNameColumnPrefix + name);
   }
 
   goToResourceDetails(name: string) {
-    this.getResourceLink(name).click();
+    this.#getResourceLink(name).click();
     return this;
+  }
+
+  assertNoResults() {
+    cy.findByTestId(this.#emptyState).should("exist");
   }
 
   assertDefaultResource() {
@@ -390,38 +425,42 @@ export default class ListingPage extends CommonElements {
   }
 
   assertResource(name: string) {
-    this.getResourceLink(name).should("exist");
+    this.#getResourceLink(name).should("exist");
     return this;
   }
 
-  private getRowGroup(index = 0) {
-    return cy.get(this.rowGroup).eq(index);
+  #getRowGroup(index = 0) {
+    return cy.get(this.#rowGroup).eq(index);
   }
 
   expandRow(index = 0) {
-    this.getRowGroup(index)
-      .find("[class='pf-c-button pf-m-plain'][id*='expandable']")
+    this.#getRowGroup(index)
+      .find("[class='pf-v5-c-button pf-m-plain'][id*='expandable']")
       .click();
     return this;
   }
 
   collapseRow(index = 0) {
-    this.getRowGroup(index)
-      .find("[class='pf-c-button pf-m-plain pf-m-expanded'][id*='expandable']")
+    this.#getRowGroup(index)
+      .find(
+        "[class='pf-v5-c-button pf-m-plain pf-m-expanded'][id*='expandable']",
+      )
       .click();
     return this;
   }
 
   assertExpandedRowContainText(index = 0, text: string) {
-    this.getRowGroup(index)
-      .find("tr[class='pf-c-table__expandable-row pf-m-expanded']")
+    this.#getRowGroup(index)
+      .find("tr[class='pf-v5-c-table__expandable-row pf-m-expanded']")
       .should("contain.text", text);
     return this;
   }
 
   assertRowIsExpanded(index = 0, isExpanded: boolean) {
-    this.getRowGroup(index)
-      .find("[class='pf-c-button pf-m-plain pf-m-expanded'][id*='expandable']")
+    this.#getRowGroup(index)
+      .find(
+        "[class='pf-v5-c-button pf-m-plain pf-m-expanded'][id*='expandable']",
+      )
       .should((!isExpanded ? "not." : "") + "exist");
     return this;
   }

@@ -127,7 +127,7 @@ public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
                             : valueEquals(value, claimValue);
 
                     if (claimValuesMatch) {
-                        context.getAuthenticationSession().setUserSessionNote(claim.getKey(), claimValue);
+                        context.setSessionNote(claim.getKey(), claimValue);
                     }
                 }
             }

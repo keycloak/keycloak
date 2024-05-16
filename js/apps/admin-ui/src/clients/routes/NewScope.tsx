@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type NewScopeParams = { realm: string; id: string };
@@ -12,10 +12,11 @@ export const NewScopeRoute: AppRouteObject = {
   element: <ScopeDetails />,
   breadcrumb: (t) => t("createAuthorizationScope"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "manage-authorization"),
   },
 };
 
 export const toNewScope = (params: NewScopeParams): Partial<Path> => ({
-  pathname: generatePath(NewScopeRoute.path, params),
+  pathname: generateEncodedPath(NewScopeRoute.path, params),
 });

@@ -17,6 +17,7 @@
  */
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.events.EventBuilder;
 import org.keycloak.provider.Provider;
 
 import jakarta.ws.rs.core.Response;
@@ -34,5 +35,5 @@ public interface TokenIntrospectionProvider extends Provider {
      * @param token the token to introspect.
      * @return the response with the information about the token
      */
-    Response introspect(String token);
+    Response introspect(String token, EventBuilder event);
 }

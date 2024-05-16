@@ -24,22 +24,27 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ForbiddenException;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.storage.StorageId;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import jakarta.ws.rs.ForbiddenException;
 
 import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
@@ -56,12 +61,20 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     protected final RealmModel realm;
     protected final AuthorizationProvider authz;
     protected final MgmtPermissions root;
+    protected final ResourceStore resourceStore;
+
+    private static final String RESOURCE_NAME_PREFIX = "client.resource.";
 
     public ClientPermissions(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
         this.session = session;
         this.realm = realm;
         this.authz = authz;
         this.root = root;
+        if (authz != null) {
+            resourceStore = authz.getStoreFactory().getResourceStore();
+        } else {
+            resourceStore = null;
+        }
     }
 
     private String getResourceName(ClientModel client) {
@@ -166,7 +179,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     private void deletePolicy(String name, ResourceServer server) {
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
-            authz.getStoreFactory().getPolicyStore().delete(server.getRealm(), policy.getId());
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
 
     }
@@ -182,7 +195,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         deletePolicy(getConfigurePermissionName(client), server);
         deletePolicy(getExchangeToPermissionName(client), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(client));;
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(server.getRealm(), resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
     @Override
@@ -644,5 +657,41 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         return map;
     }
 
+    @Override
+    public Set<String> getClientsWithPermission(String scope) {
+        if (!root.isAdminSameRealm()) {
+            return Collections.emptySet();
+        }
+
+        ResourceServer server = root.realmResourceServer();
+
+        if (server == null) {
+            return Collections.emptySet();
+        }
+
+        Set<String> granted = new HashSet<>();
+
+        resourceStore.findByType(server, "Client", resource -> {
+            if (hasPermission(resource, scope)) {
+                granted.add(resource.getName().substring(RESOURCE_NAME_PREFIX.length()));
+            }
+        });
+
+        return granted;
+    }
+
+    private boolean hasPermission(Resource resource, String scope) {
+        ResourceServer server = root.realmResourceServer();
+        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        for (Permission permission : permissions) {
+            for (String s : permission.getScopes()) {
+                if (scope.equals(s)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
 }

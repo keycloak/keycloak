@@ -17,19 +17,11 @@
 
 package org.keycloak.keys.infinispan;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -40,16 +32,24 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InfinispanKeyStorageProviderTest {
 
-    private Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
 
     Cache<String, PublicKeysEntry> keys = getKeysCache();
     Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
     int minTimeBetweenRequests = 10;
+    int maxCacheTime = 600;
 
     @Before
     public void before() {
@@ -127,7 +127,7 @@ public class InfinispanKeyStorageProviderTest {
 
         @Override
         public void run() {
-            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, minTimeBetweenRequests);
+            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, minTimeBetweenRequests, maxCacheTime);
             provider.getPublicKey(modelKey, "kid1", null, new SampleLoader(modelKey));
         }
 
@@ -156,14 +156,13 @@ public class InfinispanKeyStorageProviderTest {
     protected Cache<String, PublicKeysEntry> getKeysCache() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
         gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
-        final DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
+        DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.memory()
-                .evictionStrategy(EvictionStrategy.REMOVE)
-                .evictionType(EvictionType.COUNT)
-                .size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
-        cb.jmxStatistics().enabled(true);
+                .whenFull(EvictionStrategy.REMOVE)
+                .maxCount(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
+        cb.statistics().enabled(true);
         Configuration cfg = cb.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, cfg);
 

@@ -5,8 +5,12 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - quarkus-next
   pull_request:
   workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
 
 concurrency:
   # Only cancel jobs for PR updates

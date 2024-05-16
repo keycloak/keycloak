@@ -1,7 +1,8 @@
-import { AlertVariant, Select } from "@patternfly/react-core";
+import { AlertVariant } from "@patternfly/react-core";
+import { Select } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { useAlerts } from "../components/alert/Alerts";
 import {
@@ -23,6 +24,8 @@ export const ChangeTypeDropdown = ({
   selectedRows,
   refresh,
 }: ChangeTypeDropdownProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -36,19 +39,20 @@ export const ChangeTypeDropdown = ({
       selections={[]}
       isDisabled={selectedRows.length === 0}
       placeholderText={t("changeTypeTo")}
-      onToggle={setOpen}
+      onToggle={(_event, val) => setOpen(val)}
       onSelect={async (_, value) => {
         try {
           await Promise.all(
             selectedRows.map((row) => {
               return clientId
                 ? changeClientScope(
+                    adminClient,
                     clientId,
                     row,
                     row.type,
                     value as ClientScope,
                   )
-                : changeScope(row, value as ClientScope);
+                : changeScope(adminClient, row, value as ClientScope);
             }),
           );
           setOpen(false);

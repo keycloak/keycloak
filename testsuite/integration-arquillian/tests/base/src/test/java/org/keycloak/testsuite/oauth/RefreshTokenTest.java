@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.EventType;
 import org.keycloak.events.Details;
@@ -41,6 +42,7 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -48,18 +50,21 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
+import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -105,8 +110,9 @@ import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_MAX
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -199,7 +205,10 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        assertEquals("123456", token.getNonce());
+        assertNull(token.getNonce());
+
+        IDToken idToken = oauth.verifyToken(tokenResponse.getIdToken());
+        assertEquals("123456", idToken.getNonce());
 
         String refreshTokenString = tokenResponse.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
@@ -208,7 +217,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertNotNull(refreshTokenString);
 
-        assertEquals("123456", refreshToken.getNonce());
+        assertNull(refreshToken.getNonce());
         assertNull("RealmAccess should be null for RefreshTokens", refreshToken.getRealmAccess());
         assertTrue("ResourceAccess should be null for RefreshTokens", refreshToken.getResourceAccess().isEmpty());
     }
@@ -227,24 +236,26 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        assertEquals("123456", token.getNonce());
+        assertNull(token.getNonce());
 
-        String refreshTokenString = tokenResponse.getRefreshToken();
-        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
+        IDToken idToken = oauth.verifyToken(tokenResponse.getIdToken(), IDToken.class);
+        assertEquals("123456", idToken.getNonce());
+
+        assertNotNull(tokenResponse.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
 
         EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
 
-        assertNotNull(refreshTokenString);
-
         assertEquals("Bearer", tokenResponse.getTokenType());
 
-        assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
-        int actual = refreshToken.getExpiration() - getCurrentTime();
-        assertThat(actual, allOf(greaterThanOrEqualTo(1799 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + ALLOWED_CLOCK_SKEW)));
+        assertThat(token.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(200L), lessThanOrEqualTo(350L)));
+        long actual = refreshToken.getExp() - getCurrentTime();
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799L - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + ALLOWED_CLOCK_SKEW)));
 
         assertEquals(sessionId, refreshToken.getSessionState());
+        assertNull(refreshToken.getNonce());
 
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
@@ -254,10 +265,10 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
         assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + ALLOWED_CLOCK_SKEW)));
+        assertThat(refreshedToken.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(250L - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300L + ALLOWED_CLOCK_SKEW)));
 
-        assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
-        assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
+        assertThat(refreshedToken.getExp() - token.getExp(), allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(10L)));
+        assertThat(refreshedRefreshToken.getExp() - refreshToken.getExp(), allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(10L)));
 
         // "test-app" should not be an audience in the refresh token
         assertEquals("test-app", refreshedRefreshToken.getIssuedFor());
@@ -281,7 +292,50 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
-        assertEquals("123456", refreshedToken.getNonce());
+        assertNull(refreshedToken.getNonce());
+
+        idToken =  oauth.verifyToken(response.getIdToken(), IDToken.class);
+        assertNull(idToken.getNonce()); // null after refresh as recommended by spec
+
+        assertNotNull(response.getRefreshToken());
+        refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertEquals(sessionId, refreshToken.getSessionState());
+        assertNull(refreshToken.getNonce());
+    }
+
+    @Test
+    public void refreshTokenWithDifferentIssuer() throws Exception {
+        final String proxyHost = "proxy.kc.127.0.0.1.nip.io";
+        final int httpPort = 8666;
+        final int httpsPort = 8667;
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        SimpleUndertowLoadBalancer proxy = new SimpleUndertowLoadBalancer(proxyHost, httpPort, httpsPort, "node1=" + getHttpAuthServerContextRoot() + "/auth");
+        proxy.start();
+
+        oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
+
+        response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+        Assert.assertEquals(400, response.getStatusCode());
+        events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+
+        proxy.stop();
+
+        oauth.baseUrl(AUTH_SERVER_ROOT);
     }
 
     @Test
@@ -325,9 +379,17 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .build());
 
             realmResource.users()
-                    .create(UserBuilder.create().username("alice").password("alice").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("alice")
+                            .firstName("alice")
+                            .lastName("alice")
+                            .email("alice@keycloak.org")
+                            .password("alice").addRoles("offline_access").build());
             realmResource.users()
-                    .create(UserBuilder.create().username("bob").password("bob").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("bob")
+                            .firstName("bob")
+                            .lastName("bob")
+                            .email("bob@keycloak.org")
+                            .password("bob").addRoles("offline_access").build());
 
             oauth.realm(realmName);
             oauth.clientId("public-client");
@@ -391,7 +453,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             oauth.openLoginForm();
 
-            Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
+            Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
 
             oauth.fillLoginForm("alice", "alice");
 
@@ -458,6 +520,111 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         events.expectRefresh(refreshToken1.getId(), sessionId).assertEvent();
     }
 
+
+    @Test
+    public void refreshTokenReuseTokenWithoutRefreshTokensRevokedWithLessScopes() throws Exception {
+        //add phone,address as optional scope and request them
+        ClientScopeRepresentation phoneScope = adminClient.realm("test").clientScopes().findAll().stream().filter((ClientScopeRepresentation clientScope) ->"phone".equals(clientScope.getName())).findFirst().get();
+        ClientScopeRepresentation addressScope = adminClient.realm("test").clientScopes().findAll().stream().filter((ClientScopeRepresentation clientScope) ->"address".equals(clientScope.getName())).findFirst().get();
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(phoneScope.getId(),false);
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(addressScope.getId(),false);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            String optionalScope = "phone address";
+            oauth.scope(optionalScope);
+            OAuthClient.AccessTokenResponse response1 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile address phone",  refreshToken1.getScope());
+
+            setTimeOffset(2);
+
+            String scope = "email phone";
+            oauth.scope(scope);
+            OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
+            assertEquals(200, response2.getStatusCode());
+            AbstractOIDCScopeTest.assertScopes("openid email phone profile",  response2.getScope());
+            RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
+            assertNotNull(refreshToken2);
+            AbstractOIDCScopeTest.assertScopes("openid acr roles phone address email profile basic web-origins",  refreshToken2.getScope());
+
+        } finally {
+            setTimeOffset(0);
+            oauth.scope(null);
+        }
+    }
+
+    @Test
+    public void refreshTokenReuseTokenScopeParameterNotInRefreshToken() throws Exception {
+        try {
+            //scope parameter consists scope that is not part of scope refresh token => error thrown
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile",  refreshToken1.getScope());
+
+            setTimeOffset(2);
+
+            String scope = "openid email ssh_public_key";
+            oauth.scope(scope);
+            OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
+            assertEquals(400, response2.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_SCOPE, response2.getError());
+
+        } finally {
+            setTimeOffset(0);
+            oauth.scope(null);
+        }
+    }
+
+    @Test
+    public void refreshWithOptionalClientScopeWithIncludeInTokenScopeDisabled() throws Exception {
+        //set roles client scope as optional
+        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(adminClient.realm("test"), OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).removeClientScope(rolesScope.getId(),true);
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(rolesScope.getId(),false);
+
+        try {
+            oauth.scope("roles");
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+            AbstractOIDCScopeTest.assertScopes("openid email profile",  accessToken.getScope());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile",  refreshToken.getScope());
+
+            Assert.assertNotNull(accessToken.getRealmAccess());
+            Assert.assertNotNull(accessToken.getResourceAccess());
+
+            oauth.scope(null);
+
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+            AbstractOIDCScopeTest.assertScopes("openid email profile",  accessToken.getScope());
+            AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile",  refreshToken.getScope());
+
+            Assert.assertNotNull(accessToken.getRealmAccess());
+            Assert.assertNotNull(accessToken.getResourceAccess());
+
+        } finally {
+            ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).removeClientScope(rolesScope.getId(),false);
+            ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(rolesScope.getId(),true);
+        }
+    }
+
     @Test
     public void refreshTokenReuseTokenWithRefreshTokensRevoked() throws Exception {
         try {
@@ -489,12 +656,12 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, response3.getStatusCode());
 
-            events.expectRefresh(refreshToken1.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken1.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // Client session invalidated hence old refresh token not valid anymore
             OAuthClient.AccessTokenResponse response4 = oauth.doRefreshTokenRequest(response2.getRefreshToken(), "password");
             assertEquals(400, response4.getStatusCode());
-            events.expectRefresh(refreshToken2.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken2.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
         }
@@ -532,17 +699,18 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Second refresh (allowed).
             OAuthClient.AccessTokenResponse responseFirstReuse = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
             RefreshToken newTokenFirstReuse = oauth.parseRefreshToken(responseFirstReuse.getRefreshToken());
+            String userId = newTokenFirstReuse.getSubject();
 
             assertEquals(200, responseFirstReuse.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).assertEvent();
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).detail(Details.REFRESH_TOKEN_SUB, userId).assertEvent();
 
             // Token reused twice, became invalid.
             OAuthClient.AccessTokenResponse responseSecondReuse = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
 
             assertEquals(400, responseSecondReuse.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).detail(Details.REFRESH_TOKEN_SUB, userId).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // Refresh token from first use became invalid.
@@ -551,7 +719,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseUseOfInvalidatedRefreshToken.getStatusCode());
 
-            events.expectRefresh(newTokenFirstUse.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(newTokenFirstUse.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // Refresh token from reuse is not valid. Client session was invalidated
@@ -560,7 +728,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseUseOfValidRefreshToken.getStatusCode());
 
-            events.expectRefresh(newTokenFirstReuse.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(newTokenFirstReuse.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test"))
@@ -601,7 +769,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseReuseExceeded.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test"))
                     .refreshTokenMaxReuse(0)
@@ -636,7 +804,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, responseReuseExceeded.getStatusCode());
 
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
@@ -644,7 +812,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Config changed, token cannot be used again at this point due the client session invalidated
             OAuthClient.AccessTokenResponse responseReuseExceeded2 = oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
             assertEquals(400, responseReuseExceeded2.getStatusCode());
-            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             RealmManager.realm(adminClient.realm("test"))
@@ -692,7 +860,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertEquals(400, response3.getStatusCode());
 
-            events.expectRefresh(refreshToken1.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken1.getId(), sessionId).removeDetail(Details.TOKEN_ID).user((String) null).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             // No client sessions available after revoke
             Assert.assertFalse(hasClientSessionForTestApp());
@@ -739,7 +907,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Try to refresh with one of the old refresh tokens before SSO re-authentication - should fail
             OAuthClient.AccessTokenResponse response5 = oauth.doRefreshTokenRequest(response2.getRefreshToken(), "password");
             assertEquals(400, response5.getStatusCode());
-            events.expectRefresh(refreshToken2.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+            events.expectRefresh(refreshToken2.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             resetTimeOffset();
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
@@ -1435,7 +1603,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusCode());
             assertEquals("invalid_grant", response.getError());
 
-            events.expectRefresh(refreshToken.getId(), sessionId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+            events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
         } finally {
             UserManager.realm(adminClient.realm("test")).username("test-user@localhost").enabled(true);
         }
@@ -1465,7 +1633,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), sessionId).user(userId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+        events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
     }
 
     @Test
@@ -1626,42 +1794,42 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void tokenRefreshRequest_ClientRS384_RealmRS384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.RS384, Algorithm.RS384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS384, Algorithm.RS384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientRS512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.RS512, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS384, Algorithm.ES384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS512_RealmPS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS512, Algorithm.PS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
     }
 
     protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {

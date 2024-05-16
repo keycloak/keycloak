@@ -1,33 +1,43 @@
-import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs//userProfileMetadata";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type {
+  UserProfileConfig,
+  UserProfileMetadata,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   AlertVariant,
   ButtonVariant,
-  DropdownItem,
+  Label,
   PageSection,
   Tab,
   TabTitleText,
+  Tooltip,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
+import { InfoCircleIcon } from "@patternfly/react-icons";
+import { TFunction } from "i18next";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import {
+  isUserProfileError,
+  setUserProfileServerError,
+} from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
+import { getUnmanagedAttributes } from "../components/users/resource";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useFetch } from "../utils/useFetch";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
@@ -35,38 +45,50 @@ import { UserCredentials } from "./UserCredentials";
 import { BruteForced, UserForm } from "./UserForm";
 import { UserGroups } from "./UserGroups";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
-import {
-  isUserProfileError,
-  userProfileErrorToString,
-} from "./UserProfileFields";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import {
+  UIUserRepresentation,
   UserFormFields,
+  filterManagedAttributes,
   toUserFormFields,
   toUserRepresentation,
 } from "./form-state";
 import { UserParams, UserTab, toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
+import { isLightweightUser } from "./utils";
 
 import "./user-section.css";
 
 export default function EditUser() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { hasAccess } = useAccess();
   const { id } = useParams<UserParams>();
   const { realm: realmName } = useRealm();
-  const isFeatureEnabled = useIsFeatureEnabled();
-  const form = useForm<UserFormFields>({ mode: "onChange" });
+  // Validation of form fields is performed on server, thus we need to clear all errors before submit
+  const clearAllErrorsBeforeSubmit = async (values: UserFormFields) => ({
+    values,
+    errors: {},
+  });
+  const form = useForm<UserFormFields>({
+    mode: "onChange",
+    resolver: clearAllErrorsBeforeSubmit,
+  });
   const [realm, setRealm] = useState<RealmRepresentation>();
-  const [user, setUser] = useState<UserRepresentation>();
+  const [user, setUser] = useState<UIUserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
+  const [isUnmanagedAttributesEnabled, setUnmanagedAttributesEnabled] =
+    useState<boolean>();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = () => setRefreshCount((count) => count + 1);
+  const lightweightUser = isLightweightUser(user?.id);
+  const [upConfig, setUpConfig] = useState<UserProfileConfig>();
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -90,31 +112,41 @@ export default function EditUser() {
     async () =>
       Promise.all([
         adminClient.realms.findOne({ realm: realmName }),
-        adminClient.users.findOne({ id: id!, userProfileMetadata: true }),
+        adminClient.users.findOne({
+          id: id!,
+          userProfileMetadata: true,
+        }) as UIUserRepresentation | undefined,
         adminClient.attackDetection.findOne({ id: id! }),
+        getUnmanagedAttributes(adminClient, id!),
+        adminClient.users.getProfile({ realm: realmName }),
       ]),
-    ([realm, user, attackDetection]) => {
-      if (!user || !realm || !attackDetection) {
+    ([realm, userData, attackDetection, unmanagedAttributes, upConfig]) => {
+      if (!userData || !realm || !attackDetection) {
         throw new Error(t("notFound"));
+      }
+
+      const { userProfileMetadata, ...user } = userData;
+      setUserProfileMetadata(userProfileMetadata);
+      user.unmanagedAttributes = unmanagedAttributes;
+      user.attributes = filterManagedAttributes(
+        user.attributes,
+        unmanagedAttributes,
+      );
+
+      if (upConfig.unmanagedAttributePolicy !== undefined) {
+        setUnmanagedAttributesEnabled(true);
       }
 
       setRealm(realm);
       setUser(user);
+      setUpConfig(upConfig);
 
       const isBruteForceProtected = realm.bruteForceProtected;
       const isLocked = isBruteForceProtected && attackDetection.disabled;
 
       setBruteForced({ isBruteForceProtected, isLocked });
 
-      const isUserProfileEnabled =
-        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-        realm.attributes?.userProfileEnabled === "true";
-
-      setUserProfileMetadata(
-        isUserProfileEnabled ? user.userProfileMetadata : undefined,
-      );
-
-      form.reset(toUserFormFields(user, isUserProfileEnabled));
+      form.reset(toUserFormFields(user));
     },
     [refreshCount],
   );
@@ -129,7 +161,46 @@ export default function EditUser() {
       refresh();
     } catch (error) {
       if (isUserProfileError(error)) {
-        addError(userProfileErrorToString(error), error);
+        if (
+          isUnmanagedAttributesEnabled &&
+          Array.isArray(data.unmanagedAttributes)
+        ) {
+          const unmanagedAttributeErrors: object[] = new Array(
+            data.unmanagedAttributes.length,
+          );
+          let someUnmanagedAttributeError = false;
+          setUserProfileServerError<UserFormFields>(
+            error,
+            (field, params) => {
+              if (field.startsWith("attributes.")) {
+                const attributeName = field.substring("attributes.".length);
+                (data.unmanagedAttributes as KeyValueType[]).forEach(
+                  (attr, index) => {
+                    if (attr.key === attributeName) {
+                      unmanagedAttributeErrors[index] = params;
+                      someUnmanagedAttributeError = true;
+                    }
+                  },
+                );
+              } else {
+                form.setError(field, params);
+              }
+            },
+            ((key, param) => t(key as string, param as any)) as TFunction,
+          );
+          if (someUnmanagedAttributeError) {
+            form.setError(
+              "unmanagedAttributes",
+              unmanagedAttributeErrors as any,
+            );
+          }
+        } else {
+          setUserProfileServerError<UserFormFields>(error, form.setError, ((
+            key,
+            param,
+          ) => t(key as string, param as any)) as TFunction);
+        }
+        addError("userNotSaved", "");
       } else {
         addError("userCreateError", error);
       }
@@ -143,7 +214,11 @@ export default function EditUser() {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.users.del({ id: user!.id! });
+        if (lightweightUser) {
+          await adminClient.users.logout({ id: user!.id! });
+        } else {
+          await adminClient.users.del({ id: user!.id! });
+        }
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
         navigate(toUsers({ realm: realmName }));
       } catch (error) {
@@ -185,6 +260,24 @@ export default function EditUser() {
         titleKey={user.username!}
         className="kc-username-view-header"
         divider={false}
+        badges={
+          lightweightUser
+            ? [
+                {
+                  text: (
+                    <Tooltip content={t("transientUserTooltip")}>
+                      <Label
+                        data-testid="user-details-label-transient-user"
+                        icon={<InfoCircleIcon />}
+                      >
+                        {t("transientUser")}
+                      </Label>
+                    </Tooltip>
+                  ),
+                },
+              ]
+            : []
+        }
         dropdownItems={[
           <DropdownItem
             key="impersonate"
@@ -203,14 +296,14 @@ export default function EditUser() {
         ]}
         onToggle={(value) =>
           save({
-            ...toUserFormFields(user, !!userProfileMetadata),
+            ...toUserFormFields(user),
             enabled: value,
           })
         }
         isEnabled={user.enabled}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <UserProfileProvider>
           <FormProvider {...form}>
             <RoutableTabs
@@ -234,13 +327,13 @@ export default function EditUser() {
                   />
                 </PageSection>
               </Tab>
-              {!userProfileMetadata && (
+              {isUnmanagedAttributesEnabled && (
                 <Tab
                   data-testid="attributes"
                   title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   {...attributesTab}
                 >
-                  <UserAttributes user={user} save={save} />
+                  <UserAttributes user={user} save={save} upConfig={upConfig} />
                 </Tab>
               )}
               <Tab
@@ -249,11 +342,11 @@ export default function EditUser() {
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
                 {...credentialsTab}
               >
-                <UserCredentials user={user} />
+                <UserCredentials user={user} setUser={setUser} />
               </Tab>
               <Tab
                 data-testid="role-mapping-tab"
-                isHidden={!user.access?.mapRoles}
+                isHidden={!user.access?.view}
                 title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
                 {...roleMappingTab}
               >
@@ -275,17 +368,15 @@ export default function EditUser() {
               >
                 <UserConsents />
               </Tab>
-              {hasAccess("view-identity-providers") && (
-                <Tab
-                  data-testid="identity-provider-links-tab"
-                  title={
-                    <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
-                  }
-                  {...identityProviderLinksTab}
-                >
-                  <UserIdentityProviderLinks userId={user.id!} />
-                </Tab>
-              )}
+              <Tab
+                data-testid="identity-provider-links-tab"
+                title={
+                  <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
+                }
+                {...identityProviderLinksTab}
+              >
+                <UserIdentityProviderLinks userId={user.id!} />
+              </Tab>
               <Tab
                 data-testid="user-sessions-tab"
                 title={<TabTitleText>{t("sessions")}</TabTitleText>}

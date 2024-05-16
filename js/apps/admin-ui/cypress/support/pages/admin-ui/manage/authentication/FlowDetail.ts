@@ -1,8 +1,10 @@
+import Select from "../../../../forms/Select";
+
 type RequirementType = "Required" | "Alternative" | "Disabled" | "Conditional";
 
 export default class FlowDetails {
   executionExists(name: string, exist = true) {
-    this.getExecution(name).should((!exist ? "not." : "") + "exist");
+    this.#getExecution(name).should((!exist ? "not." : "") + "exist");
     return this;
   }
 
@@ -11,7 +13,7 @@ export default class FlowDetails {
     return this;
   }
 
-  private getExecution(name: string) {
+  #getExecution(name: string) {
     return cy.findByTestId(name);
   }
 
@@ -34,7 +36,7 @@ export default class FlowDetails {
   }
 
   changeRequirement(execution: string, requirement: RequirementType) {
-    this.getExecution(execution)
+    this.#getExecution(execution)
       .parentsUntil(".keycloak__authentication__flow-row")
       .find(".keycloak__authentication__requirement-dropdown")
       .click()
@@ -48,7 +50,7 @@ export default class FlowDetails {
     return this;
   }
 
-  private clickEditDropdownForFlow(subFlowName: string, option: string) {
+  #clickEditDropdownForFlow(subFlowName: string, option: string) {
     cy.findByTestId(`${subFlowName}-edit-dropdown`)
       .click()
       .contains(option)
@@ -56,9 +58,9 @@ export default class FlowDetails {
   }
 
   addExecution(subFlowName: string, executionTestId: string) {
-    this.clickEditDropdownForFlow(subFlowName, "Add step");
+    this.#clickEditDropdownForFlow(subFlowName, "Add step");
 
-    cy.get(".pf-c-pagination").should("exist");
+    cy.get(".pf-v5-c-pagination").should("exist");
     cy.findByTestId(executionTestId).click();
     cy.findByTestId("modal-add").click();
 
@@ -66,7 +68,7 @@ export default class FlowDetails {
   }
 
   addCondition(subFlowName: string, executionTestId: string) {
-    this.clickEditDropdownForFlow(subFlowName, "Add condition");
+    this.#clickEditDropdownForFlow(subFlowName, "Add condition");
 
     cy.findByTestId(executionTestId).click();
     cy.findByTestId("modal-add").click();
@@ -75,8 +77,8 @@ export default class FlowDetails {
   }
 
   addSubFlow(subFlowName: string, name: string) {
-    this.clickEditDropdownForFlow(subFlowName, "Add sub-flow");
-    this.fillSubFlowModal(subFlowName, name);
+    this.#clickEditDropdownForFlow(subFlowName, "Add sub-flow");
+    this.#fillSubFlowModal(subFlowName, name);
 
     return this;
   }
@@ -87,8 +89,8 @@ export default class FlowDetails {
     return this;
   }
 
-  private fillSubFlowModal(subFlowName: string, name: string) {
-    cy.get(".pf-c-modal-box__title-text").contains(
+  #fillSubFlowModal(subFlowName: string, name: string) {
+    cy.get(".pf-v5-c-modal-box__title-text").contains(
       "Add step to " + subFlowName,
     );
     cy.findByTestId("name").type(name);
@@ -100,16 +102,16 @@ export default class FlowDetails {
     description: string,
     type: "Basic flow" | "Client flow",
   ) {
-    cy.findByTestId("name").type(name);
+    cy.findByTestId("alias").type(name);
     cy.findByTestId("description").type(description);
-    cy.get("#flowType").click().parent().contains(type).click();
+    Select.selectItem(cy.get("#providerId"), type);
     cy.findByTestId("create").click();
     return this;
   }
 
   addSubFlowToEmpty(subFlowName: string, name: string) {
     cy.findByTestId("addSubFlow").click();
-    this.fillSubFlowModal(subFlowName, name);
+    this.#fillSubFlowModal(subFlowName, name);
 
     return this;
   }

@@ -38,7 +38,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, OIDCAccessTokenResponseMapper, UserInfoTokenMapper {
+public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, OIDCAccessTokenResponseMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -90,7 +90,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
 
     @Override
     protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession,
-            KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
+                            KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
 
         String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
         String noteValue = userSession.getNote(noteName);
@@ -101,14 +101,14 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userSessionNote,
                                                         String tokenClaimName, String jsonType,
-                                                        boolean accessToken, boolean idToken) {
-        return createClaimMapper(name, userSessionNote, tokenClaimName, jsonType, accessToken, idToken, false);
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+        return createClaimMapper(name, userSessionNote, tokenClaimName, jsonType, accessToken, idToken, false, introspectionEndpoint);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userSessionNote,
                                                         String tokenClaimName, String jsonType,
-                                                        boolean accessToken, boolean idToken, boolean userInfo) {
+                                                        boolean accessToken, boolean idToken, boolean userInfo, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -120,6 +120,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         if (userInfo) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;
     }
@@ -135,7 +136,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
                 userSessionNoteDescriptor.toString(),
                 userSessionNoteDescriptor.getTokenClaim(),
                 "String",
-                true, true
+                true, true, true
         );
     }
 

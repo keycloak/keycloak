@@ -21,7 +21,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -42,7 +42,7 @@ import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 
@@ -199,7 +199,7 @@ public class OIDCLoginProtocolService {
     @Path("certs")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getVersionPreflight() {
-        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
+        return Cors.builder().allowedMethods("GET").preflight().auth().add(Response.ok());
     }
 
     @GET
@@ -220,6 +220,8 @@ public class OIDCLoginProtocolService {
                         return b.rsa(k.getPublicKey(), certificates, k.getUse());
                     } else if (k.getType().equals(KeyType.EC)) {
                         return b.ec(k.getPublicKey(), k.getUse());
+                    } else if (k.getType().equals(KeyType.OKP)) {
+                        return b.okp(k.getPublicKey(), k.getUse());
                     }
                     return null;
                 })
@@ -230,7 +232,7 @@ public class OIDCLoginProtocolService {
         keySet.setKeys(jwks);
 
         Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
-        return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+        return Cors.builder().allowedOrigins("*").auth().add(responseBuilder);
     }
 
     @Path("userinfo")
@@ -274,7 +276,7 @@ public class OIDCLoginProtocolService {
     private void checkSsl() {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
                 && realm.getSslRequired().isRequired(clientConnection)) {
-            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+            Cors cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required",
                     Response.Status.FORBIDDEN);
         }

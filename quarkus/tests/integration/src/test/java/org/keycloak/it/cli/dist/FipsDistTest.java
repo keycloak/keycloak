@@ -39,7 +39,7 @@ public class FipsDistTest {
             CLIResult cliResult = dist.run("start");
             cliResult.assertStarted();
             // Not shown as FIPS is not a preview anymore
-            cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips", 0);
+            cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips:v1", 0);
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(BCFIPS version 1.000203, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
         });
@@ -77,6 +77,7 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
+            dist.assertStopped();
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }
@@ -106,10 +107,25 @@ public class FipsDistTest {
     }
 
     @Test
+    void testUnencryptedPkcs12TrustStoreInStrictMode(KeycloakDistribution dist) {
+        runOnFipsEnabledDistribution(dist, () -> {
+            String truststoreName = "keycloak-truststore.p12";
+            dist.copyOrReplaceFileFromClasspath("/" + truststoreName, Path.of("conf", truststoreName));
+
+            RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+            Path truststorePath = rawDist.getDistPath().resolve("conf").resolve(truststoreName).toAbsolutePath();
+
+            CLIResult cliResult = dist.run("--verbose", "start", "--fips-mode=strict", "--truststore-paths=" + truststorePath);
+            cliResult.assertStarted();
+        });
+    }
+
+    @Test
     void testUnsupportedHttpsPkcs12KeyStoreInStrictMode(KeycloakDistribution dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
+            dist.assertStopped();
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }

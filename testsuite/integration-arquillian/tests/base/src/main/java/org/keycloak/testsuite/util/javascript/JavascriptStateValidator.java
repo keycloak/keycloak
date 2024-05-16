@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util.javascript;
 
-import org.keycloak.models.KeycloakSession;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 

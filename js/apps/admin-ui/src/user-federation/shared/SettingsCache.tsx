@@ -1,16 +1,15 @@
+import { FormGroup, NumberInput } from "@patternfly/react-core";
 import {
-  FormGroup,
-  NumberInput,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
 
@@ -102,6 +101,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
               selections={field.value}
               variant={SelectVariant.single}
               data-testid="kerberos-cache-policy"
+              aria-label={t("selectCachePolicy")}
             >
               <SelectOption key={0} value={["DEFAULT"]} isPlaceholder />
               <SelectOption key={1} value={["EVICT_DAILY"]} />
@@ -141,6 +141,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
+                aria-label={t("selectEvictionDay")}
               >
                 <SelectOption key={0} value="1" isPlaceholder>
                   {t("Sunday")}
@@ -197,6 +198,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                   }}
                   selections={field.value}
                   variant={SelectVariant.single}
+                  aria-label={t("selectEvictionHour")}
                 >
                   {hourOptions}
                 </Select>
@@ -229,6 +231,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                   }}
                   selections={field.value}
                   variant={SelectVariant.single}
+                  aria-label={t("selectEvictionMinute")}
                 >
                   {minuteOptions}
                 </Select>

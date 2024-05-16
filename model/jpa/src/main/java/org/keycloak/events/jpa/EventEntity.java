@@ -57,8 +57,12 @@ public class EventEntity {
     @Column(name="ERROR")
     private String error;
 
+    // This is the legacy field which is kept here to be able to read old events without the need to migrate them
     @Column(name="DETAILS_JSON", length = 2550)
     private String detailsJson;
+
+    @Column(name="DETAILS_JSON_LONG_VALUE")
+    private String detailsJsonLongValue;
 
     public String getId() {
         return id;
@@ -133,11 +137,11 @@ public class EventEntity {
     }
 
     public String getDetailsJson() {
-        return detailsJson;
+        return detailsJsonLongValue != null ? detailsJsonLongValue : detailsJson;
     }
 
     public void setDetailsJson(String detailsJson) {
-        this.detailsJson = detailsJson;
+        this.detailsJsonLongValue = detailsJson;
     }
 
 }

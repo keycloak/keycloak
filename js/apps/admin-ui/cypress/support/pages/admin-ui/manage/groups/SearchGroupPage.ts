@@ -2,9 +2,9 @@ import SidebarPage from "../../SidebarPage";
 import GroupPage from "./GroupPage";
 
 export class SearchGroupPage extends GroupPage {
-  private groupSearchField = "group-search";
-  private searchButton = "[data-testid='group-search'] > button";
-  private sidebarPage = new SidebarPage();
+  #groupSearchField = "group-search";
+  #searchButton = "[data-testid='group-search'] button[type='submit']";
+  #sidebarPage = new SidebarPage();
 
   public searchGroup(groupName: string) {
     this.typeSearchInput(groupName);
@@ -19,23 +19,26 @@ export class SearchGroupPage extends GroupPage {
   }
 
   public goToGroupChildGroupsFromTree(item: string) {
-    cy.get(".pf-c-tree-view__content").contains(item).click();
-    this.sidebarPage.waitForPageLoad();
+    cy.get(".pf-v5-c-tree-view__content").contains(item).click();
+    this.#sidebarPage.waitForPageLoad();
     return this;
   }
 
   public typeSearchInput(value: string) {
-    cy.findByTestId(this.groupSearchField).type(value);
+    cy.findByTestId(this.#groupSearchField).type(value);
     return this;
   }
 
   public clickSearchButton() {
-    cy.get(this.searchButton).click();
+    cy.get(this.#searchButton).click();
     return this;
   }
 
   public checkTerm(searchTerm: string) {
-    cy.get(".pf-c-chip-group").children().contains(searchTerm).should("exist");
+    cy.get(".pf-v5-c-chip-group")
+      .children()
+      .contains(searchTerm)
+      .should("exist");
     return this;
   }
 }

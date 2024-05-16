@@ -31,7 +31,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 
 /**
- * Interface that encapsulates current information about the current requred action
+ * Interface that encapsulates information about the current required action
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -49,6 +49,8 @@ public interface RequiredActionContext {
         CANCELLED,
         ERROR
     }
+
+    String getAction();
 
     /**
      * Get the action URL for the required action.

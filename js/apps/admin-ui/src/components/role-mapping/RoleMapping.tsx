@@ -12,7 +12,7 @@ import {
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../../admin-client";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
@@ -86,6 +86,8 @@ export const RoleMapping = ({
   isManager = true,
   save,
 }: RoleMappingProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -105,10 +107,10 @@ export const RoleMapping = ({
     let effectiveRoles: Row[] = [];
     let effectiveClientRoles: Row[] = [];
     if (!hide) {
-      effectiveRoles = await getEffectiveRoles(type, id);
+      effectiveRoles = await getEffectiveRoles(adminClient, type, id);
 
       effectiveClientRoles = (
-        await getEffectiveClientRoles({
+        await getEffectiveClientRoles(adminClient, {
           type,
           id,
         })
@@ -118,7 +120,7 @@ export const RoleMapping = ({
       }));
     }
 
-    const roles = await getMapping(type, id);
+    const roles = await getMapping(adminClient, type, id);
     const realmRolesMapping =
       roles.realmMappings?.map((role) => ({ role })) || [];
     const clientMapping = Object.values(roles.clientMappings || {})
@@ -144,9 +146,13 @@ export const RoleMapping = ({
     messageKey: t("removeMappingConfirm", { count: selected.length }),
     continueButtonLabel: "remove",
     continueButtonVariant: ButtonVariant.danger,
+    onCancel: () => {
+      setSelected([]);
+      refresh();
+    },
     onConfirm: async () => {
       try {
-        await Promise.all(deleteMapping(type, id, selected));
+        await Promise.all(deleteMapping(adminClient, type, id, selected));
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
@@ -186,7 +192,7 @@ export const RoleMapping = ({
                 id="hideInheritedRoles"
                 data-testid="hideInheritedRoles"
                 isChecked={hide}
-                onChange={(check) => {
+                onChange={(_event, check) => {
                   setHide(check);
                   refresh();
                 }}
@@ -254,6 +260,15 @@ export const RoleMapping = ({
             instructions={t(`noRolesInstructions-${type}`)}
             primaryActionText={t("assignRole")}
             onPrimaryAction={() => setShowAssign(true)}
+            secondaryActions={[
+              {
+                text: t("showInheritedRoles"),
+                onClick: () => {
+                  setHide(false);
+                  refresh();
+                },
+              },
+            ]}
           />
         }
       />

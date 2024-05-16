@@ -64,6 +64,19 @@ image:images/search-user-event.png[Search user event]
 
 |===
 
+*Brute force protection:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|User disabled by permanent lockout
+|Brute force protection disabled the user account permanently due to too many login failures.
+
+|User disabled by temporary lockout
+|Brute force protection disabled the user account temporarily due to too many login failures.
+
+|===
+
 *Account events:*
 
 [cols="2",options="header"]
@@ -103,6 +116,7 @@ image:images/search-user-event.png[Search user event]
 
 Each event has a corresponding error event.
 
+[[event-listener]]
 ==== Event listener
 
 Event listeners listen for events and perform actions based on that event. {project_name} includes two built-in listeners, the Logging Event Listener and Email Event Listener.
@@ -145,12 +159,21 @@ The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal
 
 ===== The Email Event Listener
 
-The Email Event Listener sends an email to the user's account when an event occurs and supports the following events:
+The Email Event Listener sends a message to the user's email address when an event occurs and supports the following events:
 
 * Login Error.
 * Update Password.
 * Update Time-based One-time Password (TOTP).
-* Remove Time-based One-time Password (TOTP).
+* Remove One-time Password (OTP).
+
+The following conditions need to be met for an email to be sent:
+
+* User has an email address.
+* User's email address is marked as verified.
+
+.Prerequisites
+
+* Realm's email settings configured.
 
 .Procedure
 
@@ -169,19 +192,5 @@ You can exclude events by using the `--spi-events-listener-email-exclude-events`
 [source,bash]
 ----
 kc.[sh|bat] --spi-events-listener-email-exclude-events=UPDATE_TOTP,REMOVE_TOTP
-----
-
-You can set a maximum length of each Event detail in the database by using the `--spi-events-store-jpa-max-detail-length` argument. This setting is useful if a detail (for example, redirect_uri) is long. For example:
-
-[source,bash]
-----
-kc.[sh|bat] --spi-events-store-jpa-max-detail-length=1000
-----
-
-Also you can set a maximum length of all Event's details by using the `--spi-events-store-jpa-max-field-length` argument. This setting is useful if you want to adhere to the underlying storage limitation. For example:
-
-[source,bash]
-----
-kc.[sh|bat] --spi-events-store-jpa-max-field-length=2500
 ----
 

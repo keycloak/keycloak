@@ -20,7 +20,6 @@ package org.keycloak.testsuite.oidc.flows;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
-import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;

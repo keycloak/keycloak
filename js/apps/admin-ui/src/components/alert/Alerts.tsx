@@ -4,7 +4,10 @@ import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { generateId } from "../../util";
 
-import { createNamedContext, useRequiredContext } from "ui-shared";
+import {
+  createNamedContext,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 import useSetTimeout from "../../utils/useSetTimeout";
 import { AlertPanel } from "./AlertPanel";
 

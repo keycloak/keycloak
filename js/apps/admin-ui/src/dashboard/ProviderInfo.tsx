@@ -1,14 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ExpandableSection, PageSection } from "@patternfly/react-core";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
@@ -22,7 +15,7 @@ export const ProviderInfo = () => {
   const providerInfo = useMemo(
     () =>
       Object.entries(serverInfo.providers || []).filter(([key]) =>
-        key.includes(filter),
+        key.toLowerCase().includes(filter.toLowerCase()),
       ),
     [filter],
   );
@@ -42,7 +35,7 @@ export const ProviderInfo = () => {
         inputGroupPlaceholder={t("search")}
         inputGroupOnEnter={setFilter}
       >
-        <TableComposable variant="compact">
+        <Table variant="compact">
           <Thead>
             <Tr>
               <Th width={20}>{t("spi")}</Th>
@@ -70,7 +63,7 @@ export const ProviderInfo = () => {
                                   : t("showMore")
                               }
                             >
-                              <TableComposable borders={false}>
+                              <Table borders={false}>
                                 <Tbody>
                                   {Object.entries(operationalInfo).map(
                                     ([key, value]) => (
@@ -81,7 +74,7 @@ export const ProviderInfo = () => {
                                     ),
                                   )}
                                 </Tbody>
-                              </TableComposable>
+                              </Table>
                             </ExpandableSection>
                           ) : null}
                         </li>
@@ -92,7 +85,7 @@ export const ProviderInfo = () => {
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       </TableToolbar>
     </PageSection>
   );

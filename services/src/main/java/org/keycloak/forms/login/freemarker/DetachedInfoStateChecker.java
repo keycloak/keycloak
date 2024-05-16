@@ -20,18 +20,17 @@
 package org.keycloak.forms.login.freemarker;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.CookieHelper;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -40,7 +39,6 @@ public class DetachedInfoStateChecker {
 
     private static final Logger logger = Logger.getLogger(DetachedInfoStateChecker.class);
 
-    private static final String STATE_CHECKER_COOKIE_NAME = "KC_STATE_CHECKER";
     public static final String STATE_CHECKER_PARAM = "kc_state_checker";
 
     private final KeycloakSession session;
@@ -53,8 +51,6 @@ public class DetachedInfoStateChecker {
 
     public DetachedInfoStateCookie generateAndSetCookie(String messageKey, String messageType, Integer status, String clientId, Object[] messageParameters) {
         UriInfo uriInfo = session.getContext().getHttpRequest().getUri();
-        String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-        boolean secureOnly = realm.getSslRequired().isRequired(session.getContext().getConnection());
 
         String currentStateCheckerInUrl = uriInfo.getQueryParameters().getFirst(STATE_CHECKER_PARAM);
         String newStateChecker = KeycloakModelUtils.generateId();
@@ -75,14 +71,13 @@ public class DetachedInfoStateChecker {
         }
 
         String encoded = session.tokens().encode(cookie);
-        logger.tracef("Generating new %s cookie. Cookie: %s, Cookie lifespan: %d", STATE_CHECKER_COOKIE_NAME, cookie, cookieMaxAge);
 
-        CookieHelper.addCookie(STATE_CHECKER_COOKIE_NAME, encoded, path, null, null, cookieMaxAge, secureOnly, true, session);
+        session.getProvider(CookieProvider.class).set(CookieType.AUTH_DETACHED, encoded, cookieMaxAge);
         return cookie;
     }
 
     public DetachedInfoStateCookie verifyStateCheckerParameter(String stateCheckerParam) throws VerificationException {
-        Set<String> cookieVal = CookieHelper.getCookieValue(session, STATE_CHECKER_COOKIE_NAME);
+        String cookieVal = session.getProvider(CookieProvider.class).get(CookieType.AUTH_DETACHED);
         if (cookieVal == null || cookieVal.isEmpty()) {
             throw new VerificationException("State checker cookie is empty");
         }
@@ -90,8 +85,7 @@ public class DetachedInfoStateChecker {
             throw new VerificationException("State checker parameter is empty");
         }
 
-        String cookieEncoded = cookieVal.iterator().next();
-        DetachedInfoStateCookie cookie = session.tokens().decode(cookieEncoded, DetachedInfoStateCookie.class);
+        DetachedInfoStateCookie cookie = session.tokens().decode(cookieVal, DetachedInfoStateCookie.class);
         if (cookie == null) {
             throw new VerificationException("Failed to verify DetachedInfoStateCookie");
         }

@@ -91,6 +91,7 @@ public class RealmRepresentation {
     //--- brute force settings
     protected Boolean bruteForceProtected;
     protected Boolean permanentLockout;
+    protected Integer maxTemporaryLockouts;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
@@ -138,6 +139,7 @@ public class RealmRepresentation {
     protected Integer webAuthnPolicyCreateTimeout;
     protected Boolean webAuthnPolicyAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyAcceptableAaguids;
+    protected List<String> webAuthnPolicyExtraOrigins;
 
     // WebAuthn passwordless properties below
 
@@ -151,6 +153,7 @@ public class RealmRepresentation {
     protected Integer webAuthnPolicyPasswordlessCreateTimeout;
     protected Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
+    protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
 
     // Client Policies/Profiles
 
@@ -203,6 +206,7 @@ public class RealmRepresentation {
     protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
     protected String dockerAuthenticationFlow;
+    protected String firstBrokerLoginFlow;
 
     protected Map<String, String> attributes;
 
@@ -762,6 +766,14 @@ public class RealmRepresentation {
         this.permanentLockout = permanentLockout;
     }
 
+    public Integer getMaxTemporaryLockouts() {
+        return maxTemporaryLockouts;
+    }
+
+    public void setMaxTemporaryLockouts(Integer maxTemporaryLockouts) {
+        this.maxTemporaryLockouts = maxTemporaryLockouts;
+    }
+
     public Integer getMaxFailureWaitSeconds() {
         return maxFailureWaitSeconds;
     }
@@ -1127,6 +1139,14 @@ public class RealmRepresentation {
         this.webAuthnPolicyAcceptableAaguids = webAuthnPolicyAcceptableAaguids;
     }
 
+    public List<String> getWebAuthnPolicyExtraOrigins(){
+        return webAuthnPolicyExtraOrigins;
+    }
+
+    public void setWebAuthnPolicyExtraOrigins(List<String> extraOrigins) {
+        this.webAuthnPolicyExtraOrigins = extraOrigins;
+    }
+
     // WebAuthn passwordless properties below
 
 
@@ -1208,6 +1228,14 @@ public class RealmRepresentation {
 
     public void setWebAuthnPolicyPasswordlessAcceptableAaguids(List<String> webAuthnPolicyPasswordlessAcceptableAaguids) {
         this.webAuthnPolicyPasswordlessAcceptableAaguids = webAuthnPolicyPasswordlessAcceptableAaguids;
+    }
+
+    public List<String> getWebAuthnPolicyPasswordlessExtraOrigins(){
+        return webAuthnPolicyPasswordlessExtraOrigins;
+    }
+
+    public void setWebAuthnPolicyPasswordlessExtraOrigins(List<String> extraOrigins) {
+        this.webAuthnPolicyPasswordlessExtraOrigins = extraOrigins;
     }
 
     // Client Policies/Profiles
@@ -1298,6 +1326,15 @@ public class RealmRepresentation {
 
     public RealmRepresentation setDockerAuthenticationFlow(final String dockerAuthenticationFlow) {
         this.dockerAuthenticationFlow = dockerAuthenticationFlow;
+        return this;
+    }
+
+    public String getFirstBrokerLoginFlow() {
+        return firstBrokerLoginFlow;
+    }
+
+    public RealmRepresentation setFirstBrokerLoginFlow(String firstBrokerLoginFlow) {
+        this.firstBrokerLoginFlow = firstBrokerLoginFlow;
         return this;
     }
 

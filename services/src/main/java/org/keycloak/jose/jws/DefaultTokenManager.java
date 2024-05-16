@@ -19,6 +19,7 @@ package org.keycloak.jose.jws;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
@@ -54,6 +55,7 @@ import org.keycloak.util.TokenUtil;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -76,7 +78,8 @@ public class DefaultTokenManager implements TokenManager {
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
         SignatureSignerContext signer = signatureProvider.signer();
 
-        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).sign(signer);
+        String type = type(token.getCategory());
+        String encodedToken = new JWSBuilder().type(type).jsonContent(token).sign(signer);
         return encodedToken;
     }
 
@@ -190,7 +193,7 @@ public class DefaultTokenManager implements TokenManager {
     public String signatureAlgorithm(TokenCategory category) {
         switch (category) {
             case INTERNAL:
-                return Algorithm.HS256;
+                return Constants.INTERNAL_SIGNATURE_ALGORITHM;
             case ADMIN:
                 return getSignatureAlgorithm(null);
             case ACCESS:
@@ -231,6 +234,15 @@ public class DefaultTokenManager implements TokenManager {
             encodedToken = getEncryptedToken(token.getCategory(), encodedToken);
         }
         return encodedToken;
+    }
+
+    private String type(TokenCategory category) {
+        switch (category) {
+            case LOGOUT:
+                return TokenUtil.TOKEN_TYPE_JWT_LOGOUT_TOKEN;
+            default:
+                return "JWT";
+        }
     }
 
     private boolean isTokenEncryptRequired(TokenCategory category) {
@@ -327,6 +339,9 @@ public class DefaultTokenManager implements TokenManager {
         LogoutToken token = new LogoutToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
+        // From the spec "OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1" at https://openid.net/specs/openid-connect-backchannel-1_0.html
+        // "OPs are encouraged to use short expiration times in Logout Tokens, preferably at most two minutes in the future [...]"
+        token.exp(Time.currentTime() + Duration.ofMinutes(2).getSeconds());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, JsonSerialization.createObjectNode());
         token.addAudience(client.getClientId());

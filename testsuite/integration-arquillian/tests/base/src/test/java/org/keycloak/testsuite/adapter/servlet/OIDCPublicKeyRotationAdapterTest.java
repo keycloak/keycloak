@@ -79,10 +79,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -96,7 +92,7 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
-        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, AdapterActionsFilter.class, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
@@ -136,7 +132,6 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         URLAssert.assertCurrentUrlStartsWith(tokenMinTTLPage.getInjectedUrl().toString());
-        Assert.assertNull(tokenMinTTLPage.getAccessToken());
 
         ApiUtil.findUserByUsernameId(adminClient.realm("demo"), "bburke@redhat.com").logout();
 

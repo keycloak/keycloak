@@ -17,16 +17,15 @@
 
 package org.keycloak.truststore;
 
-import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
-import org.apache.http.conn.ssl.StrictHostnameVerifier;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import javax.net.ssl.HostnameVerifier;
+import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -77,6 +76,22 @@ public class JSSETruststoreConfigurator {
             return null;
         }
 
+        if (getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+            return new TrustManager[] {
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
+        }
+
         if (tm == null) {
             synchronized (this) {
                 if (tm == null) {
@@ -92,29 +107,6 @@ public class JSSETruststoreConfigurator {
             }
         }
         return tm;
-    }
-
-    public HostnameVerifier getHostnameVerifier() {
-        if (provider == null) {
-            return null;
-        }
-
-        HostnameVerificationPolicy policy = provider.getPolicy();
-        switch (policy) {
-            case ANY:
-                return new HostnameVerifier() {
-                    @Override
-                    public boolean verify(String s, SSLSession sslSession) {
-                        return true;
-                    }
-                };
-            case WILDCARD:
-                return new BrowserCompatHostnameVerifier();
-            case STRICT:
-                return new StrictHostnameVerifier();
-            default:
-                throw new IllegalStateException("Unknown policy: " + policy.name());
-        }
     }
 
     public TruststoreProvider getProvider() {

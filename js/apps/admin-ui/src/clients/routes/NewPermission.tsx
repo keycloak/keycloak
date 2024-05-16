@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type PermissionType = "resource" | "scope";
@@ -21,7 +21,8 @@ export const NewPermissionRoute: AppRouteObject = {
   element: <PermissionDetails />,
   breadcrumb: (t) => t("createPermission"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "manage-authorization"),
   },
 };
 
@@ -36,6 +37,6 @@ export const toNewPermission = (params: NewPermissionParams): Partial<Path> => {
     : NewPermissionRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

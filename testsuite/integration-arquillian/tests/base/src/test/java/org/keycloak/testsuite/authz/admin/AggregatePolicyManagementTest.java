@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
@@ -27,14 +28,28 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.AggregatePoliciesResource;
 import org.keycloak.admin.client.resource.AggregatePolicyResource;
 import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.UserPoliciesResource;
+import org.keycloak.admin.client.resource.UserPolicyResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest {
+
+    @Override
+    protected RealmBuilder createTestRealm() {
+        return super.createTestRealm()
+                .user(UserBuilder.create().username("AggregatePolicyManagementTestUser"));
+    }
 
     @Test
     public void testCreate() {
@@ -103,6 +118,47 @@ public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest 
         }
     }
 
+    //Issue #24651
+    @Test
+    public void testDeleteUser() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        UsersResource users = getRealm().users();
+        UserRepresentation user = users.search("AggregatePolicyManagementTestUser").get(0);
+
+        UserPolicyRepresentation userPolicyRepresentation = new UserPolicyRepresentation();
+        userPolicyRepresentation.setName("AggregatePolicyManagementTestUser Only");
+        userPolicyRepresentation.setDescription("description");
+        userPolicyRepresentation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        userPolicyRepresentation.setLogic(Logic.NEGATIVE);
+        userPolicyRepresentation.addUser(user.getId());
+        authorization.policies().user().create(userPolicyRepresentation);
+
+        TimePolicyRepresentation timePolicyRepresentation = new TimePolicyRepresentation();
+        timePolicyRepresentation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        timePolicyRepresentation.setLogic(Logic.NEGATIVE);
+        timePolicyRepresentation.setName("Dayshift");
+        timePolicyRepresentation.setHour("8");
+        timePolicyRepresentation.setHourEnd("17");
+        authorization.policies().time().create(timePolicyRepresentation);
+
+        AggregatePolicyRepresentation representation = new AggregatePolicyRepresentation();
+        representation.setName("AggregatePolicyManagementTestUser Only during dayshift");
+        representation.setDescription("description");
+        representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        representation.setLogic(Logic.NEGATIVE);
+        representation.addPolicy("AggregatePolicyManagementTestUser Only", "Dayshift");
+        assertCreated(authorization, representation);
+
+        users.get(user.getId()).remove();
+
+        UserPolicyRepresentation actualUserPolicy = authorization.policies().user().findByName(userPolicyRepresentation.getName());
+        assertEquals(0, actualUserPolicy.getUsers().size());
+
+        AggregatePolicyResource actual = authorization.policies().aggregate().findById(representation.getId());
+        assertRepresentation(representation, actual);
+    }
+
     private void assertCreated(AuthorizationResource authorization, AggregatePolicyRepresentation representation) {
         AggregatePoliciesResource permissions = authorization.policies().aggregate();
         try (Response response = permissions.create(representation)) {
@@ -112,8 +168,29 @@ public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest 
         }
     }
 
+    private void assertCreated(AuthorizationResource authorization, UserPolicyRepresentation representation) {
+        UserPoliciesResource permissions = authorization.policies().user();
+
+        try (Response response = permissions.create(representation)) {
+            UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
+            UserPolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
+    }
+
     private void assertRepresentation(AggregatePolicyRepresentation representation, AggregatePolicyResource policy) {
         AggregatePolicyRepresentation actual = policy.toRepresentation();
         assertRepresentation(representation, actual, () -> policy.resources(), () -> Collections.emptyList(), () -> policy.associatedPolicies());
     }
+
+    private void assertRepresentation(UserPolicyRepresentation representation, UserPolicyResource permission) {
+        UserPolicyRepresentation actual = permission.toRepresentation();
+        assertRepresentation(representation, actual, () -> permission.resources(), () -> Collections.emptyList(), () -> permission.associatedPolicies());
+        assertEquals(representation.getUsers().size(), actual.getUsers().size());
+        assertEquals(0, actual.getUsers().stream().filter(userId -> !representation.getUsers().stream()
+                        .filter(userName -> getRealm().users().get(userId).toRepresentation().getUsername().equalsIgnoreCase(userName))
+                        .findFirst().isPresent())
+                .count());
+    }
+
 }

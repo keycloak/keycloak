@@ -40,6 +40,12 @@ import java.util.Map;
  */
 public class RequiredActionsTest extends AbstractAuthenticationTest {
 
+    @Override
+    protected boolean removeVerifyProfileAtImport() {
+        // do not remove verify profile action for this test
+        return false;
+    }
+
     @Test
     public void testRequiredActions() {
         List<RequiredActionProviderRepresentation> result = authMgmtResource.getRequiredActions();
@@ -50,7 +56,9 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         addRequiredAction(expected, "UPDATE_PASSWORD", "Update Password", true, false, null);
         addRequiredAction(expected, "UPDATE_PROFILE", "Update Profile", true, false, null);
         addRequiredAction(expected, "VERIFY_EMAIL", "Verify Email", true, false, null);
+        addRequiredAction(expected, "VERIFY_PROFILE", "Verify Profile", true, false, null);
         addRequiredAction(expected, "delete_account", "Delete Account", false, false, null);
+        addRequiredAction(expected, "delete_credential", "Delete Credential", true, false, null);
         addRequiredAction(expected, "update_user_locale", "Update User Locale", true, false, null);
         addRequiredAction(expected, "webauthn-register", "Webauthn Register", true, false, null);
         addRequiredAction(expected, "webauthn-register-passwordless", "Webauthn Register Passwordless", true, false, null);
@@ -84,7 +92,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
-        Assert.assertEquals(2, result.size());
+        Assert.assertEquals(1, result.size());
         RequiredActionProviderSimpleRepresentation action = result.stream().filter(
                 a -> a.getProviderId().equals(DummyRequiredActionFactory.PROVIDER_ID)
         ).findFirst().get();
@@ -99,6 +107,17 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         try {
             authMgmtResource.registerRequiredAction(action);
         } catch (ClientErrorException ex) {
+            // Expected
+        }
+
+        // Try to register required action with fake providerId
+        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setName("not-existent");
+        requiredAction.setProviderId("not-existent");
+        try {
+            authMgmtResource.registerRequiredAction(requiredAction);
+            Assert.fail("Didn't expect to register requiredAction with providerId: 'not-existent'");
+        } catch (Exception ex) {
             // Expected
         }
 

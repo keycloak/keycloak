@@ -7,17 +7,18 @@ import {
   Button,
   FormGroup,
   PageSection,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { FormAccess } from "../components/form/FormAccess";
@@ -39,6 +40,8 @@ const defaultValues: ExecutorForm = {
 };
 
 export default function ExecutorForm() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm, profileName } = useParams<ClientProfileParams>();
@@ -158,7 +161,7 @@ export default function ExecutorForm() {
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           isReadOnly={!!globalProfile}
         >
           <FormGroup
@@ -186,7 +189,9 @@ export default function ExecutorForm() {
                 <Select
                   toggleId="kc-executor"
                   placeholderText="Select an executor"
-                  onToggle={(isOpen) => setSelectExecutorTypeOpen(isOpen)}
+                  onToggle={(_event, isOpen) =>
+                    setSelectExecutorTypeOpen(isOpen)
+                  }
                   onSelect={(_, value) => {
                     reset({ ...defaultValues, executor: value.toString() });
                     const selectedExecutor = executorTypes?.filter(

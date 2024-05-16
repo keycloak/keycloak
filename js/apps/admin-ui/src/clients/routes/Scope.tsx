@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type ScopeDetailsParams = {
@@ -16,7 +16,8 @@ export const ScopeDetailsRoute: AppRouteObject = {
   element: <ScopeDetails />,
   breadcrumb: (t) => t("authorizationScopeDetails"),
   handle: {
-    access: "manage-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "view-authorization"),
   },
 };
 
@@ -31,6 +32,6 @@ export const toScopeDetails = (params: ScopeDetailsParams): Partial<Path> => {
     : ScopeDetailsRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

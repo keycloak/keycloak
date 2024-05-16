@@ -40,14 +40,19 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
@@ -153,11 +158,15 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             Boolean allowCreate = null;
             if (getConfig().getConfig().get(SAMLIdentityProviderConfig.ALLOW_CREATE) == null || getConfig().isAllowCreate())
                 allowCreate = Boolean.TRUE;
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, request.getAuthenticationSession().getProtocol());
+            Boolean forceAuthn = getConfig().isForceAuthn();
+            if (protocol.requireReauthentication(null, request.getAuthenticationSession()))
+                forceAuthn = Boolean.TRUE;
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .assertionConsumerUrl(assertionConsumerServiceUrl)
                     .destination(destinationUrl)
                     .issuer(issuerURL)
-                    .forceAuthn(getConfig().isForceAuthn())
+                    .forceAuthn(forceAuthn)
                     .protocolBinding(protocolBinding)
                     .nameIdPolicy(SAML2NameIDPolicyBuilder
                         .format(nameIDPolicyFormat)
@@ -195,9 +204,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             request.getAuthenticationSession().setClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER, authnRequest.getID());
 
             if (postBinding) {
-                return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
+                return binding.postBinding(SAML2Request.convert(authnRequest)).request(destinationUrl);
             } else {
-                return binding.redirectBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
+                return binding.redirectBinding(SAML2Request.convert(authnRequest)).request(destinationUrl);
             }
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
@@ -368,7 +377,6 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             String entityId = getEntityId(uriInfo, realm);
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
-
             // We export all keys for algorithm RS256, both active and passive so IDP is able to verify signature even
             //  if a key rotation happens in the meantime
             List<KeyDescriptorType> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
@@ -424,7 +432,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     if (target instanceof SamlMetadataDescriptorUpdater)
                         metadataAttrProviders.add(new java.util.AbstractMap.SimpleEntry<>(mapper, (SamlMetadataDescriptorUpdater)target));
                 });
-                
+
             if (!metadataAttrProviders.isEmpty()) {
                 int attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex() != null ? getConfig().getAttributeConsumingServiceIndex() : 1;
                 String attributeConsumingServiceName = getConfig().getAttributeConsumingServiceName();
@@ -453,7 +461,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     metadataAttrProvider.updateMetadata(mapper.getKey(), entityDescriptor);
                 });
             }
-    
+
             // Write the metadata and export it to a string
             metadataWriter.writeEntityDescriptor(entityDescriptor);
 
@@ -500,5 +508,21 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     @Override
     public IdentityProviderDataMarshaller getMarshaller() {
         return new SAMLDataMarshaller();
+    }
+
+    @Override
+    public boolean reloadKeys() {
+        if (getConfig().isEnabled() && getConfig().isUseMetadataDescriptorUrl()) {
+            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), getConfig().getInternalId());
+            PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+            return keyStorage.reloadKeys(modelKey, new SamlMetadataPublicKeyLoader(session, getConfig().getMetadataDescriptorUrl()));
+        }
+        return false;
+    }
+
+    @Override
+    public boolean supportsLongStateParameter() {
+        // SAML RelayState parameter has limits of 80 bytes per SAML specification
+        return false;
     }
 }

@@ -269,6 +269,30 @@ public interface UserResource {
     @Path("send-verify-email")
     void sendVerifyEmail(@QueryParam("client_id") String clientId);
 
+    @PUT
+    @Path("send-verify-email")
+    void sendVerifyEmail(@QueryParam("client_id") String clientId, @QueryParam("redirect_uri") String redirectUri);
+
+    @PUT
+    @Path("send-verify-email")
+    void sendVerifyEmail(@QueryParam("lifespan") Integer lifespan);
+
+    /**
+     * Send an email-verification email to the user
+     *
+     * An email contains a link the user can click to verify their email address.
+     * The redirectUri and clientId parameters are optional. The default for the
+     * redirect is the account client. The default for the lifespan is 12 hours.
+     *
+     * @param redirectUri Redirect uri
+     * @param clientId Client id
+     * @param lifespan Number of seconds after which the generated token expires
+     * @return
+     */
+    @PUT
+    @Path("send-verify-email")
+    void sendVerifyEmail(@QueryParam("client_id") String clientId, @QueryParam("redirect_uri") String redirectUri, @QueryParam("lifespan") Integer lifespan);
+
     @GET
     @Path("sessions")
     List<UserSessionRepresentation> getUserSessions();

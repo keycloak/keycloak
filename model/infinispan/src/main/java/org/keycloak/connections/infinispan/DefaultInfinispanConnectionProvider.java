@@ -37,8 +37,8 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     }
 
     @Override
-    public <K, V> Cache<K, V> getCache(String name) {
-        return cacheManager.getCache(name);
+    public <K, V> Cache<K, V> getCache(String name, boolean createIfAbsent) {
+        return cacheManager.getCache(name, createIfAbsent);
     }
 
     @Override

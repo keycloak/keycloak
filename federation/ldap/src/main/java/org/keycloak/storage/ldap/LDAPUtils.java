@@ -62,7 +62,7 @@ public class LDAPUtils {
     private static final Logger log = Logger.getLogger(LDAPUtils.class);
 
     /**
-     * Method to crate a user in the LDAP. The user will be created when all
+     * Method to create a user in the LDAP. The user will be created when all
      * mandatory attributes specified by the mappers are set. The method
      * onRegisterUserToLDAP is first called in each mapper to set any default or
      * initial value.
@@ -231,7 +231,7 @@ public class LDAPUtils {
      */
     public static void addMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
         String membership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
-        ldapProvider.getLdapIdentityStore().addMemberToGroup(ldapParent.getDn().toString(), memberAttrName, membership);
+        ldapProvider.getLdapIdentityStore().addMemberToGroup(ldapParent.getDn().getLdapName(), memberAttrName, membership);
     }
 
     /**
@@ -246,7 +246,7 @@ public class LDAPUtils {
      */
     public static void deleteMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
         String userMembership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
-        ldapProvider.getLdapIdentityStore().removeMemberFromGroup(ldapParent.getDn().toString(), memberAttrName, userMembership);
+        ldapProvider.getLdapIdentityStore().removeMemberFromGroup(ldapParent.getDn().getLdapName(), memberAttrName, userMembership);
     }
 
     /**
@@ -333,7 +333,7 @@ public class LDAPUtils {
 
     private static LDAPQuery createLdapQueryForRangeAttribute(LDAPStorageProvider ldapProvider, LDAPObject ldapObject, String name) {
         LDAPQuery q = new LDAPQuery(ldapProvider);
-        q.setSearchDn(ldapObject.getDn().toString());
+        q.setSearchDn(ldapObject.getDn().getLdapName());
         q.setSearchScope(SearchControls.OBJECT_SCOPE);
         q.addReturningLdapAttribute(name + ";range=" + (ldapObject.getCurrentRange(name) + 1) + "-*");
         return q;

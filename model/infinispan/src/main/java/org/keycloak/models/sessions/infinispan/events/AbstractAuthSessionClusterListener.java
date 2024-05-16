@@ -55,10 +55,10 @@ public abstract class AbstractAuthSessionClusterListener <SE extends SessionClus
 
             log.debugf("Received authentication session event '%s'", sessionEvent.toString());
 
-            eventReceived(session, provider, sessionEvent);
+            eventReceived(provider, sessionEvent);
 
         });
     }
 
-    protected abstract void eventReceived(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, SE sessionEvent);
+    protected abstract void eventReceived(InfinispanAuthenticationSessionProvider provider, SE sessionEvent);
 }

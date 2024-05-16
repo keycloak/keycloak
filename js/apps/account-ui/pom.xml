@@ -16,6 +16,41 @@
     <name>Keycloak Account UI</name>
     <description>The user inferface to manage an account on the Keycloak server.</description>
 
+    <profiles>
+        <profile>
+            <id>withTranslations</id>
+            <activation>
+                <property>
+                    <name>!skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>maven-resources-community</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <resources>
             <resource>
@@ -36,18 +71,28 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>run-build</id>
+                        <id>lib-build</id>
                         <goals>
                             <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run build</arguments>
+                            <arguments>build</arguments>
+                            <environmentVariables>
+                                <LIB>true</LIB>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>pack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>pack --pack-destination=target</arguments>
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <installDirectory>../..</installDirectory>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.google.code.maven-replacer-plugin</groupId>
@@ -78,8 +123,24 @@
                             <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.svg"}" />]]></value>
                         </replacement>
                         <replacement>
-                            <token><![CDATA[<title>Keycloak account console</title>]]></token>
-                            <value xml:space="preserve"><![CDATA[<title>${properties.title!"Keycloak account console"}</title>]]></value>
+                            <token><![CDATA[<meta name="description" content="Web site to manage keycloak" />]]></token>
+                            <value xml:space="preserve"><![CDATA[<meta name="description" content="${properties.description!"Web site to manage keycloak"}" />]]></value>
+                        </replacement>
+                        <replacement>
+                            <token><![CDATA[<title>Account Management</title>]]></token>
+                            <value xml:space="preserve">
+<![CDATA[
+    <title>${properties.title!"Account Management"}</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "${resourceCommonUrl}/vendor/react/react.production.min.js",
+          "react/jsx-runtime": "${resourceCommonUrl}/vendor/react/react-jsx-runtime.production.min.js",
+          "react-dom": "${resourceCommonUrl}/vendor/react-dom/react-dom.production.min.js"
+        }
+      }
+    </script>
+]]></value>
                         </replacement>
                         <replacement>
                             <token><![CDATA[</body>]]></token>
@@ -88,11 +149,13 @@
   <script id="environment" type="application/json">
     {
       "authUrl": "${authUrl}",
+      "baseUrl": "${baseUrl}",
       "realm": "${realm.name}",
       "clientId": "${clientId}",
       "resourceUrl": "${resourceUrl}",
       "logo": "${properties.logo!""}",
       "logoUrl": "${properties.logoUrl!""}",
+      "locale": "${locale}",
       "features": {
             "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
             "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
@@ -103,7 +166,9 @@
             "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
             "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
             "isViewGroupsEnabled": ${isViewGroupsEnabled?c}
-        }
+        },
+        "referrerName": "${referrerName!""}",
+        "referrerUrl": "${referrer_uri!""}"
     }
   </script>
 </body>
@@ -114,6 +179,11 @@
                             <token><![CDATA[</head>]]></token>
                             <value xml:space="preserve">
 <![CDATA[
+    <#if properties.scripts?has_content>
+      <#list properties.scripts?split(' ') as script>
+        <script src="${resourceUrl}/${script}"></script>
+      </#list>
+    </#if>
     <#if properties.styles?has_content>
       <#list properties.styles?split(' ') as style>
       <link href="${resourceUrl}/${style}" rel="stylesheet"/>

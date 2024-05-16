@@ -4,16 +4,18 @@ import {
   Button,
   FormGroup,
   PageSection,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../util";
 
@@ -46,7 +48,7 @@ export const RealmSettingsThemesTab = ({
       <FormAccess
         isHorizontal
         role="manage-realm"
-        className="pf-u-mt-lg"
+        className="pf-v5-u-mt-lg"
         onSubmit={handleSubmit(save)}
       >
         <FormGroup
@@ -76,6 +78,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={loginThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-login-theme"
+                aria-label={t("selectLoginTheme")}
               >
                 {themeTypes.login.map((theme, idx) => (
                   <SelectOption
@@ -114,7 +117,7 @@ export const RealmSettingsThemesTab = ({
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
-                aria-label={t("accountTheme")}
+                aria-label={t("selectAccountTheme")}
                 isOpen={accountThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-account-theme"
@@ -161,6 +164,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={adminUIThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-admin-theme"
+                aria-label="selectAdminTheme"
               >
                 {themeTypes.admin
                   .filter((theme) => theme.name !== "base")
@@ -204,6 +208,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={emailThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-email-theme"
+                aria-label={t("selectEmailTheme")}
               >
                 {themeTypes.email.map((theme, idx) => (
                   <SelectOption

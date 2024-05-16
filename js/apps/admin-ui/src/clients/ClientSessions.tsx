@@ -2,7 +2,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
 import { PageSection } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import type { LoaderFunction } from "../components/table-toolbar/KeycloakDataTable";
 import SessionsTable from "../sessions/SessionsTable";
 
@@ -11,6 +11,8 @@ type ClientSessionsProps = {
 };
 
 export const ClientSessions = ({ client }: ClientSessionsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const loader: LoaderFunction<UserSessionRepresentation> = async (
@@ -41,7 +43,7 @@ export const ClientSessions = ({ client }: ClientSessionsProps) => {
   };
 
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <SessionsTable
         loader={loader}
         hiddenColumns={["clients"]}

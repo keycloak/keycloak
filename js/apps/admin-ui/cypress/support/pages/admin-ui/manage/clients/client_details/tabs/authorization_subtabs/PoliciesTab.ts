@@ -1,14 +1,14 @@
 import CommonPage from "../../../../../../CommonPage";
 
 export default class PoliciesTab extends CommonPage {
-  private emptyPolicyCreateBtn = "no-policies-empty-action";
-  private createPolicyBtn = "createPolicy";
+  #emptyPolicyCreateBtn = "no-policies-empty-action";
+  #createPolicyBtn = "createPolicy";
 
   createPolicy(type: string, first = false) {
     if (first) {
-      cy.findByTestId(this.emptyPolicyCreateBtn).click();
+      cy.findByTestId(this.#emptyPolicyCreateBtn).click();
     } else {
-      cy.findByTestId(this.createPolicyBtn).click();
+      cy.findByTestId(this.#createPolicyBtn).click();
     }
     cy.findByTestId(type).click();
     return this;
@@ -29,6 +29,7 @@ export default class PoliciesTab extends CommonPage {
   inputClient(clientName: string) {
     cy.get("#clients").click();
     cy.get("ul li").contains(clientName).click();
+    cy.get("#clients").click();
     return this;
   }
 }

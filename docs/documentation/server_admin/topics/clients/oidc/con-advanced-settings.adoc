@@ -64,7 +64,7 @@ The procedure to select the algorithm is:
 . Open *Fine Grain OpenID Connect Configuration*.
 . Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
 
-== Open ID Connect Compatibility Modes
+== OpenID Connect Compatibility Modes
 
 This section exists for backward compatibility.  Click the question mark icons for details on each field.
 
@@ -131,7 +131,6 @@ Currently, {project_name} client adapters do not support DPoP holder-of-key toke
 ====
 
 :tech_feature_name: DPoP
-:tech_feature_setting: -Dkeycloak.profile.feature.dpop=enabled
 :tech_feature_id: dpop
 include::../../templates/techpreview.adoc[]
 

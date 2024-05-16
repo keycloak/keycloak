@@ -9,6 +9,7 @@ describe("Partial realm export", () => {
   const REALM_NAME = "Partial-export-test-realm";
 
   before(() => adminClient.createRealm(REALM_NAME));
+
   after(() => adminClient.deleteRealm(REALM_NAME));
 
   const loginPage = new LoginPage();
@@ -45,7 +46,7 @@ describe("Partial realm export", () => {
 
   it("Exports the realm", () => {
     modal.includeGroupsAndRolesSwitch().click({ force: true });
-    modal.includeGroupsAndRolesSwitch().click({ force: true });
+    modal.includeClientsSwitch().click({ force: true });
     modal.exportButton().click();
     cy.readFile(
       Cypress.config("downloadsFolder") + "/realm-export.json",

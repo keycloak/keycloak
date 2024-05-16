@@ -1,26 +1,28 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import {
   Form,
   FormGroup,
   ModalVariant,
+  Stack,
+  StackItem,
+  TextArea,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Stack,
-  StackItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem, useHelp } from "ui-shared";
-import { adminClient } from "../../admin-client";
+import { HelpItem, useHelp } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { useFetch } from "../../utils/useFetch";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 
 type DownloadDialogProps = {
   id: string;
@@ -35,6 +37,8 @@ export const DownloadDialog = ({
   toggleDialog,
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const { enabled } = useHelp();
@@ -61,7 +65,7 @@ export const DownloadDialog = ({
   useFetch(
     async () => {
       if (selectedConfig?.mediaType === "application/zip") {
-        const response = await fetch(
+        const response = await fetchWithError(
           `${addTrailingSlash(
             adminClient.baseUrl,
           )}admin/realms/${realm}/clients/${id}/installation/providers/${selected}`,
@@ -123,7 +127,7 @@ export const DownloadDialog = ({
               <Select
                 toggleId="type"
                 isOpen={openType}
-                onToggle={(isExpanded) => setOpenType(isExpanded)}
+                onToggle={(_event, isExpanded) => setOpenType(isExpanded)}
                 variant={SelectVariant.single}
                 value={selected}
                 selections={selected}
@@ -159,7 +163,7 @@ export const DownloadDialog = ({
                   />
                 }
               >
-                <KeycloakTextArea
+                <TextArea
                   id="details"
                   readOnly
                   rows={12}

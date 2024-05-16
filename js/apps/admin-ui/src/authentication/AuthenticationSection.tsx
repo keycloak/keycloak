@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
@@ -14,8 +15,6 @@ import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -41,6 +40,7 @@ import { Policies } from "./policies/Policies";
 import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
 import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
+import { useAdminClient } from "../admin-client";
 
 type UsedBy = "SPECIFIC_CLIENTS" | "SPECIFIC_PROVIDERS" | "DEFAULT";
 
@@ -56,6 +56,7 @@ export const REALM_FLOWS = new Map<string, string>([
   ["resetCredentialsFlow", "reset credentials"],
   ["clientAuthenticationFlow", "clients"],
   ["dockerAuthenticationFlow", "docker auth"],
+  ["firstBrokerLoginFlow", "firstBrokerLogin"],
 ]);
 
 const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
@@ -81,6 +82,7 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 };
 
 export default function AuthenticationSection() {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const [key, setKey] = useState(0);
@@ -101,7 +103,7 @@ export default function AuthenticationSection() {
   ]);
 
   const loader = async () => {
-    const flowsRequest = await fetch(
+    const flowsRequest = await fetchWithError(
       `${addTrailingSlash(
         adminClient.baseUrl,
       )}admin/realms/${realmName}/ui-ext/authentication-management/flows`,
@@ -183,7 +185,7 @@ export default function AuthenticationSection() {
         helpUrl={helpUrls.authenticationUrl}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           isBox
           defaultLocation={toAuthentication({ realm: realmName, tab: "flows" })}

@@ -6,9 +6,38 @@ export class ClientRegistrationPage extends CommonPage {
     return this;
   }
 
-  createPolicy() {
-    cy.findAllByTestId("createPolicy").click();
+  goToAuthenticatedSubTab() {
+    cy.findAllByTestId("authenticated").click();
     return this;
+  }
+
+  createPolicy() {
+    cy.findAllByTestId("createPolicy").click({ force: true });
+    return this;
+  }
+
+  createAnonymousPolicy() {
+    cy.findByTestId("createPolicy-anonymous").click();
+    return this;
+  }
+
+  createAuthenticatedPolicy() {
+    cy.findByTestId("createPolicy-authenticated").click();
+    return this;
+  }
+
+  findAndSelectInAnonymousPoliciesTable(policy: string) {
+    cy.findByTestId("clientRegistration-anonymous")
+      .find("tr")
+      .contains(policy)
+      .click();
+  }
+
+  findAndSelectInAuthenticatedPoliciesTable(policy: string) {
+    cy.findByTestId("clientRegistration-authenticated")
+      .find("tr")
+      .contains(policy)
+      .click();
   }
 
   selectRow(name: string) {
@@ -17,7 +46,7 @@ export class ClientRegistrationPage extends CommonPage {
   }
 
   fillPolicyForm(props: { name: string }) {
-    cy.findAllByTestId("name").clear().type(props.name);
+    cy.findAllByTestId("name").type(props.name);
     return this;
   }
 }

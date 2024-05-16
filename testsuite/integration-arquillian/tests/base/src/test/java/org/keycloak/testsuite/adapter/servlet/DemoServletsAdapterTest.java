@@ -101,6 +101,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -137,12 +138,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  * @author tkyjovsk
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -214,7 +209,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
-        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortal.DEPLOYMENT_NAME,  AdapterActionsFilter.class, CallAuthenticatedServlet.class);
     }
     @Deployment(name = SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME)
     protected static WebArchive securePortalRewriteRedirectUri() {
@@ -754,13 +749,13 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // Get time of token
         AccessToken token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued1 = token.getIssuedAt();
+        long tokenIssued1 = token.getIat();
 
         // Sets 5 minutes offset and assert access token will be still the same
         setAdapterAndServerTimeOffset(300, tokenMinTTLPage.toString());
         tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued2 = token.getIssuedAt();
+        long tokenIssued2 = token.getIat();
         Assert.assertEquals(tokenIssued1, tokenIssued2);
         assertFalse(token.isExpired());
 
@@ -768,7 +763,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());
         tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued3 = token.getIssuedAt();
+        long tokenIssued3 = token.getIat();
         Assert.assertTrue(tokenIssued3 > tokenIssued1);
 
         // Revert times
@@ -852,8 +847,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             testRealmLoginPage.form().setPassword("password");
             testRealmLoginPage.form().login();
             AccessToken token = tokenMinTTLPage.getAccessToken();
-            int authTime = token.getAuthTime();
-            assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10)));
+            long authTime = token.getAuth_time();
+            assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10L)));
         } finally {
             setAdapterAndServerTimeOffset(0, securePortal.toString());
         }
@@ -861,7 +856,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     private static Map<String, String> getQueryFromUrl(String url) {
         try {
-            return URLEncodedUtils.parse(new URI(url), "UTF-8").stream()
+            return URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8).stream()
                 .collect(Collectors.toMap(p -> p.getName(), p -> p.getValue()));
         } catch (URISyntaxException e) {
             return null;
@@ -1110,7 +1105,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         String serverLogPath = null;
 
         String appServer = System.getProperty("app.server");
-        if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap6") || appServer.equals("eap"))) {
+        if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap"))) {
             serverLogPath = System.getProperty("app.server.home") + "/standalone-test/log/server.log";
         }
 
