@@ -112,7 +112,7 @@ With this feature enabled, the options `spi-user-sessions-infinispan-offline-ses
 
 When upgrading from {project_name} 24 or earlier, admins can choose to migrate existing online user and client sessions to persistent sessions.
 For this to work, those existing sessions need to be stored in either a remote {jdgserver_name} or in a database configured as JDBC persistence for {project_name}'s embedded cache.
-Migrating in-memory sessions for {project_name} 24 is not supported as all {project_name} instances need to be shut down before the upgrade due to a major version upgrade of the embedded cache.
+Migrating in-memory sessions for {project_name} 24 is not supported as all {project_name} instances need to be shut down before the upgrade due to a major version upgrade of the embedded Infinispan.
 
 [WARNING]
 ====
@@ -151,8 +151,9 @@ This includes clearing the caches of the external {jdgserver_name} if one is use
 --
 * If JDBC persistence is used, remove the configuration for JDBC persistence.
 * If the remote {jdgserver_name} has been used in a single-site setup solely for keeping user sessions across {project_name} restarts, remove the remote {jdgserver_name} configuration for those caches.
-* If the remote {jdgserver_name} is used in a multi-site setup, update the cache config as outlined in https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section} with the number of owners and the maximum memory size to reduce the memory usage.
 --
++
+TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduce the resource consumption by the external Infinispan by configuring the number of entries in memory. Use the settings outlined in https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
 
 . Rolling restart of {project_name} to activate the new cache configuration XML.
 
