@@ -9,19 +9,19 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
-    @FindBy(id = "username")
+    @FindBy(name = "username")
     private WebElement usernameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
     
     @FindBy(css = "input[type=\"submit\"]")
@@ -106,7 +106,7 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
     
     public boolean isDepartmentPresent() {
         try {
-            return driver.findElement(By.id("department")).isDisplayed();
+            return driver.findElement(By.name("department")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }
