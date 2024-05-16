@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.remotestore;
 
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +38,11 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -108,7 +114,24 @@ public class RemoteCacheInvoker {
 
         switch (operation) {
             case REMOVE:
-                remoteCache.remove(key);
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
+                    (remoteCache.getName().equals(USER_SESSION_CACHE_NAME)
+                     || remoteCache.getName().equals(CLIENT_SESSION_CACHE_NAME)
+                     || remoteCache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME)
+                     || remoteCache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+                    if (remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key) == null) {
+                        logger.debugf("No existing entry for %s in the remote cache to remove, might have been evicted.", key);
+                        // force a remove to trigger an event on the remote DC to clear those
+                        remoteCache.put(key, new SessionEntityWrapper<>(null));
+                        if (remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key) == null) {
+                            logger.warnf("Unable to trigger the remove in the remote cache %s for key %s", remoteCache.getName(), key);
+                        };
+                    }
+                    // second remove
+                    remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key);
+                } else {
+                    remoteCache.remove(key);
+                }
                 break;
             case ADD:
                 remoteCache.put(key, sessionWrapper.forTransport(),
@@ -146,6 +169,18 @@ public class RemoteCacheInvoker {
 
             VersionedValue<SessionEntityWrapper<V>> versioned = remoteCache.getWithMetadata(key);
             if (versioned == null) {
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
+                    (remoteCache.getName().equals(USER_SESSION_CACHE_NAME)
+                     || remoteCache.getName().equals(CLIENT_SESSION_CACHE_NAME)
+                     || remoteCache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME)
+                     || remoteCache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+                    logger.debugf("No existing entry for %s in the remote cache to remove, might have been evicted.", key);
+                    // force a remove to trigger an event on the remote DC to clear those
+                    remoteCache.put(key, new SessionEntityWrapper<>(null));
+                    if (remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key) != null) {
+                        logger.warnf("Unable to trigger the remove in the remote cache %s for key %s", remoteCache.getName(), key);
+                    };
+                }
                 logger.warnf("Not found entity to replace for key '%s'", key);
                 return;
             }

@@ -130,6 +130,10 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
 
         V remoteSession = remoteSessionVersioned.getValue().getEntity();
+        if (remoteSession == null) {
+            // this is a dummy value to trigger a remove event on the remote site
+            return;
+        }
         SessionEntityWrapper<V> newWrapper = new SessionEntityWrapper<>(remoteSession);
 
         logger.debugf("Read session entity wrapper from the remote cache: %s", remoteSession);
