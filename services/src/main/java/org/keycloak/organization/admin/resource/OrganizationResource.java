@@ -39,6 +39,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
@@ -56,6 +57,7 @@ import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.StringUtil;
 
 @Provider
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationResource {
 
     private final KeycloakSession session;
@@ -75,8 +77,16 @@ public class OrganizationResource {
         this.adminEvent = adminEvent;
     }
 
+    /**
+     * Creates a new organization based on the specified {@link OrganizationRepresentation}.
+     *
+     * @param organization the representation containing the organization data.
+     * @return a {@link Response} containing the status of the operation.
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation( summary = "Creates a new organization")
     public Response create(OrganizationRepresentation organization) {
         auth.realm().requireManageRealm();
         if (organization == null) {
@@ -107,7 +117,7 @@ public class OrganizationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation( summary = "Return a paginated list of organizations filtered according to the specified parameters")
+    @Operation( summary = "Returns a paginated list of organizations filtered according to the specified parameters")
     public Stream<OrganizationRepresentation> search(
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
@@ -126,9 +136,18 @@ public class OrganizationResource {
         }
     }
 
+    /**
+     * Returns the organization associated with the specified {@code id}.
+     *
+     * @param id the organization id.
+     * @return the organization associated with the specified id, or {@code null} if no organization is found.
+     */
     @Path("{id}")
     @GET
+    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns the organization associated with the specified id, or null if no organization is found")
     public OrganizationRepresentation get(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
         if (StringUtil.isBlank(id)) {
@@ -140,6 +159,8 @@ public class OrganizationResource {
 
     @Path("{id}")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Deletes the organization with the specified id")
     public Response delete(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
         if (StringUtil.isBlank(id)) {
@@ -154,6 +175,8 @@ public class OrganizationResource {
     @Path("{id}")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Updates the organization with the specified id")
     public Response update(@PathParam("id") String id, OrganizationRepresentation organization) {
         auth.realm().requireManageRealm();
         OrganizationModel model = getOrganization(id);

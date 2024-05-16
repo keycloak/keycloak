@@ -32,6 +32,10 @@ import jakarta.ws.rs.ext.Provider;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -41,10 +45,12 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 @Provider
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationIdentityProvidersResource {
 
     private final RealmModel realm;
@@ -66,6 +72,10 @@ public class OrganizationIdentityProvidersResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Adds the identity provider with the specified id to the organization",
+        description = "Adds, or associates, an existing identity provider with the organization. If no identity provider is found, " +
+                "or if it is already associated with the organization, an error response is returned")
     public Response addIdentityProvider(String id) {
         auth.realm().requireManageRealm();
 
@@ -90,6 +100,9 @@ public class OrganizationIdentityProvidersResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns all identity providers associated with the organization")
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
         auth.realm().requireManageRealm();
         return organization.getIdentityProviders().map(this::toRepresentation);
@@ -98,6 +111,11 @@ public class OrganizationIdentityProvidersResource {
     @Path("{alias}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns the identity provider associated with the organization that has the specified alias",
+        description = "Searches for an identity provider with the given alias. If one is found and is associated with the " +
+                "organization, it is returned. Otherwise, an error response with status NOT_FOUND is returned")
     public IdentityProviderRepresentation getIdentityProvider(@PathParam("alias") String alias) {
         IdentityProviderModel broker = realm.getIdentityProviderByAlias(alias);
 
@@ -111,6 +129,10 @@ public class OrganizationIdentityProvidersResource {
     @Path("{alias}")
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Removes the identity provider with the specified alias from the organization",
+        description = "Breaks the association between the identity provider and the organization. The provider itself is not deleted. " +
+                "If no provider is found, or if it is not currently associated with the org, an error response is returned")
     public Response delete(@PathParam("alias") String alias) {
         IdentityProviderModel broker = realm.getIdentityProviderByAlias(alias);
 
