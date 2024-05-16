@@ -59,7 +59,7 @@ public class Profile {
 
         ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
 
-        LOGIN2("New Login Theme", Type.EXPERIMENTAL),
+        LOGIN2("New Login Theme", Type.DEFAULT),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
