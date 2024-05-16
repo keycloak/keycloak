@@ -206,7 +206,7 @@
         <examples.version.suffix>${project.version}</examples.version.suffix>
         <skip.copy.example.wars>false</skip.copy.example.wars>
 
-        <browser>htmlUnit</browser>
+        <browser>chrome</browser>
         <browser.strict.cookies>false</browser.strict.cookies>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>

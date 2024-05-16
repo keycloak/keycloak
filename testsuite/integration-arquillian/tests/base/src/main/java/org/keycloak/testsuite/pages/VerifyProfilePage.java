@@ -33,16 +33,16 @@ public class VerifyProfilePage extends AbstractPage {
     @Page
     private AccountFields.AccountErrors accountErrors;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
     
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
     
 
