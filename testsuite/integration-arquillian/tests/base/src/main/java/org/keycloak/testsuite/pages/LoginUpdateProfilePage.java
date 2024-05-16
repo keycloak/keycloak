@@ -40,16 +40,16 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @Page
     private UpdateProfileErrors errorsPage;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
     
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
 
     @FindBy(css = "input[type=\"submit\"]")

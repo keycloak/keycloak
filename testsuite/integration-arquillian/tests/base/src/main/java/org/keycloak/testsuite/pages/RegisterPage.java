@@ -44,28 +44,28 @@ public class RegisterPage extends AbstractPage {
     @Page
     private PasswordFields.PasswordErrors passwordErrors;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
 
-    @FindBy(id = "username")
+    @FindBy(name = "username")
     private WebElement usernameInput;
 
-    @FindBy(id = "password")
+    @FindBy(name = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "password-confirm")
+    @FindBy(name = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
 
-    @FindBy(id = "termsAccepted")
+    @FindBy(name = "termsAccepted")
     private WebElement termsAcceptedInput;
 
     @FindBy(css = "input[type=\"submit\"]")
@@ -136,7 +136,7 @@ public class RegisterPage extends AbstractPage {
 
         if (attributes != null) {
             for (Entry<String, String> attribute : attributes.entrySet()) {
-                driver.findElement(By.id(Constants.USER_ATTRIBUTES_PREFIX + attribute.getKey())).sendKeys(attribute.getValue());
+                driver.findElement(By.name(Constants.USER_ATTRIBUTES_PREFIX + attribute.getKey())).sendKeys(attribute.getValue());
             }
         }
 
@@ -238,7 +238,7 @@ public class RegisterPage extends AbstractPage {
 
     public boolean isDepartmentPresent() {
         try {
-            return driver.findElement(By.id("department")).isDisplayed();
+            return driver.findElement(By.name("department")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }
