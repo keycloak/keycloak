@@ -17,6 +17,15 @@
 
 package org.keycloak.cluster.infinispan;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.lifecycle.ComponentStatus;
@@ -38,22 +47,14 @@ import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * This impl is aware of Cross-Data-Center scenario too
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanClusterProviderFactory implements ClusterProviderFactory {
+public class InfinispanClusterProviderFactory implements ClusterProviderFactory, EnvironmentDependentProviderFactory {
 
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
