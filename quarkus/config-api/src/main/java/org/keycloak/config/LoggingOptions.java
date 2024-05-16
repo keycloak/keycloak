@@ -204,7 +204,7 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_GELF_INCLUDE_STACK_TRACE = new OptionBuilder<>("log-gelf-include-stack-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description("If set to true, occuring stack traces are included in the 'StackTrace' field in the GELF output.")
+            .description("If set to true, occurring stack traces are included in the 'StackTrace' field in the GELF output.")
             .defaultValue(Boolean.TRUE)
             .deprecated()
             .build();

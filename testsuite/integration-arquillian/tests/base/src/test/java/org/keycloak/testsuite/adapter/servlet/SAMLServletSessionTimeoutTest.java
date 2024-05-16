@@ -148,7 +148,7 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
 
                             AuthnStatementType authType = (AuthnStatementType) statements.stream()
                                     .filter(statement -> statement instanceof AuthnStatementType)
-                                    .findFirst().orElseThrow(() -> new RuntimeException("SamlReponse doesn't contain AuthStatement"));
+                                    .findFirst().orElseThrow(() -> new RuntimeException("SamlResponse doesn't contain AuthStatement"));
 
                             assertThat(authType.getSessionNotOnOrAfter(), notNullValue());
                             XMLGregorianCalendar expectedSessionTimeout = XMLTimeUtil.add(authType.getAuthnInstant(), SESSION_LENGTH_IN_SECONDS * 1000);

@@ -2366,7 +2366,7 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
 
     @Override
     public RuntimeException maximumNumberOfClientsReachedforPool(String max) {
-        return new RuntimeException("Pool reached miximum number of clients within the pool (" + max + ")");
+        return new RuntimeException("Pool reached maximum number of clients within the pool (" + max + ")");
     }
 
     @Override
