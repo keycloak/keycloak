@@ -35,6 +35,7 @@ public class CorsErrorResponseException extends WebApplicationException {
     private final Response.Status status;
 
     public CorsErrorResponseException(Cors cors, String error, String errorDescription, Response.Status status) {
+        super(error, status);
         this.cors = cors;
         this.error = error;
         this.errorDescription = errorDescription;
