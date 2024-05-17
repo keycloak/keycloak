@@ -83,10 +83,12 @@ export const LinkIdentityProviderModal = ({
           alias: data.alias[0],
         });
       }
-      addAlert(t("linkSuccessful"));
+      addAlert(
+        t(!identityProvider ? "linkSuccessful" : "linkUpdatedSuccessful"),
+      );
       onClose();
     } catch (error) {
-      addError("linkError", error);
+      addError(!identityProvider ? "linkError" : "linkUpdatedError", error);
     }
   };
 

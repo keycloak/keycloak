@@ -45,7 +45,7 @@ const ShownOnLoginPageCheck = ({
           },
         },
       );
-      addAlert("linkUpdatedSuccessful");
+      addAlert(t("linkUpdatedSuccessful"));
 
       refresh();
     } catch (error) {
@@ -185,6 +185,7 @@ export const IdentityProviders = () => {
               message={t("emptyIdentityProviderLink")}
               instructions={t("emptyIdentityProviderLinkInstructions")}
               primaryActionText={t("linkIdentityProvider")}
+              onPrimaryAction={toggleOpen}
             />
           }
         />
