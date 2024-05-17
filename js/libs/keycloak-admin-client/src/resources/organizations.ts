@@ -114,7 +114,7 @@ export class Organizations extends Resource<{ realm?: string }> {
 
   public linkIdp = this.makeRequest<{ orgId: string; alias: string }, string>({
     method: "POST",
-    path: "/{orgId}/identity-provider",
+    path: "/{orgId}/identity-providers",
     urlParamKeys: ["orgId"],
     payloadKey: "alias",
   });
@@ -122,7 +122,7 @@ export class Organizations extends Resource<{ realm?: string }> {
   public unLinkIdp = this.makeRequest<{ orgId: string; alias: string }, string>(
     {
       method: "DELETE",
-      path: "/{orgId}/identity-provider/{alias}",
+      path: "/{orgId}/identity-providers/{alias}",
       urlParamKeys: ["orgId", "alias"],
     },
   );

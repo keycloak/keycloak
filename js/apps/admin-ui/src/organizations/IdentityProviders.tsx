@@ -1,23 +1,81 @@
-import { Button, PageSection, ToolbarItem } from "@patternfly/react-core";
+import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import {
+  Button,
+  ButtonVariant,
+  PageSection,
+  Switch,
+  ToolbarItem,
+} from "@patternfly/react-core";
 import { BellIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useFetch } from "../utils/useFetch";
+import useToggle from "../utils/useToggle";
+import { LinkIdentityProviderModal } from "./LinkIdentityProviderModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
+
+type ShownOnLoginPageCheckProps = {
+  row: IdentityProviderRepresentation;
+  refresh: () => void;
+};
+
+const ShownOnLoginPageCheck = ({
+  row,
+  refresh,
+}: ShownOnLoginPageCheckProps) => {
+  const { adminClient } = useAdminClient();
+  const { addAlert, addError } = useAlerts();
+  const { t } = useTranslation();
+
+  const toggle = async (value: boolean) => {
+    try {
+      await adminClient.identityProviders.update(
+        { alias: row.alias! },
+        {
+          ...row,
+          config: {
+            ...row.config,
+            "kc.org.broker.public": `${value}`,
+          },
+        },
+      );
+      addAlert("linkUpdatedSuccessful");
+
+      refresh();
+    } catch (error) {
+      addError("linkUpdatedError", error);
+    }
+  };
+
+  return (
+    <Switch
+      label={t("on")}
+      labelOff={t("off")}
+      isChecked={row.config?.["kc.org.broker.public"] === "true"}
+      onChange={(_, value) => toggle(value)}
+    />
+  );
+};
 
 export const IdentityProviders = () => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { id: orgId } = useParams<EditOrganizationParams>();
+  const { addAlert, addError } = useAlerts();
 
-  // const [key, setKey] = useState(0);
-  // const refresh = () => setKey(key + 1);
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
 
   const [hasProviders, setHasProviders] = useState(false);
+  const [selectedRow, setSelectedRow] =
+    useState<IdentityProviderRepresentation>();
+  const [open, toggleOpen] = useToggle();
 
   useFetch(
     async () => adminClient.identityProviders.find({ max: 1 }),
@@ -30,8 +88,38 @@ export const IdentityProviders = () => {
   const loader = () =>
     adminClient.organizations.listIdentityProviders({ orgId: orgId! });
 
+  const [toggleUnlinkDialog, UnlinkConfirm] = useConfirmDialog({
+    titleKey: "identityProviderUnlink",
+    messageKey: "identityProviderUnlinkConfirm",
+    continueButtonLabel: "unLinkIdentityProvider",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.organizations.unLinkIdp({
+          orgId: orgId!,
+          alias: selectedRow!.alias! as string,
+        });
+        addAlert(t("unLinkSuccessful"));
+        refresh();
+      } catch (error) {
+        addError("unLinkError", error);
+      }
+    },
+  });
+
   return (
     <PageSection variant="light">
+      <UnlinkConfirm />
+      {open && (
+        <LinkIdentityProviderModal
+          orgId={orgId!}
+          identityProvider={selectedRow}
+          onClose={() => {
+            toggleOpen();
+            refresh();
+          }}
+        />
+      )}
       {!hasProviders ? (
         <ListEmptyState
           icon={BellIcon}
@@ -40,27 +128,35 @@ export const IdentityProviders = () => {
         />
       ) : (
         <KeycloakDataTable
-          // key={key}
+          key={key}
           loader={loader}
-          isPaginated
           ariaLabelKey="identityProviders"
           searchPlaceholderKey="searchProvider"
           toolbarItem={
             <ToolbarItem>
-              <Button>{t("linkIdentityProvider")}</Button>
+              <Button
+                onClick={() => {
+                  setSelectedRow(undefined);
+                  toggleOpen();
+                }}
+              >
+                {t("linkIdentityProvider")}
+              </Button>
             </ToolbarItem>
           }
           actions={[
             {
               title: t("edit"),
-              onRowClick: async () => {
-                console.log("click");
+              onRowClick: (row) => {
+                setSelectedRow(row);
+                toggleOpen();
               },
             },
             {
               title: t("unLinkIdentityProvider"),
-              onRowClick: async () => {
-                console.log("click");
+              onRowClick: (row) => {
+                setSelectedRow(row);
+                toggleUnlinkDialog();
               },
             },
           ]}
@@ -75,6 +171,13 @@ export const IdentityProviders = () => {
             {
               name: "providerId",
               displayKey: "providerDetails",
+            },
+            {
+              name: "config['kc.org.broker.public']",
+              displayKey: "shownOnLoginPage",
+              cellRenderer: (row) => (
+                <ShownOnLoginPageCheck row={row} refresh={refresh} />
+              ),
             },
           ]}
           emptyState={
