@@ -171,4 +171,7 @@ public final class Constants {
 
     // Sent to clients when authentication session expired, but user is already logged-in in current browser
     public static final String AUTHENTICATION_EXPIRED_MESSAGE = "authentication_expired";
+
+    // attribute name used in apps to mark that it is an admin console and its azp is allowed
+    public static final String SECURITY_ADMIN_CONSOLE_ATTR = "security.admin.console";
 }
