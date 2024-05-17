@@ -97,7 +97,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     private int lifespan;
 
-    private static final Integer failureFactor= 2;
+    private static final Integer failureFactor = 2;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -377,13 +377,13 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             assertUserNumberOfFailures(user.getId(), failureFactor);
 
             events.clear();
-         } finally {
-             realm.setPermanentLockout(false);
-             testRealm().update(realm);
-             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
-             user.setEnabled(true);
-             updateUser(user);
-         }
+        } finally {
+            realm.setPermanentLockout(false);
+            testRealm().update(realm);
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+        }
     }
 
     @Test
@@ -606,6 +606,87 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         appPage.logout(idTokenHint);
 
         events.clear();
+    }
+
+    @Test
+    public void testRaceAttackTemporaryLockout() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+        try {
+            realm.setWaitIncrementSeconds(120);
+            realm.setQuickLoginCheckMilliSeconds(120000L);
+            testRealm().update(realm);
+            clearUserFailures();
+            clearAllUserFailures();
+            user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            testRealm().users().get(user.getId()).update(user);
+            String totpSecret = totp.generateTOTP("totpSecret");
+            OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
+            Assert.assertNotNull(response.getAccessToken());
+            raceAttack(user);
+        } finally {
+            realm.setWaitIncrementSeconds(5);
+            realm.setQuickLoginCheckMilliSeconds(100L);
+            testRealm().update(realm);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
+    @Test
+    public void testRaceAttackPermanentLockout() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+        try {
+            realm.setPermanentLockout(true);
+            testRealm().update(realm);
+            raceAttack(user);
+            clearUserFailures();
+            clearAllUserFailures();
+            user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            testRealm().users().get(user.getId()).update(user);
+            String totpSecret = totp.generateTOTP("totpSecret");
+            OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
+            Assert.assertNotNull(response.getAccessToken());
+        } finally {
+            realm.setPermanentLockout(false);
+            testRealm().update(realm);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
+    private void raceAttack(UserRepresentation user) throws Exception {
+        int num = 100;
+        LoginThread[] threads = new LoginThread[num];
+        for (int i = 0; i < num; ++i) {
+            threads[i] = new LoginThread();
+        }
+        for (int i = 0; i < num; ++i) {
+            threads[i].start();
+        }
+        for (int i = 0; i < num; ++i) {
+            threads[i].join();
+        }
+        int invalidCount =  (int) adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId()).get("numFailures");
+        assertTrue("Invalid count should be less than or equal 2 but was: " + invalidCount, invalidCount <= 2);
+    }
+
+    public class LoginThread extends Thread {
+
+        public void run() {
+            try {
+                String totpSecret = totp.generateTOTP("totpSecret");
+                OAuthClient.AccessTokenResponse response = getTestToken("invalid", totpSecret);
+                Assert.assertNull(response.getAccessToken());
+                Assert.assertEquals(response.getError(), "invalid_grant");
+                Assert.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 
     public void expectTemporarilyDisabled() throws Exception {

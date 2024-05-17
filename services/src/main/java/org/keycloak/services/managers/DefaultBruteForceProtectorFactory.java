@@ -28,6 +28,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFactory {
     DefaultBruteForceProtector protector;
 
+    private boolean allowConcurrentRequests;
+
     @Override
     public BruteForceProtector create(KeycloakSession session) {
         return protector;
@@ -35,14 +37,14 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public void init(Config.Scope config) {
-
+        // this can be a brute force setting?
+        this.allowConcurrentRequests = config.getBoolean("allowConcurrentRequests", Boolean.FALSE);
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        protector = new DefaultBruteForceProtector(factory);
+        protector = allowConcurrentRequests ? new DefaultBruteForceProtector(factory) : new DefaultBlockingBruteForceProtector(factory);
         protector.start();
-
     }
 
     @Override
