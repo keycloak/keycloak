@@ -36,6 +36,7 @@ public class ErrorResponseException extends WebApplicationException {
     private final Response.Status status;
 
     public ErrorResponseException(String error, String errorDescription, Response.Status status) {
+        super(error, status);
         this.response = null;
         this.error = error;
         this.errorDescription = errorDescription;
