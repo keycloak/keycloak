@@ -1,4 +1,4 @@
-# Configuration file just with the security properties, which are supposed to be overriden. The properties, which are not mentioned in this file,
+# Configuration file just with the security properties, which are supposed to be overridden. The properties, which are not mentioned in this file,
 # are inherited from the default java.security file bundled within the Java distribution.
 #
 # NOTE: Each property is specified 2 times. This is so the same file can be used on both FIPS based RHEL host (which uses "fips" prefixed properties by default)
@@ -12,3 +12,6 @@
 # TODO: Comment/remove this once https://bugzilla.redhat.com/show_bug.cgi?id=1940064 is fixed and OpenJDK 17 updated to corresponding version where XMLDSig is available by default
 #
 fips.provider.7=XMLDSig
+
+# TODO: Comment/remove this once https://issues.redhat.com/browse/RHEL-3478 is fixed.
+securerandom.strongAlgorithms=PKCS11:SunPKCS11-NSS-FIPS
