@@ -200,6 +200,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             prepareCommandsForRebuilding(commands);
 
             if (configuration.getFipsMode() != FipsMode.DISABLED) {
+                commands.add("-Dorg.bouncycastle.rsa.allow_pkcs15_enc=true");
                 addFipsOptions(commands);
             }
         }

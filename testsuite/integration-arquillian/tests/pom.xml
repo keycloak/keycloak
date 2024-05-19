@@ -1558,6 +1558,7 @@
                 <auth.server.fips.mode>non-strict</auth.server.fips.mode>
 
                 <auth.server.supported.keystore.types>PKCS12,BCFKS</auth.server.supported.keystore.types>
+                <auth.server.supported.rsa.key.sizes>2048,4096</auth.server.supported.rsa.key.sizes>
                 <auth.server.kerberos.supported>false</auth.server.kerberos.supported>
 
                 <auth.server.keystore.type>pkcs12</auth.server.keystore.type>
