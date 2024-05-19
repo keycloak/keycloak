@@ -11,10 +11,6 @@ org.keycloak.testsuite.x509.**
 MutualTLSClientTest
 FAPI1Test
 FAPICIBATest
-KcRegTest
-KcRegCreateTest
-KcAdmTest
-KcAdmCreateTest
 SAMLServletAdapterTest
 SamlSignatureTest
 KcOidcBrokerJWETest

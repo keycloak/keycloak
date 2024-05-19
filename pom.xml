@@ -88,8 +88,11 @@
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
-        <!-- 1.0.2.4 exhibits class loading issues -->
-        <bouncycastle.bcfips.version>1.0.2.3</bouncycastle.bcfips.version>
+
+        <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
+
+        <bouncycastle.bctls-fips.version>1.0.19</bouncycastle.bctls-fips.version>
+
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -405,6 +408,12 @@
             <artifactId>bc-fips</artifactId>
             <version>${bouncycastle.bcfips.version}</version>
           </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-fips</artifactId>
+                <version>${bouncycastle.bctls-fips.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
