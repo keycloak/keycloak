@@ -66,7 +66,7 @@ public class OrganizationInvitationResource {
         this.tokenExpiration = getTokenExpiration();
     }
 
-    public Response inviteUser(String email) {
+    public Response inviteUser(String email, String firstName, String lastName) {
         if (StringUtil.isBlank(email)) {
             throw ErrorResponse.error("To invite a member you need to provide an email", Status.BAD_REQUEST);
         }
@@ -76,15 +76,19 @@ public class OrganizationInvitationResource {
         if (user != null) {
             OrganizationModel org = provider.getByMember(user);
 
-            if (org.equals(organization)) {
+            if (org != null && org.equals(organization)) {
                 throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
             }
 
-            throw ErrorResponse.error("User already exists with this e-mail", Status.BAD_REQUEST);
+            return sendInvitation(user);
         }
 
         user = new InMemoryUserAdapter(session, realm, null);
         user.setEmail(email);
+        if (firstName != null && lastName != null) {
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+        }
 
         return sendInvitation(user);
     }

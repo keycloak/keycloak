@@ -168,6 +168,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         Map<String, Object> attributes = new HashMap<>(this.attributes);
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
         attributes.put("organization", organization);
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            attributes.put("firstName", user.getFirstName());
+            attributes.put("lastName", user.getLastName());
+        }
         send("orgInviteSubject", List.of(organization.getName()), "org-invite.ftl", attributes);
     }
 
