@@ -71,6 +71,8 @@
                                         <include>ca.crt</include>
                                         <include>client.crt</include>
                                         <include>client.key</include>
+                                        <include>client-ca.crt</include>
+                                        <include>client-ca.key</include>
                                         <include>*.crl</include>
                                     </includes>
                                 </resource>

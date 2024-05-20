@@ -72,7 +72,7 @@ FROM quay.io/keycloak/keycloak:{containerlabel} as builder
 ...
 
 # Add the provider JAR file to the providers directory
-ADD --chown=keycloak:keycloak <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
+ADD --chown=keycloak:keycloak --chmod=644 <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
 
 ...
 
