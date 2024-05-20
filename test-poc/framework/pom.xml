@@ -31,6 +31,10 @@
     <packaging>jar</packaging>
     <description>PoC JUnit 5 testing framework for Keycloak</description>
 
+    <properties>
+        <smallrye-config.version>3.8.2</smallrye-config.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -43,6 +47,11 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-junit5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.config</groupId>
+            <artifactId>smallrye-config</artifactId>
+            <version>${smallrye-config.version}</version>
         </dependency>
     </dependencies>
 

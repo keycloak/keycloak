@@ -6,6 +6,7 @@ import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
 import org.keycloak.test.framework.injection.Supplier;
 import org.keycloak.test.framework.injection.SupplierHelpers;
+import org.keycloak.test.framework.server.smallrye_config.TestConfigSource;
 
 public class KeycloakTestServerSupplier implements Supplier<KeycloakTestServer, KeycloakIntegrationTest> {
 
@@ -21,12 +22,12 @@ public class KeycloakTestServerSupplier implements Supplier<KeycloakTestServer, 
 
     @Override
     public InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> getValue(Registry registry, KeycloakIntegrationTest annotation) {
-        KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
+        TestConfigSource configSource = SupplierHelpers.getInstance(annotation.config());
+        KeycloakTestServerSmallryeConfig smallryeConfig = new KeycloakTestServerSmallryeConfig(configSource);
 
-//        RemoteKeycloakTestServer keycloakTestServer = new RemoteKeycloakTestServer();
-        EmbeddedKeycloakTestServer keycloakTestServer = new EmbeddedKeycloakTestServer();
+        KeycloakTestServer keycloakTestServer = KeycloakTestServerProducer.createKeycloakTestServerInstance(smallryeConfig.getServerType());
 
-        keycloakTestServer.start(serverConfig);
+        keycloakTestServer.start(smallryeConfig);
 
         return new InstanceWrapper<>(this, annotation, keycloakTestServer);
     }

@@ -3,7 +3,7 @@ package org.keycloak.test.framework.server;
 public class RemoteKeycloakTestServer implements KeycloakTestServer {
 
     @Override
-    public void start(KeycloakTestServerConfig serverConfig) {
+    public void start(KeycloakTestServerSmallryeConfig smallryeConfig) {
 
     }
 

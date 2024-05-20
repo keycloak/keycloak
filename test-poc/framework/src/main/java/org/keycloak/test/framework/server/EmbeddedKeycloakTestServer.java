@@ -12,7 +12,7 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
     private Keycloak keycloak;
 
     @Override
-    public void start(KeycloakTestServerConfig serverConfig) {
+    public void start(KeycloakTestServerSmallryeConfig smallryeConfig) {
         System.setProperty("keycloakAdmin", "admin");
         System.setProperty("keycloakAdminPassword", "admin");
 
@@ -21,11 +21,11 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
 //        rawOptions.add("--db=dev-mem"); // TODO With dev-mem there's an issue as the H2 DB isn't stopped when restarting embedded server
         rawOptions.add("--cache=local");
 
-        if (!serverConfig.features().isEmpty()) {
-            rawOptions.add("--features=" + String.join(",", serverConfig.features()));
+        if (!smallryeConfig.getServerFeatures().isEmpty()) {
+            rawOptions.add("--features=" + String.join(",", smallryeConfig.getServerFeatures()));
         }
 
-        serverConfig.options().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
+        smallryeConfig.getServerOptions().forEach((key, value) -> rawOptions.add("--" + key + "=" + value));
 
         keycloak = Keycloak.builder()
                 .setVersion(Version.VERSION)
