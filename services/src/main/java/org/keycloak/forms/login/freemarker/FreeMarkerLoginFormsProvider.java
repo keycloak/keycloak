@@ -100,6 +100,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 
+import static org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction.AUTH_NOTE_INITIAL_GENERATED_CODES;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 
 /**
@@ -250,7 +251,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("totp", totpBean);
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
-                attributes.put("recoveryAuthnCodesConfigBean", new RecoveryAuthnCodesBean());
+                RecoveryAuthnCodesBean recoveryCodesBean = new RecoveryAuthnCodesBean();
+                attributes.put("recoveryAuthnCodesConfigBean", recoveryCodesBean);
+                // Store the generated codes in the authentication session
+                authenticationSession.setAuthNote(AUTH_NOTE_INITIAL_GENERATED_CODES, recoveryCodesBean.getGeneratedRecoveryAuthnCodesAsString());
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_INPUT:
                 attributes.put("recoveryAuthnCodesInputBean", new RecoveryAuthnCodeInputLoginBean(session, realm, user));

@@ -29,6 +29,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     private static final String FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN = "generatedRecoveryAuthnCodes";
     private static final String FIELD_GENERATED_AT_HIDDEN = "generatedAt";
     private static final String FIELD_USER_LABEL_HIDDEN = "userLabel";
+    public static final String AUTH_NOTE_INITIAL_GENERATED_CODES = "initialGeneratedCodes";
     public static final String PROVIDER_ID = UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name();
     private static final RecoveryAuthnCodesAction INSTANCE = new RecoveryAuthnCodesAction();
 
@@ -81,7 +82,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     }
 
     @Override
-    public void processAction(RequiredActionContext reqActionContext) {
+        public void processAction(RequiredActionContext reqActionContext) {
         CredentialProvider recoveryCodeCredentialProvider;
         MultivaluedMap<String, String> httpReqParamsMap;
         Long generatedAtTime;
@@ -97,6 +98,37 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
                 Arrays.asList(httpReqParamsMap.getFirst(FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN).split(",")));
         generatedAtTime = Long.parseLong(httpReqParamsMap.getFirst(FIELD_GENERATED_AT_HIDDEN));
         generatedUserLabel = httpReqParamsMap.getFirst(FIELD_USER_LABEL_HIDDEN);
+
+        // Retrieve the initially generated recovery codes from the authentication session
+        String storedCodes = reqActionContext.getAuthenticationSession().getAuthNote(AUTH_NOTE_INITIAL_GENERATED_CODES);
+        if (storedCodes == null) {
+            Response challenge = reqActionContext.form()
+                    .setError("No initial recovery codes found.")
+                    .createErrorPage(Response.Status.BAD_REQUEST);
+            reqActionContext.challenge(challenge);
+            return;
+        }
+        List<String> initialGeneratedCodes = Arrays.asList(storedCodes.split(","));
+
+        // Check the number of recovery codes
+        if (generatedCodes.size() != initialGeneratedCodes.size()) {
+            Response challenge = reqActionContext.form()
+                    .setError("Invalid number of recovery codes.")
+                    .createErrorPage(Response.Status.BAD_REQUEST);
+            reqActionContext.challenge(challenge);
+            return;
+        }
+
+        // Check the content of the recovery codes
+        for (String code : generatedCodes) {
+            if (!initialGeneratedCodes.contains(code)) {
+                Response challenge = reqActionContext.form()
+                        .setError("Invalid recovery code.")
+                        .createErrorPage(Response.Status.BAD_REQUEST);
+                reqActionContext.challenge(challenge);
+                return;
+            }
+        }
 
         RecoveryAuthnCodesCredentialModel credentialModel = createFromValues(generatedCodes, generatedAtTime, generatedUserLabel);
 
