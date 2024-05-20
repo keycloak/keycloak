@@ -23,8 +23,7 @@ public class KeycloakTestServerSupplier implements Supplier<KeycloakTestServer, 
     public InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> getValue(Registry registry, KeycloakIntegrationTest annotation) {
         KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
-//        RemoteKeycloakTestServer keycloakTestServer = new RemoteKeycloakTestServer();
-        EmbeddedKeycloakTestServer keycloakTestServer = new EmbeddedKeycloakTestServer();
+        KeycloakTestServer keycloakTestServer = KeycloakTestServerProducer.createKeycloakTestServerInstance();
 
         keycloakTestServer.start(serverConfig);
 
