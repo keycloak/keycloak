@@ -18,7 +18,6 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -337,7 +336,6 @@ public class RepresentationToModel {
             ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
             ClientType clientType = mgr.getClientType(realm, resourceRep.getType());
             client = clientType.augment(client);
-            resourceRep = clientType.augment(resourceRep);
         }
 
         updateClientProperties(client, resourceRep, true);
@@ -691,6 +689,7 @@ public class RepresentationToModel {
      * @return {@link Supplier} with results of operation.
      * @param <T> Type of property.
      */
+    @SafeVarargs
     private static <T> Supplier<ClientTypeException> updatePropertyAction(Consumer<T> modelSetter, Supplier<T>... getters) {
         Stream<T> firstNonNullSupplied = Stream.of(getters)
                 .map(Supplier::get)

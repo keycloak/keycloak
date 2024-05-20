@@ -6,8 +6,7 @@
       "config": {
         "standardFlowEnabled": {
           "applicable": true,
-          "default-value": true,
-          "read-only": true
+          "value": true
         }
       }
     },
@@ -17,56 +16,55 @@
       "config": {
         "authorizationServicesEnabled": {
           "applicable": true,
-          "default-value": false
+          "value": false
         },
         "consentRequired": {
           "applicable": true,
-          "default-value": false
+          "value": false
         },
         "directAccessGrantsEnabled": {
           "applicable": true,
-          "default-value": false
+          "value": false
         },
         "frontchannelLogout": {
           "applicable": true,
-          "default-value": false
+          "value": false
         },
         "fullScopeAllowed": {
           "applicable": true,
-          "default-value": true
+          "value": true
         },
         "implicitFlowEnabled": {
           "applicable": true,
-          "default-value": false
+          "value": false
         },
         "nodeReRegistrationTimeout": {
           "applicable": true,
-          "default-value": -1
+          "value": -1
         },
         "oauth2.device.authorization.grant.enabled": {
           "applicable": true,
-          "default-value": "false"
+          "value": "false"
         },
         "oidc.ciba.grant.enabled": {
           "applicable": true,
-          "default-value": "false"
+          "value": "false"
         },
         "protocol": {
           "applicable": true,
-          "default-value": "openid-connect",
-          "read-only": true
+          "value": "openid-connect"
         },
         "publicClient": {
           "applicable": true,
-          "default-value": true
+          "value": true
         },
         "serviceAccountsEnabled": {
           "applicable": true,
-          "default-value": false
+          "value": false
         },
         "standardFlowEnabled": {
           "applicable": true,
-          "default-value": false
+          "value": false
         }
       }
     },
@@ -85,8 +83,7 @@
         },
         "consentRequired": {
           "applicable": true,
-          "default-value": false,
-          "read-only": true
+          "value": false
         },
         "directAccessGrantsEnabled": {
           "applicable": false
@@ -114,21 +111,18 @@
         },
         "protocol": {
           "applicable": true,
-          "default-value": "openid-connect",
-          "read-only": true
+          "value": "openid-connect"
         },
         "publicClient": {
           "applicable": true,
-          "default-value": false,
-          "read-only": true
+          "value": false
         },
         "redirectUris": {
           "applicable": false
         },
         "serviceAccountsEnabled": {
           "applicable": true,
-          "default-value": true,
-          "read-only": true
+          "value": true
         },
         "standardFlowEnabled": {
           "applicable": false

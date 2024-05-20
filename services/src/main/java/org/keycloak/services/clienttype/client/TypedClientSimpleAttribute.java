@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 enum TypedClientSimpleAttribute implements TypedClientAttribute {
     // Top Level client attributes
@@ -89,7 +88,7 @@ enum TypedClientExtendedAttribute implements TypedClientAttribute {
 interface TypedClientAttribute {
     Logger logger = Logger.getLogger(TypedClientAttribute.class);
 
-    default <T> T getClientAttribute(ClientType clientType, Supplier<T> clientGetter, Class<T> tClass) {
+    default <T> T getClientAttribute(ClientType clientType, Class<T> tClass) {
         String propertyName = getPropertyName();
         Object nonApplicableValue = getNonApplicableValue();
 
@@ -103,40 +102,25 @@ interface TypedClientAttribute {
             }
         }
 
-        //  Check if this is read-only. If yes, then we just directly delegate to return stuff from the clientType rather than from client
-        if (clientType.isReadOnly(propertyName)) {
-            return clientType.getDefaultValue(propertyName, tClass);
-        }
-
-        // Delegate to clientGetter
-        return clientGetter.get();
-    }
-
-    default <T> T orDefault(ClientType clientType, Supplier<T> clientGetter, Class<T> tClass) {
-        var typeValue = clientGetter.get();
-        if (typeValue != null) {
-            return typeValue;
-        }
-        return clientType.getDefaultValue(getPropertyName(), tClass);
+        return clientType.getTypeValue(propertyName, tClass);
     }
 
     default <T> void setClientAttribute(ClientType clientType, T newValue, Consumer<T> clientSetter, Class<T> tClass) {
         String propertyName = getPropertyName();
-        Object nonApplicableValue = getNonApplicableValue();
         // Check if clientType supports the feature. If not, return directly
-        if (!clientType.isApplicable(propertyName) && !Objects.equals(nonApplicableValue, newValue)) {
-            logger.warnf("Property %s is not-applicable to client type %s and can not be modified.", propertyName, clientType.getName());
+        if (!clientType.isApplicable(propertyName)) {
+            if(!Objects.equals(getNonApplicableValue(), newValue)) {
+                logger.warnf("Property %s is not-applicable to client type %s and can not be modified.", propertyName, clientType.getName());
+            }
             return;
         }
 
-        // Check if this is read-only. If yes and there is an attempt to change some stuff, then throw an exception
-        if (clientType.isReadOnly(propertyName)) {
-            T oldVal = clientType.getDefaultValue(propertyName, tClass);
-            if (!ObjectUtil.isEqualOrBothNull(oldVal, newValue)) {
-                throw new ClientTypeException(
-                        "Property " + propertyName + " is read-only due to client type " + clientType.getName(),
-                        propertyName);
-            }
+        // If there is an attempt to change a value for an applicable field, then throw an exception.
+        T oldVal = clientType.getTypeValue(propertyName, tClass);
+        if (!ObjectUtil.isEqualOrBothNull(oldVal, newValue)) {
+            throw new ClientTypeException(
+                    "Property " + propertyName + " is read-only due to client type " + clientType.getName(),
+                    propertyName);
         }
 
         // Delegate to clientSetter
