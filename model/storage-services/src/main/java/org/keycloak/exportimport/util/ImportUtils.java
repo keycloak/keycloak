@@ -93,6 +93,7 @@ public class ImportUtils {
         RealmModel realm = model.getRealmByName(realmName);
 
         if (realm != null) {
+            session.getContext().setRealm(realm);
             if (strategy == Strategy.IGNORE_EXISTING) {
                 logger.infof("Realm '%s' already exists. Import skipped", realmName);
                 return false;
@@ -105,6 +106,7 @@ public class ImportUtils {
                 // TODO: For migration between versions, it should be possible to delete just realm but keep it's users
                 model.removeRealm(realm.getId());
             }
+            session.getContext().setRealm(null);
         }
 
         RealmManager realmManager = new RealmManager(session);
