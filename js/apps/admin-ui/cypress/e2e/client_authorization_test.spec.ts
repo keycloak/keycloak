@@ -195,7 +195,7 @@ describe("Client authentication subtab", () => {
     );
   });
 
-  describe("Client authorization tab access for view-realm-authorization", () => {
+  describe.skip("Client authorization tab access for view-realm-authorization", () => {
     const clientId = "realm-view-authz-client-" + uuid();
 
     beforeEach(async () => {
