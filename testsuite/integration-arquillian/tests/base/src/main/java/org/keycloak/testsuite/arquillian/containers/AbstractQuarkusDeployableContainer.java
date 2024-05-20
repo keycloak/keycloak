@@ -401,7 +401,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--spi-password-hashing-pbkdf2-max-padding-length=14");
             commands.add("--spi-password-hashing-pbkdf2-sha256-max-padding-length=14");
             commands.add("--spi-password-hashing-pbkdf2-sha512-max-padding-length=14");
-
         }
 
         commands.add("--log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE,org.keycloak.truststore:TRACE");

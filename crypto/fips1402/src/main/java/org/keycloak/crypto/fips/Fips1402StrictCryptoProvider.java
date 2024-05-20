@@ -19,7 +19,7 @@ public class Fips1402StrictCryptoProvider extends FIPS1402Provider {
 
     @Override
     public String[] getSupportedRsaKeySizes() {
-        // RSA key of 1024 bits not supported in BC-FIPS mode
+        // RSA key of 1024 bits not supported in BC-FIPS approved mode
         return new String[] {"2048", "4096"};
     }
 }
