@@ -31,6 +31,12 @@ In cases where it is clear that no additional comment is needed you can just add
 example if the description only states `It doesn't work` then there's not much point in explaining what information is
 missing.
 
+#### CVE reports on third-party libraries
+
+Known CVEs on third-party libraries will be automatically created as GitHub issues, labeled with `kind/cve`, `kind/bug`, and `status/triage`. The triager identifies the responsible team for the dependency and assigned the appropriate `team/...` label. This process is similar to the bug triage process previously mentioned.
+
+When evaluating the CVE report, assess the impact on the codebase by determining if we are vulnerable or affected. "Vulnerable" means that we use the code reported in the CVE, while "affected" means that we have the dependency with the CVE present but do not use the vulnerable code, making it impossible to exploit the CVE. If closing an issue as "not planned," include a proper explanation and the reason for closing it for future reference.
+
 ### Prioritize the issue
 
 Second step is to prioritize the bug depending on how common the use-case is, if it's a regression, 
