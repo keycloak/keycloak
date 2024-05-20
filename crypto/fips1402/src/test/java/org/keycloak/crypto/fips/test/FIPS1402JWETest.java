@@ -16,6 +16,5 @@ public class FIPS1402JWETest extends JWETest {
     public void before() {
         // Run this test just if java is in FIPS mode
         Assume.assumeTrue("Java is not in FIPS mode. Skipping the test.", Environment.isJavaInFipsMode());
-        System.setProperty("org.bouncycastle.rsa.allow_pkcs15_enc", "true");
     }
 }
