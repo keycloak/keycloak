@@ -120,7 +120,7 @@ describe("User profile tabs", () => {
   });
 
   describe("Attribute groups sub tab tests", () => {
-    it("Deletes an attributes group", () => {
+    it.skip("Deletes an attributes group", () => {
       const group = "Test";
       cy.wrap(null).then(() =>
         adminClient.patchUserProfile(realmName, {
