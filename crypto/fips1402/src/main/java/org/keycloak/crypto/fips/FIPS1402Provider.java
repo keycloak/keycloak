@@ -121,6 +121,12 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     @Override
+    public String[] getSupportedRsaKeySizes() {
+        // RSA key of 1024 bits not supported in BCFIPS mode
+        return new String[] {"2048", "4096"};
+    }
+
+    @Override
     public PemUtilsProvider getPemUtils() {
         return new BCFIPSPemUtilsProvider();
     }

@@ -14,10 +14,4 @@ public class Fips1402StrictCryptoProvider extends FIPS1402Provider {
     static {
         System.setProperty("org.bouncycastle.fips.approved_only", Boolean.TRUE.toString());
     }
-
-    @Override
-    public String[] getSupportedRsaKeySizes() {
-        // RSA key of 1024 bits not supported in BCFIPS approved mode
-        return new String[] {"2048", "4096"};
-    }
 }
