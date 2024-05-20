@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -111,18 +112,22 @@ public class OrganizationMemberResource {
 
     @Path("invite-user")
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Invites a new user to the organization using the specified e-mail address")
-    public Response inviteUser(String email) {
-        return new OrganizationInvitationResource(session, organization, adminEvent).inviteUser(email);
+    @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
+            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
+    public Response inviteUser(@FormParam("email") String email,
+                               @FormParam("first-name") String firstName,
+                               @FormParam("last-name") String lastName) {
+        return new OrganizationInvitationResource(session, organization, adminEvent).inviteUser(email, firstName, lastName);
     }
 
     @POST
     @Path("invite-existing-user")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user to the organization, using the specified user id")
-    public Response inviteExistingUser(String id) {
+    public Response inviteExistingUser(@FormParam("id") String id) {
         return new OrganizationInvitationResource(session, organization, adminEvent).inviteExistingUser(id);
     }
 
