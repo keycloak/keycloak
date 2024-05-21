@@ -62,14 +62,20 @@ public class EmailExistsAsUsernameValidator implements SimpleValidator {
 
         KeycloakSession session = context.getSession();
         RealmModel realm = session.getContext().getRealm();
-
-        if (!realm.isDuplicateEmailsAllowed() && realm.isRegistrationEmailAsUsername()) {
-            UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
-            UserModel userByEmail = session.users().getUserByEmail(realm, value);
-            if (userByEmail != null && user != null && !userByEmail.getId().equals(user.getId())) {
-                context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS)
-                    .setStatusCode(Response.Status.CONFLICT));
+        UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
+        UserModel userByEmail = session.users().getUserByEmail(realm, value);
+        UserModel userByEmailAsUsername = session.users().getUserByUsername(realm, value);
+        if(!realm.isDuplicateEmailsAllowed() ){
+            if(realm.isRegistrationEmailAsUsername()){
+                if (userByEmail != null && user != null && !userByEmail.getId().equals(user.getId())) {
+                    context.addError(new ValidationError(ID, inputHint,Messages.USERNAME_EXISTS)
+                            .setStatusCode(Response.Status.CONFLICT));
+                }
+            }else if(userByEmailAsUsername!=null && (user==null || !userByEmailAsUsername.getId().equals(user.getId()))){
+                context.addError(new ValidationError(ID, inputHint,Messages.EMAIL_ALREADY_USED_AS_USERNAME)
+                        .setStatusCode(Response.Status.CONFLICT));
             }
+
         }
 
         return context;

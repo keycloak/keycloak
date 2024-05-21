@@ -84,6 +84,9 @@ public class Messages {
     public static final String INVALID_TOTP = "invalidTotpMessage";
 
     public static final String USERNAME_EXISTS = "usernameExistsMessage";
+    public static final String USERNAME_ALREADY_USED_AS_EMAIL="usernameAlreadyUsedAsEmailMessage";
+    public static final String EMAIL_ALREADY_USED_AS_USERNAME="emailAlreadyUsedAsUsernameMessage";
+
     public static final String RECAPTCHA_FAILED = "recaptchaFailed";
     public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
 

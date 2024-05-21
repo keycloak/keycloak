@@ -258,6 +258,8 @@ public class UserResource {
                     case Messages.MISSING_USERNAME -> throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
                     case Messages.USERNAME_EXISTS -> throw ErrorResponse.exists("User exists with same username");
                     case Messages.EMAIL_EXISTS -> throw ErrorResponse.exists("User exists with same email");
+                    case Messages.USERNAME_ALREADY_USED_AS_EMAIL -> throw ErrorResponse.exists("User coincide with another user's email");
+                    case Messages.EMAIL_ALREADY_USED_AS_USERNAME -> throw ErrorResponse.exists("Email coincide with another user's username");
                 }
                 errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }

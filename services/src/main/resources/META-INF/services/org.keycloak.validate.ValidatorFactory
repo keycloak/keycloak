@@ -7,6 +7,7 @@ org.keycloak.userprofile.validator.UsernameIDNHomographValidator
 org.keycloak.userprofile.validator.UsernameMutationValidator
 org.keycloak.userprofile.validator.DuplicateEmailValidator
 org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator
+org.keycloak.userprofile.validator.UsernameAlreadyUsedAsEmailValidator
 org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator
 org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator
 org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator

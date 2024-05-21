@@ -136,6 +136,8 @@ public class ValidatorsTest extends AbstractKeycloakTest {
         Assert.assertFalse(result.hasErrorsForInputHint("email"));
     }
 
+
+
     @Test
     public void acceptOnError() {
 

@@ -52,18 +52,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.config.UPConfigUtils;
-import org.keycloak.userprofile.validator.BlankAttributeValidator;
-import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator;
-import org.keycloak.userprofile.validator.DuplicateEmailValidator;
-import org.keycloak.userprofile.validator.DuplicateUsernameValidator;
-import org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator;
-import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
-import org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator;
-import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator;
-import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
-import org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator;
-import org.keycloak.userprofile.validator.UsernameHasValueValidator;
-import org.keycloak.userprofile.validator.UsernameMutationValidator;
+import org.keycloak.userprofile.validator.*;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
 
@@ -411,7 +400,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 DeclarativeUserProfileProviderFactory::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
-                new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
+                new AttributeValidatorMetadata(UsernameMutationValidator.ID),
+                new AttributeValidatorMetadata(UsernameAlreadyUsedAsEmailValidator.ID)).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         DeclarativeUserProfileProviderFactory::editEmailCondition,
@@ -467,7 +457,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         metadata.addAttribute(UserModel.USERNAME, -2,
                         new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
-                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID))
+                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
+                        new AttributeValidatorMetadata(UsernameAlreadyUsedAsEmailValidator.ID))
                 .addWriteCondition(DeclarativeUserProfileProviderFactory::editUsernameCondition);
         metadata.addAttribute(UserModel.EMAIL, -1,
                         new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
