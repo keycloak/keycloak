@@ -99,6 +99,7 @@ export const IdentityProviders = () => {
           orgId: orgId!,
           alias: selectedRow!.alias! as string,
         });
+        setSelectedRow(undefined);
         addAlert(t("unLinkSuccessful"));
         refresh();
       } catch (error) {

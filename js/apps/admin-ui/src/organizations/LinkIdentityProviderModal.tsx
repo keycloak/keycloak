@@ -44,7 +44,7 @@ export const LinkIdentityProviderModal = ({
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const form = useForm<LinkRepresentation>();
+  const form = useForm<LinkRepresentation>({ mode: "onChange" });
   const { handleSubmit, formState, setValue } = form;
   const { getValues } = useFormContext<OrganizationFormType>();
 
@@ -95,7 +95,7 @@ export const LinkIdentityProviderModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("inviteMember")}
+      title={t("linkIdentityProvider")}
       isOpen
       onClose={onClose}
       actions={[
@@ -133,7 +133,10 @@ export const LinkIdentityProviderModal = ({
             name={convertAttributeNameToForm("config.kc.org.domain")}
             label={t("domain")}
             controller={{ defaultValue: "" }}
-            options={getValues("domains")!}
+            options={[
+              { key: "", value: t("none") },
+              ...getValues("domains")!.map((d) => ({ key: d, value: d })),
+            ]}
             menuAppendTo="parent"
           />
           <DefaultSwitchControl

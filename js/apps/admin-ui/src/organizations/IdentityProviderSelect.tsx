@@ -1,23 +1,32 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-import { FormGroup } from "@patternfly/react-core";
 import {
+  Button,
+  Chip,
+  ChipGroup,
+  FormGroup,
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
+} from "@patternfly/react-core";
+import { TimesIcon } from "@patternfly/react-icons";
 import { debounce } from "lodash-es";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { ComponentProps } from "../components/dynamic/components";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 
 type IdentityProviderSelectProps = ComponentProps & {
-  variant?: SelectVariant;
+  variant?: "typeaheadMulti" | "typeahead";
   isRequired?: boolean;
 };
 
@@ -27,7 +36,7 @@ export const IdentityProviderSelect = ({
   helpText,
   defaultValue,
   isRequired,
-  variant = SelectVariant.typeahead,
+  variant = "typeahead",
   isDisabled,
 }: IdentityProviderSelectProps) => {
   const { adminClient } = useAdminClient();
@@ -40,7 +49,9 @@ export const IdentityProviderSelect = ({
   } = useFormContext();
   const values: string[] | undefined = getValues(name!);
 
-  const [open, toggleOpen] = useToggle();
+  const [open, toggleOpen, setOpen] = useToggle();
+  const [inputValue, setInputValue] = useState("");
+  const textInputRef = useRef<HTMLInputElement>();
   const [idps, setIdps] = useState<
     (IdentityProviderRepresentation | undefined)[]
   >([]);
@@ -65,19 +76,25 @@ export const IdentityProviderSelect = ({
 
   const convert = (
     identityProviders: (IdentityProviderRepresentation | undefined)[],
-  ) =>
-    identityProviders
-      .filter((i) => i !== undefined)
-      .map((option) => (
-        <SelectOption
-          key={option!.alias}
-          value={option!.alias}
-          selected={values?.includes(option!.alias!)}
-        >
-          {option!.alias}
-        </SelectOption>
-      ));
+  ) => {
+    const options = identityProviders.map((option) => (
+      <SelectOption
+        key={option!.alias}
+        value={option!.alias}
+        selected={values?.includes(option!.alias!)}
+      >
+        {option!.alias}
+      </SelectOption>
+    ));
+    if (options.length === 0) {
+      return <SelectOption value="">{t("noResultsFound")}</SelectOption>;
+    }
+    return options;
+  };
 
+  if (!idps) {
+    return <KeycloakSpinner />;
+  }
   return (
     <FormGroup
       label={t(label!)}
@@ -93,31 +110,108 @@ export const IdentityProviderSelect = ({
         name={name!}
         defaultValue={defaultValue}
         control={control}
-        rules={{ required: isRequired }}
+        rules={{
+          validate: (value: string[]) =>
+            isRequired && value.filter((i) => i !== undefined).length === 0
+              ? t("required")
+              : undefined,
+        }}
         render={({ field }) => (
           <Select
-            toggleId={name!}
-            variant={variant}
-            placeholderText={t("selectIdentityProvider")}
-            onToggle={toggleOpen}
+            id={name!}
+            toggle={(ref) => (
+              <MenuToggle
+                data-testid={name!}
+                ref={ref}
+                variant="typeahead"
+                onClick={toggleOpen}
+                isExpanded={open}
+                isFullWidth
+                isDisabled={isDisabled}
+                status={errors[name!] ? "danger" : undefined}
+              >
+                <TextInputGroup isPlain>
+                  <TextInputGroupMain
+                    value={inputValue}
+                    onClick={toggleOpen}
+                    onChange={(_, value) => {
+                      setOpen(true);
+                      setInputValue(value);
+                      debounceFn(value);
+                    }}
+                    autoComplete="off"
+                    innerRef={textInputRef}
+                    placeholderText={t("selectAUser")}
+                    {...(field.value && {
+                      "aria-activedescendant": field.value,
+                    })}
+                    role="combobox"
+                    isExpanded={open}
+                    aria-controls="select-create-typeahead-listbox"
+                  >
+                    {variant === "typeaheadMulti" &&
+                      Array.isArray(field.value) && (
+                        <ChipGroup aria-label="Current selections">
+                          {field.value.map(
+                            (selection: string, index: number) => (
+                              <Chip
+                                key={index}
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  field.onChange(
+                                    field.value.filter(
+                                      (item: string) => item !== selection,
+                                    ),
+                                  );
+                                }}
+                              >
+                                {selection}
+                              </Chip>
+                            ),
+                          )}
+                        </ChipGroup>
+                      )}
+                  </TextInputGroupMain>
+                  <TextInputGroupUtilities>
+                    {!!search && (
+                      <Button
+                        variant="plain"
+                        onClick={() => {
+                          setInputValue("");
+                          setSearch("");
+                          field.onChange([]);
+                          textInputRef?.current?.focus();
+                        }}
+                        aria-label={t("clear")}
+                      >
+                        <TimesIcon aria-hidden />
+                      </Button>
+                    )}
+                  </TextInputGroupUtilities>
+                </TextInputGroup>
+              </MenuToggle>
+            )}
             isOpen={open}
-            selections={field.value}
-            onFilter={(_, value) => {
-              debounceFn(value);
-              return convert(idps);
-            }}
-            menuAppendTo="parent"
+            selected={field.value}
             onSelect={(_, v) => {
-              const option = v.toString();
-              field.value.includes(option)
-                ? field.onChange([])
-                : field.onChange([option]);
-              toggleOpen();
+              const option = v?.toString();
+              if (variant !== "typeaheadMulti") {
+                const removed = field.value.includes(option);
+                removed ? field.onChange([]) : field.onChange([option]);
+                setInputValue(removed ? "" : option || "");
+                setOpen(false);
+              } else {
+                const changedValue = field.value.find(
+                  (v: string) => v === option,
+                )
+                  ? field.value.filter((v: string) => v !== option)
+                  : [...field.value, option];
+                field.onChange(changedValue);
+              }
             }}
             aria-label={t(name!)}
-            isDisabled={isDisabled}
           >
-            {convert(idps)}
+            <SelectList>{convert(idps)}</SelectList>
           </Select>
         )}
       />
