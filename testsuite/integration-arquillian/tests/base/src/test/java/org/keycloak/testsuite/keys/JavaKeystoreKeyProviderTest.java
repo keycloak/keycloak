@@ -106,6 +106,16 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ECDSA);
     }
 
+    @Test
+    public void createBcfksHMAC() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.HMAC);
+    }
+
+    @Test
+    public void createBcfksAES() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.AES);
+    }
+
     private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType) throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(keystoreType);
         generateKeystore(keystoreType, algorithmType);
@@ -135,17 +145,19 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
                 PublicKey exp = PemUtils.decodePublicKey(generatedKeystore.getCertificateInfo().getPublicKey(), "RSA");
                 PublicKey got = PemUtils.decodePublicKey(key.getPublicKey(), "RSA");
                 assertEquals(exp, got);
+                assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), key.getCertificate());
                 break;
             }
-            case ECDSA:
+            case ECDSA:{
                 assertEquals("EC", key.getType());
                 PublicKey exp = PemUtils.decodePublicKey(generatedKeystore.getCertificateInfo().getPublicKey(), "EC");
                 PublicKey got = PemUtils.decodePublicKey(key.getPublicKey(), "EC");
                 assertEquals(exp, got);
+                assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), key.getCertificate());
+            }
         }
 
         assertEquals(priority, key.getProviderPriority());
-        assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), key.getCertificate());
     }
 
     @Test
@@ -236,9 +248,20 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
                 this.keyAlgorithm = Algorithm.RS256;
                 return;
             }
-            case ECDSA:
+            case ECDSA: {
                 this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "selfsigned", "password", "password", KeyUtils.generateECKey(Algorithm.ES256));
                 this.keyAlgorithm = Algorithm.ES256;
+                return;
+            }
+            case AES: {
+                this.keyAlgorithm = Algorithm.AES;
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "secretKey", "password", "password", KeyUtils.generateSecretKey(this.keyAlgorithm, 256));
+                return;
+            }
+            case HMAC: {
+                this.keyAlgorithm = Algorithm.HS256;
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "secretKey", "password", "password", KeyUtils.generateSecretKey("HmacSHA256", 256));
+            }
         }
     }
 

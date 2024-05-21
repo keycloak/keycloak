@@ -28,6 +28,7 @@ import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
 
+import javax.crypto.SecretKey;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.security.KeyPair;
@@ -104,5 +105,20 @@ public class KeystoreUtils {
         public File getKeystoreFile() {
             return keystoreFile;
         }
+    }
+
+    public static KeystoreInfo generateKeystore(TemporaryFolder folder, KeystoreUtil.KeystoreFormat keystoreType, String subject, String keystorePassword, String keyPassword, SecretKey secretKey) throws Exception {
+        String fileName = "keystore." + keystoreType.getPrimaryExtension();
+
+        KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(keystoreType);
+        keyStore.load(null, null);
+
+        KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(secretKey);
+        keyStore.setEntry(subject, secretKeyEntry, new KeyStore.PasswordProtection(keyPassword.trim().toCharArray()));
+
+        File file = folder.newFile(fileName);
+        keyStore.store(new FileOutputStream(file), keystorePassword.trim().toCharArray());
+
+        return new KeystoreInfo(null, file);
     }
 }

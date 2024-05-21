@@ -30,6 +30,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.RealmModel;
 
+import javax.crypto.SecretKey;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -57,6 +58,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -93,9 +95,11 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
             String keyAlias = model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY);
 
             return switch (algorithm) {
-                case Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512 ->
+                case Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.RSA_OAEP ->
                         loadRSAKey(realm, model, keyStore, keyAlias);
                 case Algorithm.ES256, Algorithm.ES384, Algorithm.ES512 -> loadECKey(realm, model, keyStore, keyAlias);
+                case Algorithm.HS256, Algorithm.HS384, Algorithm.HS512-> loadOctKey(realm, model, keyStore, keyAlias, KeyUse.SIG);
+                case Algorithm.AES -> loadOctKey(realm, model, keyStore, keyAlias, KeyUse.ENC);
                 default ->
                         throw new RuntimeException(String.format("Keys for algorithm %s are not supported.", algorithm));
             };
@@ -124,6 +128,21 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
         return keyStore;
     }
 
+    private KeyWrapper loadOctKey(RealmModel realm, ComponentModel model, KeyStore keyStore, String keyAlias, KeyUse use) throws UnrecoverableKeyException, KeyStoreException, NoSuchAlgorithmException {
+        SecretKey secretKey = (SecretKey) keyStore.getKey(keyAlias, model.get(JavaKeystoreKeyProviderFactory.KEY_PASSWORD_KEY).toCharArray());
+        KeyWrapper key = new KeyWrapper();
+
+        key.setProviderId(model.getId());
+        key.setProviderPriority(model.get("priority", 0l));
+
+        key.setKid(model.get(Attributes.KID_KEY, UUID.randomUUID().toString()));
+        key.setUse(use);
+        key.setType(KeyType.OCT);
+        key.setAlgorithm(algorithm);
+        key.setStatus(status);
+        key.setSecretKey(secretKey);
+        return key;
+    }
 
     private KeyWrapper loadECKey(RealmModel realm, ComponentModel model, KeyStore keyStore, String keyAlias) throws GeneralSecurityException {
         ECPrivateKey privateKey = (ECPrivateKey) keyStore.getKey(keyAlias, model.get(JavaKeystoreKeyProviderFactory.KEY_PASSWORD_KEY).toCharArray());

@@ -13,6 +13,8 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -50,6 +52,11 @@ public class KeyUtils {
         }
     }
 
+    public static SecretKey generateSecretKey(String algorithm, int keySize) throws NoSuchAlgorithmException {
+        KeyGenerator keyGen = KeyGenerator.getInstance(algorithm.toString());
+        keyGen.init(keySize);
+        return keyGen.generateKey();
+    }
 
     public static PublicKey publicKeyFromString(String key) {
         try {
