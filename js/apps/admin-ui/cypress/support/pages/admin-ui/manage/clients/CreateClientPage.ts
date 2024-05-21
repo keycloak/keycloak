@@ -55,10 +55,10 @@ export default class CreateClientPage extends CommonPage {
   #actionDrpDwn = "action-dropdown";
   #deleteClientBtn = "delete-client";
 
-  #saveBtn = "save";
-  #continueBtn = "next";
-  #backBtn = "back";
-  #cancelBtn = "cancel";
+  #saveBtn = "Save";
+  #continueBtn = "Next";
+  #backBtn = "Back";
+  #cancelBtn = "Cancel";
 
   //#region General Settings
   selectClientType(clientType: string) {
@@ -174,25 +174,25 @@ export default class CreateClientPage extends CommonPage {
   //#endregion
 
   save() {
-    cy.findByTestId(this.#saveBtn).click();
+    cy.contains("button", this.#saveBtn).click();
 
     return this;
   }
 
   continue() {
-    cy.findByTestId(this.#continueBtn).click();
+    cy.contains("button", this.#continueBtn).click();
 
     return this;
   }
 
   back() {
-    cy.findByTestId(this.#backBtn).click();
+    cy.contains("button", this.#backBtn).click();
 
     return this;
   }
 
   cancel() {
-    cy.findByTestId(this.#cancelBtn).click();
+    cy.contains("button", this.#cancelBtn).click();
 
     return this;
   }
