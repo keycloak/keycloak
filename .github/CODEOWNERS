@@ -54,6 +54,6 @@
 /tsconfig.json                                              @keycloak/ui-maintainers
 /themes/                                                    @keycloak/ui-maintainers @keycloak/maintainers
 /js/                                                        @keycloak/ui-maintainers
-/js/*/maven-resources-community/*/messages_*.properties     @keycloak/ui-maintainers @keycloak/maintainers
+/js/**/maven-resources-community/**/messages_*.properties   @keycloak/ui-maintainers @keycloak/maintainers
 /adapters/oidc/js/                                          @keycloak/ui-maintainers
 /rest/admin-ui-ext/                                         @keycloak/ui-maintainers
