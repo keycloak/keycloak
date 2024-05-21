@@ -108,6 +108,11 @@ function RealmSettingsGeneralTabForm({
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
+    setValue(
+      "unmanagedAttributePolicy",
+      userProfileConfig.unmanagedAttributePolicy ||
+        UNMANAGED_ATTRIBUTE_POLICIES[0],
+    );
     if (realm.attributes?.["acr.loa.map"]) {
       const result = Object.entries(
         JSON.parse(realm.attributes["acr.loa.map"]),

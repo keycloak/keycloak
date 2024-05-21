@@ -43,7 +43,7 @@ parse_and_print_vulnerabilities() {
         local description=$(echo "$vulnerability" | jq -r '.description // "N/A"')
 
         printf -v body "%s\n%s\n%s\n%s" "$title" "$module" "$from_path" "$description"
-        if ! check_github_issue_exists "$title"; then
+        if ! check_github_issue_exists "$cve_title"; then
             create_github_issue "$title" "$body"
         fi
     done

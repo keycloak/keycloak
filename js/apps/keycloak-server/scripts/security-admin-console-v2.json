@@ -22,7 +22,9 @@
   "publicClient": true,
   "frontchannelLogout": false,
   "protocol": "openid-connect",
-  "attributes": {},
+  "attributes": {
+    "security.admin.console": "true"
+  },
   "authenticationFlowBindingOverrides": {},
   "fullScopeAllowed": true,
   "nodeReRegistrationTimeout": -1,
