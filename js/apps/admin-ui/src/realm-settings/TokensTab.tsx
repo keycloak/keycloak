@@ -184,7 +184,7 @@ export const RealmSettingsTokensTab = ({
                         field.onChange(
                           Number(field?.value) > 0
                             ? Number(field?.value) - 1
-                            : 0
+                            : 0,
                         )
                       }
                       onChange={(event) => {
