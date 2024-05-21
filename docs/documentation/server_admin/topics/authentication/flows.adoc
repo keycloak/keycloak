@@ -381,11 +381,10 @@ condition found in the authentication flow, such as the Username/Password in the
 and that level expired, the user is not required to re-authenticate, but `acr` in the token will have the value 0. This result is considered as authentication
 based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
 
-NOTE: During very first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
-the user does not yet have any level. So it is encouraged that the first level subflow contains the authenticators, which are supposed to be the minimal required authenticators for the user to be
-considered authenticated. Also note that for correct functionality, the subflows with different values of *Conditional - Level Of Authentication* should be ordered from the lowest as specified
-in the example above. For instance if you configure subflow with level 2 and then additional subflow with level 1 afterwards, the level 2 will be always asked during 1st authentication, which may
-not be the desired behaviour.
+NOTE: During the first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
+the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown 
+in the example above. For example, if you configure a subflow with level 2 and then add another subflow with level 1, the level 2 subflow will be always asked during the first authentication, which may
+not be the desired behavior.
 
 NOTE: A conflict situation may arise when an admin specifies several flows, sets different LoA levels to each, and assigns the flows to different clients. However, the rule is always the same: if a user has a certain level, it needs only have that level to connect to a client. It's up to the admin to make sure that the LoA is coherent.
 
