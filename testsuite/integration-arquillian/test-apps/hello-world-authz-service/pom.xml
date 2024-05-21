@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-test-apps</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>22.0.11</version>
     </parent>
 
     <artifactId>hello-world-authz-service</artifactId>
