@@ -107,7 +107,7 @@ interface TypedClientAttribute {
 
     default <T> void setClientAttribute(ClientType clientType, T newValue, Consumer<T> clientSetter, Class<T> tClass) {
         String propertyName = getPropertyName();
-        // Check if clientType supports the feature. If not, return directly
+        // If feature is set as non-applicable, return directly
         if (!clientType.isApplicable(propertyName)) {
             if(!Objects.equals(getNonApplicableValue(), newValue)) {
                 logger.warnf("Property %s is not-applicable to client type %s and can not be modified.", propertyName, clientType.getName());
@@ -115,7 +115,7 @@ interface TypedClientAttribute {
             return;
         }
 
-        // If there is an attempt to change a value for an applicable field, then throw an exception.
+        // If there is an attempt to change a value for an applicable field with a read-only value set, then throw an exception.
         T oldVal = clientType.getTypeValue(propertyName, tClass);
         if (!ObjectUtil.isEqualOrBothNull(oldVal, newValue)) {
             throw new ClientTypeException(
