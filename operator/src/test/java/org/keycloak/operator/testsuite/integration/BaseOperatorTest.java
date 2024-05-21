@@ -19,7 +19,11 @@ package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -49,7 +53,9 @@ import java.io.FileWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.enterprise.inject.Instance;
@@ -237,19 +243,39 @@ public abstract class BaseOperatorTest {
 
   @AfterEach
   public void cleanup() {
-    Log.info("Deleting Keycloak CR");
-    k8sclient.resources(Keycloak.class).delete();
-    Awaitility.await()
-            .untilAsserted(() -> {
-              var kcDeployments = k8sclient
-                      .apps()
-                      .statefulSets()
-                      .inNamespace(namespace)
-                      .withLabels(Constants.DEFAULT_LABELS)
-                      .list()
-                      .getItems();
-              assertThat(kcDeployments.size()).isZero();
-            });
+      Log.info("Deleting Keycloak CR");
+
+      // due to https://github.com/operator-framework/java-operator-sdk/issues/2314 we
+      // try to ensure that the operator has processed the delete event from root objects
+      // this can be simplified to just the root deletion after we pick up the fix
+      // it can be further simplified after https://github.com/fabric8io/kubernetes-client/issues/5838
+      // to just a timed foreground deletion
+      var roots = List.of(Keycloak.class, KeycloakRealmImport.class);
+      var dependents = List.of(StatefulSet.class, Secret.class, Service.class, Pod.class, Job.class);
+
+      var rootsDeleted = CompletableFuture.allOf(roots.stream()
+              .map(c -> k8sclient.resources(c).informOnCondition(List::isEmpty)).toArray(CompletableFuture[]::new));
+      roots.stream().forEach(c -> k8sclient.resources(c).withGracePeriod(0).delete());
+      try {
+          rootsDeleted.get(1, TimeUnit.MINUTES);
+      } catch (Exception e) {
+          // delete event should have arrived quickly because this is a background delete
+          throw new RuntimeException(e);
+      }
+      dependents.stream().map(c -> k8sclient.resources(c).withLabels(Constants.DEFAULT_LABELS))
+              .forEach(r -> r.withGracePeriod(0).delete());
+      // enforce that the dependents are gone
+      Awaitility.await().during(5, TimeUnit.SECONDS).until(() -> {
+          if (dependents.stream().anyMatch(
+                  c -> !k8sclient.resources(c).withLabels(Constants.DEFAULT_LABELS).list().getItems().isEmpty())) {
+              // the operator must have recreated because it hasn't gotten the keycloak
+              // deleted event, keep cleaning
+              dependents.stream().map(c -> k8sclient.resources(c).withLabels(Constants.DEFAULT_LABELS))
+                      .forEach(r -> r.withGracePeriod(0).delete());
+              return false;
+          }
+          return true;
+      });
   }
 
   @AfterAll
