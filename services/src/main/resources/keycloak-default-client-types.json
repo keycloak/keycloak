@@ -128,53 +128,41 @@
       "provider": "default",
       "config": {
         "attributes.saml.allow.ecp.flow": {
-          "applicable": true,
-          "default-value": "false"
+          "applicable": true
         },
         "attributes.saml.authnstatement": {
-          "applicable": true,
-          "default-value": "true"
+          "applicable": true
         },
         "attributes.saml.client.signature": {
-          "applicable": true,
-          "default-value": "true"
+          "applicable": true
         },
         "attributes.saml.force.post.binding": {
-          "applicable": true,
-          "default-value": "true"
+          "applicable": true
         },
         "attributes.saml_force_name_id_format": {
-          "applicable": true,
-          "default-value": "false"
+          "applicable": true
         },
         "attributes.saml_name_id_format": {
-          "applicable": true,
-          "default-value": "username"
+          "applicable": true
         },
         "attributes.saml.server.signature": {
-          "applicable": true,
-          "default-value": "true"
+          "applicable": true
         },
         "attributes.saml.signature.algorithm": {
-          "applicable": true,
-          "default-value": "RSA_SHA256"
+          "applicable": true
         },
         "consentRequired": {
-          "applicable": true,
-          "default-value": false
+          "applicable": true
         },
         "fullScopeAllowed": {
-          "applicable": true,
-          "default-value": true
+          "applicable": true
         },
         "frontchannelLogout": {
-          "applicable": true,
-          "default-value": true
+          "applicable": true
         },
         "protocol": {
           "applicable": true,
-          "default-value": "saml",
-          "read-only": true
+          "value": "saml"
         },
         "redirectUris": {
           "applicable": false
