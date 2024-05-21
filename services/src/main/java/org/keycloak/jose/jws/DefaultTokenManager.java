@@ -273,6 +273,8 @@ public class DefaultTokenManager implements TokenManager {
     public String cekManagementAlgorithm(TokenCategory category) {
         if (category == null) return null;
         switch (category) {
+            case INTERNAL:
+                return Algorithm.AES;
             case ID:
             case LOGOUT:
                 return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
@@ -300,6 +302,8 @@ public class DefaultTokenManager implements TokenManager {
         switch (category) {
             case ID:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, JWEConstants.A128CBC_HS256);
+            case INTERNAL:
+                return JWEConstants.A128CBC_HS256;
             case LOGOUT:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
             case AUTHORIZATION_RESPONSE:
