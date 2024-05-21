@@ -47,7 +47,6 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 @Provider
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
@@ -56,18 +55,16 @@ public class OrganizationIdentityProvidersResource {
     private final RealmModel realm;
     private final OrganizationProvider organizationProvider;
     private final OrganizationModel organization;
-    private final AdminPermissionEvaluator auth;
 
     public OrganizationIdentityProvidersResource() {
         // needed for registering to the JAX-RS stack
-        this(null, null, null, null);
+        this(null, null, null);
     }
 
-    public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.realm = session == null ? null : session.getContext().getRealm();
         this.organizationProvider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
-        this.auth = auth;
     }
 
     @POST
@@ -77,8 +74,6 @@ public class OrganizationIdentityProvidersResource {
         description = "Adds, or associates, an existing identity provider with the organization. If no identity provider is found, " +
                 "or if it is already associated with the organization, an error response is returned")
     public Response addIdentityProvider(String id) {
-        auth.realm().requireManageRealm();
-
         try {
             IdentityProviderModel identityProvider =  this.realm.getIdentityProvidersStream()
                     .filter(p -> Objects.equals(p.getAlias(), id) || Objects.equals(p.getInternalId(), id))
@@ -104,7 +99,6 @@ public class OrganizationIdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns all identity providers associated with the organization")
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
-        auth.realm().requireManageRealm();
         return organization.getIdentityProviders().map(this::toRepresentation);
     }
 
