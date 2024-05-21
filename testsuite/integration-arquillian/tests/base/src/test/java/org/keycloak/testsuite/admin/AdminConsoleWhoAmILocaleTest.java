@@ -25,6 +25,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.console.page.AdminConsole;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -287,6 +288,27 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
                     .asResponse()) {
                 Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
             }
+        }
+    }
+
+    @Test
+    public void testLocaleRealmTokenForOtherClientButAllowed() throws Exception {
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, REALM_I18N_ON, Constants.ADMIN_CLI_CLIENT_ID)
+                .setAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, Boolean.TRUE.toString())
+                .update();
+                Keycloak adminCliClient = AdminClientUtil.createAdminClient(true, REALM_I18N_ON,
+                USER_WITH_LOCALE, PASSWORD, Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            AccessTokenResponse accessToken = adminCliClient.tokenManager().getAccessToken();
+            Assert.assertNotNull(accessToken);
+            String token = accessToken.getToken();
+            JsonNode whoAmI = SimpleHttpDefault
+                    .doGet(whoAmiUrl(REALM_I18N_ON), client)
+                    .header("Accept", "application/json")
+                    .auth(token)
+                    .asJson();
+            Assert.assertEquals(REALM_I18N_ON, whoAmI.get("realm").asText());
+            Assert.assertEquals(USER_LOCALE, whoAmI.get("locale").asText());
+            checkRealmAccess(REALM_I18N_ON, whoAmI);
         }
     }
 }

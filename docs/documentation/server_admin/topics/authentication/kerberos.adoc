@@ -62,7 +62,7 @@ Install a Kerberos client on your machine.
 
 .Procedure
 . Install a Kerberos client. If your machine runs Fedora, Ubuntu, or RHEL, install the link:https://www.freeipa.org/page/Downloads[freeipa-client] package, containing a Kerberos client and other utilities.
-. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
+. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.21/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
 +
 Add your Kerberos realm to the configuration and configure the HTTP domains your server runs on.
 +
