@@ -40,6 +40,6 @@ public class UsersResource {
             else throw new ForbiddenException();
         }
 
-        return new UserResource(session, user);
+        return new UserResource(session, auth, user);
     }
 }
