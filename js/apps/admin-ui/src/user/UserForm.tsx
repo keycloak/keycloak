@@ -272,6 +272,9 @@ export const UserForm = ({
               onChange={(_event, value) => {
                 unLockUser();
                 setLocked(value);
+                save({
+                  enabled: !value,
+                });
               }}
               isChecked={locked}
               isDisabled={!locked}
