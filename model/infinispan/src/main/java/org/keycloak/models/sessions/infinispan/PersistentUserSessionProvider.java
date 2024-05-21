@@ -1028,8 +1028,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessionCache.get(uuid);
             if (clientSession != null) {
                 clientSession.getEntity().setUserSessionId(sessionEntityWrapper.getEntity().getId());
-                MergedUpdate<AuthenticatedClientSessionEntity> merged2 = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), clientSession, 1, 1);
-                clientSessionPerformer.registerChange(Map.entry(uuid, new SessionUpdatesList<>(realm, clientSession)), merged2);
+                MergedUpdate<AuthenticatedClientSessionEntity> merged = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), clientSession, 1, 1);
+                clientSessionPerformer.registerChange(Map.entry(uuid, new SessionUpdatesList<>(realm, clientSession)), merged);
             }
         });
         MergedUpdate<UserSessionEntity> merged = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), sessionEntityWrapper, 1, 1);
