@@ -216,8 +216,16 @@ public class AdminConsole {
             throw new NotAuthorizedException("Bearer");
         }
 
-        if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(authResult.getToken().getIssuedFor())) {
-            throw new ForbiddenException("Token not valid for admin console");
+        final String issuedFor = authResult.getToken().getIssuedFor();
+        if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
+            if (issuedFor == null) {
+                throw new ForbiddenException("No azp claim in the token");
+            }
+            // check the attribute to see if the app is defined as an admin console
+            ClientModel client  = session.clients().getClientByClientId(realm, issuedFor);
+            if (client == null || !Boolean.parseBoolean(client.getAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR))) {
+                throw new ForbiddenException("Token issued for an application that is not the admin console: " + issuedFor);
+            }
         }
 
         UserModel user= authResult.getUser();

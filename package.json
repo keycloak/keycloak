@@ -6,8 +6,8 @@
     "prepare": "husky js/.husky"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.0.2",
-    "@eslint/js": "^9.2.0",
+    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/js": "^9.3.0",
     "@types/node": "^20.12.12",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.1.0",
