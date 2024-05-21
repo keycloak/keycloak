@@ -64,6 +64,8 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.Export;
+import org.keycloak.quarkus.runtime.cli.command.Import;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
@@ -189,6 +191,8 @@ public final class Picocli {
                 || cliArgs.contains("--help-all")
                 || currentCommandName.equals(Build.NAME)
                 || currentCommandName.equals(ShowConfig.NAME)
+                || currentCommandName.equals(Import.NAME)
+                || currentCommandName.equals(Export.NAME)
                 || currentCommandName.equals(Tools.NAME);
     }
 

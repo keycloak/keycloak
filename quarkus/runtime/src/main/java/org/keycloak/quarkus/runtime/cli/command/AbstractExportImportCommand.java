@@ -64,4 +64,9 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
     public boolean includeRuntime() {
         return true;
     }
+
+    @Override
+    public boolean includeBuildTime() {
+        return false;
+    }
 }
