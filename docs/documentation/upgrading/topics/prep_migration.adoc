@@ -7,7 +7,7 @@ Perform the following steps before you upgrade the server.
 .Procedure
 . Shutdown {project_name}.
 . Back up the old installation, such as configuration, themes, and so on.
-. Handle any open transactions and delete the `data/tx-object-store/` transaction directory.
+. If XA transaction is enabled, handle any open transactions and delete the `data/transaction-logs/` transaction directory.
 . Back up the database using instructions in the documentation for your relational
   database.
 +
