@@ -93,7 +93,6 @@ export const RealmSelector = () => {
   const all = useMemo(
     () =>
       realms
-        .filter((r) => r.name !== realm)
         .map((realm) => {
           const used = recentRealms.some((name) => name === realm.name);
           return { realm, used };
