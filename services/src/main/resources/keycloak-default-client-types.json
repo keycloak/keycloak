@@ -15,56 +15,44 @@
       "provider": "default",
       "config": {
         "authorizationServicesEnabled": {
-          "applicable": true,
-          "value": false
+          "applicable": true
         },
         "consentRequired": {
-          "applicable": true,
-          "value": false
+          "applicable": true
         },
         "directAccessGrantsEnabled": {
-          "applicable": true,
-          "value": false
+          "applicable": true
         },
         "frontchannelLogout": {
-          "applicable": true,
-          "value": false
+          "applicable": true
         },
         "fullScopeAllowed": {
-          "applicable": true,
-          "value": true
+          "applicable": true
         },
         "implicitFlowEnabled": {
-          "applicable": true,
-          "value": false
+          "applicable": true
         },
         "nodeReRegistrationTimeout": {
-          "applicable": true,
-          "value": -1
+          "applicable": true
         },
         "oauth2.device.authorization.grant.enabled": {
-          "applicable": true,
-          "value": "false"
+          "applicable": true
         },
         "oidc.ciba.grant.enabled": {
-          "applicable": true,
-          "value": "false"
+          "applicable": true
         },
         "protocol": {
           "applicable": true,
           "value": "openid-connect"
         },
         "publicClient": {
-          "applicable": true,
-          "value": true
+          "applicable": true
         },
         "serviceAccountsEnabled": {
-          "applicable": true,
-          "value": false
+          "applicable": true
         },
         "standardFlowEnabled": {
-          "applicable": true,
-          "value": false
+          "applicable": true
         }
       }
     },

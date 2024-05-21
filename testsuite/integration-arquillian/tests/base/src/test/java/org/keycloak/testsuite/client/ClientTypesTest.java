@@ -22,7 +22,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import org.junit.Test;
 import org.keycloak.client.clienttype.ClientTypeManager;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -45,7 +44,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.in;
