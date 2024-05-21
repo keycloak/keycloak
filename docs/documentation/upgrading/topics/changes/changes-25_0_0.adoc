@@ -104,9 +104,9 @@ Items which are evicted from memory will be loaded on-demand from the database w
 To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
 Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.
 
-To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, for those caches, consult the updated https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, consult the updated https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
 
-With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available which were used to override the time offline sessions are kept in memory.
+With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available, as they were previously used to override the time offline sessions were kept in-memory.
 
 == Migrating user sessions during the upgrade
 
@@ -116,7 +116,7 @@ Migrating in-memory sessions for {project_name} 24 is not supported as all {proj
 
 [WARNING]
 ====
-The migration of user sessions only works when the persistent user sessions is enabled when upgrade to {project_name} 25.
+The migration of user sessions only works when the persistent user sessions is enabled when upgrading to {project_name} 25.
 If you chose to upgrade to 25 without enabling persistent user sessions, there is currently no possibility to trigger the migration of existing sessions at a later point in time.
 When you enable it later, only newly created user sessions will be persisted.
 ====
