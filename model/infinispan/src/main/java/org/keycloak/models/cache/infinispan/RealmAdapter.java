@@ -883,7 +883,9 @@ public class RealmAdapter implements CachedRealmModel {
             public boolean isEnabled() {
                 // if IdP is bound to an org
                 if (getOrganizationId() != null) {
-                    return session.getProvider(OrganizationProvider.class).isEnabled() && super.isEnabled();
+                    OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                    OrganizationModel org = provider == null ? null : provider.getById(getOrganizationId());
+                    return org != null && provider.isEnabled() && org.isEnabled() && super.isEnabled();
                 }
                 return super.isEnabled();
             }
