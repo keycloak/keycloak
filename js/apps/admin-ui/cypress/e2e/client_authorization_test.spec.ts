@@ -195,7 +195,7 @@ describe("Client authentication subtab", () => {
     );
   });
 
-  describe.skip("Client authorization tab access for view-realm-authorization", () => {
+  describe("Client authorization tab access for view-realm-authorization", () => {
     const clientId = "realm-view-authz-client-" + uuid();
 
     beforeEach(async () => {
@@ -241,11 +241,11 @@ describe("Client authentication subtab", () => {
       loginPage.logIn("test-view-authz-user", "password");
       keycloakBefore();
 
-      sidebarPage
-        .waitForPageLoad()
-        .goToRealm("realm-view-authz")
-        .waitForPageLoad()
-        .goToClients();
+      sidebarPage.waitForPageLoad().goToRealm("realm-view-authz");
+
+      cy.reload();
+
+      sidebarPage.waitForPageLoad().goToClients();
 
       listingPage
         .searchItem(clientId, true, "realm-view-authz")
