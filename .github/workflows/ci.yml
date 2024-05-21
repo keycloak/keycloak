@@ -420,10 +420,14 @@ jobs:
 
       - name: Delete Aurora DB
         if: ${{ always() && matrix.db == 'aurora-postgres' }}
-        uses: ./.github/actions/aurora-delete-database
-        with:
-          name: ${{ steps.aurora-init.outputs.name }}
-          region: ${{ steps.aurora-init.outputs.region }}
+        run: |
+          gh workflow run aurora-delete.yml \
+            -f name=${{ steps.aurora-init.outputs.name }} \
+            -f region=${{ steps.aurora-init.outputs.region }} \
+            --repo ${{ github.repository }} \
+            --ref ${{ github.ref_name }}
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   store-model-tests:
     name: Store Model Tests
