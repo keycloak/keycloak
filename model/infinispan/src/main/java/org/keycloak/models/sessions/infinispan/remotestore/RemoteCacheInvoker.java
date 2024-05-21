@@ -114,24 +114,7 @@ public class RemoteCacheInvoker {
 
         switch (operation) {
             case REMOVE:
-                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
-                    (remoteCache.getName().equals(USER_SESSION_CACHE_NAME)
-                     || remoteCache.getName().equals(CLIENT_SESSION_CACHE_NAME)
-                     || remoteCache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME)
-                     || remoteCache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
-                    if (remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key) == null) {
-                        logger.debugf("No existing entry for %s in the remote cache to remove, might have been evicted.", key);
-                        // force a remove to trigger an event on the remote DC to clear those
-                        remoteCache.put(key, new SessionEntityWrapper<>(null));
-                        if (remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key) == null) {
-                            logger.warnf("Unable to trigger the remove in the remote cache %s for key %s", remoteCache.getName(), key);
-                        };
-                    }
-                    // second remove
-                    remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key);
-                } else {
-                    remoteCache.remove(key);
-                }
+                remoteCache.remove(key);
                 break;
             case ADD:
                 remoteCache.put(key, sessionWrapper.forTransport(),
@@ -174,12 +157,8 @@ public class RemoteCacheInvoker {
                      || remoteCache.getName().equals(CLIENT_SESSION_CACHE_NAME)
                      || remoteCache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME)
                      || remoteCache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
-                    logger.debugf("No existing entry for %s in the remote cache to remove, might have been evicted.", key);
-                    // force a remove to trigger an event on the remote DC to clear those
-                    remoteCache.put(key, new SessionEntityWrapper<>(null));
-                    if (remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).remove(key) != null) {
-                        logger.warnf("Unable to trigger the remove in the remote cache %s for key %s", remoteCache.getName(), key);
-                    };
+                    logger.debugf("No existing entry for %s in the remote cache to remove, might have been evicted. A delete will force an eviction in the other DC.", key);
+                    remoteCache.remove(key);
                 }
                 logger.warnf("Not found entity to replace for key '%s'", key);
                 return;
