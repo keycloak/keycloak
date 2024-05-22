@@ -20,8 +20,8 @@ package org.keycloak.adapters.pep;
 import java.io.InputStream;
 import java.util.List;
 
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.authorization.TokenPrincipal;
 import org.keycloak.adapters.authorization.spi.HttpRequest;
 import org.keycloak.adapters.spi.HttpFacade.Cookie;
