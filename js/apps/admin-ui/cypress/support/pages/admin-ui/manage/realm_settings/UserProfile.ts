@@ -142,8 +142,12 @@ export default class UserProfile {
   }
 
   setAttributeGroup(group: string) {
-    cy.get("#kc-group-filter").click();
-    cy.get("#kc-group-filter pf-v5-c-menu__list-item").contains(group).click();
+    cy.get("#group").click();
+    cy.get("#group")
+      .parent()
+      .get(".pf-v5-c-menu__list-item")
+      .contains(group)
+      .click();
 
     return this;
   }

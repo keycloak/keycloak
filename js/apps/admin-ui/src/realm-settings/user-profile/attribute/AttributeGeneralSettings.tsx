@@ -279,7 +279,13 @@ export const AttributeGeneralSettings = ({
             controller={{
               defaultValue: "",
             }}
-            options={["none", ...(config?.groups?.map((g) => g.name!) || [])]}
+            options={[
+              { key: "", value: t("none") },
+              ...(config?.groups?.map((g) => ({
+                key: g.name!,
+                value: g.name!,
+              })) || []),
+            ]}
           />
           {!USERNAME_EMAIL.includes(attributeName) && (
             <>
