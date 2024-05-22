@@ -537,8 +537,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         removeEntriesByRealm(realmId, localCacheStoreIgnore, userSessionsSize, localCache, localClientSessionCache);
 
-        // iterate over the remote entries as well to ensure they are purged
-        removeEntriesByRealm(realmId, getCache(offline), userSessionsSize, getCache(offline), getClientSessionCache(offline));
+        // TODO: This now runs on each node on each site. Ideally it should run only once on each site.
+        removeEntriesByRealmRemote(realmId, InfinispanUtil.getRemoteCache(getCache(offline)), userSessionsSize, InfinispanUtil.getRemoteCache(getClientSessionCache(offline)));
 
         log.debugf("Removed %d sessions in realm %s. Offline: %b", (Object) userSessionsSize.get(), realmId, offline);
     }
@@ -555,12 +555,40 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     userSessionsSize.incrementAndGet();
 
                     // Remove session from remoteCache too. Use removeAsync for better perf
-                    Future future = localCache.removeAsync(userSessionEntity.getId());
+                    Future<SessionEntityWrapper<UserSessionEntity>> future = localCache.removeAsync(userSessionEntity.getId());
                     futures.addTask(future);
                     userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
-                        Future f = clientSessions.removeAsync(clientSessionId);
+                        Future<SessionEntityWrapper<AuthenticatedClientSessionEntity>> f = clientSessions.removeAsync(clientSessionId);
                         futures.addTask(f);
                     });
+                });
+
+        futures.waitForAllToFinish();
+    }
+
+    private static void removeEntriesByRealmRemote(String realmId, RemoteCache<String, SessionEntityWrapper<UserSessionEntity>> sessions, AtomicInteger userSessionsSize, RemoteCache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessions) {
+        if (sessions == null) {
+            return;
+        }
+
+        FuturesHelper futures = new FuturesHelper();
+
+        sessions
+                .entrySet()
+                .stream()
+                .filter(SessionPredicate.create(realmId))
+                .map(Mappers.userSessionEntity())
+                .forEach((Consumer<UserSessionEntity>) userSessionEntity -> {
+                    userSessionsSize.incrementAndGet();
+
+                    Future<SessionEntityWrapper<UserSessionEntity>> future = sessions.withFlags(org.infinispan.client.hotrod.Flag.SKIP_LISTENER_NOTIFICATION).removeAsync(userSessionEntity.getId());
+                    futures.addTask(future);
+                    if (clientSessions != null) {
+                        userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
+                            Future<SessionEntityWrapper<AuthenticatedClientSessionEntity>> f = clientSessions.withFlags(org.infinispan.client.hotrod.Flag.SKIP_LISTENER_NOTIFICATION).removeAsync(clientSessionId);
+                            futures.addTask(f);
+                        });
+                    }
                 });
 
         futures.waitForAllToFinish();
