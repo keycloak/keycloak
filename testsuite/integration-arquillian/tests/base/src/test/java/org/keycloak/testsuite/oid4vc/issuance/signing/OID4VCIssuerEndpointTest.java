@@ -349,8 +349,13 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     assertNotNull("A credential should be responded.", credentialResponse.getEntity());
                     CredentialResponse credentialResponseVO = OBJECT_MAPPER.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
                     JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponseVO.getCredential(), JsonWebToken.class).getToken();
-                    // correct signing and contents are verified in the JwtSigningServiceTest, thus we only check that it is a JWT
+
                     assertNotNull("A valid credential string should have been responded", jsonWebToken);
+                    assertNotNull("The credentials should be included at the vc-claim.", jsonWebToken.getOtherClaims().get("vc"));
+                    VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+
+                    assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
+                    assertFalse("Only mappers supported for the requested type should have been evaluated.", credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
                 }));
     }
 
