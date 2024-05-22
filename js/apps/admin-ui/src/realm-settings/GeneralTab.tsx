@@ -40,7 +40,7 @@ import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
-  save: (realm: UIRealmRepresentation) => void;
+  save: (realm: UIRealmRepresentation) => Promise<void>;
 };
 
 export const RealmSettingsGeneralTab = ({
@@ -74,7 +74,7 @@ export const RealmSettingsGeneralTab = ({
 
 type RealmSettingsGeneralTabFormProps = {
   realm: UIRealmRepresentation;
-  save: (realm: UIRealmRepresentation) => void;
+  save: (realm: UIRealmRepresentation) => Promise<void>;
   userProfileConfig: UserProfileConfig;
 };
 
@@ -131,17 +131,23 @@ function RealmSettingsGeneralTabForm({
 
   useEffect(setupForm, []);
 
-  const onSubmit = handleSubmit(({ unmanagedAttributePolicy, ...data }) => {
-    const upConfig = { ...userProfileConfig };
+  const onSubmit = handleSubmit(
+    async ({ unmanagedAttributePolicy, ...data }) => {
+      const upConfig = { ...userProfileConfig };
 
-    if (unmanagedAttributePolicy === UnmanagedAttributePolicy.Disabled) {
-      delete upConfig.unmanagedAttributePolicy;
-    } else {
-      upConfig.unmanagedAttributePolicy = unmanagedAttributePolicy;
-    }
+      if (unmanagedAttributePolicy === UnmanagedAttributePolicy.Disabled) {
+        delete upConfig.unmanagedAttributePolicy;
+      } else {
+        upConfig.unmanagedAttributePolicy = unmanagedAttributePolicy;
+      }
 
-    save({ ...data, upConfig });
-  });
+      await save({ ...data, upConfig });
+      if (realm.organizationsEnabled !== data.organizationsEnabled) {
+        //TODO make realm available in the context instead
+        location.reload();
+      }
+    },
+  );
 
   return (
     <PageSection variant="light">

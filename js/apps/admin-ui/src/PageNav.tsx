@@ -7,9 +7,10 @@ import {
   PageSidebar,
   PageSidebarBody,
 } from "@patternfly/react-core";
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useMatch, useNavigate } from "react-router-dom";
+import { useAdminClient } from "./admin-client";
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
@@ -17,9 +18,10 @@ import { useServerInfo } from "./context/server-info/ServerInfoProvider";
 import { toPage } from "./page/routes";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
+import { useFetch } from "./utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 import "./page-nav.css";
-import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 type LeftNavProps = { title: string; path: string; id?: string };
 
@@ -66,6 +68,9 @@ export const PageNav = () => {
   const pages =
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
   const navigate = useNavigate();
+  const { adminClient } = useAdminClient();
+  const { realm } = useRealm();
+  const [organizationsEnabled, setOrganizationsEnabled] = useState(false);
 
   type SelectedItem = {
     groupId: number | string;
@@ -95,6 +100,12 @@ export const PageNav = () => {
 
   const isOnAddRealm = !!useMatch(AddRealmRoute.path);
 
+  useFetch(
+    () => adminClient.realms.findOne({ realm }),
+    (realm) => setOrganizationsEnabled(realm?.organizationsEnabled || false),
+    [],
+  );
+
   return (
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
@@ -107,9 +118,10 @@ export const PageNav = () => {
           <Divider />
           {showManage && !isOnAddRealm && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
-              {isFeatureEnabled(Feature.Organizations) && (
-                <LeftNav title="organizations" path="/organizations" />
-              )}
+              {isFeatureEnabled(Feature.Organizations) &&
+                organizationsEnabled && (
+                  <LeftNav title="organizations" path="/organizations" />
+                )}
               <LeftNav title="clients" path="/clients" />
               <LeftNav title="clientScopes" path="/client-scopes" />
               <LeftNav title="realmRoles" path="/roles" />
