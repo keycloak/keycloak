@@ -56,7 +56,7 @@ public class KeycloakDronePostSetup {
 
         if (drone instanceof RemoteWebDriver) {
             RemoteWebDriver remoteWebDriver = (RemoteWebDriver) drone;
-            log.infof("Detected browser: %s %s", remoteWebDriver.getCapabilities().getBrowserName(), remoteWebDriver.getCapabilities().getVersion());
+            log.infof("Detected browser: %s %s", remoteWebDriver.getCapabilities().getBrowserName(), remoteWebDriver.getCapabilities().getBrowserVersion());
             webDriverProducer.set(remoteWebDriver);
         }
 
