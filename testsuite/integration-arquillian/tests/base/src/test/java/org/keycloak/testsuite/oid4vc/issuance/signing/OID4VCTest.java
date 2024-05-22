@@ -256,7 +256,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
     public static ProtocolMapperRepresentation getStaticClaimMapper(String supportedType) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
-        protocolMapperRepresentation.setName("static-mapper");
+        protocolMapperRepresentation.setName(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocol("oid4vc");
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-static-claim-mapper");
