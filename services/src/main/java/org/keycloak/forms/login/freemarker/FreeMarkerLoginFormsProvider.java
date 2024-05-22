@@ -404,7 +404,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         Properties messagesBundle;
         try {
             messagesBundle = theme.getEnhancedMessages(realm, locale);
-            attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
+            Map<Object, Object> msgParams = new HashMap<>(attributes);
+            msgParams.putAll(messagesBundle);
+            attributes.put("msg", new MessageFormatterMethod(locale, msgParams));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -441,7 +443,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             }
             attributes.put("message", wholeMessage);
         } else {
-            attributes.put("message", null);
+            attributes.remove("message");
         }
         attributes.put("messagesPerField", messagesPerField);
     }
@@ -486,7 +488,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
             attributes.put("auth", new AuthenticationContextBean(context, page));
-            attributes.put(Constants.EXECUTION, execution);
+            setAttribute(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
                 UriBuilder b;
@@ -892,7 +894,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @Override
     public LoginFormsProvider setAttribute(String name, Object value) {
-        this.attributes.put(name, value);
+        if (value == null) {
+            attributes.remove(name);
+        } else {
+            attributes.put(name, value);
+        }
         return this;
     }
 
