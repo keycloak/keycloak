@@ -112,8 +112,8 @@ public class OrganizationMemberResource {
     @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
             description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
     public Response inviteUser(@FormParam("email") String email,
-                               @FormParam("first-name") String firstName,
-                               @FormParam("last-name") String lastName) {
+                               @FormParam("firstName") String firstName,
+                               @FormParam("lastName") String lastName) {
         return new OrganizationInvitationResource(session, organization, adminEvent).inviteUser(email, firstName, lastName);
     }
 
