@@ -6,15 +6,22 @@ import MembersTab from "../support/pages/admin-ui/manage/organization/MemberTab"
 import OrganizationPage from "../support/pages/admin-ui/manage/organization/OrganizationPage";
 import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
+import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
+import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 
 const loginPage = new LoginPage();
 const listingPage = new ListingPage();
 const page = new OrganizationPage();
+const realmSettingsPage = new RealmSettingsPage();
+const sidebarPage = new SidebarPage();
 
 describe("Organization CRUD", () => {
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
+    sidebarPage.goToRealmSettings();
+    realmSettingsPage.setSwitch("organizationsEnabled", true);
+    realmSettingsPage.saveGeneral();
   });
 
   it("should create new organization", () => {
