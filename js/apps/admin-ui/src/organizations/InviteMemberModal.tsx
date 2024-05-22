@@ -1,3 +1,4 @@
+import { InvitedMember } from "@keycloak/keycloak-admin-client/lib/resources/organizations";
 import { FormSubmitButton, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
@@ -6,7 +7,7 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
-import { FieldValues, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
@@ -27,9 +28,9 @@ export const InviteMemberModal = ({
   const form = useForm();
   const { handleSubmit, formState } = form;
 
-  const submitForm = async (data: FieldValues) => {
+  const submitForm = async (data: InvitedMember) => {
     try {
-      await adminClient.organizations.invite({ orgId, email: data.email });
+      await adminClient.organizations.invite({ orgId, invite: data });
       addAlert(t("inviteSent"));
       onClose();
     } catch (error) {
@@ -73,6 +74,8 @@ export const InviteMemberModal = ({
             rules={{ required: t("required") }}
             autoFocus
           />
+          <TextControl name="firstName" label={t("firstName")} />
+          <TextControl name="lastName" label={t("lastName")} />
         </Form>
       </FormProvider>
     </Modal>
