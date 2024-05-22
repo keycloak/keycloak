@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 public interface OrganizationModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
+    String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String BROKER_PUBLIC = "kc.org.broker.public";
 
