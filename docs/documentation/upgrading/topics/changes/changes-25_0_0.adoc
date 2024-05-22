@@ -80,6 +80,92 @@ In order to dynamically resolve it from request headers, you need to set the `ho
 
 For more details and more comprehensive scenarios, see https://www.keycloak.org/server/hostname[Configuring the hostname (v2)].
 
+= Persistent user sessions
+
+Previous versions of {project_name} stored only offline user and offline client sessions in the databases.
+The new feature `persistent-user-session` stores online user sessions and online client sessions not only in memory, but also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+== Enabling persistent user sessions
+
+The feature is a preview feature and disabled by default. To use it, add the following to your build command:
+
+----
+bin/kc.sh build --features=persistent-user-session ...
+----
+
+For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
+
+NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the existing online user and client sessions will not be migrated to the database. It will only affect newly created online user and online client sessions.
+
+With persistent sessions enabled, the in-memory caches for online user sessions, offline user sessions, online client sessions and offline client sessions are limited to 10000 entries per node by default which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.
+
+To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, consult the updated https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+
+With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available, as they were previously used to override the time offline sessions were kept in-memory.
+
+== Migrating user sessions during the upgrade
+
+When upgrading from {project_name} 24 or earlier, admins can choose to migrate existing online user and client sessions to persistent sessions.
+For this to work, those existing sessions need to be stored in either a remote {jdgserver_name} or in a database configured as JDBC persistence for {project_name}'s embedded cache.
+Migrating in-memory sessions for {project_name} 24 is not supported as all {project_name} instances need to be shut down before the upgrade due to a major version upgrade of the embedded Infinispan.
+
+[WARNING]
+====
+The migration of user sessions only works when the persistent user sessions is enabled when upgrading to {project_name} 25.
+If you chose to upgrade to 25 without enabling persistent user sessions, there is currently no possibility to trigger the migration of existing sessions at a later point in time.
+When you enable it later, only newly created user sessions will be persisted.
+====
+
+To migrate the user sessions during an upgrade of {project_name}, perform the following steps:
+
+. Stop all running old instances of {project_name}.
+
+. Create backups:
++
+--
+* Create a backup {project_name}'s database.
+* If JDBC persistence is used, create a backup of that database if you want to be able to retry the migration of the sessions.
+* If an external {jdgserver_name} is used, create a backup of its data if you want to be able to retry the migration of the sessions.
+--
+. Start the new instances {project_name} with the persistent user sessions feature enabled.
++
+The first starting node will:
++
+--
+. Migrate the database to the schema version 25.
+. Copy all session information from either the remote {jdgserver_name} or the JDBC persistence configured for {project_name}'s embedded cache to the database of {project_name}.
++
+The data will be stored in the tables `offline_user_session` and `online_user_session` with `offline_flag` set to `false`.
+
+. Clear the caches.
++
+This includes clearing the caches of the external {jdgserver_name} if one is used, and clearing the JDBC persistence if one is used.
+--
+. Update the cache configuration XML of {project_name} for caches `sessions` and `clientSessions`:
++
+--
+* If JDBC persistence is used, remove the configuration for JDBC persistence.
+* If the remote {jdgserver_name} has been used in a single-site setup solely for keeping user sessions across {project_name} restarts, remove the remote {jdgserver_name} configuration for those caches.
+--
++
+TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduce the resource consumption by the external Infinispan by configuring the number of entries in memory. Use the settings outlined in https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+
+. Rolling restart of {project_name} to activate the new cache configuration XML.
+
+== Signing out existing users
+
+In previous versions and when the feature is disabled, a restart of all {project_name} nodes logged out all users.
+To sign out all online users sessions of a realm with the `persistent-user-session` feature enabled, use the following steps as before:
+
+. Login to the Admin Console.
+. Select the menu entry *Sessions*.
+. Select the action *Sign out all active sessions*.
+
 = Metrics for embedded caches enabled by default
 
 Metrics for the embedded caches are now enabled by default.
