@@ -119,6 +119,7 @@ export default function OrganizationSection() {
           toolbarItem={
             <ToolbarItem>
               <Button
+                data-testid="addOrganization"
                 component={(props) => (
                   <Link {...props} to={toAddOrganization({ realm })} />
                 )}

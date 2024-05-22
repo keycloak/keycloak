@@ -113,8 +113,12 @@ export default function DetailOrganization() {
                   >
                     {t("save")}
                   </FormSubmitButton>
-                  <Button data-testid="cancel" variant="link">
-                    {t("cancel")}
+                  <Button
+                    onClick={() => form.reset()}
+                    data-testid="reset"
+                    variant="link"
+                  >
+                    {t("reset")}
                   </Button>
                 </ActionGroup>
               </FormAccess>

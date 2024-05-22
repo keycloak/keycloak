@@ -101,7 +101,7 @@ export const LinkIdentityProviderModal = ({
       actions={[
         <FormSubmitButton
           formState={formState}
-          data-testid="save"
+          data-testid="confirm"
           key="confirm"
           form="form"
           allowInvalid
