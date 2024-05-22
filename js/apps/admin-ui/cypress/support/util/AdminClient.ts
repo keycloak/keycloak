@@ -374,7 +374,7 @@ class AdminClient {
   async deleteOrganization(name: string) {
     await this.#login();
     const { id } = (await this.#client.organizations.find({ search: name }))[0];
-    await this.#client.organizations.delById({ id });
+    await this.#client.organizations.delById({ id: id! });
   }
 }
 
