@@ -29,7 +29,11 @@ export const InviteMemberModal = ({
 
   const submitForm = async (data: Record<string, string>) => {
     try {
-      await adminClient.organizations.invite({ orgId }, data);
+      const formData = new FormData();
+      for (const key in data) {
+        formData.append(key, data[key]);
+      }
+      await adminClient.organizations.invite({ orgId }, formData);
       addAlert(t("inviteSent"));
       onClose();
     } catch (error) {
