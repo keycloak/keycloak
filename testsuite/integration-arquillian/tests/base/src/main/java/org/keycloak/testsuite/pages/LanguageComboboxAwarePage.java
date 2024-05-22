@@ -20,6 +20,10 @@ package org.keycloak.testsuite.pages;
 import org.junit.Assert;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -33,10 +37,10 @@ import org.openqa.selenium.support.FindBy;
  */
 public abstract class LanguageComboboxAwarePage extends AbstractPage {
 
-    @FindBy(id = "kc-current-locale-link")
+    @FindBy(xpath = "//select[@aria-label='languages']/option[@selected]")
     private WebElement languageText;
 
-    @FindBy(id = "kc-locale-dropdown")
+    @FindBy(xpath = "//select[@aria-label='languages']")
     private WebElement localeDropdown;
 
     @FindBy(id = "try-another-way")
@@ -56,9 +60,13 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     }
 
     public void openLanguage(String language){
-        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()[contains(.,'" + language + "')]]"));
-        String url = langLink.getAttribute("href");
-        DroneUtils.getCurrentDriver().navigate().to(url);
+        WebElement langLink = localeDropdown.findElement(By.xpath("//option[text()[contains(.,'" + language + "')]]"));
+        String url = langLink.getAttribute("value");
+        try {
+            DroneUtils.getCurrentDriver().navigate().to(new URI(DroneUtils.getCurrentDriver().getCurrentUrl()).resolve(url).toString());
+        } catch (URISyntaxException ex) {
+            Assert.fail(ex.getMessage());
+        }
         WaitUtils.waitForPageToLoad();
     }
 
