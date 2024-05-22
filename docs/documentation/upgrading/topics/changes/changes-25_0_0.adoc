@@ -421,3 +421,8 @@ It is highly recommended to avoid obtaining the `KeycloakSession` by means other
 In previous versions the session max lifespan and idle timeout calculation was slightly different when validating if a session was still valid. Since now that validation uses the same code than the rest of the project.
 
 If the session is using the remember me feature, the idle timeout and max lifespan are the maximum value between the common SSO and the remember me configuration values.
+
+= External {jdgserver_name} requirements
+
+{project_name} now requires a {jdgserver_name} server version of at least 15.0.0 for external {jdgserver_name} deployments.
+An external {jdgserver_name} deployment is supported for multi-site setups as outlined in the HA guide.

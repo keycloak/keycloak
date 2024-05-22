@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.micrometer.core.instrument.Metrics;
+import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -47,6 +48,7 @@ import org.jgroups.util.TLSClientAuth;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 

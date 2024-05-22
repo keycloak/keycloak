@@ -48,6 +48,11 @@ A deployment of {jdgserver_name} that leverages the {jdgserver_name}'s Cross-DC 
 *Not considered:* Direct interconnections between the Kubernetes clusters on the network layer.
 It might be considered in the future.
 
+[IMPORTANT]
+====
+Only {jdgserver_name} server versions 15.0.0 or greater are supported in Active/Passive deployments.
+====
+
 == {project_name}
 
 A clustered deployment of {project_name} in each site, connected to an external {jdgserver_name}.
