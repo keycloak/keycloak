@@ -476,6 +476,15 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testDatabaseStatisticsLogging() {
+        ConfigArgsConfigSource.setCliArgs("");
+        assertEquals("false", createConfig().getRawValue("kc.db-log-statistics"));
+
+        ConfigArgsConfigSource.setCliArgs("--db-log-statistics=true");
+        assertEquals("true", createConfig().getRawValue("kc.db-log-statistics"));
+    }
+
+    @Test
     public void testTransactionTypeChangesDriver() {
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--transaction-xa-enabled=false");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));

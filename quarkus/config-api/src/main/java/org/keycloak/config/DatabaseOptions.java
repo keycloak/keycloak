@@ -10,6 +10,12 @@ public class DatabaseOptions {
             .buildTime(true)
             .build();
 
+    public static final Option<Boolean> DB_LOG_HIBERNATE_STATISTICS = new OptionBuilder<>("db-log-statistics", Boolean.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue(Boolean.FALSE)
+            .description("Enable Hibernate statistics gathering and logging.")
+            .build();
+
     public static final Option<String> DB_DRIVER = new OptionBuilder<>("db-driver", String.class)
             .category(OptionCategory.DATABASE)
             .description("The fully qualified class name of the JDBC driver. If not set, a default driver is set accordingly to the chosen database.")

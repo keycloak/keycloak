@@ -50,6 +50,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -64,6 +65,8 @@ import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
+import static org.hibernate.cfg.SessionEventSettings.LOG_SESSION_METRICS;
+import static org.hibernate.cfg.StatisticsSettings.GENERATE_STATISTICS;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 
 @Recorder
@@ -192,6 +195,11 @@ public class KeycloakRecorder {
             @Override
             public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
                 propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
+
+                if (Configuration.isTrue(DatabaseOptions.DB_LOG_HIBERNATE_STATISTICS)) {
+                    propertyCollector.accept(GENERATE_STATISTICS, Boolean.TRUE.toString());
+                    propertyCollector.accept(LOG_SESSION_METRICS, Boolean.TRUE.toString());
+                }
             }
         };
     }

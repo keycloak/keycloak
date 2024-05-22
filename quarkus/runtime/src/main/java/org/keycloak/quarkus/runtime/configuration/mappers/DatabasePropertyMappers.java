@@ -22,6 +22,8 @@ final class DatabasePropertyMappers {
                         .mapFrom("db")
                         .transformer(DatabasePropertyMappers::transformDialect)
                         .build(),
+                fromOption(DatabaseOptions.DB_LOG_HIBERNATE_STATISTICS)
+                        .build(),
                 fromOption(DatabaseOptions.DB_DRIVER)
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
