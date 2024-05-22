@@ -19,11 +19,13 @@ package org.keycloak.jose.jwk;
 
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
+import java.security.AlgorithmParameters;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,6 +40,7 @@ import org.keycloak.crypto.KeyUse;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class AbstractJWKBuilder {
+    private static final String SECP256K1_OID = "1.3.132.0.10"; 
 
     public static final KeyUse DEFAULT_PUBLIC_KEY_USE = KeyUse.SIG;
 
@@ -105,12 +108,24 @@ public abstract class AbstractJWKBuilder {
 
         String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
         int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
-
+        String crv = "P-" + fieldSize;
+        if (fieldSize == 256) {
+            try {
+                AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
+                params.init(ecKey.getParams());
+                String name = params.getParameterSpec(ECGenParameterSpec.class).getName();
+                if (SECP256K1_OID.equals(name)) {
+                    crv = "secp256k1";
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
         k.setKeyId(kid);
         k.setKeyType(KeyType.EC);
         k.setAlgorithm(algorithm);
         k.setPublicKeyUse(keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName());
-        k.setCrv("P-" + fieldSize);
+        k.setCrv(crv);
         k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
         k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
         

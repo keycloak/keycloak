@@ -19,6 +19,7 @@ SAMLServletAdapterTest
 SamlSignatureTest
 KcOidcBrokerJWETest
 KcOidcBrokerJWEUserInfoJustEncryptedTest
+KcOidcBrokerPrivateKeyJwtEs256kTest
 KcSamlBrokerTest
 KcSamlFirstBrokerLoginTest
 KcSamlEncryptedIdTest

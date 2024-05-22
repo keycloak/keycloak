@@ -21,8 +21,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
@@ -36,7 +38,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public class SdJwtVPTest {
+public abstract class SdJwtVPTest {
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
+
     // Additional tests can be written to cover edge cases, error conditions,
     // and any other functionality specific to the SdJwt class.
     @Test

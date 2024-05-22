@@ -28,13 +28,17 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.List;
 
 public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFactory {
+
+    private static final String SECP256K1_OID = "1.3.132.0.10";
 
     private static final Logger logger = Logger.getLogger(GeneratedEcdsaKeyProviderFactory.class);
 
@@ -56,7 +60,8 @@ public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFa
 
     @Override
     public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
-        if (keyUse.equals(KeyUse.SIG) && (algorithm.equals(Algorithm.ES256) || algorithm.equals(Algorithm.ES384) || algorithm.equals(Algorithm.ES512))) {
+        if (keyUse.equals(KeyUse.SIG) && (algorithm.equals(Algorithm.ES256) || algorithm.equals(Algorithm.ES384)
+                || algorithm.equals(Algorithm.ES512) || algorithm.equals(Algorithm.ES256K))) {
             RealmModel realm = session.getContext().getRealm();
 
             ComponentModel generated = new ComponentModel();
@@ -131,7 +136,16 @@ public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFa
             KeyFactory kf = KeyFactory.getInstance("EC");
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEcdsaKeyBase64Encoded));
             ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
-            return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
+            int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
+            if (fieldSize == 256) {
+                AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
+                params.init(ecKey.getParams());
+                String name = params.getParameterSpec(ECGenParameterSpec.class).getName();
+                if (SECP256K1_OID.equals(name)) {
+                    return "secp256k1";
+                }
+            }
+            return "P-" + fieldSize;
         } catch (Throwable t) {
             throw new ComponentValidationException("Failed to get EC from its public key", t);
         }

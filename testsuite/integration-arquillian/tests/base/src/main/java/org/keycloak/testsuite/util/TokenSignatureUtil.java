@@ -116,6 +116,7 @@ public class TokenSignatureUtil {
             case Algorithm.ES256:
             case Algorithm.ES384:
             case Algorithm.ES512:
+            case Algorithm.ES256K:
                 registerKeyProvider(realm, "ecdsaEllipticCurveKey", convertAlgorithmToECDomainParamNistRep(jwaAlgorithmName), GeneratedEcdsaKeyProviderFactory.ID, adminClient, testContext);
                 break;
             case Algorithm.Ed25519:
@@ -133,6 +134,8 @@ public class TokenSignatureUtil {
                 return "P-384";
             case Algorithm.ES512 :
                 return "P-521";
+            case Algorithm.ES256K :
+                return "secp256k1";
             default :
                 return null;
         }

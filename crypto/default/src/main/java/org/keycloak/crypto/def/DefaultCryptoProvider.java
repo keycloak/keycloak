@@ -18,7 +18,6 @@ import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -38,7 +37,6 @@ import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
-import org.keycloak.crypto.JavaAlgorithm;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -98,7 +96,7 @@ public class DefaultCryptoProvider implements CryptoProvider {
     @Override
     public ECParameterSpec createECParams(String curveName) {
         ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(curveName);
-        return new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
+        return new ECNamedCurveSpec(spec.getName(), spec.getCurve(), spec.getG(), spec.getN());
     }
 
     @Override
@@ -174,8 +172,7 @@ public class DefaultCryptoProvider implements CryptoProvider {
 
     @Override
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
-        return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
-            
+        return Signature.getInstance(sigAlgName, BouncyIntegration.PROVIDER);
     }
 
     @Override

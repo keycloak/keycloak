@@ -42,7 +42,6 @@ import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
-import java.security.spec.ECPoint;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -138,6 +137,10 @@ public abstract class JWKTest {
     }
 
     private void testPublicEs256(String algorithm) throws Exception {
+        testPublicEs(algorithm, "ES256");
+    }
+
+    private void testPublicEs(String algorithm, String sigAlg) throws Exception {
         KeyPairGenerator keyGen = CryptoIntegration.getProvider().getKeyPairGen(KeyType.EC);
         SecureRandom randomGen = new SecureRandom();
         ECGenParameterSpec ecSpec = new ECGenParameterSpec(algorithm);
@@ -146,10 +149,10 @@ public abstract class JWKTest {
 
         ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
 
-        JWK jwk = JWKBuilder.create().kid(KeyUtils.createKeyId(keyPair.getPublic())).algorithm("ES256").ec(publicKey);
+        JWK jwk = JWKBuilder.create().kid(KeyUtils.createKeyId(keyPair.getPublic())).algorithm(sigAlg).ec(publicKey);
 
         assertEquals("EC", jwk.getKeyType());
-        assertEquals("ES256", jwk.getAlgorithm());
+        assertEquals(sigAlg, jwk.getAlgorithm());
         assertEquals("sig", jwk.getPublicKeyUse());
 
         assertTrue(jwk instanceof ECPublicJWK);
@@ -194,6 +197,11 @@ public abstract class JWKTest {
     }
 
     @Test
+    public void publicEs256kSecp256k1() throws Exception {
+        testPublicEs("secp256k1", "ES256K");
+    }
+
+    @Test
     public void parse() {
         String jwkJson = "{" +
                 "   \"kty\": \"RSA\"," +
@@ -227,14 +235,14 @@ public abstract class JWKTest {
     }
 
     private byte[] sign(byte[] data, String javaAlgorithm, PrivateKey key) throws Exception {
-        Signature signature = Signature.getInstance(javaAlgorithm);
+        Signature signature = CryptoIntegration.getProvider().getSignature(javaAlgorithm);
         signature.initSign(key);
         signature.update(data);
         return signature.sign();
     }
 
     private boolean verify(byte[] data, byte[] signature, String javaAlgorithm, PublicKey key) throws Exception {
-        Signature verifier = Signature.getInstance(javaAlgorithm);
+        Signature verifier = CryptoIntegration.getProvider().getSignature(javaAlgorithm);
         verifier.initVerify(key);
         verifier.update(data);
         return verifier.verify(signature);

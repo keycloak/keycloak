@@ -63,6 +63,8 @@ public class JavaAlgorithm {
                 return ES384;
             case Algorithm.ES512:
                 return ES512;
+            case Algorithm.ES256K:
+                return ES256;
             case Algorithm.PS256:
                 return PS256;
             case Algorithm.PS384:
@@ -105,6 +107,8 @@ public class JavaAlgorithm {
                 return SHA384;
             case Algorithm.ES512:
                 return SHA512;
+            case Algorithm.ES256K:
+                return SHA256;
             case Algorithm.PS256:
                 return SHA256;
             case Algorithm.PS384:

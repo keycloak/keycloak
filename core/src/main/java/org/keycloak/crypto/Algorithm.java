@@ -36,6 +36,8 @@ public interface Algorithm {
     String ES384 = "ES384";
     String ES512 = "ES512";
 
+    String ES256K = "ES256K";
+
     /* EdDSA signing algorithms  */
     String EdDSA = "EdDSA";
     /* EdDSA Curve */

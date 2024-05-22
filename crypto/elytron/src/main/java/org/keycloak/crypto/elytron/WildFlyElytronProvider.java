@@ -47,7 +47,6 @@ import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
-import org.keycloak.crypto.JavaAlgorithm;
 
 public class WildFlyElytronProvider implements CryptoProvider {
 
@@ -165,8 +164,7 @@ public class WildFlyElytronProvider implements CryptoProvider {
 
     @Override
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException {
-        return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName));
-            
+        return Signature.getInstance(sigAlgName);
     }
 
     @Override
