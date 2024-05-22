@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import java.util.List;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
@@ -24,6 +26,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -39,7 +42,7 @@ public class OrganizationAuthenticatorFactory extends IdentityProviderAuthentica
 
     @Override
     public String getDisplayType() {
-        return "Organization Identity Provider Redirector";
+        return "Organization Identity-First Login";
     }
 
     @Override
@@ -55,5 +58,10 @@ public class OrganizationAuthenticatorFactory extends IdentityProviderAuthentica
     @Override
     public boolean isSupported(Scope config) {
         return Profile.isFeatureEnabled(Feature.ORGANIZATION);
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() { // org identity-first login
+        return List.of();
     }
 }

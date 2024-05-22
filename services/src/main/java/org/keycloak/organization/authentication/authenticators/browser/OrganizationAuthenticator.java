@@ -190,4 +190,9 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         return email.substring(domainSeparator + 1);
     }
+
+    @Override
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return realm.isOrganizationsEnabled();
+    }
 }
