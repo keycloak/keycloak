@@ -63,6 +63,7 @@ import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.Constants;
 import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.MigrationManager;
@@ -145,6 +146,14 @@ public class DefaultMigrationManager implements MigrationManager {
                     m.migrate(session);
                 }
             }
+        } else if (currentVersion.lessThan(databaseVersion)) {
+            if (databaseVersion.equals(SNAPSHOT_VERSION)) {
+                throw new ModelException("Incorrect state of migration. You are trying to run server version '" + currentVersion + "' against database, which was migrated snapshot to version '"
+                        + databaseVersion + "'. If this state is really correct, please update manually your database to set the correct version of Keycloak server.");
+            } else {
+                logger.warnf("Possibly incorrect state of migration. You are trying to run server version '" + currentVersion + "' against database, which was already migrated to newer version '"  +
+                        databaseVersion + "'.");
+            }
         }
 
         if (databaseVersion == null || databaseVersion.lessThan(currentVersion)) {
@@ -159,6 +168,7 @@ public class DefaultMigrationManager implements MigrationManager {
     public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.3");
     public static final ModelVersion RHSSO_VERSION_7_3_KEYCLOAK_VERSION = new ModelVersion("4.8.3");
     public static final ModelVersion RHSSO_VERSION_7_4_KEYCLOAK_VERSION = new ModelVersion("9.0.3");
+    public static final ModelVersion SNAPSHOT_VERSION = new ModelVersion("999.0.0-SNAPSHOT");
 
     private static final Map<Pattern, ModelVersion> PATTERN_MATCHER = new LinkedHashMap<>();
     static {
@@ -180,6 +190,12 @@ public class DefaultMigrationManager implements MigrationManager {
         }
         if (stored == null) {
             stored = migrations[0].getVersion();
+        } else {
+            ModelVersion currentVersion = new ModelVersion(Version.VERSION);
+            if (currentVersion.lessThan(stored)) {
+                logger.warnf("Possibly incorrect state of migration during realm import. You are running server version '" + currentVersion + "' when importing JSON file, which was created in the newer version '"  +
+                        stored + "'.");
+            }
         }
 
         for (Migration m : migrations) {
