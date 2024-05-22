@@ -17,6 +17,9 @@
 
 package org.keycloak.organization.jpa;
 
+import static java.util.Optional.ofNullable;
+
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
@@ -47,6 +50,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     private final OrganizationEntity entity;
     private final OrganizationProvider provider;
     private GroupModel group;
+    private Map<String, List<String>> attributes;
 
     public OrganizationAdapter(RealmModel realm, OrganizationProvider provider) {
         entity = new OrganizationEntity();
@@ -114,6 +118,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         if (attributes == null) {
             return;
         }
+        // make sure the kc.org attribute is never removed or updated
+        attributes.put(ORGANIZATION_ATTRIBUTE, getGroup().getAttributes().get(OrganizationModel.ORGANIZATION_ATTRIBUTE));
         Set<String> attrsToRemove = getAttributes().keySet();
         attrsToRemove.removeAll(attributes.keySet());
         attrsToRemove.forEach(group::removeAttribute);
@@ -122,7 +128,12 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return getGroup().getAttributes();
+        if (attributes == null) {
+            attributes = new HashMap<>(ofNullable(getGroup().getAttributes()).orElse(Map.of()));
+            // do not expose the kc.org attribute
+            attributes.remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        }
+        return attributes;
     }
 
     @Override

@@ -24,12 +24,14 @@ import static org.keycloak.testsuite.admin.group.GroupSearchTest.buildSearchQuer
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelValidationException;
@@ -57,7 +59,10 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
         // create 5 organizations
         for (int i = 0; i < 5; i++) {
             OrganizationRepresentation expected = createOrganization("myorg" + i);
-            OrganizationRepresentation existing = testRealm().organizations().get(expected.getId()).toRepresentation();
+            OrganizationResource organization = testRealm().organizations().get(expected.getId());
+            expected.setAttributes(Map.of());
+            organization.update(expected).close();
+            OrganizationRepresentation existing = organization.toRepresentation();
             orgIds.add(expected.getId());
             assertNotNull(existing);
         }
@@ -252,5 +257,12 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
             } catch (ModelValidationException ignore) {
             }
         });
+    }
+
+    @Override
+    protected OrganizationRepresentation createRepresentation(String name, String... orgDomains) {
+        OrganizationRepresentation rep = super.createRepresentation(name, orgDomains);
+        rep.setAttributes(Map.of());
+        return rep;
     }
 }
