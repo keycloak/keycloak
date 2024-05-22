@@ -60,7 +60,7 @@ export const IdentityProviderSelect = ({
   const debounceFn = useCallback(debounce(setSearch, 1000), []);
 
   useFetch(
-    () => {
+    async () => {
       const params: IdentityProvidersQuery = {
         max: 20,
       };
@@ -68,7 +68,8 @@ export const IdentityProviderSelect = ({
         params.search = search;
       }
 
-      return adminClient.identityProviders.find(params);
+      const idps = await adminClient.identityProviders.find(params);
+      return idps.filter((i) => !i.config?.["kc.org"]);
     },
     setIdps,
     [search],
@@ -132,7 +133,7 @@ export const IdentityProviderSelect = ({
               >
                 <TextInputGroup isPlain>
                   <TextInputGroupMain
-                    value={inputValue}
+                    value={inputValue || field.value}
                     onClick={toggleOpen}
                     onChange={(_, value) => {
                       setOpen(true);
