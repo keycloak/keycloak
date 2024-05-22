@@ -1,0 +1,7 @@
+= Keystore and trust store default format change
+
+{project_name} now determines the format of the keystore and trust store based on the file extension. If the file extension is `.p12`, `.pkcs12` or `.pfx`, the format is PKCS12. If the file extension is `.jks`, `.keystore` or `.truststore`, the format is JKS. If the file extension is `.pem`, `.crt` or `.key`, the format is PEM.
+
+You can still override automatic detection by specifying the `https-key-store-type` and `https-trust-store-type` explicitly. Restrictions for the FIPS strict mode stays unchanged.
+
+NOTE: The `+spi-truststore-file-*+` options and the truststore related options `+https-trust-store-*+` are deprecated, we strongly recommend to use System Truststore. For more details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
