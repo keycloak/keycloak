@@ -1,4 +1,3 @@
-import { InvitedMember } from "@keycloak/keycloak-admin-client/lib/resources/organizations";
 import { FormSubmitButton, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
@@ -25,12 +24,12 @@ export const InviteMemberModal = ({
   const { addAlert, addError } = useAlerts();
 
   const { t } = useTranslation();
-  const form = useForm();
+  const form = useForm<Record<string, string>>();
   const { handleSubmit, formState } = form;
 
-  const submitForm = async (data: InvitedMember) => {
+  const submitForm = async (data: Record<string, string>) => {
     try {
-      await adminClient.organizations.invite({ orgId, invite: data });
+      await adminClient.organizations.invite({ orgId }, data);
       addAlert(t("inviteSent"));
       onClose();
     } catch (error) {

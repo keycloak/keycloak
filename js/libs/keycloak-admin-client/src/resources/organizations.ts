@@ -18,12 +18,6 @@ interface MemberQuery extends PaginatedQuery {
   orgId: string; //Id of the organization to get the members of
 }
 
-export type InvitedMember = {
-  email: string;
-  firstName?: string;
-  lastName?: string;
-};
-
 export class Organizations extends Resource<{ realm?: string }> {
   /**
    * Organizations
@@ -102,14 +96,13 @@ export class Organizations extends Resource<{ realm?: string }> {
     urlParamKeys: ["orgId", "userId"],
   });
 
-  public invite = this.makeRequest<
-    { orgId: string; invite: InvitedMember },
-    string
+  public invite = this.makeUpdateRequest<
+    { orgId: string },
+    Record<string, string>
   >({
     method: "POST",
     path: "/{orgId}/members/invite-user",
     urlParamKeys: ["orgId"],
-    payloadKey: "invite",
   });
 
   public listIdentityProviders = this.makeRequest<
