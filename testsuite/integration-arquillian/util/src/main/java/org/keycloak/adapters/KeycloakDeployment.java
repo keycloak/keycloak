@@ -17,13 +17,13 @@
 
 package org.keycloak.adapters;
 
+import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
-import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.KeycloakUriBuilder;

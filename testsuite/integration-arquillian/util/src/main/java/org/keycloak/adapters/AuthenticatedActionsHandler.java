@@ -17,11 +17,11 @@
 
 package org.keycloak.adapters;
 
+import org.keycloak.adapters.pep.HttpAuthzRequest;
+import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.pep.HttpAuthzRequest;
-import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
