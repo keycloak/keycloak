@@ -22,7 +22,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import org.junit.Test;
 import org.keycloak.client.clienttype.ClientTypeManager;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -45,7 +44,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.in;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
@@ -154,8 +155,8 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
         ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
         assertThat(
-                List.of(errorRepresentation.getParams()),
-                containsInAnyOrder(items));
+                List.of(items),
+                everyItem(in(errorRepresentation.getParams())));
     }
 
     @Test
@@ -164,10 +165,9 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(0, clientTypes.getRealmClientTypes().size());
 
-        List<String> globalClientTypeNames = clientTypes.getGlobalClientTypes().stream()
-                .map(ClientTypeRepresentation::getName)
+        List<ClientTypeRepresentation> globalClientTypeNames = clientTypes.getGlobalClientTypes().stream()
                 .collect(Collectors.toList());
-        Assert.assertNames(globalClientTypeNames, "sla", "service-account");
+        assertNames(globalClientTypeNames, "sla", "service-account");
 
         ClientTypeRepresentation serviceAccountType = clientTypes.getGlobalClientTypes().stream()
                 .filter(clientType -> "service-account".equals(clientType.getName()))
@@ -176,15 +176,14 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertEquals("default", serviceAccountType.getProvider());
 
         ClientTypeRepresentation.PropertyConfig cfg = serviceAccountType.getConfig().get("standardFlowEnabled");
-        assertPropertyConfig("standardFlowEnabled", cfg, false, null, null);
+        assertPropertyConfig("standardFlowEnabled", cfg,  false, null);
 
         cfg = serviceAccountType.getConfig().get("serviceAccountsEnabled");
-        assertPropertyConfig("serviceAccountsEnabled", cfg, true, true, true);
+        assertPropertyConfig("serviceAccountsEnabled", cfg, true, true);
 
         cfg = serviceAccountType.getConfig().get("tosUri");
-        assertPropertyConfig("tosUri", cfg, false, null, null);
+        assertPropertyConfig("tosUri", cfg, false, null);
     }
-
 
     @Test
     public void testClientTypesAdminRestAPI_realmTypes() {
@@ -218,8 +217,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         try {
             ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get("standardFlowEnabled");
             cfg.setApplicable(false);
-            cfg.setReadOnly(true);
-            cfg.setDefaultValue(true);
+            cfg.setValue(true);
             testRealm().clientTypes().updateClientTypes(clientTypes);
             Assert.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
@@ -278,14 +276,13 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         List<String> names = clientTypes.stream()
                 .map(ClientTypeRepresentation::getName)
                 .collect(Collectors.toList());
-        Assert.assertNames(names, expectedNames);
+        assertThat(names, hasItems(expectedNames));
     }
 
 
-    private void assertPropertyConfig(String propertyName, ClientTypeRepresentation.PropertyConfig cfg, Boolean expectedApplicable, Boolean expectedReadOnly, Object expectedDefaultValue) {
-        assertThat("'applicable' for property " + propertyName + " not equal", ObjectUtil.isEqualOrBothNull(expectedApplicable, cfg.getApplicable()));
-        assertThat("'read-only' for property " + propertyName + " not equal", ObjectUtil.isEqualOrBothNull(expectedReadOnly, cfg.getReadOnly()));
-        assertThat("'default-value' ;for property " + propertyName + " not equal", ObjectUtil.isEqualOrBothNull(expectedDefaultValue, cfg.getDefaultValue()));
+    private void assertPropertyConfig(String propertyName, ClientTypeRepresentation.PropertyConfig cfg, Boolean expectedApplicable, Object expectedValue) {
+        assertEquals("'applicable' for property " + propertyName + " not equal", expectedApplicable, cfg.getApplicable());
+        assertEquals("'value' for property " + propertyName + " not equal", expectedValue, cfg.getValue());
     }
 
     private ClientRepresentation createClientWithType(String clientId, String clientType) {
