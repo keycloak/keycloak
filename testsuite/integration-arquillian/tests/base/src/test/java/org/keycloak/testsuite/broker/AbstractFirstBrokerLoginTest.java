@@ -369,11 +369,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Click browser 'back' on review profile page
         idpConfirmLinkPage.clickReviewProfile();
-        // Need to confirm again with htmlUnit due the JS not working correctly
-        if (driver instanceof HtmlUnitDriver) {
-            idpConfirmLinkPage.assertCurrent();
-            idpConfirmLinkPage.clickReviewProfile();
-        }
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         driver.navigate().back();

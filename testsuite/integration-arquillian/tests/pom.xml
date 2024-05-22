@@ -215,15 +215,15 @@
         <ieDriverArch>Win32</ieDriverArch>
         <ieDriverVersion/>
         <js.browser>chrome</js.browser>
-        <js.chromeArguments>--headless</js.chromeArguments>
+        <js.chromeArguments>--headless --ignore-ssl-errors=yes --ignore-certificate-errors</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
-        <firefoxHeadless>true</firefoxHeadless>
+        <firefoxArguments>-headless</firefoxArguments>
         <chromeBinary/>
-        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
+        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=* --ignore-ssl-errors=yes --ignore-certificate-errors</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
@@ -600,7 +600,7 @@
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
                             <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
                             <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
-                            <firefoxHeadless>${firefoxHeadless}</firefoxHeadless>
+                            <firefoxArguments>${firefoxArguments}</firefoxArguments>
 
                             <appium.platformName>${appium.platformName}</appium.platformName>
                             <appium.deviceName>${appium.deviceName}</appium.deviceName>
@@ -1862,17 +1862,6 @@
 
             </dependencies>
 
-            <dependencyManagement>
-                <dependencies>
-                    <!-- we need to specify the correct version because of conflict in arquillian-drone-webdriver-depchain -->
-                    <dependency>
-                        <groupId>org.seleniumhq.selenium</groupId>
-                        <artifactId>htmlunit-driver</artifactId>
-                        <version>2.27</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-
             <build>
                 <plugins>
                     <plugin>
@@ -2077,7 +2066,7 @@
                 <browser>firefox</browser>
                 <js.browser>firefox</js.browser>
                 <firefoxUserPreferences>${project.build.directory}/dependency/firefox-cookies-prefs.js</firefoxUserPreferences>
-                <firefoxHeadless>true</firefoxHeadless>
+                <firefoxArguments>-headless</firefoxArguments>
                 <browser.strict.cookies>true</browser.strict.cookies>
             </properties>
         </profile>

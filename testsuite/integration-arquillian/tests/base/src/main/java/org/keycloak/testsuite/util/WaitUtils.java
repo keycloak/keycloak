@@ -78,7 +78,7 @@ public final class WaitUtils {
     }
 
     public static void waitUntilElementClassContains(WebElement element, String value) {
-        new WebDriverWait(getCurrentDriver(), 1).until(
+        new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(1)).until(
                 ExpectedConditions.attributeContains(element, "class", value)
         );
     }
@@ -105,7 +105,7 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        WebDriverWait wait = new WebDriverWait(driver, PAGELOAD_TIMEOUT_MILLIS / 1000);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS));
 
         try {
             wait

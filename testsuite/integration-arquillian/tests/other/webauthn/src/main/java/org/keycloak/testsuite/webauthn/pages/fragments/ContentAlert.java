@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.webauthn.pages.fragments;
 
-import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
@@ -32,17 +31,25 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
+ *
+ * Page fragments seem not to be working after migration from CGlib to ByteBuddy in Graphene
  */
 public class ContentAlert {
-    private static final String ROOT_ID = "//ul[@data-testid='alerts']/li[1]";
+    private static final String ROOT_ID = "//ul[@data-testid='alerts']/li[1]//div";
 
     //The first alert from the alert group is what we are interested in.
-    @FindBy(xpath = ROOT_ID + "//div")
-    private AlertElement alertElement;
+    @FindBy(xpath = ROOT_ID)
+    private WebElement alertElementRoot;
+
+    @FindBy(className = ROOT_ID + "[@class='pf-v5-c-alert__title']")
+    private WebElement messageElement;
+
+    @FindBy(className = ROOT_ID + "[@class='pf-v5-c-alert__action']")
+    private WebElement closeBtn;
 
     public boolean isDisplayed() {
         try {
-            return alertElement.getRoot().isDisplayed();
+            return alertElementRoot.isDisplayed();
         }
         catch (NoSuchElementException e) {
             return false;
@@ -62,16 +69,16 @@ public class ContentAlert {
     }
 
     public String getMessage() {
-        return getTextFromElement(alertElement.getMessageElement());
+        return getTextFromElement(messageElement);
     }
 
     public void close() {
-        alertElement.getCloseBtn().click();
+        closeBtn.click();
         assertIsNotDisplayed();
     }
 
     protected void assertAlertType(String type) {
-        assertTrue("Alert is not " + type, doesElementClassContain(alertElement.getRoot(), type));
+        assertTrue("Alert is not " + type, doesElementClassContain(alertElementRoot, type));
     }
 
     protected void assertMessage(String expectedMessage) {
@@ -112,32 +119,5 @@ public class ContentAlert {
     public void assertInfo(String expectedMessage) {
         assertInfo();
         assertMessage(expectedMessage);
-    }
-
-    /**
-     * Elements are placed into a separate class to leverage Page Fragment functionality so that all elements are found
-     * under the Root element.
-     */
-    private class AlertElement {
-        @Root
-        private WebElement root;
-
-        @FindBy(className = "pf-v5-c-alert__title")
-        private WebElement messageElement;
-
-        @FindBy(className = "pf-v5-c-alert__action")
-        private WebElement closeBtn;
-
-        public WebElement getRoot() {
-            return root;
-        }
-
-        public WebElement getMessageElement() {
-            return messageElement;
-        }
-
-        public WebElement getCloseBtn() {
-            return closeBtn;
-        }
     }
 }

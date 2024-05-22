@@ -65,6 +65,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.openqa.selenium.WebDriver;
 
@@ -572,6 +573,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         Assert.assertNotNull(cfgId);
 
         loginConfirmationPage.open();
+
+        WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals(username, loginConfirmationPage.getUsernameText());

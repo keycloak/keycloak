@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.gargoylesoftware.htmlunit.WebClient;
+import org.htmlunit.WebClient;
 import java.io.Closeable;
 import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;

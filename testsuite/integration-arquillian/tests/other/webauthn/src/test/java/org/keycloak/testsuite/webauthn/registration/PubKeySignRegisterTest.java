@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.webauthn.registration;
 
-import com.beust.jcommander.internal.Lists;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
 import org.junit.Test;
@@ -46,12 +45,12 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void publicKeySignaturesWrong() {
-        assertPublicKeyAlgorithms(false, null, Lists.newArrayList(RS512, ES512));
+        assertPublicKeyAlgorithms(false, null, List.of(RS512, ES512));
     }
 
     @Test
     public void publicKeySignaturesAlternatives() {
-        assertPublicKeyAlgorithms(true, COSEAlgorithmIdentifier.ES256, Lists.newArrayList(ES256, ES512));
+        assertPublicKeyAlgorithms(true, COSEAlgorithmIdentifier.ES256, List.of(ES256, ES512));
     }
 
     @Test
@@ -61,7 +60,7 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void publicKeySignaturesRSA() {
-        assertPublicKeyAlgorithms(false, null, Lists.newArrayList(RS384, ES512));
+        assertPublicKeyAlgorithms(false, null, List.of(RS384, ES512));
     }
 
     @Test
