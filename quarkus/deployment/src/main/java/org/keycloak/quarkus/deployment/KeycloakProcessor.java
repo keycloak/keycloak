@@ -144,6 +144,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
 
+import static org.hibernate.cfg.SessionEventSettings.LOG_SESSION_METRICS;
+import static org.hibernate.cfg.StatisticsSettings.GENERATE_STATISTICS;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
@@ -367,6 +369,8 @@ class KeycloakProcessor {
         descriptor.setTransactionType(PersistenceUnitTransactionType.JTA);
 
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
+        unitProperties.setProperty(GENERATE_STATISTICS, System.getProperty(GENERATE_STATISTICS, Boolean.FALSE.toString()));
+        unitProperties.setProperty(LOG_SESSION_METRICS, System.getProperty(LOG_SESSION_METRICS, Boolean.FALSE.toString()));
 
         String dbKind = defaultDataSource.getDbKind();
 
