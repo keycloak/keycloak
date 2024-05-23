@@ -335,6 +335,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
     @Test
     public void testRequestCredential() {
         String token = getBearerToken(oauth);
+        ObjectMapper objectMapper = new ObjectMapper();
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
@@ -352,8 +353,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
 
                     assertNotNull("A valid credential string should have been responded", jsonWebToken);
                     assertNotNull("The credentials should be included at the vc-claim.", jsonWebToken.getOtherClaims().get("vc"));
-                    VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
-                    log.warnf("The subject is %s", new ObjectMapper().writeValueAsString(credential.getCredentialSubject()));
+                    VerifiableCredential credential = objectMapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
                     assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
                     assertFalse("Only mappers supported for the requested type should have been evaluated.", credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
                 }));

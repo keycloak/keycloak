@@ -263,7 +263,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         protocolMapperRepresentation.setConfig(
                 Map.of(
                         "subjectProperty", supportedType,
-                        "subjectValue", "true",
+                        "staticValue", "true",
                         "supportedCredentialTypes", supportedType)
         );
         return protocolMapperRepresentation;
