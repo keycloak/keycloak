@@ -96,9 +96,9 @@ public class OrganizationsResource {
         Set<String> domains = ofNullable(organization.getDomains()).orElse(Set.of()).stream()
                 .map(OrganizationDomainRepresentation::getName)
                 .filter(StringUtil::isNotBlank)
+                .collect(Collectors.toSet());
 
         try {
-                .collect(Collectors.toSet());
             OrganizationModel model = provider.create(organization.getName(), domains);
 
             Organizations.toModel(organization, model);
