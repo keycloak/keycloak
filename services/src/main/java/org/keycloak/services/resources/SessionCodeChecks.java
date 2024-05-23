@@ -150,6 +150,7 @@ public class SessionCodeChecks {
         }
         if (client != null) {
             session.getContext().setClient(client);
+            setClientToEvent(client);
         }
 
 
