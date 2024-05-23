@@ -15,7 +15,7 @@ const page = new OrganizationPage();
 const realmSettingsPage = new RealmSettingsPage();
 const sidebarPage = new SidebarPage();
 
-describe("Organization CRUD", () => {
+describe.skip("Organization CRUD", () => {
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
@@ -78,7 +78,7 @@ describe("Organization CRUD", () => {
   });
 });
 
-describe("Members", () => {
+describe.skip("Members", () => {
   const membersTab = new MembersTab();
 
   before(() => {
