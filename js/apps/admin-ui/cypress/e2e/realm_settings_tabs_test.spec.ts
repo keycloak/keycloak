@@ -258,7 +258,7 @@ describe("Realm settings tabs tests", () => {
         .should("be.visible");
 
       cy.findByTestId("selectAll").click();
-      cy.get('[data-testid="toolbar-deleteBtn"] button').click();
+      cy.get('[data-testid="toolbar-deleteBtn"]').click();
       cy.findByTestId("delete-selected-TranslationBtn").click();
       cy.findByTestId("confirm").click();
       masthead.checkNotificationMessage("Successfully removed translation(s).");
