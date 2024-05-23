@@ -43,6 +43,12 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     @FindBy(xpath = "//select[@aria-label='languages']")
     private WebElement localeDropdown;
 
+    @FindBy(id = "kc-current-locale-link")
+    private WebElement languageTextBase;    // base theme
+
+    @FindBy(id = "kc-locale-dropdown")
+    private WebElement localeDropdownBase;  // base theme
+
     @FindBy(id = "try-another-way")
     private WebElement tryAnotherWayLink;
 
@@ -56,14 +62,23 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     private WebElement accountLink;
 
     public String getLanguageDropdownText() {
-        return languageText.getText();
+        try {
+            final String text = languageText.getText();
+            return text == null ? text : text.trim();
+        } catch (NoSuchElementException ex) {
+            return languageTextBase.getText();
+        }
     }
 
     public void openLanguage(String language){
-        WebElement langLink = localeDropdown.findElement(By.xpath("//option[text()[contains(.,'" + language + "')]]"));
-        String url = langLink.getAttribute("value");
         try {
+            WebElement langLink = localeDropdown.findElement(By.xpath("//option[text()[contains(.,'" + language + "')]]"));
+            String url = langLink.getAttribute("value");
             DroneUtils.getCurrentDriver().navigate().to(new URI(DroneUtils.getCurrentDriver().getCurrentUrl()).resolve(url).toString());
+        } catch (NoSuchElementException ex) {
+            WebElement langLink = localeDropdownBase.findElement(By.xpath("//a[text()[contains(.,'" + language + "')]]"));
+            String url = langLink.getAttribute("href");
+            DroneUtils.getCurrentDriver().navigate().to(url);
         } catch (URISyntaxException ex) {
             Assert.fail(ex.getMessage());
         }

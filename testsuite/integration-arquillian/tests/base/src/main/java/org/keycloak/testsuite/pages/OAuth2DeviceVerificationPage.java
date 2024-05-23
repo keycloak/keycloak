@@ -108,7 +108,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
             try {
                 driver.findElement(By.id("device-user-code"));
                 return driver.findElement(By.id("kc-page-title")).getText().equals("Device Login")
-                        && driver.findElement(By.className("kc-feedback-text")).getText().equals("Invalid code, please try again.");
+                        && driver.findElement(By.className("pf-m-danger")).getText().equals("Invalid code, please try again.");
             } catch (Throwable t) {
             }
         }
@@ -120,7 +120,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
             try {
                 driver.findElement(By.id("device-user-code"));
                 return driver.findElement(By.id("kc-page-title")).getText().equals("Device Login")
-                        && driver.findElement(By.className("kc-feedback-text")).getText().equals("The code has expired. Please go back to your device and try connecting again.");
+                        && driver.findElement(By.className("pf-m-danger")).getText().equals("The code has expired. Please go back to your device and try connecting again.");
             } catch (Throwable t) {
             }
         }
