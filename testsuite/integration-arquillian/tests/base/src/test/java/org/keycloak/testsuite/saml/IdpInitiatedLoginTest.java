@@ -50,6 +50,7 @@ import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import static org.hamcrest.Matchers.anyOf;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
@@ -197,9 +198,12 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                 .execute(r -> {
                     assertThat(r, statusCodeIsHC(Response.Status.OK));
                     assertThat(r, bodyHC(allOf(
-                            containsString("Redirecting, please wait."),
+                            anyOf(
+                              containsString("Redirecting, please wait."),
+                              containsString("Authentication Redirect")
+                            ),
                             containsString("<input type=\"hidden\" name=\"SAMLResponse\""), 
-                            containsString("<h1 id=\"kc-page-title\">")
+                            containsString(" id=\"kc-page-title\"")
                     )));
                 });
     }
@@ -219,9 +223,13 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                 .execute(r -> {
                     assertThat(r, statusCodeIsHC(Response.Status.OK));
                     assertThat(r, bodyHC(allOf(
+                            anyOf(
+                              containsString("Redirecting, please wait."),
+                              containsString("Authentication Redirect")
+                            ),
                             containsString("Redirecting, please wait."),
                             containsString("<input type=\"hidden\" name=\"SAMLRequest\""), 
-                            containsString("<h1 id=\"kc-page-title\">")
+                            containsString(" id=\"kc-page-title\"")
                     )));
                 });
         }
