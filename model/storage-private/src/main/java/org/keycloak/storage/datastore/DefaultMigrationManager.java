@@ -148,8 +148,8 @@ public class DefaultMigrationManager implements MigrationManager {
             }
         } else if (currentVersion.lessThan(databaseVersion)) {
             if (databaseVersion.equals(SNAPSHOT_VERSION)) {
-                throw new ModelException("Incorrect state of migration. You are trying to run server version '" + currentVersion + "' against database, which was migrated snapshot to version '"
-                        + databaseVersion + "'. If this state is really correct, please update manually your database to set the correct version of Keycloak server.");
+                throw new ModelException("Incorrect state of migration. You are trying to run server version '" + currentVersion + "' against a database which was migrated to snapshot version '"
+                        + databaseVersion + "'. Databases that have been migrated to a snapshot version can't be migrated to a released version of Keycloak or to a more recent snapshot version.");
             } else {
                 logger.warnf("Possibly incorrect state of migration. You are trying to run server version '" + currentVersion + "' against database, which was already migrated to newer version '"  +
                         databaseVersion + "'.");
