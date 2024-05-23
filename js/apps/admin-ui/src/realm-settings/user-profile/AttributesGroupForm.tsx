@@ -1,5 +1,5 @@
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Alert,
@@ -12,6 +12,7 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
+import { GlobeRouteIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
   FormProvider,
@@ -21,26 +22,24 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
+import useLocale from "../../utils/useLocale";
+import useToggle from "../../utils/useToggle";
+import "../realm-settings-section.css";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
 import { toUserProfile } from "../routes/UserProfile";
 import { useUserProfile } from "./UserProfileContext";
-import { useFetch } from "../../utils/useFetch";
-import { GlobeRouteIcon } from "@patternfly/react-icons";
-import useToggle from "../../utils/useToggle";
-import useLocale from "../../utils/useLocale";
 import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./attribute/AddTranslationsDialog";
-import "../realm-settings-section.css";
-import { useAdminClient } from "../../admin-client";
 
 function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
   return Object.entries(input).reduce((p, [key, value]) => {
@@ -89,13 +88,12 @@ const defaultValues: FormFields = {
 export default function AttributesGroupForm() {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   const { config, save } = useUserProfile();
   const navigate = useNavigate();
   const combinedLocales = useLocale();
   const params = useParams<EditAttributesGroupParams>();
   const form = useForm<FormFields>({ defaultValues });
-  const [realm, setRealm] = useState<RealmRepresentation>();
   const { addError } = useAlerts();
   const editMode = params.name ? true : false;
   const [newAttributesGroupName, setNewAttributesGroupName] = useState("");
@@ -155,17 +153,6 @@ export default function AttributesGroupForm() {
     generatedAttributesGroupDisplayName,
     generatedAttributesGroupDisplayDescription,
   ]);
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      if (!realm) {
-        throw new Error(t("notFound"));
-      }
-      setRealm(realm);
-    },
-    [],
-  );
 
   useFetch(
     async () => {

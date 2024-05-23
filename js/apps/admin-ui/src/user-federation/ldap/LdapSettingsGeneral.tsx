@@ -1,19 +1,17 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormGroup } from "@patternfly/react-core";
 import {
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core/deprecated";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
-import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 
 export type LdapSettingsGeneralProps = {
   form: UseFormReturn<ComponentRepresentation>;
@@ -28,16 +26,10 @@ export const LdapSettingsGeneral = ({
   showSectionDescription = false,
   vendorEdit = false,
 }: LdapSettingsGeneralProps) => {
-  const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
 
-  useFetch(
-    () => adminClient.realms.findOne({ realm }),
-    (result) => form.setValue("parentId", result!.id),
-    [],
-  );
+  useEffect(() => form.setValue("parentId", realmRepresentation?.id), []);
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
 
   const setVendorDefaultValues = () => {

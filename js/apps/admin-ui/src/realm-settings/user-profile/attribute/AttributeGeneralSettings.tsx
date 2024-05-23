@@ -1,6 +1,6 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   Button,
@@ -22,7 +22,7 @@ import { isEqual } from "lodash-es";
 import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../../context/realm-context/RealmContext";
@@ -30,13 +30,12 @@ import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import useToggle from "../../../utils/useToggle";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
+import "../../realm-settings-section.css";
 import { AttributeParams } from "../../routes/Attribute";
 import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./AddTranslationsDialog";
-import { useAdminClient } from "../../../admin-client";
-import "../../realm-settings-section.css";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -65,7 +64,7 @@ export const AttributeGeneralSettings = ({
 }: AttributeGeneralSettingsProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realm: realmName } = useRealm();
+  const { realmRepresentation: realm } = useRealm();
   const form = useFormContext();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
@@ -77,7 +76,6 @@ export const AttributeGeneralSettings = ({
   const [addTranslationsModalOpen, toggleModal] = useToggle();
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
-  const [realm, setRealm] = useState<RealmRepresentation>();
   const [newAttributeName, setNewAttributeName] = useState("");
   const [generatedDisplayName, setGeneratedDisplayName] = useState("");
   const [type, setType] = useState<TranslationsType>();
@@ -121,17 +119,6 @@ export const AttributeGeneralSettings = ({
   });
 
   const displayNamePatternMatch = displayNameRegex.test(attributeDisplayName);
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      if (!realm) {
-        throw new Error(t("notFound"));
-      }
-      setRealm(realm);
-    },
-    [],
-  );
 
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);

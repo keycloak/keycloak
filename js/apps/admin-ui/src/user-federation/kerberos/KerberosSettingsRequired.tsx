@@ -1,3 +1,4 @@
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormGroup, Switch } from "@patternfly/react-core";
 import {
   Select,
@@ -5,7 +6,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Controller,
   FormProvider,
@@ -13,12 +14,9 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
-import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 
 export type KerberosSettingsRequiredProps = {
   form: UseFormReturn;
@@ -31,10 +29,8 @@ export const KerberosSettingsRequired = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: KerberosSettingsRequiredProps) => {
-  const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
 
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
 
@@ -43,11 +39,7 @@ export const KerberosSettingsRequired = ({
     name: "config.allowPasswordAuthentication",
   });
 
-  useFetch(
-    () => adminClient.realms.findOne({ realm }),
-    (result) => form.setValue("parentId", result!.id),
-    [],
-  );
+  useEffect(() => form.setValue("parentId", realmRepresentation?.id), []);
 
   return (
     <FormProvider {...form}>

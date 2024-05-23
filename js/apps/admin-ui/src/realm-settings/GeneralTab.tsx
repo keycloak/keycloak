@@ -142,10 +142,6 @@ function RealmSettingsGeneralTabForm({
       }
 
       await save({ ...data, upConfig });
-      if (realm.organizationsEnabled !== data.organizationsEnabled) {
-        //TODO make realm available in the context instead
-        location.reload();
-      }
     },
   );
 
