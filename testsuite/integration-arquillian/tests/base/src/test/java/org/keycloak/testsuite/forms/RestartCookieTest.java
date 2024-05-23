@@ -133,7 +133,6 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
                 .assertEvent();
     }
 
@@ -173,7 +172,6 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
                 .assertEvent();
     }
 }
