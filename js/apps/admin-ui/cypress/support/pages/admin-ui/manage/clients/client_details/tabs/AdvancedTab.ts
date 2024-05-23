@@ -85,9 +85,7 @@ export default class AdvancedTab extends PageObject {
 
   selectAccessTokenSignatureAlgorithm(algorithm: string) {
     cy.get(this.#accessTokenSignatureAlgorithmInput).click();
-    cy.get(this.#accessTokenSignatureAlgorithmInput + " + ul")
-      .contains(algorithm)
-      .click();
+    cy.get(".pf-v5-c-menu__list").contains(algorithm).click();
 
     return this;
   }
