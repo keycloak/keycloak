@@ -384,6 +384,7 @@ export const RealmOverrides = ({
                     variant="plain"
                     isExpanded={kebabOpen}
                     data-testid="toolbar-deleteBtn"
+                    aria-label="kebab"
                   >
                     <EllipsisVIcon />
                   </MenuToggle>
