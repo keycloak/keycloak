@@ -18,6 +18,7 @@ package org.keycloak.testsuite.migration;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -47,6 +48,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -422,6 +424,43 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo25_0_0() {
         // check that all expected scopes exist in the migrated realm.
         testRealmDefaultClientScopes(migrationRealm);
+        testClientContainsExpectedClientScopes();
+    }
+
+
+    private void testClientContainsExpectedClientScopes() {
+        // Test OIDC client contains expected client scopes
+        ClientResource migrationTestOIDCClient = ApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
+        List<String> defaultClientScopes = migrationTestOIDCClient.getDefaultClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        List<String> optionalClientScopes = migrationTestOIDCClient.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+
+        assertThat(defaultClientScopes, Matchers.hasItems(
+                OIDCLoginProtocolFactory.BASIC_SCOPE,
+                OAuth2Constants.SCOPE_PROFILE,
+                OAuth2Constants.SCOPE_EMAIL
+        ));
+        assertThat(optionalClientScopes, Matchers.hasItems(
+                OAuth2Constants.SCOPE_ADDRESS,
+                OAuth2Constants.OFFLINE_ACCESS,
+                OAuth2Constants.SCOPE_PHONE
+        ));
+
+        // Test SAML client
+        ClientResource migrationTestSAMLClient = ApiUtil.findClientByClientId(migrationRealm, "migration-saml-client");
+        defaultClientScopes = migrationTestSAMLClient.getDefaultClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        optionalClientScopes = migrationTestSAMLClient.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        assertThat(defaultClientScopes, Matchers.hasItems(
+                SamlProtocolFactory.SCOPE_ROLE_LIST
+        ));
+        Assert.assertTrue(optionalClientScopes.isEmpty());
     }
 
     protected void testDeleteAccount(RealmResource realm) {
