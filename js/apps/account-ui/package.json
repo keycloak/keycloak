@@ -33,7 +33,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.51.5",
-    "react-i18next": "^14.1.1",
+    "react-i18next": "^14.1.2",
     "react-router-dom": "^6.23.1"
   },
   "devDependencies": {

@@ -102,8 +102,8 @@ importers:
         specifier: ^7.51.5
         version: 7.51.5(react@18.3.1)
       react-i18next:
-        specifier: ^14.1.1
-        version: 14.1.1(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.23.1
         version: 6.23.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -211,8 +211,8 @@ importers:
         specifier: ^7.51.5
         version: 7.51.5(react@18.3.1)
       react-i18next:
-        specifier: ^14.1.1
-        version: 14.1.1(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.23.1
         version: 6.23.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -418,8 +418,8 @@ importers:
         specifier: 7.51.5
         version: 7.51.5(react@18.3.1)
       react-i18next:
-        specifier: ^14.1.1
-        version: 14.1.1(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -4021,8 +4021,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18
 
-  react-i18next@14.1.1:
-    resolution: {integrity: sha512-QSiKw+ihzJ/CIeIYWrarCmXJUySHDwQr5y8uaNIkbxoGRm/5DukkxZs+RPla79IKyyDPzC/DRlgQCABHtrQuQQ==}
+  react-i18next@14.1.2:
+    resolution: {integrity: sha512-FSIcJy6oauJbGEXfhUgVeLzvWBhIBIS+/9c6Lj4niwKZyGaGb4V4vUbATXSlsHJDXXB+ociNxqFNiFuV1gmoqg==}
     peerDependencies:
       i18next: '>= 23.2.3'
       react: '>= 16.8.0'
@@ -6460,7 +6460,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-dropzone: 14.2.3(react@18.3.1)
       react-hook-form: 7.51.5(react@18.3.1)
-      react-i18next: 14.1.1(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-i18next: 14.1.2(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom: 6.23.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.3(@types/react@18.3.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.23.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
@@ -8984,7 +8984,7 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@14.1.1(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-i18next@14.1.2(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.24.5
       html-parse-stringify: 3.0.1
