@@ -20,6 +20,7 @@ package org.keycloak.admin.client.resource;
 import java.util.List;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -76,11 +77,13 @@ public interface OrganizationMembersResource {
 
     @POST
     @Path("invite-user")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Response inviteUser(String email);
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteUser(@FormParam("email") String email,
+                        @FormParam("first-name") String firstName,
+                        @FormParam("last-name") String lastName);
 
     @POST
     @Path("invite-existing-user")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Response inviteExistingUser(String id);
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteExistingUser(@FormParam("id") String id);
 }

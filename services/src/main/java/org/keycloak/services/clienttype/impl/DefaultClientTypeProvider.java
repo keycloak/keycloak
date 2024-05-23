@@ -50,8 +50,8 @@ public class DefaultClientTypeProvider implements ClientTypeProvider {
                 throw new ClientTypeException("Invalid configuration of 'applicable' property on client type");
             }
 
-            // Not supported to set read-only or default-value for properties, which are not applicable for the particular client
-            if (!propConfig.getApplicable() && (propConfig.getReadOnly() != null || propConfig.getDefaultValue() != null)) {
+            // Not supported to set value for properties, which are not applicable for the particular client
+            if (!propConfig.getApplicable() && propConfig.getValue() != null) {
                 logger.errorf("Property '%s' is not applicable and so should not have read-only or default-value set for client type '%s'", propertyName, clientType.getName());
                 throw new ClientTypeException("Invalid configuration of property on client type");
             }

@@ -6,8 +6,53 @@
       "config": {
         "standardFlowEnabled": {
           "applicable": true,
-          "default-value": true,
-          "read-only": true
+          "value": true
+        }
+      }
+    },
+    {
+      "name": "oidc",
+      "provider": "default",
+      "config": {
+        "authorizationServicesEnabled": {
+          "applicable": true
+        },
+        "consentRequired": {
+          "applicable": true
+        },
+        "directAccessGrantsEnabled": {
+          "applicable": true
+        },
+        "frontchannelLogout": {
+          "applicable": true
+        },
+        "fullScopeAllowed": {
+          "applicable": true
+        },
+        "implicitFlowEnabled": {
+          "applicable": true
+        },
+        "nodeReRegistrationTimeout": {
+          "applicable": true
+        },
+        "oauth2.device.authorization.grant.enabled": {
+          "applicable": true
+        },
+        "oidc.ciba.grant.enabled": {
+          "applicable": true
+        },
+        "protocol": {
+          "applicable": true,
+          "value": "openid-connect"
+        },
+        "publicClient": {
+          "applicable": true
+        },
+        "serviceAccountsEnabled": {
+          "applicable": true
+        },
+        "standardFlowEnabled": {
+          "applicable": true
         }
       }
     },
@@ -26,8 +71,7 @@
         },
         "consentRequired": {
           "applicable": true,
-          "default-value": false,
-          "read-only": true
+          "value": false
         },
         "directAccessGrantsEnabled": {
           "applicable": false
@@ -55,21 +99,18 @@
         },
         "protocol": {
           "applicable": true,
-          "default-value": "openid-connect",
-          "read-only": true
+          "value": "openid-connect"
         },
         "publicClient": {
           "applicable": true,
-          "default-value": false,
-          "read-only": true
+          "value": false
         },
         "redirectUris": {
           "applicable": false
         },
         "serviceAccountsEnabled": {
           "applicable": true,
-          "default-value": true,
-          "read-only": true
+          "value": true
         },
         "standardFlowEnabled": {
           "applicable": false

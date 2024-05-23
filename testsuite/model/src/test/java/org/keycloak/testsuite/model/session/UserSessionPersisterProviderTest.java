@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
@@ -32,7 +33,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.jpa.session.JpaUserSessionPersisterProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -555,6 +558,43 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 cleanClientStorageComponents(session, session.realms().getRealm(realmId));
             });
         }
+    }
+
+    @Test
+    public void testMigrateSession() {
+        Assume.assumeTrue(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS));
+
+        UserSessionModel[] sessions = inComittedTransaction(session -> {
+            // Create some sessions in infinispan
+            return createSessions(session, realmId);
+        });
+
+        inComittedTransaction(session -> {
+            // clear the entries in the database to enable the migration
+            JpaUserSessionPersisterProvider sessionPersisterProvider = (JpaUserSessionPersisterProvider) session.getProvider(UserSessionPersisterProvider.class);
+            sessionPersisterProvider.removeUserSessions(session.realms().getRealm(realmId), false);
+
+            // verify that clearing was successful
+            Assert.assertEquals(0, countUserSessionsInRealm(session));
+        });
+
+        inComittedTransaction(session -> {
+            // trigger a migration with the entries that are still in the cache
+            PersistentUserSessionProvider userSessionProvider = (PersistentUserSessionProvider) session.getProvider(UserSessionProvider.class);
+            userSessionProvider.migrateNonPersistentSessionsToPersistentSessions();
+            JpaUserSessionPersisterProvider sessionPersisterProvider = (JpaUserSessionPersisterProvider) session.getProvider(UserSessionPersisterProvider.class);
+
+            // verify that import was complete
+            Assert.assertEquals(sessions.length, countUserSessionsInRealm(session));
+        });
+    }
+
+    private long countUserSessionsInRealm(KeycloakSession session) {
+        JpaUserSessionPersisterProvider sessionPersisterProvider = (JpaUserSessionPersisterProvider) session.getProvider(UserSessionPersisterProvider.class);
+        RealmModel realm = session.realms().getRealm(realmId);
+        return sessionPersisterProvider.getUserSessionsCountsByClients(realm, false).keySet().stream()
+                .flatMap(s -> sessionPersisterProvider.loadUserSessionsStream(realm, session.clients().getClientById(realm, s), false, 0, -1))
+                .distinct().count();
     }
 
     private void setupClientStorageComponents(KeycloakSession s, RealmModel realm) {

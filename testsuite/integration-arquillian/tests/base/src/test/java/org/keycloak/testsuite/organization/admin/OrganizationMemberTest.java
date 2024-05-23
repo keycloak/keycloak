@@ -39,6 +39,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.io.IOException;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
@@ -57,6 +58,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
 @EnableFeature(Feature.ORGANIZATION)
 public class OrganizationMemberTest extends AbstractOrganizationTest {
@@ -194,7 +196,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existingOrg.isEnabled(), is(false));
 
         // now fetch all users from the org - unmanaged users should still be enabled, but managed ones should not.
-        List<UserRepresentation> existing = organization.members().getAll();;
+        List<UserRepresentation> existing = organization.members().getAll();
         assertThat(existing, not(empty()));
         assertThat(existing, hasSize(6));
         for (UserRepresentation user : existing) {
@@ -226,6 +228,48 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
             testRealm().users().get(disabledUser.getId()).update(disabledUser);
             fail("Should not be possible to update disabled org user");
         } catch(BadRequestException ignored) {
+        }
+    }
+
+    @Test
+    public void testGetAllDisabledOrganizationProvider() throws IOException {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+
+        // add some unmanaged members to the organization.
+        for (int i = 0; i < 5; i++) {
+            addMember(organization, "member-" + i + "@neworg.org");
+        }
+
+        // onboard a test user by authenticating using the organization's provider.
+        super.assertBrokerRegistration(organization, bc.getUserEmail());
+
+        // now fetch all users from the realm
+        List<UserRepresentation> members = testRealm().users().search("*neworg*", null, null);
+        members.stream().forEach(user -> assertThat(user.isEnabled(), is(Boolean.TRUE)));
+
+        // disable the organization provider
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+                .setOrganizationEnabled(Boolean.FALSE)
+                .update()) {
+
+            // now fetch all members from the realm - unmanaged users should still be enabled, but managed ones should not.
+            List<UserRepresentation> existing = testRealm().users().search("*neworg*", null, null);
+            assertThat(existing, hasSize(members.size()));
+            for (UserRepresentation user : existing) {
+                if (user.getEmail().equals(bc.getUserEmail())) {
+                    assertThat(user.isEnabled(), is(Boolean.FALSE));
+
+                    // try to update the disabled user (for example, try to re-enable the user) - should not be possible.
+                    user.setEnabled(Boolean.TRUE);
+                    try {
+                        testRealm().users().get(user.getId()).update(user);
+                        fail("Should not be possible to update disabled org user");
+                    } catch(BadRequestException expected) {}
+                } else {
+                    assertThat("User " + user.getUsername(), user.isEnabled(), is(true));
+                }
+            }
         }
     }
 

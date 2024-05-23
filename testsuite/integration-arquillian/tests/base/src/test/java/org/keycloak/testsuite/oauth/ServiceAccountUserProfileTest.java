@@ -132,6 +132,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         UserRepresentation representation = serviceAccount.toRepresentation();
         String username = representation.getUsername();
 
+        assertNotNull(username);
         assertNull(representation.getEmail());
 
         serviceAccount.update(representation);
@@ -158,6 +159,10 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         representation = serviceAccount.toRepresentation();
         assertFalse(representation.getAttributes().isEmpty());
         assertEquals("attr-1-value", representation.getAttributes().get("attr-1").get(0));
+
+        Map<String, List<String>> unmanagedAttributes = test.users().get(userId).getUnmanagedAttributes();
+
+        assertEquals(1, unmanagedAttributes.size());
     }
 
     @Test

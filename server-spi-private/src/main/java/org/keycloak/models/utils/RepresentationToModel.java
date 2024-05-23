@@ -18,7 +18,6 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,6 +60,7 @@ import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
@@ -413,7 +413,7 @@ public class RepresentationToModel {
     public static void updateClient(ClientRepresentation rep, ClientModel resource, KeycloakSession session) {
 
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
-            if (!ObjectUtil.isEqualOrBothNull(rep.getType(), rep.getType())) {
+            if (!ObjectUtil.isEqualOrBothNull(resource.getType(), rep.getType())) {
                 throw new ClientTypeException("Not supported to change client type");
             }
             if (rep.getType() != null) {
@@ -526,8 +526,8 @@ public class RepresentationToModel {
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
-            add(updatePropertyAction(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
-            add(updatePropertyAction(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+            add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
+            add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
         }};
 
         // Extended client attributes
@@ -689,6 +689,7 @@ public class RepresentationToModel {
      * @return {@link Supplier} with results of operation.
      * @param <T> Type of property.
      */
+    @SafeVarargs
     private static <T> Supplier<ClientTypeException> updatePropertyAction(Consumer<T> modelSetter, Supplier<T>... getters) {
         Stream<T> firstNonNullSupplied = Stream.of(getters)
                 .map(Supplier::get)
@@ -1643,12 +1644,6 @@ public class RepresentationToModel {
         representation.setClientId(client.getId());
 
         return toModel(representation, authorization, client);
-    }
-
-    private static <T> Set<T> collectionToSet(Collection<T> collection) {
-        return Optional.ofNullable(collection)
-                .map(HashSet::new)
-                .orElse(null);
     }
 
     private static void updateOrganizationBroker(RealmModel realm, IdentityProviderRepresentation representation, KeycloakSession session) {

@@ -90,15 +90,8 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                 result.childUpdates.add(child);
             } else {
 
-                // Merge the operations. REMOVE is special case as other operations are not needed then.
-                CacheOperation mergedOp = result.getOperation().merge(child.getOperation(), session);
-                if (mergedOp == CacheOperation.REMOVE) {
-                    result = new MergedUpdate<>(child.getOperation(), child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
-                    result.childUpdates.add(child);
-                    return result;
-                }
-
-                result.operation = mergedOp;
+                // Merge the operations.
+                result.operation = result.getOperation().merge(child.getOperation(), session);
 
                 // Check if we need to send message to other DCs and how critical it is
                 CrossDCMessageStatus currentDCStatus = result.getCrossDCMessageStatus(sessionWrapper);
@@ -107,6 +100,13 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                 if (currentDCStatus != CrossDCMessageStatus.SYNC) {
                     CrossDCMessageStatus childDCStatus = child.getCrossDCMessageStatus(sessionWrapper);
                     result.crossDCMessageStatus = currentDCStatus.merge(childDCStatus);
+                }
+
+                // REMOVE is special case as other operations are not needed then.
+                if (result.operation == CacheOperation.REMOVE) {
+                    result = new MergedUpdate<>(result.operation, result.crossDCMessageStatus, lifespanMs, maxIdleTimeMs);
+                    result.childUpdates.add(child);
+                    return result;
                 }
 
                 // Finally add another update to the result

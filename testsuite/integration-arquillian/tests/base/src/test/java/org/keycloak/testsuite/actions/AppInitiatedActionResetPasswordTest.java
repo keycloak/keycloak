@@ -204,6 +204,10 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         changePasswordPage.assertCurrent();
+        /*
+         * cancel should not be supported, because the action is not only application-initiated, but also required by
+         * Keycloak
+         */
         assertFalse(changePasswordPage.isCancelDisplayed());
 
         changePasswordPage.changePassword("new-password", "new-password");

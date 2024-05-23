@@ -68,7 +68,6 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserBulkUpdateProvider;
@@ -116,10 +115,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     protected UserModel importValidation(RealmModel realm, UserModel user) {
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && user != null) {
-            // check if user belongs to a disabled organization
+            // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
             OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
             OrganizationModel organization = organizationProvider.getByMember(user);
-            if (organization != null && organization.isManaged(user) && !organization.isEnabled()) {
+
+            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(user) && !organization.isEnabled()) || 
+                    (!organizationProvider.isEnabled() && organization != null && organization.isManaged(user))) {
                 return new ReadOnlyUserModelDelegate(user) {
                     @Override
                     public boolean isEnabled() {
@@ -128,6 +129,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 };
             }
         }
+
         if (user == null || user.getFederationLink() == null) return user;
 
         UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());

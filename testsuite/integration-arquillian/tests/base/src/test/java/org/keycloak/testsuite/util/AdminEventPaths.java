@@ -454,6 +454,12 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
+    public static String authRequiredActionConfigPath(String requiredActionAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getRequiredActionConfig")
+                .build(requiredActionAlias);
+        return uri.toString();
+    }
+
     public static String authRaiseRequiredActionPath(String requiredActionAlias) {
         URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "raiseRequiredActionPriority")
                 .build(requiredActionAlias);

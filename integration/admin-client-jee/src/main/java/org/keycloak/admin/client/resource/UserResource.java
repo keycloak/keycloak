@@ -329,4 +329,9 @@ public interface UserResource {
     @Path("impersonation")
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, Object> impersonate();
+
+    @GET
+    @Path("unmanagedAttributes")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, List<String>> getUnmanagedAttributes();
 }

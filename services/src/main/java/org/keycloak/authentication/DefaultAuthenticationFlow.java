@@ -416,7 +416,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
         if (authenticator.requiresUser()) {
             if (authUser == null) {
-                throw new AuthenticationFlowException("authenticator: " + factory.getId(), AuthenticationFlowError.UNKNOWN_USER);
+                throw new AuthenticationFlowException("authenticator '" + factory.getId() + "' requires user to be set in the authentication context by previous authenticators, but user is not set yet", AuthenticationFlowError.UNKNOWN_USER);
             }
             if (!authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser)) {
                 if (factory.isUserSetupAllowed() && model.isRequired() && authenticator.areRequiredActionsEnabled(processor.getSession(), processor.getRealm())) {

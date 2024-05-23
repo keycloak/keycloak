@@ -32,7 +32,6 @@ import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { getUnmanagedAttributes } from "../components/users/resource";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -117,7 +116,7 @@ export default function EditUser() {
           userProfileMetadata: true,
         }) as UIUserRepresentation | undefined,
         adminClient.attackDetection.findOne({ id: id! }),
-        getUnmanagedAttributes(adminClient, id!),
+        adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
       ]),
     ([realm, userData, attackDetection, unmanagedAttributes, upConfig]) => {

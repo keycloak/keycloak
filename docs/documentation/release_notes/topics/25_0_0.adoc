@@ -2,6 +2,19 @@
 
 The Account Console v2 theme has been removed from {project_name}. This theme was deprecated in {project_name} 24 and replaced by the Account Console v3 theme. If you are still using this theme, you should migrate to the Account Console v3 theme.
 
+= Most of Java adapters removed
+
+As stated in the release notes of previous {project_name} version, the most of Java adapters are now removed from the {project_name} codebase and downloads pages.
+
+For OAuth 2.0/OIDC, this includes removal of the Tomcat adapter, WildFly/EAP adapter, Servlet Filter adapter, `KeycloakInstalled` desktop adapter, the `jaxrs-oauth-client` adapter, JAAS login modules, Spring adapter and SpringBoot adapters.
+You can check https://www.keycloak.org/2023/03/adapter-deprecation-update.html[our older post] for the list of some alternatives.
+
+For SAML, this includes removal of the Tomcat adapter and Servlet filter adapter. SAML adapters are still supported with WildFly and JBoss EAP.
+
+The generic Authorization Client library is still supported, and we still plan to support it. It aims to be used in combination with any other OAuth 2.0 or OpenID Connect libraries. You can
+check the https://github.com/keycloak/keycloak-quickstarts[quickstarts] for some examples where this authorization client library is used together with the 3rd party Java adapters like
+Elytron OIDC or SpringBoot. You can check the quickstarts also for the example of SAML adapter used with WildFly.
+
 = Upgrade to PatternFly 5
 
 In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://www.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
@@ -10,8 +23,8 @@ In {project_name} 24, the Welcome page is updated to use https://www.patternfly.
 
 Argon2 is now the default password hashing algorithm used by {project_name} in a non-FIPS environment.
 
-Argon2 was the winner of the [2015 password hashing competition](https://en.wikipedia.org/wiki/Password_Hashing_Competition)
-and is the recommended hashing algorithm by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
+Argon2 was the winner of the https://en.wikipedia.org/wiki/Password_Hashing_Competition[2015 password hashing competition]
+and is the recommended hashing algorithm by https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[OWASP].
 
 In {project_name} 24 the default hashing iterations for PBKDF2 were increased from 27.5K to 210K, resulting in a more than
 10 times increase in the amount of CPU time required to generate a password hash. With Argon2 it is possible to achieve
@@ -50,22 +63,7 @@ bin/kc.sh build --features=persistent-user-session ...
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
 
-NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the existing online user and client sessions will not be migrated to the database. It will only affect newly created online user and online client sessions.
-
-With persistent sessions enabled, the in-memory caches for online user sessions, offline user sessions, online client sessions and offline client sessions are limited to 10000 entries per node by default which will reduce the overall memory usage of Keycloak for larger installations.
-Items which are evicted from memory will be loaded on-demand from the database when needed.
-To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
-Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.
-
-To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, for those caches, consult the updated https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
-
-With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available which were used to override the time offline sessions are kept in memory.
-
-To log out all online users sessions of a realm with the `persistent-user-session` feature enabled, use the following steps as before:
-
-. Login to the Admin Console.
-. Select the menu entry *Sessions*.
-. Select the action *Sign out all active sessions*.
+For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Cookies updates
 
