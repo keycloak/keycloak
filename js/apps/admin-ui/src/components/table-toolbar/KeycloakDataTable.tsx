@@ -132,7 +132,11 @@ function DataTable<T>({
             />
           )}
           {columns.map((column) => (
-            <Th key={column.displayKey} aria-label={t(ariaLabelKey)}>
+            <Th
+              key={column.displayKey}
+              aria-label={t(ariaLabelKey)}
+              className={column.transforms?.[0]().className}
+            >
               {t(column.displayKey || column.name)}
             </Th>
           ))}
