@@ -111,7 +111,6 @@ describe("User Federation LDAP tests", () => {
     keycloakBefore();
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToUserFederation();
-    cy.intercept("GET", `/admin/realms/${realmName}`).as("getProvider");
   });
 
   it("Should create LDAP provider from empty state", () => {
@@ -527,7 +526,6 @@ describe("User Federation LDAP tests", () => {
 
   it("Should disable an existing LDAP provider", () => {
     providersPage.clickExistingCard(firstLdapName);
-    cy.wait("@getProvider");
     providersPage.disableEnabledSwitch(allCapProvider);
     modalUtils.checkModalTitle(disableModalTitle).confirmModal();
     masthead.checkNotificationMessage(savedSuccessMessage);
@@ -537,7 +535,6 @@ describe("User Federation LDAP tests", () => {
 
   it("Should enable a previously-disabled LDAP provider", () => {
     providersPage.clickExistingCard(firstLdapName);
-    cy.wait("@getProvider");
     providersPage.enableEnabledSwitch(allCapProvider);
     masthead.checkNotificationMessage(savedSuccessMessage);
     sidebarPage.goToUserFederation();
