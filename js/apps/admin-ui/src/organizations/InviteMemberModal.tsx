@@ -56,7 +56,7 @@ export const InviteMemberModal = ({
           allowInvalid
           allowNonDirty
         >
-          {t("save")}
+          {t("send")}
         </FormSubmitButton>,
         <Button
           id="modal-cancel"
