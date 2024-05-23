@@ -31,10 +31,12 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
@@ -81,8 +83,12 @@ public class OrganizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Updates the organization")
     public Response update(OrganizationRepresentation organizationRep) {
-        Organizations.toModel(organizationRep, organization);
-        return Response.noContent().build();
+        try {
+            Organizations.toModel(organizationRep, organization);
+            return Response.noContent().build();
+        } catch (ModelValidationException mve) {
+            throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     @Path("members")
