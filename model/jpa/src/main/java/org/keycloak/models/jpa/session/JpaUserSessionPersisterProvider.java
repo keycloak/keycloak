@@ -84,7 +84,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         entity.setData(model.getData());
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         em.persist(entity);
-        em.flush();
     }
 
     @Override
@@ -127,7 +126,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         if (!exists) {
             em.persist(entity);
-            em.flush();
         }
     }
 
@@ -143,7 +141,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         PersistentUserSessionEntity sessionEntity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(userSessionId, offlineStr), LockModeType.PESSIMISTIC_WRITE);
         if (sessionEntity != null) {
             em.remove(sessionEntity);
-            em.flush();
         }
     }
 
@@ -176,8 +173,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                     }
                 }
             }
-
-            em.flush();
         }
     }
 
