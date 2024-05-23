@@ -1,20 +1,24 @@
 import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
+  ActionsColumn,
+  ExpandableRowContent,
   IAction,
   IActions,
   IActionsResolver,
   IFormatter,
   IRow,
+  IRowCell,
   ITransform,
-  TableVariant,
-} from "@patternfly/react-table";
-import {
   Table,
-  TableBody,
-  TableHeader,
   TableProps,
-} from "@patternfly/react-table/deprecated";
+  TableVariant,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+} from "@patternfly/react-table";
 import { cloneDeep, differenceBy, get } from "lodash-es";
 import {
   ComponentClass,
@@ -67,6 +71,18 @@ type DataTableProps<T> = {
   isRadio?: boolean;
 };
 
+type CellRendererProps = {
+  row: IRow;
+};
+
+const CellRenderer = ({ row }: CellRendererProps) => {
+  const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
+    !!c && (c as IRowCell).title !== undefined;
+  return row.cells!.map((c, i) => (
+    <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
+  ));
+};
+
 function DataTable<T>({
   columns,
   rows,
@@ -81,32 +97,108 @@ function DataTable<T>({
   ...props
 }: DataTableProps<T>) {
   const { t } = useTranslation();
+
+  const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
+  const [expandedRows, setExpandedRows] = useState<boolean[]>([]);
+
+  const updateState = (rowIndex: number, isSelected: boolean) => {
+    const items = [...selectedRows];
+    items[rowIndex] = isSelected;
+    setSelectedRows(items);
+  };
+
   return (
     <Table
       {...props}
       variant={isNotCompact ? undefined : TableVariant.compact}
-      onSelect={
-        onSelect
-          ? (_, isSelected, rowIndex) => onSelect(isSelected, rowIndex)
-          : undefined
-      }
-      onCollapse={
-        onCollapse
-          ? (_, rowIndex, isOpen) => onCollapse(isOpen, rowIndex)
-          : undefined
-      }
-      selectVariant={isRadio ? "radio" : "checkbox"}
-      canSelectAll={canSelectAll}
-      cells={columns.map((column) => {
-        return { ...column, title: t(column.displayKey || column.name) };
-      })}
-      rows={rows as IRow[]}
-      actions={actions}
-      actionResolver={actionResolver}
       aria-label={t(ariaLabelKey)}
     >
-      <TableHeader />
-      <TableBody />
+      <Thead>
+        <Tr>
+          {onCollapse && <Th />}
+          {canSelectAll && (
+            <Th
+              select={
+                !isRadio
+                  ? {
+                      onSelect: (_, isSelected, rowIndex) => {
+                        onSelect!(isSelected, rowIndex);
+                        updateState(0, isSelected);
+                      },
+                      isSelected: selectedRows[0],
+                    }
+                  : undefined
+              }
+            />
+          )}
+          {columns.map((column) => (
+            <Th key={column.displayKey} aria-label={t(ariaLabelKey)}>
+              {t(column.displayKey || column.name)}
+            </Th>
+          ))}
+        </Tr>
+      </Thead>
+      {!onCollapse ? (
+        <Tbody>
+          {(rows as IRow[]).map((row, index) => (
+            <Tr key={index} isExpanded={expandedRows[index]}>
+              {onSelect && (
+                <Td
+                  select={{
+                    rowIndex: index,
+                    onSelect: (_, isSelected, rowIndex) => {
+                      onSelect!(isSelected, rowIndex);
+                      updateState(rowIndex + 1, isSelected);
+                    },
+                    isSelected: selectedRows[0] || selectedRows[index + 1],
+                    variant: isRadio ? "radio" : "checkbox",
+                  }}
+                />
+              )}
+              <CellRenderer row={row} />
+              {(actions || actionResolver) && (
+                <Td isActionCell>
+                  <ActionsColumn
+                    items={actions || actionResolver?.(row, {})!}
+                  />
+                </Td>
+              )}
+            </Tr>
+          ))}
+        </Tbody>
+      ) : (
+        (rows as IRow[]).map((row, index) => (
+          <Tbody key={index}>
+            {index % 2 === 0 ? (
+              <Tr>
+                <Td
+                  expand={{
+                    isExpanded: !!expandedRows[index],
+                    rowIndex: index,
+                    expandId: `${index}`,
+                    onToggle: (_, rowIndex, isOpen) => {
+                      onCollapse(isOpen, rowIndex);
+                      const expand = [...expandedRows];
+                      expand[index] = isOpen;
+                      setExpandedRows(expand);
+                    },
+                  }}
+                />
+                <CellRenderer row={row} />
+              </Tr>
+            ) : (
+              <Tr isExpanded={!!expandedRows[index - 1]}>
+                <Td />
+                <Td colSpan={columns.length}>
+                  <ExpandableRowContent>
+                    <CellRenderer row={row} />
+                  </ExpandableRowContent>
+                </Td>
+              </Tr>
+            )}
+          </Tbody>
+        ))
+      )}
     </Table>
   );
 }
@@ -229,6 +321,10 @@ export function KeycloakDataTable<T>({
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
+      if ("cellFormatters" in col) {
+        const v = get(value, col.name);
+        return col.cellFormatters?.reduce((s, f) => f(s), v);
+      }
       if (col.cellRenderer) {
         const Component = col.cellRenderer;
         //@ts-ignore
