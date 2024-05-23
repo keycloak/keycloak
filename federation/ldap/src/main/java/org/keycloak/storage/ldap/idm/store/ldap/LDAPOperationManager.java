@@ -507,7 +507,7 @@ public class LDAPOperationManager {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password.toCharArray(), sslSocketFactory);
+                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password, sslSocketFactory);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
