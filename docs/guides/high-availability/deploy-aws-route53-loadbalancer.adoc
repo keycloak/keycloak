@@ -274,7 +274,8 @@ To test failover works as expected, log in to the Primary cluster and scale the 
 Scaling will cause the Primary's health checks to fail and Route53 should start routing traffic to the {project_name} Pods on the Backup cluster.
 
 == Optional: Failover Lambda
-To prevent a failed Primary cluster from becoming active without SRE input, optionally follow the steps outlined in the
+
+To prevent a failed Primary cluster from becoming active without SRE input, follow the steps outlined in the
 guide <@links.ha id="deploy-aws-route53-failover-lambda" />
 
 </@tmpl.guide>

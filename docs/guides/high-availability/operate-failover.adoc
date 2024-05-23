@@ -21,11 +21,16 @@ See the <@links.ha id="introduction" /> {section} for different operational proc
 
 == Procedure
 
-Follow these steps to manually force a failover.
+Follow these steps to prevent an automatic failover back to the Primary site or to manually force a failover.
 
 === Route53
 
 To force Route53 to mark the primary site as permanently not available and prevent an automatic fallback, edit the health check in AWS to point to a non-existent route (`/lb-check-failed-over`).
+
+== Optional: Failover Lambda
+
+To prevent a failed Primary cluster from becoming active without SRE input, follow the steps outlined in the
+guide <@links.ha id="deploy-aws-route53-failover-lambda" />
 
 </@tmpl.guide>
 

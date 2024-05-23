@@ -163,6 +163,10 @@ This eliminates the need to execute the build phase and rebuild your image due t
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+= High availability guide enhanced
+
+The high availability guide now contains a {section} how to configure an AWS Lambda to prevent an intended automatic failback from the Backup site to the Primary site.
+
 = Removing deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken` classes
 
 In this release, we are finally removing deprecated methods from the following classes:
