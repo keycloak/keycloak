@@ -92,7 +92,10 @@ public class OrganizationsResource {
             throw ErrorResponse.error("Organization cannot be null.", Response.Status.BAD_REQUEST);
         }
 
-        Set<String> domains = ofNullable(organization.getDomains()).orElse(Set.of()).stream().map(OrganizationDomainRepresentation::getName).collect(Collectors.toSet());
+        Set<String> domains = ofNullable(organization.getDomains()).orElse(Set.of()).stream()
+                .map(OrganizationDomainRepresentation::getName)
+                .filter(StringUtil::isNotBlank)
+                .collect(Collectors.toSet());
         OrganizationModel model = provider.create(organization.getName(), domains);
 
         Organizations.toModel(organization, model);

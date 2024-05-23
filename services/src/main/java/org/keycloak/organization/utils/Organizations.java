@@ -170,6 +170,7 @@ public class Organizations {
         model.setAttributes(rep.getAttributes());
         model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
                     .filter(Objects::nonNull)
+                    .filter(domain -> StringUtil.isNotBlank(domain.getName()))
                     .map(Organizations::toModel)
                     .collect(Collectors.toSet()));
 
