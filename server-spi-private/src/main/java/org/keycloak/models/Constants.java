@@ -91,6 +91,11 @@ public final class Constants {
     public static final String KC_ACTION_PARAMETER = "kc_action_parameter";
     public static final String KC_ACTION_STATUS = "kc_action_status";
     public static final String KC_ACTION_EXECUTING = "kc_action_executing";
+    /**
+     * Auth session attribute whether an AIA is enforced, which means it cannot be cancelled.
+     * <p>Example use case: the action behind the AIA is also defined on the user (for example, UPDATE_PASSWORD).</p>
+     */
+    public static final String KC_ACTION_ENFORCED = "kc_action_enforced";
     public static final int KC_ACTION_MAX_AGE = 300;
 
     public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";

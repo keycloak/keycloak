@@ -213,6 +213,9 @@ public class ClientScopeResource {
         }
     }
 
+    public static void validateClientScopeProtocol(String protocol)throws ErrorResponseException{
+        if(protocol==null || (!protocol.equals("openid-connect") && !protocol.equals("saml"))) throw ErrorResponse.error("Unexpected protocol",Response.Status.BAD_REQUEST);
+    }
     /**
      * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client
      * as a default scope.

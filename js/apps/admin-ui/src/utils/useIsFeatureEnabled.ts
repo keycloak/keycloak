@@ -10,6 +10,7 @@ export enum Feature {
   TransientUsers = "TRANSIENT_USERS",
   ClientTypes = "CLIENT_TYPES",
   DeclarativeUI = "DECLARATIVE_UI",
+  Organizations = "ORGANIZATION",
 }
 
 export default function useIsFeatureEnabled() {

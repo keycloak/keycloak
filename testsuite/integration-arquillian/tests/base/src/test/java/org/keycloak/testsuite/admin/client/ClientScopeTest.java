@@ -89,6 +89,7 @@ public class ClientScopeTest extends AbstractClientTest {
         // Creating first
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
         String scope1Id = createClientScope(scopeRep);
         // Assert created
         scopeRep = clientScopes().get(scope1Id).toRepresentation();
@@ -114,10 +115,12 @@ public class ClientScopeTest extends AbstractClientTest {
     public void testAddDuplicatedClientScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
         String scopeId = createClientScope(scopeRep);
 
         scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
         Response response = clientScopes().create(scopeRep);
         assertEquals(409, response.getStatus());
 
@@ -149,6 +152,8 @@ public class ClientScopeTest extends AbstractClientTest {
         // Create scope1
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
+
         String scope1Id = createClientScope(scopeRep);
 
         List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
@@ -157,6 +162,8 @@ public class ClientScopeTest extends AbstractClientTest {
         // Create scope2
         scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope2");
+        scopeRep.setProtocol("openid-connect");
+
         String scope2Id = createClientScope(scopeRep);
 
         clientScopes = clientScopes().findAll();
@@ -226,7 +233,12 @@ public class ClientScopeTest extends AbstractClientTest {
         clientScopes().get(scope1Id).remove();
     }
 
-
+    @Test
+    public void testValidateClientScopeProtocol(){
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("saml");
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("openid-connect");
+        Assert.assertThrows(RuntimeException.class,()->org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("other"));
+    }
     @Test
     public void testRenameScope() {
         // Create two scopes
@@ -265,6 +277,7 @@ public class ClientScopeTest extends AbstractClientTest {
         // create client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("bar-scope");
+        scopeRep.setProtocol("openid-connect");
         String scopeId = createClientScope(scopeRep);
 
         // update with some scopes
@@ -336,6 +349,8 @@ public class ClientScopeTest extends AbstractClientTest {
         RealmResource realm = testRealmResource();
         ClientScopeRepresentation clientScopeRep = new ClientScopeRepresentation();
         clientScopeRep.setName("my-scope");
+        clientScopeRep.setProtocol("openid-connect");
+
         String clientScopeId = createClientScope(clientScopeRep);
 
         createRealmRole("realm-composite");
@@ -403,6 +418,8 @@ public class ClientScopeTest extends AbstractClientTest {
         // Add client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("bar-scope");
+        scopeRep.setProtocol("openid-connect");
+
         String scopeId = createClientScope(scopeRep);
 
         // Add realm role to scopes of clientScope

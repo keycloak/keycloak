@@ -211,10 +211,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 }
             }
         });
-        persistentSessionsWorker = new PersistentSessionsWorker(factory,
-                asyncQueuePersistentUpdate,
-                maxBatchSize);
-        persistentSessionsWorker.start();
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            persistentSessionsWorker = new PersistentSessionsWorker(factory,
+                    asyncQueuePersistentUpdate,
+                    maxBatchSize);
+            persistentSessionsWorker.start();
+        }
     }
 
     // Max count of worker errors. Initialization will end with exception when this number is reached
@@ -412,7 +414,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public void close() {
-        persistentSessionsWorker.stop();
+        if (persistentSessionsWorker != null) {
+            persistentSessionsWorker.stop();
+        }
     }
 
     @Override

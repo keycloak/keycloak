@@ -9,6 +9,7 @@ import {
   Thead,
   Tr,
   type TableProps,
+  ThProps,
 } from "@patternfly/react-table";
 import type { ThInfoType } from "@patternfly/react-table/dist/esm/components/Table/base/types";
 import { get } from "lodash-es";
@@ -21,7 +22,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-export type Field<T> = {
+export type Field<T> = Pick<ThProps, "width"> & {
   name: string;
   displayKey?: string;
   cellRenderer?: (row: T) => ReactNode;
@@ -199,7 +200,12 @@ export function DraggableTable<T>({
         <Tr>
           <Th aria-hidden="true" />
           {columns.map((column) => (
-            <Th key={column.name} info={thInfo(column)}>
+            <Th
+              key={column.name}
+              info={thInfo(column)}
+              width={column.width}
+              modifier="fitContent"
+            >
               {t(column.displayKey || column.name)}
             </Th>
           ))}

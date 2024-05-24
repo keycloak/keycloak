@@ -16,6 +16,12 @@ This {section} assumes two {ocp} clusters named `{site-a}` and `{site-b}`.
 This is a building block following the concepts described in the <@links.ha id="concepts-active-passive-sync" /> {section}.
 See the <@links.ha id="introduction" /> {section} for an overview.
 
+
+[IMPORTANT]
+====
+Only {jdgserver_name} server versions 15.0.0 or greater are supported for external {jdgserver_name} deployments.
+====
+
 == Architecture
 
 This setup deploys two synchronously replicating {jdgserver_name} clusters in two sites with a low-latency network connection.

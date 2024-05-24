@@ -20,9 +20,9 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +92,7 @@ public class SupportedCredentialConfiguration {
     }
 
     public SupportedCredentialConfiguration setCryptographicBindingMethodsSupported(List<String> cryptographicBindingMethodsSupported) {
-        this.cryptographicBindingMethodsSupported = ImmutableList.copyOf(cryptographicBindingMethodsSupported);
+        this.cryptographicBindingMethodsSupported = Collections.unmodifiableList(cryptographicBindingMethodsSupported);
         return this;
     }
 
@@ -101,7 +101,7 @@ public class SupportedCredentialConfiguration {
     }
 
     public SupportedCredentialConfiguration setCryptographicSuitesSupported(List<String> cryptographicSuitesSupported) {
-        this.cryptographicSuitesSupported = ImmutableList.copyOf(cryptographicSuitesSupported);
+        this.cryptographicSuitesSupported = Collections.unmodifiableList(cryptographicSuitesSupported);
         return this;
     }
 
@@ -131,7 +131,7 @@ public class SupportedCredentialConfiguration {
     }
 
     public SupportedCredentialConfiguration setCredentialSigningAlgValuesSupported(List<String> credentialSigningAlgValuesSupported) {
-        this.credentialSigningAlgValuesSupported = ImmutableList.copyOf(credentialSigningAlgValuesSupported);
+        this.credentialSigningAlgValuesSupported = Collections.unmodifiableList(credentialSigningAlgValuesSupported);
         return this;
     }
 

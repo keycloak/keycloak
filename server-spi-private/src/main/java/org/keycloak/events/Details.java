@@ -23,6 +23,7 @@ package org.keycloak.events;
 public interface Details {
     String PREF_PREVIOUS = "previous_";
     String PREF_UPDATED = "updated_";
+    String FIELDS_TO_UPDATE = "fields_to_update";
     
     String CUSTOM_REQUIRED_ACTION="custom_required_action";
     String CONTEXT = "context";

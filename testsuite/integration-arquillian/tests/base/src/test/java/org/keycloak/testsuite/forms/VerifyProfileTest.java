@@ -350,7 +350,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         verifyProfilePage.assertCurrent();
         //event when form is shown
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).detail("fields_to_update", "department").assertEvent();
+        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id)
+                .detail(Details.FIELDS_TO_UPDATE, "department")
+                .assertEvent();
 
         verifyProfilePage.update("First", "Last", "Department");
         //event after profile is updated

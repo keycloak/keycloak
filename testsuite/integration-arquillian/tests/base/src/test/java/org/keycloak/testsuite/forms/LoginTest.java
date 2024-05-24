@@ -918,6 +918,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     public void loginRememberMeExpiredIdle() throws Exception {
         try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
           .setSsoSessionIdleTimeoutRememberMe(1)
+          .setSsoSessionIdleTimeout(1) // max of both values
           .setRememberMe(true)
           .update()) {
             // login form shown after redirect from app

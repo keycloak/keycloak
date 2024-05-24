@@ -179,8 +179,14 @@ export const RealmSettingsTokensTab = ({
                       id="oAuthDevicePollingInterval"
                       value={field.value}
                       min={0}
-                      onPlus={() => field.onChange(field.value || 0 + 1)}
-                      onMinus={() => field.onChange(field.value || 0 - 1)}
+                      onPlus={() => field.onChange(Number(field?.value) + 1)}
+                      onMinus={() =>
+                        field.onChange(
+                          Number(field?.value) > 0
+                            ? Number(field?.value) - 1
+                            : 0,
+                        )
+                      }
                       onChange={(event) => {
                         const newValue = Number(event.currentTarget.value);
                         field.onChange(!isNaN(newValue) ? newValue : 0);

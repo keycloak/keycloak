@@ -18,7 +18,6 @@
 package org.keycloak.organization.protocol.mappers.saml;
 
 import java.util.List;
-
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -38,6 +37,8 @@ import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+
+import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 
 public class OrganizationMembershipMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper, EnvironmentDependentProviderFactory {
 
@@ -59,7 +60,7 @@ public class OrganizationMembershipMapper extends AbstractSAMLProtocolMapper imp
     public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
-        if (!provider.isEnabled()) {
+        if (!isEnabledAndOrganizationsPresent(provider)) {
             return;
         }
 

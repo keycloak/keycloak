@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -87,19 +88,26 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         organization.members().inviteExistingUser(user.getId()).close();
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
-        Assert.assertNotNull(message);
-        Assert.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
-        EmailBody body = MailUtils.getBody(message);
-        String link = MailUtils.getLink(body.getHtml());
-        driver.navigate().to(link.trim());
-        // not yet a member
-        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
-        // confirm the intent of membership
-        infoPage.clickToContinue();
-        assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
-        // now a member
-        Assert.assertNotNull(organization.members().member(user.getId()).toRepresentation());
+        acceptInvitation(organization, user);
+    }
+
+    @Test
+    public void testInviteExistingUserWithEmail() throws IOException, MessagingException {
+        UserRepresentation user = UserBuilder.create()
+                .username("invitedWithMatchingEmail")
+                .email("invitedWithMatchingEmail@myemail.com")
+                .password("password")
+                .enabled(true)
+                .build();
+        try (Response response = testRealm().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        organization.members().inviteUser(user.getEmail(), "Homer", "Simpson").close();
+
+        acceptInvitation(organization, user);
     }
 
     @Test
@@ -111,7 +119,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 .build();
         // User isn't created when we send the invite
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        organization.members().inviteUser(user.getEmail()).close();
+        organization.members().inviteUser(user.getEmail(), null, null).close();
 
         MimeMessage message = greenMail.getLastReceivedMessage();
         Assert.assertNotNull(message);
@@ -150,7 +158,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 .build();
         // User isn't created when we send the invite
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        organization.members().inviteUser(user.getEmail()).close();
+        organization.members().inviteUser(user.getEmail(), null, null).close();
 
         MimeMessage message = greenMail.getLastReceivedMessage();
         Assert.assertNotNull(message);
@@ -178,7 +186,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 .build();
         // User isn't created when we send the invite
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        organization.members().inviteUser(user.getEmail()).close();
+        organization.members().inviteUser(user.getEmail(), "Homer", "Simpson").close();
 
         try {
             setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
@@ -200,5 +208,24 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         } finally {
             resetTimeOffset();
         }
+    }
+
+    private void acceptInvitation(OrganizationResource organization, UserRepresentation user) throws MessagingException, IOException {
+        MimeMessage message = greenMail.getLastReceivedMessage();
+        Assert.assertNotNull(message);
+        Assert.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
+        EmailBody body = MailUtils.getBody(message);
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            assertThat(body.getText(), Matchers.containsString(user.getFirstName() + " " + user.getLastName()));
+        }
+        String link = MailUtils.getLink(body.getHtml());
+        driver.navigate().to(link.trim());
+        // not yet a member
+        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+        // confirm the intent of membership
+        infoPage.clickToContinue();
+        assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
+        // now a member
+        Assert.assertNotNull(organization.members().member(user.getId()).toRepresentation());
     }
 }
