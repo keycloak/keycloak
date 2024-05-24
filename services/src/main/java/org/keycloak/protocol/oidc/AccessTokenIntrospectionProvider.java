@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.ws.rs.core.HttpHeaders;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -106,6 +107,12 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             }
 
             tokenMetadata.put("active", userSession != null);
+
+            // if consumer requests application/jwt return a JWT representation of the introspection contents in an jwt field
+            if (org.keycloak.utils.MediaType.APPLICATION_JWT.equals(session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT))) {
+                // consumers can use this to convert an opaque token into an JWT based token
+                tokenMetadata.put("jwt", session.tokens().encode(accessToken));
+            }
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {

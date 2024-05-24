@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -63,6 +64,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.UriBuilder;
+import org.keycloak.utils.MediaType;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -73,6 +75,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -355,6 +358,29 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             testRealm.setClientScopes(preExistingClientScopes);
             adminClient.realm("test").update(testRealm);
         }
+    }
+
+    @Test
+    public void testIntrospectAccessTokenReturnedAsJwt() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        // request the introspection result to be returned as JWT
+        oauth.requestHeaders(Map.of(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT));
+
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertTrue(rep.isActive());
+        assertEquals("test-user@localhost", rep.getUserName());
+        assertEquals("test-app", rep.getClientId());
+        assertEquals(loginEvent.getUserId(), rep.getSubject());
+        assertNotNull(rep.getOtherClaims().get("jwt"));
+
+        // Assert expected scope
+        AbstractOIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
     @Test
