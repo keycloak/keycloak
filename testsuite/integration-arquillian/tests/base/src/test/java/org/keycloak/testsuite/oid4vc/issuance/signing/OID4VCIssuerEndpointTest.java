@@ -76,7 +76,6 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -487,6 +486,8 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         assertEquals(List.of("VerifiableCredential"), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+        assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
+        assertFalse("Only mappers supported for the requested type should have been evaluated.", credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
     }
 
     @Override
