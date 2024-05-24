@@ -17,22 +17,14 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
-
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * {@link WellKnownProvider} implementation for JWT VC Issuer metadata at endpoint /.well-known/jwt-vc-issuer
@@ -61,31 +53,7 @@ public class JWTVCIssuerWellKnownProvider implements WellKnownProvider {
         JWTVCIssuerMetadata config = new JWTVCIssuerMetadata();
         config.setIssuer(Urls.realmIssuer(frontendUriInfo.getBaseUri(), realm.getName()));
 
-        /*
-        Aware of duplicate logic from; org.keycloak.protocol.oidc.OIDCLoginProtocolService.certs
-         But still to check if all oidc key also qualify as jwt-vc issuer keys.
-        */
-        JWK[] keys = session.keys().getKeysStream(realm)
-                .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
-                .map(k -> {
-                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
-                    List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
-                            .filter(certs -> !certs.isEmpty())
-                            .orElseGet(() -> Collections.singletonList(k.getCertificate()));
-                    if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
-                    } else if (k.getType().equals(KeyType.EC)) {
-                        return b.ec(k.getPublicKey(), k.getUse());
-                    } else if (k.getType().equals(KeyType.OKP)) {
-                        return b.okp(k.getPublicKey(), k.getUse());
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .toArray(JWK[]::new);
-
-        JSONWebKeySet jwks = new JSONWebKeySet();
-        jwks.setKeys(keys);
+        JSONWebKeySet jwks = JWKSServerUtils.getRealmJwks(session, realm);
         config.setJwks(jwks);
 
         return config;
