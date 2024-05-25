@@ -376,6 +376,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testFilterEmptyDomain() {
+        //org should be created with only one domain
+        assertThat(createOrganization("singleValidDomainOrg", "validDomain.com", "", null).getDomains(), hasSize(1));
+    }
+
+    @Test
     public void testDisabledOrganizationProvider() throws IOException {
         OrganizationRepresentation existing = createOrganization("acme", "acme.org", "acme.net");
         // disable the organization provider and try to access REST endpoints
