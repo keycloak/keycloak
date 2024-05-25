@@ -543,7 +543,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
         }
 
-        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null) {
+        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null
+                && !Boolean.TRUE.toString().equals(authenticationSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             attributes.put("isAppInitiatedAction", true);
         }
     }

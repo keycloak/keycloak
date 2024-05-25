@@ -106,9 +106,9 @@ public interface UserModel extends RoleMapperModel {
     Map<String, List<String>> getAttributes();
 
     /**
-     * Obtains the names of required actions associated with the user.
+     * Obtains the aliases of required actions associated with the user.
      *
-     * @return a non-null {@link Stream} of required action names.
+     * @return a non-null {@link Stream} of required action aliases.
      */
     Stream<String> getRequiredActionsStream();
 

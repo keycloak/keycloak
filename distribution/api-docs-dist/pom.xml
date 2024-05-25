@@ -63,11 +63,10 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
         </dependency>
+        <!-- This is here because BloomFilter is used in the Javadoc within BlacklistPasswordPolicyProviderFactory -->
         <dependency>
-            <!-- Included here as it provides Nonnull from com.google.code.findbugs:jsr305.
-            That is used in annotations in FilesPlainTextVaultProvider -->
-            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
-            <artifactId>owasp-java-html-sanitizer</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
     </dependencies>
 

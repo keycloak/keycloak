@@ -220,6 +220,13 @@
         </profile>
 
         <profile>
+            <id>jpa+cross-dc-infinispan+persistentsessions</id>
+            <properties>
+                <keycloak.model.parameters>CrossDCInfinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
             <id>jpa+infinispan+client-storage</id>
             <properties>
                 <keycloak.model.parameters>Jpa,Infinispan,HardcodedClientStorage</keycloak.model.parameters>

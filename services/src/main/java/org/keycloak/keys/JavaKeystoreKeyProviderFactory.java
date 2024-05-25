@@ -119,7 +119,9 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
     private static ProviderConfigProperty mergedAlgorithmProperties() {
         List<String> ecAlgorithms = List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
         List<String> algorithms = Stream.concat(Attributes.RS_ALGORITHM_PROPERTY.getOptions().stream(), ecAlgorithms.stream()).toList();
-        return new ProviderConfigProperty(Attributes.ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE, algorithms.toArray());
+        return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),
+                Attributes.RS_ALGORITHM_PROPERTY.getHelpText(), Attributes.RS_ALGORITHM_PROPERTY.getType(),
+                Attributes.RS_ALGORITHM_PROPERTY.getDefaultValue(), algorithms.toArray(String[]::new));
 
     }
 

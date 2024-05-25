@@ -1255,10 +1255,10 @@ describe("Clients test", () => {
       createClientPage.fillClientData(clientId);
       cy.checkA11y();
 
-      cy.findByTestId("next").click();
+      createClientPage.continue();
       cy.checkA11y();
 
-      cy.findByTestId("next").click();
+      createClientPage.continue();
       cy.checkA11y();
     });
 

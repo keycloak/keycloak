@@ -77,7 +77,7 @@ public class IdpOrganizationAuthenticatorFactory implements AuthenticatorFactory
 
     @Override
     public String getDisplayType() {
-        return "Organization";
+        return "Organization Member Onboard";
     }
 
     @Override

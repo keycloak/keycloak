@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.base.Strings;
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -43,6 +42,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractRegistrationRecaptcha implements FormAction, FormActionFactory {
 
@@ -98,7 +98,7 @@ public abstract class AbstractRegistrationRecaptcha implements FormAction, FormA
         String userLanguageTag = context.getSession().getContext().resolveLocale(context.getUser())
                 .toLanguageTag();
         boolean invisible = Boolean.parseBoolean(config.get(INVISIBLE));
-        String action = Strings.isNullOrEmpty(config.get(ACTION)) ? "register" : config.get(ACTION);
+        String action = StringUtil.isNullOrEmpty(config.get(ACTION)) ? "register" : config.get(ACTION);
 
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", config.get(SITE_KEY));

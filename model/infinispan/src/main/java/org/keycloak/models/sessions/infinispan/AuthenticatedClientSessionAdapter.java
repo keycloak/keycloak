@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -317,6 +318,36 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         Map<String, String> copy = new HashMap<>();
         copy.putAll(entity.getNotes());
         return copy;
+    }
+
+    @Override
+    public void restartClientSession() {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
+
+            @Override
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
+                UserSessionModel userSession = getUserSession();
+                entity.setAction(null);
+                entity.setRedirectUri(null);
+                entity.setCurrentRefreshToken(null);
+                entity.setCurrentRefreshTokenUseCount(-1);
+                entity.setTimestamp(Time.currentTime());
+                entity.getNotes().clear();
+                entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));
+                entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
+                entity.getNotes().put(AuthenticatedClientSessionEntity.CLIENT_ID_NOTE, getClient().getId());
+                if (userSession.isRememberMe()) {
+                    entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
+                }
+            }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
+        };
+
+        update(task);
     }
 
 }

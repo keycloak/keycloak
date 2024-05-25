@@ -23,7 +23,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.services.clienttype.client.TypeAwareClientModelDelegate;
 
-import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,34 +44,31 @@ public class DefaultClientType implements ClientType {
 
     @Override
     public boolean isApplicable(String optionName) {
-        ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get(optionName);
-
         // Each property is applicable by default if not configured for the particular client type
-        return (cfg != null && cfg.getApplicable() != null) ? cfg.getApplicable() : true;
+        return getConfiguration(optionName)
+                .map(ClientTypeRepresentation.PropertyConfig::getApplicable)
+                .orElse(true);
     }
 
     @Override
-    public boolean isReadOnly(String optionName) {
-        ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get(optionName);
+    public <T> T getTypeValue(String optionName, Class<T> optionType) {
 
-        // Each property is writable by default if not configured for the particular type
-        return (cfg != null && cfg.getReadOnly() != null) ? cfg.getReadOnly() : false;
+        return getConfiguration(optionName)
+                .map(ClientTypeRepresentation.PropertyConfig::getValue)
+                .map(optionType::cast).orElse(null);
     }
 
     @Override
-    public <T> T getDefaultValue(String optionName, Class<T> optionType) {
-        ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get(optionName);
-
-        return (cfg != null && cfg.getDefaultValue() != null) ? optionType.cast(cfg.getDefaultValue()) : null;
-    }
-
-    @Override
-    public Map<String, ClientTypeRepresentation.PropertyConfig> getConfiguration() {
-        return clientType.getConfig();
+    public Set<String> getOptionNames() {
+        return clientType.getConfig().keySet();
     }
 
     @Override
     public ClientModel augment(ClientModel client) {
         return new TypeAwareClientModelDelegate(this, () -> client);
+    }
+
+    private Optional<ClientTypeRepresentation.PropertyConfig> getConfiguration(String optionName) {
+        return Optional.ofNullable(clientType.getConfig().get(optionName));
     }
 }

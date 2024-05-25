@@ -27,11 +27,10 @@ public class OrganizationResourceProvider implements AdminRealmResourceProvider 
 
     @Override
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new OrganizationResource(session, auth, adminEvent);
+        return new OrganizationsResource(session, auth, adminEvent);
     }
 
     @Override
     public void close() {
-
     }
 }

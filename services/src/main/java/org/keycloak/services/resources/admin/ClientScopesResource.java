@@ -102,6 +102,7 @@ public class ClientScopesResource {
     public Response createClientScope(ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
         ClientScopeResource.validateClientScopeName(rep.getName());
+        ClientScopeResource.validateClientScopeProtocol(rep.getProtocol());
         ClientScopeResource.validateDynamicClientScope(rep);
         try {
             ClientScopeModel clientModel = RepresentationToModel.createClientScope(session, realm, rep);

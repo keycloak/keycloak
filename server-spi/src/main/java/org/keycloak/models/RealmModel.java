@@ -105,6 +105,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
 
+    boolean isOrganizationsEnabled();
+
+    void setOrganizationsEnabled(boolean organizationsEnabled);
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
@@ -415,6 +419,12 @@ public interface RealmModel extends RoleContainerModel {
     void removeAuthenticatorConfig(AuthenticatorConfigModel model);
     AuthenticatorConfigModel getAuthenticatorConfigById(String id);
     AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias);
+
+    RequiredActionConfigModel getRequiredActionConfigById(String id);
+    RequiredActionConfigModel getRequiredActionConfigByAlias(String alias);
+    void removeRequiredActionProviderConfig(RequiredActionConfigModel model);
+    void updateRequiredActionConfig(RequiredActionConfigModel model);
+    Stream<RequiredActionConfigModel> getRequiredActionConfigsStream();
 
     /**
      * Returns sorted {@link RequiredActionProviderModel RequiredActionProviderModel} as a stream.
