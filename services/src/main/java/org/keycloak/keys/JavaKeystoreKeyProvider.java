@@ -23,6 +23,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
@@ -41,6 +42,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
@@ -52,13 +54,15 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -95,7 +99,8 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
             String keyAlias = model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY);
 
             return switch (algorithm) {
-                case Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.RSA_OAEP ->
+                case Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
+                        Algorithm.RSA_OAEP, Algorithm.RSA1_5, Algorithm.RSA_OAEP_256 ->
                         loadRSAKey(realm, model, keyStore, keyAlias);
                 case Algorithm.ES256, Algorithm.ES384, Algorithm.ES512 -> loadECKey(realm, model, keyStore, keyAlias);
                 case Algorithm.HS256, Algorithm.HS384, Algorithm.HS512-> loadOctKey(realm, model, keyStore, keyAlias, KeyUse.SIG);
@@ -128,8 +133,16 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
         return keyStore;
     }
 
-    private KeyWrapper loadOctKey(RealmModel realm, ComponentModel model, KeyStore keyStore, String keyAlias, KeyUse use) throws UnrecoverableKeyException, KeyStoreException, NoSuchAlgorithmException {
-        SecretKey secretKey = (SecretKey) keyStore.getKey(keyAlias, model.get(JavaKeystoreKeyProviderFactory.KEY_PASSWORD_KEY).toCharArray());
+    private KeyWrapper loadOctKey(RealmModel realm, ComponentModel model, KeyStore keyStore, String keyAlias, KeyUse use) throws UnrecoverableEntryException, KeyStoreException, NoSuchAlgorithmException {
+        Enumeration<String> aliases = keyStore.aliases();
+        KeyStore.SecretKeyEntry keyEntry = (KeyStore.SecretKeyEntry) keyStore.getEntry(keyAlias, new KeyStore.PasswordProtection(model.get(JavaKeystoreKeyProviderFactory.KEY_PASSWORD_KEY).toCharArray()));
+        SecretKey secretKey = (SecretKey) keyEntry.getSecretKey();
+        // Read the Corresponding Java Algorithm
+        String javaAlgorithm = JavaAlgorithm.getJavaAlgorithm(algorithm);
+        // Check that expected algorithm is the one configured with the provider
+        if(!Objects.equals(javaAlgorithm, secretKey.getAlgorithm())){
+            throw new IllegalStateException("Provider configured algorithm not matching key algorithm");
+        }
         KeyWrapper key = new KeyWrapper();
 
         key.setProviderId(model.getId());

@@ -4,6 +4,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
@@ -53,7 +54,7 @@ public class KeyUtils {
     }
 
     public static SecretKey generateSecretKey(String algorithm, int keySize) throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance(algorithm.toString());
+        KeyGenerator keyGen = KeyGenerator.getInstance(JavaAlgorithm.getJavaAlgorithm(algorithm));
         keyGen.init(keySize);
         return keyGen.generateKey();
     }

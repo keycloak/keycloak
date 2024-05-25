@@ -19,6 +19,7 @@ package org.keycloak.testsuite.keys;
 
 import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -107,6 +108,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @Ignore("BCFKS does not support HMAC keys")
     public void createBcfksHMAC() throws Exception {
         createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.HMAC);
     }
@@ -221,6 +223,9 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         response.close();
     }
 
+    private static final String KEYSTORE_PASSWORD = "password";
+    private static final String KEY_ALIAS = "keyAlias";
+
     protected ComponentRepresentation createRep(String name, long priority, String algorithm) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
@@ -230,9 +235,9 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle("keystore", generatedKeystore.getKeystoreFile().getAbsolutePath());
-        rep.getConfig().putSingle("keystorePassword", "password");
-        rep.getConfig().putSingle("keyAlias", "selfsigned");
-        rep.getConfig().putSingle("keyPassword", "password");
+        rep.getConfig().putSingle("keystorePassword", KEYSTORE_PASSWORD);
+        rep.getConfig().putSingle("keyAlias", KEY_ALIAS);
+        rep.getConfig().putSingle("keyPassword", KEYSTORE_PASSWORD);
         rep.getConfig().putSingle("algorithm", algorithm);
         return rep;
     }
@@ -244,23 +249,23 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     private void generateKeystore(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType) throws Exception {
         switch (algorithmType) {
             case RSA: {
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "selfsigned", "password", "password");
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, KEY_ALIAS, KEYSTORE_PASSWORD, KEYSTORE_PASSWORD);
                 this.keyAlgorithm = Algorithm.RS256;
                 return;
             }
             case ECDSA: {
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "selfsigned", "password", "password", KeyUtils.generateECKey(Algorithm.ES256));
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, KEY_ALIAS, KEYSTORE_PASSWORD, KEYSTORE_PASSWORD, KeyUtils.generateECKey(Algorithm.ES256));
                 this.keyAlgorithm = Algorithm.ES256;
                 return;
             }
             case AES: {
                 this.keyAlgorithm = Algorithm.AES;
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "secretKey", "password", "password", KeyUtils.generateSecretKey(this.keyAlgorithm, 256));
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, KEY_ALIAS, KEYSTORE_PASSWORD, KEYSTORE_PASSWORD, KeyUtils.generateSecretKey(this.keyAlgorithm, 256));
                 return;
             }
             case HMAC: {
                 this.keyAlgorithm = Algorithm.HS256;
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "secretKey", "password", "password", KeyUtils.generateSecretKey("HmacSHA256", 256));
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, KEY_ALIAS, KEYSTORE_PASSWORD, KEYSTORE_PASSWORD, KeyUtils.generateSecretKey(this.keyAlgorithm, 256));
             }
         }
     }

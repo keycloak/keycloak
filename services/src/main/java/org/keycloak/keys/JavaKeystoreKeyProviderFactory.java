@@ -30,6 +30,7 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -118,7 +119,11 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
     // merge the algorithms supported for RSA and EC keys and provide them as one configuration property
     private static ProviderConfigProperty mergedAlgorithmProperties() {
         List<String> ecAlgorithms = List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
-        List<String> algorithms = Stream.concat(Attributes.RS_ALGORITHM_PROPERTY.getOptions().stream(), ecAlgorithms.stream()).toList();
+        List<String> encAlgoritms = List.of(Algorithm.AES, Algorithm.RSA_OAEP, Algorithm.RSA1_5, Algorithm.RSA_OAEP_256);
+        List<String> hmacAlgorithms = List.of(Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+        List<String> algorithms = Stream.of(Attributes.RS_ALGORITHM_PROPERTY.getOptions(), ecAlgorithms, encAlgoritms, hmacAlgorithms)
+                .flatMap(Collection::stream)
+                .toList();
         return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),
                 Attributes.RS_ALGORITHM_PROPERTY.getHelpText(), Attributes.RS_ALGORITHM_PROPERTY.getType(),
                 Attributes.RS_ALGORITHM_PROPERTY.getDefaultValue(), algorithms.toArray(String[]::new));
