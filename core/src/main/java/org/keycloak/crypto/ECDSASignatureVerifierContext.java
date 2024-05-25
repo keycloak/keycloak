@@ -1,4 +1,3 @@
-package org.keycloak.crypto;
 /*
  * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
@@ -15,6 +14,8 @@ package org.keycloak.crypto;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto;
+
 import org.keycloak.common.VerificationException;
 
 public class ECDSASignatureVerifierContext extends AsymmetricSignatureVerifierContext{
