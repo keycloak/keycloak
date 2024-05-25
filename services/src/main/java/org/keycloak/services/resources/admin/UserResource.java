@@ -108,6 +108,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
+import org.keycloak.utils.StringUtil;
 
 import java.net.URI;
 import java.text.MessageFormat;
@@ -118,6 +119,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -125,6 +127,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -1049,6 +1053,30 @@ public class UserResource {
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
         }
+    }
+
+    @GET
+    @Path("unmanagedAttributes")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation()
+    public Map<String, List<String>> getUnmanagedAttributes() {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
+        UserProfile profile = provider.create(USER_API, user);
+        Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
+        Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
+        managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
+        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+        attributes.entrySet().removeAll(managedAttributes.entrySet());
+
+        attributes.remove(UserModel.USERNAME);
+        attributes.remove(UserModel.EMAIL);
+
+        return attributes.entrySet().stream()
+                .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     /**

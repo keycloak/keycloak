@@ -52,9 +52,10 @@ public class UIRealmsResource {
             )}
     )
     public Stream<RealmNameRepresentation> getRealms() {
+        final RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
+        
         Stream<RealmNameRepresentation> realms = session.realms().getRealmsStream()
                 .filter(realm -> {
-                    RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
                     return eval.canView(realm) || eval.isAdmin(realm);
                 })
                 .map((RealmModel realm) -> {

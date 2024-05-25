@@ -17,7 +17,6 @@
 
 package org.keycloak.organization.authentication.authenticators.broker;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -31,6 +30,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+
+import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 
 public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthenticator {
 
@@ -70,13 +71,13 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
-        if (!provider.isEnabled()) {
+        if (!isEnabledAndOrganizationsPresent(provider)) {
             return false;
         }
 
         OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
-        if (organization == null) {
+        if (organization == null || !organization.isEnabled()) {
             return false;
         }
 

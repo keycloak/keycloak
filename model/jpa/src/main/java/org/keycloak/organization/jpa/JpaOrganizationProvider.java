@@ -398,7 +398,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean isEnabled() {
-        return getAllStream().findAny().isPresent();
+        return realm.isOrganizationsEnabled();
     }
 
     @Override

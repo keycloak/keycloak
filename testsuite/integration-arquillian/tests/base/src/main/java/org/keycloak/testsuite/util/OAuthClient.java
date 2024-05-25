@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import com.google.common.base.Charsets;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.UriBuilder;
@@ -524,7 +523,7 @@ public class OAuthClient {
             post.addHeader("DPoP", dpopProof);
         }
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         try {
@@ -1277,7 +1276,7 @@ public class OAuthClient {
                 customParameters.keySet().stream().forEach(i -> parameters.add(new BasicNameValuePair(i, customParameters.get(i))));
             }
 
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             try {
                 return new ParResponse(client.execute(post), c);

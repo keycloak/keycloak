@@ -36,6 +36,8 @@ import {
 import { useFetch } from "../utils/useFetch";
 import { UIRealmRepresentation } from "./RealmSettingsTabs";
 
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
   save: (realm: UIRealmRepresentation) => void;
@@ -105,9 +107,16 @@ function RealmSettingsGeneralTabForm({
     setValue,
     formState: { isDirty, errors },
   } = form;
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const isOrganizationsEnabled = isFeatureEnabled(Feature.Organizations);
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
+    setValue(
+      "unmanagedAttributePolicy",
+      userProfileConfig.unmanagedAttributePolicy ||
+        UNMANAGED_ATTRIBUTE_POLICIES[0],
+    );
     if (realm.attributes?.["acr.loa.map"]) {
       const result = Object.entries(
         JSON.parse(realm.attributes["acr.loa.map"]),
@@ -207,6 +216,13 @@ function RealmSettingsGeneralTabForm({
             label={t("userManagedAccess")}
             labelIcon={t("userManagedAccessHelp")}
           />
+          {isOrganizationsEnabled && (
+            <DefaultSwitchControl
+              name="organizationsEnabled"
+              label={t("organizationsEnabled")}
+              labelIcon={t("organizationsEnabledHelp")}
+            />
+          )}
           <SelectControl
             name="unmanagedAttributePolicy"
             label={t("unmanagedAttributes")}

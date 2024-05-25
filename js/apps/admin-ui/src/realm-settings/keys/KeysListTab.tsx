@@ -109,7 +109,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   );
 
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
-    titleKey: t("publicKeys").slice(0, -1),
+    titleKey: t("publicKey"),
     messageKey: publicKey,
     continueButtonLabel: "close",
     continueButtonVariant: ButtonVariant.primary,
@@ -204,7 +204,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                     variant="secondary"
                     id="kc-public-key"
                   >
-                    {t("publicKeys").slice(0, -1)}
+                    {t("publicKey")}
                   </Button>
                 );
               } else if (type === "RSA") {
@@ -218,7 +218,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                       variant="secondary"
                       id={publicKey}
                     >
-                      {t("publicKeys").slice(0, -1)}
+                      {t("publicKey")}
                     </Button>
                     <Button
                       onClick={() => {
@@ -243,7 +243,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                     variant="secondary"
                     id="kc-public-key"
                   >
-                    {t("publicKeys").slice(0, -1)}
+                    {t("publicKey")}
                   </Button>
                 );
               } else return "";

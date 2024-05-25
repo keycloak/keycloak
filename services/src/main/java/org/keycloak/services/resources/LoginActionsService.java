@@ -236,6 +236,10 @@ public class LoginActionsService {
             return checks.getResponse();
         }
 
+        event.user(authSession.getAuthenticatedUser());
+        event.detail(Details.USERNAME, authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME));
+        event.detail(Details.AUTH_METHOD, authSession.getProtocol());
+
         String flowPath = authSession.getClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW);
         if (flowPath == null) {
             flowPath = AUTHENTICATE_PATH;
@@ -256,6 +260,7 @@ public class LoginActionsService {
 
         URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
         logger.debugf("Flow restart requested. Redirecting to %s", redirectUri);
+        event.success();
         return Response.status(Response.Status.FOUND).location(redirectUri).build();
     }
 
@@ -1190,7 +1195,8 @@ public class LoginActionsService {
     }
     
     private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
-        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))) {
+        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
+                && !Boolean.TRUE.toString().equals(authSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
             boolean userRequestedCancelAIA = formData.getFirst(CANCEL_AIA) != null;
             return userRequestedCancelAIA;

@@ -494,6 +494,15 @@ export class Users extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "clientId"],
   });
 
+  public getUnmanagedAttributes = this.makeRequest<
+    { id: string },
+    Record<string, string[]>
+  >({
+    method: "GET",
+    path: "/{id}/unmanagedAttributes",
+    urlParamKeys: ["id"],
+  });
+
   constructor(client: KeycloakAdminClient) {
     super(client, {
       path: "/admin/realms/{realm}/users",

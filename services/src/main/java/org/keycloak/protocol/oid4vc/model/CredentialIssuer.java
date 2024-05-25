@@ -19,8 +19,8 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableMap;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -85,7 +85,7 @@ public class CredentialIssuer {
     }
 
     public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredentialConfiguration> credentialsSupported) {
-        this.credentialsSupported = ImmutableMap.copyOf(credentialsSupported);
+        this.credentialsSupported = Collections.unmodifiableMap(credentialsSupported);
         return this;
     }
 
