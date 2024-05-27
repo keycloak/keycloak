@@ -30,8 +30,7 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -39,7 +38,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Time;
@@ -348,9 +346,9 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient(String adapterConfig) {
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getConfigurationStream(adapterConfig));
+        PolicyEnforcer policyEnforcer = PolicyEnforcer.builder().enforcerConfig(getConfigurationStream(adapterConfig)).build();
 
-        return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()));
+        return policyEnforcer.getAuthzClient();
     }
 
     private InputStream getConfigurationStream(String adapterConfig) {
