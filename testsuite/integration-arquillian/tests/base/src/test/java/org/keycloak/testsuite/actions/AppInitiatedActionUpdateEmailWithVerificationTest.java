@@ -173,7 +173,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		assertEquals(String.format("The account email has been successfully updated to %s.", "new@localhost"), infoPage.getInfo());
 		//Issue #15136
 		final WebElement backToApplicationLink = driver.findElement(By.linkText("« Back to Application"));
-		assertThat(backToApplicationLink.toString(), Matchers.containsString("/auth/realms/master/app/auth"));
+		assertThat(backToApplicationLink.getDomAttribute("href"), Matchers.containsString("/auth/realms/master/app/auth"));
 
 		events.expect(EventType.UPDATE_EMAIL)
 				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")

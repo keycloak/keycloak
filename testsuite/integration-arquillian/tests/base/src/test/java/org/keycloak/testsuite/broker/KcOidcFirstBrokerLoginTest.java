@@ -463,11 +463,11 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         //assert field names
         // i18n replaced
-        org.junit.Assert.assertEquals("First name", updateAccountInformationPage.getLabelForField("firstName"));
+        org.junit.Assert.assertEquals("First name *", updateAccountInformationPage.getLabelForField("firstName"));
         // attribute name used if no display name set
         org.junit.Assert.assertEquals("lastName", updateAccountInformationPage.getLabelForField("lastName"));
         // direct value in display name
-        org.junit.Assert.assertEquals("Department", updateAccountInformationPage.getLabelForField("department"));
+        org.junit.Assert.assertEquals("Department *", updateAccountInformationPage.getLabelForField("department"));
     }
 
     @Test
@@ -500,42 +500,42 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         //assert fields and groups location in form, attributes without a group appear first
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) div > span.pf-v5-c-form-control > input#lastName")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#username")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) div > span.pf-v5-c-form-control > input#username")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#firstName")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) div > span.pf-v5-c-form-control > input#firstName")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(1) > label#header-company")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div > label#header-company")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > label#description-company")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div > label#description-company")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#department")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) div > span.pf-v5-c-form-control > input#department")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(1) > label#header-contact")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) div > label#header-contact")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#email")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) div > span.pf-v5-c-form-control > input#email")
                 ).isDisplayed()
         );
     }
@@ -565,27 +565,27 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         String htmlFormId = "kc-idp-review-profile-form";
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) div > span.pf-v5-c-form-control > input#lastName")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#department")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) div > span.pf-v5-c-form-control > input#department")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#username")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) div > span.pf-v5-c-form-control > input#username")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > input#firstName")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) div > span.pf-v5-c-form-control > input#firstName")
                 ).isDisplayed()
         );
         org.junit.Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#email")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) div > span.pf-v5-c-form-control > input#email")
                 ).isDisplayed()
         );
     }
