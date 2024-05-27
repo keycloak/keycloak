@@ -17,14 +17,14 @@
 
 package org.keycloak.models.jpa.entities;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
 /**
@@ -34,12 +34,13 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name="ORG_DOMAIN")
-@NamedQueries({
-        @NamedQuery(name="getByName", query="select o from OrganizationDomainEntity o where o.name = :name")
-})
 public class OrganizationDomainEntity {
 
     @Id
+    @Column(name = "ID", length = 36)
+    @Access(AccessType.PROPERTY)
+    private String id;
+
     @Column(name="NAME")
     protected String name;
 
@@ -49,6 +50,14 @@ public class OrganizationDomainEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ORG_ID")
     private OrganizationEntity organization;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getName() {
         return this.name;
@@ -81,7 +90,7 @@ public class OrganizationDomainEntity {
         if (!(o instanceof OrganizationDomainEntity)) return false;
 
         OrganizationDomainEntity that = (OrganizationDomainEntity) o;
-        return name != null && name.equals(that.getName());
+        return id != null && id.equals(that.getId());
     }
 
     @Override

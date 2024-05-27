@@ -155,7 +155,7 @@ public class Organizations {
     public static OrganizationDomainRepresentation toRepresentation(OrganizationDomainModel model) {
         OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
         representation.setName(model.getName());
-        representation.setVerified(model.getVerified());
+        representation.setVerified(model.isVerified());
         return representation;
     }
 

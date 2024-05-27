@@ -101,6 +101,9 @@
         <addUniqueConstraint tableName="ORG" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
 
         <createTable tableName="ORG_DOMAIN">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
             <column name="NAME" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
