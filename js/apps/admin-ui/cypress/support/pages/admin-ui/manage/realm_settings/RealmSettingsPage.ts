@@ -1270,12 +1270,12 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   checkElementNotInList(name: string) {
-    cy.get('tbody [data-label="Name"]').should("not.contain.text", name);
+    cy.get("tbody").should("not.contain.text", name);
     return this;
   }
 
   checkElementInList(name: string) {
-    cy.get('tbody [data-label="Name"]').should("contain.text", name);
+    cy.get("tbody").should("contain.text", name);
     return this;
   }
 

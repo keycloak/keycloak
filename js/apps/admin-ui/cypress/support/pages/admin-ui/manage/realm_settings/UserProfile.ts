@@ -21,7 +21,7 @@ export default class UserProfile {
   #newAttributeAnnotationBtn = "annotations-add-row";
   #newAttributeAnnotationKey = "annotations.0.key";
   #newAttributeAnnotationValue = "annotations.0.value";
-  #validatorsList = 'tbody [data-label="name"]';
+  #validatorsList = "tbody";
   #saveNewAttributeBtn = "attribute-create";
   #addValidatorBtn = "addValidator";
   #removeValidatorBtn = "deleteValidator";
