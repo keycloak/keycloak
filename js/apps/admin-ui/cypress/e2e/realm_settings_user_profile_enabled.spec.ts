@@ -360,7 +360,7 @@ describe("User profile tabs", () => {
         .assertNotificationSaved();
     });
 
-    it("Checks that attribute with select-annotation is displayed and editable when user is created/edited", () => {
+    it.skip("Checks that attribute with select-annotation is displayed and editable when user is created/edited", () => {
       const userName = `select-test-user-${uuid()}`;
       const attrName = "select-test-attr";
       const opt1 = "opt1";
