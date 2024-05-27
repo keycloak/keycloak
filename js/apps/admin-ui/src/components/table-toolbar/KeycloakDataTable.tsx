@@ -164,6 +164,7 @@ function DataTable<T>({
                 <Td isActionCell>
                   <ActionsColumn
                     items={actions || actionResolver?.(row, {})!}
+                    extraData={{ rowIndex: index }}
                   />
                 </Td>
               )}
@@ -461,9 +462,9 @@ export function KeycloakDataTable<T>({
     actions &&
     cloneDeep(actions).map((action: Action<T>, index: number) => {
       delete action.onRowClick;
-      action.onClick = async () => {
+      action.onClick = async (_, rowIndex) => {
         const result = await actions[index].onRowClick!(
-          (filteredData || rows)![index].data,
+          (filteredData || rows)![rowIndex].data,
         );
         if (result) {
           if (!isPaginated) {
