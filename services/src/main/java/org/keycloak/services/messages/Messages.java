@@ -320,4 +320,5 @@ public class Messages {
     public static final String OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER = "oauth2DeviceVerificationFailedHeader";
     public static final String OAUTH2_DEVICE_CONSENT_DENIED = "oauth2DeviceConsentDeniedMessage";
 
+    public static final String CONFIRM_ORGANIZATION_MEMBERSHIP = "organization.confirm-membership";
 }

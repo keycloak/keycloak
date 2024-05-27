@@ -1094,6 +1094,18 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public void addClientScopeToAllClients(RealmModel realm, ClientScopeModel clientScope, boolean defaultClientScope) {
+        if (realm.equals(clientScope.getRealm())) {
+            em.createNamedQuery("addClientScopeToAllClients")
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("clientScopeId", clientScope.getId())
+                    .setParameter("clientProtocol", clientScope.getProtocol())
+                    .setParameter("defaultScope", defaultClientScope)
+                    .executeUpdate();
+        }
+    }
+
+    @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScope) {
         // Defaults to openid-connect
         String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();

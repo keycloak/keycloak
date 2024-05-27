@@ -41,7 +41,9 @@ import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
+    private static final String KEYCLOAK_ADMIN_PROP_VAR = "keycloakAdmin";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
+    private static final String KEYCLOAK_ADMIN_PASSWORD_PROP_VAR = "keycloakAdminPassword";
 
     void onStartupEvent(@Observes StartupEvent event) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
@@ -69,8 +71,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     private void createAdminUser() {
-        String adminUserName = System.getenv(KEYCLOAK_ADMIN_ENV_VAR);
-        String adminPassword = System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
+        String adminUserName = getEnvOrProp(KEYCLOAK_ADMIN_ENV_VAR, KEYCLOAK_ADMIN_PROP_VAR);
+        String adminPassword = getEnvOrProp(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR, KEYCLOAK_ADMIN_PASSWORD_PROP_VAR);
 
         if ((adminUserName == null || adminUserName.trim().length() == 0)
             || (adminPassword == null || adminPassword.trim().length() == 0)) {
@@ -86,6 +88,11 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         } catch (Throwable t) {
             ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
         }
+    }
+
+    private String getEnvOrProp(String envKey, String propKey) {
+        String value = System.getenv(envKey);
+        return value != null ? value : System.getProperty(propKey);
     }
 
 }

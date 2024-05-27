@@ -223,6 +223,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         // not yet a member
         Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
         // confirm the intent of membership
+        assertThat(infoPage.getInfo(), containsString("You are about to join organization " + organizationName));
         infoPage.clickToContinue();
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
         // now a member

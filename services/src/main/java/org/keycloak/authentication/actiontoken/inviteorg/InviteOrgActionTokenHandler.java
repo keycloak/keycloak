@@ -43,8 +43,8 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 /**
  * Action token handler for handling invitation of an existing user to an organization. A new user is handled in registration {@link org.keycloak.services.resources.LoginActionsService}.
@@ -114,6 +114,8 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                     .setAuthenticationSession(authSession)
                     .setSuccess(Messages.CONFIRM_EXECUTION_OF_ACTIONS)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
+                    .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, List.of(Messages.CONFIRM_ORGANIZATION_MEMBERSHIP))
+                    .setAttribute(OrganizationModel.ORGANIZATION_NAME_ATTRIBUTE, organization.getName())
                     .createInfoPage();
         }
 
