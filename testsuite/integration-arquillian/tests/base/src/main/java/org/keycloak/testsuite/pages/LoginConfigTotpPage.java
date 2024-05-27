@@ -48,7 +48,7 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
     @FindBy(id = "mode-manual")
     private WebElement manualLink;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     @FindBy(id = "input-error-otp-code")

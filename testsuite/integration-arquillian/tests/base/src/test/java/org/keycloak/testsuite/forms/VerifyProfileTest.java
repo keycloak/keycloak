@@ -243,7 +243,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > label#description-company")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div > label#description-company")
                 ).isDisplayed()
         );
         Assert.assertTrue(

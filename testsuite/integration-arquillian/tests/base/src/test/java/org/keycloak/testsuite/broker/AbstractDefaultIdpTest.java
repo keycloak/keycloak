@@ -120,7 +120,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
 
         waitForPage(driver, "sign in to", true);
 
-        WebElement errorElement = driver.findElement(By.className("alert-error"));
+        WebElement errorElement = driver.findElement(By.className("pf-v5-c-alert"));
         assertNotNull("Page should show an error message but it's missing", errorElement);
 
         // Login to IDP failed due consent denied. Error message is displayed on the username/password screen of the consumer realm
