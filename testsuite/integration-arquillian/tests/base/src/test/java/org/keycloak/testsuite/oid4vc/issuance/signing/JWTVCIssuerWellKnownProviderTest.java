@@ -16,13 +16,23 @@
  */
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -36,21 +46,23 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */public class JWTVCIssuerWellKnownProviderTest extends OID4VCTest {
 
-     @Test
-    public void getConfig() {
+    @Test
+    public void getConfig() throws IOException {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
-        testingClient
-                .server(TEST_REALM_NAME)
-                .run((session -> {
-                    JWTVCIssuerWellKnownProvider jwtvcIssuerWellKnownProvider = new JWTVCIssuerWellKnownProvider(session);
-                    Object issuerConfig = jwtvcIssuerWellKnownProvider.getConfig();
-                    assertTrue("Valid jwt-vc-issuer metadata should be returned.", issuerConfig instanceof JWTVCIssuerMetadata);
-                    JWTVCIssuerMetadata jwtvcIssuerMetadata = (JWTVCIssuerMetadata) issuerConfig;
-                    assertEquals("The correct issuer should be included.", expectedIssuer, jwtvcIssuerMetadata.getIssuer());
-                    JSONWebKeySet jwks = jwtvcIssuerMetadata.getJwks();
-                    assertNotNull("The key set shall not be null", jwks.getKeys());
-                    assertTrue("The key set shall not be empty", jwks.getKeys().length>0);
-                }));
+
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+            URI jwtIssuerUri = RealmsResource.wellKnownProviderUrl(builder).build("test", JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID);
+            WebTarget jwtIssuerTarget = client.target(jwtIssuerUri);
+
+            try (Response jwtIssuerResponse = jwtIssuerTarget.request().get()) {
+                JWTVCIssuerMetadata jwtvcIssuerMetadata = JsonSerialization.readValue(jwtIssuerResponse.readEntity(String.class), JWTVCIssuerMetadata.class);
+                assertEquals("The correct issuer should be included.", expectedIssuer, jwtvcIssuerMetadata.getIssuer());
+                JSONWebKeySet jwks = jwtvcIssuerMetadata.getJwks();
+                assertNotNull("The key set shall not be null", jwks.getKeys());
+                assertTrue("The key set shall not be empty", jwks.getKeys().length > 0);
+            }
+        }
     }
 
     @Override
