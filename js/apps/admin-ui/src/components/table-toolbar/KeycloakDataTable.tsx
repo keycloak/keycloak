@@ -461,9 +461,9 @@ export function KeycloakDataTable<T>({
     actions &&
     cloneDeep(actions).map((action: Action<T>, index: number) => {
       delete action.onRowClick;
-      action.onClick = async (_, rowIndex) => {
+      action.onClick = async () => {
         const result = await actions[index].onRowClick!(
-          (filteredData || rows)![rowIndex].data,
+          (filteredData || rows)![index].data,
         );
         if (result) {
           if (!isPaginated) {
