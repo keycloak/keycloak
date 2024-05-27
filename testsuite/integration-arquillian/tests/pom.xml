@@ -1627,11 +1627,6 @@
                     <artifactId>arquillian-protocol-servlet</artifactId>
                 </dependency>
                 <dependency>
-                    <groupId>org.jboss.arquillian.extension</groupId>
-                    <artifactId>arquillian-phantom-driver</artifactId>
-                    <version>1.2.1.Final</version>
-                </dependency>
-                <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
                     <artifactId>arquillian-browser-screenshooter</artifactId>
                     <version>${arquillian-graphene.version}</version>

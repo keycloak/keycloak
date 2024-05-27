@@ -26,5 +26,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Qualifier
-public @interface PhantomJSBrowser {
+public @interface HtmlUnitBrowser {
 }

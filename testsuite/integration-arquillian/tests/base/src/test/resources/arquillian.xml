@@ -91,9 +91,10 @@
         <property name="chromeDriverVersion">${chromeDriverVersion}</property>
     </extension>
 
-    <extension qualifier="webdriver-phantomjsbrowser">
-        <property name="browser">phantomjs</property>
-        <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+    <extension qualifier="webdriver-htmlunitbrowser">
+        <property name="browser">htmlunit</property>
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
     </extension>
 
     <extension qualifier="graphene-secondbrowser">
