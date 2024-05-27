@@ -28,7 +28,7 @@ import java.util.List;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
- * Test for DB migration with legacy JPA store
+ * Test for DB migration with the JPA store
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
@@ -70,6 +70,18 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo22_x();
         testMigrationTo23_x(true);
         testMigrationTo24_x(true, true);
+        testMigrationTo25_0_0();
+    }
+
+    @Test
+    @Migration(versionPrefix = "24.")
+    public void migration24_xTest() throws Exception{
+        testMigratedData(false);
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
+
         testMigrationTo25_0_0();
     }
 }
