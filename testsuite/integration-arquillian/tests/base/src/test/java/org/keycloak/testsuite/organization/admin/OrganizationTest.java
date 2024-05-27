@@ -355,13 +355,16 @@ public class OrganizationTest extends AbstractOrganizationTest {
         }
         expectedNewOrgBrDomain.setName("acme.com");
 
-        // create another org and attempt to set the same internet domain during update - should not be possible.
+        // create another org in the same realm and attempt to set the same internet domain during update - should not be possible.
         OrganizationRepresentation anotherOrg = createOrganization("another-org");
         anotherOrg.addDomain(expectedNewOrgDomain);
         organization = testRealm().organizations().get(anotherOrg.getId());
         try (Response response = organization.update(anotherOrg)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
+
+        // create another org in a different realm with the same internet domain - should be allowed.
+        createOrganization(adminClient.realm(bc.providerRealmName()), "testorg", "acme.com");
 
         // try to remove a domain
         organization = testRealm().organizations().get(existing.getId());

@@ -98,19 +98,25 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         return createOrganization(name, name + ".org");
     }
 
-    protected OrganizationRepresentation createOrganization(String name, String... orgDomain) {
-        return createOrganization(testRealm(), getCleanup(), name, brokerConfigFunction.apply(name).setUpIdentityProvider(), orgDomain);
+    protected OrganizationRepresentation createOrganization(String name, String... orgDomains) {
+        return createOrganization(testRealm(), name, orgDomains);
     }
 
-    protected static OrganizationRepresentation createOrganization(RealmResource testRealm, TestCleanup testCleanup, String name, IdentityProviderRepresentation broker, String... orgDomain) {
-        OrganizationRepresentation org = createRepresentation(name, orgDomain);
+    protected OrganizationRepresentation createOrganization(RealmResource realm, String name, String... orgDomains) {
+        return createOrganization(realm, getCleanup(), name, brokerConfigFunction.apply(name).setUpIdentityProvider(), orgDomains);
+    }
+
+    protected static OrganizationRepresentation createOrganization(RealmResource testRealm, TestCleanup testCleanup, String name,
+                                                                   IdentityProviderRepresentation broker, String... orgDomains) {
+        OrganizationRepresentation org = createRepresentation(name, orgDomains);
         String id;
 
         try (Response response = testRealm.organizations().create(org)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             id = ApiUtil.getCreatedId(response);
         }
-        broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, org.getDomains().iterator().next().getName());
+        // set the idp domain to the first domain used to create the org.
+        broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
         testRealm.identityProviders().create(broker).close();
         testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
         testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
@@ -226,6 +232,14 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected BrokerConfiguration createBrokerConfiguration() {
-        return new KcOidcBrokerConfiguration();
-    };
+        return new KcOidcBrokerConfiguration() {
+            @Override
+            public RealmRepresentation createProviderRealm() {
+                // enable organizations in the provider realm too just for testing purposes.
+                RealmRepresentation realmRep = super.createProviderRealm();
+                realmRep.setOrganizationsEnabled(true);
+                return realmRep;
+            }
+        };
+    }
 }

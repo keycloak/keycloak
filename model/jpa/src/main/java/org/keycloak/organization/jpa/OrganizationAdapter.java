@@ -143,7 +143,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
             // update the existing domain (for now, only the verified flag can be changed).
             if (modelMap.containsKey(domainEntity.getName())) {
-                domainEntity.setVerified(modelMap.get(domainEntity.getName()).getVerified());
+                domainEntity.setVerified(modelMap.get(domainEntity.getName()).isVerified());
                 modelMap.remove(domainEntity.getName());
             } else {
                 // remove domain that is not found in the new set.
@@ -161,8 +161,9 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         // create the remaining domains.
         for (OrganizationDomainModel model : modelMap.values()) {
             OrganizationDomainEntity domainEntity = new OrganizationDomainEntity();
+            domainEntity.setId(KeycloakModelUtils.generateId());
             domainEntity.setName(model.getName());
-            domainEntity.setVerified(model.getVerified());
+            domainEntity.setVerified(model.isVerified());
             domainEntity.setOrganization(this.entity);
             this.entity.addDomain(domainEntity);
         }
@@ -233,7 +234,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
         OrganizationModel orgModel = provider.getByDomainName(domainName);
         if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
-            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization");
+            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization in realm " + realm.getName());
         }
         return domainModel;
     }
