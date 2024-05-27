@@ -63,7 +63,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${auth.server.home}</outputDirectory>
+                            <outputDirectory>${auth.server.home}/conf</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${common.resources}/keystore</directory>
@@ -71,6 +71,7 @@
                                         <include>ca.crt</include>
                                         <include>client.crt</include>
                                         <include>client.key</include>
+                                        <include>client.p12</include>
                                         <include>client-ca.crt</include>
                                         <include>client-ca.key</include>
                                         <include>*.crl</include>
@@ -80,7 +81,9 @@
                                     <directory>${common.resources}/pki/root/ca</directory>
                                     <includes>
                                         <include>certs/clients/test-user-san@localhost.cert.pem</include>
+                                        <include>certs/clients/test-user-san@localhost.p12</include>
                                         <include>certs/clients/test-user@localhost.key.pem</include>
+                                        <include>certs/clients/test-user-san-cert-test-user-key@localhost.p12</include>
                                     </includes>
                                 </resource>
                             </resources>

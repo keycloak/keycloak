@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -37,18 +37,18 @@ public class X509SingleCertificateBrowserCRLTest extends AbstractX509Authenticat
     public static CRLRule crlRule = new CRLRule();
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlunit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(htmlunit);
     }
 
     @BeforeClass
     public static void onBeforeTestClass() {
         // configure single certificate without CA cert
-        configurePhantomJS(null, "/client-ca.crt", "/client-ca.key", "password");
+        configureHtmlUnit("/client-ca.jks", "secret", "jks");
     }
 
     @Test

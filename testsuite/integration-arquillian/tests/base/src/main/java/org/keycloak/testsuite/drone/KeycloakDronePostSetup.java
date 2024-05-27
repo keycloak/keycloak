@@ -39,10 +39,16 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+import java.io.File;
+import java.net.MalformedURLException;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KeycloakDronePostSetup {
+    public static final String HTML_UNIT_SSL_KEYSTORE_PROP = "htmlunit-ssl-keystore";
+    public static final String HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP = "htmlunit-ssl-keystore-password";
+    public static final String HTML_UNIT_SSL_KEYSTORE_TYPE_PROP = "htmlunit-ssl-keystore-type";
 
     @Inject
     @ClassScoped // needed in BrowserDriverIgnoreDecider
@@ -54,22 +60,19 @@ public class KeycloakDronePostSetup {
         DronePoint<?> dronePoint = event.getDronePoint();
         Object drone = droneContext.get(dronePoint).getInstance();
 
-        if (drone instanceof RemoteWebDriver) {
-            RemoteWebDriver remoteWebDriver = (RemoteWebDriver) drone;
+        if (drone instanceof RemoteWebDriver remoteWebDriver) {
             log.infof("Detected browser: %s %s", remoteWebDriver.getCapabilities().getBrowserName(), remoteWebDriver.getCapabilities().getBrowserVersion());
             webDriverProducer.set(remoteWebDriver);
         }
 
-        if (drone instanceof WebDriver && !(drone instanceof AppiumDriver)) {
-            WebDriver webDriver = (WebDriver) drone;
+        if (drone instanceof WebDriver webDriver && !(drone instanceof AppiumDriver)) {
             configureDriverSettings(webDriver);
             webDriverProducer.set(webDriver);
         } else {
             log.warn("Drone is not instanceof WebDriver for a desktop browser! Drone is " + drone);
         }
 
-        if (drone instanceof GrapheneProxyInstance) {
-            GrapheneProxyInstance droneProxy = (GrapheneProxyInstance) drone;
+        if (drone instanceof GrapheneProxyInstance droneProxy) {
             if (drone instanceof HtmlUnitDriver) {
                 droneProxy.registerInterceptor(new HtmlUnitInterceptor());
             }
@@ -89,16 +92,38 @@ public class KeycloakDronePostSetup {
         driver.manage().window().maximize();
 
         configureFirefoxDriver(driver);
+        configureHtmlUnitDriver(driver);
     }
 
     private void configureFirefoxDriver(WebDriver driver) {
-        if (driver instanceof FirefoxDriver) {
-            FirefoxDriver firefoxDriver = (FirefoxDriver) driver;
+        if (driver instanceof FirefoxDriver firefoxDriver) {
             Capabilities capabilities = firefoxDriver.getCapabilities();
             FirefoxOptions options = new FirefoxOptions(capabilities);
             // disables extension automatic updates as we don't need it when running the test suite
             options.addPreference("extensions.update.enabled", "false");
             firefoxDriver.getCapabilities().merge(options);
+        }
+    }
+
+    private void configureHtmlUnitDriver(WebDriver driver) {
+        if (driver instanceof HtmlUnitDriver htmlUnitDriver) {
+            final var keystore = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PROP);
+            final var keystorePassword = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP);
+            final var keystoreType = System.getProperty(HTML_UNIT_SSL_KEYSTORE_TYPE_PROP);
+
+            log.info("Check HtmlUnit driver TLS settings");
+
+            if (keystore != null && keystorePassword != null && keystoreType != null) {
+                log.infof("Keystore '%s', password '%s', type '%s'", keystore, keystorePassword, keystoreType);
+
+                var options = htmlUnitDriver.getWebClient().getOptions();
+                options.setUseInsecureSSL(true);
+                try {
+                    options.setSSLClientCertificateKeyStore(new File(keystore).toURI().toURL(), keystorePassword, keystoreType);
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
