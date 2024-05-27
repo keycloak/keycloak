@@ -81,6 +81,7 @@ export const SingleSelectControl = <
                 isExpanded={open}
                 isFullWidth
                 status={get(errors, name) ? MenuToggleStatus.danger : undefined}
+                aria-label="toggle"
               >
                 {isSelectBasedOptions(options)
                   ? options.find((o) => o.key === value)?.value
