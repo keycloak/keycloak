@@ -58,7 +58,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     public void update(String firstName, String lastName) {
