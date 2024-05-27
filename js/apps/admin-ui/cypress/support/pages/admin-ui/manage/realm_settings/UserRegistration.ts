@@ -3,7 +3,7 @@ export default class UserRegistration {
   #defaultGroupTab = "#pf-tab-20-groups";
   #addRoleBtn = "assignRole";
   #addDefaultGroupBtn = "no-default-groups-empty-action";
-  #namesColumn = 'tbody td[data-label="Name"]:visible';
+  #namesColumn = "tbody td:visible";
   #addBtn = "assign";
   #filterTypeDropdown = "filter-type-dropdown";
 
