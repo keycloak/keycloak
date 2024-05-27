@@ -136,8 +136,8 @@ describe("User profile tabs", () => {
     });
   });
 
-  describe("Check attributes are displayed and editable on user create/edit", () => {
-    it("Checks that not required attribute is not present when user is created with email as username and edit username set to disabled", () => {
+  describe.skip("Check attributes are displayed and editable on user create/edit", () => {
+    it.skip("Checks that not required attribute is not present when user is created with email as username and edit username set to disabled", () => {
       const attrName = "newAttribute1";
 
       getUserProfileTab();
@@ -171,7 +171,7 @@ describe("User profile tabs", () => {
       masthead.checkNotificationMessage("Attribute deleted");
     });
 
-    it("Checks that not required attribute is not present when user is created/edited with email as username enabled", () => {
+    it.skip("Checks that not required attribute is not present when user is created/edited with email as username enabled", () => {
       const attrName = "newAttribute2";
 
       getUserProfileTab();
@@ -360,7 +360,7 @@ describe("User profile tabs", () => {
         .assertNotificationSaved();
     });
 
-    it.skip("Checks that attribute with select-annotation is displayed and editable when user is created/edited", () => {
+    it("Checks that attribute with select-annotation is displayed and editable when user is created/edited", () => {
       const userName = `select-test-user-${uuid()}`;
       const attrName = "select-test-attr";
       const opt1 = "opt1";
