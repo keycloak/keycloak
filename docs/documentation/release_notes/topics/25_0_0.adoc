@@ -114,6 +114,36 @@ For more details, see the link:{upgradingguide_link}[{upgradingguide_name}]..
 
 Keycloak supports a new password policy that allows you to deny user passwords which contains the user username.
 
+= Required actions improvements
+
+There is ability for required actions to be configurable. Realm administrator can configure some required actions in the admin console in the *Required actions* tab of particular realm. At
+this moment, the *Update password* is the only built-in configurable required action. It supports setting *Maximum Age of Authentication*, which is the maximum time user is able to update his password
+by the `kc_action` parameter (used for instance when updating password in the account console) without re-authentication. The sorting of required actions is also improved. When there are multiple required
+actions during authentication, all actions are sorted together regardless of whether those are actions set during authentication (for instance by `kc_action` parameter) or actions added to the user account manually by administrator.
+Thanks to https://github.com/thomasdarimont[Thomas Darimont] and https://github.com/danielFesenmeyer[Daniel Fesenmeyer] for the contributions.
+
+= Passkeys improvements
+
+The support for Passkeys conditional UI was added. When Passkeys preview feature is enabled, there is dedicated authenticator available, which allows to select from list of available passkeys accounts
+and authenticate user based on that. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+
+= Default client profile for SAML
+
+The default client profile to have secured SAML clients was added. When browsing through client policies of some realm in admin console, there is now new client profile `saml-security-profile` added. When it is used, there are
+security best practices applied for SAML clients like for instance signatures are enforced, SAML Redirect binding is disabled and wildcard redirect uris are not allowed.
+
+= Authenticator for override existing IDP link during first-broker-login
+
+There was new authenticator `Confirm override existing link` added. This authenticator allows to override linked IDP username for the {project_name} user, which was already linked to different
+IDP identity before. More details in the link:{adminguide_link}#_override_existing_broker_link[{adminguide_name}]. Thanks to https://github.com/lexcao[Lex Cao] for the contribution.
+
+= OpenID for Verifiable Credential Issuance - experimental support
+
+There is work in progress on the support of OpenID for Verifiable Credential Issuance (OID4VCI). Right now, this is still work in progress, but things are being gradually added. The {project_name}
+can act as an OID4VC Issuer with support of Pre-Authorized code flow. There is support for verifiable credentials in the JWT-VC, SD-JWT-VC and VCDM formats. Thanks to the members of the OAuth SIG
+groups for the contributions and feedback and especially thanks to https://github.com/wistefan[Stefan Wiedemann], https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/tnorimat[Takashi Norimatsu]
+and https://github.com/bucchi[Yutaka Obuchi].
+
 = Searching by user attribute no longer case insensitive
 
 When searching for users by user attribute, {project_name} no longer searches for user attribute names forcing lower case comparisons. The goal of this change was to speed up searches by using {project_name}'s native index on the user attribute table. If your database collation is case-insensitive, your search results will stay the same. If your database collation is case-sensitive, you might see less search results than before.
