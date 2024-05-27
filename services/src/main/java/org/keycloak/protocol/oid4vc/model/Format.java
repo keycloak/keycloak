@@ -40,7 +40,7 @@ public enum Format {
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    SD_JWT_VC("sd-jwt_vc");
+    SD_JWT_VC("vc+sd-jwt");
 
     private String value;
 
