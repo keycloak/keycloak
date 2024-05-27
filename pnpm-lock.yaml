@@ -152,7 +152,7 @@ importers:
         version: 5.3.1
       '@patternfly/react-code-editor':
         specifier: ^5.3.3
-        version: 5.3.3(monaco-editor@0.48.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 5.3.3(monaco-editor@0.49.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core':
         specifier: ^5.3.3
         version: 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -193,8 +193,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       monaco-editor:
-        specifier: ^0.48.0
-        version: 0.48.0
+        specifier: ^0.49.0
+        version: 0.49.0
       p-debounce:
         specifier: ^4.0.0
         version: 4.0.0
@@ -3753,8 +3753,8 @@ packages:
   moment@2.30.1:
     resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
 
-  monaco-editor@0.48.0:
-    resolution: {integrity: sha512-goSDElNqFfw7iDHMg8WDATkfcyeLTNpBHQpO8incK6p5qZt5G/1j41X0xdGzpIkGojGXM+QiRQyLjnfDVvrpwA==}
+  monaco-editor@0.49.0:
+    resolution: {integrity: sha512-2I8/T3X/hLxB2oPHgqcNYUVdA/ZEFShT7IAujifIPMfKkNbLOqY8XCoyHCXrsdjb36dW9MwoTwBCFpXKMwNwaQ==}
 
   ms@2.1.2:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
@@ -5517,15 +5517,15 @@ snapshots:
 
   '@microsoft/tsdoc@0.14.2': {}
 
-  '@monaco-editor/loader@1.4.0(monaco-editor@0.48.0)':
+  '@monaco-editor/loader@1.4.0(monaco-editor@0.49.0)':
     dependencies:
-      monaco-editor: 0.48.0
+      monaco-editor: 0.49.0
       state-local: 1.0.7
 
-  '@monaco-editor/react@4.6.0(monaco-editor@0.48.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@monaco-editor/react@4.6.0(monaco-editor@0.49.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@monaco-editor/loader': 1.4.0(monaco-editor@0.48.0)
-      monaco-editor: 0.48.0
+      '@monaco-editor/loader': 1.4.0(monaco-editor@0.49.0)
+      monaco-editor: 0.49.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
@@ -5608,9 +5608,9 @@ snapshots:
 
   '@patternfly/patternfly@5.3.1': {}
 
-  '@patternfly/react-code-editor@5.3.3(monaco-editor@0.48.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@patternfly/react-code-editor@5.3.3(monaco-editor@0.49.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@monaco-editor/react': 4.6.0(monaco-editor@0.48.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@monaco-editor/react': 4.6.0(monaco-editor@0.49.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.3.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.3.1
@@ -6578,7 +6578,7 @@ snapshots:
       '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
       '@patternfly/patternfly': 5.3.1
-      '@patternfly/react-code-editor': 5.3.3(monaco-editor@0.48.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-code-editor': 5.3.3(monaco-editor@0.49.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-core': 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.3.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.3.1
@@ -6591,7 +6591,7 @@ snapshots:
       i18next-http-backend: 2.5.2
       keycloak-js: link:js/libs/keycloak-js
       lodash-es: 4.17.21
-      monaco-editor: 0.48.0
+      monaco-editor: 0.49.0
       p-debounce: 4.0.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -8763,7 +8763,7 @@ snapshots:
   moment@2.30.1:
     optional: true
 
-  monaco-editor@0.48.0: {}
+  monaco-editor@0.49.0: {}
 
   ms@2.1.2: {}
 
