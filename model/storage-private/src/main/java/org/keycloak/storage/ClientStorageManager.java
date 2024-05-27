@@ -274,6 +274,11 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
+    public void addClientScopeToAllClients(RealmModel realm, ClientScopeModel clientScope, boolean defaultClientScope) {
+        localStorage().addClientScopeToAllClients(realm, clientScope, defaultClientScope);
+    }
+
+    @Override
     public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
         return localStorage().getAllRedirectUrisOfEnabledClients(realm);
     }

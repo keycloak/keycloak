@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-core</module>
         <module>js</module>
     </modules>
 </project>

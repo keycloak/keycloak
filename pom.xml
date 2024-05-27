@@ -972,11 +972,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-adapter-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-client-jee</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1755,6 +1750,13 @@
             </activation>
             <modules>
                 <module>testsuite</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>test-poc</id>
+            <modules>
+                <module>test-poc</module>
             </modules>
         </profile>
 

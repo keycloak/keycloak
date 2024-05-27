@@ -865,7 +865,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
                     } catch (JWSInputException cause) {
                         throw new RuntimeException(cause);
                     }
-                    return new RefreshableKeycloakSecurityContext(deployment, null, token, accessToken, null, null, null);
+                    return new RefreshableKeycloakSecurityContext(deployment, token, accessToken, null, null, null);
                 }
                 return null;
             }

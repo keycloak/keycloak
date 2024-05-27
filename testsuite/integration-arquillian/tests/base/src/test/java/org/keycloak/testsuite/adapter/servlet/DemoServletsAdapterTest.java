@@ -35,7 +35,6 @@ import org.junit.Before;
 import org.junit.After;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
@@ -661,14 +660,14 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             assertEquals(401, response.getStatus());
             String errorPageResponse = response.readEntity(String.class);
             assertThat(errorPageResponse, containsString("Error Page"));
-            assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN.toString()));
+            assertThat(errorPageResponse, containsString("NO_BEARER_TOKEN"));
         }
 
         try (Response response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get()) {
             assertEquals(401, response.getStatus());
             String errorPageResponse = response.readEntity(String.class);
             assertThat(errorPageResponse, containsString("Error Page"));
-            assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.INVALID_TOKEN.toString()));
+            assertThat(errorPageResponse, containsString("INVALID_TOKEN"));
         }
         
         client.close();

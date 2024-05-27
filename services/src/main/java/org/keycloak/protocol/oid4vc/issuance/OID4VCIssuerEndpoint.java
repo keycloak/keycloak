@@ -373,11 +373,15 @@ public class OID4VCIssuerEndpoint {
 
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers
+                .stream()
+                .filter(mapper -> mapper.isTypeSupported(vcType))
                 .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, userSessionModel));
 
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
+                .stream()
+                .filter(mapper -> mapper.isTypeSupported(vcType))
                 .forEach(mapper -> mapper.setClaimsForCredential(vc, userSessionModel));
 
         LOGGER.debugf("The credential to sign is: %s", vc);

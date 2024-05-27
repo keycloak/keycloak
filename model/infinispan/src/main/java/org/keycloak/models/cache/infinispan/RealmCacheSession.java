@@ -1455,6 +1455,16 @@ public class RealmCacheSession implements CacheRealmProvider {
         return assignedScopes;
     }
 
+    @Override
+    public void addClientScopeToAllClients(RealmModel realm, ClientScopeModel clientScope, boolean defaultClientScope) {
+        getClientDelegate().addClientScopeToAllClients(realm, clientScope, defaultClientScope);
+
+        // This will make sure to all invalidate all clients dependent on clientScope
+        listInvalidations.add(realm.getId());
+        cache.clientScopeRemoval(realm.getId(), invalidations);
+        invalidationEvents.add(ClientScopeRemovedEvent.create(clientScope.getId(), realm.getId()));
+    }
+
     // Don't cache ClientInitialAccessModel for now
     @Override
     public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
