@@ -290,7 +290,7 @@
                                         <outputDirectory>${containers.home}/auth-server-undertow</outputDirectory>
                                     </artifactItem>
                                 </artifactItems>
-                                <includes>*.jks,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
+                                <includes>*.jks,*.p12,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
                                 <skip>${auth.server.undertow.skip.unpack}</skip>
                             </configuration>
                         </execution>
@@ -1625,11 +1625,6 @@
                 <dependency>
                     <groupId>org.jboss.arquillian.protocol</groupId>
                     <artifactId>arquillian-protocol-servlet</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.extension</groupId>
-                    <artifactId>arquillian-phantom-driver</artifactId>
-                    <version>1.2.1.Final</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
