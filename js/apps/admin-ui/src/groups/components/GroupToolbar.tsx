@@ -51,6 +51,8 @@ export const GroupToolbar = ({
               isExpanded={openKebab}
               onClick={toggleKebab}
               isDisabled={kebabDisabled}
+              variant="plain"
+              aria-label="Actions"
             >
               <EllipsisVIcon />
             </MenuToggle>

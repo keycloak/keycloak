@@ -1,7 +1,7 @@
 export default class PageObject {
   #selectItemSelectedIcon = ".pf-v5-c-menu-toggle__toggle-icon";
-  #drpDwnMenuList = ".pf-v5-c-dropdown__menu";
-  #drpDwnMenuItem = ".pf-v5-c-dropdown__menu-item";
+  #drpDwnMenuList = ".pf-v5-c-menu__list";
+  #drpDwnMenuItem = ".pf-v5-c-menu__item";
   #drpDwnMenuToggleBtn = ".pf-v5-c-menu-toggle";
   #selectMenuList = ".pf-v5-c-menu__list";
   #selectMenuItem = ".pf-v5-c-menu__list-item";

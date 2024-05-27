@@ -112,8 +112,9 @@ const GroupTreeContextMenu = ({
             onClick={toggleOpen}
             isExpanded={isOpen}
             variant="plain"
+            aria-label="Actions"
           >
-            <EllipsisVIcon />{" "}
+            <EllipsisVIcon />
           </MenuToggle>
         )}
         isOpen={isOpen}

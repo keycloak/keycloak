@@ -211,6 +211,7 @@ export const Members = () => {
                       onClick={() => setIsKebabOpen(!isKebabOpen)}
                       isExpanded={isKebabOpen}
                       isDisabled={selectedRows.length === 0}
+                      aria-label="Actions"
                     >
                       <EllipsisVIcon />
                     </MenuToggle>
