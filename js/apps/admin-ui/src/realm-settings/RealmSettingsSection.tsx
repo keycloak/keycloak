@@ -17,6 +17,7 @@ export default function RealmSettingsSection() {
   const refresh = () => {
     setKey(key + 1);
     setRealm(undefined);
+    console.log("test");
   };
 
   useFetch(() => adminClient.realms.findOne({ realm: realmName }), setRealm, [
