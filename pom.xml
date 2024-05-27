@@ -159,8 +159,8 @@
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
-        <postgresql.version>15</postgresql.version>
-        <aurora-postgresql.version>15.3</aurora-postgresql.version>
+        <postgresql.version>16</postgresql.version>
+        <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.2</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
