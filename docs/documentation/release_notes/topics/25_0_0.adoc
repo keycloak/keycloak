@@ -213,3 +213,7 @@ As a consequence of the removal of deprecated methods from `AccessToken`, `IDTok
 the `SingleUseObjectKeyModel` also changed to keep consistency with the method names related to expiration values.
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Support for PostgreSQL 16
+
+The supported and tested databases now include PostgreSQL 16.
