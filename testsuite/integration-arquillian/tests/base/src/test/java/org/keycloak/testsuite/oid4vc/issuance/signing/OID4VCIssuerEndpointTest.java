@@ -20,6 +20,11 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -44,6 +49,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -62,7 +68,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
@@ -373,7 +381,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         // 1. Retrieving the credential-offer-uri
         HttpGet getCredentialOfferURI = new HttpGet(getBasePath(TEST_REALM_NAME) + "credential-offer-uri?credential_configuration_id=test-credential");
-        getCredentialOfferURI.addHeader("Authorization", "Bearer " + token);
+        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
 
         assertEquals("A valid offer uri should be returned", HttpStatus.SC_OK, credentialOfferURIResponse.getStatusLine().getStatusCode());
@@ -382,7 +390,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         // 2. Using the uri to get the actual credential offer
         HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
-        getCredentialOffer.addHeader("Authorization", "Bearer " + token);
+        getCredentialOffer.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
 
         assertEquals("A valid offer should be returned", HttpStatus.SC_OK, credentialOfferResponse.getStatusLine().getStatusCode());
@@ -434,6 +442,62 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
 
+    // Tests the AuthZCode complete flow without scope from
+    // 1. Get authorization code without scope specified by wallet
+    // 2. Using the code to get access token 
+    // 3. Get the credential configuration id from issuer metadata at .wellKnown
+    // 4. With the access token, get the credential
+    @Test
+    public void testCredentialIssuanceWithAuthZCode() throws Exception {
+
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+            URI oid4vciDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build(TEST_REALM_NAME, OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID);
+            WebTarget oid4vciDiscoveryTarget = client.target(oid4vciDiscoveryUri);
+
+            // 1. Get authoriZation code without scope specified by wallet
+            // 2. Using the code to get accesstoken
+            String token = getBearerToken(oauth.openid(false).scope(null));
+
+            // 3. Get the credential configuration id from issuer metadata at .wellKnown
+            try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
+                CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(discoveryResponse.readEntity(String.class), CredentialIssuer.class);
+                assertEquals(200, discoveryResponse.getStatus());
+                assertEquals(getRealmPath(TEST_REALM_NAME), oid4vciIssuerConfig.getCredentialIssuer());
+                assertEquals(getBasePath(TEST_REALM_NAME) + "credential", oid4vciIssuerConfig.getCredentialEndpoint());
+
+                // 4. With the access token, get the credential
+                try (Client clientForCredentialRequest = AdminClientUtil.createResteasyClient()) {
+                    UriBuilder credentialUriBuilder = UriBuilder.fromUri(oid4vciIssuerConfig.getCredentialEndpoint());
+                    URI credentialUri = credentialUriBuilder.build();
+                    WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
+
+                    CredentialRequest request = new CredentialRequest();
+                    request.setFormat(oid4vciIssuerConfig.getCredentialsSupported().get("test-credential").getFormat());
+                    request.setCredentialIdentifier(oid4vciIssuerConfig.getCredentialsSupported().get("test-credential").getId());
+
+                    assertEquals("jwt_vc", oid4vciIssuerConfig.getCredentialsSupported().get("test-credential").getFormat().toString());
+                    assertEquals("test-credential", oid4vciIssuerConfig.getCredentialsSupported().get("test-credential").getId());
+
+                    try (Response response = credentialTarget.request().header(HttpHeaders.AUTHORIZATION, "bearer " + token).post(Entity.json(request))) {
+                        CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),CredentialResponse.class);
+
+                        assertEquals(200, response.getStatus());
+                        JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
+                        assertEquals("did:web:test.org", jsonWebToken.getIssuer());
+
+                        VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                        assertEquals(TEST_TYPES, credential.getType());
+                        assertEquals(TEST_DID, credential.getIssuer());
+                        assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+                    }
+                }
+            }
+        }
+    }
+
+
+
     private static String prepareNonce(AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
         String nonce = SecretGenerator.getInstance().randomString();
         AuthenticationManager.AuthResult authResult = authenticator.authenticate();
@@ -461,7 +525,11 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     private String getBasePath(String realm) {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + realm + "/protocol/oid4vc/";
+        return getRealmPath(realm) + "/protocol/oid4vc/";
+    }
+
+    private String getRealmPath(String realm){
+        return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + realm;
     }
 
     private void requestOffer(String token, String credentialEndpoint, SupportedCredentialConfiguration offeredCredential) throws IOException, VerificationException {
@@ -472,7 +540,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         StringEntity stringEntity = new StringEntity(OBJECT_MAPPER.writeValueAsString(request), ContentType.APPLICATION_JSON);
 
         HttpPost postCredential = new HttpPost(credentialEndpoint);
-        postCredential.addHeader("Authorization", "Bearer " + token);
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         postCredential.setEntity(stringEntity);
         CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential);
         assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusLine().getStatusCode());
