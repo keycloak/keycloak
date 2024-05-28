@@ -183,14 +183,15 @@ export const localeToDisplayName = (locale: string, displayLocale: string) => {
 };
 
 const DARK_MODE_CLASS = "pf-v5-theme-dark";
-const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+const mediaQuery =
+  window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 
-updateDarkMode(mediaQuery.matches);
-mediaQuery.addEventListener("change", (event: MediaQueryListEvent) =>
+updateDarkMode(mediaQuery?.matches);
+mediaQuery?.addEventListener("change", (event: MediaQueryListEvent) =>
   updateDarkMode(event.matches),
 );
 
-function updateDarkMode(isEnabled: boolean) {
+function updateDarkMode(isEnabled: boolean = false) {
   const { classList } = document.documentElement;
 
   if (isEnabled) {
