@@ -14,9 +14,6 @@ export const EventListenersForm = ({
   reset,
 }: EventListenersFormProps) => {
   const { t } = useTranslation();
-  const {
-    formState: { isDirty },
-  } = form;
 
   const serverInfo = useServerInfo();
   const eventListeners = serverInfo.providers?.eventsListener.providers;
@@ -44,7 +41,6 @@ export const EventListenersForm = ({
           variant="primary"
           type="submit"
           data-testid={"saveEventListenerBtn"}
-          isDisabled={!isDirty}
         >
           {t("save")}
         </Button>

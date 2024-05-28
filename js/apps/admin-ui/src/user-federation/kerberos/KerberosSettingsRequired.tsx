@@ -1,4 +1,3 @@
-import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   HelpItem,
   SelectControl,
@@ -6,6 +5,7 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import { FormGroup, Switch } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
+import { useEffect } from "react";
 import {
   Controller,
   FormProvider,

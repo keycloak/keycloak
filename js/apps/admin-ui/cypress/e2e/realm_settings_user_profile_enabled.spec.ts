@@ -136,7 +136,6 @@ describe("User profile tabs", () => {
     });
   });
 
-  // MF 052224 - select/dropdown issues fixed but most of these fail locally with network issue
   describe.skip("Check attributes are displayed and editable on user create/edit", () => {
     it.skip("Checks that not required attribute is not present when user is created with email as username and edit username set to disabled", () => {
       const attrName = "newAttribute1";

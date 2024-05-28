@@ -1,6 +1,5 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   FormErrorText,
   HelpItem,
@@ -39,12 +38,13 @@ import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import useToggle from "../../../utils/useToggle";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
-import "../../realm-settings-section.css";
 import { AttributeParams } from "../../routes/Attribute";
 import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./AddTranslationsDialog";
+
+import "../../realm-settings-section.css";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
