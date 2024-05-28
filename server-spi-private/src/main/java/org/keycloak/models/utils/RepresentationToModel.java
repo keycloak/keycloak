@@ -138,11 +138,12 @@ public class RepresentationToModel {
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
         KeycloakContext context = session.getContext();
+        RealmModel originalRealm = context.getRealm();
         try {
             context.setRealm(newRealm);
             session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
         } finally {
-            context.setRealm(null);
+            context.setRealm(originalRealm);
         }
     }
 

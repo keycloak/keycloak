@@ -178,8 +178,7 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
             // success
         }
 
-        OrganizationRepresentation org = createOrganization();
-        UserRepresentation userRep = addMember(testRealm().organizations().get(org.getId()));
+        UserRepresentation userRep = addMember(createOrganization().getId());
 
         try {
             // cannot join organization related group
@@ -193,13 +192,13 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
     @Test
     public void testManagingOrganizationGroupNotInOrganizationScope() {
         String id = createOrganization().getId();
-        String memberId = addMember(testRealm().organizations().get(id)).getId();
+        String memberId = addMember(id).getId();
 
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
             OrganizationModel organization = provider.getById(id);
-            RealmModel realm = session.getContext().getRealm();
-            GroupModel orgGroup = session.groups().getGroupByName(realm, null, organization.getId());
+            RealmModel realmModel = session.getContext().getRealm();
+            GroupModel orgGroup = session.groups().getGroupByName(realmModel, null, organization.getId());
 
             try {
                 orgGroup.setName("fail");
@@ -213,7 +212,7 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
             } catch (ModelValidationException ignore) {
             }
 
-            GroupModel child = realm.createGroup("child");
+            GroupModel child = realmModel.createGroup("child");
 
             try {
                 orgGroup.addChild(child);
@@ -221,27 +220,27 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
             } catch (ModelValidationException ignore) {
             }
 
-            GroupModel parent = realm.createGroup("parent");
+            GroupModel parent = realmModel.createGroup("parent");
 
             try {
-                realm.moveGroup(orgGroup, parent);
+                realmModel.moveGroup(orgGroup, parent);
                 fail("can not manage");
             } catch (ModelValidationException ignore) {
             }
 
             try {
-                realm.removeGroup(orgGroup);
+                realmModel.removeGroup(orgGroup);
                 fail("can not manage");
             } catch (ModelValidationException ignore) {
             }
 
             try {
-                realm.addDefaultGroup(orgGroup);
+                realmModel.addDefaultGroup(orgGroup);
                 fail("can not manage");
             } catch (ModelValidationException ignore) {
             }
 
-            UserModel user = session.users().getUserByUsername(realm, "john-doh@localhost");
+            UserModel user = session.users().getUserByUsername(realmModel, "john-doh@localhost");
             assertNotNull(user);
             try {
                 user.joinGroup(orgGroup);
@@ -249,7 +248,7 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
             } catch (ModelValidationException ignore) {
             }
 
-            UserModel member = session.users().getUserById(realm, memberId);
+            UserModel member = session.users().getUserById(realmModel, memberId);
             assertNotNull(user);
             try {
                 member.leaveGroup(orgGroup);
@@ -257,12 +256,5 @@ public class OrganizationGroupTest extends AbstractOrganizationTest {
             } catch (ModelValidationException ignore) {
             }
         });
-    }
-
-    @Override
-    protected OrganizationRepresentation createRepresentation(String name, String... orgDomains) {
-        OrganizationRepresentation rep = super.createRepresentation(name, orgDomains);
-        rep.setAttributes(Map.of());
-        return rep;
     }
 }

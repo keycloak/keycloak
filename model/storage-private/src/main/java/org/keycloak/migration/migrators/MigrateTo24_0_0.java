@@ -57,6 +57,8 @@ public class MigrateTo24_0_0 implements Migration {
 
     private void migrateRealm(KeycloakSession session, RealmModel realm) {
         KeycloakContext context = session.getContext();
+        RealmModel originalRealm = context.getRealm();
+
         try {
             context.setRealm(realm);
             updateUserProfileSettings(session);
@@ -64,7 +66,7 @@ public class MigrateTo24_0_0 implements Migration {
             createHS512ComponentModelKey(session);
             bindFirstBrokerLoginFlow(session);
         } finally {
-            context.setRealm(null);
+            context.setRealm(originalRealm);
         }
     }
 

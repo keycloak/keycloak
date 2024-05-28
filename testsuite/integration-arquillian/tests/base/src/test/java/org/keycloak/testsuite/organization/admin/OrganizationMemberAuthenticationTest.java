@@ -23,7 +23,6 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import java.io.IOException;
 import org.hamcrest.Matchers;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -35,8 +34,7 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
 
     @Test
     public void testAuthenticateUnmanagedMember() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation member = addMember(organization, "contractor@contractor.org");
+        UserRepresentation member = addMember(createOrganization().getId(), "contractor@contractor.org");
 
         // first try to log in using only the email
         oauth.clientId("broker-app");
@@ -61,7 +59,7 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
 
     @Test
     public void testTryLoginWithUsernameNotAnEmail() {
-        testRealm().organizations().get(createOrganization().getId());
+        createOrganization().getId();
         oauth.clientId("broker-app");
 
         // login with email only
@@ -77,7 +75,7 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
 
     @Test
     public void testDefaultAuthenticationMechanismIfNotOrganizationMember() {
-        testRealm().organizations().get(createOrganization().getId());
+        createOrganization().getId();
         oauth.clientId("broker-app");
 
         // login with email only
@@ -92,9 +90,8 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
     }
 
     @Test
-    public void testAuthenticateUnmanagedMemberWehnProviderDisabled() throws IOException {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation member = addMember(organization, "contractor@contractor.org");
+    public void testAuthenticateUnmanagedMemberWhenProviderDisabled() throws IOException {
+        UserRepresentation member = addMember(createOrganization().getId(), "contractor@contractor.org");
 
         // first try to access login page
         oauth.clientId("broker-app");

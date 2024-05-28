@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.UriBuilder;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
@@ -51,8 +50,7 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testAttribute() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        addMember(organization);
+        addMember(createOrganization().getId());
         String clientId = "saml-client";
         testRealm().clients().create(ClientBuilder.create()
                 .protocol(SamlProtocol.LOGIN_PROTOCOL)

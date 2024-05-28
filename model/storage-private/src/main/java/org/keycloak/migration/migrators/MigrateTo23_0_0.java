@@ -54,13 +54,14 @@ public class MigrateTo23_0_0 implements Migration {
 
     private void migrateRealm(KeycloakSession session, RealmModel realm) {
         KeycloakContext context = session.getContext();
+        RealmModel originalRealm = context.getRealm();
 
         try {
             context.setRealm(realm);
             updateUserProfileConfig(realm);
             removeRegistrationProfileFormExecution(realm);
         } finally {
-            context.setRealm(null);
+            context.setRealm(originalRealm);
         }
     }
 

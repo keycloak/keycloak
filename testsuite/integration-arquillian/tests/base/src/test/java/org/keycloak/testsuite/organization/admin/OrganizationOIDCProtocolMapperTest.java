@@ -26,7 +26,6 @@ import java.util.Map;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
-import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -37,8 +36,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testClaim() throws Exception {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        addMember(organization);
+        addMember(createOrganization().getId());
 
         oauth.clientId("direct-grant");
         oauth.scope("openid organization");

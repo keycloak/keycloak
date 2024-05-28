@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.Function;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.OrganizationModel;
@@ -49,7 +50,6 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
-import org.keycloak.testsuite.util.TestCleanup;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -102,33 +102,31 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         return createOrganization(testRealm(), name, orgDomains);
     }
 
-    protected OrganizationRepresentation createOrganization(RealmResource realm, String name, String... orgDomains) {
-        return createOrganization(realm, getCleanup(), name, brokerConfigFunction.apply(name).setUpIdentityProvider(), orgDomains);
-    }
-
-    protected OrganizationRepresentation createOrganization(RealmResource testRealm, TestCleanup testCleanup, String name,
-                                                                   IdentityProviderRepresentation broker, String... orgDomains) {
+    protected OrganizationRepresentation createOrganization(RealmResource realmResource, String name, String... orgDomains) {
         OrganizationRepresentation org = createRepresentation(name, orgDomains);
         String id;
+        String realmName = realmResource.toRepresentation().getRealm();
 
-        try (Response response = testRealm.organizations().create(org)) {
+        try (Response response = realmResource.organizations().create(org)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             id = ApiUtil.getCreatedId(response);
         }
         // set the idp domain to the first domain used to create the org.
+        IdentityProviderRepresentation broker = brokerConfigFunction.apply(name).setUpIdentityProvider();
         broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-        testRealm.identityProviders().create(broker).close();
-        testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
-        testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
-        org = testRealm.organizations().get(id).toRepresentation();
-        testCleanup.addCleanup(() -> testRealm.organizations().get(id).delete().close());
+        realmResource.identityProviders().create(broker).close();
+        getCleanup(realmName).addCleanup(realmResource.identityProviders().get(broker.getAlias())::remove);
+        realmResource.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+        org = realmResource.organizations().get(id).toRepresentation();
+        getCleanup(realmName).addCleanup(() -> realmResource.organizations().get(id).delete().close());
 
         return org;
     }
 
-    protected OrganizationRepresentation createRepresentation(String name, String... orgDomains) {
+    public static OrganizationRepresentation createRepresentation(String name, String... orgDomains) {
         OrganizationRepresentation org = new OrganizationRepresentation();
         org.setName(name);
+        org.setAttributes(Map.of());
 
         for (String orgDomain : orgDomains) {
             OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
@@ -139,15 +137,18 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         return org;
     }
 
-    protected UserRepresentation addMember(OrganizationResource organization) {
-        return addMember(organization, memberEmail);
+    protected UserRepresentation addMember(String orgId) {
+        return addMember(orgId, memberEmail);
     }
-
-    protected UserRepresentation addMember(OrganizationResource organization, String email) {
-        return addMember(organization, email, null, null);
+    protected UserRepresentation addMember(String orgId, String email) {
+        return addMember(orgId, email, null, null);
     }
+    protected UserRepresentation addMember(String orgId, String email, String firstName, String lastName) {
+        return addMember(testRealm(), orgId, email, firstName, lastName);
+    }
+    protected UserRepresentation addMember(RealmResource realmResource, String orgId, String email, String firstName, String lastName) {
+        String realmName = realm.toRepresentation().getRealm();
 
-    protected UserRepresentation addMember(OrganizationResource organization, String email, String firstName, String lastName) {
         UserRepresentation expected = new UserRepresentation();
 
         expected.setEmail(email);
@@ -157,14 +158,15 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         expected.setLastName(lastName);
         Users.setPasswordFor(expected, memberPassword);
 
-        try (Response response = testRealm().users().create(expected)) {
+        try (Response response = realmResource.users().create(expected)) {
             expected.setId(ApiUtil.getCreatedId(response));
         }
 
-        getCleanup().addCleanup(() -> testRealm().users().get(expected.getId()).remove());
+        getCleanup(realmName).addCleanup(() -> realmResource.users().get(expected.getId()).remove());
 
         String userId = expected.getId();
 
+        OrganizationResource organization = realmResource.organizations().get(orgId);
         try (Response response = organization.members().addMember(userId)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             UserRepresentation actual = organization.members().member(userId).toRepresentation();

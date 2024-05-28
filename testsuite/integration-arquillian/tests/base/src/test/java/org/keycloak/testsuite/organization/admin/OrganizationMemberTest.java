@@ -65,8 +65,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testUpdate() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        String orgId = createOrganization().getId();
+        UserRepresentation expected = addMember(orgId);
 
         expected.setFirstName("f");
         expected.setLastName("l");
@@ -74,6 +74,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         testRealm().users().get(expected.getId()).update(expected);
 
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         UserRepresentation existing = organization.members().member(expected.getId()).toRepresentation();
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getUsername(), existing.getUsername());
@@ -87,8 +88,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         testRealm().users().userProfile().update(upConfig);
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        UserRepresentation expected = addMember(createOrganization().getId());
         List<String> expectedOrganizations = expected.getAttributes().get(ORGANIZATION_ATTRIBUTE);
 
         expected.singleAttribute(ORGANIZATION_ATTRIBUTE, "invalid");
@@ -120,9 +120,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         testRealm().users().userProfile().update(upConfig);
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization, KeycloakModelUtils.generateId() + "@user.org");
+        String orgId = createOrganization().getId();
+        UserRepresentation expected = addMember(orgId, KeycloakModelUtils.generateId() + "@user.org");
 
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         try (Response response = organization.members().addMember(expected.getId())) {
             assertEquals(Status.CONFLICT.getStatusCode(), response.getStatus());
         }
@@ -130,8 +131,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGet() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        String orgId = createOrganization().getId();
+        UserRepresentation expected = addMember(orgId);
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         UserRepresentation existing = organization.members().member(expected.getId()).toRepresentation();
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getUsername(), existing.getUsername());
@@ -140,8 +142,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetMemberOrganization() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation member = addMember(organization);
+        String orgId = createOrganization().getId();
+        UserRepresentation member = addMember(orgId);
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         OrganizationRepresentation expected = organization.toRepresentation();
         OrganizationRepresentation actual = organization.members().getOrganization(member.getId());
         assertNotNull(actual);
@@ -150,13 +153,14 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAll() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        String orgId = createOrganization().getId();
         List<UserRepresentation> expected = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
-            expected.add(addMember(organization, "member-" + i + "@neworg.org"));
+            expected.add(addMember(orgId, "member-" + i + "@neworg.org"));
         }
 
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         List<UserRepresentation> existing = organization.members().getAll();
         assertFalse(existing.isEmpty());
         assertEquals(expected.size(), existing.size());
@@ -175,13 +179,13 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testGetAllDisabledOrganization() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
 
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {
-            addMember(organization, "member-" + i + "@neworg.org");
+            addMember(orgRep.getId(), "member-" + i + "@neworg.org");
         }
 
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         // onboard a test user by authenticating using the organization's provider.
         super.assertBrokerRegistration(organization, bc.getUserEmail());
 
@@ -234,13 +238,13 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testGetAllDisabledOrganizationProvider() throws IOException {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
-
+        
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {
-            addMember(organization, "member-" + i + "@neworg.org");
+            addMember(orgRep.getId(), "member-" + i + "@neworg.org");
         }
 
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         // onboard a test user by authenticating using the organization's provider.
         super.assertBrokerRegistration(organization, bc.getUserEmail());
 
@@ -277,9 +281,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     public void testDeleteUnmanagedMember() {
         UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        String orgId = createOrganization().getId();
+        UserRepresentation expected = addMember(orgId);
         assertNotNull(expected.getAttributes());
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         assertTrue(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE).contains(organization.toRepresentation().getId()));
         OrganizationMemberResource member = organization.members().member(expected.getId());
 
@@ -300,8 +305,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testUpdateEmailUnmanagedMember() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        UserRepresentation expected = addMember(organization);
+        UserRepresentation expected = addMember(createOrganization().getId());
         expected.setEmail("some@unknown.org");
         UserResource userResource = testRealm().users().get(expected.getId());
         userResource.update(expected);
@@ -313,13 +317,14 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testDeleteMembersOnOrganizationRemoval() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        String orgId = createOrganization().getId();
         List<UserRepresentation> expected = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
-            expected.add(addMember(organization, "member-" + i + "@neworg.org"));
+            expected.add(addMember(orgId, "member-" + i + "@neworg.org"));
         }
 
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         organization.delete().close();
 
         for (UserRepresentation member : expected) {
@@ -346,28 +351,29 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testDeleteGroupOnOrganizationRemoval() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        addMember(organization);
+        String orgId = createOrganization().getId();
+        addMember(orgId);
 
         assertTrue(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
 
-        organization.delete().close();
+        testRealm().organizations().get(orgId).delete().close();
 
         assertFalse(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
     }
 
     @Test
     public void testSearchMembers() {
+        String orgId = createOrganization().getId();
 
         // create test users, ordered by username (e-mail).
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         List<UserRepresentation> expected = new ArrayList<>();
-        expected.add(addMember(organization, "batwoman@neworg.org", "Katherine", "Kane"));
-        expected.add(addMember(organization, "brucewayne@neworg.org", "Bruce", "Wayne"));
-        expected.add(addMember(organization, "harveydent@neworg.org", "Harvey", "Dent"));
-        expected.add(addMember(organization, "marthaw@neworg.org", "Martha", "Wayne"));
-        expected.add(addMember(organization, "thejoker@neworg.org", "Jack", "White"));
+        expected.add(addMember(orgId, "batwoman@neworg.org", "Katherine", "Kane"));
+        expected.add(addMember(orgId, "brucewayne@neworg.org", "Bruce", "Wayne"));
+        expected.add(addMember(orgId, "harveydent@neworg.org", "Harvey", "Dent"));
+        expected.add(addMember(orgId, "marthaw@neworg.org", "Martha", "Wayne"));
+        expected.add(addMember(orgId, "thejoker@neworg.org", "Jack", "White"));
 
+        OrganizationResource organization = testRealm().organizations().get(orgId);
         // exact search - username/e-mail, first name, last name.
         List<UserRepresentation> existing = organization.members().search("brucewayne@neworg.org", true, null, null);
         assertThat(existing, hasSize(1));
@@ -446,14 +452,14 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
             OrganizationModel organization = provider.getById(orgId);
 
-            RealmModel realm = session.realms().getRealmByName("master");
-            session.users().addUser(realm, "master-test-user");
+            RealmModel realmModel = session.realms().getRealmByName("master");
+            session.users().addUser(realmModel, "master-test-user");
             UserModel user = null;
             try {
-                user = session.users().getUserByUsername(realm, "master-test-user");
+                user = session.users().getUserByUsername(realmModel, "master-test-user");
                 assertFalse(provider.addMember(organization, user));
             } finally {
-                session.users().removeUser(realm, user);
+                session.users().removeUser(realmModel, user);
             }
         });
     }

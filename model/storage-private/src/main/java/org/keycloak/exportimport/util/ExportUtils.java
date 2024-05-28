@@ -31,6 +31,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -40,6 +41,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
@@ -60,8 +62,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -255,7 +256,36 @@ public class ExportUtils {
         // Message Bundle
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
 
+        stripOrgRelatedAttributes(rep);
+
         return rep;
+    }
+
+    private static void stripOrgRelatedAttributes(RealmRepresentation rep) {
+        //IdPs
+        if (rep.getIdentityProviders() != null) {
+            rep.getIdentityProviders().forEach(idp -> {
+                idp.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+                idp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+            });
+        }
+
+        // Organization groups
+        if (rep.getGroups() != null) {
+            List<GroupRepresentation> filteredGroups = rep.getGroups().stream()
+                    .filter(group -> !group.getAttributes().containsKey(OrganizationModel.ORGANIZATION_ATTRIBUTE))
+                    .collect(Collectors.toList());
+            rep.setGroups(filteredGroups);
+        }
+
+        // Members
+        if (rep.getUsers() != null) {
+            rep.getUsers().forEach(user -> {
+                if (user.getAttributes() != null) {
+                    user.getAttributes().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+                }
+            });
+        }
     }
 
     public static MultivaluedHashMap<String, ComponentExportRepresentation> exportComponents(RealmModel realm, String parentId) {
