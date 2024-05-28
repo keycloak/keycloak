@@ -32,6 +32,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -68,6 +69,8 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         try {
             accessToken = verifyAccessToken(token, eventBuilder, false);
             UserSessionModel userSession = tokenManager.getValidUserSessionIfTokenIsValid(session, realm, accessToken, eventBuilder);
+
+            ClientModel client = session.getContext().getClient();
 
             ObjectNode tokenMetadata;
             if (userSession != null) {
@@ -109,7 +112,8 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             tokenMetadata.put("active", userSession != null);
 
             // if consumer requests application/jwt return a JWT representation of the introspection contents in an jwt field
-            if (org.keycloak.utils.MediaType.APPLICATION_JWT.equals(session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT))) {
+            boolean isJwtRequest = org.keycloak.utils.MediaType.APPLICATION_JWT.equals(session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT));
+            if (isJwtRequest && Boolean.parseBoolean(client.getAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED))) {
                 // consumers can use this to convert an opaque token into an JWT based token
                 tokenMetadata.put("jwt", session.tokens().encode(accessToken));
             }
