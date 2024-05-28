@@ -226,14 +226,6 @@
         <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
         <chromeDriverVersion/>
 
-        <appium.platformName/>
-        <appium.deviceName/>
-        <appium.browserName/>
-        <appium.avd/>
-        <appium.automationName/>
-        <appium.noReset/>
-        <appium.fullReset/>
-
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
 
@@ -601,14 +593,6 @@
                             <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
                             <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
                             <firefoxHeadless>${firefoxHeadless}</firefoxHeadless>
-
-                            <appium.platformName>${appium.platformName}</appium.platformName>
-                            <appium.deviceName>${appium.deviceName}</appium.deviceName>
-                            <appium.browserName>${appium.browserName}</appium.browserName>
-                            <appium.avd>${appium.avd}</appium.avd>
-                            <appium.automationName>${appium.automationName}</appium.automationName>
-                            <appium.noReset>${appium.noReset}</appium.noReset>
-                            <appium.fullReset>${appium.fullReset}</appium.fullReset>
 
                             <project.version>${project.version}</project.version>
 
@@ -1645,12 +1629,6 @@
                             <artifactId>guava</artifactId>
                         </exclusion>
                     </exclusions>
-                </dependency>
-
-                <dependency>
-                    <groupId>io.appium</groupId>
-                    <artifactId>java-client</artifactId>
-                    <version>${appium.client.version}</version>
                 </dependency>
 
                 <!--

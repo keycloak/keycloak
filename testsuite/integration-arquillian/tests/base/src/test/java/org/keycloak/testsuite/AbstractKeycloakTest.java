@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite;
 
-import io.appium.java_client.AppiumDriver;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -302,24 +301,6 @@ public abstract class AbstractKeycloakTest {
 
     protected void resetRealmSession(String realmName) {
         deleteAllCookiesForRealm(realmName);
-
-        if (driver instanceof AppiumDriver) { // smartphone drivers don't support cookies deletion
-            try {
-                log.info("resetting realm session");
-
-                final RealmRepresentation realmRep = adminClient.realm(realmName).toRepresentation();
-
-                deleteAllSessionsInRealm(realmName); // logout users
-
-                if (realmRep.isInternationalizationEnabled()) { // reset the locale
-                    String locale = getDefaultLocaleName(realmRep.getRealm());
-                    loginPage.localeDropdown().selectByText(locale);
-                    log.info("locale reset to " + locale);
-                }
-            } catch (NotFoundException e) {
-                log.warn("realm not found");
-            }
-        }
     }
 
     protected String getDefaultLocaleName(String realmName) {

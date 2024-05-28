@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import io.appium.java_client.android.AndroidDriver;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
@@ -140,12 +139,6 @@ public final class UIUtils {
         else { // just clearing the input; input.clear() may not fire all JS events so we need to let the page know that something's changed
             input.sendKeys("1");
             input.sendKeys(Keys.BACK_SPACE);
-        }
-
-        WebDriver driver = getCurrentDriver();
-        if (driver instanceof AndroidDriver) {
-            AndroidDriver androidDriver = (AndroidDriver) driver;
-            androidDriver.hideKeyboard(); // stability improvement
         }
     }
 

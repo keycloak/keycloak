@@ -52,7 +52,6 @@ public class KeycloakWebDriverConfigurator {
 
         DesiredCapabilities capabilitiesToAdd = new DesiredCapabilities();
         updateCapabilityKeys("htmlUnit", webDriverCfg, capabilitiesToAdd);
-        updateCapabilityKeys("appium", webDriverCfg, capabilitiesToAdd);
         configurePhantomJSDriver(webDriverCfg, capabilitiesToAdd);
         acceptAllSSLCerts(webDriverCfg, capabilitiesToAdd);
 

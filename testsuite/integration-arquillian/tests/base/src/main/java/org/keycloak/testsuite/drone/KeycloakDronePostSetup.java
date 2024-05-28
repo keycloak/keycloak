@@ -19,7 +19,6 @@ package org.keycloak.testsuite.drone;
 
 import java.util.concurrent.TimeUnit;
 
-import io.appium.java_client.AppiumDriver;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -60,7 +59,7 @@ public class KeycloakDronePostSetup {
             webDriverProducer.set(remoteWebDriver);
         }
 
-        if (drone instanceof WebDriver && !(drone instanceof AppiumDriver)) {
+        if (drone instanceof WebDriver) {
             WebDriver webDriver = (WebDriver) drone;
             configureDriverSettings(webDriver);
             webDriverProducer.set(webDriver);
