@@ -77,21 +77,19 @@ setlocal EnableDelayedExpansion
 if not "x%JAVA_OPTS%" == "x" (
   echo "JAVA_OPTS already set in environment; overriding default settings"
 ) else (
-  rem The defaults set up Keycloak with '-XX:+UseG1GC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90' which proved to provide a good throughput and efficiency in the total memory allocation and CPU overhead.
+  rem The defaults set up Keycloak with '-XX:+UseG1GC -XX:MinHeapFreeRatio=40 -XX:MaxHeapFreeRatio=70 -XX:GCTimeRatio=12 -XX:AdaptiveSizePolicyWeight=10' which proved to provide a good throughput and efficiency in the total memory allocation and CPU overhead.
   rem If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
   rem To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
-  rem As of KC22 and JDK17, G1GC, ZGC and Shenandoah GC seem to be eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning in reclaiming dead objects.
-  set "JAVA_OPTS=-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:FlightRecorderOptions=stackdepth=512"
+  rem As of KC25 and JDK17, G1GC, ZGC and Shenandoah GC seem to be eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning in reclaiming dead objects.
+  set "JAVA_OPTS=-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:FlightRecorderOptions=stackdepth=512"
 
   if "x%JAVA_OPTS_KC_HEAP%" == "x" (
-    set "JAVA_OPTS_KC_HEAP=-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
-
     if "!KC_RUN_IN_CONTAINER!" == "true" (
       rem Maximum utilization of the heap is set to 70% of the total container memory
       rem Initial heap size is set to 50% of the total container memory in order to reduce GC executions
-      set "JAVA_OPTS_KC_HEAP=!JAVA_OPTS_KC_HEAP! -XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"
+      set "JAVA_OPTS_KC_HEAP=-XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"
     ) else (
-      set "JAVA_OPTS_KC_HEAP=!JAVA_OPTS_KC_HEAP! -Xms64m -Xmx512m"
+      set "JAVA_OPTS_KC_HEAP=-Xms64m -Xmx512m"
     )
 
     set "JAVA_OPTS=!JAVA_OPTS! !JAVA_OPTS_KC_HEAP!"
