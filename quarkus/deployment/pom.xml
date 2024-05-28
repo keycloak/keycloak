@@ -84,6 +84,11 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql-deployment</artifactId>
             <exclusions>
@@ -112,6 +117,11 @@
                     <artifactId>quarkus-devservices-mysql</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
