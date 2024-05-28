@@ -13,11 +13,10 @@ import {
 } from '@patternfly/react-core';
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { usePromise } from "../utils/usePromise";
 import { Page } from "../components/page/Page";
 import { parseResponse } from "../api/parse-response";
-import { useEnvironment } from '../root/KeycloakContext';
 import { token } from '../api/request';
 
 type CredentialsIssuer = {
