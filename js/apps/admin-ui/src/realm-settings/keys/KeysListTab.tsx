@@ -181,14 +181,14 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           {
             name: "provider",
             displayKey: "provider",
-            cellRenderer: ({ provider }: KeyData) => provider || "",
+            cellRenderer: ({ provider }: KeyData) => provider || "-",
             transforms: [cellWidth(10)],
           },
           {
             name: "validTo",
             displayKey: "validTo",
             cellRenderer: ({ validTo }: KeyData) =>
-              validTo ? formatDate(new Date(validTo)) : "",
+              validTo ? formatDate(new Date(validTo)) : "-",
             transforms: [cellWidth(10)],
           },
           {
