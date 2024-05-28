@@ -21,8 +21,10 @@ import org.junit.Before;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import java.util.function.BiConsumer;
 
@@ -64,6 +66,16 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
         addClientsToProviderAndConsumer();
 
         testContext.setInitialized(true);
+        changeRequiredAction(false);
+
+    }
+
+    protected void changeRequiredAction(boolean enabled) {
+        AuthenticationManagementResource flows = adminClient.realm(bc.consumerRealmName()).flows();
+        RequiredActionProviderRepresentation rep = flows.getRequiredAction(TermsAndConditions.PROVIDER_ID);
+        rep.setEnabled(enabled);
+        flows.updateRequiredAction(TermsAndConditions.PROVIDER_ID, rep);
+
     }
 
     protected void updateExecutions(BiConsumer<AuthenticationExecutionInfoRepresentation, AuthenticationManagementResource> action) {

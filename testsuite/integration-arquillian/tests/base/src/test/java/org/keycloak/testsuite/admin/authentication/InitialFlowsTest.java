@@ -41,7 +41,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
     private HashMap<String, AuthenticatorConfigRepresentation> expectedConfigs = new HashMap<>();
 
     {
-        expectedConfigs.put("idp-review-profile", newConfig("review profile config", new String[]{"update.profile.on.first.login", "missing"}));
+        expectedConfigs.put("idp-review-profile", newConfig("review profile config", new String[]{"update.profile.on.first.login", "missing","terms_and_conditions","false"}));
         expectedConfigs.put("idp-create-user-if-unique", newConfig("create unique user config", new String[]{"require.password.update.after.registration", "false"}));
     }
 

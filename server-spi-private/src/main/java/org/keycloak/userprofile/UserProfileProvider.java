@@ -70,6 +70,21 @@ public interface UserProfileProvider extends Provider {
     UserProfile create(UserProfileContext context, Map<String, ?> attributes, UserModel user);
 
     /**
+     * <p>Creates a new {@link UserProfile} instance for a given {@code context} and {@code attributes} for update purposes.
+     *
+     * <p>Instances created from this method are going to run validations and updates based on the given {@code user}. This
+     * might be useful when updating an existing user.
+     *
+     * @param context the context
+     * @param attributes the attributes to associate with the instance returned from this method
+     * @param user the user to eventually update with the given {@code attributes}
+     * @param terms if terms and condition required action user attribute neeed to be saved
+     *
+     * @return the user profile instance
+     */
+    UserProfile create(UserProfileContext context, Map<String, ?> attributes, UserModel user, boolean terms);
+
+    /**
      * Get current UserProfile configuration.
      *
      * @return current UserProfile configuration

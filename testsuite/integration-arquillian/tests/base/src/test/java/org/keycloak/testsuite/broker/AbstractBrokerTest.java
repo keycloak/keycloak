@@ -211,6 +211,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         } else if (execution.getAlias() != null && execution.getAlias().equals(IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
             AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
             config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_ON);
+            config.getConfig().put("terms_and_conditions", "false");
             flows.updateAuthenticatorConfig(config.getId(), config);
         }
     }
@@ -222,6 +223,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         } else if (execution.getAlias() != null && execution.getAlias().equals(IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
             AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
             config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_MISSING);
+            config.getConfig().put("terms_and_conditions", "false");
             flows.updateAuthenticatorConfig(config.getId(), config);
         }
     }
@@ -252,9 +254,23 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         } else if (execution.getAlias() != null && execution.getAlias().equals(IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
             AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
             config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_OFF);
+            config.getConfig().put("terms_and_conditions", "false");
             flows.updateAuthenticatorConfig(config.getId(), config);
         }
     }
+
+    static void makeTermsAndCondionRequiredInLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
+        if (execution.getProviderId() != null && execution.getProviderId().equals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID)) {
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+            flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);
+        } else if (execution.getAlias() != null && execution.getAlias().equals(IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
+            AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
+            config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_ON);
+            config.getConfig().put("terms_and_conditions", "true");
+            flows.updateAuthenticatorConfig(config.getId(), config);
+        }
+    }
+
 
     static void disableExistingUser(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
         if (execution.getProviderId() != null && (execution.getProviderId().equals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID) || execution.getProviderId().equals(IdpConfirmLinkAuthenticatorFactory.PROVIDER_ID))) {

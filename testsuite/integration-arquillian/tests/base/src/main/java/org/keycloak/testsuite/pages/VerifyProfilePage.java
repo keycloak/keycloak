@@ -121,7 +121,7 @@ public class VerifyProfilePage extends AbstractPage {
     }
 
     public boolean isDepartmentEnabled() {
-        return departmentInput.isEnabled();
+        return departmentInput.getAttribute("readOnly") == null;
     }
 
     public boolean isUsernamePresent() {
@@ -142,7 +142,7 @@ public class VerifyProfilePage extends AbstractPage {
 
     public boolean isUsernameEnabled() {
         try {
-            return driver.findElement(By.id("username")).isEnabled();
+            return driver.findElement(By.id("username")).getAttribute("readOnly") == null;
         } catch (NoSuchElementException nse) {
             return false;
         }
