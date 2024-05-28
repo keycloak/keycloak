@@ -17,7 +17,7 @@ import { Fragment, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -154,6 +154,8 @@ const KeySection = ({
 };
 
 export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [isChanged, setIsChanged] = useState<KeyTypes>();
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation[]>();

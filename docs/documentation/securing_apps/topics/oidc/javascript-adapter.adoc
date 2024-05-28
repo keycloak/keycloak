@@ -386,11 +386,9 @@ Options is an optional Object, where:
 
 * redirectUri - Specifies the uri to redirect to after login.
 * prompt - This parameter allows to slightly customize the login flow on the {project_name} server side.
-For example, enforce displaying the login screen in case of value `login`.
-ifeval::[{project_community}==true]
-See the link:{adapterguide_link}#_params_forwarding[Parameters Forwarding Section]
-for the details and all the possible values of the `prompt` parameter.
-endif::[]
+For example, enforce displaying the login screen in case of value `login`. Or enforce displaying of consent screen for the value `consent` in case that client has `Consent Required`.
+Finally it is possible use the value `none` to make sure that login screen is not displayed to the user, which is useful just to check SSO for the case when user was already
+authenticated before (This is related to the `onLoad` check with value `check-sso` described above).
 * maxAge - Used just if user is already authenticated. Specifies maximum time since the authentication of user happened. If user is already authenticated for longer time than `maxAge`, the SSO is ignored and he will need to re-authenticate again.
 * loginHint - Used to pre-fill the username/email field on the login form.
 * scope - Override the scope configured in `init` with a different value for this specific login.

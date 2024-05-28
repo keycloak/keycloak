@@ -115,7 +115,7 @@ public class PropertyMapper<T> {
         // try to obtain the value for the property we want to map first
         ConfigValue config = convertValue(context.proceed(from));
 
-        if (config == null) {
+        if (config == null || config.getValue() == null) {
             if (mapFrom != null) {
                 // if the property we want to map depends on another one, we use the value from the other property to call the mapper
                 String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + mapFrom;

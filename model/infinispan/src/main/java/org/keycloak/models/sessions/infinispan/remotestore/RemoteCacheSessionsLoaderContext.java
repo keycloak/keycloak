@@ -33,17 +33,6 @@ public class RemoteCacheSessionsLoaderContext extends SessionLoader.LoaderContex
     }
 
 
-    private static int computeSegmentsCount(int ispnSegments) {
-        // No support by remote ISPN cache for segments. This can happen if remoteCache is local (non-clustered)
-        if (ispnSegments < 0) {
-            return 1;
-        }
-
-        // always use the same number of ISPN segments to avoid touching multiple segments at a time
-        return ispnSegments;
-    }
-
-
     public int getSessionsPerSegment() {
         return sessionsPerSegment;
     }

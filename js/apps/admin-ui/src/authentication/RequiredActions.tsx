@@ -1,18 +1,24 @@
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import type RequiredActionProviderSimpleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderSimpleRepresentation";
-import { AlertVariant, Switch } from "@patternfly/react-core";
+import { AlertVariant, Button, Switch } from "@patternfly/react-core";
+import { CogIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { toKey } from "../util";
+import { addTrailingSlash, toKey } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { DraggableTable } from "./components/DraggableTable";
+import { RequiredActionConfigModal } from "./components/RequiredActionConfigModal";
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
+import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type DataType = RequiredActionProviderRepresentation &
-  RequiredActionProviderSimpleRepresentation;
+  RequiredActionProviderSimpleRepresentation & {
+    configurable?: boolean;
+  };
 
 type Row = {
   name: string;
@@ -22,31 +28,51 @@ type Row = {
 };
 
 export const RequiredActions = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [actions, setActions] = useState<Row[]>();
+  const [selectedAction, setSelectedAction] = useState<DataType>();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const { realm: realmName } = useRealm();
+
+  const loadActions = async (): Promise<
+    RequiredActionProviderRepresentation[]
+  > => {
+    const requiredActionsRequest = await fetchWithError(
+      `${addTrailingSlash(
+        adminClient.baseUrl,
+      )}admin/realms/${realmName}/ui-ext/authentication-management/required-actions`,
+      {
+        method: "GET",
+        headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
+      },
+    );
+
+    return (await requiredActionsRequest.json()) as DataType[];
+  };
 
   useFetch(
     async () => {
       const [requiredActions, unregisteredRequiredActions] = await Promise.all([
-        adminClient.authenticationManagement.getRequiredActions(),
+        loadActions(),
         adminClient.authenticationManagement.getUnregisteredRequiredActions(),
       ]);
       return [
-        ...requiredActions.map((a) => ({
-          name: a.name!,
-          enabled: a.enabled!,
-          defaultAction: a.defaultAction!,
-          data: a,
+        ...requiredActions.map((action) => ({
+          name: action.name!,
+          enabled: action.enabled!,
+          defaultAction: action.defaultAction!,
+          data: action,
         })),
-        ...unregisteredRequiredActions.map((a) => ({
-          name: a.name!,
+        ...unregisteredRequiredActions.map((action) => ({
+          name: action.name!,
           enabled: false,
           defaultAction: false,
-          data: a,
+          data: action,
         })),
       ];
     },
@@ -65,6 +91,8 @@ export const RequiredActions = () => {
     try {
       if (field in action) {
         action[field] = !action[field];
+        // remove configurable property from action which only exists for the admin ui
+        delete action.configurable;
         await adminClient.authenticationManagement.updateRequiredAction(
           { alias: action.alias! },
           action,
@@ -116,59 +144,85 @@ export const RequiredActions = () => {
   }
 
   return (
-    <DraggableTable
-      keyField="name"
-      onDragFinish={async (nameDragged, items) => {
-        const keys = actions.map((e) => e.name);
-        const newIndex = items.indexOf(nameDragged);
-        const oldIndex = keys.indexOf(nameDragged);
-        const dragged = actions[oldIndex].data;
-        if (!dragged.alias) return;
+    <>
+      {selectedAction && (
+        <RequiredActionConfigModal
+          requiredAction={selectedAction}
+          onClose={() => setSelectedAction(undefined)}
+        />
+      )}
+      <DraggableTable
+        keyField="name"
+        onDragFinish={async (nameDragged, items) => {
+          const keys = actions.map((e) => e.name);
+          const newIndex = items.indexOf(nameDragged);
+          const oldIndex = keys.indexOf(nameDragged);
+          const dragged = actions[oldIndex].data;
+          if (!dragged.alias) return;
 
-        const times = newIndex - oldIndex;
-        executeMove(dragged, times);
-      }}
-      columns={[
-        {
-          name: "name",
-          displayKey: "requiredActions",
-        },
-        {
-          name: "enabled",
-          displayKey: "enabled",
-          cellRenderer: (row) => (
-            <Switch
-              id={`enable-${toKey(row.name)}`}
-              label={t("on")}
-              labelOff={t("off")}
-              isChecked={row.enabled}
-              onChange={() => {
-                updateAction(row.data, "enabled");
-              }}
-              aria-label={toKey(row.name)}
-            />
-          ),
-        },
-        {
-          name: "default",
-          displayKey: "setAsDefaultAction",
-          thTooltipText: "authDefaultActionTooltip",
-          cellRenderer: (row) => (
-            <Switch
-              id={`default-${toKey(row.name)}`}
-              label={t("on")}
-              isDisabled={!row.enabled}
-              labelOff={!row.enabled ? t("disabledOff") : t("off")}
-              isChecked={row.defaultAction}
-              onChange={() => {
-                updateAction(row.data, "defaultAction");
-              }}
-              aria-label={toKey(row.name)}
-            />
-          ),
-        },
-      ]}
-      data={actions}
-    />
+          const times = newIndex - oldIndex;
+          executeMove(dragged, times);
+        }}
+        columns={[
+          {
+            name: "name",
+            displayKey: "action",
+            width: 50,
+          },
+          {
+            name: "enabled",
+            displayKey: "enabled",
+            cellRenderer: (row) => (
+              <Switch
+                id={`enable-${toKey(row.name)}`}
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={row.enabled}
+                onChange={() => {
+                  updateAction(row.data, "enabled");
+                }}
+                aria-label={toKey(row.name)}
+              />
+            ),
+            width: 20,
+          },
+          {
+            name: "default",
+            displayKey: "setAsDefaultAction",
+            thTooltipText: "authDefaultActionTooltip",
+            cellRenderer: (row) => (
+              <Switch
+                id={`default-${toKey(row.name)}`}
+                label={t("on")}
+                isDisabled={!row.enabled}
+                labelOff={!row.enabled ? t("disabledOff") : t("off")}
+                isChecked={row.defaultAction}
+                onChange={() => {
+                  updateAction(row.data, "defaultAction");
+                }}
+                aria-label={toKey(row.name)}
+              />
+            ),
+            width: 20,
+          },
+          {
+            name: "config",
+            displayKey: "configure",
+            cellRenderer: (row) =>
+              row.data.configurable ? (
+                <Button
+                  variant="plain"
+                  aria-label={t("settings")}
+                  onClick={() => setSelectedAction(row.data)}
+                >
+                  <CogIcon />
+                </Button>
+              ) : undefined,
+            width: 10,
+          },
+        ]}
+        data={actions}
+      />
+    </>
   );
 };

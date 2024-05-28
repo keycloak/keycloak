@@ -28,7 +28,7 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
 import java.util.List;
 
 /**
- * PartialImport handler for Identitiy Providers.
+ * PartialImport handler for Identity Providers.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */

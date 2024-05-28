@@ -286,7 +286,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             {useMetadataDescriptorUrl !== "true" && (
               <TextControl
                 name="config.signingCertificate"
-                label="validatingX509Certs"
+                label={t("validatingX509Certs")}
                 readOnly={readOnly}
               />
             )}

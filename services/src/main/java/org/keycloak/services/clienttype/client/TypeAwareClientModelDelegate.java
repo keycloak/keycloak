@@ -18,14 +18,15 @@
 
 package org.keycloak.services.clienttype.client;
 
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.client.clienttype.ClientType;
-import org.keycloak.client.clienttype.ClientTypeException;
 
 /**
  * Delegates to client-type and underlying delegate
@@ -47,45 +48,218 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isStandardFlowEnabled() {
-        return getBooleanProperty("standardFlowEnabled", super::isStandardFlowEnabled);
+        return TypedClientSimpleAttribute.STANDARD_FLOW_ENABLED
+                .getClientAttribute(clientType, Boolean.class);
     }
 
     @Override
     public void setStandardFlowEnabled(boolean standardFlowEnabled) {
-        setBooleanProperty("standardFlowEnabled", standardFlowEnabled, super::setStandardFlowEnabled);
+        TypedClientSimpleAttribute.STANDARD_FLOW_ENABLED
+                .setClientAttribute(clientType, standardFlowEnabled, super::setStandardFlowEnabled, Boolean.class);
     }
 
-
-    protected boolean getBooleanProperty(String propertyName, Supplier<Boolean> clientGetter) {
-        // Check if clientType supports the feature. If not, simply return false
-        if (!clientType.isApplicable(propertyName)) {
-            return false;
-        }
-
-        //  Check if this is read-only. If yes, then we just directly delegate to return stuff from the clientType rather than from client
-        if (clientType.isReadOnly(propertyName)) {
-            return clientType.getDefaultValue(propertyName, Boolean.class);
-        }
-
-        // Delegate to clientGetter
-        return clientGetter.get();
+    @Override
+    public boolean isBearerOnly() {
+        return TypedClientSimpleAttribute.BEARER_ONLY
+                .getClientAttribute(clientType, Boolean.class);
     }
 
-    protected void setBooleanProperty(String propertyName, Boolean newValue, Consumer<Boolean> clientSetter) {
-        // Check if clientType supports the feature. If not, return directly
-        if (!clientType.isApplicable(propertyName)) {
-            return;
+    @Override
+    public void setBearerOnly(boolean bearerOnly) {
+        TypedClientSimpleAttribute.BEARER_ONLY
+                .setClientAttribute(clientType, bearerOnly, super::setBearerOnly, Boolean.class);
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        return TypedClientSimpleAttribute.CONSENT_REQUIRED
+                .getClientAttribute(clientType, Boolean.class);
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        TypedClientSimpleAttribute.CONSENT_REQUIRED
+                .setClientAttribute(clientType, consentRequired, super::setConsentRequired, Boolean.class);
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return TypedClientSimpleAttribute.DIRECT_ACCESS_GRANTS_ENABLED
+                .getClientAttribute(clientType, Boolean.class);
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        TypedClientSimpleAttribute.DIRECT_ACCESS_GRANTS_ENABLED
+                .setClientAttribute(clientType, directAccessGrantsEnabled, super::setDirectAccessGrantsEnabled, Boolean.class);
+    }
+
+    @Override
+    public boolean isAlwaysDisplayInConsole() {
+        return TypedClientSimpleAttribute.ALWAYS_DISPLAY_IN_CONSOLE
+                .getClientAttribute(clientType, Boolean.class);
+    }
+
+    @Override
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        TypedClientSimpleAttribute.ALWAYS_DISPLAY_IN_CONSOLE
+                .setClientAttribute(clientType, alwaysDisplayInConsole, super::setAlwaysDisplayInConsole, Boolean.class);
+    }
+
+    @Override
+    public boolean isFrontchannelLogout() {
+        return TypedClientSimpleAttribute.FRONTCHANNEL_LOGOUT
+                .getClientAttribute(clientType, Boolean.class);
+    }
+
+    @Override
+    public void setFrontchannelLogout(boolean frontchannelLogout) {
+        TypedClientSimpleAttribute.FRONTCHANNEL_LOGOUT
+                .setClientAttribute(clientType, frontchannelLogout, super::setFrontchannelLogout, Boolean.class);
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return TypedClientSimpleAttribute.IMPLICIT_FLOW_ENABLED
+                .getClientAttribute(clientType, Boolean.class);
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        TypedClientSimpleAttribute.IMPLICIT_FLOW_ENABLED
+                .setClientAttribute(clientType, implicitFlowEnabled, super::setImplicitFlowEnabled, Boolean.class);
+    }
+
+    @Override
+    public boolean isServiceAccountsEnabled() {
+        return TypedClientSimpleAttribute.SERVICE_ACCOUNTS_ENABLED
+                .getClientAttribute(clientType, Boolean.class);
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean flag) {
+        TypedClientSimpleAttribute.SERVICE_ACCOUNTS_ENABLED
+                .setClientAttribute(clientType, flag, super::setServiceAccountsEnabled, Boolean.class);
+    }
+
+    @Override
+    public String getProtocol() {
+        return TypedClientSimpleAttribute.PROTOCOL
+                .getClientAttribute(clientType, String.class);
+    }
+
+    @Override
+    public void setProtocol(String protocol) {
+        TypedClientSimpleAttribute.PROTOCOL
+                .setClientAttribute(clientType, protocol, super::setProtocol, String.class);
+    }
+
+    @Override
+    public boolean isPublicClient() {
+        return TypedClientSimpleAttribute.PUBLIC_CLIENT
+                .getClientAttribute(clientType, Boolean.class);
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        TypedClientSimpleAttribute.PUBLIC_CLIENT
+                .setClientAttribute(clientType, flag, super::setPublicClient, Boolean.class);
+    }
+
+    @Override
+    public Set<String> getWebOrigins() {
+        return TypedClientSimpleAttribute.WEB_ORIGINS
+                .getClientAttribute(clientType, Set.class);
+    }
+
+    @Override
+    public void setWebOrigins(Set<String> webOrigins) {
+        TypedClientSimpleAttribute.WEB_ORIGINS
+                .setClientAttribute(clientType, webOrigins, super::setWebOrigins, Set.class);
+    }
+
+    @Override
+    public void addWebOrigin(String webOrigin) {
+        TypedClientSimpleAttribute.WEB_ORIGINS
+                .setClientAttribute(clientType, webOrigin, super::addWebOrigin, String.class);
+    }
+
+    @Override
+    public void removeWebOrigin(String webOrigin) {
+        TypedClientSimpleAttribute.WEB_ORIGINS
+                .setClientAttribute(clientType, null, (val) -> super.removeWebOrigin(webOrigin), String.class);
+    }
+
+    @Override
+    public Set<String> getRedirectUris() {
+        return TypedClientSimpleAttribute.REDIRECT_URIS
+                .getClientAttribute(clientType, Set.class);
+    }
+
+    @Override
+    public void setRedirectUris(Set<String> redirectUris) {
+        TypedClientSimpleAttribute.REDIRECT_URIS
+                .setClientAttribute(clientType, redirectUris, super::setRedirectUris, Set.class);
+    }
+
+    @Override
+    public void addRedirectUri(String redirectUri) {
+        TypedClientSimpleAttribute.REDIRECT_URIS
+                .setClientAttribute(clientType, redirectUri, super::addRedirectUri, String.class);
+    }
+
+    @Override
+    public void removeRedirectUri(String redirectUri) {
+        TypedClientSimpleAttribute.REDIRECT_URIS
+            .setClientAttribute(clientType, null, (val) -> super.removeRedirectUri(redirectUri), String.class);
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
+        if (attribute != null) {
+            attribute.setClientAttribute(clientType, value, (newValue) -> super.setAttribute(name, newValue), String.class);
+        } else {
+            super.setAttribute(name, value);
+        }
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
+        if (attribute != null) {
+            attribute.setClientAttribute(clientType, null, (val) -> super.removeAttribute(name), String.class);
+        } else {
+            super.removeAttribute(name);
+        }
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
+        if (attribute != null) {
+            return attribute.getClientAttribute(clientType, String.class);
+        } else {
+            return super.getAttribute(name);
+        }
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        // Start with attributes set on the delegate.
+        Map<String, String> attributes = new HashMap<>(super.getAttributes());
+
+        // Get extended client type attributes and values from the client type configuration.
+        Set<String> extendedClientTypeAttributes =
+                clientType.getOptionNames().stream()
+                .filter(optionName -> TypedClientExtendedAttribute.getAttributesByName().containsKey(optionName))
+                .collect(Collectors.toSet());
+
+        // Augment client type attributes on top of attributes on the delegate.
+        for (String entry : extendedClientTypeAttributes) {
+            attributes.put(entry, getAttribute(entry));
         }
 
-        // Check if this is read-only. If yes and there is an attempt to change some stuff, then throw an exception
-        if (clientType.isReadOnly(propertyName)) {
-            Boolean oldVal = clientType.getDefaultValue(propertyName, Boolean.class);
-            if (!ObjectUtil.isEqualOrBothNull(oldVal, newValue)) {
-                throw new ClientTypeException("Property " + propertyName + " of client " + getClientId() + " is read-only due to client type " + clientType.getName());
-            }
-        }
-
-        // Call clientSetter
-        clientSetter.accept(newValue);
+        return attributes;
     }
 }

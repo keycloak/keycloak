@@ -36,12 +36,6 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     private CrossDCMessageStatus crossDCMessageStatus;
     private final long lifespanMs;
     private final long maxIdleTimeMs;
-    private boolean isDeferrable;
-
-    @Override
-    public boolean isDeferrable() {
-        return isDeferrable;
-    }
 
     private MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus, long lifespanMs, long maxIdleTimeMs) {
         this.operation = operation;
@@ -58,7 +52,7 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     }
 
     @Override
-    public CacheOperation getOperation(S session) {
+    public CacheOperation getOperation() {
         return operation;
     }
 
@@ -83,13 +77,9 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
 
         MergedUpdate<S> result = null;
         S session = sessionWrapper.getEntity();
-        boolean isDeferrable = true;
         for (SessionUpdateTask<S> child : childUpdates) {
-            if (!child.isDeferrable()) {
-                isDeferrable = false;
-            }
             if (result == null) {
-                CacheOperation operation = child.getOperation(session);
+                CacheOperation operation = child.getOperation();
 
                 if (lifespanMs == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdleTimeMs == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
                     operation = CacheOperation.REMOVE;
@@ -100,15 +90,8 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                 result.childUpdates.add(child);
             } else {
 
-                // Merge the operations. REMOVE is special case as other operations are not needed then.
-                CacheOperation mergedOp = result.getOperation(session).merge(child.getOperation(session), session);
-                if (mergedOp == CacheOperation.REMOVE) {
-                    result = new MergedUpdate<>(child.getOperation(session), child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
-                    result.childUpdates.add(child);
-                    return result;
-                }
-
-                result.operation = mergedOp;
+                // Merge the operations.
+                result.operation = result.getOperation().merge(child.getOperation(), session);
 
                 // Check if we need to send message to other DCs and how critical it is
                 CrossDCMessageStatus currentDCStatus = result.getCrossDCMessageStatus(sessionWrapper);
@@ -119,24 +102,23 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
                     result.crossDCMessageStatus = currentDCStatus.merge(childDCStatus);
                 }
 
+                // REMOVE is special case as other operations are not needed then.
+                if (result.operation == CacheOperation.REMOVE) {
+                    result = new MergedUpdate<>(result.operation, result.crossDCMessageStatus, lifespanMs, maxIdleTimeMs);
+                    result.childUpdates.add(child);
+                    return result;
+                }
+
                 // Finally add another update to the result
                 result.childUpdates.add(child);
             }
         }
-        if (result != null) {
-            result.setDeferable(isDeferrable);
-        }
         return result;
-    }
-
-    private void setDeferable(boolean isDeferrable) {
-        this.isDeferrable = isDeferrable;
     }
 
     @Override
     public String toString() {
         return "MergedUpdate" + childUpdates;
     }
-
 
 }

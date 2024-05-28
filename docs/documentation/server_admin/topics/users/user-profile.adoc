@@ -273,6 +273,10 @@ The list below provides a list of all the built-in validators:
 |Check if the value has a valid format based on the realm and/or user locale.
 | None
 
+|iso-date
+|Check if the value has a valid format based on ISO 8601. This validator can be used with inputs using the html5-date input type.
+| None
+
 |person-name-prohibited-characters
 | Check if the value is a valid person name as an additional barrier for attacks such as script injection. The validation is based on a default RegEx pattern that blocks characters not common in person names.
 |
@@ -404,7 +408,7 @@ number of digits expected in a determined position. For instance, a format `(\{2
 |Number UnFormat
 |If set, the `data-kcNumberUnFormat` attribute is added to the field to format the value based on a given format before submitting the form. This annotation
 is useful if you do not want to store any format for a specific attribute but only format the value on the client side. For instance, if the current value
-is `(00) 00000-0000`, the value will change to `00000000000` if you set the value `\{11}` to this annotation or any other format you want by specifying a set of one or ore group of digits.
+is `(00) 00000-0000`, the value will change to `00000000000` if you set the value `\{11}` to this annotation or any other format you want by specifying a set of one or more group of digits.
 Make sure to add validators to perform server-side validations before storing values.
 
 |===

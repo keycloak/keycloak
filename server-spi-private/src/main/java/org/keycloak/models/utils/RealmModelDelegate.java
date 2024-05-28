@@ -33,6 +33,7 @@ import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -736,6 +737,31 @@ public class RealmModelDelegate implements RealmModel {
         return delegate.getAuthenticatorConfigByAlias(alias);
     }
 
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+        return delegate.getRequiredActionConfigById(id);
+    }
+
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+        return delegate.getRequiredActionConfigByAlias(alias);
+    }
+
+    @Override
+    public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+        delegate.removeRequiredActionProviderConfig(model);
+    }
+
+    @Override
+    public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+        delegate.updateRequiredActionConfig(model);
+    }
+
+    @Override
+    public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+        return delegate.getRequiredActionConfigsStream();
+    }
+
     public Stream<RequiredActionProviderModel> getRequiredActionProvidersStream() {
         return delegate.getRequiredActionProvidersStream();
     }
@@ -1130,4 +1156,13 @@ public class RealmModelDelegate implements RealmModel {
         return delegate.searchForRolesStream(search, first, max);
     }
 
+    @Override
+    public boolean isOrganizationsEnabled() {
+        return delegate.isOrganizationsEnabled();
+    }
+
+    @Override
+    public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        delegate.setOrganizationsEnabled(organizationsEnabled);
+    }
 }

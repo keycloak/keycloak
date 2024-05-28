@@ -43,7 +43,6 @@ public class JwtSigningService extends SigningService<String> {
     private static final Logger LOGGER = Logger.getLogger(JwtSigningService.class);
 
     private static final String ID_TEMPLATE = "urn:uuid:%s";
-    private static final String TOKEN_TYPE = "JWT";
     private static final String VC_CLAIM_KEY = "vc";
     private static final String ID_CLAIM_KEY = "id";
 

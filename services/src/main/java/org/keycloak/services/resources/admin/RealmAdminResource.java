@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.enterprise.inject.Default;
 import jakarta.ws.rs.DefaultValue;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -49,7 +48,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -86,6 +84,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -93,7 +92,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.ErrorResponseException;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
@@ -424,7 +422,7 @@ public class RealmAdminResource {
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
-        
+
         ReservedCharValidator.validate(rep.getRealm());
         ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
@@ -458,14 +456,17 @@ public class RealmAdminResource {
             session.getContext().getUri();
 
             adminEvent.operation(OperationType.UPDATE).representation(rep).success();
-            
+
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
                 session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
             }
-            
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Realm with same name exists");
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {
@@ -484,6 +485,10 @@ public class RealmAdminResource {
     public void deleteRealm() {
         auth.realm().requireManageRealm();
 
+        if (Config.getAdminRealm().equals(realm.getName())) {
+            throw ErrorResponse.error("Can't remove master realm", Status.BAD_REQUEST);
+        }
+
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         }
@@ -492,7 +497,7 @@ public class RealmAdminResource {
         // instead of the realm being deleted.
         AdminEventBuilder deleteAdminEvent = new AdminEventBuilder(auth.adminAuth().getRealm(), auth.adminAuth(), session, connection);
         deleteAdminEvent.operation(OperationType.DELETE).resource(ResourceType.REALM)
-                .realm(auth.adminAuth().getRealm().getId()).resourcePath(realm.getName()).success();
+                .realm(auth.adminAuth().getRealm()).resourcePath(realm.getName()).success();
     }
 
     /**
@@ -1049,6 +1054,7 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.addDefaultGroup(group);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -1066,6 +1072,7 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.removeDefaultGroup(group);
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();

@@ -1,4 +1,5 @@
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Label,
@@ -9,11 +10,11 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { CubesIcon, InfoCircleIcon } from "@patternfly/react-icons";
+import { IRowData } from "@patternfly/react-table";
 import { MouseEvent, ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -26,12 +27,10 @@ import {
 } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { keycloak } from "../keycloak";
-import { toUser, UserRoute } from "../user/routes/User";
+import { UserRoute, toUser } from "../user/routes/User";
 import { toUsers } from "../user/routes/Users";
 import { isLightweightUser } from "../user/utils";
 import useFormatDate from "../utils/useFormatDate";
-import { IRowData } from "@patternfly/react-table";
 
 export type ColumnName =
   | "username"
@@ -98,6 +97,9 @@ export default function SessionsTable({
   isSearching,
   isPaginated,
 }: SessionsTableProps) {
+  const { keycloak } = useEnvironment();
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const navigate = useNavigate();

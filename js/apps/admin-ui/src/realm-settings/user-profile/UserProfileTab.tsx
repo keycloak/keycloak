@@ -50,7 +50,7 @@ export const UserProfileTab = ({ setTableData }: UserProfileTabProps) => {
           data-testid="attributesGroupTab"
           {...attributesGroupTab}
         >
-          <AttributesGroupTab />
+          <AttributesGroupTab setTableData={setTableData} />
         </Tab>
         <Tab
           title={<TabTitleText>{t("jsonEditor")}</TabTitleText>}

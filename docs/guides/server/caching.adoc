@@ -103,9 +103,29 @@ The following caches are used to store both user and client sessions:
 * clientSessions
 
 By relying on a distributable cache, user and client sessions are available to any node in the cluster so that users can be redirected
-to any node without loosing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
+to any node without losing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
+
+ifeval::[{project_community}==true]
+
+The feature `persistent-user-session` stores online user and client sessions also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+The feature is disabled by default. To use it, enable the feature:
+
+----
+bin/kc.sh start --features=persistent-user-session ...
+----
+
+With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to by default 10000 entries per node which will reduce the overall memory usage of {project_name} for larger installations.
+The internal caches will run with only a single owner for each cache entry.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+This feature can be enabled via a rolling configuration upgrade.
+After the change, all new online user and client sessions are written to the database.
+
+endif::[]
 
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
 when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
@@ -117,6 +137,14 @@ The following caches are used to store offline sessions:
 * offlineClientSessions
 
 Upon a cluster restart, offline sessions are lazily loaded from the database and kept in a shared cache using the two caches above.
+
+ifeval::[{project_community}==true]
+
+With feature `persistent-user-session` enabled, the in-memory caches for offline user sessions and offline client sessions are limited to 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+
+endif::[]
 
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
@@ -151,6 +179,16 @@ The configuration file is relative to the `conf/` directory.
 For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
 Once any of declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
 
+==== Connecting to an insecure Infinispan server
+
+WARNING: Disabling security is not recommended in production!
+
+In a development or test environment, it is easier to start an unsecured Infinispan server.
+For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (TLS) between {project_name} and Infinispan.
+{project_name} will fail to start if the Infinispan server is configured to accept only encrypted connections.
+
+The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the Infinispan server without presenting any credentials.
+If the Infinispan server has authentication enabled, {project_name} will fail to start.
 
 == Transport stacks
 Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.

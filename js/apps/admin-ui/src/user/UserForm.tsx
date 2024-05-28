@@ -3,6 +3,14 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
+  FormErrorText,
+  FormSubmitButton,
+  HelpItem,
+  SwitchControl,
+  TextControl,
+  UserProfileFields,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
@@ -19,20 +27,13 @@ import { useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import {
-  FormErrorText,
-  HelpItem,
-  SwitchControl,
-  TextControl,
-  UserProfileFields,
-} from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useAccess } from "../context/access/Access";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { FederatedUserLink } from "./FederatedUserLink";
@@ -67,21 +68,20 @@ export const UserForm = ({
   save,
   onGroupsUpdate,
 }: UserFormProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const formatDate = useFormatDate();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");
   const canViewFederationLink = hasAccess("view-realm");
+  const { whoAmI } = useWhoAmI();
+  const currentLocale = whoAmI.getLocale();
 
-  const {
-    handleSubmit,
-    setValue,
-    watch,
-    control,
-    reset,
-    formState: { errors },
-  } = form;
+  const { handleSubmit, setValue, watch, control, reset, formState } = form;
+  const { errors } = formState;
+
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
@@ -210,6 +210,7 @@ export const UserForm = ({
               userProfileMetadata={userProfileMetadata}
               hideReadOnly={!user}
               supportedLocales={realm.supportedLocales || []}
+              currentLocale={currentLocale}
               t={
                 ((key: unknown, params) =>
                   t(key as string, params as any)) as TFunction
@@ -271,6 +272,9 @@ export const UserForm = ({
               onChange={(_event, value) => {
                 unLockUser();
                 setLocked(value);
+                save({
+                  enabled: !value,
+                });
               }}
               isChecked={locked}
               isDisabled={!locked}
@@ -325,18 +329,19 @@ export const UserForm = ({
         )}
 
         <ActionGroup>
-          <Button
+          <FormSubmitButton
+            formState={formState}
             data-testid={!user?.id ? "create-user" : "save-user"}
             isDisabled={
               !user?.id &&
               !watchUsernameInput &&
               realm.registrationEmailAsUsername === false
             }
-            variant="primary"
-            type="submit"
+            allowNonDirty
+            allowInvalid
           >
             {user?.id ? t("save") : t("create")}
-          </Button>
+          </FormSubmitButton>
           <Button
             data-testid="cancel-create-user"
             variant="link"

@@ -34,6 +34,24 @@
         <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-operator-sdk-bom</artifactId>
+                <version>${quarkus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-operator</artifactId>
+                <version>${project.version}</version>
+                <type>jar</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -47,6 +65,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-operator</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus.resteasy.reactive</groupId>
@@ -63,11 +85,19 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
         </dependency>
+        <!-- This is here because BloomFilter is used in the Javadoc within BlacklistPasswordPolicyProviderFactory -->
         <dependency>
-            <!-- Included here as it provides Nonnull from com.google.code.findbugs:jsr305.
-            That is used in annotations in FilesPlainTextVaultProvider -->
-            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
-            <artifactId>owasp-java-html-sanitizer</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>crd-generator-apt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.operatorsdk</groupId>
+            <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -84,13 +114,17 @@
                     <includeDependencySources>true</includeDependencySources>
                     <source>${maven.compiler.source}</source>
                     <failOnError>true</failOnError>
+                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                    <dependencySourceIncludes>
+                        <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
+                    </dependencySourceIncludes>
                 </configuration>
                 <executions>
                     <execution>
                         <id>aggregate-javadoc</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>javadoc</goal>
+                            <goal>aggregate</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -109,21 +143,6 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>aggregate-javadoc</id>
-                        <configuration>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
-                            </dependencySourceIncludes>
                         </configuration>
                     </execution>
                 </executions>

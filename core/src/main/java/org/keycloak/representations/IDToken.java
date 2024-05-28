@@ -154,26 +154,9 @@ public class IDToken extends JsonWebToken {
         return auth_time;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #getAuth_time()} instead.
-     */
-    @Deprecated
-    @JsonIgnore
-    public int getAuthTime() {
-        return auth_time != null ? auth_time.intValue() : 0;
-    }
-
     public void setAuth_time(Long auth_time) {
         this.auth_time = auth_time;
     }
-
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #setAuth_time(Long)} ()} instead.
-     */
-    public void setAuthTime(int authTime) {
-        this.auth_time = Long.valueOf(authTime);
-    }
-
 
     public String getSessionId() {
         return sessionId;

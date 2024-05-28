@@ -64,7 +64,6 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.cli.command.HelpAllMixin;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
@@ -336,19 +335,24 @@ public final class Picocli {
                         if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
                             continue; // we found enabled mapper with the same name
                         }
-                        final boolean deniedPrintException = mapper.isRunTime() && isRebuild();
 
-                        if (PropertyMapper.isCliOption(configValue) && !deniedPrintException) {
-                            throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine(), List.of(mapper.getCliFormat()));
-                        } else {
-                            handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                        // only check build-time for a rebuild, we'll check the runtime later
+                        if (!mapper.isRunTime() || !isRebuild()) {
+                            if (PropertyMapper.isCliOption(configValue)) {
+                                throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine(), List.of(mapper.getCliFormat()));
+                            } else {
+                                handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                            }
                         }
                         continue;
                     }
 
                     if (mapper.isBuildTime() && !options.includeBuildTime) {
-                        ignoredBuildTime.add(mapper.getFrom());
-                        continue;
+                        String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
+                        if (!configValueStr.equals(currentValue)) {
+                            ignoredBuildTime.add(mapper.getFrom());
+                            continue;
+                        }
                     }
                     if (mapper.isRunTime() && !options.includeRuntime) {
                         ignoredRunTime.add(mapper.getFrom());
@@ -366,9 +370,11 @@ public final class Picocli {
             Logger logger = Logger.getLogger(Picocli.class); // logger can't be instantiated in a class field
 
             if (!ignoredBuildTime.isEmpty()) {
-                outputIgnoredProperties(ignoredBuildTime, true, logger);
+                logger.warn(format("The following build time non-cli options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
+                        String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
-                outputIgnoredProperties(ignoredRunTime, false, logger);
+                logger.warn(format("The following run time non-cli options were found, but will be ignored during build time: %s\n",
+                        String.join(", ", ignoredRunTime)));
             }
 
             if (!disabledBuildTime.isEmpty()) {
@@ -446,12 +452,6 @@ public final class Picocli {
             }
         }
         disabledInUse.add(sb.toString());
-    }
-
-    private static void outputIgnoredProperties(List<String> properties, boolean build, Logger logger) {
-        logger.warn(format("The following %s time non-cli options were found, but will be ignored during %s time: %s\n",
-                build ? "build" : "run", build ? "run" : "build",
-                String.join(", ", properties)));
     }
 
     private static void outputDisabledProperties(Set<String> properties, boolean build, Logger logger) {

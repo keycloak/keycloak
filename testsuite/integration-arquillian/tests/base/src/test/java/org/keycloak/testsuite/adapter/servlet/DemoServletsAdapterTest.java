@@ -35,7 +35,6 @@ import org.junit.Before;
 import org.junit.After;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
@@ -138,12 +137,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  * @author tkyjovsk
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -667,14 +660,14 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             assertEquals(401, response.getStatus());
             String errorPageResponse = response.readEntity(String.class);
             assertThat(errorPageResponse, containsString("Error Page"));
-            assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN.toString()));
+            assertThat(errorPageResponse, containsString("NO_BEARER_TOKEN"));
         }
 
         try (Response response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get()) {
             assertEquals(401, response.getStatus());
             String errorPageResponse = response.readEntity(String.class);
             assertThat(errorPageResponse, containsString("Error Page"));
-            assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.INVALID_TOKEN.toString()));
+            assertThat(errorPageResponse, containsString("INVALID_TOKEN"));
         }
         
         client.close();
@@ -755,13 +748,13 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // Get time of token
         AccessToken token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued1 = token.getIssuedAt();
+        long tokenIssued1 = token.getIat();
 
         // Sets 5 minutes offset and assert access token will be still the same
         setAdapterAndServerTimeOffset(300, tokenMinTTLPage.toString());
         tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued2 = token.getIssuedAt();
+        long tokenIssued2 = token.getIat();
         Assert.assertEquals(tokenIssued1, tokenIssued2);
         assertFalse(token.isExpired());
 
@@ -769,7 +762,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());
         tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued3 = token.getIssuedAt();
+        long tokenIssued3 = token.getIat();
         Assert.assertTrue(tokenIssued3 > tokenIssued1);
 
         // Revert times
@@ -853,8 +846,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             testRealmLoginPage.form().setPassword("password");
             testRealmLoginPage.form().login();
             AccessToken token = tokenMinTTLPage.getAccessToken();
-            int authTime = token.getAuthTime();
-            assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10)));
+            long authTime = token.getAuth_time();
+            assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10L)));
         } finally {
             setAdapterAndServerTimeOffset(0, securePortal.toString());
         }
@@ -1111,7 +1104,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         String serverLogPath = null;
 
         String appServer = System.getProperty("app.server");
-        if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap6") || appServer.equals("eap"))) {
+        if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap"))) {
             serverLogPath = System.getProperty("app.server.home") + "/standalone-test/log/server.log";
         }
 

@@ -14,7 +14,7 @@ include::partials/blueprint-disclaimer.adoc[]
 == Architecture
 
 All {project_name} client requests are routed by a DNS name managed by Route53 records.
-Route53 is responsibile to ensure that all client requests are routed to the Primary cluster when it is available and healthy, or to the backup cluster in the event of the primary availability-zone or {project_name} deployment failing.
+Route53 is responsible to ensure that all client requests are routed to the Primary cluster when it is available and healthy, or to the backup cluster in the event of the primary availability-zone or {project_name} deployment failing.
 
 If the primary site fails, the DNS changes will need to propagate to the clients.
 Depending on the client's settings, the propagation may take some minutes based on the client's configuration.
@@ -217,13 +217,13 @@ For both the Primary and Backup cluster, perform the following steps:
 +
 .. Log in to the ROSA cluster
 +
-.. Ensure the {project_name} CR has the following configuration
+.. Ensure the `Keycloak` CR has the following configuration
 +
 [source,yaml]
 ----
 <#noparse>
 apiVersion: k8s.keycloak.org/v2alpha1
-kind: {project_name}
+kind: Keycloak
 metadata:
   name: keycloak
 spec:

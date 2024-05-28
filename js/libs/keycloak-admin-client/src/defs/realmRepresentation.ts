@@ -81,6 +81,7 @@ export default interface RealmRepresentation {
   offlineSessionIdleTimeout?: number;
   offlineSessionMaxLifespan?: number;
   offlineSessionMaxLifespanEnabled?: boolean;
+  organizationsEnabled?: boolean;
   otpPolicyAlgorithm?: string;
   otpPolicyDigits?: number;
   otpPolicyInitialCounter?: number;

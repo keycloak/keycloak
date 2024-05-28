@@ -1,6 +1,6 @@
 package org.keycloak.admin.ui.rest.model;
 
-import org.keycloak.admin.ui.rest.model.SessionId.SessionType;
+import org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,17 +90,20 @@ public class SessionRepresentation {
         this.transientUser = transientUser;
     }
 
+    /**
+     * Equality is determined by user session ID and the offline flag, which are also the primary key on this entity.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof SessionRepresentation)) return false;
         SessionRepresentation that = (SessionRepresentation) o;
-        return start == that.start && userId.equals(that.userId) && type == that.type;
+        return Objects.equals(id, that.id) && type == that.type;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, start, type);
+        return Objects.hash(id, type);
     }
 }
 

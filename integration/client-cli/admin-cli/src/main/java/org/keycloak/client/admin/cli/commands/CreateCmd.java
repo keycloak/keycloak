@@ -110,7 +110,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println("    -d, --delete NAME         Remove a specific attribute NAME from JSON request body");
         out.println("    -f, --file FILENAME       Read object from file or standard input if FILENAME is set to '-'");
         out.println("    -b, --body CONTENT        Content to be sent as-is or used as a JSON object template");
-        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
+        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println();
         out.println("    -H, --print-headers       Print response headers");
@@ -122,7 +122,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println();
         out.println();
-        out.println("Nested attributes are supported by using '.' to separate components of a KEY. Optionaly, the KEY components ");
+        out.println("Nested attributes are supported by using '.' to separate components of a KEY. Optionally, the KEY components ");
         out.println("can be quoted with double quotes - e.g. my_client.attributes.\"external.user.id\". If VALUE starts with [ and ");
         out.println("ends with ] the attribute will be set as a JSON array. If VALUE starts with { and ends with } the attribute ");
         out.println("will be set as a JSON object. If KEY ends with an array index - e.g. clients[3]=VALUE - then the specified item");

@@ -62,7 +62,7 @@ Install a Kerberos client on your machine.
 
 .Procedure
 . Install a Kerberos client. If your machine runs Fedora, Ubuntu, or RHEL, install the link:https://www.freeipa.org/page/Downloads[freeipa-client] package, containing a Kerberos client and other utilities.
-. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
+. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.21/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
 +
 Add your Kerberos realm to the configuration and configure the HTTP domains your server runs on.
 +
@@ -139,7 +139,7 @@ endif::[]
 
 ==== Credential delegation
 
-Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can re-use it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
+Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can reuse it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
 
 Applications must deserialize the claim it receives from {project_name} before using it to make GSS calls against other services. When you deserialize the credential from the access token to the GSSCredential object, create the GSSContext with this credential passed to the `GSSManager.createContext` method. For example:
 

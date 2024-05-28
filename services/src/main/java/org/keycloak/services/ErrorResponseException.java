@@ -17,9 +17,9 @@
 
 package org.keycloak.services;
 
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -36,6 +36,7 @@ public class ErrorResponseException extends WebApplicationException {
     private final Response.Status status;
 
     public ErrorResponseException(String error, String errorDescription, Response.Status status) {
+        super(error, status);
         this.response = null;
         this.error = error;
         this.errorDescription = errorDescription;
@@ -55,10 +56,10 @@ public class ErrorResponseException extends WebApplicationException {
 
     @Override
     public Response getResponse() {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         if (session != null) {
             // This has to happen, since calling getResponse() with non-null result leads to
-            // directly returning the result instead of 
+            // directly returning the result instead of
             // propagating exception to KeycloakErrorHandler.toResponse(Throwable) which would ensure rollback on other exception types.
             //
             // See org.jboss.resteasy.core.ExceptionHandler.unwrapException(HttpRequest, Throwable, RESTEasyTracingLogger)

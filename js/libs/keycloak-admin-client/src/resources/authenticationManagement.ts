@@ -7,6 +7,8 @@ import type AuthenticatorConfigRepresentation from "../defs/authenticatorConfigR
 import type { AuthenticationProviderRepresentation } from "../defs/authenticatorConfigRepresentation.js";
 import type AuthenticatorConfigInfoRepresentation from "../defs/authenticatorConfigInfoRepresentation.js";
 import type RequiredActionProviderSimpleRepresentation from "../defs/requiredActionProviderSimpleRepresentation.js";
+import type RequiredActionConfigInfoRepresentation from "../defs/requiredActionConfigInfoRepresentation.js";
+import type RequiredActionConfigRepresentation from "../defs/requiredActionConfigRepresentation.js";
 
 export class AuthenticationManagement extends Resource<{ realm?: string }> {
   /**
@@ -229,6 +231,44 @@ export class AuthenticationManagement extends Resource<{ realm?: string }> {
     method: "POST",
     path: "/executions/{id}/raise-priority",
     urlParamKeys: ["id"],
+  });
+
+  // Get required actions provider's configuration description
+  public getRequiredActionConfigDescription = this.makeRequest<
+    { alias: string },
+    RequiredActionConfigInfoRepresentation
+  >({
+    method: "GET",
+    path: "/required-actions/{alias}/config-description",
+    urlParamKeys: ["alias"],
+  });
+
+  // Get the configuration of the RequiredAction provider in the current Realm.
+  public getRequiredActionConfig = this.makeRequest<
+    { alias: string },
+    RequiredActionConfigRepresentation
+  >({
+    method: "GET",
+    path: "/required-actions/{alias}/config",
+    urlParamKeys: ["alias"],
+  });
+
+  // Remove the configuration from the RequiredAction provider in the current Realm.
+  public removeRequiredActionConfig = this.makeRequest<{ alias: string }>({
+    method: "DELETE",
+    path: "/required-actions/{alias}/config",
+    urlParamKeys: ["alias"],
+  });
+
+  // Update the configuration from the RequiredAction provider in the current Realm.
+  public updateRequiredActionConfig = this.makeUpdateRequest<
+    { alias: string },
+    RequiredActionConfigRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/required-actions/{alias}/config",
+    urlParamKeys: ["alias"],
   });
 
   public getConfigDescription = this.makeRequest<

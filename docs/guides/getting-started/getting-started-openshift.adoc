@@ -9,6 +9,8 @@ summary="Get started with {project_name} on OpenShift">
 
 == Before you start
 
+include::templates/hw-requirements.adoc[]
+
 . Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a 
 local OpenShift cluster.
 

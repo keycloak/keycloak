@@ -113,7 +113,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     protected final CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
     protected final PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
 
-    protected final RemoteCacheInvoker remoteCacheInvoker;
     protected final InfinispanKeyGenerator keyGenerator;
 
     protected final SessionFunction offlineSessionCacheEntryLifespanAdjuster;
@@ -153,7 +152,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         this.lastSessionRefreshStore = lastSessionRefreshStore;
         this.offlineLastSessionRefreshStore = offlineLastSessionRefreshStore;
         this.persisterLastSessionRefreshStore = persisterLastSessionRefreshStore;
-        this.remoteCacheInvoker = remoteCacheInvoker;
         this.keyGenerator = keyGenerator;
         this.offlineSessionCacheEntryLifespanAdjuster = offlineSessionCacheEntryLifespanAdjuster;
         this.offlineClientSessionCacheEntryLifespanAdjuster = offlineClientSessionCacheEntryLifespanAdjuster;
@@ -238,8 +236,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             id = keyGenerator.generateKeyString(session, sessionCache);
         }
 
-        UserSessionEntity entity = new UserSessionEntity();
-        entity.setId(id);
+        UserSessionEntity entity = new UserSessionEntity(id);
         updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
         SessionUpdateTask<UserSessionEntity> createSessionTask = Tasks.addIfAbsentSync();
@@ -717,10 +714,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
-    protected void onClientRemovedEvent(String realmId, String clientUuid) {
-        // Nothing for now. userSession.getAuthenticatedClientSessions() will check lazily if particular client exists and update userSession on-the-fly.
-    }
-
 
     protected void onUserRemoved(RealmModel realm, UserModel user) {
         removeUserSessions(realm, user, true);
@@ -789,7 +782,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     AuthenticatedClientSessionAdapter wrap(UserSessionModel userSession, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {
-        InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
         return entity != null ? new AuthenticatedClientSessionAdapter(session, this, entity, client, userSession, clientSessionUpdateTx, offline) : null;
     }
@@ -1049,8 +1041,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
 
     private UserSessionEntity createUserSessionEntityInstance(UserSessionModel userSession) {
-        UserSessionEntity entity = new UserSessionEntity();
-        entity.setId(userSession.getId());
+        UserSessionEntity entity = new UserSessionEntity(userSession.getId());
         entity.setRealmId(userSession.getRealm().getId());
 
         entity.setAuthMethod(userSession.getAuthMethod());
@@ -1151,7 +1142,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         }
 
         @Override
-        public CacheOperation getOperation(UserSessionEntity session) {
+        public CacheOperation getOperation() {
             return CacheOperation.REPLACE;
         }
 

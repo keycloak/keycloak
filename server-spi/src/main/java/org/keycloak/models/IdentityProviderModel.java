@@ -21,6 +21,7 @@ import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * <p>A model type representing the configuration for identity providers. It provides some common properties and also a {@link org.keycloak.models.IdentityProviderModel#config}
@@ -220,6 +221,14 @@ public class IdentityProviderModel implements Serializable {
         return displayIconClasses;
     }
 
+    public String getOrganizationId() {
+        return getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+    }
+
+    public void setOrganizationId(String organizationId) {
+        getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, organizationId);
+    }
+
     /**
      * <p>Validates this configuration.
      * 
@@ -264,7 +273,7 @@ public class IdentityProviderModel implements Serializable {
     }
 
     /**
-     * Returns flag whether the users withing this IdP should be transient, ie. not stored in Keycloak database.
+     * Returns flag whether the users within this IdP should be transient, ie. not stored in Keycloak database.
      * Default value: {@code false}.
      * @return
      */
@@ -310,5 +319,21 @@ public class IdentityProviderModel implements Serializable {
 
     public void setMetadataDescriptorUrl(String metadataDescriptorUrl) {
         getConfig().put(METADATA_DESCRIPTOR_URL, metadataDescriptorUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 61 * hash + Objects.hashCode(this.internalId);
+        hash = 61 * hash + Objects.hashCode(this.alias);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof IdentityProviderModel)) return false;
+        return Objects.equals(getInternalId(), ((IdentityProviderModel) obj).getInternalId()) &&
+               Objects.equals(getAlias(), ((IdentityProviderModel) obj).getAlias());
     }
 }

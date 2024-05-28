@@ -15,6 +15,7 @@ import {
   FlexItem,
   Form,
   FormGroup,
+  Icon,
   PageSection,
   Tab,
   TabTitleText,
@@ -32,8 +33,9 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   RoutableTabs,
@@ -41,7 +43,6 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
@@ -50,7 +51,6 @@ import { useFetch } from "../utils/useFetch";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { AdminEvents } from "./AdminEvents";
 import { EventsTab, toEvents } from "./routes/Events";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
 
 import "./events.css";
 
@@ -75,12 +75,18 @@ const defaultValues: UserEventSearchForm = {
 const StatusRow = (event: EventRepresentation) =>
   !event.error ? (
     <span>
-      <CheckCircleIcon color="green" /> {event.type}
+      <Icon status="success">
+        <CheckCircleIcon />
+      </Icon>
+      {event.type}
     </span>
   ) : (
     <Tooltip content={event.error}>
       <span>
-        <WarningTriangleIcon color="orange" /> {event.type}
+        <Icon status="warning">
+          <WarningTriangleIcon />
+        </Icon>
+        {event.type}
       </span>
     </Tooltip>
   );
@@ -127,6 +133,8 @@ const UserDetailLink = (event: EventRepresentation) => {
 };
 
 export default function EventsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const formatDate = useFormatDate();

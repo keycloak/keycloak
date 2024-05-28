@@ -99,7 +99,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     protected Set<String> invalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
 
-    protected boolean clearAll;
     protected final long startupRevision;
     protected StoreFactory delegate;
     protected KeycloakSession session;
@@ -248,16 +247,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         cache.sendInvalidationEvents(session, invalidationEvents, InfinispanCacheStoreFactoryProviderFactory.AUTHORIZATION_INVALIDATION_EVENTS);
-    }
-
-
-
-    public long getStartupRevision() {
-        return startupRevision;
-    }
-
-    public boolean isInvalid(String id) {
-        return invalidations.contains(id);
     }
 
     public void registerResourceServerInvalidation(String id) {

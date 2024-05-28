@@ -44,10 +44,7 @@
             <id>build-app-servers</id>
             <modules>
                 <module>jboss</module>
-                <module>karaf</module>
-                <module>tomcat</module>
                 <module>undertow</module>
-                <module>jetty</module>
             </modules>
         </profile>
     </profiles>

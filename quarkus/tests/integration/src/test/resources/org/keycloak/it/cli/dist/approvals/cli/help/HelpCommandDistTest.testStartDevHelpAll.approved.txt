@@ -52,18 +52,25 @@ Cache:
                      The password for the authentication to the remote server for the remote store.
                        It replaces the 'password' attribute of 'digest' tag of the configuration
                        specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-host' and 'cache-remote-username' are required as
-                       well and the related configuration in XML file should not be present.
+                       specified, 'cache-remote-username' is required as well and the related
+                       configuration in XML file should not be present. Available only when remote
+                       host is set.
 --cache-remote-port <port>
                      The port of the remote server for the remote store configuration. It replaces
                        the 'port' attribute of 'remote-server' tag of the configuration specified
-                       via XML file (see 'cache-config-file' option.). Default: 11222.
+                       via XML file (see 'cache-config-file' option.). Default: 11222. Available
+                       only when remote host is set.
+--cache-remote-tls-enabled <true|false>
+                     Enable TLS support to communicate with a secured remote Infinispan server.
+                       Recommended to be enabled in production. Default: true. Available only when
+                       remote host is set.
 --cache-remote-username <username>
                      The username for the authentication to the remote server for the remote store.
                        It replaces the 'username' attribute of 'digest' tag of the configuration
                        specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-host' and 'cache-remote-password' are required as
-                       well and the related configuration in XML file should not be present.
+                       specified, 'cache-remote-password' is required as well and the related
+                       configuration in XML file should not be present. Available only when remote
+                       host is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
@@ -359,7 +366,7 @@ Logging:
                      DEPRECATED. Include message parameters from the log event. Default: true.
                        Available only when GELF is activated.
 --log-gelf-include-stack-trace <true|false>
-                     DEPRECATED. If set to true, occuring stack traces are included in the
+                     DEPRECATED. If set to true, occurring stack traces are included in the
                        'StackTrace' field in the GELF output. Default: true. Available only when
                        GELF is activated.
 --log-gelf-level <level>

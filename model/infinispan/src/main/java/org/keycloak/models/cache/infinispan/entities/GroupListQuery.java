@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class GroupListQuery extends AbstractRevisioned implements GroupQuery {
     private final String realm;
     private final String realmName;
-    private Map<String, Set<String>> searchKeys;
+    private final Map<String, Set<String>> searchKeys;
 
     public GroupListQuery(Long revisioned, String id, RealmModel realm, String searchKey, Set<String> result) {
         super(revisioned, id);
@@ -60,13 +60,6 @@ public class GroupListQuery extends AbstractRevisioned implements GroupQuery {
     @Override
     public String getRealm() {
         return realm;
-    }
-
-    public Map<String, Set<String>> getSearchKeys() {
-        if (searchKeys == null) {
-            searchKeys = new HashMap<>();
-        }
-        return searchKeys;
     }
 
     @Override

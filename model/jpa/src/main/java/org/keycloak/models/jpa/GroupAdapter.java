@@ -77,6 +77,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public void setName(String name) {
         group.setName(name);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -105,6 +106,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             GroupEntity parentEntity = toEntity(parent, em);
             group.setParentId(parentEntity.getId());
         }
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -113,6 +115,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             return;
         }
         subGroup.setParent(this);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -121,6 +124,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             return;
         }
         subGroup.setParent(null);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -144,7 +148,6 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
                 .map(realm::getGroupById)
                 // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
                 .filter(Objects::nonNull)
-                .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 
@@ -177,10 +180,12 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         }
 
         if (found) {
+            fireGroupUpdatedEvent();
             return;
         }
 
         persistAttributeValue(name, value);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -214,6 +219,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
                 em.remove(attr);
             }
         }
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -265,6 +271,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         em.persist(entity);
         em.flush();
         em.detach(entity);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -294,6 +301,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             em.remove(entity);
         }
         em.flush();
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -318,5 +326,9 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public boolean escapeSlashesInGroupPath() {
         return KeycloakModelUtils.escapeSlashesInGroupPath(session);
+    }
+
+    private void fireGroupUpdatedEvent() {
+        GroupUpdatedEvent.fire(this, session);
     }
 }

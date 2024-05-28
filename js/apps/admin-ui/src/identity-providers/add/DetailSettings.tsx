@@ -26,8 +26,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { ScrollForm } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -68,6 +66,7 @@ import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
+import { useAdminClient } from "../../admin-client";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -85,6 +84,8 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
@@ -250,6 +251,8 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 };
 
 export default function DetailSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -325,10 +328,12 @@ export default function DetailSettings() {
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = savedProvider || getValues();
+    const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
         p.config.authnContextClassRefs,
       );
+    const origAuthnContextDeclRefs = p.config?.authnContextDeclRefs;
     if (p.config?.authnContextDeclRefs)
       p.config.authnContextDeclRefs = JSON.stringify(
         p.config.authnContextDeclRefs,
@@ -344,6 +349,12 @@ export default function DetailSettings() {
           providerId,
         },
       );
+      if (origAuthnContextClassRefs) {
+        p.config!.authnContextClassRefs = origAuthnContextClassRefs;
+      }
+      if (origAuthnContextDeclRefs) {
+        p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
+      }
       reset(p);
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {

@@ -22,10 +22,10 @@ import {
   FormErrorText,
   SelectControl,
   useAlerts,
+  useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useEnvironment } from "../root/KeycloakContext";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {

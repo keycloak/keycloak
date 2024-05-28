@@ -10,12 +10,12 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { flatten } from "flat";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { ScrollForm } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -29,8 +29,7 @@ import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotati
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
-import { DEFAULT_LOCALE } from "../i18n/i18n";
-
+import useLocale from "../utils/useLocale";
 import "./realm-settings-section.css";
 
 type TranslationForm = {
@@ -156,9 +155,11 @@ const CreateAttributeFormContent = ({
 };
 
 export default function NewAttributeSettings() {
+  const { adminClient } = useAdminClient();
   const { realm: realmName, attributeName } = useParams<AttributeParams>();
   const form = useForm<UserProfileAttributeFormFields>();
   const { t } = useTranslation();
+  const combinedLocales = useLocale();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const [config, setConfig] = useState<UserProfileConfig | null>(null);
@@ -169,20 +170,6 @@ export default function NewAttributeSettings() {
   });
   const [generatedDisplayName, setGeneratedDisplayName] = useState<string>("");
   const [realm, setRealm] = useState<RealmRepresentation>();
-
-  const defaultSupportedLocales = useMemo(() => {
-    return realm?.supportedLocales?.length
-      ? realm.supportedLocales
-      : [DEFAULT_LOCALE];
-  }, [realm]);
-
-  const defaultLocales = useMemo(() => {
-    return realm?.defaultLocale?.length ? [realm.defaultLocale] : [];
-  }, [realm]);
-
-  const combinedLocales = useMemo(() => {
-    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
-  }, [defaultLocales, defaultSupportedLocales]);
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),

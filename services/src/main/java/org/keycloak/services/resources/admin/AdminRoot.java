@@ -23,6 +23,7 @@ import org.keycloak.http.HttpResponse;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.NotAuthorizedException;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Encode;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -170,7 +171,7 @@ public class AdminRoot {
         } catch (JWSInputException e) {
             throw new NotAuthorizedException("Bearer token format error");
         }
-        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        String realmName = Encode.decodePath(token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1));
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
         if (realm == null) {
@@ -223,10 +224,7 @@ public class AdminRoot {
             logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
-        HttpResponse response = getHttpResponse();
-
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().build(
-                response);
+        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
 
         return new RealmsAdminResource(session, auth, tokenManager);
     }
@@ -235,13 +233,11 @@ public class AdminRoot {
     @OPTIONS
     @Operation(hidden = true)
     public Object preFlight() {
-        HttpRequest request = getHttpRequest();
-
         if (!isAdminApiEnabled()) {
             throw new NotFoundException();
         }
 
-        return new AdminCorsPreflightService(request);
+        return new AdminCorsPreflightService();
     }
 
     /**
@@ -260,7 +256,7 @@ public class AdminRoot {
         HttpRequest request = getHttpRequest();
 
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new AdminCorsPreflightService(request);
+            return new AdminCorsPreflightService();
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
@@ -272,8 +268,7 @@ public class AdminRoot {
             logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(
-                getHttpResponse());
+        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         return new ServerInfoAdminResource(session);
     }

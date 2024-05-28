@@ -120,11 +120,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public ClientConnection getConnection() {
         if (clientConnection == null) {
-            synchronized (this) {
-                if (clientConnection == null) {
-                    clientConnection = createClientConnection();
-                }
-            }
+            clientConnection = createClientConnection();
         }
 
         return clientConnection;
@@ -148,11 +144,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpRequest getHttpRequest() {
         if (request == null) {
-            synchronized (this) {
-                if (request == null) {
-                    request = createHttpRequest();
-                }
-            }
+            request = createHttpRequest();
         }
 
         return request;
@@ -161,11 +153,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpResponse getHttpResponse() {
         if (response == null) {
-            synchronized (this) {
-                if (response == null) {
-                    response = createHttpResponse();
-                }
-            }
+            response = createHttpResponse();
         }
 
         return response;

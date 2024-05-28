@@ -235,13 +235,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, sid);
 
         assertNull(token.getNbf());
-        assertEquals(0, token.getNotBefore());
 
         assertNotNull(token.getIat());
-        assertEquals(token.getIat().intValue(), token.getIssuedAt());
 
         assertNotNull(token.getExp());
-        assertEquals(token.getExp().intValue(), token.getExpiration());
 
         assertEquals(1, token.getRealmAccess().getRoles().size());
         assertTrue(token.getRealmAccess().isUserInRole("user"));
@@ -345,7 +342,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals("invalid_grant", response.getError());
         assertEquals("Incorrect redirect_uri", response.getErrorDescription());
 
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code")
+        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error(Errors.INVALID_REDIRECT_URI)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)

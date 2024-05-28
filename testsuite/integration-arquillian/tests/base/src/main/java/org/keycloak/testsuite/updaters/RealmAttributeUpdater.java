@@ -179,4 +179,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.getBrowserSecurityHeaders().put(name, value);
         return this;
     }
+
+    public RealmAttributeUpdater setOrganizationEnabled(Boolean organizationsEnabled) {
+        rep.setOrganizationsEnabled(organizationsEnabled);
+        return this;
+    }
 }

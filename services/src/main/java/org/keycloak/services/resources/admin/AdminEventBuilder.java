@@ -103,11 +103,7 @@ public class AdminEventBuilder {
 
     public AdminEventBuilder realm(RealmModel realm) {
         adminEvent.setRealmId(realm.getId());
-        return this;
-    }
-
-    public AdminEventBuilder realm(String realmId) {
-        adminEvent.setRealmId(realmId);
+        adminEvent.setRealmName(realm.getName());
         return this;
     }
 
@@ -173,6 +169,7 @@ public class AdminEventBuilder {
         } else {
             authDetails.setRealmId(realm.getId());
         }
+        authDetails.setRealmName(realm.getName());
         adminEvent.setAuthDetails(authDetails);
         return this;
     }

@@ -30,9 +30,8 @@ import {
   HelpItem,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
-
 import { ForbiddenSection } from "../../ForbiddenSection";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -98,6 +97,8 @@ export const AuthorizationEvaluate = (props: Props) => {
 };
 
 const AuthorizationEvaluateContent = ({ client }: Props) => {
+  const { adminClient } = useAdminClient();
+
   const form = useForm<EvaluateFormInputs>({ mode: "onChange" });
   const {
     control,

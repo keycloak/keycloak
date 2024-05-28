@@ -42,7 +42,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class LDSigningServiceTest extends SigningServiceTest {
+public class LDSigningServiceTest extends OID4VCTest {
 
     @Before
     public void setup() {

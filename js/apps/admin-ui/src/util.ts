@@ -173,7 +173,9 @@ export const generateId = () => Math.floor(Math.random() * 1000);
 export const localeToDisplayName = (locale: string, displayLocale: string) => {
   try {
     return new Intl.DisplayNames([displayLocale], { type: "language" }).of(
-      locale,
+      // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
+      // Once the existing locales have been moved, this code can be removed.
+      locale === "zh-CN" ? "zh-HANS" : locale === "zh-TW" ? "zh-HANT" : locale,
     );
   } catch (error) {
     return locale;

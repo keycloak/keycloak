@@ -25,10 +25,10 @@ import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 
 /**
  * TODO: Check if Boolean can be used as single-use cache argument instead of SingleUseObjectValueEntity. With respect to other single-use cache usecases like "Revoke Refresh Token" .
@@ -42,14 +42,11 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     public static final Logger logger = Logger.getLogger(InfinispanSingleUseObjectProvider.class);
 
     private final Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
-    private final KeycloakSession session;
     private final InfinispanKeycloakTransaction tx;
 
     public InfinispanSingleUseObjectProvider(KeycloakSession session, Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache) {
-        this.session = session;
         this.singleUseObjectCache = singleUseObjectCache;
         this.tx = new InfinispanKeycloakTransaction();
-
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
 

@@ -1,1 +1,1 @@
-. Install the https://infinispan.org/docs/infinispan-operator/main/operator.html#installation[Infinispan Operator]
+. Install the {infinispan-operator-docs}#installation[{jdgserver_name} Operator]

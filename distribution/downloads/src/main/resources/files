@@ -1,10 +1,6 @@
 mvn:keycloak-quarkus-dist:keycloak
 mvn:keycloak-api-docs-dist:keycloak-api-docs
 
-mvn:keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
-
-mvn:keycloak-saml-tomcat-adapter-dist:keycloak-saml-tomcat-adapter
-
 mvn:documentation/keycloak-documentation:keycloak-documentation
 
 npm:js/libs/keycloak-admin-client/target/keycloak-keycloak-admin-client-$$VERSION$$.tgz:keycloak-admin-client-$$VERSION$$.tgz

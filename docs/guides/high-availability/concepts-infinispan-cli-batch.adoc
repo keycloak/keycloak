@@ -19,7 +19,7 @@ For human interactions, the CLI shell might still be a better fit.
 
 == Example
 
-The following `Batch` CR takes an {jdgserver_name} site offline as described in the operational procedure <@links.ha id="operate-switch-over" />.
+The following `Batch` CR takes a site offline as described in the operational procedure <@links.ha id="operate-switch-over" />.
 
 [source,yaml,subs="+attributes"]
 ----
@@ -49,6 +49,6 @@ NOTE: Modifying a `Batch` CR instance has no effect. Batch operations are "`one-
 
 == Further reading
 
-For more information, see the link:{infinispan-operator-docs}#batch-cr[{jdgserver_name} Operator Batch CR documentation].
+For more information, see the link:{infinispan-operator-docs}#batch-cr[{jdgserver_name} Operator `Batch` CR documentation].
 
 </@tmpl.guide>

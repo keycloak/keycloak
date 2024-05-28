@@ -279,7 +279,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
         Response response = ((ExchangeTokenToIdentityProviderToken)provider).exchangeFromToken(session.getContext().getUri(), event, client, targetUserSession, targetUser, formParams);
-        return cors.builder(Response.fromResponse(response)).build();
+        return cors.add(Response.fromResponse(response));
 
     }
 
@@ -451,7 +451,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, ClientModel targetClient) {
@@ -501,7 +501,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     protected Response exchangeExternalToken(String issuer, String subjectToken) {

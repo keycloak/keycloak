@@ -19,7 +19,8 @@
 package org.keycloak.client.clienttype;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.representations.idm.ClientRepresentation;
+
+import java.util.Set;
 
 /**
  * TODO:client-types javadocs
@@ -34,17 +35,11 @@ public interface ClientType {
     // Can be property name (like "standardFlow" or "rootUrl") or attributeName (like "pkceEnabled")
     boolean isApplicable(String optionName);
 
-    // Return if option is configurable by clientType or not...
-    boolean isReadOnly(String optionName);
-
     // Return the value of particular option (if it can be provided by clientType) or return null if this option is not provided by client type
-    <T> T getDefaultValue(String optionName, Class<T> optionType);
+    <T> T getTypeValue(String optionName, Class<T> optionType);
 
+    Set<String> getOptionNames();
 
     // Augment at the client type
-    // Augment particular client on creation of client  (TODO:client-types Should it be clientModel or clientRepresentation? Or something else?)
-    void onCreate(ClientRepresentation newClient) throws ClientTypeException;
-
-    // Augment particular client on update of client (TODO:client-types Should it be clientModel or clientRepresentation? Or something else?)
-    void onUpdate(ClientModel currentClient, ClientRepresentation clientToUpdate) throws ClientTypeException;
+    ClientModel augment(ClientModel client);
 }

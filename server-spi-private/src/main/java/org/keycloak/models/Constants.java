@@ -79,6 +79,7 @@ public final class Constants {
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
+    public static final String TOKEN = "token";
     public static final String TAB_ID = "tab_id";
     public static final String CLIENT_DATA = "client_data";
 
@@ -90,6 +91,11 @@ public final class Constants {
     public static final String KC_ACTION_PARAMETER = "kc_action_parameter";
     public static final String KC_ACTION_STATUS = "kc_action_status";
     public static final String KC_ACTION_EXECUTING = "kc_action_executing";
+    /**
+     * Auth session attribute whether an AIA is enforced, which means it cannot be cancelled.
+     * <p>Example use case: the action behind the AIA is also defined on the user (for example, UPDATE_PASSWORD).</p>
+     */
+    public static final String KC_ACTION_ENFORCED = "kc_action_enforced";
     public static final int KC_ACTION_MAX_AGE = 300;
 
     public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";
@@ -170,4 +176,7 @@ public final class Constants {
 
     // Sent to clients when authentication session expired, but user is already logged-in in current browser
     public static final String AUTHENTICATION_EXPIRED_MESSAGE = "authentication_expired";
+
+    // attribute name used in apps to mark that it is an admin console and its azp is allowed
+    public static final String SECURITY_ADMIN_CONSOLE_ATTR = "security.admin.console";
 }

@@ -18,8 +18,7 @@ import { DatabaseIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
@@ -39,6 +38,8 @@ import { toUserFederationLdap } from "./routes/UserFederationLdap";
 import "./user-federation.css";
 
 export default function UserFederationSection() {
+  const { adminClient } = useAdminClient();
+
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();

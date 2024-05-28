@@ -83,21 +83,27 @@
             <column name="ID" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="ENABLED" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
             <column name="REALM_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="GROUP_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="IPD_ALIAS" type="VARCHAR(255)" />
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="DESCRIPTION" type="VARCHAR(4000)"/>
         </createTable>
         <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
         <addUniqueConstraint tableName="ORG" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
 
         <createTable tableName="ORG_DOMAIN">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
             <column name="NAME" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -133,5 +139,12 @@
         <addUniqueConstraint columnNames="CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_EXTERNAL_CONSENT" tableName="USER_CONSENT"/>
     </changeSet>
 
-
+    <changeSet author="keycloak" id="25.0.0-28861-index-creation">
+        <createIndex tableName="RESOURCE_SERVER_PERM_TICKET" indexName="IDX_PERM_TICKET_REQUESTER">
+            <column name="REQUESTER"/>
+        </createIndex>
+        <createIndex tableName="RESOURCE_SERVER_PERM_TICKET" indexName="IDX_PERM_TICKET_OWNER">
+            <column name="OWNER"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>

@@ -2,16 +2,29 @@
 
 The Account Console v2 theme has been removed from {project_name}. This theme was deprecated in {project_name} 24 and replaced by the Account Console v3 theme. If you are still using this theme, you should migrate to the Account Console v3 theme.
 
+= Most of Java adapters removed
+
+As stated in the release notes of previous {project_name} version, the most of Java adapters are now removed from the {project_name} codebase and downloads pages.
+
+For OAuth 2.0/OIDC, this includes removal of the Tomcat adapter, WildFly/EAP adapter, Servlet Filter adapter, `KeycloakInstalled` desktop adapter, the `jaxrs-oauth-client` adapter, JAAS login modules, Spring adapter and SpringBoot adapters.
+You can check https://www.keycloak.org/2023/03/adapter-deprecation-update.html[our older post] for the list of some alternatives.
+
+For SAML, this includes removal of the Tomcat adapter and Servlet filter adapter. SAML adapters are still supported with WildFly and JBoss EAP.
+
+The generic Authorization Client library is still supported, and we still plan to support it. It aims to be used in combination with any other OAuth 2.0 or OpenID Connect libraries. You can
+check the https://github.com/keycloak/keycloak-quickstarts[quickstarts] for some examples where this authorization client library is used together with the 3rd party Java adapters like
+Elytron OIDC or SpringBoot. You can check the quickstarts also for the example of SAML adapter used with WildFly.
+
 = Upgrade to PatternFly 5
 
 In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://www.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
 
 = Argon2 password hashing
 
-Argon2 is now the default password hashing algorithm used by {project_name}
+Argon2 is now the default password hashing algorithm used by {project_name} in a non-FIPS environment.
 
-Argon2 was the winner of the [2015 password hashing competition](https://en.wikipedia.org/wiki/Password_Hashing_Competition)
-and is the recommended hashing algorithm by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
+Argon2 was the winner of the https://en.wikipedia.org/wiki/Password_Hashing_Competition[2015 password hashing competition]
+and is the recommended hashing algorithm by https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[OWASP].
 
 In {project_name} 24 the default hashing iterations for PBKDF2 were increased from 27.5K to 210K, resulting in a more than
 10 times increase in the amount of CPU time required to generate a password hash. With Argon2 it is possible to achieve
@@ -19,6 +32,7 @@ better security, with almost the same CPU time as previous releases of {project_
 memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in {project_name} requires 7MB
 per-hashing request.
 To prevent excessive memory and CPU usage, the parallel computation of hashes by Argon2 is by default limited to the number of cores available to the JVM.
+To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization.
 
 = New Hostname options
 
@@ -33,6 +47,23 @@ You should migrate to them as soon as possible.
 New options are activated by default, so {project_name} will not recognize the old ones.
 
 For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Persistent user sessions
+
+Previous versions of {project_name} stored only offline user and offline client sessions in the databases.
+The new feature `persistent-user-session` stores online user sessions and online client sessions not only in memory, but also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+The feature is a preview feature and disabled by default. To use it, add the following to your build command:
+
+----
+bin/kc.sh build --features=persistent-user-session ...
+----
+
+For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
+
+For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Cookies updates
 
@@ -55,8 +86,9 @@ The cookie `KC_AUTH_STATE` is removed and it is no longer set by the {project_na
 
 = Deprecated cookie methods removed
 
-The following methods for setting custom cookies have been removed:
+The following APIs for setting custom cookies have been removed:
 
+* `ServerCookie` - replaced by `NewCookie.Builder`
 * `LocaleSelectorProvider.KEYCLOAK_LOCALE` - replaced by `CookieType.LOCALE`
 * `HttpCookie` - replaced by `NewCookie.Builder`
 * `HttpResponse.setCookieIfAbsent(HttpCookie cookie)` - replaced by `HttpResponse.setCookieIfAbsent(NewCookie cookie)`
@@ -129,5 +161,22 @@ For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 It is now possible to specify the `cache`, `cache-stack`, and `cache-config-file` options during runtime.
 This eliminates the need to execute the build phase and rebuild your image due to them.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Removing deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken` classes
+
+In this release, we are finally removing deprecated methods from the following classes:
+
+* `AccessToken`
+* `IDToken`
+* `JsonWebToken`
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Method `getExp` added to `SingleUseObjectKeyModel`
+
+As a consequence of the removal of deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken`,
+the `SingleUseObjectKeyModel` also changed to keep consistency with the method names related to expiration values.
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].

@@ -95,7 +95,7 @@ public interface TestingResource {
 
     /**
      * Query events
-     *
+     * <p>
      * Returns all events, or filters them based on URL query parameters listed here
      *
      * @param realmId     The realm
@@ -114,9 +114,9 @@ public interface TestingResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults);
+                                                 @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+                                                 @QueryParam("max") Integer maxResults);
 
     @PUT
     @Path("/on-event")
@@ -142,7 +142,7 @@ public interface TestingResource {
      * @param operationTypes
      * @param authRealm
      * @param authClient
-     * @param authUser user id
+     * @param authUser       user id
      * @param authIpAddress
      * @param resourcePath
      * @param dateFrom
@@ -156,10 +156,10 @@ public interface TestingResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-            @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults);
+                                                         @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                                         @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+                                                         @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+                                                         @QueryParam("max") Integer maxResults);
 
     @POST
     @Path("/on-admin-event")
@@ -369,12 +369,12 @@ public interface TestingResource {
 
     /**
      * Re-initialize specified provider factory with system properties scope. This will allow to change providerConfig in runtime with {@link #setSystemPropertyOnServer}
-     *
+     * <p>
      * This works just for the provider factories, which can be re-initialized without any side-effects (EG. some functionality already dependent
      * on the previously initialized properties, which cannot be easily changed in runtime)
      *
-     * @param providerType fully qualified class name of provider (subclass of org.keycloak.provider.Provider)
-     * @param providerId provider Id
+     * @param providerType           fully qualified class name of provider (subclass of org.keycloak.provider.Provider)
+     * @param providerId             provider Id
      * @param systemPropertiesPrefix prefix to be used for system properties
      */
     @GET
@@ -387,14 +387,14 @@ public interface TestingResource {
 
     /**
      * This method is here just to have all endpoints from TestingResourceProvider available here.
-     *
+     * <p>
      * But usually it is requested to call this endpoint through WebDriver. See URLUtils.sendPOSTWithWebDriver for more details
      */
     @GET
     @Path("/simulate-post-request")
     @Produces(MediaType.TEXT_HTML_UTF_8)
     Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
-                                         @QueryParam("encodedFormParameters") String encodedFormParameters);
+                                 @QueryParam("encodedFormParameters") String encodedFormParameters);
 
     /**
      * Display message to Error Page - for testing purposes
@@ -408,7 +408,7 @@ public interface TestingResource {
 
     /**
      * @param providerClass Full name of class such as for example "org.keycloak.authentication.Authenticator"
-     * @param providerId providerId referenced in particular provider factory. Can be null (in this case we're returning default provider for particular providerClass)
+     * @param providerId    providerId referenced in particular provider factory. Can be null (in this case we're returning default provider for particular providerClass)
      * @return fullname of provider implementation class
      */
     @GET
@@ -426,6 +426,7 @@ public interface TestingResource {
 
     /**
      * Temporarily changes the truststore SPI with another hostname verification policy. Call reenableTruststoreSpi to revert.
+     *
      * @param hostnamePolicy The hostname verification policy to set
      */
     @GET
@@ -444,7 +445,7 @@ public interface TestingResource {
     /**
      * Get count of tabs (child authentication sessions) for given "root authentication session"
      *
-     * @param realm realm name (not ID)
+     * @param realm         realm name (not ID)
      * @param authSessionId ID of authentication session
      * @return count of tabs. Return 0 if authentication session of given ID does not exists (or if it exists, but without any authenticationSessions attached, which should not happen with normal usage)
      */
@@ -456,4 +457,17 @@ public interface TestingResource {
     @GET
     @Path("/no-cache-annotated-endpoint")
     Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Long programmaticMaxAgeValue);
+
+    /**
+     * Return a pre-authorized code for the current session.
+     *
+     * @param realmName     name of the realm to be used
+     * @param userSessionId id of the user session to get a code for
+     * @param clientId      id of the client to be used
+     * @param expiration    expiration time of the code
+     * @return the code
+     */
+    @GET
+    @Path("/pre-authorized-code")
+    String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration);
 }

@@ -177,15 +177,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
     private ProcessBuilder getProcessBuilder() {
         Map<String, String> env = new HashMap<>();
         String[] processCommands = getArgs(env).toArray(new String[0]);
-        if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
-            for (int i = 0; i < processCommands.length; i++) {
-                if (processCommands[i].startsWith("--db-url=")) {
-                    processCommands[i]= "--db-url=\"" + processCommands[i].substring(9) + "\"";
-                }
-            }
-        }
         ProcessBuilder pb = new ProcessBuilder(processCommands);
-
         pb.environment().putAll(env);
 
         return pb;

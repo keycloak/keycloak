@@ -82,6 +82,7 @@ export type UserProfileFieldsProps = {
   form: UseFormReturn<UserFormFields>;
   userProfileMetadata: UserProfileMetadata;
   supportedLocales: string[];
+  currentLocale: string;
   hideReadOnly?: boolean;
   renderer?: (
     attribute: UserProfileAttributeMetadata,
@@ -98,6 +99,7 @@ export const UserProfileFields = ({
   form,
   userProfileMetadata,
   supportedLocales,
+  currentLocale,
   hideReadOnly = false,
   renderer,
 }: UserProfileFieldsProps) => {
@@ -153,6 +155,7 @@ export const UserProfileFields = ({
                   t={t}
                   form={form}
                   supportedLocales={supportedLocales}
+                  currentLocale={currentLocale}
                   renderer={renderer}
                   attribute={attribute}
                 />
@@ -168,6 +171,7 @@ type FormFieldProps = {
   t: TFunction;
   form: UseFormReturn<UserFormFields>;
   supportedLocales: string[];
+  currentLocale: string;
   attribute: UserProfileAttributeMetadata;
   renderer?: (
     attribute: UserProfileAttributeMetadata,
@@ -179,6 +183,7 @@ const FormField = ({
   form,
   renderer,
   supportedLocales,
+  currentLocale,
   attribute,
 }: FormFieldProps) => {
   const value = form.watch(
@@ -196,6 +201,7 @@ const FormField = ({
       <LocaleSelector
         form={form}
         supportedLocales={supportedLocales}
+        currentLocale={currentLocale}
         t={t}
         attribute={attribute}
       />

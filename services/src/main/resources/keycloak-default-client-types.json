@@ -6,8 +6,53 @@
       "config": {
         "standardFlowEnabled": {
           "applicable": true,
-          "read-only": true,
-          "default-value": true
+          "value": true
+        }
+      }
+    },
+    {
+      "name": "oidc",
+      "provider": "default",
+      "config": {
+        "authorizationServicesEnabled": {
+          "applicable": true
+        },
+        "consentRequired": {
+          "applicable": true
+        },
+        "directAccessGrantsEnabled": {
+          "applicable": true
+        },
+        "frontchannelLogout": {
+          "applicable": true
+        },
+        "fullScopeAllowed": {
+          "applicable": true
+        },
+        "implicitFlowEnabled": {
+          "applicable": true
+        },
+        "nodeReRegistrationTimeout": {
+          "applicable": true
+        },
+        "oauth2.device.authorization.grant.enabled": {
+          "applicable": true
+        },
+        "oidc.ciba.grant.enabled": {
+          "applicable": true
+        },
+        "protocol": {
+          "applicable": true,
+          "value": "openid-connect"
+        },
+        "publicClient": {
+          "applicable": true
+        },
+        "serviceAccountsEnabled": {
+          "applicable": true
+        },
+        "standardFlowEnabled": {
+          "applicable": true
         }
       }
     },
@@ -18,56 +63,62 @@
         "alwaysDisplayInConsole": {
           "applicable": false
         },
+        "authorizationServicesEnabled": {
+          "applicable": false
+        },
+        "bearerOnly": {
+          "applicable": false
+        },
         "consentRequired": {
           "applicable": true,
-          "read-only": true,
-          "default-value": false
+          "value": false
+        },
+        "directAccessGrantsEnabled": {
+          "applicable": false
+        },
+        "frontchannelLogout": {
+          "applicable": false
+        },
+        "implicitFlowEnabled": {
+          "applicable": false
         },
         "login_theme": {
           "applicable": false
         },
-        "protocol": {
-          "applicable": true,
-          "read-only": true,
-          "default-value": "openid-connect"
-        },
-        "publicClient": {
-          "applicable": true,
-          "read-only": true,
-          "default-value": false
-        },
-        "bearerOnly": {
-          "applicable": true,
-          "read-only": true,
-          "default-value": false
-        },
-        "standardFlowEnabled": {
-          "applicable": true,
-          "read-only": true,
-          "default-value": false
-        },
-        "implicitFlowEnabled": {
-          "applicable": true,
-          "read-only": true,
-          "default-value": false
-        },
-        "directAccessGrantsEnabled": {
-          "applicable": true,
-          "read-only": true,
-          "default-value": false
-        },
-        "serviceAccountsEnabled": {
-          "applicable": true,
-          "read-only": true,
-          "default-value": true
-        },
         "logoUri": {
+          "applicable": false
+        },
+        "oauth2.device.authorization.grant.enabled": {
+          "applicable": false
+        },
+        "oidc.ciba.grant.enabled": {
           "applicable": false
         },
         "policyUri": {
           "applicable": false
         },
+        "protocol": {
+          "applicable": true,
+          "value": "openid-connect"
+        },
+        "publicClient": {
+          "applicable": true,
+          "value": false
+        },
+        "redirectUris": {
+          "applicable": false
+        },
+        "serviceAccountsEnabled": {
+          "applicable": true,
+          "value": true
+        },
+        "standardFlowEnabled": {
+          "applicable": false
+        },
         "tosUri": {
+          "applicable": false
+        },
+        "webOrigins": {
           "applicable": false
         }
       }

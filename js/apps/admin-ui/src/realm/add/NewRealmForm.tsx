@@ -4,9 +4,8 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { FormSubmitButton, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -18,6 +17,8 @@ import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 export default function NewRealmForm() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { refresh, whoAmI } = useWhoAmI();
@@ -29,7 +30,7 @@ export default function NewRealmForm() {
     mode: "onChange",
   });
 
-  const { handleSubmit, setValue } = form;
+  const { handleSubmit, setValue, formState } = form;
 
   const handleFileChange = (obj?: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };
@@ -80,9 +81,13 @@ export default function NewRealmForm() {
               defaultValue={true}
             />
             <ActionGroup>
-              <Button variant="primary" type="submit">
+              <FormSubmitButton
+                formState={formState}
+                allowInvalid
+                allowNonDirty
+              >
                 {t("create")}
-              </Button>
+              </FormSubmitButton>
               <Button variant="link" onClick={() => navigate(-1)}>
                 {t("cancel")}
               </Button>

@@ -18,6 +18,8 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkAuthenticator;
+import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -71,6 +73,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponse;
@@ -117,7 +120,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -446,7 +448,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @Path("{provider_alias}/token")
     @OPTIONS
     public Response retrieveTokenPreflight() {
-        return Cors.add(this.request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     @GET
@@ -711,7 +713,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
 
             // Add federated identity link here
-            if (! (federatedUser instanceof LightweightUserAdapter)) {
+            if (!(federatedUser instanceof LightweightUserAdapter)) {
+                checkOverrideLink(authSession, federatedUser, providerAlias);
+
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getUsername(), context.getToken());
                 session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
@@ -758,6 +762,25 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
     }
 
+    private void checkOverrideLink(AuthenticationSessionModel authSession, UserModel federatedUser, String providerAlias) {
+        String isOverride = authSession.getAuthNote(IdpConfirmOverrideLinkAuthenticator.OVERRIDE_LINK);
+        if (!Boolean.parseBoolean(isOverride)) {
+            return;
+        }
+
+        FederatedIdentityModel previous = session.users()
+                .getFederatedIdentity(realmModel, federatedUser, providerAlias);
+        if (previous == null) {
+            return;
+        }
+
+        session.users().removeFederatedIdentity(realmModel, federatedUser, providerAlias);
+
+        event.clone()
+                .event(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previous.getUserName())
+                .success();
+    }
 
     private Response finishOrRedirectToPostBrokerLogin(AuthenticationSessionModel authSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
         String postBrokerLoginFlowId = context.getIdpConfig().getPostBrokerLoginFlowId();
@@ -1051,7 +1074,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private void setEmail(BrokeredIdentityContext context, UserModel federatedUser, String newEmail) {
         federatedUser.setEmail(newEmail);
-        // change email verified depending if it is trusted or not
+        // change email verified depending on if it is trusted or not
         if (context.getIdpConfig().isTrustEmail() && !Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
             logger.tracef("Email verified automatically after updating user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
             federatedUser.setEmailVerified(true);
@@ -1073,13 +1096,30 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private void updateToken(BrokeredIdentityContext context, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
         if (context.getIdpConfig().isStoreToken() && !ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
-            federatedIdentityModel.setToken(context.getToken());
+            // like in OIDCIdentityProvider.exchangeStoredToken()
+            // we shouldn't override the refresh token if it is null in the context and not null in the DB
+            // as for google IDP it will be lost forever
+            if (federatedIdentityModel.getToken() != null && ExchangeTokenToIdentityProviderToken.class.isInstance(context.getIdp())) {
+                try {
+                    AccessTokenResponse previousResponse = JsonSerialization.readValue(federatedIdentityModel.getToken(), AccessTokenResponse.class);
+                    AccessTokenResponse newResponse = JsonSerialization.readValue(context.getToken(), AccessTokenResponse.class);
+
+                    if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+                        newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                        newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+                    }
+
+                    federatedIdentityModel.setToken(JsonSerialization.writeValueAsString(newResponse));
+                } catch (IOException ioe) {
+                    logger.debugf("Token deserialization failed for identity provider %s:  %s", context.getIdpConfig().getAlias(), ioe.getMessage());
+                    federatedIdentityModel.setToken(context.getToken());
+                }
+            } else {
+                federatedIdentityModel.setToken(context.getToken());
+            }
 
             this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
-
-            if (isDebugEnabled()) {
-                logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
-            }
+            logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
         }
     }
 
@@ -1306,7 +1346,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {
-        return Cors.add(this.request, Response.fromResponse(response)).auth().allowedOrigins(session, clientModel).build();
+        return Cors.builder().auth().allowedOrigins(session, clientModel).add(Response.fromResponse(response));
     }
 
     private void fireErrorEvent(String message, Throwable throwable) {

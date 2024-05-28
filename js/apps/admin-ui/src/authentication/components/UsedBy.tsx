@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../../admin-client";
 import { fetchUsedBy } from "../../components/role-mapping/resource";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import useToggle from "../../utils/useToggle";
@@ -36,6 +36,8 @@ type UsedByModalProps = {
 };
 
 const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const loader = async (
@@ -43,7 +45,7 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
     max?: number,
     search?: string,
   ): Promise<{ name: string }[]> => {
-    const result = await fetchUsedBy({
+    const result = await fetchUsedBy(adminClient, {
       id,
       type: isSpecificClient ? "clients" : "idp",
       first: first || 0,

@@ -46,7 +46,11 @@
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>commons-logging-jboss-logging</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -89,13 +93,20 @@
                                         <include>org/keycloak/representations/idm/IdentityProviderRepresentation.class</include>
                                         <include>org/keycloak/representations/idm/authorization/**</include>
                                         -->
+                                        <include>org/keycloak/representations/oidc/OIDCClientRepresentation.class</include>
                                         <include>org/keycloak/representations/idm/**</include>
                                         <include>org/keycloak/representations/JsonWebToken.class</include>
                                         <include>org/keycloak/Token.class</include>
                                         <include>org/keycloak/TokenCategory.class</include>
                                     </includes>
                                 </filter>
-                                
+                                <filter>
+                                    <artifact>org.keycloak:keycloak-common</artifact>
+                                    <includes>
+                                        <include>org/keycloak/common/util/**</include>
+                                        <include>org/keycloak/common/crypto/**</include>
+                                    </includes>
+                                </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
                                     <includes>
@@ -112,24 +123,6 @@
                                     <artifact>com.fasterxml.jackson.core:jackson-annotations</artifact>
                                     <includes>
                                         <include>com/fasterxml/jackson/annotation/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-client</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-core</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-jackson2-provider</artifact>
-                                    <includes>
-                                        <include>**/**</include>
                                     </includes>
                                 </filter>
                                 <filter>

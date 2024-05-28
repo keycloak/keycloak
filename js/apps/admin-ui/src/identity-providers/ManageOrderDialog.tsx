@@ -21,7 +21,7 @@ import {
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { useFetch } from "../utils/useFetch";
@@ -31,6 +31,8 @@ type ManageOrderDialogProps = {
 };
 
 export const ManageOrderDialog = ({ onClose }: ManageOrderDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 

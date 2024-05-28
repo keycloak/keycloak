@@ -45,6 +45,10 @@ public class IdentityProviderBean {
     private RealmModel realm;
     private final KeycloakSession session;
 
+    public IdentityProviderBean() {
+        this.session = null;
+    }
+
     public IdentityProviderBean(RealmModel realm, KeycloakSession session, List<IdentityProviderModel> identityProviders, URI baseURI) {
         this.realm = realm;
         this.session = session;

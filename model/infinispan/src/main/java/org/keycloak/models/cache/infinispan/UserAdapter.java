@@ -99,7 +99,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
-            userProviderCache.registerUserInvalidation(realm, cached);
+            userProviderCache.registerUserInvalidation(cached);
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }

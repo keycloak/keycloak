@@ -110,6 +110,13 @@ public class StartCommandDistTest {
     }
 
     @Test
+    @Launch({ "start", "--http-enabled=true", "--cache-remote-host=localhost", "--hostname-strict=false", "--cache-remote-tls-enabled=false", "--transaction-xa-enabled=true" })
+    void testStartNoWarningOnDisabledRuntimeOption(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoMessage("cache-remote-tls-enabled: Available only when remote host is set");
+    }
+
+    @Test
     @WithEnvVars({"KC_LOG", "invalid"})
     @Launch({ "start", "--optimized" })
     void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
@@ -149,6 +156,16 @@ public class StartCommandDistTest {
         dist.run("build", "--db=dev-mem");
         cliResult = dist.run("start", "--db=dev-mem", "--cache=local", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:"); // no message, same values provided during auto-build
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void testWarningWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build", "--features=preview");
+        cliResult.assertBuild();
+        dist.setEnvVar("KC_DB", "postgres");
+        cliResult = dist.run("start", "--optimized", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertMessage("The following build time non-cli options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
     }
 
     @Test

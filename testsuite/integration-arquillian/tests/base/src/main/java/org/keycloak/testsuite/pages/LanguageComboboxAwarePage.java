@@ -56,7 +56,7 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     }
 
     public void openLanguage(String language){
-        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" + language + "']"));
+        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()[contains(.,'" + language + "')]]"));
         String url = langLink.getAttribute("href");
         DroneUtils.getCurrentDriver().navigate().to(url);
         WaitUtils.waitForPageToLoad();

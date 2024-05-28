@@ -207,7 +207,7 @@ We recommend optimizing {project_name} to provide faster startup and better memo
 === Creating an optimized {project_name} build
 By default, when you use the `start` or `start-dev` command, {project_name} runs a `build` command under the covers for convenience reasons.
 
-This `build` command performs a set of optimizations for the startup and runtime behavior. The build process can take a few seconds. Especially when running {project_name} in containerized environments such as Kubernetes or OpenShift, startup time is important. To avoid losing that time, run a `build` explicity before starting up, such as a separate step in a CI/CD pipeline.
+This `build` command performs a set of optimizations for the startup and runtime behavior. The build process can take a few seconds. Especially when running {project_name} in containerized environments such as Kubernetes or OpenShift, startup time is important. To avoid losing that time, run a `build` explicitly before starting up, such as a separate step in a CI/CD pipeline.
 
 ==== First step: Run a build explicitly
 To run a `build`, enter the following command:

@@ -17,7 +17,11 @@
 
 package org.keycloak.organization.jpa;
 
+import org.keycloak.Config;
 import org.keycloak.Config.Scope;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupEvent;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.organization.authentication.authenticators.broker.IdpOrganizationAuthenticatorFactory;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -29,6 +33,7 @@ import org.keycloak.models.RealmModel.RealmPostCreateEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.OrganizationProviderFactory;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderEvent;
 
 public class JpaOrganizationProviderFactory implements OrganizationProviderFactory {
@@ -68,6 +73,14 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
             provider.removeAll();
         }
+        if (event instanceof GroupEvent) {
+            GroupEvent groupEvent = (GroupEvent) event;
+            KeycloakSession session = groupEvent.getKeycloakSession();
+            GroupModel group = groupEvent.getGroup();
+            if (!Organizations.canManageOrganizationGroup(session, group)) {
+                throw new ModelValidationException("Can not update organization group");
+            }
+        }
     }
 
     private void configureAuthenticationFlows(RealmModel realm) {
@@ -76,8 +89,8 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
     }
 
     private void addOrganizationFirstBrokerFlowStep(RealmModel realm) {
-        AuthenticationFlowModel firstBrokerLoginFlow = realm.getFirstBrokerLoginFlow();
 
+        AuthenticationFlowModel firstBrokerLoginFlow = realm.getFirstBrokerLoginFlow();
         if (firstBrokerLoginFlow == null) {
             return;
         }
@@ -88,18 +101,44 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
             return;
         }
 
-        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(firstBrokerLoginFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator(IdpOrganizationAuthenticatorFactory.ID);
-        execution.setPriority(50);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
+        if (!Config.getAdminRealm().equals(realm.getName())) {
+            // do not add the org flows to the master realm for now.
+            AuthenticationFlowModel conditionalOrg = new AuthenticationFlowModel();
+            conditionalOrg.setTopLevel(false);
+            conditionalOrg.setBuiltIn(true);
+            conditionalOrg.setAlias("First Broker Login - Conditional Organization");
+            conditionalOrg.setDescription("Flow to determine if the authenticator that adds organization members is to be used");
+            conditionalOrg.setProviderId("basic-flow");
+            conditionalOrg = realm.addAuthenticationFlow(conditionalOrg);
+            AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(firstBrokerLoginFlow.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
+            execution.setFlowId(conditionalOrg.getId());
+            execution.setPriority(50);
+            execution.setAuthenticatorFlow(true);
+            realm.addAuthenticatorExecution(execution);
+
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOrg.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticator("conditional-user-configured");
+            execution.setPriority(10);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOrg.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticator(IdpOrganizationAuthenticatorFactory.ID);
+            execution.setPriority(20);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
     }
 
     public void addOrganizationBrowserFlowStep(RealmModel realm) {
-        AuthenticationFlowModel browserFlow = realm.getBrowserFlow();
 
+        AuthenticationFlowModel browserFlow = realm.getBrowserFlow();
         if (browserFlow == null) {
             return;
         }
@@ -110,14 +149,52 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
             return;
         }
 
-        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        if (!Config.getAdminRealm().equals(realm.getName())) {
+            // do not add the org flows to the master realm for now.
+            AuthenticationFlowModel organizations = new AuthenticationFlowModel();
+            organizations.setTopLevel(false);
+            organizations.setBuiltIn(true);
+            organizations.setAlias("Organization");
+            organizations.setProviderId("basic-flow");
+            organizations = realm.addAuthenticationFlow(organizations);
+            AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(browserFlow.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setFlowId(organizations.getId());
+            execution.setPriority(26);
+            execution.setAuthenticatorFlow(true);
+            realm.addAuthenticatorExecution(execution);
 
-        execution.setParentFlow(browserFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        execution.setAuthenticator(OrganizationAuthenticatorFactory.ID);
-        execution.setPriority(26);
-        execution.setAuthenticatorFlow(false);
+            AuthenticationFlowModel conditionalOrg = new AuthenticationFlowModel();
+            conditionalOrg.setTopLevel(false);
+            conditionalOrg.setBuiltIn(true);
+            conditionalOrg.setAlias("Browser - Conditional Organization");
+            conditionalOrg.setDescription("Flow to determine if the organization identity-first login is to be used");
+            conditionalOrg.setProviderId("basic-flow");
+            conditionalOrg = realm.addAuthenticationFlow(conditionalOrg);
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(organizations.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
+            execution.setFlowId(conditionalOrg.getId());
+            execution.setPriority(10);
+            execution.setAuthenticatorFlow(true);
+            realm.addAuthenticatorExecution(execution);
 
-        realm.addAuthenticatorExecution(execution);
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOrg.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticator("conditional-user-configured");
+            execution.setPriority(10);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOrg.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setAuthenticator(OrganizationAuthenticatorFactory.ID);
+            execution.setPriority(20);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
     }
 }

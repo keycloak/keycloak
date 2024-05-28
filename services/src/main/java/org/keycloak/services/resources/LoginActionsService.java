@@ -17,6 +17,8 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.MessageType;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
@@ -52,6 +54,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -67,6 +70,7 @@ import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
@@ -77,7 +81,6 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -233,6 +236,10 @@ public class LoginActionsService {
             return checks.getResponse();
         }
 
+        event.user(authSession.getAuthenticatedUser());
+        event.detail(Details.USERNAME, authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME));
+        event.detail(Details.AUTH_METHOD, authSession.getProtocol());
+
         String flowPath = authSession.getClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW);
         if (flowPath == null) {
             flowPath = AUTHENTICATE_PATH;
@@ -253,6 +260,7 @@ public class LoginActionsService {
 
         URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
         logger.debugf("Flow restart requested. Redirecting to %s", redirectUri);
+        event.success();
         return Response.status(Response.Status.FOUND).location(redirectUri).build();
     }
 
@@ -925,7 +933,21 @@ public class LoginActionsService {
 
         };
 
+        configureOrganization(brokerContext);
+
         return processFlow(checks.isActionRequest(), execution, authSession, flowPath, brokerLoginFlow, null, processor);
+    }
+
+    private void configureOrganization(BrokeredIdentityContext brokerContext) {
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            String organizationId = brokerContext.getIdpConfig().getOrganizationId();
+
+            if (organizationId != null) {
+                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                session.setAttribute(OrganizationModel.class.getName(), provider.getById(organizationId));
+                session.setAttribute(BrokeredIdentityContext.class.getName(), brokerContext);
+            }
+        }
     }
 
     private Response redirectToAfterBrokerLoginEndpoint(AuthenticationSessionModel authSession, boolean firstBrokerLogin) {
@@ -1173,7 +1195,8 @@ public class LoginActionsService {
     }
     
     private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
-        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))) {
+        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
+                && !Boolean.TRUE.toString().equals(authSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
             boolean userRequestedCancelAIA = formData.getFirst(CANCEL_AIA) != null;
             return userRequestedCancelAIA;

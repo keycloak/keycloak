@@ -35,7 +35,7 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
     @FindBy(id = "authenticateWebAuthnButton")
     private WebElement authenticateButton;
 
-    @FindBy(id = "kc-webauthn-authenticator-label")
+    @FindBy(xpath = "//div[contains(@id,'kc-webauthn-authenticator-label-')]")
     private List<WebElement> authenticatorsLabels;
 
     @Page

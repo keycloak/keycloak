@@ -15,6 +15,7 @@ import BindFlowModal from "../support/pages/admin-ui/manage/authentication/BindF
 import OTPPolicies from "../support/pages/admin-ui/manage/authentication/OTPPolicies";
 import WebAuthnPolicies from "../support/pages/admin-ui/manage/authentication/WebAuthnPolicies";
 import CIBAPolicyPage from "../support/pages/admin-ui/manage/authentication/CIBAPolicyPage";
+import FlowDiagram from "../support/pages/admin-ui/manage/authentication/FlowDiagram";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -25,6 +26,7 @@ const realmName = "test" + uuid();
 
 describe("Authentication test", () => {
   const detailPage = new FlowDetails();
+  const diagramView = new FlowDiagram();
   const duplicateFlowModal = new DuplicateFlowModal();
   const modalUtil = new ModalUtils();
 
@@ -118,7 +120,7 @@ describe("Authentication test", () => {
 
     detailPage.goToDiagram();
 
-    cy.get(".react-flow").should("exist");
+    diagramView.exists();
   });
 
   it("Should add a execution", () => {
@@ -206,6 +208,26 @@ describe("Authentication test", () => {
 
     new BindFlowModal().fill("Direct grant flow").save();
     masthead.checkNotificationMessage("Flow successfully updated");
+  });
+
+  it("Should display the default browser flow diagram", () => {
+    listingPage.goToItemDetails("browser");
+
+    detailPage.goToDiagram();
+
+    diagramView.exists();
+
+    diagramView.edgesExist([
+      { from: "Start", to: "Cookie" },
+      { from: "Cookie", to: "End" },
+      { from: "Cookie", to: "Identity Provider Redirector" },
+      { from: "Identity Provider Redirector", to: "End" },
+      { from: "Identity Provider Redirector", to: "Username Password Form" },
+      { from: "Username Password Form", to: "Condition - user configured" },
+      { from: "Condition - user configured", to: "OTP Form" },
+      { from: "Condition - user configured", to: "End" },
+      { from: "OTP Form", to: "End" },
+    ]);
   });
 });
 

@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.Encode;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
@@ -178,7 +179,8 @@ public class RealmManager {
         adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
 
         adminConsole.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
-        String baseUrl = "/admin/" + realm.getName() + "/console/";
+
+        String baseUrl = "/admin/" + Encode.encodePathAsIs(realm.getName()) + "/console/";
         adminConsole.setBaseUrl(baseUrl);
         adminConsole.addRedirectUri(baseUrl + "*");
         adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
@@ -424,7 +426,8 @@ public class RealmManager {
             accountClient.setFullScopeAllowed(false);
 
             accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
-            String baseUrl = "/realms/" + realm.getName() + "/account/";
+
+            String baseUrl = "/realms/" + Encode.encodePathAsIs(realm.getName()) + "/account/";
             accountClient.setBaseUrl(baseUrl);
             accountClient.addRedirectUri(baseUrl + "*");
             accountClient.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
@@ -529,6 +532,7 @@ public class RealmManager {
         try {
             session.getContext().setRealm(realm);
             ReservedCharValidator.validate(rep.getRealm());
+            ReservedCharValidator.validateLocales(rep.getSupportedLocales());
             realm.setName(rep.getRealm());
 
             // setup defaults

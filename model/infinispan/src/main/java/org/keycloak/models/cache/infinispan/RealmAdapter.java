@@ -32,6 +32,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.keycloak.common.Profile;
+import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -872,17 +874,34 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        if (isUpdated()) return updated.getIdentityProvidersStream();
-        return cached.getIdentityProviders().stream();
+        if (isUpdated()) return updated.getIdentityProvidersStream().map(this::createOrganizationAwareIdentityProviderModel);
+        return cached.getIdentityProviders().stream().map(this::createOrganizationAwareIdentityProviderModel);
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        if (isUpdated()) return updated.getIdentityProviderByAlias(alias);
+        if (isUpdated()) return createOrganizationAwareIdentityProviderModel(updated.getIdentityProviderByAlias(alias));
         return getIdentityProvidersStream()
                 .filter(model -> Objects.equals(model.getAlias(), alias))
                 .findFirst()
+                .map(this::createOrganizationAwareIdentityProviderModel)
                 .orElse(null);
+    }
+
+    private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
+        return new IdentityProviderModel(idp) {
+            @Override
+            public boolean isEnabled() {
+                // if IdP is bound to an org
+                if (getOrganizationId() != null) {
+                    OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                    OrganizationModel org = provider == null ? null : provider.getById(getOrganizationId());
+                    return org != null && provider.isEnabled() && org.isEnabled() && super.isEnabled();
+                }
+                return super.isEnabled();
+            }
+        };
     }
 
     @Override
@@ -1410,6 +1429,36 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+        if (isUpdated()) return updated.getRequiredActionConfigById(id);
+        return cached.getRequiredActionProviderConfigs().get(id);
+    }
+
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+        if (isUpdated()) return updated.getRequiredActionConfigByAlias(alias);
+        return cached.getRequiredActionProviderConfigsByAlias().get(alias);
+    }
+
+    @Override
+    public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+        getDelegateForUpdate();
+        updated.updateRequiredActionConfig(model);
+    }
+
+    @Override
+    public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+        getDelegateForUpdate();
+        updated.removeRequiredActionProviderConfig(model);
+    }
+
+    @Override
+    public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+        if (isUpdated()) return updated.getRequiredActionConfigsStream();
+        return cached.getRequiredActionProviderConfigsByAlias().values().stream();
+    }
+
+    @Override
     public Stream<RequiredActionProviderModel> getRequiredActionProvidersStream() {
         if (isUpdated()) return updated.getRequiredActionProvidersStream();
         return cached.getRequiredActionProviderList().stream();
@@ -1759,5 +1808,22 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
+    }
+
+    @Override
+    public boolean isOrganizationsEnabled() {
+        if (isUpdated()) return featureAwareIsOrganizationsEnabled(updated.isOrganizationsEnabled());
+        return featureAwareIsOrganizationsEnabled(cached.isOrganizationsEnabled());
+    }
+
+    @Override
+    public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        getDelegateForUpdate();
+        updated.setOrganizationsEnabled(organizationsEnabled);
+    }
+
+    private boolean featureAwareIsOrganizationsEnabled(boolean isOrganizationsEnabled) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return false;
+        return isOrganizationsEnabled;
     }
 }

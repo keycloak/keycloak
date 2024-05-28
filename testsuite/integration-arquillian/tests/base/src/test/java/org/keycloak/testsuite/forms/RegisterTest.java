@@ -610,11 +610,11 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "Bob123", "Bob123");
             assertTrue(registerPage.isCurrent());
-            assertEquals("Invalid password: Can not contains the username.", registerPage.getInputPasswordErrors().getPasswordError());
+            assertEquals("Invalid password: Can not contain the username.", registerPage.getInputPasswordErrors().getPasswordError());
 
             registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "123Bob", "123Bob");
             assertTrue(registerPage.isCurrent());
-            assertEquals("Invalid password: Can not contains the username.", registerPage.getInputPasswordErrors().getPasswordError());
+            assertEquals("Invalid password: Can not contain the username.", registerPage.getInputPasswordErrors().getPasswordError());
 
             try (Response response = adminClient.realm("test").users().create(UserBuilder.create().username("Bob").build())) {
                 assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());

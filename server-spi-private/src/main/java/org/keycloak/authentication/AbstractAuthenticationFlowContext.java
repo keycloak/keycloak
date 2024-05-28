@@ -184,7 +184,7 @@ public interface AbstractAuthenticationFlowContext {
     void challenge(Response challenge);
 
     /**
-     * Sends the challenge back to the HTTP client irregardless of the current executionr requirement
+     * Sends the challenge back to the HTTP client regardless of the current execution requirement
      *
      * @param challenge
      */

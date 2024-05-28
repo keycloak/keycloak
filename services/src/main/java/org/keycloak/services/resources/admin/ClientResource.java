@@ -152,17 +152,6 @@ public class ClientResource {
             session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED,Boolean.FALSE);
             session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(rep, client, auth.adminAuth()));
 
-            if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
-                if (!ObjectUtil.isEqualOrBothNull(rep.getType(), client.getType())) {
-                    throw new ClientTypeException("Not supported to change client type");
-                }
-                if (rep.getType() != null) {
-                    ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
-                    ClientType clientType = mgr.getClientType(realm, rep.getType());
-                    clientType.onUpdate(client, rep);
-                }
-            }
-
             updateClientFromRep(rep, client, session);
 
             ValidationUtil.validateClient(session, client, false, r -> {

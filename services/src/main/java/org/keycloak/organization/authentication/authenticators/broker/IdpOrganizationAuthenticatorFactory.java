@@ -33,11 +33,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class IdpOrganizationAuthenticatorFactory implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
 
-    public static final String ID = "organization-broker";
+    public static final String ID = "idp-add-organization-member";
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return new IdpOrganizationAuthenticator();
+        return new IdpAddOrganizationMemberAuthenticator();
     }
 
     @Override
@@ -77,7 +77,7 @@ public class IdpOrganizationAuthenticatorFactory implements AuthenticatorFactory
 
     @Override
     public String getDisplayType() {
-        return "Organization Member Link";
+        return "Organization Member Onboard";
     }
 
     @Override
@@ -87,7 +87,7 @@ public class IdpOrganizationAuthenticatorFactory implements AuthenticatorFactory
 
     @Override
     public boolean isUserSetupAllowed() {
-        return false;
+        return true;
     }
 
     @Override

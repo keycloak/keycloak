@@ -1,9 +1,8 @@
 import { lazy } from "react";
 import type { IndexRouteObject, RouteObject } from "react-router-dom";
-
+import { environment } from "@keycloak/keycloak-ui-shared";
 import { ErrorPage } from "./root/ErrorPage";
 import { Root } from "./root/Root";
-import { environment } from "./environment";
 
 const DeviceActivity = lazy(() => import("./account-security/DeviceActivity"));
 const LinkedAccounts = lazy(() => import("./account-security/LinkedAccounts"));
@@ -59,7 +58,7 @@ export const PersonalInfoRoute: IndexRouteObject = {
 };
 
 export const RootRoute: RouteObject = {
-  path: new URL(environment.baseUrl).pathname,
+  path: decodeURIComponent(new URL(environment.baseUrl).pathname),
   element: <Root />,
   errorElement: <ErrorPage />,
   children: [

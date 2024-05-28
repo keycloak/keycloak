@@ -1,8 +1,8 @@
-import type {
-  UserProfileMetadata,
-  UserProfileConfig,
-} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type {
+  UserProfileConfig,
+  UserProfileMetadata,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   AlertVariant,
   ButtonVariant,
@@ -23,10 +23,10 @@ import {
   isUserProfileError,
   setUserProfileServerError,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,
@@ -47,20 +47,21 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import {
+  UIUserRepresentation,
   UserFormFields,
+  filterManagedAttributes,
   toUserFormFields,
   toUserRepresentation,
-  filterManagedAttributes,
-  UIUserRepresentation,
 } from "./form-state";
 import { UserParams, UserTab, toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
-import { getUnmanagedAttributes } from "../components/users/resource";
+
 import "./user-section.css";
-import { KeyValueType } from "../components/key-value-form/key-value-convert";
 
 export default function EditUser() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
@@ -115,7 +116,7 @@ export default function EditUser() {
           userProfileMetadata: true,
         }) as UIUserRepresentation | undefined,
         adminClient.attackDetection.findOne({ id: id! }),
-        getUnmanagedAttributes(id!),
+        adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
       ]),
     ([realm, userData, attackDetection, unmanagedAttributes, upConfig]) => {
@@ -366,17 +367,15 @@ export default function EditUser() {
               >
                 <UserConsents />
               </Tab>
-              {hasAccess("view-identity-providers") && (
-                <Tab
-                  data-testid="identity-provider-links-tab"
-                  title={
-                    <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
-                  }
-                  {...identityProviderLinksTab}
-                >
-                  <UserIdentityProviderLinks userId={user.id!} />
-                </Tab>
-              )}
+              <Tab
+                data-testid="identity-provider-links-tab"
+                title={
+                  <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
+                }
+                {...identityProviderLinksTab}
+              >
+                <UserIdentityProviderLinks userId={user.id!} />
+              </Tab>
               <Tab
                 data-testid="user-sessions-tab"
                 title={<TabTitleText>{t("sessions")}</TabTitleText>}

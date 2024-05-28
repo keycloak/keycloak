@@ -7,23 +7,25 @@ import {
   ButtonVariant,
   Divider,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
+  EmptyStateHeader,
   EmptyStateIcon,
   PageSection,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
-  EmptyStateActions,
-  EmptyStateHeader,
-  EmptyStateFooter,
+  Select,
+  SelectOption,
+  MenuToggle,
+  SelectList,
 } from "@patternfly/react-core";
-import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -51,21 +53,33 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
 
   return (
     <Select
-      width={300}
+      style={{
+        width: "300px",
+      }}
       onSelect={(_, selection) => {
         onSelect(selection as PasswordPolicyTypeRepresentation);
         setOpen(false);
       }}
-      onToggle={(_event, value) => setOpen(value)}
+      toggle={(ref) => (
+        <MenuToggle
+          ref={ref}
+          onClick={() => setOpen(!open)}
+          isExpanded={open}
+          isDisabled={policies?.length === 0}
+          data-testid="add-policy"
+        >
+          {t("addPolicy")}
+        </MenuToggle>
+      )}
       isOpen={open}
-      selections={t("addPolicy")}
-      isDisabled={policies?.length === 0}
     >
-      {policies?.map((policy) => (
-        <SelectOption key={policy.id} value={policy}>
-          {policy.displayName}
-        </SelectOption>
-      ))}
+      <SelectList>
+        {policies?.map((policy) => (
+          <SelectOption key={policy.id} value={policy}>
+            {policy.displayName}
+          </SelectOption>
+        ))}
+      </SelectList>
     </Select>
   );
 };
@@ -79,6 +93,8 @@ export const PasswordPolicy = ({
   realm,
   realmUpdated,
 }: PasswordPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { passwordPolicies } = useServerInfo();
 

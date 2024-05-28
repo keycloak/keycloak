@@ -24,7 +24,12 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 
@@ -34,12 +39,14 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -128,6 +135,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             try {
                 session.clientPolicy().triggerOnEvent(clientPolicyContextGenerator.apply(responseBuilder));
             } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, cpe.getErrorDetail());
                 event.error(cpe.getError());
                 throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
             }
@@ -151,7 +159,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
         event.success();
 
-        return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE));
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
@@ -165,9 +173,11 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     responseBuilder.getRefreshToken().setConfirmation(confirmation);
                 }
             } else {
+                String errorMessage = "Client Certification missing for MTLS HoK Token Binding";
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.INVALID_REQUEST);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
+                        errorMessage, Response.Status.BAD_REQUEST);
             }
         }
     }
@@ -225,6 +235,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                 dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
                 session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
             } catch (VerificationException ex) {
+                event.detail(Details.REASON, ex.getMessage());
                 event.error(Errors.INVALID_DPOP_PROOF);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_DPOP_PROOF, ex.getMessage(), Response.Status.BAD_REQUEST);
             }
@@ -243,9 +254,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
 
         if (!validScopes) {
+            String errorMessage = "Invalid scopes: " + scope;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
-                    Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         return scope;

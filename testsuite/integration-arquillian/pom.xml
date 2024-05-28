@@ -49,11 +49,7 @@
         <arquillian-graphene.version>3.0.0-alpha.3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
-        <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
-        <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
-        <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
-        <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
         <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
@@ -158,11 +154,6 @@
                 <artifactId>selenium-remote-driver</artifactId>
                 <version>${selenium.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-opera-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.jboss.arquillian</groupId>
@@ -221,33 +212,6 @@
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
             </dependency>
 
-            <!-- Fuse adapter tests dependencies -->
-            <dependency>
-		        <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-karaf-managed</artifactId>
-                <version>${arquillian-container-karaf.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-osgi</artifactId>
-                <version>${arquillian-container-karaf.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!-- Fuse adapter tests dependencies END -->
-            
         </dependencies>
     </dependencyManagement>
     

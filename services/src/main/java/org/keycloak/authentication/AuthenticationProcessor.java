@@ -101,6 +101,8 @@ public class AuthenticationProcessor {
     protected HttpRequest request;
     protected String flowId;
     protected String flowPath;
+
+
     protected boolean browserFlow;
     protected BruteForceProtector protector;
     protected Runnable afterResetListener;

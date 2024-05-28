@@ -1,6 +1,6 @@
 = Never expires option removed from client advanced settings combos
 
-The option `Never expires` is now removed from all the combos of the Advanced Settings client tab. This option was misleading because the different lifespans or idle timeouts were never infinite, but limited by the general user session or realm values. Therefore, this option is removed in favor of the other two remaining options: `Inherits from the realm settings` (the client uses general realm timeouts) and `Expires in` (the value is overriden for the client). Internally the `Never expires` was represented by `-1`. Now that value is shown with a warning in the Admin Console and cannot be set directly by the administrator.
+The option `Never expires` is now removed from all the combos of the Advanced Settings client tab. This option was misleading because the different lifespans or idle timeouts were never infinite, but limited by the general user session or realm values. Therefore, this option is removed in favor of the other two remaining options: `Inherits from the realm settings` (the client uses general realm timeouts) and `Expires in` (the value is overridden for the client). Internally the `Never expires` was represented by `-1`. Now that value is shown with a warning in the Admin Console and cannot be set directly by the administrator.
 
 = New LinkedIn OpenID Connect social provider
 

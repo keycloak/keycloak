@@ -23,6 +23,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
+        <quarkus.docker.build-args.KEYCLOAK_VERSION>${project.version}</quarkus.docker.build-args.KEYCLOAK_VERSION>
     </properties>
 
     <dependencyManagement>

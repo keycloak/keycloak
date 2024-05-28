@@ -16,10 +16,12 @@
  */
 package org.keycloak.organization;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -56,10 +58,36 @@ public interface OrganizationProvider extends Provider {
     OrganizationModel getByDomainName(String domainName);
 
     /**
-     * Returns the organizations of the given realm as a stream.
-     * @return Stream of the organizations. Never returns {@code null}.
+     * Returns all organizations in the realm.
+     *
+     * @return a {@link Stream} of the realm's organizations.
      */
-    Stream<OrganizationModel> getAllStream();
+    default Stream<OrganizationModel> getAllStream() {
+        return getAllStream("", null, null, null);
+    }
+
+    /**
+     * Returns all organizations in the realm filtered according to the specified parameters.
+     *
+     * @param search a {@code String} representing either an organization name or domain.
+     * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
+     *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
+     *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a {@link Stream} of the matched organizations. Never returns {@code null}.
+     */
+    Stream<OrganizationModel> getAllStream(String search, Boolean exact, Integer first, Integer max);
+
+    /**
+     * Returns all organizations in the realm filtered according to the specified parameters.
+     *
+     * @param attributes a {@code Map} containig the attributes (name/value) that must match organization attributes.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a {@link Stream} of the matched organizations. Never returns {@code null}.
+     */
+    Stream<OrganizationModel> getAllStream(Map<String, String> attributes, Integer first, Integer max);
 
     /**
      * Removes the given organization from the realm together with the data associated with it, e.g. its members etc.
@@ -86,12 +114,12 @@ public interface OrganizationProvider extends Provider {
     boolean addMember(OrganizationModel organization, UserModel user);
 
     /**
-     * Returns the members of a given {@link OrganizationModel}.
+     * Returns the members of a given {@link OrganizationModel} filtered according to the specified parameters.
      *
      * @param organization the organization
      * @return Stream of the members. Never returns {@code null}.
      */
-    Stream<UserModel> getMembersStream(OrganizationModel organization);
+    Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max);
 
     /**
      * Returns the member of the {@link OrganizationModel} by its {@code id}.
@@ -123,15 +151,16 @@ public interface OrganizationProvider extends Provider {
      * @param organization the organization
      * @return The identityProvider associated with a given {@code organization} or {@code null} if there is none.
      */
-    IdentityProviderModel getIdentityProvider(OrganizationModel organization);
+    Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization);
 
     /**
      * Removes the link between the given {@link OrganizationModel} and identity provider associated with it if such a link exists.
      * 
      * @param organization the organization
+     * @param identityProvider the identity provider
      * @return {@code true} if the link was removed, {@code false} otherwise
      */
-    boolean removeIdentityProvider(OrganizationModel organization);
+    boolean removeIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
 
     /**
      * Indicates if the current realm supports organization.
@@ -139,4 +168,35 @@ public interface OrganizationProvider extends Provider {
      * @return {@code true} if organization is supported. Otherwise, returns {@code false}
      */
     boolean isEnabled();
+
+    /**
+     * <p>Indicates if the given {@code member} is managed by the organization.
+     *
+     * <p>A member is managed by the organization whenever the member cannot exist without the organization they belong
+     * to so that their lifecycle is bound to the organization lifecycle. For instance, when a member is federated from
+     * the identity provider associated with an organization, there is a strong relationship between the member identity
+     * and the organization.
+     *
+     * <p>On the other hand, existing realm users whose identities are not intrinsically linked to an organization but
+     * are eventually joining an organization are not managed by the organization. They have a lifecycle that does not
+     * depend on the organization they are linked to.
+     *
+     * @param organization the organization
+     * @param member the member
+     * @return {@code true} if the {@code member} is managed by the given {@code organization}. Otherwise, returns {@code false}
+     */
+    boolean isManagedMember(OrganizationModel organization, UserModel member);
+
+    /**
+     * <p>Removes a member from the organization.
+     *
+     * <p>This method can either remove the given {@code member} entirely from the realm (and the organization) or only
+     * remove the link to the {@code organization} so that the user still exists but is no longer a member of the organization.
+     * The decision to remove the user entirely or only the link depends on whether the user is managed by the organization or not, respectively.
+     *
+     * @param organization the organization
+     * @param member the member
+     * @return {@code true} if the given {@code member} is a member and was successfully removed from the organization. Otherwise, returns {@code false}
+     */
+    boolean removeMember(OrganizationModel organization, UserModel member);
 }

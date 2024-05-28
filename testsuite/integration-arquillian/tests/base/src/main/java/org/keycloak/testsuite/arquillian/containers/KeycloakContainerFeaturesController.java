@@ -23,9 +23,11 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -94,7 +96,7 @@ public class KeycloakContainerFeaturesController {
         private void assertPerformed() {
             assertThat("An annotation requested to " + action.name() +
                             " feature " + feature.getKey() + ", however after performing this operation " +
-                            "the feature is not in desired state" ,
+                            "the feature is not in desired state",
                     ProfileAssume.isFeatureEnabled(feature),
                     is(action == FeatureAction.ENABLE || action == FeatureAction.ENABLE_AND_RESET));
         }
@@ -185,17 +187,39 @@ public class KeycloakContainerFeaturesController {
         }
     }
 
+    private UpdateFeature getUpdateFeature(State state, boolean enableFeature, boolean skipRestart, AnnotatedElement annotatedElement, Profile.Feature feature) {
+
+        if (state.equals(State.BEFORE)) {
+            return new UpdateFeature(feature, skipRestart, enableFeature ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotatedElement);
+        }
+
+        //in case of method, checks if there is a feature annotation on the class to set the correct state for the feature
+        if (annotatedElement instanceof Method) {
+            Class<?> clazz = ((Method) annotatedElement).getDeclaringClass();
+            while (clazz != null) {
+                if(Arrays.stream(clazz.getAnnotationsByType(EnableFeature.class)).anyMatch(a -> a.value() == feature)) {
+                    return new UpdateFeature(feature, skipRestart, FeatureAction.ENABLE_AND_RESET, annotatedElement);
+                } else if(Arrays.stream(clazz.getAnnotationsByType(DisableFeature.class)).anyMatch(a -> a.value() == feature)) {
+                    return new UpdateFeature(feature, skipRestart, FeatureAction.DISABLE_AND_RESET, annotatedElement);
+                }
+                clazz = clazz.getSuperclass();
+            }
+        }
+
+        //class element or no feature annotation found for the method, using state from profile
+        Profile activeProfile = Optional.ofNullable(Profile.getInstance()).orElse(Profile.defaults());
+        return new UpdateFeature(feature, skipRestart, activeProfile.getDisabledFeatures().contains(feature) ? FeatureAction.DISABLE_AND_RESET : FeatureAction.ENABLE_AND_RESET, annotatedElement);
+    }
+
     private Set<UpdateFeature> getUpdateFeaturesSet(AnnotatedElement annotatedElement, State state) {
         Set<UpdateFeature> ret = new HashSet<>();
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
-                .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE_AND_RESET, annotatedElement))
+                .map(annotation -> getUpdateFeature(state, true, annotation.skipRestart(), annotatedElement, annotation.value()))
                 .collect(Collectors.toSet()));
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
-                .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE_AND_RESET, annotatedElement))
+                .map(annotation -> getUpdateFeature(state, false, annotation.skipRestart(), annotatedElement, annotation.value()))
                 .collect(Collectors.toSet()));
 
         return ret;
@@ -222,7 +246,7 @@ public class KeycloakContainerFeaturesController {
 
         return false;
     }
-    
+
     public void handleEnableFeaturesAnnotationBeforeClass(@Observes(precedence = 1) BeforeClass event) throws Exception {
         checkAnnotatedElementForFeatureAnnotations(event.getTestClass().getJavaClass(), State.BEFORE);
     }

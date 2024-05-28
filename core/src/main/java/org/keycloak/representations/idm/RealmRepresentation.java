@@ -215,6 +215,8 @@ public class RealmRepresentation {
 
     protected Boolean userManagedAccessAllowed;
 
+    protected Boolean organizationsEnabled;
+
     @Deprecated
     protected Boolean social;
     @Deprecated
@@ -1427,6 +1429,14 @@ public class RealmRepresentation {
 
     public Boolean isUserManagedAccessAllowed() {
         return userManagedAccessAllowed;
+    }
+
+    public Boolean isOrganizationsEnabled() {
+        return organizationsEnabled;
+    }
+
+    public void setOrganizationsEnabled(Boolean organizationsEnabled) {
+        this.organizationsEnabled = organizationsEnabled;
     }
 
     @JsonIgnore

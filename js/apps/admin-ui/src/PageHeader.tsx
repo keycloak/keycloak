@@ -18,16 +18,15 @@ import { BarsIcon, EllipsisVIcon, HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHref } from "react-router-dom";
-import { useHelp } from "@keycloak/keycloak-ui-shared";
-
+import { useEnvironment, useHelp } from "@keycloak/keycloak-ui-shared";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { toDashboard } from "./dashboard/routes/Dashboard";
-import environment from "./environment";
-import { keycloak } from "./keycloak";
 
 const ManageAccountDropdownItem = () => {
+  const { keycloak } = useEnvironment();
+
   const { t } = useTranslation();
   return (
     <DropdownItem
@@ -41,6 +40,7 @@ const ManageAccountDropdownItem = () => {
 };
 
 const SignOutDropdownItem = () => {
+  const { keycloak } = useEnvironment();
   const { t } = useTranslation();
   return (
     <DropdownItem
@@ -146,6 +146,7 @@ const UserDropdown = () => {
 };
 
 export const Header = () => {
+  const { environment, keycloak } = useEnvironment();
   const { t } = useTranslation();
   const { realm } = useRealm();
 

@@ -43,6 +43,6 @@ public interface OrganizationResource {
     @Path("members")
     OrganizationMembersResource members();
 
-    @Path("identity-provider")
-    OrganizationIdentityProviderResource identityProvider();
+    @Path("identity-providers")
+    OrganizationIdentityProvidersResource identityProviders();
 }

@@ -17,6 +17,14 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.util.Iterator;
+import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
+
 import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.CacheMode;
@@ -24,7 +32,6 @@ import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
@@ -36,7 +43,7 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
-import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -46,14 +53,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.ProviderEvent;
-
-import java.util.Iterator;
-import java.util.ServiceLoader;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Supplier;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -186,7 +185,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                             throw new RuntimeException("Multiple " + org.keycloak.cluster.ManagedCacheManagerProvider.class + " providers found.");
                         }
                         
-                        managedCacheManager = provider.getCacheManager(config);
+                        managedCacheManager = provider.getEmbeddedCacheManager(config);
                     }
 
                     // store it in a locale variable first, so it is not visible to the outside, yet
@@ -247,11 +246,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         }
 
-        // For Infinispan 10, we go with the JBoss marshalling.
-        // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
-        // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
-        gcb.serialization().marshaller(new JBossUserMarshaller());
-
+        Marshalling.configure(gcb);
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
         if (useKeycloakTimeService) {
             setTimeServiceToKeycloakTime(cacheManager);
@@ -391,7 +386,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .segmented(segmented)
                 .rawValues(true)
                 .forceReturnValues(false)
-                .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
                 .protocolVersion(getHotrodVersion())
                 .addServer()
                 .host(jdgServer)

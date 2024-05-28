@@ -31,14 +31,18 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
 @Table(name="ORG")
 @Entity
 @NamedQueries({
-        @NamedQuery(name="getByRealm", query="select o from OrganizationEntity o where o.realmId = :realmId")
+        @NamedQuery(name="getByRealm", query="select o from OrganizationEntity o where o.realmId = :realmId order by o.name ASC"),
+        @NamedQuery(name="getByOrgName", query="select distinct o from OrganizationEntity o where o.realmId = :realmId AND o.name = :name"),
+        @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
+                " where o.realmId = :realmId AND d.name = :name"),
+        @NamedQuery(name="getByNameOrDomain", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
+                " where o.realmId = :realmId AND (o.name = :search OR d.name = :search) order by o.name ASC"),
+        @NamedQuery(name="getByNameOrDomainContained", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
+                " where o.realmId = :realmId AND (lower(o.name) like concat('%',:search,'%') OR d.name like concat('%',:search,'%')) order by o.name ASC")
 })
 public class OrganizationEntity {
 
@@ -50,18 +54,19 @@ public class OrganizationEntity {
     @Column(name = "NAME")
     private String name;
 
+    @Column(name = "ENABLED")
+    private boolean enabled;
+
+    @Column(name = "DESCRIPTION")
+    private String description;
+
     @Column(name = "REALM_ID")
     private String realmId;
 
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @Column(name = "IPD_ALIAS")
-    private String idpAlias;
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
-    @Fetch(FetchMode.SELECT)
-    @BatchSize(size = 20)
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
 
     public String getId() {
@@ -74,6 +79,22 @@ public class OrganizationEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isEnabled() {
+        return this.enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getRealmId() {
@@ -94,14 +115,6 @@ public class OrganizationEntity {
 
     public String getName() {
         return name;
-    }
-
-    public String getIdpAlias() {
-        return idpAlias;
-    }
-
-    public void setIdpAlias(String idpAlias) {
-        this.idpAlias = idpAlias;
     }
 
     public Collection<OrganizationDomainEntity> getDomains() {

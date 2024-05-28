@@ -55,7 +55,6 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
                         optionCategory != OptionCategory.HOSTNAME_V1 &&
                         optionCategory != OptionCategory.HOSTNAME_V2 &&
                         optionCategory != OptionCategory.METRICS &&
-                        optionCategory != OptionCategory.VAULT &&
                         optionCategory != OptionCategory.SECURITY &&
                         optionCategory != OptionCategory.CACHE &&
                         optionCategory != OptionCategory.HEALTH).collect(Collectors.toList());

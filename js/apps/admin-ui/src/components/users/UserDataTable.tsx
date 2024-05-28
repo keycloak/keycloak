@@ -27,8 +27,7 @@ import type { IRowData } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { SearchType } from "../../user/details/SearchFilter";
 import { toAddUser } from "../../user/routes/AddUser";
@@ -95,6 +94,8 @@ const ValidatedEmail = (user: UserRepresentation) => {
 };
 
 export function UserDataTable() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
@@ -159,7 +160,7 @@ export function UserDataTable() {
     }
 
     try {
-      return await findUsers({
+      return await findUsers(adminClient, {
         briefRepresentation: true,
         ...params,
       });

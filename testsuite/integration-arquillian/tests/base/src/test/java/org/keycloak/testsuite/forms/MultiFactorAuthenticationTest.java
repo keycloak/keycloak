@@ -33,9 +33,12 @@ import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -285,6 +288,7 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
     @Test
     public void testUsernameLabelAndResetLogin() {
         try {
+            UserRepresentation user = testRealm().users().search("user-with-one-configured-otp").get(0);
             configureBrowserFlowWithAlternativeCredentials();
 
             // The "attempted username" with username not yet available on the login screen
@@ -306,6 +310,12 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
 
             // Reset login
             selectAuthenticatorPage.clickResetLogin();
+            events.expect(EventType.RESTART_AUTHENTICATION)
+                    .client(oauth.getClientId())
+                    .user(user.getId())
+                    .detail(Details.USERNAME, "user-with-one-configured-otp")
+                    .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
+                    .assertEvent();
 
             // Should be back on the login page
             loginUsernameOnlyPage.assertCurrent();
@@ -321,7 +331,7 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
 
             // Login
             passwordPage.login("password");
-            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
+            events.expectLogin().user(user.getId())
                     .detail(Details.USERNAME, "otp1@redhat.com").assertEvent();
         } finally {
             BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");

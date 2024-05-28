@@ -17,13 +17,11 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.awaitility.Awaitility.given;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -32,8 +30,6 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-
-import static io.restassured.RestAssured.when;
 
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
@@ -99,8 +95,6 @@ public class LoggingDistTest {
     void testJsonFormatApplied(LaunchResult result) throws JsonProcessingException {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertMessage("The following used run time options are UNAVAILABLE and will be ignored during build time:");
-        cliResult.assertMessage("- log-console-output: Available only when Console log handler is activated.");
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();
     }

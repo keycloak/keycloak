@@ -6,11 +6,12 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
+import { useParams } from "../utils/useParams";
 import { PAGE_PROVIDER, TAB_PROVIDER } from "./PageList";
 import { toPage } from "./routes";
 
@@ -25,12 +26,15 @@ export const PageHandler = ({
   providerType,
   page: { id: providerId, ...page },
 }: PageHandlerProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<ComponentTypeRepresentation>();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const { addAlert, addError } = useAlerts();
   const [id, setId] = useState(idAttribute);
+  const params = useParams();
 
   useFetch(
     async () =>
@@ -51,11 +55,13 @@ export const PageHandler = ({
   );
 
   const onSubmit = async (component: ComponentRepresentation) => {
-    if (component.config)
+    if (component.config || params) {
+      component.config = Object.assign(component.config || {}, params);
       Object.entries(component.config).forEach(
         ([key, value]) =>
           (component.config![key] = Array.isArray(value) ? value : [value]),
       );
+    }
     try {
       const updatedComponent = {
         ...component,

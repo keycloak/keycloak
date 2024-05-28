@@ -23,9 +23,7 @@ import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.DOMException;
@@ -61,15 +59,10 @@ public class DeploymentArchiveProcessorUtils {
     private static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
     private static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
 
-    private static final String APP_SERVER_SCHEMA = APP_SERVER_SSL_REQUIRED ? "https" : "http";
-    private static final String APP_SERVER_PORT_PROPERTY = "auth.server." + APP_SERVER_SCHEMA + ".port";
     private static final String AUTH_SERVER_REPLACED_URL = "http://localhost:8080";
-    private static final String APP_SERVER_CONTAINER = System.getProperty("app.server", "");
 
     public static final String WEBXML_PATH = "/WEB-INF/web.xml";
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
-    public static final String ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak.json";
-    public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_JS = "/keycloak.json";
     public static final String SAML_ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak-saml.xml";
     public static final String JBOSS_DEPLOYMENT_XML_PATH = "/WEB-INF/jboss-deployment-structure.xml";
@@ -84,130 +77,6 @@ public class DeploymentArchiveProcessorUtils {
      */
     public static boolean checkRunOnServerDeployment(Archive<?> archive) {
         return archive.getName().equals("run-on-server-classes.war");
-    }
-
-    public static void modifyWebXMLForServletFilter(Archive<?> archive, TestClass testClass) {
-        Document webXmlDoc;
-        try {
-            webXmlDoc = IOUtil.loadXML(
-              archive.get(WEBXML_PATH).getAsset().openStream());
-        } catch (Exception ex) {
-            throw new RuntimeException("Error when processing " + archive.getName(), ex);
-        }
-
-        //We need to add filter declaration to web.xml
-        log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() +
-                " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() +
-                " for " + archive.getName());
-
-        Element filter = webXmlDoc.createElement("filter");
-        Element filterName = webXmlDoc.createElement("filter-name");
-        Element filterClass = webXmlDoc.createElement("filter-class");
-
-        filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
-        filterClass.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterClass());
-
-        filter.appendChild(filterName);
-        filter.appendChild(filterClass);
-        IOUtil.appendChildInDocument(webXmlDoc, "web-app", filter);
-
-        filter.appendChild(filterName);
-        filter.appendChild(filterClass);
-
-        // check if there was a resolver for OIDC and set as a filter param
-        String keycloakResolverClass = getKeycloakResolverClass(webXmlDoc);
-        if (keycloakResolverClass != null) {
-            Element initParam = webXmlDoc.createElement("init-param");
-            Element paramName = webXmlDoc.createElement("param-name");
-            paramName.setTextContent("keycloak.config.resolver");
-            Element paramValue = webXmlDoc.createElement("param-value");
-            paramValue.setTextContent(keycloakResolverClass);
-            initParam.appendChild(paramName);
-            initParam.appendChild(paramValue);
-            filter.appendChild(initParam);
-        }
-
-        // Limitation that all deployments of annotated class use same skipPattern. Refactor if 
-        // something more flexible is needed (would require more tricky web.xml parsing though...)
-        addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.SKIP_PATTERN_PARAM, testClass.getAnnotation(UseServletFilter.class).skipPattern());
-        addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.ID_MAPPER_PARAM, testClass.getAnnotation(UseServletFilter.class).idMapper());
-
-
-        IOUtil.appendChildInDocument(webXmlDoc, "web-app", filter);
-
-        Element filterMapping = webXmlDoc.createElement("filter-mapping");
-
-        Element urlPattern = webXmlDoc.createElement("url-pattern");
-
-        filterName = webXmlDoc.createElement("filter-name");
-
-        filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
-        urlPattern.setTextContent(IOUtil.getElementTextContent(webXmlDoc, "web-app/security-constraint/web-resource-collection/url-pattern"));
-
-        filterMapping.appendChild(filterName);
-        filterMapping.appendChild(urlPattern);
-
-        if (!testClass.getAnnotation(UseServletFilter.class).dispatcherType().isEmpty()) {
-            Element dispatcher = webXmlDoc.createElement("dispatcher");
-            dispatcher.setTextContent(testClass.getAnnotation(UseServletFilter.class).dispatcherType());
-            filterMapping.appendChild(dispatcher);
-        }
-        IOUtil.appendChildInDocument(webXmlDoc, "web-app", filterMapping);
-
-        //finally we need to remove all keycloak related configuration from web.xml
-        IOUtil.removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
-        IOUtil.removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
-        IOUtil.removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
-
-        archive.add(new StringAsset((IOUtil.documentToString(webXmlDoc))), WEBXML_PATH);
-    }
-
-    private static void addInitParam(Document webXmlDoc, Element filter, String initParamName, String initParamValue) {
-        // Limitation that all deployments of annotated class use same skipPattern. Refactor if something more flexible is needed (would require more tricky web.xml parsing though...)
-        if (initParamValue != null && !initParamValue.isEmpty()) {
-            Element initParam = webXmlDoc.createElement("init-param");
-
-            Element paramName = webXmlDoc.createElement("param-name");
-            paramName.setTextContent(initParamName);
-
-            Element paramValue = webXmlDoc.createElement("param-value");
-            paramValue.setTextContent(initParamValue);
-
-            initParam.appendChild(paramName);
-            initParam.appendChild(paramValue);
-
-            filter.appendChild(initParam);
-        }
-    }
-
-    public static String getKeycloakResolverClass(Document doc) {
-        try {
-            XPathFactory factory = XPathFactory.newInstance();
-            XPath xpath = factory.newXPath();
-            XPathExpression expr = xpath.compile("//web-app/context-param[param-name='keycloak.config.resolver']/param-value/text()");
-            NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-            if (nodes != null && nodes.getLength() > 0) {
-                return nodes.item(0).getNodeValue();
-            }
-        } catch(DOMException e) {
-            throw new IllegalStateException(e);
-        } catch (XPathExpressionException e) {
-            throw new IllegalStateException(e);
-        }
-        return null;
-    }
-
-    public static void addFilterDependencies(Archive<?> archive, TestClass testClass) {
-        log.info("Adding filter dependencies to " + archive.getName());
-
-        String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
-        ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
-
-        Document jbossXmlDoc = IOUtil.loadXML(archive.get(JBOSS_DEPLOYMENT_XML_PATH).getAsset().openStream());
-        IOUtil.removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
-        IOUtil.removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
-
-        archive.add(new StringAsset((IOUtil.documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
     }
 
     public static void modifyOIDCAdapterConfig(Archive<?> archive, String adapterConfigPath) {

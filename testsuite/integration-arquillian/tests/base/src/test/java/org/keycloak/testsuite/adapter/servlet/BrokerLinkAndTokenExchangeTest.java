@@ -105,10 +105,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWit
  * @version $Revision: 1 $
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest {

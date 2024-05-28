@@ -271,7 +271,7 @@ Now you configure the flow for the first authentication level.
 . Enter `Level 1` as an alias.
 . Enter `1` for the Level of Authentication (LoA).
 . Set Max Age to *36000*. This value is in seconds and it is equivalent to 10 hours, which is the default `SSO Session Max` timeout set in the realm.
-  As a result, when a user authenticates with this level, subsequent SSO logins can re-use this level and the user does not need to authenticate
+  As a result, when a user authenticates with this level, subsequent SSO logins can reuse this level and the user does not need to authenticate
   with this level until the end of the user session, which is 10 hours by default.
 . Click *Save*
 +
@@ -380,6 +380,11 @@ If no explicit level is requested by parameters, the {project_name} will require
 condition found in the authentication flow, such as the Username/Password in the preceding example. When a user was already authenticated with that level
 and that level expired, the user is not required to re-authenticate, but `acr` in the token will have the value 0. This result is considered as authentication
 based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
+
+NOTE: During the first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
+the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown 
+in the example above. For example, if you configure a subflow with level 2 and then add another subflow with level 1, the level 2 subflow will be always asked during the first authentication, which may
+not be the desired behavior.
 
 NOTE: A conflict situation may arise when an admin specifies several flows, sets different LoA levels to each, and assigns the flows to different clients. However, the rule is always the same: if a user has a certain level, it needs only have that level to connect to a client. It's up to the admin to make sure that the LoA is coherent.
 

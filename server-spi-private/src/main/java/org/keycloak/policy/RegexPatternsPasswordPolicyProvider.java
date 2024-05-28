@@ -57,6 +57,8 @@ public class RegexPatternsPasswordPolicyProvider implements PasswordPolicyProvid
     public Object parseConfig(String value) {
         if (value == null) {
             throw new PasswordPolicyConfigException("Config required");
+        } else if(value.trim().isEmpty()) {
+            throw new PasswordPolicyConfigException("White space not acepted");
         }
         try {
             return Pattern.compile(value);
