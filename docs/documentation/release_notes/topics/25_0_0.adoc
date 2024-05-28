@@ -86,8 +86,9 @@ The cookie `KC_AUTH_STATE` is removed and it is no longer set by the {project_na
 
 = Deprecated cookie methods removed
 
-The following methods for setting custom cookies have been removed:
+The following APIs for setting custom cookies have been removed:
 
+* `ServerCookie` - replaced by `NewCookie.Builder`
 * `LocaleSelectorProvider.KEYCLOAK_LOCALE` - replaced by `CookieType.LOCALE`
 * `HttpCookie` - replaced by `NewCookie.Builder`
 * `HttpResponse.setCookieIfAbsent(HttpCookie cookie)` - replaced by `HttpResponse.setCookieIfAbsent(NewCookie cookie)`
