@@ -1,7 +1,6 @@
 #!/bin/bash -e
 
 KEYCLOAK_REPO="keycloak/keycloak"
-
 # Prevent duplicates by checking if a similar title exists
 check_github_issue_exists() {
     local issue_title="$1"
@@ -10,7 +9,25 @@ check_github_issue_exists() {
     local search_url="https://api.github.com/search/issues?q=$CVE_ID+is%3Aissue+sort%3Aupdated-desc+repo:$KEYCLOAK_REPO"
     local response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "$search_url")
     local count=$(echo "$response" | jq '.total_count')
-    
+
+    # Check for bad credentials
+    if printf "%s" "$response" | jq -e '.message == "Bad credentials"' > /dev/null; then
+        printf "Error: Bad credentials\n%s\n" "$response"
+        exit 1
+    fi
+
+    # Check if we reached GitHub rate limiting
+    if printf "%s" "$response" | jq -e '.message == "API rate limit exceeded"' > /dev/null; then
+        printf "Error: API rate limit exceeded\n%s\n" "$response"
+        exit 1
+    fi
+
+    # Check if total_count is available
+    if [[ $count == "null" ]]; then
+        printf "Error: total_count not available in response\n%s\n" "$response"
+        exit 1
+    fi
+
     if [[ $count -gt 0 ]]; then
         return 0  
     else
@@ -27,6 +44,14 @@ create_github_issue() {
     local data=$(jq -n --arg title "$title" --arg body "$body" \
                  '{title: $title, body: $body, labels: ["status/triage", "kind/cve", "kind/bug"]}')
     local response=$(curl -s -w "%{http_code}" -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$data" "$api_url")
+    local http_code=$(echo "$response" | tail -n1)
+
+    if [[ $http_code -eq 201 ]]; then
+        return 0
+    else
+        printf "Issue creation failed with status: %s\n" "$http_code"
+        exit 1
+    fi
 }
 
 check_dependencies() {
