@@ -28,7 +28,6 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
@@ -78,8 +77,6 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -340,30 +337,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
-        if (token != null && token.getScope() != null && scope == null) {
-            scope = token.getScope();
-
-            Set<String> targetClientScopes = new HashSet<String>();
-            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
-            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
-            //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
-        } else if (token != null && token.getScope() != null) {
-            String subjectTokenScopes = token.getScope();
-            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).map(s -> s.split(":")[0]).collect(Collectors.toSet());
-                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc.split(":")[0])).collect(Collectors.joining(" "));
-            } else {
-                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).collect(Collectors.toSet());
-                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc)).collect(Collectors.joining(" "));
-            }
-
-            Set<String> targetClientScopes = new HashSet<String>();
-            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
-            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
-            //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
-        }
 
         try {
             session.getContext().setClient(targetClient);
