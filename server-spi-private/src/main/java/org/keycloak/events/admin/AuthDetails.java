@@ -23,6 +23,7 @@ package org.keycloak.events.admin;
 public class AuthDetails {
 
     private String realmId;
+    private String realmName;
 
     private String clientId;
 
@@ -33,6 +34,7 @@ public class AuthDetails {
     public AuthDetails() {}
     public AuthDetails(AuthDetails toCopy) {
         this.realmId = toCopy.getRealmId();
+        this.realmName = toCopy.getRealmName();
         this.clientId = toCopy.getClientId();
         this.userId = toCopy.getUserId();
         this.ipAddress = toCopy.getIpAddress();
@@ -44,6 +46,14 @@ public class AuthDetails {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
     }
 
     public String getClientId() {
