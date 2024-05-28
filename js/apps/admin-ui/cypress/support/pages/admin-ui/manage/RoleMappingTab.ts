@@ -11,7 +11,7 @@ export default class RoleMappingTab {
   #assignBtn = "assign";
   #hideInheritedRolesBtn = "#hideInheritedRoles";
   #assignedRolesTable = "assigned-roles";
-  #namesColumn = 'td[data-label="Name"]:visible';
+  #namesColumn = "td:visible";
   #roleMappingTab = "role-mapping-tab";
   #filterTypeDropdown = "filter-type-dropdown";
 
