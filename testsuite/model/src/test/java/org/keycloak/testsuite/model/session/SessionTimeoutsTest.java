@@ -375,12 +375,12 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         testUserClientMaxLifespanSmallerThanSession(false, true);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOnlineUserClientIdleTimeoutSmallerThanSessionNoRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(0, false, false);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOnlineUserClientIdleTimeoutSmallerThanSessionOneRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(1, false, false);
     }
