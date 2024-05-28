@@ -58,6 +58,10 @@ public abstract class AbstractPage {
 
     abstract public boolean isCurrent();
 
+    public boolean isCurrent(String expectedTitle) {
+        return PageUtils.getPageTitle(driver).equals(expectedTitle);
+    }
+
     abstract public void open() throws Exception;
 
     public WebDriver getDriver() {

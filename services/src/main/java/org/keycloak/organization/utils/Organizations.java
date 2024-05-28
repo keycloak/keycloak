@@ -19,14 +19,21 @@ package org.keycloak.organization.utils;
 
 import static java.util.Optional.ofNullable;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.VerificationException;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -179,5 +186,16 @@ public class Organizations {
 
     public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
         return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+    }
+
+    public static InviteOrgActionToken parseInvitationToken(HttpRequest request) throws VerificationException {
+        MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
+        String tokenFromQuery = queryParameters.getFirst(Constants.TOKEN);
+
+        if (tokenFromQuery == null) {
+            return null;
+        }
+
+        return TokenVerifier.create(tokenFromQuery, InviteOrgActionToken.class).getToken();
     }
 }
