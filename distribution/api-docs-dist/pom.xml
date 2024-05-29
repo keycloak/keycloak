@@ -34,24 +34,6 @@
         <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.quarkus.platform</groupId>
-                <artifactId>quarkus-operator-sdk-bom</artifactId>
-                <version>${quarkus.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-operator</artifactId>
-                <version>${project.version}</version>
-                <type>jar</type>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -65,10 +47,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-operator</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus.resteasy.reactive</groupId>
@@ -90,15 +68,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>crd-generator-apt</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.operatorsdk</groupId>
-            <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
 
     <build>
@@ -118,6 +87,9 @@
                     <dependencySourceIncludes>
                         <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
                     </dependencySourceIncludes>
+                    <dependencySourceExcludes>
+                        <dependencySourceInclude>org.keycloak:keycloak-operator</dependencySourceInclude>
+                    </dependencySourceExcludes>
                 </configuration>
                 <executions>
                     <execution>
