@@ -499,7 +499,7 @@ public class OAuthClient {
         }
 
         if (dpopProof != null) {
-            post.addHeader("DPoP", dpopProof);
+            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
@@ -979,7 +979,7 @@ public class OAuthClient {
         }
 
         if (dpopProof != null) {
-            post.addHeader("DPoP", dpopProof);
+            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
         UrlEncodedFormEntity formEntity;
@@ -1033,7 +1033,7 @@ public class OAuthClient {
         }
 
         if (dpopProof != null) {
-            post.addHeader("DPoP", dpopProof);
+            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         }
 
         UrlEncodedFormEntity formEntity;
@@ -1154,12 +1154,12 @@ public class OAuthClient {
         }
     }
 
-    public UserInfoResponse doUserInfoRequestByGet(String accessToken) throws Exception {
+    public UserInfoResponse doUserInfoRequestByGet(OAuthClient.AccessTokenResponse accessTokenResponse) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet get = new HttpGet(getUserInfoUrl());
-            get.setHeader("Authorization", "Bearer " + accessToken);
+            get.setHeader("Authorization", accessTokenResponse.getTokenType() + " " + accessTokenResponse.getAccessToken());
             if (dpopProof != null) {
-                get.addHeader("DPoP", dpopProof);
+                get.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
             }
             return new UserInfoResponse(client.execute(get));
         } catch (IOException ex) {
