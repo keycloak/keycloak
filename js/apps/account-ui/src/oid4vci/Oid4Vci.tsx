@@ -34,7 +34,7 @@ type SupportedCredentialConfiguration = {
 
 type VCState = {
   dropdownItems: string[],
-  selectOptions: Map<string, SupportedCredentialConfiguration>,
+  selectOptions: Record<string, SupportedCredentialConfiguration>,
   credentialIssuer?: CredentialsIssuer,
   issuerDid: string,
   qrCode: string,
