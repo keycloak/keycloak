@@ -16,10 +16,8 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
@@ -60,7 +58,10 @@ import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.StringUtil;
+import java.util.HashSet;
+import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -456,7 +457,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         try {
             UPConfig testUpConfig = configuration.clone();
             List<String> attributes = List.of("foo", "bar", "zar");
-            List<String> values = IntStream.range(0, 5).mapToObj(Integer::toString).collect(Collectors.toList());
+            List<String> values = IntStream.range(1, 6).mapToObj(Integer::toString).collect(Collectors.toList());
+            Set<String> valuesSet = new HashSet<>(values);
 
             for (String attribute : attributes) {
                 testUpConfig.addOrReplaceAttribute(
@@ -477,7 +479,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
-                    updateProfilePage.clickAddAttributeValue(elementId);
+                    updateProfilePage.clickAddAttributeValue(attribute);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
                 UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
@@ -487,17 +489,24 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
                 testRealm().users().get(userRep.getId()).update(userRep);
                 loginPage.open();
-                for (String value : values) {
-                    assertEquals(value, updateProfilePage.getAttribute(attribute + "-" + value));
-                }
+                assertThat(IntStream.range(1, 6).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
+
+                final String lastValue = values.get(values.size() - 1);
 
                 // remove multiple values, only the last value should be kept as you can't remove the last one
                 for (String value : values) {
-                    updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                    try {
+                        updateProfilePage.clickRemoveAttributeValue(attribute + "-1");
+                    } catch (ElementClickInterceptedException e) {
+                        if (! lastValue.equals(value)) {    // Ignore that the last value cannot be clicked / removed - this is by design
+                            throw e;
+                        }
+                    }
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
-                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.get(values.size() - 1)));
+                assertThat(userRep.getAttributes().get(attribute), Matchers.hasSize(1));
+                assertThat(userRep.getAttributes().get(attribute).get(0), Matchers.in(values));
 
                 // make sure adding/removing within the same context works
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
@@ -506,21 +515,28 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
-                    updateProfilePage.clickAddAttributeValue(elementId);
+                    updateProfilePage.clickAddAttributeValue(attribute);
                 }
+
+                assertThat(IntStream.range(1, 6).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
+
                 for (String value : values) {
-                    assertEquals(value, updateProfilePage.getAttribute(attribute + "-" + value));
-                }
-                for (String value : values) {
-                    updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                    try {
+                        updateProfilePage.clickRemoveAttributeValue(attribute + "-1");
+                    } catch (ElementClickInterceptedException e) {
+                        if (! lastValue.equals(value)) {    // Ignore that the last value cannot be clicked / removed - this is by design
+                            throw e;
+                        }
+                    }
                 }
                 // make sure the last attribute is set with a value
-                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-0"))) {
-                    updateProfilePage.setAttribute(attribute + "-0", values.get(values.size() - 1));
+                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-1"))) {
+                    updateProfilePage.setAttribute(attribute + "-1", lastValue);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
-                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.get(values.size() - 1)));
+                assertThat(userRep.getAttributes().get(attribute), Matchers.hasSize(1));
+                assertThat(userRep.getAttributes().get(attribute).get(0), Matchers.in(values));
 
                 // at the end the attribute is set with multiple values
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
@@ -529,7 +545,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
-                    updateProfilePage.clickAddAttributeValue(elementId);
+                    updateProfilePage.clickAddAttributeValue(attribute);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
 
