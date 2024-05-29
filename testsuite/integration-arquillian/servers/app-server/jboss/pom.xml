@@ -378,59 +378,6 @@
                             </execution>
 
                             <execution>
-                                <!--OIDC: wf10, wf9-->
-                                <id>adapter-install-offline-standalone</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>${cli.executable}</executable>
-                                    <workingDirectory>${cli.working.dir}</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    </environmentVariables>
-                                    <arguments>
-                                        <argument>${cli.jboss-cli.arg}</argument>
-                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
-                                        <!--
-                                            following attribute is required just for windows
-                                            see ${common.resources}/win/run-jboss-cli.bat
-                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
-                                        -->
-                                        <argument>${cli.win.working.dir}</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <!--OIDC: wf10, wf9-->
-                                <id>adapter-install-offline-standalone-ha</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>${cli.executable}</executable>
-                                    <workingDirectory>${cli.working.dir}</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    </environmentVariables>
-                                    <arguments>
-                                        <argument>${cli.jboss-cli.arg}</argument>
-                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
-                                        <!--
-                                            following attribute is required just for windows
-                                            see ${common.resources}/win/run-jboss-cli.bat
-                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
-                                        -->
-                                        <argument>${cli.win.working.dir}</argument>
-                                        <argument>-Dserver.config=standalone-ha.xml</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <!--SAML: wf10, wf9-->
                                 <id>adapter-install-saml-offline-standalone</id>
                                 <phase>process-resources</phase>
