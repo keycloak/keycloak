@@ -23,7 +23,7 @@ type CredentialsIssuer = {
   credential_issuer: string;
   credential_endpoint: string;
   authorization_servers: string[]; 
-  credential_configurations_supported: Map<string, SupportedCredentialConfiguration>
+  credential_configurations_supported: Record<string, SupportedCredentialConfiguration>
 }
 
 type SupportedCredentialConfiguration = {
