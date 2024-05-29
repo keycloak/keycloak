@@ -125,9 +125,9 @@ To set different sizes for the caches, edit {project_name}'s cache config file t
 
 [WARNING]
 ====
-Enabling this feature via a rolling configuration upgrade can result in an unknown behavior of {project_name}.
-To avoid this state, it is necessary to remove all online user and client sessions before the first node is started with this feature enabled.
-This means all {project_name} nodes need to be stopped and, if used, Infinispan remote cache store and Infinispan JDBC persistence need to be cleared.
+Enabling this feature via a rolling configuration upgrade can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist.
+To prevent that, remove all online user and client sessions before the first node is started with this feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
 ====
 
 endif::[]

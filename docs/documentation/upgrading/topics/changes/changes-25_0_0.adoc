@@ -119,8 +119,8 @@ Migrating in-memory sessions for {project_name} 24 is not supported as all {proj
 The migration of user sessions only works when the persistent user sessions is enabled when upgrading to {project_name} 25.
 If you chose to upgrade to 25 without enabling persistent user sessions, there is currently no possibility to trigger the migration of existing sessions at a later point in time.
 
-Enabling this feature later, by a configuration change, can result in an unknown behavior and requires removal of all existing online user and client sessions before the first node is started with the feature enabled.
-This means all {project_name} nodes need to be stopped and, if used, Infinispan remote cache store and Infinispan JDBC persistence need to be cleared.
+Enabling this feature later, by a configuration change, can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist. To prevent that, remove all existing online user and client sessions before the first node is started with the feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
 ====
 
 To migrate the user sessions during an upgrade of {project_name}, perform the following steps:
