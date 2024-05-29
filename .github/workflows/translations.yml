@@ -1,0 +1,39 @@
+name: Translations
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  synchronize:
+    name: Synchronize
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Synchronize translations
+        uses: crowdin/github-action@v2
+        with:
+          # See: https://github.com/crowdin/github-action?tab=readme-ov-file#supported-options
+          # Upload options
+          upload_sources: true
+          upload_translations: true
+          auto_approve_imported: true
+          import_eq_suggestions: true
+          # Download options
+          download_translations: true
+          export_only_approved: true
+          # Git and Pull Request options
+          commit_message: Update translations
+          create_pull_request: true
+          pull_request_title: Update translations
+          pull_request_body: This pull request updates the translations with the latest approved translations from [Crowdin](https://keycloak.crowdin.com/).
+          pull_request_labels: area/translations
+          # Global options
+          crowdin_branch_name: update-translations
+          config: .github/crowdin.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}

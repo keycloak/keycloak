@@ -1,0 +1,21 @@
+base_path: .
+base_url: https://keycloak.api.crowdin.com
+preserve_hierarchy: true
+files:
+  - source: js/apps/account-ui/maven-resources/theme/keycloak.v3/account/messages/messages_en.properties
+    translation: js/apps/account-ui/maven-resources-community/theme/keycloak.v3/account/messages/messages_%two_letters_code%.properties
+
+  - source: js/apps/admin-ui/maven-resources/theme/keycloak.v2/admin/messages/messages_en.properties
+    translation: js/apps/admin-ui/maven-resources-community/theme/keycloak.v2/admin/messages/messages_%two_letters_code%.properties
+
+  - source: themes/src/main/resources/theme/base/account/messages/messages_en.properties
+    translation: themes/src/main/resources-community/theme/base/account/messages/messages_%two_letters_code%.properties
+
+  - source: themes/src/main/resources/theme/base/admin/messages/messages_en.properties
+    translation: themes/src/main/resources-community/theme/base/admin/messages/messages_%two_letters_code%.properties
+
+  - source: themes/src/main/resources/theme/base/email/messages/messages_en.properties
+    translation: themes/src/main/resources-community/theme/base/email/messages/messages_%two_letters_code%.properties
+
+  - source: themes/src/main/resources/theme/base/login/messages/messages_en.properties
+    translation: themes/src/main/resources-community/theme/base/login/messages/messages_%two_letters_code%.properties
