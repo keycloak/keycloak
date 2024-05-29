@@ -41,7 +41,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
@@ -92,7 +91,6 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
@@ -441,26 +439,7 @@ public class OAuthClient {
 
     public static CloseableHttpClient newCloseableHttpClientSSL(String keyStorePath,
                                                                 String keyStorePassword, String trustStorePath, String trustStorePassword) {
-        KeyStore keystore = null;
-        // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
-        try {
-            keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // load the truststore
-        KeyStore truststore = null;
-        try {
-            truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
-                .keyStore(keystore, keyStorePassword)
-                .trustStore(truststore)
-                .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
-                .build();
+        return MutualTLSUtils.newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword);
     }
 
     public CloseableHttpResponse doPreflightRequest() {
