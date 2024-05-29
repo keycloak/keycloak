@@ -460,8 +460,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 if (System.getProperty("product") != null) {
                     // JDBC drivers might be excluded if running as a product build
                     copyProvider(dPath, "com.microsoft.sqlserver", "mssql-jdbc");
-                    copyProvider(dPath, "com.oracle.database.jdbc", "ojdbc11");
-                    copyProvider(dPath, "com.oracle.database.nls", "orai18n");
                 }
             }
 

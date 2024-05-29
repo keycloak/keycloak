@@ -17,12 +17,18 @@
 
 package org.keycloak.it.storage.database;
 
+import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
+
+import java.util.function.Consumer;
 
 @CLITest
 @WithDatabase(alias = "oracle")
+@BeforeStartDistribution(OracleTest.CopyOracleJdbcDriver.class)
 public class OracleTest extends BasicDatabaseTest {
 
     @Override
@@ -33,5 +39,15 @@ public class OracleTest extends BasicDatabaseTest {
     @Override
     protected void assertWrongPassword(CLIResult cliResult) {
         cliResult.assertMessage("ORA-01017: invalid username/password; logon denied");
+    }
+
+    public static class CopyOracleJdbcDriver implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
+            rawDist.copyProvider("com.oracle.database.jdbc", "ojdbc11");
+            rawDist.copyProvider("com.oracle.database.nls", "orai18n");
+        }
     }
 }
