@@ -28,7 +28,7 @@ public class AbstractAuthenticationExecutionRepresentation implements Serializab
     private String authenticator;
     private boolean authenticatorFlow;
     private String requirement;
-    private int priority;
+    private Integer priority;
 
     public String getAuthenticatorConfig() {
         return authenticatorConfig;
@@ -54,11 +54,11 @@ public class AbstractAuthenticationExecutionRepresentation implements Serializab
         this.requirement = requirement;
     }
 
-    public int getPriority() {
+    public Integer getPriority() {
         return priority;
     }
 
-    public void setPriority(int priority) {
+    public void setPriority(Integer priority) {
         this.priority = priority;
     }
 

@@ -1137,17 +1137,17 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.REALM, true);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.flows().copy("nosuch", Collections.<String, String>emptyMap()));
+                response.set(realm.flows().copy("nosuch", Collections.<String, Object>emptyMap()));
             }
         }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.flows().addExecutionFlow("nosuch", Collections.<String, String>emptyMap());
+                realm.flows().addExecutionFlow("nosuch", Collections.<String, Object>emptyMap());
             }
         }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.flows().addExecution("nosuch", Collections.<String, String>emptyMap());
+                realm.flows().addExecution("nosuch", Collections.<String, Object>emptyMap());
             }
         }, Resource.REALM, true);
         invoke(new Invocation() {
