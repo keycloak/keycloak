@@ -551,7 +551,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, CONSUMER_BROKER_APP_SECRET);
 
         // Check that userInfo can be invoked
-        var userInfoResponse = oauth.doUserInfoRequestByGet(tokenResponse.getAccessToken());
+        var userInfoResponse = oauth.doUserInfoRequestByGet(tokenResponse);
         assertThat(userInfoResponse.getUserInfo().getSub(), is(lwUserId));
         assertThat(userInfoResponse.getUserInfo().getPreferredUsername(), is(bc.getUserLogin()));
         assertThat(userInfoResponse.getUserInfo().getEmail(), is(bc.getUserEmail()));
@@ -713,7 +713,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             userAttrMapper.setName(USER_ATTRIBUTE_NAME);
             userAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             userAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-    
+
             Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
             userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, USER_ATTRIBUTE_NAME);
             userAttrMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, USER_ATTRIBUTE_NAME);
@@ -728,7 +728,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             client.setProtocolMappers(mappers);
 
             return clients;
-        }    
+        }
 
         @Override
         public List<ClientRepresentation> createConsumerClients() {
