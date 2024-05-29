@@ -13,7 +13,7 @@ A failover from the primary site to the secondary site will happen automatically
 
 When the primary site loses its state in {jdgserver_name} or a network partition occurs that prevents the synchronization, manual procedures are necessary to recover the primary site before it can handle traffic again, see the <@links.ha id="operate-switch-back" /> {section}.
 
-To prevent an automatic fallback to the primary site before those manual steps have been performed, configure the loadbalancer as described following to prevent this from happening automatically.
+To prevent fallback to the primary site before those manual steps have been performed, follow the procedure outlined in this guide.
 
 For a graceful switch to the secondary site, follow the instructions in the <@links.ha id="operate-switch-over" /> {section}.
 
@@ -21,11 +21,16 @@ See the <@links.ha id="introduction" /> {section} for different operational proc
 
 == Procedure
 
-Follow these steps to manually force a failover.
+Follow these steps to prevent an automatic failover back to the Primary site or to manually force a failover.
 
 === Route53
 
-To force Route53 to mark the primary site as permanently not available and prevent an automatic fallback, edit the health check in AWS to point to a non-existent route (`health/down`).
+To force Route53 to mark the primary site as permanently not available and prevent an automatic fallback, edit the health check in AWS to point to a non-existent route (`/lb-check-failed-over`).
+
+== Optional: Failover Lambda
+
+To prevent a failed Primary cluster from becoming active without SRE input, follow the steps outlined in the
+guide <@links.ha id="deploy-aws-route53-failover-lambda" />
 
 </@tmpl.guide>
 

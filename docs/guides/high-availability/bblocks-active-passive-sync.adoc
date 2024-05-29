@@ -65,7 +65,7 @@ A clustered deployment of {project_name} in each site, connected to an external 
 
 A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site.
 
-*Blueprint:* <@links.ha id="deploy-aws-route53-loadbalancer"/>.
+*Blueprint:* <@links.ha id="deploy-aws-route53-loadbalancer"/>, optionally enhanced with <@links.ha id="deploy-aws-route53-failover-lambda"/>
 
 *Not considered:* AWS Global Accelerator as it supports only weighted traffic routing and not active-passive failover.
 To support active-passive failover, additional logic using, for example, AWS CloudWatch and AWS Lambda would be necessary to simulate the active-passive handling by adjusting the weights when the probes fail.
