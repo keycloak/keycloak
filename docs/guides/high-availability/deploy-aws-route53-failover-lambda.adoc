@@ -11,7 +11,7 @@ again after the SRE team synchronized the two sites first as outlined in the <@l
 
 If the Primary site would be marked as healthy by the Route 53 Health Check before the sites are synchronized, the Primary Site would start serving requests with outdated session and realm data.
 
-This {section} shows how an automatic fallback to a not-yet synchronized Primary site can be prevented with the help of AWS CloudWatch, SNS and Lambda.
+This {section} shows how an automatic fallback to a not-yet synchronized Primary site can be prevented with the help of AWS CloudWatch, SNS, and Lambda.
 
 == Architecture
 
