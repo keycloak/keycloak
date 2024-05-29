@@ -693,14 +693,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      # Don't use Chrome for testing (just regular Chrome) until https://github.com/keycloak/keycloak/issues/22214 is resolved
-      #- id: install-chrome
-      #  name: Install Chrome browser
-      #  uses: ./.github/actions/install-chrome
-      #  if: matrix.browser == 'chrome'
-
       - name: Run WebAuthn IT
-        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml 2>&1 | misc/log/trimmer.sh
+        run: |
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh webauthn`
+          echo "Tests: $TESTS"
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
