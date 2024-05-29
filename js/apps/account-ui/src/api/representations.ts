@@ -202,3 +202,15 @@ export interface Group {
   name: string;
   path: string;
 }
+
+export interface SupportedCredentialConfiguration {
+  id: string;
+  format: string;
+  scope: string;
+}
+export interface CredentialsIssuer {
+  credential_issuer: string;
+  credential_endpoint: string;
+  authorization_servers: string[]; 
+  credential_configurations_supported: Record<string, SupportedCredentialConfiguration>
+}

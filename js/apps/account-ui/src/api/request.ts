@@ -37,8 +37,12 @@ export async function request(
   path: string,
   { environment, keycloak }: KeycloakContext<BaseEnvironment>,
   opts: RequestOptions = {},
+  fullUrl?: URL 
 ) {
-  return _request(url(environment, path), {
+  if (typeof fullUrl === 'undefined') {
+    fullUrl = url(environment, path)
+  }
+  return _request(fullUrl, {
     ...opts,
     getAccessToken: token(keycloak),
   });

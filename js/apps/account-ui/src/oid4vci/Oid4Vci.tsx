@@ -11,148 +11,76 @@ import {
     MenuToggleElement,
     MenuToggle
 } from '@patternfly/react-core';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { usePromise } from "../utils/usePromise";
 import { Page } from "../components/page/Page";
-import { parseResponse } from "../api/parse-response";
-import { token } from '../api/request';
-
-type CredentialsIssuer = {
-  credential_issuer: string;
-  credential_endpoint: string;
-  authorization_servers: string[]; 
-  credential_configurations_supported: Record<string, SupportedCredentialConfiguration>
-}
-
-type SupportedCredentialConfiguration = {
-  id: string,
-  format: string,
-  scope: string
-}
-
-type VCState = {
-  dropdownItems: string[],
-  selectOptions: Record<string, SupportedCredentialConfiguration>,
-  credentialIssuer?: CredentialsIssuer,
-  issuerDid: string,
-  qrCode: string,
-  isOpen: boolean,
-  offerQRVisible: boolean
-}
+import { CredentialsIssuer } from "../api/representations";
+import { getIssuer, requestVCOffer } from "../api";
 
 export const Oid4Vci = () => {
-    const { addAlert, addError } = useAlerts();
     const context = useEnvironment();
    
     const { t } = useTranslation();
-    const initialState: VCState = {
-      dropdownItems: [],
-      selectOptions: new Map<string, SupportedCredentialConfiguration>(),
-      issuerDid: "",
-      qrCode: "",
-      isOpen: false,
-      offerQRVisible: false
-    }
+
     const initialSelected = t('verifiableCredentialsSelectionDefault') 
 
     const [selected, setSelected] = useState<string>(initialSelected);
-    const [vcState, setState] = useState<VCState>(initialState);
-    const url:string = context.environment.authUrl
-    const realm = context.environment.realm
-    const wellKnownIssuer = url + "/realms/" + realm + "/.well-known/openid-credential-issuer"
+    const [qrCode, setQrCode] = useState<string>("")
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const [offerQRVisible, setOfferQRVisible] = useState<boolean>(false)
+    const [credentialsIssuer, setCredentialsIssuer] = useState<CredentialsIssuer>()
 
-    usePromise(
-      (signal) =>
-          getIssuer(wellKnownIssuer),
-      (issuer) => {
-        const ccsMap = new Map(Object.entries(issuer.credential_configurations_supported))
-        const ccsKeyArray = Array.from(ccsMap.keys());
-        setState({...vcState , credentialIssuer: issuer, dropdownItems: ccsKeyArray, selectOptions: ccsMap});
-    
-    });
+    usePromise(() => getIssuer(context), setCredentialsIssuer);
+
+    const selectOptions = useMemo(
+      () => {
+        if(typeof credentialsIssuer !== 'undefined') {
+          return credentialsIssuer.credential_configurations_supported
+        } 
+        return {}
+      },
+      [credentialsIssuer],
+    )
+
+    const dropdownItems = useMemo(
+      () => {
+        if (typeof selectOptions !== 'undefined') {
+         return Array.from(Object.keys(selectOptions))
+        } 
+        return []
+      },
+      [selectOptions],
+    )
 
     useEffect(() => {
-      if(initialSelected !== selected){
-        requestVCOffer();
-      }
-    }, [selected]);
-
-    async function fetchWithToken(url: string) {
-      var options = {  
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${await token(context.keycloak)?.()}`
-        }
-      }
-      return fetch(url, options)
-    }
-    
-    // retrieve the issuer information for the current session
-    const getIssuer = async (wellKnownIssuer: string): Promise<CredentialsIssuer> => {
-      return fetchWithToken(wellKnownIssuer) 
-        .then(response => parseResponse<CredentialsIssuer>(response)) 
-    }
-
-    // request a verifiable credentials offer, already qr-encoded
-    const requestVCOffer = () => {
-      let supportedCredential = vcState.selectOptions.get(selected)
-      if (supportedCredential === undefined) {
-        addAlert(t('verifiableCredentialsConfigAlert'))
-        return
-      }
-
-      let credentialIssuer = vcState.credentialIssuer
-
-      if (credentialIssuer == null) {
-        addAlert(t('verifiableCredentialsIssuerAlert'))
-        return
-      } else {
-        const requestUrl = credentialIssuer.credential_issuer + "/protocol/oid4vc/credential-offer-uri?credential_configuration_id=" + supportedCredential.id+ "&type=qr-code&width=500&height=500"
-    
-        return fetchWithToken(requestUrl) 
-        .then(response => handleOfferResponse(response))
-      }
-    }
-
-  
-    const handleOfferResponse = (response: Response) => {
-      response.blob()
-        .then((blob) => {
-          if (response.status !== 200) {
-            addError(t('verifiableCredentialsOfferAlert'));
-          } else {
+      if(initialSelected !== selected && credentialsIssuer !== undefined){
+        requestVCOffer(context, selectOptions[selected], credentialsIssuer)
+          .then((blob) => {
             var reader = new FileReader();
             reader.readAsDataURL(blob)
             reader.onloadend = function() {
               let result = reader.result
               if (typeof result === "string") {
-                setState({ ...vcState,
-                  qrCode: result,
-                  offerQRVisible: true,
-                  isOpen: false});
+                setQrCode(result);
+                setOfferQRVisible(true);
+                setIsOpen(false);
               }    
             }
-          }
-        })    
-    }
-
-    const setOpen = (isOpen: boolean) => {
-      setState({...vcState,
-        isOpen
-      });
-    }
+          })
+      }
+    }, [selected]);
   
     const onToggleClick = () => {
-      setOpen(!vcState.isOpen);
+      setIsOpen(!isOpen);
     };
 
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
           ref={toggleRef}
           onClick={onToggleClick}
-          isExpanded={vcState.isOpen}
+          isExpanded={isOpen}
           data-testid="menu-toggle"
         >
           {selected}
@@ -166,15 +94,15 @@ export const Oid4Vci = () => {
             <ListItem>
               <Select
                 data-testid="credential-select"
-                onOpenChange={(isOpen) => setOpen(isOpen)}
+                onOpenChange={(isOpen) => setIsOpen(isOpen)}
                 onSelect={(_event, val) => setSelected(val as string)}
-                isOpen={vcState.isOpen}
+                isOpen={isOpen}
                 selected={selected}
                 toggle={toggle}
                 shouldFocusToggleOnSelect={true}
               >
                 <SelectList>
-                  {vcState.dropdownItems.map((option, index) => (
+                  {dropdownItems.map((option, index) => (
                     <SelectOption 
                       value={option}
                       data-testid='select-${option}'
@@ -187,9 +115,9 @@ export const Oid4Vci = () => {
               </ListItem>  
               <ListItem>
                   <ActionList>
-                  { vcState.offerQRVisible &&
+                  { offerQRVisible &&
                     <ActionListItem>
-                        <img width='500' height='500' src={`${vcState.qrCode}`} data-testid="qr-code"/>
+                        <img width='500' height='500' src={`${qrCode}`} data-testid="qr-code"/>
                     </ActionListItem>
                   }
                   </ActionList>
