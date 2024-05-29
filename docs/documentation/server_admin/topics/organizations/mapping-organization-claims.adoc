@@ -1,0 +1,23 @@
+[id="mapping-organization-claims_{context}"]
+
+=  Mapping organization claims
+[role="_abstract"]
+When authenticating in the context of an organization, the access token is automatically updated with specific claims
+about the organization where the user is a member.
+
+To map organization-specific claims into tokens, a client needs to request the *organization* scope when sending
+authorization requests to the server.
+
+As a result, the token will contain a claim as follows:
+
+```json
+"organization": {
+  "acme": {}
+}
+```
+
+The organization claim can be used by clients (for example, from ID Tokens) and resource servers (for example, from access tokens)
+to authorize access to protected resources based on the organization where the user is a member.
+
+The organization scope is a built-in optional client scope at the realm.  Therefore, this scope is added to any client created
+in the realm, by default.
