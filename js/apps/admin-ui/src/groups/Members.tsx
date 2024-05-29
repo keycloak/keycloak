@@ -1,12 +1,7 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
-import {
-  AlertVariant,
-  Button,
-  Checkbox,
-  ToolbarItem,
-} from "@patternfly/react-core";
+import { Button, Checkbox, ToolbarItem } from "@patternfly/react-core";
 import {
   Dropdown,
   DropdownItem,
@@ -155,7 +150,21 @@ export const Members = () => {
     <>
       {addMembers && (
         <MemberModal
-          groupId={id!}
+          membersQuery={async () =>
+            await adminClient.groups.listMembers({ id: id! })
+          }
+          onAdd={async (selectedRows) => {
+            try {
+              await Promise.all(
+                selectedRows.map((user) =>
+                  adminClient.users.addToGroup({ id: user.id!, groupId: id! }),
+                ),
+              );
+              addAlert(t("usersAdded", { count: selectedRows.length }));
+            } catch (error) {
+              addError("usersAddedError", error);
+            }
+          }}
           onClose={() => {
             setAddMembers(false);
             refresh();
@@ -218,7 +227,6 @@ export const Members = () => {
                           setIsKebabOpen(false);
                           addAlert(
                             t("usersLeft", { count: selectedRows.length }),
-                            AlertVariant.success,
                           );
                         } catch (error) {
                           addError("usersLeftError", error);
@@ -246,10 +254,7 @@ export const Members = () => {
                         id: user.id!,
                         groupId: id!,
                       });
-                      addAlert(
-                        t("usersLeft", { count: 1 }),
-                        AlertVariant.success,
-                      );
+                      addAlert(t("usersLeft", { count: 1 }));
                     } catch (error) {
                       addError("usersLeftError", error);
                     }

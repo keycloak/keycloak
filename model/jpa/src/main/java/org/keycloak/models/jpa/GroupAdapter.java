@@ -39,6 +39,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jakarta.persistence.LockModeType;
 
+import static java.util.Optional.ofNullable;
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -190,6 +192,12 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        List<String> current = getAttributes().getOrDefault(name, List.of());
+
+        if (collectionEquals(current, ofNullable(values).orElse(List.of()))) {
+            return;
+        }
+
         // Remove all existing
         removeAttribute(name);
 

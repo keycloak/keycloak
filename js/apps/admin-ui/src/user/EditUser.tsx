@@ -1,8 +1,11 @@
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type {
   UserProfileConfig,
   UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
+  isUserProfileError,
+  setUserProfileServerError,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -19,10 +22,6 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import {
-  isUserProfileError,
-  setUserProfileServerError,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -67,7 +66,7 @@ export default function EditUser() {
   const navigate = useNavigate();
   const { hasAccess } = useAccess();
   const { id } = useParams<UserParams>();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   // Validation of form fields is performed on server, thus we need to clear all errors before submit
   const clearAllErrorsBeforeSubmit = async (values: UserFormFields) => ({
     values,
@@ -77,7 +76,6 @@ export default function EditUser() {
     mode: "onChange",
     resolver: clearAllErrorsBeforeSubmit,
   });
-  const [realm, setRealm] = useState<RealmRepresentation>();
   const [user, setUser] = useState<UIUserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [isUnmanagedAttributesEnabled, setUnmanagedAttributesEnabled] =
@@ -110,7 +108,6 @@ export default function EditUser() {
   useFetch(
     async () =>
       Promise.all([
-        adminClient.realms.findOne({ realm: realmName }),
         adminClient.users.findOne({
           id: id!,
           userProfileMetadata: true,
@@ -119,7 +116,7 @@ export default function EditUser() {
         adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
       ]),
-    ([realm, userData, attackDetection, unmanagedAttributes, upConfig]) => {
+    ([userData, attackDetection, unmanagedAttributes, upConfig]) => {
       if (!userData || !realm || !attackDetection) {
         throw new Error(t("notFound"));
       }
@@ -136,7 +133,6 @@ export default function EditUser() {
         setUnmanagedAttributesEnabled(true);
       }
 
-      setRealm(realm);
       setUser(user);
       setUpConfig(upConfig);
 
@@ -247,7 +243,7 @@ export default function EditUser() {
     },
   });
 
-  if (!realm || !user || !bruteForced) {
+  if (!user || !bruteForced) {
     return <KeycloakSpinner />;
   }
 
@@ -318,7 +314,7 @@ export default function EditUser() {
                 <PageSection variant="light">
                   <UserForm
                     form={form}
-                    realm={realm}
+                    realm={realm!}
                     user={user}
                     bruteForce={bruteForced}
                     userProfileMetadata={userProfileMetadata}

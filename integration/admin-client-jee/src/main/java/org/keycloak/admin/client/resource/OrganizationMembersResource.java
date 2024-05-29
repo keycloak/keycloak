@@ -79,8 +79,8 @@ public interface OrganizationMembersResource {
     @Path("invite-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     Response inviteUser(@FormParam("email") String email,
-                        @FormParam("first-name") String firstName,
-                        @FormParam("last-name") String lastName);
+                        @FormParam("firstName") String firstName,
+                        @FormParam("lastName") String lastName);
 
     @POST
     @Path("invite-existing-user")

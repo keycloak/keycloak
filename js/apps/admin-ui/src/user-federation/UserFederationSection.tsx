@@ -44,7 +44,7 @@ export default function UserFederationSection() {
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
@@ -59,9 +59,8 @@ export default function UserFederationSection() {
 
   useFetch(
     async () => {
-      const realmModel = await adminClient.realms.findOne({ realm });
       const testParams: { [name: string]: string | number } = {
-        parentId: realmModel!.id!,
+        parentId: realmRepresentation!.id!,
         type: "org.keycloak.storage.UserStorageProvider",
       };
       return adminClient.components.find(testParams);

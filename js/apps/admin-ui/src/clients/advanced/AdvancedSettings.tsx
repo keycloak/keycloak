@@ -1,4 +1,4 @@
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import {
   Select,
@@ -8,8 +8,6 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
-import { useAdminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
@@ -17,7 +15,6 @@ import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
@@ -35,22 +32,13 @@ export const AdvancedSettings = ({
   protocol,
   hasConfigureAccess,
 }: AdvancedSettingsProps) => {
-  const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
-  const [realm, setRealm] = useState<RealmRepresentation>();
-  const { realm: realmName } = useRealm();
+  const { realmRepresentation: realm } = useRealm();
 
   const isFeatureEnabled = useIsFeatureEnabled();
   const isDPoPEnabled = isFeatureEnabled(Feature.DPoP);
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    setRealm,
-    [],
-  );
 
   const { control } = useFormContext();
   return (

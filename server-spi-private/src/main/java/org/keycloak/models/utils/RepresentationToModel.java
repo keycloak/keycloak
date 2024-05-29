@@ -126,6 +126,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
@@ -1667,7 +1668,9 @@ public class RepresentationToModel {
 
             String domain = representation.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
 
-            if (domain != null && org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
+            if (StringUtil.isBlank(domain)) {
+                representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+            } else if (org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
                 throw new IllegalArgumentException("Domain does not match any domain from the organization");
             }
 
