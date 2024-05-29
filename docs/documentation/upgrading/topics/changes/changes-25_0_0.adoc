@@ -118,7 +118,9 @@ Migrating in-memory sessions for {project_name} 24 is not supported as all {proj
 ====
 The migration of user sessions only works when the persistent user sessions is enabled when upgrading to {project_name} 25.
 If you chose to upgrade to 25 without enabling persistent user sessions, there is currently no possibility to trigger the migration of existing sessions at a later point in time.
-When you enable it later, only newly created user sessions will be persisted.
+
+Enabling this feature later, by a configuration change, can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist. To prevent that, remove all existing online user and client sessions before the first node is started with the feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
 ====
 
 To migrate the user sessions during an upgrade of {project_name}, perform the following steps:
@@ -218,10 +220,10 @@ bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size
 
 = Hostname Verification Policy
 
-The default for `spi-truststore-file-hostname-verification-policy` and the new `tls-hostname-verifier` option is now DEFAULT, rather than WILDCARD. The WILDCARD and STRICT option values have been deprecated - you should simply rely upon DEFAULT instead. 
+The default for `spi-truststore-file-hostname-verification-policy` and the new `tls-hostname-verifier` option is now DEFAULT, rather than WILDCARD. The WILDCARD and STRICT option values have been deprecated - you should simply rely upon DEFAULT instead.
 
 Behavior supported by WILDCARD, that is not supported by DEFAULT:
-* allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com). 
+* allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com).
 * allows matching against well known public suffixes - e.g. foo.co.gl may match *.co.gl
 
 Behavior supported by STRICT, that is not supported by DEFAULT:
