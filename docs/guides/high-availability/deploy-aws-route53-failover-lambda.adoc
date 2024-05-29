@@ -18,7 +18,7 @@ This {section} shows how an automatic fallback to a not-yet synchronized Primary
 In the event of a Primary cluster failure, an https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html[AWS CloudWatch]
 alarm sends a message to an https://aws.amazon.com/sns[AWS SNS] topic, which then triggers an https://aws.amazon.com/lambda/[AWS Lambda] function.
 The Lambda function updates the Route53 health check of the Primary cluster so that it points to a non-existent path
-`/lb-check-failed-over`, thus ensuring that it's not possible for the Primary to be marked as healthy until the path is
+`/lb-check-failed-over`, thus ensuring that it is impossible for the Primary to be marked as healthy until the path is
 manually changed back to `/lb-check`.
 
 == Prerequisites
