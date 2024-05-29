@@ -88,7 +88,7 @@ public interface AuthenticationManagementResource {
     @Path("/flows/{flowAlias}/copy")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    Response copy(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
+    Response copy(@PathParam("flowAlias") String flowAlias, Map<String, Object> data);
 
     @Path("/flows/{id}")
     @PUT
@@ -98,12 +98,12 @@ public interface AuthenticationManagementResource {
     @Path("/flows/{flowAlias}/executions/flow")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
+    void addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, Object> data);
 
     @Path("/flows/{flowAlias}/executions/execution")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void addExecution(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
+    void addExecution(@PathParam("flowAlias") String flowAlias, Map<String, Object> data);
 
     @Path("/flows/{flowAlias}/executions")
     @GET

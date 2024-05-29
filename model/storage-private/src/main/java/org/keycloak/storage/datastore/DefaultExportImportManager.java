@@ -1416,7 +1416,9 @@ public class DefaultExportImportManager implements ExportImportManager {
             AuthenticationFlowModel flow = realm.getFlowByAlias(rep.getFlowAlias());
             model.setFlowId(flow.getId());
         }
-        model.setPriority(rep.getPriority());
+        if (rep.getPriority() != null) {
+            model.setPriority(rep.getPriority());
+        }
         try {
             model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
             model.setParentFlow(parentFlow.getId());

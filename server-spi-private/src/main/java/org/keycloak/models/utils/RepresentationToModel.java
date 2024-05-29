@@ -635,7 +635,7 @@ public class RepresentationToModel {
             }
         }
     }
-    
+
     public static void updateClientScopes(ClientRepresentation resourceRep, ClientModel client) {
         if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
             // First remove all default/built in client scopes
@@ -859,16 +859,16 @@ public class RepresentationToModel {
     public static IdentityProviderModel toModel(RealmModel realm, IdentityProviderRepresentation representation, KeycloakSession session) {
         IdentityProviderFactory providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                 IdentityProvider.class, representation.getProviderId());
-        
+
         if (providerFactory == null) {
             providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                     SocialIdentityProvider.class, representation.getProviderId());
         }
-        
+
         if (providerFactory == null) {
             throw new IllegalArgumentException("Invalid identity provider id [" + representation.getProviderId() + "]");
         }
-        
+
         IdentityProviderModel identityProviderModel = providerFactory.createConfig();
 
         identityProviderModel.setInternalId(representation.getInternalId());
@@ -984,7 +984,9 @@ public class RepresentationToModel {
         model.setFlowId(rep.getFlowId());
 
         model.setAuthenticator(rep.getAuthenticator());
-        model.setPriority(rep.getPriority());
+        if (rep.getPriority() != null) {
+            model.setPriority(rep.getPriority());
+        }
         model.setParentFlow(rep.getParentFlow());
         model.setAuthenticatorFlow(rep.isAuthenticatorFlow());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));

@@ -370,7 +370,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     AuthenticationFlowRepresentation copyFlow(String existingFlow, String newFlow) {
         // copy that should succeed
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", newFlow);
         Response response = authMgmtResource.copy(existingFlow, params);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Encode.decode(AdminEventPaths.authCopyFlowPath(existingFlow)), params, ResourceType.AUTH_FLOW);

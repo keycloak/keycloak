@@ -39,6 +39,7 @@ public class AuthenticationExecutionInfoRepresentation implements Serializable {
     protected String flowId;
     protected int level;
     protected int index;
+    protected int priority;
 
     public String getId() {
         return id;
@@ -142,5 +143,13 @@ public class AuthenticationExecutionInfoRepresentation implements Serializable {
 
     public void setFlowId(String flowId) {
         this.flowId = flowId;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }

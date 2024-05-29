@@ -471,7 +471,7 @@ public class AuthenticationManagementResource {
      * Add new flow with new execution to existing flow
      *
      * @param flowAlias Alias of parent authentication flow
-     * @param data New authentication flow / execution JSON data containing 'alias', 'type', 'provider', and 'description' attributes
+     * @param data New authentication flow / execution JSON data containing 'alias', 'type', 'provider', 'priority', and 'description' attributes
      */
     @Path("/flows/{flowAlias}/executions/flow")
     @POST
@@ -479,7 +479,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Add new flow with new execution to existing flow")
-    public Response addExecutionFlow(@Parameter(description = "Alias of parent authentication flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New authentication flow / execution JSON data containing 'alias', 'type', 'provider', and 'description' attributes") Map<String, String> data) {
+    public Response addExecutionFlow(@Parameter(description = "Alias of parent authentication flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New authentication flow / execution JSON data containing 'alias', 'type', 'provider', 'priority', and 'description' attributes") Map<String, Object> data) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
@@ -489,12 +489,13 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add sub-flow to a built in flow");
         }
-        String alias = data.get("alias");
-        String type = data.get("type");
-        String provider = data.get("provider");
+        String alias = (String) data.get("alias");
+        String type = (String) data.get("type");
+        String provider = (String) data.get("provider");
+        int priority = data.containsKey("priority") ? (Integer) data.get("priority") : getNextPriority(parentFlow);
         
         //Make sure that the description to avoid NullPointerException
-        String description = Objects.isNull(data.get("description")) ? "" : data.get("description");
+        String description = Objects.isNull(data.get("description")) ? "" : (String) data.get("description");
 
 
         AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
@@ -514,7 +515,7 @@ public class AuthenticationManagementResource {
         if (type.equals("form-flow")) {
             execution.setAuthenticator(provider);
         }
-        execution.setPriority(getNextPriority(parentFlow));
+        execution.setPriority(priority);
         execution = realm.addAuthenticatorExecution(execution);
 
         data.put("id", execution.getId());
@@ -534,7 +535,7 @@ public class AuthenticationManagementResource {
      * Add new authentication execution to a flow
      *
      * @param flowAlias Alias of parent flow
-     * @param data New execution JSON data containing 'provider' attribute
+     * @param data New execution JSON data containing 'provider' and 'priority' (optional) attribute
      */
     @Path("/flows/{flowAlias}/executions/execution")
     @POST
@@ -542,7 +543,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary="Add new authentication execution to a flow")
-    public Response addExecutionToFlow(@Parameter(description = "Alias of parent flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New execution JSON data containing 'provider' attribute") Map<String, String> data) {
+    public Response addExecutionToFlow(@Parameter(description = "Alias of parent flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New execution JSON data containing 'provider' and 'priority' (optional) attribute") Map<String, Object> data) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
@@ -552,7 +553,8 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add execution to a built in flow");
         }
-        String provider = data.get("provider");
+        String provider = (String) data.get("provider");
+        int priority = data.containsKey("priority") ? (Integer) data.get("priority") : getNextPriority(parentFlow);
 
         // make sure provider is one of the registered providers
         ProviderFactory f = getProviderFactory( parentFlow, provider);
@@ -568,7 +570,7 @@ public class AuthenticationManagementResource {
 
         execution.setAuthenticatorFlow(false);
         execution.setAuthenticator(provider);
-        execution.setPriority(getNextPriority(parentFlow));
+        execution.setPriority(priority);
 
         execution = realm.addAuthenticatorExecution(execution);
 
@@ -647,6 +649,7 @@ public class AuthenticationManagementResource {
             rep.setLevel(level);
             rep.setIndex(index.getAndIncrement());
             rep.setRequirementChoices(new LinkedList<>());
+            rep.setPriority(execution.getPriority());
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel flowRef = realm.getAuthenticationFlowById(execution.getFlowId());
                 if (AuthenticationFlow.BASIC_FLOW.equals(flowRef.getProviderId())) {
@@ -741,8 +744,16 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Illegal execution");
 
         }
+        boolean updateExecution = false;
+        if (model.getPriority() != rep.getPriority()) {
+            model.setPriority(rep.getPriority());
+            updateExecution = true;
+        }
         if (!model.getRequirement().name().equals(rep.getRequirement())) {
             model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+            updateExecution = true;
+        }
+        if (updateExecution) {
             realm.updateAuthenticatorExecution(model);
             adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.accepted(flow).build();
@@ -825,7 +836,8 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add execution to a built in flow");
         }
-        model.setPriority(getNextPriority(parentFlow));
+        int priority = execution.getPriority() != null ? execution.getPriority() : getNextPriority(parentFlow);
+        model.setPriority(priority);
         model = realm.addAuthenticatorExecution(model);
 
         if (!execution.isAuthenticatorFlow()) {
