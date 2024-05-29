@@ -1,6 +1,6 @@
 root = true
 
-[{*.java,*.properties,*.js,*.tsx,*.adoc}]
+[{*.java,*.js,*.tsx,*.adoc}]
 insert_final_newline = true
 trim_trailing_whitespace = true
 
