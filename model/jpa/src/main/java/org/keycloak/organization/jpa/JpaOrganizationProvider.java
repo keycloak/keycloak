@@ -78,7 +78,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel create(String name, Set<String> domains) {
+    public OrganizationModel create(String name) {
         if (StringUtil.isBlank(name)) {
             throw new ModelValidationException("Name can not be null");
         }
@@ -98,8 +98,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             adapter.setEnabled(true);
 
             em.persist(adapter.getEntity());
-
-            adapter.setDomains(domains.stream().map(OrganizationDomainModel::new).collect(Collectors.toSet()));
         } finally {
             session.removeAttribute(OrganizationModel.class.getName());
         }
