@@ -35,6 +35,12 @@
     <packaging>pom</packaging>
 
     <properties>
+        <!-- Maven -->
+        <maven.version>3.9.8</maven.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+
         <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
@@ -183,8 +189,7 @@
         <assertj-core.version>3.22.0</assertj-core.version>
         
         <!-- Maven Plugins -->
-        <maven.version>3.9.8</maven.version>
-        <maven.plugins.version>3.11.0</maven.plugins.version>
+        <maven.plugins.version>3.13.1</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
@@ -207,7 +212,11 @@
         <surefire.memory.metaspace>96m</surefire.memory.metaspace>
         <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
         <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
-        <surefire.system.args></surefire.system.args>
+        <!-- See: https://github.com/keycloak/keycloak/issues/9899 -->
+        <surefire.system.args>
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+        </surefire.system.args>
 
         <!-- webauthn support -->
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
@@ -1543,6 +1552,15 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <doclint>none</doclint>
+                        <failOnError>false</failOnError>
+                        <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>com.lazerycode.jmeter</groupId>
                     <artifactId>jmeter-maven-plugin</artifactId>
                     <version>${jmeter.plugin.version}</version>
@@ -1734,19 +1752,6 @@
 
     <profiles>
         <profile>
-            <id>jdk9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <properties>
-                <surefire.system.args>
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                </surefire.system.args>
-            </properties>
-        </profile>
-
-        <profile>
             <id>testsuite</id>
             <activation>
                 <property>
@@ -1834,42 +1839,6 @@
             <modules>
                 <module>operator</module>
             </modules>
-        </profile>
-
-        <profile>
-            <id>doclint-java8-disable</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <doclint>none</doclint>
-                            <failOnError>false</failOnError>
-                            <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>built-with-jdk-9-or-later</id>
-            <activation>
-                <!-- only activate this on JDK 9 or later as this option is unknown for JDK 8, and as it is not necessary for JDK 8 -->
-                <!-- support for running with JDK 8 is still necessary for some downstream integration tests -->
-                <jdk>(9,)</jdk>
-            </activation>
-            <properties>
-                <!-- Minimum Java version supported for running Keycloak -->
-                <!-- maven.compiler.target and maven.compiler.source already set to 1.8 in the parent pom -->
-                <!-- other modules will configure a higher Java version (for example, Quarkus) -->
-                <maven.compiler.release>8</maven.compiler.release>
-            </properties>
         </profile>
 
         <profile>

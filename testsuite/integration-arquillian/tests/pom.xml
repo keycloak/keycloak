@@ -77,7 +77,7 @@
         <auth.server.keystore>${auth.server.config.dir}/keycloak.jks</auth.server.keystore>
         <auth.server.keystore.password>secret</auth.server.keystore.password>
         <auth.server.keystore.type>jks</auth.server.keystore.type>
-        <auth.server.jvm.args.extra/>
+        <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
@@ -132,7 +132,7 @@
         <app.server.truststore.password>secret</app.server.truststore.password>
         <app.server.keystore>${app.server.keystore.dir}/adapter.jks</app.server.keystore>
         <app.server.keystore.password>secret</app.server.keystore.password>
-        <app.server.jvm.args.extra/>
+        <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
 
         <cache.server.legacy>false</cache.server.legacy>
         <cache.server.home>${containers.home}/cache-server-${cache.server}</cache.server.home>
@@ -1895,26 +1895,6 @@
                 <auth.server.https.port>8443</auth.server.https.port>
                 <auth.server.management.port>9990</auth.server.management.port>
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>java11-auth-server</id>
-            <activation>
-                <jdk>[11,)</jdk>
-            </activation>
-            <properties>
-                <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>java11-app-server</id>
-            <activation>
-                <jdk>[11,)</jdk>
-            </activation>
-            <properties>
-                <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
             </properties>
         </profile>
 
