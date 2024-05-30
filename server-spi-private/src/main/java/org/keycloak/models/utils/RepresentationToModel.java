@@ -137,13 +137,7 @@ public class RepresentationToModel {
 
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
-        KeycloakContext context = session.getContext();
-        try {
-            context.setRealm(newRealm);
-            session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
-        } finally {
-            context.setRealm(null);
-        }
+        session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
     }
 
     public static void importRoles(RolesRepresentation realmRoles, RealmModel realm) {

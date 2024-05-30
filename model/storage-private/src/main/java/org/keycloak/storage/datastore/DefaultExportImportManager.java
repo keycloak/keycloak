@@ -18,6 +18,8 @@
 package org.keycloak.storage.datastore;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
@@ -40,11 +42,14 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -61,6 +66,7 @@ import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -79,6 +85,8 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -107,11 +115,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -460,6 +470,8 @@ public class DefaultExportImportManager implements ExportImportManager {
                 DefaultKeyProviders.createProviders(newRealm);
             }
         }
+
+        importOrganizations(rep, newRealm);
     }
 
     @Override
@@ -1572,4 +1584,24 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
     }
 
+    private void importOrganizations(RealmRepresentation rep, RealmModel newRealm) {
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+
+            for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
+                OrganizationModel org = provider.create(orgRep.getName());
+                org.setDomains(orgRep.getDomains().stream().map(r -> new OrganizationDomainModel(r.getName(), r.isVerified())).collect(Collectors.toSet()));
+
+                for (IdentityProviderRepresentation identityProvider : orgRep.getIdentityProviders()) {
+                    IdentityProviderModel idp = newRealm.getIdentityProviderByAlias(identityProvider.getAlias());
+                    provider.addIdentityProvider(org, idp);
+                }
+
+                for (UserRepresentation member : orgRep.getMembers()) {
+                    UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
+                    provider.addMember(org, m);
+                }
+            }
+        }
+    }
 }
