@@ -18,10 +18,8 @@
 package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
@@ -55,8 +53,6 @@ public class X509BrowserLoginSubjectAltNameTest extends AbstractX509Authenticati
 
     @Test
     public void loginAsUserFromCertSANUpn() {
-        Assume.assumeTrue("Does not work with JDK 21. See https://github.com/keycloak/keycloak/issues/29968", Runtime.version().feature() < 21);
-
         x509BrowserLogin(createLoginSubjectAltNameOtherName2UserAttributeConfig(), userId, "test-user@localhost", "test_upn_name@localhost");
     }
 }
