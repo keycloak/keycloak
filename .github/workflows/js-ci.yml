@@ -188,8 +188,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: account-ui-playwright-report
-          path: js/apps/${{ env.WORKSPACE }}/playwright-report
+          name: account-ui-traces
+          path: js/apps/account-ui/test-results
           retention-days: 30
 
       - name: Upload server logs
