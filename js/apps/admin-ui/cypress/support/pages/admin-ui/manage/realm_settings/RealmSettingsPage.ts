@@ -85,7 +85,7 @@ export default class RealmSettingsPage extends CommonPage {
   eventsUserSave = "save-user";
   enableAdminEvents = "adminEventsEnabled";
   eventsAdminSave = "save-admin";
-  eventTypeColumn = 'tbody > tr > [data-label="Event saved type"]';
+  eventTypeColumn = "tbody > tr td";
   filterSelectMenu = ".kc-filter-type-select";
   passiveKeysOption = "PASSIVE-option";
   disabledKeysOption = "DISABLED-option";
