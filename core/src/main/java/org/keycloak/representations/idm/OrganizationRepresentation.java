@@ -17,6 +17,7 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,8 @@ public class OrganizationRepresentation {
     private String description;
     private Map<String, List<String>> attributes;
     private Set<OrganizationDomainRepresentation> domains;
+    private List<UserRepresentation> members;
+    private List<IdentityProviderRepresentation> identityProviders;
 
     public String getId() {
         return id;
@@ -105,6 +108,36 @@ public class OrganizationRepresentation {
             return;
         }
         getDomains().remove(domain);
+    }
+
+    public List<UserRepresentation> getMembers() {
+        return members;
+    }
+
+    public void setMembers(List<UserRepresentation> members) {
+        this.members = members;
+    }
+
+    public void addMember(UserRepresentation user) {
+        if (members == null) {
+            members = new ArrayList<>();
+        }
+        members.add(user);
+    }
+
+    public List<IdentityProviderRepresentation> getIdentityProviders() {
+        return identityProviders;
+    }
+
+    public void setIdentityProviders(List<IdentityProviderRepresentation> identityProviders) {
+        this.identityProviders = identityProviders;
+    }
+
+    public void addIdentityProvider(IdentityProviderRepresentation idp) {
+        if (identityProviders == null) {
+            identityProviders = new ArrayList<>();
+        }
+        identityProviders.add(idp);
     }
 
     @Override

@@ -1115,7 +1115,7 @@ public class RealmAdminResource {
         auth.realm().requireManageRealm();
         try {
             return Response.ok(
-                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
+                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), kcSession -> {
                         RealmModel realmClone = kcSession.realms().getRealm(realm.getId());
                         AdminEventBuilder adminEventClone = adminEvent.clone(kcSession);
                         // calling a static method to avoid using the wrong instances
@@ -1186,7 +1186,7 @@ public class RealmAdminResource {
         // service accounts are exported if the clients are exported
         // this means that if clients is true but groups/roles is false the service account is exported without roles
         // the other option is just include service accounts if clientsExported && groupsAndRolesExported
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported, true);
 
         ExportImportManager exportProvider = session.getProvider(DatastoreProvider.class).getExportImportManager();
 
