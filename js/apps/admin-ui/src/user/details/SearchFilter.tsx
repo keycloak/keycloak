@@ -1,14 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { ToolbarItem } from "@patternfly/react-core";
 import {
   Dropdown,
   DropdownItem,
-  DropdownToggle,
-  Select,
+  DropdownList,
+  MenuToggle,
   SelectOption,
-} from "@patternfly/react-core/deprecated";
+  ToolbarItem,
+} from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { KeycloakSelect } from "../../components/select/KeycloakSelect";
 
 export type SearchType = "default" | "attribute";
 
@@ -42,17 +43,20 @@ export const SearchDropdown = ({
   return (
     <Dropdown
       className="keycloak__users__searchtype"
-      toggle={
-        <DropdownToggle
+      toggle={(ref) => (
+        <MenuToggle
+          ref={ref}
           id="toggle-id"
-          onToggle={(_event, val) => setSearchToggle(val)}
+          onClick={() => setSearchToggle(!searchToggle)}
+          icon={<FilterIcon />}
         >
-          <FilterIcon /> {t(`searchType.${searchType}`)}
-        </DropdownToggle>
-      }
+          {t(`searchType.${searchType}`)}
+        </MenuToggle>
+      )}
       isOpen={searchToggle}
-      dropdownItems={options}
-    />
+    >
+      <DropdownList>{options}</DropdownList>
+    </Dropdown>
   );
 };
 
@@ -66,16 +70,16 @@ export const SearchToolbar = ({ searchType, onSelect }: SearchToolbarProps) => {
         <SearchDropdown searchType={searchType} onSelect={onSelect} />
       </ToolbarItem>
       <ToolbarItem>
-        <Select
+        <KeycloakSelect
           className="keycloak__users__searchtype"
-          onToggle={(_event, val) => setOpen(val)}
+          onToggle={(val) => setOpen(val)}
           isOpen={open}
           selections={[t("default"), t("attribute")]}
           onSelect={() => setOpen(false)}
         >
           <SelectOption value={"default"}>{t("default")}</SelectOption>
           <SelectOption value={"attribute"}>{t("attribute")}</SelectOption>
-        </Select>
+        </KeycloakSelect>
       </ToolbarItem>
     </>
   );

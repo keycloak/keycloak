@@ -6,6 +6,7 @@ import {
   DrawerContentBody,
   DrawerHead,
   DrawerPanelContent,
+  DropdownItem,
   PageSection,
   PageSectionVariants,
   Tab,
@@ -13,7 +14,6 @@ import {
   Tabs,
   Tooltip,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { AngleLeftIcon, TreeIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

@@ -8,7 +8,6 @@ export default class TableToolbar extends CommonElements {
   #nextPageBtn: string;
   #previousPageBtn: string;
   #searchTypeDropdownBtn: string;
-  #searchTypeSelectToggleBtn: string;
   #actionToggleBtn: string;
 
   constructor() {
@@ -21,12 +20,8 @@ export default class TableToolbar extends CommonElements {
     this.#nextPageBtn = this.parentSelector + "button[data-action=next]";
     this.#previousPageBtn =
       this.parentSelector + "button[data-action=previous]";
-    this.#searchTypeDropdownBtn =
-      this.parentSelector +
-      ".pf-v5-c-dropdown .keycloak__client-scopes__searchtype";
-    this.#searchTypeSelectToggleBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-v5-c-select__toggle";
-    this.#actionToggleBtn = this.tableKebabBtn + "[aria-label='Actions']";
+    this.#searchTypeDropdownBtn = "[data-testid='clientScopeSearchType']";
+    this.#actionToggleBtn = "[data-testid='kebab']";
   }
 
   clickNextPageButton(isUpperButton = true) {
@@ -98,7 +93,7 @@ export default class TableToolbar extends CommonElements {
   }
 
   selectSecondarySearchType(itemName: FilterAssignedType) {
-    cy.get(this.#searchTypeSelectToggleBtn).click();
+    cy.get(this.#searchTypeDropdownBtn).click();
     cy.get(this.dropdownSelectToggleItem).contains(itemName).click();
     return this;
   }

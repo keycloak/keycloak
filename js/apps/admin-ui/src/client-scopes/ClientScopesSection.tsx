@@ -2,14 +2,14 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
+import { EllipsisVIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -256,17 +256,23 @@ export default function ClientScopesSection() {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <KebabToggle
-                      onToggle={(_event, val) => setKebabOpen(val)}
-                    />
-                  }
+                  shouldFocusToggleOnSelect
+                  toggle={(ref) => (
+                    <MenuToggle
+                      data-testid="kebab"
+                      aria-label="Kebab toggle"
+                      ref={ref}
+                      onClick={() => setKebabOpen(!kebabOpen)}
+                      variant="plain"
+                    >
+                      <EllipsisVIcon />
+                    </MenuToggle>
+                  )}
                   isOpen={kebabOpen}
-                  isPlain
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
-                      key="action"
-                      component="button"
+                      data-testid="delete"
                       isDisabled={selectedScopes.length === 0}
                       onClick={() => {
                         toggleDeleteDialog();
@@ -274,9 +280,9 @@ export default function ClientScopesSection() {
                       }}
                     >
                       {t("delete")}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           }

@@ -1,15 +1,11 @@
-import { FormGroup } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { KeycloakSelect } from "../../components/select/KeycloakSelect";
 
 const comparisonValues = ["exact", "minimum", "maximum", "better"];
 
@@ -31,12 +27,11 @@ export const ReqAuthnConstraints = () => {
           defaultValue={comparisonValues[0]}
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId="comparison"
-              required
               direction="up"
-              onToggle={(_event, isExpanded) => setComparisonOpen(isExpanded)}
-              onSelect={(_, value) => {
+              onToggle={(isExpanded) => setComparisonOpen(isExpanded)}
+              onSelect={(value) => {
                 field.onChange(value.toString());
                 setComparisonOpen(false);
               }}
@@ -54,7 +49,7 @@ export const ReqAuthnConstraints = () => {
                   {t(option)}
                 </SelectOption>
               ))}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>

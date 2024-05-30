@@ -1,25 +1,25 @@
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
-  FormGroup,
-  Switch,
-  TextInput,
-  ValidatedOptions,
-} from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
-import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import {
   FormErrorText,
   HelpItem,
   SelectControl,
 } from "@keycloak/keycloak-ui-shared";
+import {
+  FormGroup,
+  SelectOption,
+  Switch,
+  TextInput,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
@@ -59,11 +59,10 @@ const LoginFlow = ({
         defaultValue={defaultValue}
         control={control}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={label}
-            required
             onToggle={() => setOpen(!open)}
-            onSelect={(_, value) => {
+            onSelect={(value) => {
               field.onChange(value as string);
               setOpen(false);
             }}
@@ -90,7 +89,7 @@ const LoginFlow = ({
                 </SelectOption>
               )) || []),
             ]}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </FormGroup>

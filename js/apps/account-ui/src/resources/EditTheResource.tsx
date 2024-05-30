@@ -85,7 +85,7 @@ export const EditTheResource = ({
                 id={`permissions-${p.id}`}
                 name={`permissions.${index}.scopes`}
                 label="permissions"
-                variant="typeaheadmulti"
+                variant="typeaheadMulti"
                 controller={{ defaultValue: [] }}
                 options={resource.scopes.map(({ name, displayName }) => ({
                   key: name,

@@ -1,5 +1,9 @@
-import { AlertVariant } from "@patternfly/react-core";
-import { Select } from "@patternfly/react-core/deprecated";
+import {
+  AlertVariant,
+  MenuToggle,
+  Select,
+  SelectList,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -33,13 +37,19 @@ export const ChangeTypeDropdown = ({
 
   return (
     <Select
-      toggleId="change-type-dropdown"
       aria-label="change-type-to"
       isOpen={open}
-      selections={[]}
-      isDisabled={selectedRows.length === 0}
-      placeholderText={t("changeTypeTo")}
-      onToggle={(_event, val) => setOpen(val)}
+      toggle={(ref) => (
+        <MenuToggle
+          id="change-type-dropdown"
+          isDisabled={selectedRows.length === 0}
+          ref={ref}
+          onClick={() => setOpen(!open)}
+          isExpanded={open}
+        >
+          {t("changeTypeTo")}
+        </MenuToggle>
+      )}
       onSelect={async (_, value) => {
         try {
           await Promise.all(
@@ -63,10 +73,12 @@ export const ChangeTypeDropdown = ({
         }
       }}
     >
-      {clientScopeTypesSelectOptions(
-        t,
-        !clientId ? allClientScopeTypes : undefined,
-      )}
+      <SelectList>
+        {clientScopeTypesSelectOptions(
+          t,
+          !clientId ? allClientScopeTypes : undefined,
+        )}
+      </SelectList>
     </Select>
   );
 };

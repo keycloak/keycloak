@@ -1,12 +1,16 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
-import { Button, Checkbox, ToolbarItem } from "@patternfly/react-core";
 import {
+  Button,
+  Checkbox,
   Dropdown,
   DropdownItem,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
+  DropdownList,
+  MenuToggle,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import { EllipsisVIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -202,15 +206,22 @@ export const Members = () => {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <KebabToggle
-                      onToggle={() => setIsKebabOpen(!isKebabOpen)}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      variant="plain"
+                      onClick={() => setIsKebabOpen(!isKebabOpen)}
+                      isExpanded={isKebabOpen}
                       isDisabled={selectedRows.length === 0}
-                    />
-                  }
+                      aria-label="Actions"
+                    >
+                      <EllipsisVIcon />
+                    </MenuToggle>
+                  )}
+                  shouldFocusToggleOnSelect
                   isOpen={isKebabOpen}
-                  isPlain
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
                       key="action"
                       component="button"
@@ -236,9 +247,9 @@ export const Members = () => {
                       }}
                     >
                       {t("leave")}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           )

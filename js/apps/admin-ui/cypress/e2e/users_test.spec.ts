@@ -438,7 +438,7 @@ describe("User creation", () => {
     cy.get("table")
       .contains(itemCredential)
       .parentsUntil("tbody")
-      .find(".pf-v5-c-dropdown__toggle")
+      .find(".pf-v5-c-table__action .pf-v5-c-menu-toggle")
       .click();
     cy.get("table").contains("Delete").click();
     modalUtils.checkModalTitle("Delete credentials?").confirmModal();

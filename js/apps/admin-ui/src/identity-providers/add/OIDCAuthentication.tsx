@@ -1,9 +1,4 @@
-import { FormGroup } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -14,6 +9,10 @@ import { SwitchField } from "../component/SwitchField";
 import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { TextField } from "../component/TextField";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 
 const clientAuthentications = [
   "client_secret_post",
@@ -52,11 +51,10 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
           defaultValue={clientAuthentications[0]}
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId="clientAuthentication"
-              required
               onToggle={() => setOpenClientAuth(!openClientAuth)}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 field.onChange(value as string);
                 setOpenClientAuth(false);
               }}
@@ -74,7 +72,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
                   {t(`clientAuthentications.${option}`)}
                 </SelectOption>
               ))}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>
@@ -97,11 +95,11 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
           defaultValue=""
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               maxHeight={200}
               toggleId="clientAssertionSigningAlg"
               onToggle={() => setOpenClientAuthSigAlg(!openClientAuthSigAlg)}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 field.onChange(value.toString());
                 setOpenClientAuthSigAlg(false);
               }}
@@ -119,10 +117,12 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
                     selected={option === field.value}
                     key={option}
                     value={option}
-                  />
+                  >
+                    {option}
+                  </SelectOption>
                 )),
               ]}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>

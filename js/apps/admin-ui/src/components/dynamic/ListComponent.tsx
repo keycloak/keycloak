@@ -1,16 +1,11 @@
-import { FormGroup } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
-import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
+import { KeycloakSelect, SelectVariant } from "../select/KeycloakSelect";
 
 export const ListComponent = ({
   name,
@@ -38,11 +33,11 @@ export const ListComponent = ({
         defaultValue={defaultValue || options?.[0] || ""}
         control={control}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={name}
             isDisabled={isDisabled}
-            onToggle={(_event, toggle) => setOpen(toggle)}
-            onSelect={(_, value) => {
+            onToggle={(toggle) => setOpen(toggle)}
+            onSelect={(value) => {
               field.onChange(value as string);
               setOpen(false);
             }}
@@ -56,9 +51,11 @@ export const ListComponent = ({
                 selected={option === field.value}
                 key={option}
                 value={option}
-              />
+              >
+                {option}
+              </SelectOption>
             ))}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </FormGroup>

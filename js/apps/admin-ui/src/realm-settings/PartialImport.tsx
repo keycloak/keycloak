@@ -19,27 +19,18 @@ import {
   Label,
   Modal,
   ModalVariant,
+  SelectOption,
   Stack,
   StackItem,
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectOptionObject,
-} from "@patternfly/react-core/deprecated";
-import {
-  ChangeEvent,
-  FormEvent,
-  MouseEvent as ReactMouseEvent,
-  useEffect,
-  useState,
-} from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
+import { KeycloakSelect } from "../components/select/KeycloakSelect";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 
@@ -120,7 +111,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     }
   };
 
-  const handleRealmSelect = (realm: string | SelectOptionObject) => {
+  const handleRealmSelect = (realm: string | number | object) => {
     setTargetRealm(realm as RealmRepresentation);
     setIsRealmSelectOpen(false);
     resetResourcesToImport();
@@ -149,10 +140,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       </SelectOption>
     ));
 
-  const handleCollisionSelect = (
-    event: ChangeEvent<Element> | ReactMouseEvent<Element, MouseEvent>,
-    option: string | SelectOptionObject,
-  ) => {
+  const handleCollisionSelect = (option: string | number | object) => {
     setCollisionOption(option as CollisionOption);
     setIsCollisionSelectOpen(false);
   };
@@ -340,17 +328,17 @@ export const PartialImportDialog = (props: PartialImportProps) => {
               {Array.isArray(importedFile) && importedFile.length > 1 && (
                 <StackItem>
                   <Text>{t("selectRealm")}:</Text>
-                  <Select
+                  <KeycloakSelect
                     toggleId="realm-selector"
                     isOpen={isRealmSelectOpen}
                     typeAheadAriaLabel={t("realmSelector")}
                     aria-label={"realmSelector"}
                     onToggle={() => setIsRealmSelectOpen(!isRealmSelectOpen)}
-                    onSelect={(_, value) => handleRealmSelect(value)}
+                    onSelect={(value) => handleRealmSelect(value)}
                     placeholderText={targetRealm.realm || targetRealm.id}
                   >
                     {realmSelectOptions(importedFile)}
-                  </Select>
+                  </KeycloakSelect>
                 </StackItem>
               )}
               <StackItem>
@@ -375,7 +363,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
               </StackItem>
               <StackItem>
                 <Text>{t("selectIfResourceExists")}:</Text>
-                <Select
+                <KeycloakSelect
                   isOpen={isCollisionSelectOpen}
                   direction="up"
                   onToggle={() => {
@@ -385,7 +373,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                   placeholderText={t(collisionOption)}
                 >
                   {collisionOptions()}
-                </Select>
+                </KeycloakSelect>
               </StackItem>
             </>
           )}

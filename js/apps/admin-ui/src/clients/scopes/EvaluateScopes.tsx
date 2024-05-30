@@ -9,6 +9,7 @@ import {
   Grid,
   GridItem,
   PageSection,
+  SelectOption,
   Split,
   SplitItem,
   Tab,
@@ -18,11 +19,6 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -39,6 +35,10 @@ import { useFetch } from "../../utils/useFetch";
 import { GeneratedCodeTab } from "./GeneratedCodeTab";
 
 import "./evaluate.css";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 
 export type EvaluateScopesProps = {
   clientId: string;
@@ -250,14 +250,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           >
             <Split hasGutter>
               <SplitItem isFilled>
-                <Select
+                <KeycloakSelect
                   toggleId="scopeParameter"
                   variant={SelectVariant.typeaheadMulti}
                   typeAheadAriaLabel={t("scopeParameter")}
                   onToggle={() => setIsScopeOpen(!isScopeOpen)}
                   isOpen={isScopeOpen}
                   selections={selected}
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     const option = value as string;
                     if (selected.includes(option)) {
                       if (option !== prefix) {
@@ -273,7 +273,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {selectableScopes.map((option, index) => (
                     <SelectOption key={index} value={option.name} />
                   ))}
-                </Select>
+                </KeycloakSelect>
               </SplitItem>
               <SplitItem>
                 <ClipboardCopy className="keycloak__scopes_evaluate__clipboard-copy">

@@ -4,9 +4,9 @@ import {
   ActionGroup,
   Button,
   ButtonVariant,
+  DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";

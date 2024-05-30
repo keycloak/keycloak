@@ -1,9 +1,8 @@
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
-import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FieldPathByValue, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { SelectControl, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 
@@ -48,14 +47,14 @@ export const RequiredActionMultiSelect = <
       label={t(label)}
       labelIcon={t(help)}
       controller={{ defaultValue: [] }}
-      maxHeight={375}
+      isScrollable
+      maxMenuHeight="375px"
       variant={SelectVariant.typeaheadMulti}
       chipGroupProps={{
         numChips: 3,
       }}
       placeholderText={t("requiredActionPlaceholder")}
       menuAppendTo="parent"
-      typeAheadAriaLabel={t("resetAction")}
       options={requiredActions.map(({ alias, name }) => ({
         key: alias!,
         value: name || alias!,

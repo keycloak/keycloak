@@ -17,9 +17,9 @@ import {
   ToolbarContent,
   ToolbarItem,
   Select,
-  SelectOption,
   MenuToggle,
   SelectList,
+  SelectOption,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
@@ -53,9 +53,6 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
 
   return (
     <Select
-      style={{
-        width: "300px",
-      }}
       onSelect={(_, selection) => {
         onSelect(selection as PasswordPolicyTypeRepresentation);
         setOpen(false);
@@ -66,6 +63,7 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
           onClick={() => setOpen(!open)}
           isExpanded={open}
           isDisabled={policies?.length === 0}
+          style={{ width: "300px" }}
           data-testid="add-policy"
         >
           {t("addPolicy")}

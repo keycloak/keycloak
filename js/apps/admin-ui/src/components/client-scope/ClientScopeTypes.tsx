@@ -1,16 +1,17 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import {
-  DropdownItem,
-  Select,
-  SelectOption,
-  SelectProps,
-} from "@patternfly/react-core/deprecated";
 import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toUpperCase } from "../../util";
+import {
+  DropdownItem,
+  MenuToggle,
+  Select,
+  SelectOption,
+  SelectProps,
+} from "@patternfly/react-core";
 
 export enum ClientScope {
   default = "default",
@@ -50,11 +51,12 @@ export const clientScopeTypesDropdown = (
     </DropdownItem>
   ));
 
-type CellDropdownProps = Omit<SelectProps, "onToggle"> & {
+type CellDropdownProps = Omit<SelectProps, "toggle"> & {
   clientScope: ClientScopeRepresentation;
   type: ClientScopeType | AllClientScopeType;
   all?: boolean;
   onSelect: (value: ClientScopeType | AllClientScopeType) => void;
+  isDisabled?: boolean;
 };
 
 export const CellDropdown = ({
@@ -62,6 +64,7 @@ export const CellDropdown = ({
   type,
   onSelect,
   all = false,
+  isDisabled,
   ...props
 }: CellDropdownProps) => {
   const { t } = useTranslation();
@@ -69,11 +72,21 @@ export const CellDropdown = ({
 
   return (
     <Select
-      className={`keycloak__client-scope__${type}`}
       key={clientScope.id}
-      onToggle={() => setOpen(!open)}
+      toggle={(ref) => (
+        <MenuToggle
+          data-testid="cell-dropdown"
+          className={`keycloak__client-scope__${type}`}
+          ref={ref}
+          onClick={() => setOpen(!open)}
+          isExpanded={open}
+          isDisabled={isDisabled}
+        >
+          {t(`clientScopeType.${type}`)}
+        </MenuToggle>
+      )}
       isOpen={open}
-      selections={[type]}
+      selected={[type]}
       onSelect={(_, value) => {
         onSelect(
           all ? (value as ClientScopeType) : (value as AllClientScopeType),

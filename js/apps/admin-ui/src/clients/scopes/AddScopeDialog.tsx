@@ -2,18 +2,14 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import {
   Button,
   ButtonVariant,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
   Modal,
   ModalVariant,
-} from "@patternfly/react-core";
-import {
-  Dropdown,
-  DropdownDirection,
-  DropdownItem,
-  DropdownToggle,
-  Select,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import {
   CaretDownIcon,
   CaretUpIcon,
@@ -30,6 +26,7 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import useToggle from "../../utils/useToggle";
 import { getProtocolName } from "../utils";
+import { KeycloakSelect } from "../../components/select/KeycloakSelect";
 
 import "./client-scopes.css";
 
@@ -123,7 +120,7 @@ export const AddScopeDialog = ({
     <SelectOption key={2} value={ProtocolType.OpenIDConnect}>
       {t("protocolTypes.openid-connect")}
     </SelectOption>,
-    <SelectOption key={3} value={ProtocolType.All} isPlaceholder>
+    <SelectOption key={3} value={ProtocolType.All}>
       {t("protocolTypes.all")}
     </SelectOption>,
   ];
@@ -170,24 +167,29 @@ export const AddScopeDialog = ({
             ]
           : [
               <Dropdown
+                popperProps={{
+                  direction: "up",
+                }}
                 className="keycloak__client-scopes-add__add-dropdown"
-                id="add-dropdown"
                 key="add-dropdown"
-                direction={DropdownDirection.up}
                 isOpen={addToggle}
-                toggle={
-                  <DropdownToggle
+                toggle={(ref) => (
+                  <MenuToggle
+                    ref={ref}
                     isDisabled={rows.length === 0}
-                    onToggle={() => setAddToggle(!addToggle)}
-                    toggleVariant="primary"
-                    toggleIndicator={CaretUpIcon}
-                    id="add-scope-toggle"
+                    onClick={() => setAddToggle(!addToggle)}
+                    variant="primary"
+                    id="add-dropdown"
+                    statusIcon={<CaretUpIcon />}
                   >
                     {t("add")}
-                  </DropdownToggle>
-                }
-                dropdownItems={clientScopeTypesDropdown(t, action)}
-              />,
+                  </MenuToggle>
+                )}
+              >
+                <DropdownList>
+                  {clientScopeTypesDropdown(t, action)}
+                </DropdownList>
+              </Dropdown>,
               <Button
                 id="modal-cancel"
                 key="cancel"
@@ -214,27 +216,29 @@ export const AddScopeDialog = ({
             onSelect={() => {
               onFilterTypeDropdownSelect(filterType);
             }}
-            data-testid="filter-type-dropdown"
-            toggle={
-              <DropdownToggle
+            toggle={(ref) => (
+              <MenuToggle
+                ref={ref}
+                data-testid="filter-type-dropdown"
                 id="toggle-id-9"
-                onToggle={toggleIsFilterTypeDropdownOpen}
-                toggleIndicator={CaretDownIcon}
+                onClick={toggleIsFilterTypeDropdownOpen}
                 icon={<FilterIcon />}
+                statusIcon={<CaretDownIcon />}
               >
                 {filterType}
-              </DropdownToggle>
-            }
+              </MenuToggle>
+            )}
             isOpen={isFilterTypeDropdownOpen}
-            dropdownItems={[
+          >
+            <DropdownList>
               <DropdownItem
                 data-testid="filter-type-dropdown-item"
                 key="filter-type"
               >
                 {filterType === FilterType.Name ? t("protocol") : t("name")}
-              </DropdownItem>,
-            ]}
-          />
+              </DropdownItem>
+            </DropdownList>
+          </Dropdown>
         }
         toolbarItem={
           filterType === FilterType.Protocol && (
@@ -244,39 +248,40 @@ export const AddScopeDialog = ({
                   onFilterTypeDropdownSelect(filterType);
                 }}
                 data-testid="filter-type-dropdown"
-                toggle={
-                  <DropdownToggle
+                toggle={(ref) => (
+                  <MenuToggle
+                    ref={ref}
                     id="toggle-id-9"
-                    onToggle={toggleIsFilterTypeDropdownOpen}
-                    toggleIndicator={CaretDownIcon}
+                    onClick={toggleIsFilterTypeDropdownOpen}
+                    statusIcon={<CaretDownIcon />}
                     icon={<FilterIcon />}
                   >
                     {filterType}
-                  </DropdownToggle>
-                }
+                  </MenuToggle>
+                )}
                 isOpen={isFilterTypeDropdownOpen}
-                dropdownItems={[
+              >
+                <DropdownList>
                   <DropdownItem
                     data-testid="filter-type-dropdown-item"
                     key="filter-type"
                   >
                     {t("name")}
-                  </DropdownItem>,
-                ]}
-              />
-              <Select
-                variant={SelectVariant.single}
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
+              <KeycloakSelect
                 className="kc-protocolType-select"
                 aria-label={t("selectOne")}
                 onToggle={toggleIsProtocolTypeDropdownOpen}
-                onSelect={(_, value) =>
+                onSelect={(value) =>
                   onProtocolTypeDropdownSelect(value.toString())
                 }
                 selections={protocolType}
                 isOpen={isProtocolTypeDropdownOpen}
               >
                 {protocolTypeOptions}
-              </Select>
+              </KeycloakSelect>
             </>
           )
         }

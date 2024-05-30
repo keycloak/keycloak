@@ -1,5 +1,4 @@
-import { ButtonVariant } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
+import { ButtonVariant, DropdownItem } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";

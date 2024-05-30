@@ -3,15 +3,11 @@ import {
   Button,
   ButtonVariant,
   Divider,
+  SelectOption,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
@@ -27,6 +23,10 @@ import { toAttribute } from "../routes/Attribute";
 import { useUserProfile } from "./UserProfileContext";
 import useLocale from "../../utils/useLocale";
 import { useAdminClient } from "../../admin-client";
+import {
+  KeycloakSelect,
+  SelectVariant,
+} from "../../components/select/KeycloakSelect";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
 
@@ -168,14 +168,15 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       <Toolbar>
         <ToolbarContent>
           <ToolbarItem>
-            <Select
+            <KeycloakSelect
+              toggleId="kc-group-filter"
               width={200}
               data-testid="filter-select"
               isOpen={isFilterTypeDropdownOpen}
               variant={SelectVariant.single}
               onToggle={toggleIsFilterTypeDropdownOpen}
               toggleIcon={<FilterIcon />}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 const filter = value.toString();
                 setFilter(filter);
                 setData(
@@ -199,14 +200,12 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                   attributes.filter((attr) => !!attr.group),
                   "group",
                 ).map((attr) => (
-                  <SelectOption
-                    key={attr.group}
-                    data-testid={`${attr.group}-option`}
-                    value={attr.group}
-                  />
+                  <SelectOption key={attr.group} value={attr.group}>
+                    {attr.group}
+                  </SelectOption>
                 )),
               ]}
-            </Select>
+            </KeycloakSelect>
           </ToolbarItem>
           <ToolbarItem className="kc-toolbar-attributesTab">
             <Button
