@@ -31,7 +31,6 @@ export default class CreateUserPage {
   }
 
   goToCreateUser() {
-    cy.intercept("/admin/realms/master/users/profile/metadata").as("meta");
     cy.get("body").then((body) => {
       if (body.find(`[data-testid=${this.addUserBtn}]`).length > 0) {
         cy.findByTestId(this.addUserBtn).click({ force: true });
@@ -39,7 +38,6 @@ export default class CreateUserPage {
         cy.findByTestId(this.emptyStateCreateUserBtn).click({ force: true });
       }
     });
-    cy.wait(["@meta"]);
 
     return this;
   }

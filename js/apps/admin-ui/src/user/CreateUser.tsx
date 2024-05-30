@@ -37,11 +37,11 @@ export default function CreateUser() {
   useFetch(
     () => adminClient.users.getProfileMetadata({ realm: realmName }),
     (userProfileMetadata) => {
-      if (!realm) {
+      if (!userProfileMetadata) {
         throw new Error(t("notFound"));
       }
 
-      form.setValue("attributes.locale", realm.defaultLocale || "");
+      form.setValue("attributes.locale", realm?.defaultLocale || "");
       setUserProfileMetadata(userProfileMetadata);
     },
     [],
@@ -69,7 +69,7 @@ export default function CreateUser() {
     }
   };
 
-  if (!realm) {
+  if (!realm || !userProfileMetadata) {
     return <KeycloakSpinner />;
   }
 
