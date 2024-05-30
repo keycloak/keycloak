@@ -43,7 +43,7 @@ test.describe("My resources page", () => {
     await page.getByTestId("done").click();
 
     await page.getByTestId("expand-one").click();
-    expect(page.getByTestId("shared-with-alice")).toBeDefined();
+    await expect(page.getByTestId("shared-with-alice")).toBeVisible();
   });
 
   test("One is shared with alice", async ({ page }) => {
