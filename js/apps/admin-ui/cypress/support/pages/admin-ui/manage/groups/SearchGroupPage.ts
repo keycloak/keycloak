@@ -1,10 +1,8 @@
-import SidebarPage from "../../SidebarPage";
 import GroupPage from "./GroupPage";
 
 export class SearchGroupPage extends GroupPage {
   #groupSearchField = "group-search";
   #searchButton = "[data-testid='group-search'] button[type='submit']";
-  #sidebarPage = new SidebarPage();
 
   public searchGroup(groupName: string) {
     this.typeSearchInput(groupName);
@@ -15,12 +13,6 @@ export class SearchGroupPage extends GroupPage {
   public searchGlobal(searchValue: string) {
     this.search("[data-testid='searchForGroups']", searchValue, true);
 
-    return this;
-  }
-
-  public goToGroupChildGroupsFromTree(item: string) {
-    cy.get(".pf-v5-c-tree-view__content").contains(item).click();
-    this.#sidebarPage.waitForPageLoad();
     return this;
   }
 
