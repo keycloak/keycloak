@@ -17,7 +17,6 @@
 package org.keycloak.organization;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
@@ -35,11 +34,10 @@ public interface OrganizationProvider extends Provider {
      * Creates a new organization with given {@code name} to the realm.
      * The internal ID of the organization will be created automatically.
      * @param name String name of the organization.
-     * @param domains the domains
      * @throws ModelDuplicateException If there is already an organization with the given name
      * @return Model of the created organization.
      */
-    OrganizationModel create(String name, Set<String> domains);
+    OrganizationModel create(String name);
 
     /**
      * Returns a {@link OrganizationModel} by its {@code id};
