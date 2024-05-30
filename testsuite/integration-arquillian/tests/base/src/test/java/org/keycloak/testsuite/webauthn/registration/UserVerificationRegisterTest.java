@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.webauthn.registration;
 
 import com.webauthn4j.data.UserVerificationRequirement;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
