@@ -1,7 +1,9 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
-import { Button, Checkbox, ToolbarItem } from "@patternfly/react-core";
+import {
+  Button,
+  Checkbox,
   Dropdown,
   DropdownItem,
   DropdownList,
