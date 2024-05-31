@@ -164,7 +164,7 @@ TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduc
 In previous versions and when the feature is disabled, a restart of all {project_name} nodes logged out all users.
 To sign out all online users sessions of a realm with the `persistent-user-session` feature enabled, use the following steps as before:
 
-. Login to the Admin Console.
+. Log in to the Admin Console.
 . Select the menu entry *Sessions*.
 . Select the action *Sign out all active sessions*.
 
