@@ -43,23 +43,9 @@ public abstract class AbstractHeader extends AbstractFragmentWithMobileLayout {
         assertToolsBtnVisible(expected, getLogoutBtn());
     }
 
-    public void clickReferrerLink() {
-        clickToolsBtn(getReferrerLink());
-    }
-
-    public void assertReferrerLinkVisible(boolean expected) {
-        assertToolsBtnVisible(expected, getReferrerLink());
-    }
-
-    public String getReferrerLinkText() {
-        return getToolsBtnText(getReferrerLink());
-    }
-
     public abstract void clickOptions();
 
     protected abstract WebElement getLogoutBtn ();
-
-    protected abstract WebElement getReferrerLink();
 
     protected void clickToolsBtn(WebElement btn) {
         clickOptions();
