@@ -29,6 +29,24 @@ public interface OrganizationModel {
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String BROKER_PUBLIC = "kc.org.broker.public";
 
+    enum IdentityProviderRedirectMode {
+        EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
+
+        private final String key;
+
+        IdentityProviderRedirectMode(String key) {
+            this.key = key;
+        }
+
+        public boolean isSet(IdentityProviderModel broker) {
+            return Boolean.parseBoolean(broker.getConfig().get(key));
+        }
+
+        public String getKey() {
+            return key;
+        }
+    }
+
     String getId();
 
     void setName(String name);

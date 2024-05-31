@@ -32,6 +32,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -109,14 +110,8 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         List<IdentityProviderModel> brokers = organization.getIdentityProviders().toList();
 
-        for (IdentityProviderModel broker : brokers) {
-            String idpDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-
-            if (emailDomain.equals(idpDomain)) {
-                // redirect the user using the broker that matches the email domain
-                redirect(context, broker.getAlias(), username);
-                return;
-            }
+        if (redirect(context, brokers, username, emailDomain)) {
+            return;
         }
 
         if (!hasPublicBrokers(brokers)) {
@@ -194,5 +189,21 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         return realm.isOrganizationsEnabled();
+    }
+
+    protected boolean redirect(AuthenticationFlowContext context, List<IdentityProviderModel> brokers, String username, String emailDomain) {
+        for (IdentityProviderModel broker : brokers) {
+            if (IdentityProviderRedirectMode.EMAIL_MATCH.isSet(broker)) {
+                String idpDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+                if (emailDomain.equals(idpDomain)) {
+                    // redirect the user using the broker that matches the email domain
+                    redirect(context, broker.getAlias(), username);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

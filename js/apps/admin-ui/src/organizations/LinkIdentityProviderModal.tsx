@@ -145,6 +145,14 @@ export const LinkIdentityProviderModal = ({
             labelIcon={t("shownOnLoginPageHelp")}
             stringify
           />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.redirect.mode.email-matches",
+            )}
+            label={t("redirectWhenEmailMatches")}
+            labelIcon={t("redirectWhenEmailMatchesHelp")}
+            stringify
+          />
         </Form>
       </FormProvider>
     </Modal>
