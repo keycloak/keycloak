@@ -42,6 +42,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -264,6 +265,34 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         clientTypes = testRealm().clientTypes().getClientTypes();
         assertNames(clientTypes.getRealmClientTypes(), "sla1", "different");
         assertNames(clientTypes.getGlobalClientTypes(), "sla", "service-account");
+    }
+
+    @Test
+    public void testClientTypesInheritFromParent() {
+        ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig standardFlowEnabledProperty = new ClientTypeRepresentation.PropertyConfig();
+        standardFlowEnabledProperty.setApplicable(true);
+        standardFlowEnabledProperty.setValue(true);
+
+        Map<String, ClientTypeRepresentation.PropertyConfig> config = new HashMap<>();
+        config.put("standardFlowEnabled", standardFlowEnabledProperty);
+
+        ClientTypeRepresentation clientType = new ClientTypeRepresentation();
+        clientType.setName("child");
+        clientType.setProvider("default");
+        clientType.setParent("oidc");
+        clientType.setConfig(config);
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(clientType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        testRealm().clientTypes().updateClientTypes(clientTypes);
+
+        ClientRepresentation client = createClientWithType("blah-client", clientType.getName());
+        assertEquals(client.getProtocol(), "openid-connect");
+        assertEquals(client.isStandardFlowEnabled(), true);
     }
 
     private void assertErrorResponseContainsParams(Response response, String... items) {

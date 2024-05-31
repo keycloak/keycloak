@@ -655,8 +655,8 @@ public class RepresentationToModel {
     }
 
     /**
-     * Create Supplier to update property, if not null.
-     * Captures {@link ClientTypeException} if thrown by the setter.
+     * Create Supplier to update property.
+     * Captures and returns {@link ClientTypeException} if thrown by the setter.
      *
      * @param modelSetter setter to call.
      * @param representationGetter getter supplying the property update.
@@ -687,9 +687,7 @@ public class RepresentationToModel {
     private static <T> Supplier<ClientTypeException> updatePropertyAction(Consumer<T> modelSetter, Supplier<T>... getters) {
         Stream<T> firstNonNullSupplied = Stream.of(getters)
                 .map(Supplier::get)
-                .map(Optional::ofNullable)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .filter(Objects::nonNull);
         return updateProperty(modelSetter, () -> firstNonNullSupplied.findFirst().orElse(null));
     }
 

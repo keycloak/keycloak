@@ -148,8 +148,8 @@ interface TypedClientAttribute {
         }
 
         // If there is an attempt to change a value for an applicable field with a read-only value set, then throw an exception.
-        T oldVal = clientType.getTypeValue(propertyName, tClass);
-        if (!ObjectUtil.isEqualOrBothNull(oldVal, newValue)) {
+        T readOnlyValue = clientType.getTypeValue(propertyName, tClass);
+        if (readOnlyValue != null && !readOnlyValue.equals(newValue)) {
             throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception(propertyName);
         }
 

@@ -48,8 +48,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isStandardFlowEnabled() {
-        return TypedClientSimpleAttribute.STANDARD_FLOW_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.STANDARD_FLOW_ENABLED
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -60,8 +60,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isBearerOnly() {
-        return TypedClientSimpleAttribute.BEARER_ONLY
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.BEARER_ONLY
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -72,8 +72,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isConsentRequired() {
-        return TypedClientSimpleAttribute.CONSENT_REQUIRED
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.CONSENT_REQUIRED
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -84,8 +84,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isDirectAccessGrantsEnabled() {
-        return TypedClientSimpleAttribute.DIRECT_ACCESS_GRANTS_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.DIRECT_ACCESS_GRANTS_ENABLED
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -96,8 +96,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isAlwaysDisplayInConsole() {
-        return TypedClientSimpleAttribute.ALWAYS_DISPLAY_IN_CONSOLE
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.ALWAYS_DISPLAY_IN_CONSOLE
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -108,8 +108,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isFrontchannelLogout() {
-        return TypedClientSimpleAttribute.FRONTCHANNEL_LOGOUT
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.FRONTCHANNEL_LOGOUT
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -120,8 +120,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isImplicitFlowEnabled() {
-        return TypedClientSimpleAttribute.IMPLICIT_FLOW_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.IMPLICIT_FLOW_ENABLED
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -132,8 +132,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isServiceAccountsEnabled() {
-        return TypedClientSimpleAttribute.SERVICE_ACCOUNTS_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.SERVICE_ACCOUNTS_ENABLED
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -156,8 +156,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public boolean isPublicClient() {
-        return TypedClientSimpleAttribute.PUBLIC_CLIENT
-                .getClientAttribute(clientType, Boolean.class);
+        return Boolean.TRUE.equals(TypedClientSimpleAttribute.PUBLIC_CLIENT
+                .getClientAttribute(clientType, Boolean.class));
     }
 
     @Override
@@ -251,9 +251,9 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
         // Get extended client type attributes and values from the client type configuration.
         Set<String> extendedClientTypeAttributes =
-                clientType.getOptionNames().stream()
-                        .filter(optionName -> TypedClientExtendedAttribute.getAttributesByName().containsKey(optionName))
-                        .collect(Collectors.toSet());
+                clientType.getConfig().keySet().stream()
+                .filter(optionName -> TypedClientExtendedAttribute.getAttributesByName().containsKey(optionName))
+                .collect(Collectors.toSet());
 
         // Augment client type attributes on top of attributes on the delegate.
         for (String entry : extendedClientTypeAttributes) {

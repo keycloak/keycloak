@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.ClientTypeRepresentation;
 public interface ClientTypeProvider extends Provider {
 
     // Return client types for the model returned
-    ClientType getClientType(ClientTypeRepresentation clientTypeRep);
+    ClientType getClientType(ClientTypeRepresentation clientTypeRep, ClientType parent);
 
     // TODO:client-types type-safety here. The returned clientType should have correctly casted client type configuration
     // Used when creating/updating clientType. The JSON configuration is validated to be checked if it matches the good format for client type

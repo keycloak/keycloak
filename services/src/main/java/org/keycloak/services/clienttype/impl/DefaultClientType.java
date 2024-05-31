@@ -19,12 +19,15 @@
 package org.keycloak.services.clienttype.impl;
 
 import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.services.clienttype.client.TypeAwareClientModelDelegate;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -32,9 +35,22 @@ import java.util.Set;
 public class DefaultClientType implements ClientType {
 
     private final ClientTypeRepresentation clientType;
+    private final Map<String, ClientTypeRepresentation.PropertyConfig> propertyConfigs;
 
-    public DefaultClientType(ClientTypeRepresentation clientType) {
+    public DefaultClientType(ClientTypeRepresentation clientType, ClientType parentClientType) {
         this.clientType = clientType;
+
+        // If there is a client type parent, we inherit the parent configuration as a base.
+        if (clientType.getParent() != null) {
+            if (parentClientType == null) {
+                throw ClientTypeException.Message.PARENT_CLIENT_TYPE_NOT_FOUND.exception();
+            }
+            this.propertyConfigs = new HashMap<>(parentClientType.getConfig());
+        }
+        else {
+            this.propertyConfigs = new HashMap<>();
+        }
+        this.propertyConfigs.putAll(clientType.getConfig());
     }
 
     @Override
@@ -55,12 +71,13 @@ public class DefaultClientType implements ClientType {
 
         return getConfiguration(optionName)
                 .map(ClientTypeRepresentation.PropertyConfig::getValue)
-                .map(optionType::cast).orElse(null);
+                .map(optionType::cast)
+                .orElse(null);
     }
 
     @Override
-    public Set<String> getOptionNames() {
-        return clientType.getConfig().keySet();
+    public Map<String, ClientTypeRepresentation.PropertyConfig> getConfig() {
+        return propertyConfigs;
     }
 
     @Override
@@ -69,6 +86,6 @@ public class DefaultClientType implements ClientType {
     }
 
     private Optional<ClientTypeRepresentation.PropertyConfig> getConfiguration(String optionName) {
-        return Optional.ofNullable(clientType.getConfig().get(optionName));
+        return Optional.ofNullable(propertyConfigs.get(optionName));
     }
 }

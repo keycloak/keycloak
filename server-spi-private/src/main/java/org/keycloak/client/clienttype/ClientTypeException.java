@@ -29,10 +29,6 @@ public class ClientTypeException extends ModelException {
         super(message, parameters);
     }
 
-    private ClientTypeException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
     public enum Message {
         /**
          * Register all client type exception messages through this enum to keep things consistent across the services.
@@ -45,6 +41,7 @@ public class ClientTypeException extends ModelException {
         DUPLICATE_CLIENT_TYPE("Duplicated client type name"),
         CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION("Cannot change property of client as it is not allowed by the specified client type."),
         CLIENT_TYPE_NOT_FOUND("Client type not found."),
+        PARENT_CLIENT_TYPE_NOT_FOUND("Client type parent not found."),
         CLIENT_TYPE_FAILED_TO_LOAD("Failed to load client type.");
 
         private final String message;
@@ -55,10 +52,6 @@ public class ClientTypeException extends ModelException {
 
         public ClientTypeException exception(Object... parameters) {
             return new ClientTypeException(message, parameters);
-        }
-
-        public ClientTypeException exception(String message, Throwable cause) {
-            return new ClientTypeException(message, cause);
         }
 
         public String getMessage() {
