@@ -32,6 +32,7 @@ jobs:
       ci-quarkus: ${{ steps.conditional.outputs.ci-quarkus }}
       ci-store: ${{ steps.conditional.outputs.ci-store }}
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
+      ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-store-matrix: ${{ steps.conditional-stores.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
@@ -677,9 +678,11 @@ jobs:
 
   webauthn-integration-tests:
     name: WebAuthn IT
+    if: needs.conditional.outputs.ci-webauthn == 'true'
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 45
+
     strategy:
       matrix:
         browser:
