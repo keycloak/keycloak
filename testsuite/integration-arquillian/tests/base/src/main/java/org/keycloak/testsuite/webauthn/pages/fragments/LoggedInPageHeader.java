@@ -27,40 +27,24 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class LoggedInPageHeader extends AbstractHeader {
-    @FindBy(xpath = "//*[@data-testid='options']//a[text() = 'Sign out']")
+    @FindBy(xpath = "//*[@data-testid='page-header']//*[text() = 'Sign out']")
     private WebElement logoutBtn;
-    @FindBy(xpath = "//*[@data-testid='options-kebab']//a[text() = 'Sign out']")
-    private WebElement logoutBtnMobile;
 
-    @FindBy(id = "referrerLink")
-    private WebElement referrerLink;
-    @FindBy(id = "referrerMobileLink")
-    private WebElement referrerLinkMobile;
-
-    @FindBy(xpath = "//*[@data-testid='options']")
+    @FindBy(xpath = "//*[@data-testid='options-toggle']")
     private WebElement options;
-    @FindBy(xpath = "//*[@data-testid='options-kebab']")
-    private WebElement optionsMobile;
-
-    @FindBy(id = "loggedInUser")
-    private WebElement toolbarLoggedInUser;
 
     @Override
     public void clickOptions() {
-        clickLink(isMobileLayout() ? optionsMobile : options);
+        clickLink(options);
     }
 
     @Override
     protected WebElement getLogoutBtn() {
-        return isMobileLayout() ? logoutBtnMobile : logoutBtn;
-    }
 
-    @Override
-    protected WebElement getReferrerLink() {
-        return isMobileLayout() ? referrerLinkMobile : referrerLink;
+        return logoutBtn;
     }
 
     public String getToolbarLoggedInUser() {
-        return getTextFromElement(toolbarLoggedInUser);
+        return getTextFromElement(options);
     }
 }

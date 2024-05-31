@@ -45,6 +45,7 @@ export const Header = () => {
 
   return (
     <KeycloakMasthead
+      data-testid="page-header"
       keycloak={keycloak}
       features={{ hasManageAccount: false }}
       showNavToggle

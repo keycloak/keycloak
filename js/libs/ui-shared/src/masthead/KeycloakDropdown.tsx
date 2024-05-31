@@ -8,6 +8,7 @@ import { EllipsisVIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 
 type KeycloakDropdownProps = Omit<DropdownProps, "toggle"> & {
+  "data-testid"?: string;
   isKebab?: boolean;
   title?: ReactNode;
   dropDownItems: ReactNode[];
@@ -29,6 +30,7 @@ export const KeycloakDropdown = ({
       }}
       toggle={(ref) => (
         <MenuToggle
+          data-testid={`${rest["data-testid"]}-toggle`}
           ref={ref}
           onClick={() => setOpen(!open)}
           isExpanded={open}
