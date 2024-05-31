@@ -102,10 +102,24 @@ function DataTable<T>({
   const [expandedRows, setExpandedRows] = useState<boolean[]>([]);
 
   const updateState = (rowIndex: number, isSelected: boolean) => {
-    const items = [...selectedRows];
+    const items = [
+      ...(rowIndex === -1 ? Array(rows.length).fill(isSelected) : selectedRows),
+    ];
     items[rowIndex] = isSelected;
     setSelectedRows(items);
   };
+
+  useEffect(() => {
+    if (canSelectAll) {
+      const selectAllCheckbox = document.getElementsByName("check-all").item(0);
+      if (selectAllCheckbox) {
+        const checkbox = selectAllCheckbox as HTMLInputElement;
+        const selected = selectedRows.filter((r) => r === true);
+        checkbox.indeterminate =
+          selected.length < rows.length && selected.length > 0;
+      }
+    }
+  }, [selectedRows]);
 
   return (
     <Table
@@ -123,9 +137,11 @@ function DataTable<T>({
                   ? {
                       onSelect: (_, isSelected, rowIndex) => {
                         onSelect!(isSelected, rowIndex);
-                        updateState(0, isSelected);
+                        updateState(-1, isSelected);
                       },
-                      isSelected: selectedRows[0],
+                      isSelected:
+                        selectedRows.filter((r) => r === true).length ===
+                        rows.length,
                     }
                   : undefined
               }
@@ -152,9 +168,9 @@ function DataTable<T>({
                     rowIndex: index,
                     onSelect: (_, isSelected, rowIndex) => {
                       onSelect!(isSelected, rowIndex);
-                      updateState(rowIndex + 1, isSelected);
+                      updateState(rowIndex, isSelected);
                     },
-                    isSelected: selectedRows[0] || selectedRows[index + 1],
+                    isSelected: selectedRows[index],
                     variant: isRadio ? "radio" : "checkbox",
                   }}
                 />
@@ -402,22 +418,6 @@ export function KeycloakDataTable<T>({
             .slice(first, first + max + 1),
     [search, first, max],
   );
-
-  useEffect(() => {
-    if (canSelectAll) {
-      const checkboxes = document
-        .getElementsByClassName("pf-v5-c-table__check")
-        .item(0);
-      if (checkboxes) {
-        const checkAllCheckbox = checkboxes.children!.item(
-          0,
-        )! as HTMLInputElement;
-        checkAllCheckbox.indeterminate =
-          selected.length > 0 &&
-          selected.length < (filteredData || rows)!.length;
-      }
-    }
-  }, [selected]);
 
   useFetch(
     async () => {
