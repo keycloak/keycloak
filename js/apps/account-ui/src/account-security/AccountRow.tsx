@@ -12,10 +12,14 @@ import {
 } from "@patternfly/react-core";
 import { LinkIcon, UnlinkIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { IconMapper, useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import {
+  IconMapper,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { linkAccount, unLinkAccount } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
-
+//test
 type AccountRowProps = {
   account: LinkedAccountRepresentation;
   isLinked?: boolean;
