@@ -19,10 +19,10 @@
 package org.keycloak.services.clienttype.client;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
@@ -216,50 +216,23 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
     @Override
     public void setAttribute(String name, String value) {
-        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
-        if (attribute != null) {
-            attribute.setClientAttribute(clientType, value, (newValue) -> super.setAttribute(name, newValue), String.class);
-        } else {
+        if (clientType.isApplicable(name)) {
             super.setAttribute(name, value);
         }
     }
 
     @Override
     public void removeAttribute(String name) {
-        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
-        if (attribute != null) {
-            attribute.setClientAttribute(clientType, null, (val) -> super.removeAttribute(name), String.class);
-        } else {
-            super.removeAttribute(name);
-        }
+        super.removeAttribute(name);
     }
 
     @Override
     public String getAttribute(String name) {
-        TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
-        if (attribute != null) {
-            return attribute.getClientAttribute(clientType, String.class);
-        } else {
-            return super.getAttribute(name);
-        }
+        return super.getAttribute(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        // Start with attributes set on the delegate.
-        Map<String, String> attributes = new HashMap<>(super.getAttributes());
-
-        // Get extended client type attributes and values from the client type configuration.
-        Set<String> extendedClientTypeAttributes =
-                clientType.getOptionNames().stream()
-                .filter(optionName -> TypedClientExtendedAttribute.getAttributesByName().containsKey(optionName))
-                .collect(Collectors.toSet());
-
-        // Augment client type attributes on top of attributes on the delegate.
-        for (String entry : extendedClientTypeAttributes) {
-            attributes.put(entry, getAttribute(entry));
-        }
-
-        return attributes;
+        return new HashMap<>(super.getAttributes());
     }
 }
