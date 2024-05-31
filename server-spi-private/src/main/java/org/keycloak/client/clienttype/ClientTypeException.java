@@ -25,15 +25,44 @@ import org.keycloak.models.ModelException;
  */
 public class ClientTypeException extends ModelException {
 
-    public ClientTypeException(String message) {
-        super(message);
-    }
-
-    public ClientTypeException(String message, Object ... parameters) {
+    private ClientTypeException(String message, Object... parameters) {
         super(message, parameters);
     }
 
-    public ClientTypeException(String message, Throwable cause) {
+    private ClientTypeException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    public enum Message {
+        /**
+         * Register all client type exception messages through this enum to keep things consistent across the services.
+         */
+        INVALID_CLIENT_TYPE("Invalid client type"),
+        CANNOT_CHANGE_CLIENT_TYPE("Not supported to change client type"),
+        INVALID_CLIENT_TYPE_PROVIDER("Did not find client type provider"),
+        CLIENT_TYPE_FIELD_NOT_APPLICABLE("Invalid configuration of 'applicable' property on client type"),
+        INVALID_CLIENT_TYPE_CONFIGURATION("Invalid configuration of property on client type"),
+        DUPLICATE_CLIENT_TYPE("Duplicated client type name"),
+        CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION("Cannot change property of client as it is not allowed by the specified client type."),
+        CLIENT_TYPE_NOT_FOUND("Client type not found."),
+        CLIENT_TYPE_FAILED_TO_LOAD("Failed to load client type.");
+
+        private final String message;
+
+        Message(String message) {
+            this.message = message;
+        }
+
+        public ClientTypeException exception(Object... parameters) {
+            return new ClientTypeException(message, parameters);
+        }
+
+        public ClientTypeException exception(String message, Throwable cause) {
+            return new ClientTypeException(message, cause);
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 }

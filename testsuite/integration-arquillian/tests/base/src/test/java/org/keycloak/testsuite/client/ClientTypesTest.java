@@ -21,6 +21,7 @@ package org.keycloak.testsuite.client;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import org.junit.Test;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -38,7 +39,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.ClientBuilder;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,6 +49,8 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.in;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
 
@@ -112,7 +115,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             testRealm().clients().get(clientRep.getId()).update(clientRep);
             Assert.fail("Not expected to update client");
         } catch (BadRequestException bre) {
-            // Expected
+            assertErrorContainsMessage(bre, ClientTypeException.Message.CANNOT_CHANGE_CLIENT_TYPE);
         }
 
         // Updating read-only attribute should fail
@@ -130,7 +133,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         // Adding non-applicable attribute should not fail but not update client attribute
         clientRep.getAttributes().put(ClientModel.LOGO_URI, "https://foo");
         testRealm().clients().get(clientRep.getId()).update(clientRep);
-        assertEquals(testRealm().clients().get(clientRep.getId()).toRepresentation().getAttributes().get(ClientModel.LOGO_URI), null);
+        assertNull(testRealm().clients().get(clientRep.getId()).toRepresentation().getAttributes().get(ClientModel.LOGO_URI));
 
         // Update of supported attribute should be successful
         clientRep.getAttributes().remove(ClientModel.LOGO_URI);
@@ -151,22 +154,13 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertErrorResponseContainsParams(response, "publicClient", "serviceAccountsEnabled");
     }
 
-    private void assertErrorResponseContainsParams(Response response, String... items) {
-        assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
-        ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
-        assertThat(
-                List.of(items),
-                everyItem(in(errorRepresentation.getParams())));
-    }
-
     @Test
     public void testClientTypesAdminRestAPI_globalTypes() {
         ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
 
         assertEquals(0, clientTypes.getRealmClientTypes().size());
 
-        List<ClientTypeRepresentation> globalClientTypeNames = clientTypes.getGlobalClientTypes().stream()
-                .collect(Collectors.toList());
+        List<ClientTypeRepresentation> globalClientTypeNames = new ArrayList<>(clientTypes.getGlobalClientTypes());
         assertNames(globalClientTypeNames, "sla", "service-account");
 
         ClientTypeRepresentation serviceAccountType = clientTypes.getGlobalClientTypes().stream()
@@ -194,12 +188,12 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         try {
             clientType.setName("sla1");
             clientType.setProvider("non-existent");
-            clientType.setConfig(new HashMap<String, ClientTypeRepresentation.PropertyConfig>());
-            clientTypes.setRealmClientTypes(Arrays.asList(clientType));
+            clientType.setConfig(new HashMap<>());
+            clientTypes.setRealmClientTypes(List.of(clientType));
             testRealm().clientTypes().updateClientTypes(clientTypes);
             Assert.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
-            // Expected
+            assertErrorContainsMessage(bre, ClientTypeException.Message.INVALID_CLIENT_TYPE_PROVIDER);
         }
 
         // Test attribute without applicable should fail
@@ -210,7 +204,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             testRealm().clientTypes().updateClientTypes(clientTypes);
             Assert.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
-            // Expected
+            assertErrorContainsMessage(bre, ClientTypeException.Message.CLIENT_TYPE_FIELD_NOT_APPLICABLE);
         }
 
         // Test non-applicable attribute with default-value should fail
@@ -221,7 +215,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             testRealm().clientTypes().updateClientTypes(clientTypes);
             Assert.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
-            // Expected
+            assertErrorContainsMessage(bre, ClientTypeException.Message.INVALID_CLIENT_TYPE_CONFIGURATION);
         }
 
         // Update should be successful
@@ -241,7 +235,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             testRealm().clientTypes().updateClientTypes(clientTypes);
             Assert.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
-            // Expected
+            assertErrorContainsMessage(bre, ClientTypeException.Message.DUPLICATE_CLIENT_TYPE);
         }
 
         // Also test duplicated global name should fail
@@ -250,7 +244,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             testRealm().clientTypes().updateClientTypes(clientTypes);
             Assert.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
-            // Expected
+            assertErrorContainsMessage(bre, ClientTypeException.Message.DUPLICATE_CLIENT_TYPE);
         }
 
         // Different name should be fine
@@ -270,6 +264,20 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         clientTypes = testRealm().clientTypes().getClientTypes();
         assertNames(clientTypes.getRealmClientTypes(), "sla1", "different");
         assertNames(clientTypes.getGlobalClientTypes(), "sla", "service-account");
+    }
+
+    private void assertErrorResponseContainsParams(Response response, String... items) {
+        assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
+        ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
+        assertThat(
+                List.of(items),
+                everyItem(in(errorRepresentation.getParams())));
+    }
+
+    private void assertErrorContainsMessage(BadRequestException bre, ClientTypeException.Message expectedException) {
+        ErrorRepresentation errorRepresentation = bre.getResponse().readEntity(ErrorRepresentation.class);
+        assertNotNull(errorRepresentation);
+        assertEquals(expectedException.getMessage(), errorRepresentation.getErrorMessage());
     }
 
     private void assertNames(List<ClientTypeRepresentation> clientTypes, String... expectedNames) {
