@@ -26,6 +26,7 @@ federation/sssd/                            ci ci-sssd
 quarkus/                                    ci-quarkus guides
 
 model/                                      ci-store
+testsuite/model/                            ci-store
 operator/                                   operator
 
 docs/guides/                                guides
