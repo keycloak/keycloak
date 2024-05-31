@@ -271,28 +271,38 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
     public void testClientTypesInheritFromParent() {
         ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
 
-        ClientTypeRepresentation.PropertyConfig standardFlowEnabledProperty = new ClientTypeRepresentation.PropertyConfig();
-        standardFlowEnabledProperty.setApplicable(true);
-        standardFlowEnabledProperty.setValue(true);
+        ClientTypeRepresentation.PropertyConfig applicableAndTrue = new ClientTypeRepresentation.PropertyConfig();
+        applicableAndTrue.setApplicable(true);
+        applicableAndTrue.setValue(true);
 
-        Map<String, ClientTypeRepresentation.PropertyConfig> config = new HashMap<>();
-        config.put("standardFlowEnabled", standardFlowEnabledProperty);
+        ClientTypeRepresentation childClientType = new ClientTypeRepresentation();
+        childClientType.setName("child");
+        childClientType.setProvider("default");
+        childClientType.setParent("oidc");
+        childClientType.setConfig(Map.of("standardFlowEnabled", applicableAndTrue));
 
-        ClientTypeRepresentation clientType = new ClientTypeRepresentation();
-        clientType.setName("child");
-        clientType.setProvider("default");
-        clientType.setParent("oidc");
-        clientType.setConfig(config);
+        ClientTypeRepresentation subClientType = new ClientTypeRepresentation();
+        subClientType.setName("subClientType");
+        subClientType.setProvider("default");
+        subClientType.setParent("child");
+        subClientType.setConfig(Map.of("consentRequired", applicableAndTrue));
 
         List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
-        realmClientTypes.add(clientType);
+        realmClientTypes.add(childClientType);
+        realmClientTypes.add(subClientType);
         clientTypes.setRealmClientTypes(realmClientTypes);
 
         testRealm().clientTypes().updateClientTypes(clientTypes);
 
-        ClientRepresentation client = createClientWithType("blah-client", clientType.getName());
-        assertEquals(client.getProtocol(), "openid-connect");
-        assertEquals(client.isStandardFlowEnabled(), true);
+        ClientRepresentation childClient = createClientWithType("child-client", childClientType.getName());
+        assertEquals(childClient.getProtocol(), "openid-connect");
+        assertEquals(childClient.isStandardFlowEnabled(), true);
+        assertEquals(childClient.isConsentRequired(), false);
+
+        ClientRepresentation subClient = createClientWithType("sub-client", subClientType.getName());
+        assertEquals(subClient.getProtocol(), "openid-connect");
+        assertEquals(subClient.isStandardFlowEnabled(), true);
+        assertEquals(subClient.isConsentRequired(), true);
     }
 
     private void assertErrorResponseContainsParams(Response response, String... items) {

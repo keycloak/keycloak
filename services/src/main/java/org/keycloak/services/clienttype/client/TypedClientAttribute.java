@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 enum TypedClientSimpleAttribute implements TypedClientAttribute {
     // Top Level client attributes
@@ -120,7 +121,7 @@ enum TypedClientExtendedAttribute implements TypedClientAttribute {
 interface TypedClientAttribute {
     Logger logger = Logger.getLogger(TypedClientAttribute.class);
 
-    default <T> T getClientAttribute(ClientType clientType, Class<T> tClass) {
+    default <T> T getClientAttribute(ClientType clientType, Supplier<T> clientGetter, Class<T> tClass) {
         String propertyName = getPropertyName();
         Object nonApplicableValue = getNonApplicableValue();
 
@@ -134,7 +135,9 @@ interface TypedClientAttribute {
             }
         }
 
-        return clientType.getTypeValue(propertyName, tClass);
+        T typeValue = clientType.getTypeValue(propertyName, tClass);
+        // If the value is not supplied by the client type, delegate to the client getter.
+        return typeValue == null ? clientGetter.get() : typeValue;
     }
 
     default <T> void setClientAttribute(ClientType clientType, T newValue, Consumer<T> clientSetter, Class<T> tClass) {
