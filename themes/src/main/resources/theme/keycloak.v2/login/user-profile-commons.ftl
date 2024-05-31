@@ -3,26 +3,32 @@
 	
 	<#list profile.attributes as attribute>
 
-		<#assign groupName = attribute.group!"">
-		<#if groupName != currentGroup>
-			<#assign currentGroup=groupName>
-			<#if currentGroup != "" >
-				<div class="${properties.kcFormGroupClass!}">
-	
-					<#assign groupDisplayHeader=attribute.groupDisplayHeader!"">
+		<#assign group = (attribute.group)!"">
+		<#if group != currentGroup>
+			<#assign currentGroup=group>
+			<#if currentGroup != "">
+				<div class="${properties.kcFormGroupClass!}"
+				<#list group.html5DataAnnotations as key, value>
+					data-${key}="${value}"
+				</#list>
+				>
+
+					<#assign groupDisplayHeader=group.displayHeader!"">
 					<#if groupDisplayHeader != "">
-						<#assign groupHeaderText=advancedMsg(attribute.groupDisplayHeader)!groupName>
+						<#assign groupHeaderText=advancedMsg(groupDisplayHeader)!group>
 					<#else>
-						<#assign groupHeaderText=groupName>
+						<#assign groupHeaderText=group.name!"">
 					</#if>
 					<div class="${properties.kcContentWrapperClass!}">
-						<label id="header-${groupName}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
+						<label id="header-${attribute.group.name}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
 					</div>
-	
-					<#assign groupDisplayDescription=attribute.groupDisplayDescription!"">
+
+					<#assign groupDisplayDescription=group.displayDescription!"">
 					<#if groupDisplayDescription != "">
-						<#assign groupDescriptionText=advancedMsg(attribute.groupDisplayDescription)!"">
-						<label id="description-${groupName}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
+						<#assign groupDescriptionText=advancedMsg(groupDisplayDescription)!"">
+						<div class="${properties.kcLabelWrapperClass!}">
+							<label id="description-${group.name}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
+						</div>
 					</#if>
 				</div>
 			</#if>
