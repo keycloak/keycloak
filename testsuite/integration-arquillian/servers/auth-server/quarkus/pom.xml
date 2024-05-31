@@ -192,6 +192,31 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>includeOracleJdbcDriver</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.jdbc</groupId>
+                                    <artifactId>ojdbc11</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.nls</groupId>
+                                    <artifactId>orai18n</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-testsuite-providers</id>
                         <phase>generate-resources</phase>
                         <goals>
@@ -363,20 +388,6 @@
                                 </goals>
                                 <configuration>
                                     <artifactItems>
-                                        <artifactItem>
-                                            <groupId>com.oracle.database.jdbc</groupId>
-                                            <artifactId>ojdbc11</artifactId>
-                                            <version>${oracle-jdbc.version}</version>
-                                            <type>jar</type>
-                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>com.oracle.database.nls</groupId>
-                                            <artifactId>orai18n</artifactId>
-                                            <version>${oracle-jdbc.version}</version>
-                                            <type>jar</type>
-                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                        </artifactItem>
                                         <artifactItem>
                                             <groupId>com.microsoft.sqlserver</groupId>
                                             <artifactId>mssql-jdbc</artifactId>

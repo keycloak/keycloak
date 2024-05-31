@@ -433,3 +433,8 @@ If the session is using the remember me feature, the idle timeout and max lifesp
 
 {project_name} now requires a {jdgserver_name} server version of at least 15.0.0 for external {jdgserver_name} deployments.
 An external {jdgserver_name} deployment is supported for multi-site setups as outlined in the HA guide.
+
+= Oracle Database driver not part of the distribution
+
+The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
+If you wish to use Oracle DB, you must manually install a version of the Oracle Driver that is compatible with your specific environment. Instructions for this process can be found in the https://www.keycloak.org/server/db[Configuring the database] {section}.
