@@ -49,12 +49,9 @@ describe("Realm settings general tab tests", () => {
     sidebarPage.waitForPageLoad();
 
     // Disable realm
-    const loadName = `load-disabled-${uuid()}`;
-    cy.intercept({ path: "/admin/realms/*", times: 1 }).as(loadName);
     realmSettingsPage.toggleSwitch(`${realmName}-switch`, false);
     realmSettingsPage.disableRealm();
     masthead.checkNotificationMessage("Realm successfully updated", true);
-    cy.wait(`@${loadName}`);
     sidebarPage.waitForPageLoad();
 
     // Re-enable realm
