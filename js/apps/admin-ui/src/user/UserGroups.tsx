@@ -1,5 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -12,7 +13,6 @@ import { cellWidth } from "@patternfly/react-table";
 import { intersectionBy, sortBy, uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHelp } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -21,7 +21,6 @@ import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAccess } from "../context/access/Access";
-import { emptyFormatter } from "../util";
 
 type UserGroupsProps = {
   user: UserRepresentation;
@@ -238,8 +237,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           {
             name: "groupMembership",
             displayKey: "groupMembership",
-            cellRenderer: (group: GroupRepresentation) => group.name || "",
-            cellFormatters: [emptyFormatter()],
+            cellRenderer: (group: GroupRepresentation) => group.name || "-",
             transforms: [cellWidth(40)],
           },
           {
@@ -268,10 +266,9 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
                   {t("leave")}
                 </Button>
               ) : (
-                ""
+                "-"
               );
             },
-            cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(20)],
           },
         ]}

@@ -27,7 +27,7 @@ export default class InitialAccessTokenTab extends CommonPage {
   }
 
   getFirstId(callback: (id: string) => void) {
-    cy.get('tbody > tr:first-child > [data-label="ID"]')
+    cy.get("tbody > tr:first-child > td:first-child")
       .invoke("text")
       .then((text) => {
         callback(text);
