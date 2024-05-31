@@ -33,6 +33,8 @@ docs/documentation/                         documentation
 
 js/                                         js
 rest/admin-ui-ext/                          js
+js/apps/account-ui                          ci-webauthn
+js/libs/ui-shared                           ci-webauthn
 
 *.java                                      codeql-java
 themes/                                     codeql-themes
