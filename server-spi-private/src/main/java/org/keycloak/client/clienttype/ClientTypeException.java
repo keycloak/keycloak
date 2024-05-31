@@ -41,7 +41,6 @@ public class ClientTypeException extends ModelException {
         DUPLICATE_CLIENT_TYPE("Duplicated client type name"),
         CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION("Cannot change property of client as it is not allowed by the specified client type."),
         CLIENT_TYPE_NOT_FOUND("Client type not found."),
-        PARENT_CLIENT_TYPE_NOT_FOUND("Client type parent not found."),
         CLIENT_TYPE_FAILED_TO_LOAD("Failed to load client type.");
 
         private final String message;
