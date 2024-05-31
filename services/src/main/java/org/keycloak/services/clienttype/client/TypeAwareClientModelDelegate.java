@@ -251,9 +251,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
         // Get extended client type attributes and values from the client type configuration.
         Set<String> extendedClientTypeAttributes =
-                clientType.getConfig().entrySet().stream()
-                .map(Map.Entry::getKey)
-                .filter(entry -> TypedClientExtendedAttribute.getAttributesByName().containsKey(entry))
+                clientType.getOptionNames().stream()
+                .filter(optionName -> TypedClientExtendedAttribute.getAttributesByName().containsKey(optionName))
                 .collect(Collectors.toSet());
 
         // Augment client type attributes on top of attributes on the delegate.

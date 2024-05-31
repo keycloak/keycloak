@@ -19,9 +19,8 @@
 package org.keycloak.client.clienttype;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.representations.idm.ClientTypeRepresentation;
 
-import java.util.Map;
+import java.util.Set;
 
 /**
  * TODO:client-types javadocs
@@ -39,7 +38,7 @@ public interface ClientType {
     // Return the value of particular option (if it can be provided by clientType) or return null if this option is not provided by client type
     <T> T getTypeValue(String optionName, Class<T> optionType);
 
-    Map<String, ClientTypeRepresentation.PropertyConfig> getConfig();
+    Set<String> getOptionNames();
 
     // Augment at the client type
     ClientModel augment(ClientModel client);
