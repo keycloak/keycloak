@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -496,6 +497,32 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());
         assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
+    public void testDoNotRedirectToIdentityProviderAssociatedWithOrganizationDomain() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
+        idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        log.debug("Logging in");
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
+        loginPage.loginUsername(bc.getUserEmail());
+
+        // user not automatically redirected to the organization identity provider
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the consumer realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + organizationName + " organization but you don't have an account yet."));
+        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
     @Test
