@@ -12,6 +12,7 @@ const Groups = lazy(() => import("./groups/Groups"));
 const PersonalInfo = lazy(() => import("./personal-info/PersonalInfo"));
 const Resources = lazy(() => import("./resources/Resources"));
 const ContentComponent = lazy(() => import("./content/ContentComponent"));
+const Oid4Vci = lazy(() => import("./oid4vci/Oid4Vci"));
 
 export const DeviceActivityRoute: RouteObject = {
   path: "account-security/device-activity",
@@ -57,6 +58,11 @@ export const PersonalInfoRoute: IndexRouteObject = {
   element: <PersonalInfo />,
 };
 
+export const Oid4VciRoute: RouteObject = {
+  path: "oid4vci",
+  element: <Oid4Vci />,
+}
+
 export const RootRoute: RouteObject = {
   path: decodeURIComponent(new URL(environment.baseUrl).pathname),
   element: <Root />,
@@ -71,6 +77,7 @@ export const RootRoute: RouteObject = {
     PersonalInfoRoute,
     ResourcesRoute,
     ContentRoute,
+    Oid4VciRoute,
   ],
 };
 
