@@ -161,6 +161,17 @@ public class LDAPRule extends ExternalResource {
                     break;
             }
         }
+
+        Annotation passwordPolicyAnnotations = description.getAnnotation(LDAPPasswordPolicy.class);
+        if (passwordPolicyAnnotations != null) {
+            LDAPPasswordPolicy passwordPolicy = (LDAPPasswordPolicy) passwordPolicyAnnotations;
+
+            log.debugf("Enabling LDAP password policy: mustChange=%s.", passwordPolicy.mustChange());
+
+            defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_ENABLED, "true");
+            defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_MUST_CHANGE, String.valueOf(passwordPolicy.mustChange()));
+        }
+
         return super.apply(base, description);
     }
 
@@ -261,6 +272,13 @@ public class LDAPRule extends ExternalResource {
                 // Configure the LDAP server to accept not secured connections from clients by default
                 System.setProperty("PROPERTY_SET_CONFIDENTIALITY_REQUIRED", "false");
         }
+        switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_ENABLED, "false")) {
+            case "true":
+                config.put(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY, "true");
+                break;
+            default:
+                config.put(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY, "false");
+        }
         return config;
     }
 
@@ -311,5 +329,11 @@ public class LDAPRule extends ExternalResource {
 
     public boolean isEmbeddedServer() {
         return ldapTestConfiguration.isStartEmbeddedLdapServer();
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface LDAPPasswordPolicy {
+        public boolean mustChange() default false;
     }
 }
