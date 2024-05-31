@@ -159,7 +159,7 @@ export default function ProfilesTab() {
         addError("updateClientProfilesError", error);
       }
     } catch (error) {
-      console.warn("Invalid json, ignoring value using {}");
+      addError("invalidJsonClientProfilesError", error);
     }
   };
 

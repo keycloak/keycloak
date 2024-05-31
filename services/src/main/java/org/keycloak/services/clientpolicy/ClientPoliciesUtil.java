@@ -294,6 +294,11 @@ public class ClientPoliciesUtil {
             throw new ClientPolicyException("proposed client profile name duplicated.");
         }
 
+        // validate global profiles not changed
+        if (isGlobalProfilesUpdated(proposedProfilesRep.getGlobalProfiles(), globalClientProfiles)) {
+            throw new ClientPolicyException("Global profiles cannot be updated");
+        }
+
         // Conflict with any global profile is not allowed
         Set<String> globalProfileNames = globalClientProfiles.stream().map(ClientProfileRepresentation::getName).collect(Collectors.toSet());
         for (ClientProfileRepresentation clientProfile : proposedProfileRepList) {
@@ -318,6 +323,12 @@ public class ClientPoliciesUtil {
         proposedProfilesRep.setGlobalProfiles(null);
 
         return proposedProfilesRep;
+    }
+
+    private static boolean isGlobalProfilesUpdated(List<ClientProfileRepresentation> proposedGlobalProfiles, List<ClientProfileRepresentation> origGlobalProfiles) {
+        // if globalProfiles were not sent, we can skip this
+        if (proposedGlobalProfiles == null || proposedGlobalProfiles.isEmpty()) return false;
+        return !proposedGlobalProfiles.equals(origGlobalProfiles);
     }
 
     /**
