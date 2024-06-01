@@ -20,7 +20,7 @@ Distributed environments frequently require the use of a reverse proxy. {project
 
 For example:
 
-<@kc.start parameters="--proxy-headers forwarded"/>
+<@kc.start parameters="--proxy-headers=forwarded"/>
 
 WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
 
@@ -52,7 +52,7 @@ When in **edge** or **reencrypt** proxy mode, {project_name} will parse the foll
 === Configure the proxy mode in {project_name}
 To select the proxy mode, enter this command:
 
-<@kc.start parameters="--proxy <mode>"/>
+<@kc.start parameters="--proxy=<mode>"/>
 
 == Different context-path on reverse proxy
 
