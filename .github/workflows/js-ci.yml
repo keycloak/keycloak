@@ -185,11 +185,12 @@ jobs:
         env:
           KEYCLOAK_SERVER: http://localhost:8080
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: account-ui-traces
-          path: js/apps/account-ui/test-results
+          name: account-ui-playwright-report
+          path: js/apps/account-ui/playwright-report
           retention-days: 30
 
       - name: Upload server logs
