@@ -248,6 +248,7 @@ jobs:
         exclude:
           # Only test with Firefox on scheduled runs
           - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
