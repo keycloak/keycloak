@@ -74,9 +74,9 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} lint
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} build
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
 
   keycloak-js:
     name: Keycloak JS
@@ -90,23 +90,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} build
-
-  keycloak-masthead:
-    name: Keycloak Masthead
-    needs: conditional
-    if: needs.conditional.outputs.js-ci == 'true'
-    runs-on: ubuntu-latest
-    env:
-      WORKSPACE: keycloak-masthead
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/pnpm-setup
-
-      - run: pnpm --filter ${{ env.WORKSPACE }} lint
-
-      - run: pnpm --filter ${{ env.WORKSPACE }} build
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
 
   ui-shared:
     name: UI Shared
@@ -114,15 +98,15 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: ui-shared
+      WORKSPACE: "@keycloak/keycloak-ui-shared"
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} lint
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} build
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
 
   account-ui:
     name: Account UI
@@ -130,15 +114,15 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: account-ui
+      WORKSPACE: "@keycloak/keycloak-account-ui"
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} lint
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} build
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
 
   admin-ui:
     name: Admin UI
@@ -152,13 +136,13 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} lint
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} test
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} build
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} cy:check-types
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:check-types
 
   account-ui-e2e:
     name: Account UI E2E
@@ -168,7 +152,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: account-ui
+      WORKSPACE: "@keycloak/keycloak-account-ui"
     steps:
       - uses: actions/checkout@v4
 
@@ -194,18 +178,19 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Install Playwright browsers
-        run: pnpm --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
 
       - name: Run Playwright tests
-        run: pnpm --filter ${{ env.WORKSPACE }} test
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
         env:
           KEYCLOAK_SERVER: http://localhost:8080
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: account-ui-playwright-report
-          path: js/apps/${{ env.WORKSPACE }}/playwright-report
+          path: js/apps/account-ui/playwright-report
           retention-days: 30
 
       - name: Upload server logs
@@ -267,7 +252,7 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - name: Compile Admin Client
-        run: pnpm --filter @keycloak/keycloak-admin-client build
+        run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
 
       - name: Download Keycloak server
         uses: actions/download-artifact@v4
@@ -289,7 +274,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Start LDAP server
-        run: pnpm --filter ${{ env.WORKSPACE }} cy:ldap-server &
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:ldap-server &
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
@@ -329,7 +314,6 @@ jobs:
       - build-keycloak
       - admin-client
       - keycloak-js
-      - keycloak-masthead
       - ui-shared
       - account-ui
       - account-ui-e2e
