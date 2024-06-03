@@ -61,7 +61,7 @@ export const PersonalInfoRoute: IndexRouteObject = {
 export const Oid4VciRoute: RouteObject = {
   path: "oid4vci",
   element: <Oid4Vci />,
-}
+};
 
 export const RootRoute: RouteObject = {
   path: decodeURIComponent(new URL(environment.baseUrl).pathname),

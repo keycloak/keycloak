@@ -211,6 +211,9 @@ export interface SupportedCredentialConfiguration {
 export interface CredentialsIssuer {
   credential_issuer: string;
   credential_endpoint: string;
-  authorization_servers: string[]; 
-  credential_configurations_supported: Record<string, SupportedCredentialConfiguration>
+  authorization_servers: string[];
+  credential_configurations_supported: Record<
+    string,
+    SupportedCredentialConfiguration
+  >;
 }

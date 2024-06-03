@@ -23,7 +23,11 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import {
+  ContinueCancelModal,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { deleteSession, getDevices } from "../api/methods";
 import {
   ClientRepresentation,
