@@ -3,7 +3,13 @@ import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/envir
 import { CallOptions } from "./api/methods";
 import { Links, parseLinks } from "./api/parse-links";
 import { parseResponse } from "./api/parse-response";
-import { Permission, Resource, Scope, CredentialsIssuer, SupportedCredentialConfiguration } from "./api/representations";
+import {
+  Permission,
+  Resource,
+  Scope,
+  CredentialsIssuer,
+  SupportedCredentialConfiguration,
+} from "./api/representations";
 import { request } from "./api/request";
 import { joinPath } from "./utils/joinPath";
 
@@ -70,16 +76,20 @@ function checkResponse<T>(response: T) {
   return response;
 }
 
-
-export async function getIssuer( 
-  context: KeycloakContext<BaseEnvironment>
-) {
+export async function getIssuer(context: KeycloakContext<BaseEnvironment>) {
   const response = await request(
-    "/realms/" + context.environment.realm + "/.well-known/openid-credential-issuer",
+    "/realms/" +
+      context.environment.realm +
+      "/.well-known/openid-credential-issuer",
     context,
     {},
     new URL(
-      joinPath(context.environment.authUrl + "/realms/" + context.environment.realm + "/.well-known/openid-credential-issuer"),
+      joinPath(
+        context.environment.authUrl +
+          "/realms/" +
+          context.environment.realm +
+          "/.well-known/openid-credential-issuer",
+      ),
     ),
   );
   return parseResponse<CredentialsIssuer>(response);
@@ -87,16 +97,26 @@ export async function getIssuer(
 
 export async function requestVCOffer(
   context: KeycloakContext<BaseEnvironment>,
-  supportedCredentialConfiguration:SupportedCredentialConfiguration,
-  credentialsIssuer:CredentialsIssuer 
+  supportedCredentialConfiguration: SupportedCredentialConfiguration,
+  credentialsIssuer: CredentialsIssuer,
 ) {
   const response = await request(
     "/protocol/oid4vc/credential-offer-uri",
     context,
-    { searchParams: {"credential_configuration_id": supportedCredentialConfiguration.id, "type": "qr-code", "width": "500", "height": "500"} },
+    {
+      searchParams: {
+        credential_configuration_id: supportedCredentialConfiguration.id,
+        type: "qr-code",
+        width: "500",
+        height: "500",
+      },
+    },
     new URL(
-      joinPath(credentialsIssuer.credential_issuer + "/protocol/oid4vc/credential-offer-uri"),
+      joinPath(
+        credentialsIssuer.credential_issuer +
+          "/protocol/oid4vc/credential-offer-uri",
+      ),
     ),
   );
-  return response.blob()
+  return response.blob();
 }

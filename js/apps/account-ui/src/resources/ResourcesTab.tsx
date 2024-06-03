@@ -32,7 +32,11 @@ import {
 } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import {
+  ContinueCancelModal,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { fetchPermission, fetchResources, updatePermissions } from "../api";
 import { getPermissionRequests } from "../api/methods";
 import { Links } from "../api/parse-links";

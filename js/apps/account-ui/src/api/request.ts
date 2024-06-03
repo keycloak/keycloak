@@ -37,10 +37,10 @@ export async function request(
   path: string,
   { environment, keycloak }: KeycloakContext<BaseEnvironment>,
   opts: RequestOptions = {},
-  fullUrl?: URL 
+  fullUrl?: URL,
 ) {
-  if (typeof fullUrl === 'undefined') {
-    fullUrl = url(environment, path)
+  if (typeof fullUrl === "undefined") {
+    fullUrl = url(environment, path);
   }
   return _request(fullUrl, {
     ...opts,
