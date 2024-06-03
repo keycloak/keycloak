@@ -657,6 +657,7 @@
                 org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusEmbeddedDeployableContainer
             </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
+            <property name="defaultFeatures">${auth.server.feature}</property>
         </configuration>
     </container>
 
