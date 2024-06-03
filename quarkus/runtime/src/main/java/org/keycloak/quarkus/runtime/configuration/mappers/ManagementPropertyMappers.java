@@ -61,7 +61,6 @@ public class ManagementPropertyMappers {
                 // HTTPS
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CLIENT_AUTH)
                         .isEnabled(ManagementPropertyMappers::isManagementEnabled, MANAGEMENT_ENABLED_MSG)
-                        .mapFrom(HttpOptions.HTTPS_CLIENT_AUTH.getKey())
                         .to("quarkus.management.ssl.client-auth")
                         .paramLabel("auth")
                         .build(),

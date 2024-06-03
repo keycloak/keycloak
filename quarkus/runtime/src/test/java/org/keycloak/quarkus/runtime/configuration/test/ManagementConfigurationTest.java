@@ -121,7 +121,7 @@ public class ManagementConfigurationTest extends ConfigurationTest {
 
         assertConfig(Map.of(
                 "http-management-host", "host123",
-                "https-management-client-auth", "required",
+                "https-management-client-auth", "none",
                 "https-management-cipher-suites", "some-cipher-suite",
                 "https-management-protocols", "TLSv1.2",
                 "https-management-certificate-file", "/some/path/srv.crt.pem",

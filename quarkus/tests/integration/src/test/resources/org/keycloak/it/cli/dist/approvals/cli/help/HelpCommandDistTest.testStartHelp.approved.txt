@@ -210,9 +210,8 @@ Management:
                        Management interface is enabled.
 --https-management-client-auth <auth>
                      Configures the management interface to require/request client authentication.
-                       If not given, the value is inherited from HTTP options. Possible values are:
-                       none, request, required. Default: none. Available only when Management
-                       interface is enabled.
+                       Possible values are: none, request, required. Default: none. Available only
+                       when Management interface is enabled.
 --https-management-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is

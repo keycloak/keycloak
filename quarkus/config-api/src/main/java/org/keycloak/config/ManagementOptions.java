@@ -55,7 +55,7 @@ public class ManagementOptions {
     //HTTPS
     public static final Option<HttpOptions.ClientAuth> HTTPS_MANAGEMENT_CLIENT_AUTH = new OptionBuilder<>("https-management-client-auth", HttpOptions.ClientAuth.class)
             .category(OptionCategory.MANAGEMENT)
-            .description("Configures the management interface to require/request client authentication. If not given, the value is inherited from HTTP options.")
+            .description("Configures the management interface to require/request client authentication.")
             .defaultValue(HttpOptions.ClientAuth.none)
             .buildTime(true)
             .build();

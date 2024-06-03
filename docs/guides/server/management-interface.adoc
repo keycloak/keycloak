@@ -17,7 +17,7 @@ The management interface is turned on by default, so management endpoints such a
 In order to change the port for the management interface, you can use the {project_name} option `http-management-port`.
 
 The management interface provides a set of options and is fully configurable.
-If these options for the management HTTP server are not explicitly set, their values are automatically inherited from the default HTTP server.
+If these options for the management HTTP server are not explicitly set, their values are automatically inherited from the default HTTP server in most cases (see options description).
 
 You can change the relative path of the management interface, as the prefix path for the management endpoints can be different.
 You can achieve it via the {project_name} option `http-management-relative-path`.
@@ -32,8 +32,11 @@ if you set the CLI option `--http-relative-path=/auth`, these endpoints are acce
 When the TLS is set for the default {project_name} server, the management interface will be accessible through HTTPS as well.
 The management interface can run only either on HTTP or HTTPS, not both as for the main server.
 
-Specific {project_name} management interface options with the prefix `https-management-*` were provided for setting different TLS parameters for the management HTTP server. Their function is similar to their counterparts for the main HTTP server, for details see <@links.server id="enabletls" />.
-When these options are not explicitly set, the TLS parameters are inherited from the default HTTP server.
+Specific {project_name} management interface options with the prefix `https-management-*` are provided for setting different TLS parameters for the management HTTP server.
+Their function is similar to their counterparts for the main HTTP server, for details see <@links.server id="enabletls" />.
+When these options are not explicitly set, the TLS parameters are inherited from the default HTTP server (except `https-management-client-auth`).
+
+To enable mTLS for the management interface, you need to explicitly set the `https-management-client-auth` option.
 
 == Disable Management interface
 
