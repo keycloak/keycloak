@@ -30,7 +30,7 @@ test.describe("Personal info page", () => {
   });
 });
 
-test.describe("Personal info with userprofile enabled", async () => {
+test.describe("Personal info with userprofile enabled", () => {
   let user: string;
   test.beforeAll(async () => {
     await importUserProfile(userProfileConfig as UserProfileConfig, realm);
@@ -71,7 +71,7 @@ test.describe("Personal info with userprofile enabled", async () => {
     await page.locator("*:focus").pressSequentially("S");
     await expect(page.getByText("Italiano")).toHaveCount(0);
     await expect(page.getByText("Slovak")).toBeVisible();
-    await expect(page.getByText('Create "S"')).not.toBeVisible();
+    await expect(page.getByText('Create "S"')).toBeHidden();
   });
 
   test("render long list of locales as typeahead", async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe("Personal info with userprofile enabled", async () => {
     await page.locator("*:focus").pressSequentially("S");
     await expect(page.getByText("Italiano")).toHaveCount(0);
     await expect(page.getByText("Slovak")).toBeVisible();
-    await expect(page.getByText('Create "S"')).not.toBeVisible();
+    await expect(page.getByText('Create "S"')).toBeHidden();
   });
 
   test("save user profile", async ({ page }) => {
@@ -114,7 +114,7 @@ test.describe("Personal info with userprofile enabled", async () => {
 });
 
 // skip currently the locale is not part of the response
-test.describe.skip("Realm localization", async () => {
+test.describe.skip("Realm localization", () => {
   test.beforeAll(() => enableLocalization());
 
   test("change locale", async ({ page }) => {
