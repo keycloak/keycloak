@@ -31,6 +31,9 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     final String STARTED_AT_NOTE = "startedAt";
     final String USER_SESSION_STARTED_AT_NOTE = "userSessionStartedAt";
     final String USER_SESSION_REMEMBER_ME_NOTE = "userSessionRememberMe";
+    final String REFRESH_TOKEN_PREFIX = "refreshTokenPrefix";
+    final String REFRESH_TOKEN_USE_PREFIX = "refreshTokenUsePrefix";
+    final String REFRESH_TOKEN_LAST_REFRESH_PREFIX = "refreshTokenLastRefreshPrefix";
 
     String getId();
 
@@ -63,11 +66,28 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     void detachFromUserSession();
     UserSessionModel getUserSession();
 
-    String getCurrentRefreshToken();
-    void setCurrentRefreshToken(String currentRefreshToken);
+    default String getRefreshToken(String id) {
+        return getNote(REFRESH_TOKEN_PREFIX + id);
+    }
+    default void setRefreshToken(String id,String refreshTokenId) {
+        setNote(REFRESH_TOKEN_PREFIX + id, refreshTokenId);
+    }
 
-    int getCurrentRefreshTokenUseCount();
-    void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount);
+    default int getRefreshTokenUseCount(String id) {
+        String count = getNote(REFRESH_TOKEN_USE_PREFIX + id);
+        return count == null ? 0 : Integer.parseInt(count);
+    }
+    default void setRefreshTokenUseCount(String id, int refreshTokenUseCount) {
+        setNote(REFRESH_TOKEN_USE_PREFIX + id, String.valueOf(refreshTokenUseCount));
+    }
+
+    default int getRefreshTokenLastRefresh(String id) {
+        String timestamp = getNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + id);
+        return timestamp == null ? 0 : Integer.parseInt(timestamp);
+    }
+    default void setRefreshTokenLastRefresh(String id, int refreshTokenLastRefresh) {
+        setNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + id, String.valueOf(refreshTokenLastRefresh));
+    }
 
     String getNote(String name);
     void setNote(String name, String value);
@@ -77,8 +97,6 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     default void restartClientSession() {
         setAction(null);
         setRedirectUri(null);
-        setCurrentRefreshToken(null);
-        setCurrentRefreshTokenUseCount(-1);
         setTimestamp(Time.currentTime());
         for (String note : getNotes().keySet()) {
             if (!AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE.equals(note)

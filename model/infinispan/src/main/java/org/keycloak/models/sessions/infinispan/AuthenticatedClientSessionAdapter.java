@@ -177,52 +177,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     }
 
     @Override
-    public int getCurrentRefreshTokenUseCount() {
-        return entity.getCurrentRefreshTokenUseCount();
-    }
-
-    @Override
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
-
-            @Override
-            public void runUpdate(AuthenticatedClientSessionEntity entity) {
-                entity.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
-            }
-
-            @Override
-            public boolean isOffline() {
-                return offline;
-            }
-        };
-
-        update(task);
-    }
-
-    @Override
-    public String getCurrentRefreshToken() {
-        return entity.getCurrentRefreshToken();
-    }
-
-    @Override
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
-
-            @Override
-            public void runUpdate(AuthenticatedClientSessionEntity entity) {
-                entity.setCurrentRefreshToken(currentRefreshToken);
-            }
-
-            @Override
-            public boolean isOffline() {
-                return offline;
-            }
-        };
-
-        update(task);
-    }
-
-    @Override
     public String getAction() {
         return entity.getAction();
     }
@@ -329,8 +283,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
                 UserSessionModel userSession = getUserSession();
                 entity.setAction(null);
                 entity.setRedirectUri(null);
-                entity.setCurrentRefreshToken(null);
-                entity.setCurrentRefreshTokenUseCount(-1);
                 entity.setTimestamp(Time.currentTime());
                 entity.getNotes().clear();
                 entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));

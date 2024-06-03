@@ -189,26 +189,6 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     }
 
     @Override
-    public String getCurrentRefreshToken() {
-        return getData().getCurrentRefreshToken();
-    }
-
-    @Override
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-        getData().setCurrentRefreshToken(currentRefreshToken);
-    }
-
-    @Override
-    public int getCurrentRefreshTokenUseCount() {
-        return getData().getCurrentRefreshTokenUseCount();
-    }
-
-    @Override
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        getData().setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
-    }
-
-    @Override
     public String getAction() {
         return getData().getAction();
     }
@@ -302,10 +282,6 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         private Set<String> protocolMappers;
         @JsonProperty("roles")
         private Set<String> roles;
-        @JsonProperty("currentRefreshToken")
-        private String currentRefreshToken;
-        @JsonProperty("currentRefreshTokenUseCount")
-        private int currentRefreshTokenUseCount;
 
         public String getAuthMethod() {
             return authMethod;
@@ -379,20 +355,5 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
             this.roles = roles;
         }
 
-        public String getCurrentRefreshToken() {
-            return currentRefreshToken;
-        }
-
-        public void setCurrentRefreshToken(String currentRefreshToken) {
-            this.currentRefreshToken = currentRefreshToken;
-        }
-
-        public int getCurrentRefreshTokenUseCount() {
-            return currentRefreshTokenUseCount;
-        }
-
-        public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-            this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
-        }
     }
 }
