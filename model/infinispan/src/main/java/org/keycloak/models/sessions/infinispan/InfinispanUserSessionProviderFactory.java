@@ -69,13 +69,14 @@ import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
-public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory, ServerInfoAwareProviderFactory {
+public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory, ServerInfoAwareProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserSessionProviderFactory.class);
 
@@ -179,11 +180,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                             initializeLastSessionRefreshStore(factory);
                         }
                         registerClusterListeners(session);
-                        // TODO [pruivo] to remove: workaround to run the testsuite.
-                        if (InfinispanUtils.isEmbeddedInfinispan()) {
-                            loadSessionsFromRemoteCaches(session);
-                        }
-
+                        loadSessionsFromRemoteCaches(session);
                     }, preloadTransactionTimeout);
 
                 } else if (event instanceof UserModel.UserRemovedEvent) {
@@ -427,6 +424,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public int order() {
         return InfinispanUtils.PROVIDER_ORDER;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 
     @Override

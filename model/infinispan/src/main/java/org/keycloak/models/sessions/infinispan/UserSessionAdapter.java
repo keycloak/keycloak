@@ -371,7 +371,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
 
             @Override
             public void runUpdate(UserSessionEntity entity) {
-                InfinispanUserSessionProvider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+                UserSessionEntity.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
                 entity.setState(null);
                 entity.getNotes().clear();

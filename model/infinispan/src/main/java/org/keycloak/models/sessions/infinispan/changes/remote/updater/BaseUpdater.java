@@ -16,13 +16,15 @@
  */
 package org.keycloak.models.sessions.infinispan.changes.remote.updater;
 
+import java.util.Objects;
+
 /**
  * Base functionality of an {@link Updater} implementation.
  * <p>
  * It stores the Infinispan cache key, value, version, and it states. However, it does not keep track of the changed
  * fields in the cache value, and it is the responsibility of the implementation to do that.
  * <p>
- * The method {@link #onFieldChanged()} must be invoked to track changes in the cache value.
+ * Implement the method {@link #isUnchanged()} to signal if the entity was modified or not.
  *
  * @param <K> The type of the Infinispan cache key.
  * @param <V> The type of the Infinispan cache value.
@@ -35,10 +37,10 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
     private UpdaterState state;
 
     protected BaseUpdater(K cacheKey, V cacheValue, long versionRead, UpdaterState state) {
-        this.cacheKey = cacheKey;
+        this.cacheKey = Objects.requireNonNull(cacheKey);
         this.cacheValue = cacheValue;
         this.versionRead = versionRead;
-        this.state = state;
+        this.state = Objects.requireNonNull(state);
     }
 
     @Override
@@ -68,7 +70,7 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
 
     @Override
     public final boolean isReadOnly() {
-        return state == UpdaterState.READ_ONLY;
+        return state == UpdaterState.READ && isUnchanged();
     }
 
     @Override
@@ -76,16 +78,38 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
         state = UpdaterState.DELETED;
     }
 
-    /**
-     * Must be invoked when a field change to mark this updated and modified.
-     */
-    protected final void onFieldChanged() {
-        state = state.stateAfterChange();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BaseUpdater<?, ?> that = (BaseUpdater<?, ?>) o;
+        return cacheKey.equals(that.cacheKey);
     }
+
+    @Override
+    public int hashCode() {
+        return cacheKey.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "BaseUpdater{" +
+                "cacheKey=" + cacheKey +
+                ", cacheValue=" + cacheValue +
+                ", state=" + state +
+                ", versionRead=" + versionRead +
+                '}';
+    }
+
+    /**
+     * @return {@code true} if the entity was changed after being created/read.
+     */
+    protected abstract boolean isUnchanged();
 
     protected enum UpdaterState {
         /**
-         * The cache value is created. It implies {@link #MODIFIED}.
+         * The cache value is created.
          */
         CREATED,
         /**
@@ -93,23 +117,8 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
          */
         DELETED,
         /**
-         * The cache value was read the Infinispan cache and was not modified.
+         * The cache value was read from the Infinispan cache.
          */
-        READ_ONLY {
-            @Override
-            UpdaterState stateAfterChange() {
-                return MODIFIED;
-            }
-        },
-        /**
-         * The cache value was read from the Infinispan cache and was modified. Changes will be merged into the current
-         * Infinispan cache value.
-         */
-        MODIFIED;
-
-        UpdaterState stateAfterChange() {
-            return this;
-        }
-
+        READ,
     }
 }

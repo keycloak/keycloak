@@ -213,12 +213,13 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         var features = getDefaultFeatures();
         if (features.contains("remote-cache") && features.contains("multi-site")) {
-            commands.add("--cache-remote-host=localhost");
+            commands.add("--cache-remote-host=127.0.0.1");
             commands.add("--cache-remote-username=keycloak");
             commands.add("--cache-remote-password=Password1!");
             commands.add("--cache-remote-tls-enabled=false");
             commands.add("--spi-connections-infinispan-quarkus-site-name=test");
             configuration.appendJavaOpts("-Dkc.cache-remote-create-caches=true");
+            System.setProperty("kc.cache-remote-create-caches", "true");
         }
 
         return commands;

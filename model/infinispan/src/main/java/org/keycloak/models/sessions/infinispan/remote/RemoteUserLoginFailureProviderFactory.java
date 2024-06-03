@@ -46,7 +46,7 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
 
     @Override
     public RemoteUserLoginFailureProvider create(KeycloakSession session) {
-        var tx = new RemoteChangeLogTransaction<>(this, cache, session);
+        var tx = new RemoteChangeLogTransaction<>(this, cache);
         session.getTransactionManager().enlistAfterCompletion(tx);
         return new RemoteUserLoginFailureProvider(tx);
     }

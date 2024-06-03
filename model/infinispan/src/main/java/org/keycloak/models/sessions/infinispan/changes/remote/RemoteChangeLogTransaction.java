@@ -18,6 +18,7 @@ package org.keycloak.models.sessions.infinispan.changes.remote;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -26,18 +27,19 @@ import java.util.function.Predicate;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import org.infinispan.client.hotrod.Flag;
+import org.infinispan.client.hotrod.MetadataValue;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.keycloak.models.AbstractKeycloakTransaction;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 
 /**
- * A {@link org.keycloak.models.KeycloakTransaction} implementation that keeps track of changes made to entities stored
+ * A {@link KeycloakTransaction} implementation that keeps track of changes made to entities stored
  * in a Infinispan cache.
  *
  * @param <K> The type of the Infinispan cache key.
@@ -50,13 +52,11 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
     private final Map<K, T> entityChanges;
     private final UpdaterFactory<K, V, T> factory;
     private final RemoteCache<K, V> cache;
-    private final KeycloakSession session;
     private Predicate<V> removePredicate;
 
-    public RemoteChangeLogTransaction(UpdaterFactory<K, V, T> factory, RemoteCache<K, V> cache, KeycloakSession session) {
+    public RemoteChangeLogTransaction(UpdaterFactory<K, V, T> factory, RemoteCache<K, V> cache) {
         this.factory = Objects.requireNonNull(factory);
         this.cache = Objects.requireNonNull(cache);
-        this.session = Objects.requireNonNull(session);
         entityChanges = new ConcurrentHashMap<>(8);
     }
 
@@ -75,6 +75,16 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
         removePredicate = null;
     }
 
+    public void commitAsync(AggregateCompletionStage<Void> stage) {
+        if (state != TransactionState.STARTED) {
+            throw new IllegalStateException("Transaction in illegal state for commit: " + state);
+        }
+
+        doCommit(stage);
+
+        state = TransactionState.FINISHED;
+    }
+
     private void doCommit(AggregateCompletionStage<Void> stage) {
         if (removePredicate != null) {
             // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
@@ -87,7 +97,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
         }
 
         for (var updater : entityChanges.values()) {
-            if (updater.isReadOnly() || (removePredicate != null && removePredicate.test(updater.getValue()))) {
+            if (updater.isReadOnly() || updater.isTransient() || (removePredicate != null && removePredicate.test(updater.getValue()))) {
                 continue;
             }
             if (updater.isDeleted()) {
@@ -95,7 +105,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
                 continue;
             }
 
-            var expiration = updater.computeExpiration(session);
+            var expiration = updater.computeExpiration();
 
             if (expiration.isExpired()) {
                 stage.dependsOn(cache.removeAsync(updater.getKey()));
@@ -129,15 +139,23 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
     public T get(K key) {
         var updater = entityChanges.get(key);
         if (updater != null) {
-            return updater;
+            return updater.isDeleted() ? null : updater;
         }
-        var entity = cache.getWithMetadata(key);
-        if (entity == null) {
-            return null;
+        return onEntityFromCache(key, cache.getWithMetadata(key));
+    }
+
+    /**
+     * Nonblocking alternative of {@link #get(Object)}
+     *
+     * @param key The Infinispan cache key to fetch.
+     * @return The {@link Updater} to track further changes of the Infinispan cache value.
+     */
+    public CompletionStage<T> getAsync(K key) {
+        var updater = entityChanges.get(key);
+        if (updater != null) {
+            return updater.isDeleted() ? CompletableFutures.completedNull() : CompletableFuture.completedFuture(updater);
         }
-        updater = factory.wrapFromCache(key, entity);
-        entityChanges.put(key, updater);
-        return updater.isDeleted() ? null : updater;
+        return cache.getWithMetadataAsync(key).thenApply(e -> onEntityFromCache(key, e));
     }
 
     /**
@@ -180,6 +198,19 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
         removePredicate = removePredicate.or(predicate);
     }
 
+    public T wrap(Map.Entry<K, MetadataValue<V>> entry) {
+        return entityChanges.computeIfAbsent(entry.getKey(), k -> factory.wrapFromCache(k, entry.getValue()));
+    }
+
+    private T onEntityFromCache(K key, MetadataValue<V> entity) {
+        if (entity == null) {
+            return null;
+        }
+        var updater = factory.wrapFromCache(key, entity);
+        entityChanges.put(key, updater);
+        return updater.isDeleted() ? null : updater;
+    }
+
     private CompletionStage<V> putIfAbsent(Updater<K, V> updater, Expiration expiration) {
         return cache.withFlags(Flag.FORCE_RETURN_VALUE)
                 .putIfAbsentAsync(updater.getKey(), updater.getValue(), expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS)
@@ -197,7 +228,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
     }
 
     private CompletionStage<V> merge(Updater<K, V> updater, Expiration expiration) {
-        return cache.computeAsync(updater.getKey(), updater, expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS);
+        return cache.computeIfPresentAsync(updater.getKey(), updater, expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS);
     }
 
     private Completable removeKey(K key) {
