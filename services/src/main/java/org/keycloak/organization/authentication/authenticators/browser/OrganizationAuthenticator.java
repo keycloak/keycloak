@@ -21,6 +21,7 @@ import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganiza
 import static org.keycloak.organization.utils.Organizations.resolveBroker;
 
 import java.util.List;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -86,14 +87,14 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 return;
             }
 
-            IdentityProviderModel broker = resolveBroker(session, user);
+            List<IdentityProviderModel> broker = resolveBroker(session, user);
 
-            if (broker == null) {
+            if (broker.isEmpty()) {
                 // not a managed member, continue with the regular flow
                 context.attempted();
-            } else {
+            } else if (broker.size() == 1) {
                 // user is a managed member and associated with a broker, redirect automatically
-                redirect(context, broker.getAlias(), user.getEmail());
+                redirect(context, broker.get(0).getAlias(), user.getEmail());
             }
 
             return;
