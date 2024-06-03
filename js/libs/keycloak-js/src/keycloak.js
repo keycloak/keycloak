@@ -477,6 +477,13 @@ function Keycloak (config) {
             url += '&acr_values=' + encodeURIComponent(options.acrValues || kc.acrValues);
         }
 
+        if (options && options.customParam) {
+            for(key in options.customParam)
+                {
+                  url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(options.customParam[key]);
+                }
+        }
+
         if (kc.pkceMethod) {
             var codeVerifier = generateCodeVerifier(96);
             callbackState.pkceCodeVerifier = codeVerifier;
