@@ -2,6 +2,7 @@
 import { FlatCompat } from "@eslint/eslintrc";
 import eslint from "@eslint/js";
 import mochaPlugin from "eslint-plugin-mocha";
+import playwright from "eslint-plugin-playwright";
 import prettierRecommended from "eslint-plugin-prettier/recommended";
 import reactJsxRuntime from "eslint-plugin-react/configs/jsx-runtime.js";
 import reactRecommended from "eslint-plugin-react/configs/recommended.js";
@@ -148,5 +149,9 @@ export default tseslint.config(
       "mocha/no-mocha-arrows": "off",
       "mocha/no-setup-in-describe": "off",
     },
+  },
+  {
+    ...playwright.configs["flat/recommended"],
+    files: ["js/apps/account-ui/test/**"],
   },
 );
