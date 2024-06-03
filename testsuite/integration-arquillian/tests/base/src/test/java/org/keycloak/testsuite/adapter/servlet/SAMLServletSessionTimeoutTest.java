@@ -4,7 +4,6 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
@@ -44,7 +43,7 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
 
     @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive employee2() {
-        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class, PublicKeyLocator.class);
+        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class);
     }
 
     private static final int SESSION_LENGTH_IN_SECONDS = 120;
