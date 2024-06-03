@@ -245,6 +245,8 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProviderMessage";
 
+    public static final String FEDERATED_IDENTITY_BOUND_ORGANIZATION = "federatedIdentityBoundOrganization";
+
     public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectErrorMessage";
 
     public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemovedMessage";

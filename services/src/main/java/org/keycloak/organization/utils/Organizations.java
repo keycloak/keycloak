@@ -66,19 +66,18 @@ public class Organizations {
         return true;
     }
 
-    public static IdentityProviderModel resolveBroker(KeycloakSession session, UserModel user) {
+    public static List<IdentityProviderModel> resolveBroker(KeycloakSession session, UserModel user) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
         OrganizationModel organization = provider.getByMember(user);
 
         if (organization == null || !organization.isEnabled()) {
-            return null;
+            return List.of();
         }
 
         if (provider.isManagedMember(organization, user)) {
-            // user is a managed member, try to resolve the origin broker and redirect automatically
             List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
-            List<IdentityProviderModel> brokers = session.users().getFederatedIdentitiesStream(realm, user)
+            return session.users().getFederatedIdentitiesStream(realm, user)
                     .map(f -> {
                         IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
 
@@ -95,11 +94,9 @@ public class Organizations {
                         return null;
                     }).filter(Objects::nonNull)
                     .toList();
-
-            return brokers.size() == 1 ? brokers.get(0) : null;
         }
 
-        return null;
+        return List.of();
     }
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
