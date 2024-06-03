@@ -172,6 +172,8 @@ public final class Constants {
 
     public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
 
+    public static final String SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED = "client.introspection.response.allow.jwt.claim.enabled";
+
     public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
 
     // Sent to clients when authentication session expired, but user is already logged-in in current browser

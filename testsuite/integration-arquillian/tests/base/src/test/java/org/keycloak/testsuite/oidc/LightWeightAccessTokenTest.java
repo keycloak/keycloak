@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.oidc;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.HttpHeaders;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,6 +27,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -56,6 +58,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -103,6 +106,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).directAccessGrant(true).setServiceAccountsEnabled(true);
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).directAccessGrant(true);
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).updateAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED, "true");
     }
 
     @Override
@@ -189,6 +193,34 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void accessTokenTrueIntrospectionReturnedAsJwt() throws IOException {
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, true);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+
+            // request JWT in introspection response
+            oauth.requestHeaders(Map.of(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT));
+
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
+            AccessToken introspectionResult = JsonSerialization.readValue(tokenResponse, AccessToken.class);
+            assertTokenIntrospectionResponse(introspectionResult, true, true, false);
+
+            Assert.assertNotNull(introspectionResult.getOtherClaims().get("jwt"));
         } finally {
             deleteProtocolMappers(protocolMappers);
         }

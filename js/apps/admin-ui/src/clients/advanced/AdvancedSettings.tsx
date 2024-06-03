@@ -192,6 +192,15 @@ export const AdvancedSettings = ({
             labelIcon={t("lightweightAccessTokenHelp")}
             stringify
           />
+
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.client.introspection.response.allow.jwt.claim.enabled",
+            )}
+            label={t("supportJwtClaimInIntrospectionResponse")}
+            labelIcon={t("supportJwtClaimInIntrospectionResponseHelp")}
+            stringify
+          />
           <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
