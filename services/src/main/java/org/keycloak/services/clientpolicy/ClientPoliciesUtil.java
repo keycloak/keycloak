@@ -331,6 +331,12 @@ public class ClientPoliciesUtil {
         return !proposedGlobalProfiles.equals(origGlobalProfiles);
     }
 
+    private static boolean isGlobalPoliciesUpdated(List<ClientPolicyRepresentation> proposedGlobalPolicies, List<ClientPolicyRepresentation> origGlobalPolicies) {
+        // if globalPolicies were not sent, we can skip this
+        if (proposedGlobalPolicies == null || proposedGlobalPolicies.isEmpty()) return false;
+        return !proposedGlobalPolicies.equals(origGlobalPolicies);
+    }
+
     /**
      * check whether the proposed executor's provider can be found in keycloak's ClientPolicyExecutorProvider list.
      * not return null.
@@ -562,6 +568,11 @@ public class ClientPoliciesUtil {
             List<ClientPolicyRepresentation> existingGlobalPolicies) throws ClientPolicyException {
         if (realm == null) {
             throw new ClientPolicyException("realm not specified.");
+        }
+
+        // validate global profiles not changed
+        if (isGlobalPoliciesUpdated(proposedPoliciesRep.getGlobalPolicies(), existingGlobalPolicies)) {
+            throw new ClientPolicyException("Global policies cannot be updated");
         }
 
         ClientPoliciesRepresentation updatingPoliciesRep = new ClientPoliciesRepresentation();
