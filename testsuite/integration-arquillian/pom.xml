@@ -57,6 +57,7 @@
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
         <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
         <commons.validator.version>1.8.0</commons.validator.version>
+        <byte-buddy.version>1.14.13</byte-buddy.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>

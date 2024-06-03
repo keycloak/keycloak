@@ -50,7 +50,9 @@ public class XPathAttributeMapperTest {
                 assertThrows(RuntimeException.class, () -> testMapping("<Open>Foo</Close>", "//*"));
         assertThat(actualException.getCause(), instanceOf(ParsingException.class));
 
-        assertThrows(RuntimeException.class, () -> testMapping(XML_WITH_NAMESPACE, "//*[local-name()=$street]"));
+        // it seems additional validation is added as 'TransformerException: Prefix must resolve to a namespace: unknownPrefix'
+        // is thrown before the XPath function resolver
+        assertNull(testMapping(XML_WITH_NAMESPACE, "//*[local-name()=$street]"));
         assertNull(testMapping(XML_WITH_NAMESPACE, "//*[local-name()=myPrefix:add(1,2)]"));
     }
 
