@@ -1,4 +1,11 @@
-import { Select, SelectOption } from "@patternfly/react-core/deprecated";
+import {
+  Chip,
+  ChipGroup,
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, ControllerRenderProps } from "react-hook-form";
 import {
@@ -7,12 +14,11 @@ import {
   UserProfileFieldProps,
 } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { UserFormFields, fieldName, isRequiredAttribute, label } from "./utils";
+import { UserFormFields, fieldName, label } from "./utils";
 
 export const SelectComponent = (props: UserProfileFieldProps) => {
   const { t, form, inputType, attribute } = props;
   const [open, setOpen] = useState(false);
-  const isRequired = isRequiredAttribute(attribute);
   const isMultiValue = inputType === "multiselect";
 
   const setValue = (
@@ -23,7 +29,11 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
       if (field.value.includes(value)) {
         field.onChange(field.value.filter((item: string) => item !== value));
       } else {
-        field.onChange([...field.value, value]);
+        if (Array.isArray(field.value)) {
+          field.onChange([...field.value, value]);
+        } else {
+          field.onChange([value]);
+        }
       }
     } else {
       field.onChange(value);
@@ -46,39 +56,56 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
         control={form.control}
         render={({ field }) => (
           <Select
-            toggleId={attribute.name}
-            onToggle={(_event, b) => setOpen(b)}
+            toggle={(ref) => (
+              <MenuToggle
+                id={attribute.name}
+                ref={ref}
+                onClick={() => setOpen(!open)}
+                isExpanded={open}
+                isFullWidth
+                isDisabled={attribute.readOnly}
+              >
+                {(isMultiValue && Array.isArray(field.value) ? (
+                  <ChipGroup>
+                    {field.value.map((selection, index: number) => (
+                      <Chip
+                        key={index}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          setValue(selection, field);
+                        }}
+                      >
+                        {selection}
+                      </Chip>
+                    ))}
+                  </ChipGroup>
+                ) : (
+                  fetchLabel(field.value)
+                )) || t("choose")}
+              </MenuToggle>
+            )}
             onSelect={(_, value) => {
-              const option = value.toString();
+              const option = value?.toString() || "";
               setValue(option, field);
-              if (!Array.isArray(field.value)) {
+              if (!isMultiValue) {
                 setOpen(false);
               }
             }}
-            selections={
-              field.value ? field.value : isMultiValue ? [] : t("choose")
-            }
-            variant={
-              isMultiValue
-                ? "typeaheadmulti"
-                : options.length >= 10
-                  ? "typeahead"
-                  : "single"
-            }
+            selected={field.value}
             aria-label={t("selectOne")}
             isOpen={open}
-            isDisabled={attribute.readOnly}
-            required={isRequired}
           >
-            {["", ...options].map((option) => (
-              <SelectOption
-                selected={field.value === option}
-                key={option}
-                value={option}
-              >
-                {option ? fetchLabel(option) : t("choose")}
-              </SelectOption>
-            ))}
+            <SelectList>
+              {options.map((option) => (
+                <SelectOption
+                  selected={field.value === option}
+                  key={option}
+                  value={option}
+                >
+                  {fetchLabel(option)}
+                </SelectOption>
+              ))}
+            </SelectList>
           </Select>
         )}
       />
