@@ -117,6 +117,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           ),
         );
 
+        setSelectedGroups([]);
         addAlert(t("removedGroupMembership"), AlertVariant.success);
       } catch (error) {
         addError("removedGroupMembershipError", error);
