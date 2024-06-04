@@ -2,10 +2,10 @@
 :project_name_full: Keycloak
 :project_community: true
 :project_product: false
-:project_version: DEV
-:project_versionMvn: 999.0.0-SNAPSHOT
-:project_versionNpm: 999.0.0-SNAPSHOT
-:project_versionDoc: DEV
+:project_version: 24.0.5
+:project_versionMvn: 24.0.5
+:project_versionNpm: 24.0.5
+:project_versionDoc: 24.0.5
 
 :archivebasename: keycloak
 :archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{project_version}/keycloak-{project_version}.zip
