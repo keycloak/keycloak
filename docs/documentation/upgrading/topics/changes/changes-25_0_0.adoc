@@ -448,8 +448,12 @@ The following variables were deprecated in the Account theme:
 The following variables from the environment script injected into the page of the Account theme are deprecated:
 
 * `authUrl`. Use `authServerUrl` instead.
-* `features.isInternationalizationEnabled`. Do not use this property.
+* `features.isInternationalizationEnabled`. Do not use this variable.
+
+The following variables were deprecated in the Admin theme:
+
+* `authUrl`. Do not use this variable.
 
 The following variables from the environment script injected into the page of the Admin theme are deprecated:
 
-* `authUrl`. Use `authServerUrl` instead.
+* `authUrl`. Do not use this variable.

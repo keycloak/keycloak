@@ -346,6 +346,7 @@ public class AdminConsole {
             }
 
             map.put("authServerUrl", authServerBaseUrl);
+            // TODO: The 'authUrl' variable is deprecated and only exists to provide backwards compatibility for older themes, it should be removed in a future version.
             map.put("authUrl", adminBaseUrl);
             map.put("consoleBaseUrl", Urls.adminConsoleRoot(adminBaseUri, realm.getName()).getPath());
             map.put("resourceUrl", Urls.themeRoot(adminBaseUri).getPath() + "/admin/" + theme.getName());
