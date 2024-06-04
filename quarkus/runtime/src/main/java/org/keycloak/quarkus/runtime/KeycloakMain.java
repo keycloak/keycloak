@@ -29,6 +29,7 @@ import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllo
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.common.profile.ProfileException;
@@ -56,6 +57,8 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 public class KeycloakMain implements QuarkusApplication {
 
     public static void main(String[] args) {
+        ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
+
         System.setProperty("kc.version", Version.VERSION);
         List<String> cliArgs = null;
         try {
@@ -94,6 +97,25 @@ public class KeycloakMain implements QuarkusApplication {
 
         // parse arguments and execute any of the configured commands
         parseAndRun(cliArgs);
+    }
+
+    /**
+     * Verify that the property for the ForkJoinPool factory set by Quarkus matches the actual factory.
+     * If this is not the case, the classloader for those threads is not set correctly, and for example loading configurations
+     * via SmallRye is unreliable. This can happen if a Java Agent or JMX initializes the ForkJoinPool before Java's main method is run.
+     */
+    private static void ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus() {
+        // At this point, the settings from the CLI are no longer visible as they have been overwritten in the QuarkusEntryPoint.
+        // Therefore, the only thing we can do is to check if the thread pool class name is the same as in the configuration.
+        final String FORK_JOIN_POOL_COMMON_THREAD_FACTORY = "java.util.concurrent.ForkJoinPool.common.threadFactory";
+        String sf = System.getProperty(FORK_JOIN_POOL_COMMON_THREAD_FACTORY);
+        //noinspection resource
+        if (!ForkJoinPool.commonPool().getFactory().getClass().getName().equals(sf)) {
+            Logger.getLogger(KeycloakMain.class).errorf("The ForkJoinPool has been initialized with the wrong thread factory. The property '%s' should be set on the Java CLI to ensure Java's ForkJoinPool will always be initialized with '%s' even if there are Java agents which might initialize logging or other capabilities earlier than the main method.",
+                    FORK_JOIN_POOL_COMMON_THREAD_FACTORY,
+                    sf);
+            throw new RuntimeException("The ForkJoinPool has been initialized with the wrong thread factory");
+        }
     }
 
     private static void handleUsageError(String message) {
