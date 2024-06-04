@@ -80,9 +80,9 @@ For more details on how to invoke on this endpoint, see https://datatracker.ietf
 
 ====== Introspection endpoint triggered with application/jwt header
 
-There is possibility to invoke introspection endpoint with HTTP header `Accept: application/jwt` instead of `Accept: application/json`. In case of `application/jwt`, the response
-may contain the additional claim `jwt` with the full JWT access token, which can be useful especially if the token to be introspected was link:{adminguide_link}#_using_lightweight_access_token[lightweight access token]. This requires the switch `Support JWT claim in Introspection Response`
-from client advanced settings to be enabled for the client, which triggers the token introspection.
+You can invoke an introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json`. In case of `application/jwt`, the response
+may contain the additional claim `jwt` with the full JWT access token, which can be useful especially if the token to be introspected was a link:{adminguide_link}#_using_lightweight_access_token[lightweight access token]. This requires that you enable `Support JWT claim in Introspection Response`
+on the client advanced settings, which triggers the token introspection.
 
 ===== Dynamic Client Registration endpoint
 ....

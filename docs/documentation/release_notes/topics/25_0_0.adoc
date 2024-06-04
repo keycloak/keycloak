@@ -121,7 +121,7 @@ For more details, see the link:{upgradingguide_link}[{upgradingguide_name}]..
 
 = Support for application/jwt media-type in token introspection endpoint
 
-There is possibility to use HTTP Header `Accept: application/jwt` when invoking token introspection endpoint. When enabled for particular client, it will allow to return claim `jwt` from the
+You can use the HTTP Header `Accept: application/jwt` when invoking a token introspection endpoint. When enabled for a particular client, it returns a claim `jwt` from the
 token introspection endpoint with the full JWT access token, which can be useful especially for the use-cases when the client calling introspection endpoint used lightweight access
 token. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
 
