@@ -1,7 +1,8 @@
 import { createInstance } from "i18next";
 import HttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
-import { environmentAdmin as environment } from "@keycloak/keycloak-ui-shared";
+
+import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";
 
 type KeyValue = { key: string; value: string };

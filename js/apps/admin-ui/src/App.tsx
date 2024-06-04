@@ -1,12 +1,12 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import { Page } from "@patternfly/react-core";
-import { PropsWithChildren, Suspense, useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
 import {
-  AdminEnvironment,
   mainPageContentId,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
+import { Page } from "@patternfly/react-core";
+import { PropsWithChildren, Suspense, useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
+
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
 import { AdminClientContext, initAdminClient } from "./admin-client";
@@ -24,6 +24,7 @@ import { AccessContextProvider } from "./context/access/Access";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
+import type { Environment } from "./environment";
 import { SubGroups } from "./groups/SubGroupsContext";
 import { AuthWall } from "./root/AuthWall";
 
@@ -48,7 +49,7 @@ const AppContexts = ({ children }: PropsWithChildren) => (
 );
 
 export const App = () => {
-  const { keycloak, environment } = useEnvironment<AdminEnvironment>();
+  const { keycloak, environment } = useEnvironment<Environment>();
   const [adminClient, setAdminClient] = useState<KeycloakAdminClient>();
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Nav,
   NavExpandable,
@@ -22,13 +23,9 @@ import {
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
-import {
-  AccountEnvironment,
-  environmentAccount as environment,
-  useEnvironment,
-  type Feature,
-} from "@keycloak/keycloak-ui-shared";
+
 import fetchContentJson from "../content/fetchContent";
+import { environment, type Environment, type Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
@@ -49,7 +46,7 @@ export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
 export const PageNav = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>();
-  const context = useEnvironment<AccountEnvironment>();
+  const context = useEnvironment<Environment>();
 
   usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
@@ -86,7 +83,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { t } = useTranslation();
   const {
     environment: { features },
-  } = useEnvironment<AccountEnvironment>();
+  } = useEnvironment<Environment>();
   const { pathname } = useLocation();
   const isActive = useMemo(
     () => matchMenuItem(pathname, menuItem),

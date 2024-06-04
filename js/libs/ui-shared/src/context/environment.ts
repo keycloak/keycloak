@@ -1,121 +1,33 @@
-export const DEFAULT_REALM = "master";
-
-export type Feature = {
-  isRegistrationEmailAsUsername: boolean;
-  isEditUserNameAllowed: boolean;
-  isInternationalizationEnabled: boolean;
-  isLinkedAccountsEnabled: boolean;
-  isEventsEnabled: boolean;
-  isMyResourcesEnabled: boolean;
-  isTotpConfigured: boolean;
-  deleteAccountAllowed: boolean;
-  updateEmailFeatureEnabled: boolean;
-  updateEmailActionEnabled: boolean;
-  isViewGroupsEnabled: boolean;
-  isOid4VciEnabled: boolean;
-};
-
+/** The base environment variables that are shared between the Admin and Account Consoles. */
 export type BaseEnvironment = {
-  /** The URL to the root of the auth server. */
+  /**
+   * The URL to the root of the Keycloak server, this is **NOT** always equivalent to the URL of the Admin Console.
+   * For example, the Keycloak server could be hosted on `auth.example.com` and Admin Console may be hosted on `admin.example.com`.
+   *
+   * @see {@link https://www.keycloak.org/server/hostname#_administration_console}
+   */
   authServerUrl: string;
-  /** The URL to the root of the account console. */
-  baseUrl: string;
-  /** The realm used to authenticate the user to the Account Console. */
+  /** The identifier of the realm used to authenticate the user. */
   realm: string;
-  /** The identifier of the client used to authenticate the user to the Account Console. */
+  /** The identifier of the client used to authenticate the user. */
   clientId: string;
-  /** The URL to resources such as the files in the `public` directory. */
+  /** The base URL of the resources. */
   resourceUrl: string;
-  /** Indicates the src for the Brand image */
+  /** The source URL for the the logo image. */
   logo: string;
-  /** Indicates the url to be followed when Brand image is clicked */
+  /** The URL to be followed when the logo is clicked. */
   logoUrl: string;
 };
 
-export type AdminEnvironment = BaseEnvironment & {
-  /** The name of the master realm. */
-  masterRealm: string;
-  /** The URL to the base of the Admin UI. */
-  consoleBaseUrl: string;
-  /** The version hash of the auth server. */
-  resourceVersion: string;
-};
-
-export type AccountEnvironment = BaseEnvironment & {
-  /** The locale of the user */
-  locale: string;
-  /** Feature flags */
-  features: Feature;
-  /** Name of the referrer application in the back link */
-  referrerName?: string;
-  /** UR to the referrer application in the back link */
-  referrerUrl?: string;
-};
-
-// During development the realm can be passed as a query parameter when redirecting back from Keycloak.
-const realm =
-  new URLSearchParams(window.location.search).get("realm") ||
-  location.pathname.match("/realms/(.*?)/account")?.[1];
-
-const defaultAccountEnvironment: AccountEnvironment = {
-  authServerUrl: "http://localhost:8180",
-  baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
-  realm: realm ?? DEFAULT_REALM,
-  clientId: "security-admin-console-v2",
-  resourceUrl: "http://localhost:8080",
-  logo: "/logo.svg",
-  logoUrl: "/",
-  locale: "en",
-  features: {
-    isRegistrationEmailAsUsername: false,
-    isEditUserNameAllowed: true,
-    isInternationalizationEnabled: true,
-    isLinkedAccountsEnabled: true,
-    isEventsEnabled: true,
-    isMyResourcesEnabled: true,
-    isTotpConfigured: true,
-    deleteAccountAllowed: true,
-    updateEmailFeatureEnabled: true,
-    updateEmailActionEnabled: true,
-    isViewGroupsEnabled: true,
-    isOid4VciEnabled: false,
-  },
-};
-
-const defaultAdminEnvironment: AdminEnvironment = {
-  authServerUrl: "http://localhost:8180",
-  baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
-  realm: realm ?? DEFAULT_REALM,
-  clientId: "security-admin-console-v2",
-  resourceUrl: "http://localhost:8080",
-  logo: "/logo.svg",
-  logoUrl: "/",
-  consoleBaseUrl: "/admin/master/console/",
-  masterRealm: "master",
-  resourceVersion: "unknown",
-};
-
-// Merge the default and injected environment variables together.
-const environmentAccount = {
-  ...defaultAccountEnvironment,
-  ...getInjectedEnvironment(),
-};
-
-const environmentAdmin = {
-  ...defaultAdminEnvironment,
-  ...getInjectedEnvironment(),
-};
-
-export { environmentAccount, environmentAdmin };
-
 /**
- * Extracts the environment variables that are passed if the application is running as a Keycloak theme.
+ * Extracts the environment variables that are passed if the application is running as a Keycloak theme and combines them with the provided defaults.
  * These variables are injected by Keycloak into the `index.ftl` as a script tag, the contents of which can be parsed as JSON.
+ *
+ * @argument defaults - The default values to fall to if a value is not present in the environment.
  */
-function getInjectedEnvironment(): Record<string, string | number | boolean> {
+export function getInjectedEnvironment<T>(defaults: T): T {
   const element = document.getElementById("environment");
-
-  let env = {} as Record<string, string | number | boolean>;
+  let env = {} as T;
 
   // Attempt to parse the contents as JSON and return its value.
   try {
@@ -127,6 +39,6 @@ function getInjectedEnvironment(): Record<string, string | number | boolean> {
     console.error("Unable to parse environment variables.");
   }
 
-  // Otherwise, return an empty record.
-  return env;
+  // Return the merged environment variables with the defaults.
+  return { ...defaults, ...env };
 }

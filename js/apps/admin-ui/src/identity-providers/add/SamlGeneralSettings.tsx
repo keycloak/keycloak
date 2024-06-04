@@ -1,14 +1,15 @@
-import { FormGroup } from "@patternfly/react-core";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import type { AdminEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
 import {
   HelpItem,
   TextControl,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
+import { FormGroup } from "@patternfly/react-core";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
 import { FormattedLink } from "../../components/external-link/FormattedLink";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import type { Environment } from "../../environment";
 import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
 
@@ -23,7 +24,7 @@ export const SamlGeneralSettings = ({
 }: SamlGeneralSettingsProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
-  const { environment } = useEnvironment<AdminEnvironment>();
+  const { environment } = useEnvironment<Environment>();
 
   const { control } = useFormContext();
   const alias = useWatch({ control, name: "alias" });
