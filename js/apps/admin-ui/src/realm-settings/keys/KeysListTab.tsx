@@ -153,7 +153,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             }
           />
         }
-        canSelectAll
         columns={[
           {
             name: "algorithm",
@@ -182,16 +181,14 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           {
             name: "provider",
             displayKey: "provider",
-            cellRenderer: ({ provider }: KeyData) => provider || "",
-            cellFormatters: [emptyFormatter()],
+            cellRenderer: ({ provider }: KeyData) => provider || "-",
             transforms: [cellWidth(10)],
           },
           {
             name: "validTo",
             displayKey: "validTo",
             cellRenderer: ({ validTo }: KeyData) =>
-              validTo ? formatDate(new Date(validTo)) : "",
-            cellFormatters: [emptyFormatter()],
+              validTo ? formatDate(new Date(validTo)) : "-",
             transforms: [cellWidth(10)],
           },
           {
@@ -252,7 +249,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                 );
               } else return "";
             },
-            cellFormatters: [],
             transforms: [cellWidth(20)],
           },
         ]}

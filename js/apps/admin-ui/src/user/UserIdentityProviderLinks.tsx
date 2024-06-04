@@ -194,7 +194,6 @@ export const UserIdentityProviderLinks = ({
       {
         name: "identityProvider",
         displayKey: "name",
-        cellFormatters: [emptyFormatter()],
         cellRenderer: idpLinkRenderer,
         transforms: [cellWidth(20)],
       },
@@ -213,7 +212,6 @@ export const UserIdentityProviderLinks = ({
       },
       {
         name: "",
-        cellFormatters: [emptyFormatter()],
         cellRenderer: unlinkRenderer,
         transforms: [cellWidth(20)],
       },
@@ -223,7 +221,6 @@ export const UserIdentityProviderLinks = ({
       columns.splice(1, 0, {
         name: "type",
         displayKey: "type",
-        cellFormatters: [emptyFormatter()],
         cellRenderer: badgeRenderer1,
         transforms: [cellWidth(10)],
       });
@@ -286,13 +283,11 @@ export const UserIdentityProviderLinks = ({
                 {
                   name: "type",
                   displayKey: "type",
-                  cellFormatters: [emptyFormatter()],
                   cellRenderer: badgeRenderer2,
                   transforms: [cellWidth(60)],
                 },
                 {
                   name: "",
-                  cellFormatters: [emptyFormatter()],
                   cellRenderer: linkRenderer,
                 },
               ]}

@@ -777,7 +777,7 @@ describe("Clients test", () => {
       commonPage.sidebar().waitForPageLoad();
       rolesTab.goToAssociatedRolesTab();
 
-      cy.get('td[data-label="Name"]')
+      cy.get("td")
         .contains("manage-account")
         .parent()
         .within(() => {

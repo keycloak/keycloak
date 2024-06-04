@@ -85,7 +85,7 @@ export default class RealmSettingsPage extends CommonPage {
   eventsUserSave = "save-user";
   enableAdminEvents = "adminEventsEnabled";
   eventsAdminSave = "save-admin";
-  eventTypeColumn = 'tbody > tr > [data-label="Event saved type"]';
+  eventTypeColumn = "tbody > tr td";
   filterSelectMenu = ".kc-filter-type-select";
   passiveKeysOption = "PASSIVE-option";
   disabledKeysOption = "DISABLED-option";
@@ -1270,12 +1270,12 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   checkElementNotInList(name: string) {
-    cy.get('tbody [data-label="Name"]').should("not.contain.text", name);
+    cy.get("tbody").should("not.contain.text", name);
     return this;
   }
 
   checkElementInList(name: string) {
-    cy.get('tbody [data-label="Name"]').should("contain.text", name);
+    cy.get("tbody").should("contain.text", name);
     return this;
   }
 

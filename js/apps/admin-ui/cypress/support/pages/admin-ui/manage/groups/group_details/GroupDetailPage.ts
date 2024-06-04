@@ -13,8 +13,7 @@ export default class GroupDetailPage extends GroupPage {
   #attributesTab = "attributes";
   #roleMappingTab = "role-mapping-tab";
   #permissionsTab = "permissionsTab";
-  #memberNameColumn =
-    '[data-testid="members-table"] > tbody > tr > [data-label="Name"]';
+  #memberNameColumn = '[data-testid="members-table"] > tbody > tr';
   #addMembers = "addMember";
   #memberUsernameColumn = 'tbody > tr > [data-label="Username"]';
   #actionDrpDwnItemRenameGroup = "renameGroupAction";
