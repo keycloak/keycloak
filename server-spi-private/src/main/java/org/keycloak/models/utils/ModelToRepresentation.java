@@ -737,6 +737,13 @@ public class ModelToRepresentation {
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
 
+        String clientId = clientModel.getClientId();
+        final String realmClientSuffix = "-realm";
+        //check if client is realm client
+        if(clientId != null && clientId.endsWith(realmClientSuffix) && session.realms().getRealmByName(clientId.substring(0, clientId.length() - realmClientSuffix.length())) != null) {
+            rep.getAttributes().put(Constants.REALM_CLIENT, String.valueOf(true));
+        }
+
         // adding the secret if non public or bearer only
         if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
             rep.setSecret(null);

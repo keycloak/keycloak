@@ -96,6 +96,11 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
+    @Test
+    public void getRealmClients() {
+        assertTrue(realm.clients().findAll().stream().filter(client->client.getAttributes().get(Constants.REALM_CLIENT) != null).allMatch(clientRepresentation -> clientRepresentation.getClientId().endsWith("-realm")));
+    }
+
     private ClientRepresentation createClient() {
         return createClient(null);
     }
@@ -122,7 +127,7 @@ public class ClientTest extends AbstractAdminTest {
 
         return rep;
     }
-    
+
     private ClientRepresentation createClientNonPublic() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
@@ -142,7 +147,7 @@ public class ClientTest extends AbstractAdminTest {
 
         return rep;
     }
-    
+
     @Test
     public void createClientVerifyWithSecret() {
         String id = createClientNonPublic().getId();
@@ -442,14 +447,14 @@ public class ClientTest extends AbstractAdminTest {
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME), Collections.singletonList(role), ResourceType.REALM_ROLE);
 
-        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
                 hasItem(role.getName()));
 
         realm.clients().get(id).roles().deleteRole("test");
 
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(id, "test"), ResourceType.CLIENT_ROLE);
 
-        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
                 not(hasItem(role)));
     }
 
@@ -558,7 +563,7 @@ public class ClientTest extends AbstractAdminTest {
 
         realm.clients().get(id).registerNode(Collections.singletonMap("node", "foo#"));
     }
-    
+
     @Test
     public void nodes() {
         testingClient.testApp().clearAdminActions();
