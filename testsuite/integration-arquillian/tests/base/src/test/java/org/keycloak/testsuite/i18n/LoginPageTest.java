@@ -167,7 +167,7 @@ public class LoginPageTest extends AbstractI18NTest {
     @Test
     public void testIdentityProviderCapitalization(){
         loginPage.open();
-        assertEquals("GitHub", loginPage.findSocialButton("github").getText());
+        assertEquals("", loginPage.findSocialButton("github").getText());   // github is only displayed as an icon in keycloak.v2 theme
         assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
         assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
     }
