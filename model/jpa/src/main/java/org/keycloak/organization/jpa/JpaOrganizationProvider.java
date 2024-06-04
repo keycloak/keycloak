@@ -26,8 +26,6 @@ import static org.keycloak.utils.StreamsUtil.closing;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -47,7 +45,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
-import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -392,6 +389,15 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         return true;
+    }
+
+    @Override
+    public long count() {
+        TypedQuery<Long> query;
+        query = em.createNamedQuery("getCount", Long.class);
+        query.setParameter("realmId", realm.getId());
+
+        return query.getSingleResult();
     }
 
     @Override

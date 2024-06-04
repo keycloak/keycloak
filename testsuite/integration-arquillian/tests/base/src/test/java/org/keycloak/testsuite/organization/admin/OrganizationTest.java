@@ -47,11 +47,13 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -446,5 +448,17 @@ public class OrganizationTest extends AbstractOrganizationTest {
         } finally {
             realmRes.remove();
         }
+    }
+
+    @Test
+    public void testCount() {
+        for (int i = 0; i < 10; i++) {
+            createOrganization("kc.org." + i);
+        }
+
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertEquals(10, orgProvider.count());
+        });
     }
 }

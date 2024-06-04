@@ -130,9 +130,8 @@ public class Organizations {
         };
     }
 
-    public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider provider) {
-        // todo replace getAllStream().findAny().isPresent() with count query
-        return provider != null && provider.isEnabled() && provider.getAllStream().findAny().isPresent();
+    public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {
+        return orgProvider != null && orgProvider.isEnabled() && orgProvider.count() != 0;
     }
 
     public static void checkEnabled(OrganizationProvider provider) {
