@@ -232,6 +232,9 @@ importers:
       '@testing-library/cypress':
         specifier: ^10.0.2
         version: 10.0.2(cypress@13.11.0)
+      '@testing-library/dom':
+        specifier: ^10.1.0
+        version: 10.1.0
       '@testing-library/jest-dom':
         specifier: ^6.4.5
         version: 6.4.5(vitest@1.6.0(@types/node@20.14.1)(jsdom@24.1.0)(lightningcss@1.25.1)(terser@5.31.0))
