@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { IndexRouteObject, RouteObject } from "react-router-dom";
-import { environment } from "@keycloak/keycloak-ui-shared";
+import { environmentAccount as environment } from "@keycloak/keycloak-ui-shared";
 import { ErrorPage } from "./root/ErrorPage";
 import { Root } from "./root/Root";
 

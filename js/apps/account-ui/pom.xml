@@ -148,7 +148,7 @@
 <![CDATA[
   <script id="environment" type="application/json">
     {
-      "authUrl": "${authUrl}",
+      "authServerUrl": "${authServerUrl}",
       "baseUrl": "${baseUrl}",
       "realm": "${realm.name}",
       "clientId": "${clientId}",

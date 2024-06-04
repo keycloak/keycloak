@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useHref } from "react-router-dom";
 import {
   KeycloakMasthead,
-  environment,
+  environmentAccount as environment,
   label,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";

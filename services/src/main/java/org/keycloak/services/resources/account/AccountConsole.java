@@ -105,7 +105,7 @@ public class AccountConsole implements AccountResourceProvider {
 
         URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
         URI authUrl = uriInfo.getBaseUri();
-        map.put("authUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
+        map.put("authServerUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
         map.put("baseUrl", accountBaseUrl.getPath().endsWith("/") ? accountBaseUrl : accountBaseUrl + "/");
         map.put("realm", realm);
         map.put("clientId", Constants.ACCOUNT_CONSOLE_CLIENT_ID);

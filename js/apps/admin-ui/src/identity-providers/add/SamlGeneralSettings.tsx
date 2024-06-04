@@ -1,6 +1,7 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import type { AdminEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
 import {
   HelpItem,
   TextControl,
@@ -22,7 +23,7 @@ export const SamlGeneralSettings = ({
 }: SamlGeneralSettingsProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
-  const { environment } = useEnvironment();
+  const { environment } = useEnvironment<AdminEnvironment>();
 
   const { control } = useFormContext();
   const alias = useWatch({ control, name: "alias" });

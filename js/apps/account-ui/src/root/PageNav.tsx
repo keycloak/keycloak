@@ -24,7 +24,7 @@ import {
 } from "react-router-dom";
 import {
   AccountEnvironment,
-  environment,
+  environmentAccount as environment,
   useEnvironment,
   type Feature,
 } from "@keycloak/keycloak-ui-shared";

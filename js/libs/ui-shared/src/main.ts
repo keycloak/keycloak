@@ -7,7 +7,8 @@ export {
   type KeycloakContext,
 } from "./context/KeycloakContext";
 export {
-  environment,
+  environmentAccount,
+  environmentAdmin,
   type AccountEnvironment,
   type AdminEnvironment,
   type Feature,

@@ -3,6 +3,7 @@ import { Page } from "@patternfly/react-core";
 import { PropsWithChildren, Suspense, useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import {
+  AdminEnvironment,
   mainPageContentId,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
@@ -47,7 +48,7 @@ const AppContexts = ({ children }: PropsWithChildren) => (
 );
 
 export const App = () => {
-  const { keycloak, environment } = useEnvironment();
+  const { keycloak, environment } = useEnvironment<AdminEnvironment>();
   const [adminClient, setAdminClient] = useState<KeycloakAdminClient>();
 
   useEffect(() => {

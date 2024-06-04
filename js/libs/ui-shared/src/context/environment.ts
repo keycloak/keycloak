@@ -17,7 +17,7 @@ export type Feature = {
 
 export type BaseEnvironment = {
   /** The URL to the root of the auth server. */
-  authUrl: string;
+  authServerUrl: string;
   /** The URL to the root of the account console. */
   baseUrl: string;
   /** The realm used to authenticate the user to the Account Console. */
@@ -34,7 +34,7 @@ export type BaseEnvironment = {
 
 export type AdminEnvironment = BaseEnvironment & {
   /** The URL to the root of the auth server. */
-  authServerUrl: string;
+  authUrl: string;
   /** The name of the master realm. */
   masterRealm: string;
   /** The URL to the base of the Admin UI. */
@@ -59,8 +59,7 @@ const realm =
   new URLSearchParams(window.location.search).get("realm") ||
   location.pathname.match("/realms/(.*?)/account")?.[1];
 
-const defaultEnvironment: AdminEnvironment & AccountEnvironment = {
-  authUrl: "http://localhost:8180",
+const defaultAccountEnvironment: AccountEnvironment = {
   authServerUrl: "http://localhost:8180",
   baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
   realm: realm ?? DEFAULT_REALM,
@@ -69,9 +68,6 @@ const defaultEnvironment: AdminEnvironment & AccountEnvironment = {
   logo: "/logo.svg",
   logoUrl: "/",
   locale: "en",
-  consoleBaseUrl: "/admin/master/console/",
-  masterRealm: "master",
-  resourceVersion: "unknown",
   features: {
     isRegistrationEmailAsUsername: false,
     isEditUserNameAllowed: true,
@@ -88,13 +84,32 @@ const defaultEnvironment: AdminEnvironment & AccountEnvironment = {
   },
 };
 
+const defaultAdminEnvironment: AdminEnvironment = {
+  authUrl: "http://localhost:8180",
+  authServerUrl: "http://localhost:8180",
+  baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
+  realm: realm ?? DEFAULT_REALM,
+  clientId: "security-admin-console-v2",
+  resourceUrl: "http://localhost:8080",
+  logo: "/logo.svg",
+  logoUrl: "/",
+  consoleBaseUrl: "/admin/master/console/",
+  masterRealm: "master",
+  resourceVersion: "unknown",
+};
+
 // Merge the default and injected environment variables together.
-const environment = {
-  ...defaultEnvironment,
+const environmentAccount = {
+  ...defaultAccountEnvironment,
   ...getInjectedEnvironment(),
 };
 
-export { environment };
+const environmentAdmin = {
+  ...defaultAdminEnvironment,
+  ...getInjectedEnvironment(),
+};
+
+export { environmentAccount, environmentAdmin };
 
 /**
  * Extracts the environment variables that are passed if the application is running as a Keycloak theme.

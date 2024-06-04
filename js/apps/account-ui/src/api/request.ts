@@ -50,7 +50,13 @@ export async function request(
 
 export const url = (environment: BaseEnvironment, path: string) =>
   new URL(
-    joinPath(environment.authUrl, "realms", environment.realm, "account", path),
+    joinPath(
+      environment.authServerUrl,
+      "realms",
+      environment.realm,
+      "account",
+      path,
+    ),
   );
 
 export const token = (keycloak: Keycloak) =>
