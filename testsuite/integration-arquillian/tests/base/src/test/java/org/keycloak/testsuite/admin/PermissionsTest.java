@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -375,7 +376,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.testLDAPConnection("nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch"));
+                TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(
+                        "nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch");
+                response.set(realm.testLDAPConnection(config.getAction(), config.getConnectionUrl(), config.getBindDn(),
+                        config.getBindCredential(), config.getUseTruststoreSpi(), config.getConnectionTimeout()));
+                response.set(realm.testLDAPConnection(config));
             }
         }, Resource.REALM, true);
 
@@ -1460,6 +1465,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.USER, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).getUnmanagedAttributes();
+            }
+        }, Resource.USER, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
                 realm.users().get(user.getId()).update(user);
             }
         }, Resource.USER, true);
@@ -1755,6 +1765,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.components().query("nosuch");
+            }
+        }, Resource.REALM, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.clientRegistrationPolicy().getProviders();
             }
         }, Resource.REALM, false);
         invoke(new InvocationWithResponse() {
