@@ -85,7 +85,7 @@ export async function getIssuer(context: KeycloakContext<BaseEnvironment>) {
     {},
     new URL(
       joinPath(
-        context.environment.authUrl +
+        context.environment.authServerUrl +
           "/realms/" +
           context.environment.realm +
           "/.well-known/openid-credential-issuer",

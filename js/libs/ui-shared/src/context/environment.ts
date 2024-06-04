@@ -16,8 +16,13 @@ export type Feature = {
 };
 
 export type BaseEnvironment = {
-  /** The URL to the root of the auth server. */
-  authUrl: string;
+  /**
+   * The URL to the root of the Keycloak server, this is **NOT** always equivalent to the URL of the Admin Console.
+   * For example, the Keycloak server could be hosted on `auth.example.com` and Admin Console may be hosted on `admin.example.com`.
+   *
+   * @see {@link https://www.keycloak.org/server/hostname#_administration_console}
+   */
+  authServerUrl: string;
   /** The URL to the root of the account console. */
   baseUrl: string;
   /** The realm used to authenticate the user to the Account Console. */
@@ -33,8 +38,6 @@ export type BaseEnvironment = {
 };
 
 export type AdminEnvironment = BaseEnvironment & {
-  /** The URL to the root of the auth server. */
-  authServerUrl: string;
   /** The name of the master realm. */
   masterRealm: string;
   /** The URL to the base of the Admin UI. */
@@ -60,7 +63,6 @@ const realm =
   location.pathname.match("/realms/(.*?)/account")?.[1];
 
 const defaultEnvironment: AdminEnvironment & AccountEnvironment = {
-  authUrl: "http://localhost:8180",
   authServerUrl: "http://localhost:8180",
   baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
   realm: realm ?? DEFAULT_REALM,

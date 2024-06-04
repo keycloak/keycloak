@@ -127,7 +127,6 @@
       "realm": "${loginRealm!"master"}",
       "clientId": "${clientId}",
       "authServerUrl": "${authServerUrl}",
-      "authUrl": "${authUrl}",
       "consoleBaseUrl": "${consoleBaseUrl}",
       "resourceUrl": "${resourceUrl}",
       "masterRealm": "${masterRealm}",
