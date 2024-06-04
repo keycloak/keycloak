@@ -797,7 +797,7 @@
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>{byte-buddy.version}</version>
+                    <version>${byte-buddy.version}</version>
                 </dependency>
             </dependencies>
         </profile>
