@@ -112,7 +112,7 @@ public class Profile {
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 
-        ORGANIZATION("Organization support within realms", Type.EXPERIMENTAL),
+        ORGANIZATION("Organization support within realms", Type.PREVIEW),
 
         PASSKEYS("Passkeys", Type.PREVIEW)
         ;
