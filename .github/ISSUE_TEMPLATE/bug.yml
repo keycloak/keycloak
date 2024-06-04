@@ -51,6 +51,7 @@ body:
         - oidc
         - oid4vc
         - operator
+        - organizations
         - saml
         - storage
         - testsuite
