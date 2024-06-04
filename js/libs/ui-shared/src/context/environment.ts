@@ -33,8 +33,6 @@ export type BaseEnvironment = {
 };
 
 export type AdminEnvironment = BaseEnvironment & {
-  /** The URL to the root of the auth server. */
-  authUrl: string;
   /** The name of the master realm. */
   masterRealm: string;
   /** The URL to the base of the Admin UI. */
@@ -85,7 +83,6 @@ const defaultAccountEnvironment: AccountEnvironment = {
 };
 
 const defaultAdminEnvironment: AdminEnvironment = {
-  authUrl: "http://localhost:8180",
   authServerUrl: "http://localhost:8180",
   baseUrl: `http://localhost:8180/realms/${realm ?? DEFAULT_REALM}/account/`,
   realm: realm ?? DEFAULT_REALM,
