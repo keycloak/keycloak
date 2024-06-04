@@ -14,7 +14,7 @@ test.describe("Verifiable Credentials page", () => {
 
     await expect(
       page.getByTestId("select-verifiable-credential"),
-    ).toBeVisible(),
+    ).toBeVisible();
       await expect(page.getByTestId("select-natural-person")).toBeVisible();
     await page.getByTestId("select-natural-person").click();
     await expect(page.getByTestId("qr-code")).toBeVisible();
