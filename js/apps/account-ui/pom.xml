@@ -148,6 +148,7 @@
 <![CDATA[
   <script id="environment" type="application/json">
     {
+      "authUrl": "${authUrl}",
       "authServerUrl": "${authServerUrl}",
       "realm": "${realm.name}",
       "clientId": "${clientId}",
@@ -161,6 +162,7 @@
       "features": {
         "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
         "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
+        "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
         "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
         "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
         "deleteAccountAllowed": ${deleteAccountAllowed?c},
