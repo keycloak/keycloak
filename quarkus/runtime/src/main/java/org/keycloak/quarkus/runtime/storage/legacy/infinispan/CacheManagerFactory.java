@@ -73,12 +73,10 @@ public class CacheManagerFactory {
 
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
 
-    private final String config;
     private final CompletableFuture<DefaultCacheManager> cacheManagerFuture;
 
     public CacheManagerFactory(String config) {
-        this.config = config;
-        this.cacheManagerFuture = CompletableFuture.supplyAsync(this::startEmbeddedCacheManager);
+        this.cacheManagerFuture = startEmbeddedCacheManager(config);
     }
 
     public DefaultCacheManager getOrCreateEmbeddedCacheManager() {
@@ -107,7 +105,7 @@ public class CacheManagerFactory {
         }
     }
 
-    private DefaultCacheManager startEmbeddedCacheManager() {
+    private CompletableFuture<DefaultCacheManager> startEmbeddedCacheManager(String config) {
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
         if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
@@ -152,7 +150,8 @@ public class CacheManagerFactory {
         }
 
         Marshalling.configure(builder.getGlobalConfigurationBuilder());
-        return new DefaultCacheManager(builder, isStartEagerly());
+        var start = isStartEagerly();
+        return CompletableFuture.supplyAsync(() -> new DefaultCacheManager(builder, start));
     }
 
     private static boolean isRemoteTLSEnabled() {
