@@ -119,6 +119,12 @@ by protocol mappers. Some of them affect even the regular access tokens or ID to
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}]..
 
+= Support for application/jwt media-type in token introspection endpoint
+
+You can use the HTTP Header `Accept: application/jwt` when invoking a token introspection endpoint. When enabled for a particular client, it returns a claim `jwt` from the
+token introspection endpoint with the full JWT access token, which can be useful especially for the use-cases when the client calling introspection endpoint used lightweight access
+token. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+
 = Password policy for check if password contains Username
 
 Keycloak supports a new password policy that allows you to deny user passwords which contains the user username.
