@@ -27,6 +27,7 @@ team/core-iam:
   - area/authorization-services
   - area/identity-brokering
   - area/ldap
+  - area/organizations
   - area/user-profile
 
 team/core-shared:
