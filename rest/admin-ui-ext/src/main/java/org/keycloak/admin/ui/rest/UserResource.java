@@ -17,9 +17,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.StringUtil;
@@ -30,10 +30,12 @@ import org.keycloak.utils.StringUtil;
 public class UserResource {
 
     private final KeycloakSession session;
+    private final AdminPermissionEvaluator auth;
     private final UserModel user;
 
-    public UserResource(KeycloakSession session, UserModel user) {
+    public UserResource(KeycloakSession session, AdminPermissionEvaluator auth, UserModel user) {
         this.session = session;
+        this.auth = auth;
         this.user = user;
     }
 
@@ -42,6 +44,8 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, List<String>> getUnmanagedAttributes() {
+        auth.users().requireView(user);
+
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
 
         UserProfile profile = provider.create(USER_API, user);

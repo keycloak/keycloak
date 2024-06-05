@@ -24,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
@@ -51,6 +52,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -73,6 +75,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -375,7 +379,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.testLDAPConnection("nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch"));
+                TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(
+                        "nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch");
+                response.set(realm.testLDAPConnection(config.getAction(), config.getConnectionUrl(), config.getBindDn(),
+                        config.getBindCredential(), config.getUseTruststoreSpi(), config.getConnectionTimeout()));
+                response.set(realm.testLDAPConnection(config));
             }
         }, Resource.REALM, true);
 
@@ -1458,6 +1466,21 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.users().get(user.getId()).toRepresentation();
             }
         }, Resource.USER, false);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                // no-op
+            }
+            public void invoke(Keycloak keycloak, RealmResource realm, AtomicReference<Response> response) {
+                try (Client client = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+                    Response resp = client.target(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth")
+                            .path("/admin/realms/" + realm.toRepresentation().getRealm() + "/ui-ext/users/" + user.getId() + "/unmanagedAttributes")
+                            .register(new BearerAuthFilter(keycloak.tokenManager()))
+                            .request(MediaType.APPLICATION_JSON)
+                            .get();
+                    response.set(resp);
+                }
+            }
+        }, Resource.USER, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.users().get(user.getId()).update(user);
@@ -1757,6 +1780,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.components().query("nosuch");
             }
         }, Resource.REALM, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.clientRegistrationPolicy().getProviders();
+            }
+        }, Resource.REALM, false);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 response.set(realm.components().add(new ComponentRepresentation()));
@@ -1945,7 +1973,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         int statusCode;
         try {
             AtomicReference<Response> responseReference = new AtomicReference<>();
-            invocation.invoke(client.realm(REALM_NAME), responseReference);
+            invocation.invoke(client, client.realm(REALM_NAME), responseReference);
             Response response = responseReference.get();
             if (response != null) {
                 statusCode = response.getStatus();
@@ -2054,6 +2082,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         void invoke(RealmResource realm, AtomicReference<Response> response);
 
+        default void invoke(Keycloak keycloak, RealmResource realm, AtomicReference<Response> response) {
+            invoke(realm, response);
+        }
     }
 
     private void assertGettersEmpty(RealmRepresentation rep) {

@@ -1,0 +1,5 @@
+= Security issue with PAR clients using client_secret_post based authentication
+
+This release contains the fix of the important security issue affecting some OIDC confidential clients using PAR (Pushed authorization request). In case you use OIDC confidential clients together
+with PAR and you use client authentication based on `client_id` and `client_secret` sent as parameters in the HTTP request body (method `client_secret_post` specified in the OIDC specification), it is
+highly encouraged to rotate the client secrets of your clients after upgrading to this version.
