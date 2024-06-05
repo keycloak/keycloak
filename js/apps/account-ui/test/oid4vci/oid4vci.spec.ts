@@ -10,7 +10,7 @@ test.describe("Verifiable Credentials page", () => {
     await expect(page.getByTestId("qr-code")).toBeHidden();
 
     await page.getByTestId("oid4vci").click();
-    await page.getByTestId("credential-select").click();
+    await page.getByTestId("menu-toggle").click();
 
     await expect(
       page.getByTestId("select-verifiable-credential"),
