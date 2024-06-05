@@ -66,7 +66,7 @@ export default function UserFederationKerberosSettings() {
       );
     } catch (error) {
       addError(
-        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
+        !id ? "createUserProviderError" : "userProviderSaveError",
         error,
       );
     }
