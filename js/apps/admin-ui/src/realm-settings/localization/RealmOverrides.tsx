@@ -218,6 +218,8 @@ export const RealmOverrides = ({
       refreshTable();
       translationForm.setValue("key", "");
       translationForm.setValue("value", "");
+      i18n.reloadResources();
+
       addAlert(t("addTranslationSuccess"), AlertVariant.success);
     } catch (error) {
       addError(t("addTranslationError"), error);
