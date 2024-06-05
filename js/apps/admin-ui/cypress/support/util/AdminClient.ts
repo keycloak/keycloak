@@ -260,14 +260,16 @@ class AdminClient {
     await this.#client.users.updateProfile(merge(userProfile, { realm }));
   }
 
-  async patchUserProfile(realm: string, payload: UserProfileConfig) {
+  async addGroupToProfile(realm: string, groupName: string) {
     await this.#login();
 
     const currentProfile = await this.#client.users.getProfile({ realm });
 
-    await this.#client.users.updateProfile(
-      merge(currentProfile, payload, { realm }),
-    );
+    await this.#client.users.updateProfile({
+      ...currentProfile,
+      realm,
+      ...{ groups: [...currentProfile.groups!, { name: groupName }] },
+    });
   }
 
   async createRealmRole(payload: RoleRepresentation) {

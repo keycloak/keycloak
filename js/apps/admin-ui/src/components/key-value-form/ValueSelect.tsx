@@ -36,7 +36,9 @@ export const ValueSelect = ({
       placeholderText={t("valuePlaceholder")}
     >
       {defaultItem.values.map((item) => (
-        <SelectOption key={item} value={item} />
+        <SelectOption key={item} value={item}>
+          {item}
+        </SelectOption>
       ))}
     </KeycloakSelect>
   ) : (
