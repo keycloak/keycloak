@@ -947,6 +947,7 @@ public class ModelToRepresentation {
         propRep.setHelpText(prop.getHelpText());
         propRep.setSecret(prop.isSecret());
         propRep.setRequired(prop.isRequired());
+        propRep.setStringify(prop.isStringify());
         return propRep;
     }
 
