@@ -31,8 +31,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
   });
 
   const hourOptions = [
-    <SelectOption key={0} value={[`${0}`]}>
-      {[`0${0}`]}
+    <SelectOption key={0} value={[`0`]}>
+      {[`00`]}
     </SelectOption>,
   ];
   let hourDisplay = "";
@@ -50,8 +50,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
   }
 
   const minuteOptions = [
-    <SelectOption key={0} value={[`${0}`]}>
-      {[`0${0}`]}
+    <SelectOption key={0} value={[`0`]}>
+      {[`00`]}
     </SelectOption>,
   ];
   let minuteDisplay = "";

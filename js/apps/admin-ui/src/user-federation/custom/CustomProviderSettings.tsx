@@ -96,7 +96,7 @@ export default function CustomProviderSettings() {
       );
     } catch (error) {
       addError(
-        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
+        !id ? "createUserProviderError" : "userProviderSaveError",
         error,
       );
     }

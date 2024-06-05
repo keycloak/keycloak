@@ -120,7 +120,7 @@ export const Oid4Vci = () => {
                   <img
                     width="500"
                     height="500"
-                    src={`${qrCode}`}
+                    src={qrCode}
                     data-testid="qr-code"
                   />
                 </ActionListItem>

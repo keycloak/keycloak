@@ -158,8 +158,8 @@ export default function UserFederationSection() {
           footerText={toUpperCase(userFederation.providerId!)}
           labelText={
             userFederation.config?.["enabled"]?.[0] !== "false"
-              ? `${t("enabled")}`
-              : `${t("disabled")}`
+              ? t("enabled")
+              : t("disabled")
           }
           labelColor={
             userFederation.config?.["enabled"]?.[0] !== "false"

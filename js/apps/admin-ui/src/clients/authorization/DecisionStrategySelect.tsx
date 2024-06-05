@@ -25,7 +25,7 @@ export const DecisionStrategySelect = ({
       label={t("decisionStrategy")}
       labelIcon={
         <HelpItem
-          helpText={t(`${helpLabel || "decisionStrategyHelp"}`)}
+          helpText={t(helpLabel || "decisionStrategyHelp")}
           fieldLabelId="decisionStrategy"
         />
       }
