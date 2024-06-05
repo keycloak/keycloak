@@ -157,7 +157,7 @@
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.2.0</mysql-jdbc.version>
-        <postgresql.version>15</postgresql.version>
+        <postgresql.version>16</postgresql.version>
         <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
         <mariadb-jdbc.version>3.1.4</mariadb-jdbc.version>
