@@ -45,6 +45,8 @@ public class PasswordPolicy implements Serializable {
 
     public static final String MAX_AUTH_AGE_ID = "maxAuthAge";
 
+    public static final String PASSWORD_AGE = "passwordAge";
+
     private Map<String, Object> policyConfig;
     private Builder builder;
 
@@ -92,6 +94,14 @@ public class PasswordPolicy implements Serializable {
     public int getExpiredPasswords() {
         if (policyConfig.containsKey(PASSWORD_HISTORY_ID)) {
             return getPolicyConfig(PASSWORD_HISTORY_ID);
+        } else {
+            return -1;
+        }
+    }
+
+    public int getPasswordAgeInDays() {
+        if (policyConfig.containsKey(PASSWORD_AGE)) {
+            return getPolicyConfig(PASSWORD_AGE);
         } else {
             return -1;
         }
