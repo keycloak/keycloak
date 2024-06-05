@@ -12,11 +12,9 @@ test.describe("Verifiable Credentials page", () => {
     await page.getByTestId("oid4vci").click();
     await page.getByTestId("menu-toggle").click();
 
-    await expect(
-      page.getByTestId("select-verifiable-credential"),
-    ).toBeVisible();
-    await expect(page.getByTestId("select-natural-person")).toBeVisible();
-    await page.getByTestId("select-natural-person").click();
+    await expect(page.getByTestId("verifiable-credential")).toBeVisible();
+    await expect(page.getByTestId("natural-person")).toBeVisible();
+    await page.getByTestId("natural-person").click();
     await expect(page.getByTestId("qr-code")).toBeVisible();
   });
 });
