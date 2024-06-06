@@ -214,7 +214,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
-        
+
         UserModel adapter = null;
         if (cached == null) {
             logger.trace("not cached");
@@ -342,10 +342,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
             // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
             OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel organization = organizationProvider.getByMember(delegate);
-
-            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate) && !organization.isEnabled()) || 
-                    (!organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate))) {
+            if (organizationProvider.getByMember(delegate)
+                    .anyMatch((org) -> org.isManaged(delegate) && !org.isEnabled() ||
+                    (!organizationProvider.isEnabled() && org.isManaged(delegate)))) {
                 return new ReadOnlyUserModelDelegate(delegate) {
                     @Override
                     public boolean isEnabled() {
@@ -509,7 +508,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
         return getDelegate().getRoleMembersStream(realm, role);
-    }    
+    }
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {

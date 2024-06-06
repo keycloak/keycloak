@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.organization.member;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -44,6 +45,7 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.OrganizationModel;
@@ -53,6 +55,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
@@ -109,11 +112,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         expected.getAttributes().remove(ORGANIZATION_ATTRIBUTE);
         userResource.update(expected);
         expected = userResource.toRepresentation();
-        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), containsInAnyOrder(expectedOrganizations.toArray()));
 
         userResource.update(expected);
         expected = userResource.toRepresentation();
-        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), containsInAnyOrder(expectedOrganizations.toArray()));
     }
 
     @Test
@@ -144,9 +147,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
         OrganizationRepresentation expected = organization.toRepresentation();
-        OrganizationRepresentation actual = organization.members().getOrganization(member.getId());
+        List<OrganizationRepresentation> actual = organization.members().getOrganization(member.getId());
         assertNotNull(actual);
-        assertEquals(expected.getId(), actual.getId());
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
     }
 
     @Test
@@ -457,5 +460,26 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
                 session.users().removeUser(realm, user);
             }
         });
+    }
+
+    @Test
+    public void testMemberInMultipleOrganizations() {
+        OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
+
+        addMember(orga);
+
+        UserRepresentation member = getUserRepresentation(memberEmail);
+
+        orgb.members().addMember(member.getId()).close();
+
+        Assert.assertTrue(orga.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orgb.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+
+        member = getUserRepresentation(memberEmail);
+
+        String orgbId = orgb.toRepresentation().getId();
+        String orgaId = orga.toRepresentation().getId();
+        assertThat(List.of(orgaId, orgbId), containsInAnyOrder(member.getAttributes().get(ORGANIZATION_ATTRIBUTE).toArray()));
     }
 }

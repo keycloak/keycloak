@@ -59,13 +59,9 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
     @Override
     protected void doValidate(Object value, String inputHint, ValidationContext context, ValidatorConfig config) {
         KeycloakSession session = context.getSession();
-        OrganizationModel organization = resolveOrganization(context, session);
-
-        if (organization == null) {
-            return;
+        for (OrganizationModel organization : resolveOrganization(context, session)) {
+            validateEmailDomain((String) value, inputHint, context, organization);
         }
-
-        validateEmailDomain((String) value, inputHint, context, organization);
     }
 
     @Override
@@ -165,11 +161,11 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
         return  ofNullable(brokerDomain).map(Set::of).orElse(Set.of());
     }
 
-    private OrganizationModel resolveOrganization(ValidationContext context, KeycloakSession session) {
+    private List<OrganizationModel> resolveOrganization(ValidationContext context, KeycloakSession session) {
         OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
         if (organization != null) {
-            return organization;
+            return List.of(organization);
         }
 
         UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
@@ -178,9 +174,9 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
 
         if (user != null) {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            return provider.getByMember(user);
+            return provider.getByMember(user).filter(OrganizationModel::isEnabled).toList();
         }
 
-        return null;
+        return List.of();
     }
 }

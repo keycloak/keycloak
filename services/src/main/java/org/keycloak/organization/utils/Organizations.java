@@ -21,6 +21,8 @@ import static java.util.Optional.ofNullable;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -69,15 +71,24 @@ public class Organizations {
     public static List<IdentityProviderModel> resolveBroker(KeycloakSession session, UserModel user) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
-        OrganizationModel organization = provider.getByMember(user);
+        List<OrganizationModel> organizations = provider.getByMember(user)
+                .filter(OrganizationModel::isEnabled)
+                .filter((org) -> org.isManaged(user))
+                .toList();
 
-        if (organization == null || !organization.isEnabled()) {
+        if (organizations.isEmpty()) {
             return List.of();
         }
 
-        if (provider.isManagedMember(organization, user)) {
+        List<IdentityProviderModel> brokers = new ArrayList<>();
+
+        for (OrganizationModel organization : organizations) {
+            if (!provider.isManagedMember(organization, user)) {
+                continue;
+            }
+            // user is a managed member, try to resolve the origin broker and redirect automatically
             List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
-            return session.users().getFederatedIdentitiesStream(realm, user)
+            session.users().getFederatedIdentitiesStream(realm, user)
                     .map(f -> {
                         IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
 
@@ -93,10 +104,10 @@ public class Organizations {
 
                         return null;
                     }).filter(Objects::nonNull)
-                    .toList();
+                    .forEach(brokers::add);
         }
 
-        return List.of();
+        return brokers;
     }
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {

@@ -134,7 +134,7 @@ public interface OrganizationProvider extends Provider {
      * @param member the member of a organization
      * @return the organization the {@code member} belongs to or {@code null} if the user doesn't belong to any.
      */
-    OrganizationModel getByMember(UserModel member);
+    Stream<OrganizationModel> getByMember(UserModel member);
 
     /**
      * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.

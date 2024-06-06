@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
@@ -84,14 +87,15 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         UserModel user = userSession.getUser();
-        OrganizationModel organization = provider.getByMember(user);
+        Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
+        Map<String, Map<String, Object>> claim = new HashMap<>();
 
-        if (organization == null || !organization.isEnabled()) {
+        organizations.forEach(organization -> claim.put(organization.getName(), Map.of()));
+
+        if (claim.isEmpty()) {
             return;
         }
 
-        Map<String, Map<String, Object>> claim = new HashMap<>();
-        claim.put(organization.getName(), Map.of());
         token.getOtherClaims().put(OAuth2Constants.ORGANIZATION, claim);
     }
 
