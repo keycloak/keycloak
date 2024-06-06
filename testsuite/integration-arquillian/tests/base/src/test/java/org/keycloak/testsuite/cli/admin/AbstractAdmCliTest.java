@@ -345,12 +345,18 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         realm.getUsers().add(account);
     }
 
-    void loginAsUser(File configFile, String server, String realm, String user, String password) {
-
-        KcAdmExec exe = KcAdmExec.execute("config credentials --server " + server + " --realm " + realm +
-                " --user " + user + " --password " + password + " --config " + configFile.getAbsolutePath());
+    void loginAsUser(File configFile, String server, String realm, String user, String password, boolean envPassword) {
+        KcAdmExec exe = KcAdmExec.newBuilder()
+                .argsLine("config credentials --server " + server + " --realm " + realm +
+                        " --user " + user + (envPassword ? "" : (" --password " + password)) + " --config " + configFile.getAbsolutePath())
+                .env(envPassword ? "KC_CLI_PASSWORD=" + password : null)
+                .execute();
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+    }
+
+    void loginAsUser(File configFile, String server, String realm, String user, String password) {
+        loginAsUser(configFile, server, realm, user, password, false);
     }
 
 }

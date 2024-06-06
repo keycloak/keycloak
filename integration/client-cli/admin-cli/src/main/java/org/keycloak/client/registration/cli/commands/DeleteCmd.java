@@ -17,7 +17,6 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.registration.cli.KcRegMain;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.CmdStdinContext;
 
@@ -98,30 +97,13 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " delete CLIENT [ARGUMENTS]");
         out.println();
         out.println("Command to delete a specific client configuration. If registration access token is specified or is available in ");
         out.println("configuration file, then it is used. Otherwise, current active session is used.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
-        out.println("  Command specific options:");
+        globalOptions(out);
         out.println("    CLIENT                ClientId of the client to delete");
         out.println("    -t, --token TOKEN     Use the specified Registration Access Token for authorization");
         out.println();

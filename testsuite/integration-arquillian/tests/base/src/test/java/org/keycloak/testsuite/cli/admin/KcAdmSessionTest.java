@@ -36,8 +36,9 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
         try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
-            // login as admin
-            loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin");
+            // login as admin using command option and env password
+            loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin", false);
+            loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin", true);
 
             // create realm
             KcAdmExec exe = execute("create realms --config '" + configFile.getName() + "' -s realm=demorealm -s enabled=true");
