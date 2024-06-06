@@ -419,9 +419,8 @@ public class TokenManager {
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
         if (clientConfig.isUseRefreshToken()) {
-            Object reuseId = refreshToken.getOtherClaims().get(Constants.REUSE_ID);
             //refresh token must have same scope as old refresh token (type, scope, expiration)
-            responseBuilder.generateRefreshToken(refreshToken.getScope(), clientSession, reuseId);
+            responseBuilder.generateRefreshToken(refreshToken, clientSession);
         }
 
         if (validation.newToken.getAuthorization() != null
@@ -443,10 +442,9 @@ public class TokenManager {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
             try {
                 validateTokenReuse(session, realm, refreshToken, clientSession, true);
-                String key = Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
+                String key = getReuseIdKey(refreshToken);
                 int currentCount = clientSession.getRefreshTokenUseCount(key);
                 clientSession.setRefreshTokenUseCount(key, currentCount + 1);
-                clientSession.setRefreshTokenLastRefresh(key, Time.currentTime());
             } catch (OAuthErrorException oee) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
@@ -461,7 +459,7 @@ public class TokenManager {
     // Will throw OAuthErrorException if validation fails
     private void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
         int startupTime = session.getProvider(UserSessionProvider.class).getStartupTime(realm);
-        String key = Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
+        String key = getReuseIdKey(refreshToken);
         String refreshTokenId = clientSession.getRefreshToken(key);
         int lastRefresh = clientSession.getRefreshTokenLastRefresh(key);
 
@@ -1112,17 +1110,20 @@ public class TokenManager {
             return this;
         }
 
-        public AccessTokenResponseBuilder generateRefreshToken(String scope, AuthenticatedClientSessionModel clientSession, Object reuseId) {
+        public AccessTokenResponseBuilder generateRefreshToken(RefreshToken oldRefreshToken, AuthenticatedClientSessionModel clientSession) {
             if (accessToken == null) {
                 throw new IllegalStateException("accessToken not set");
             }
 
+            String scope = oldRefreshToken.getScope();
+            Object reuseId = oldRefreshToken.getOtherClaims().get(Constants.REUSE_ID);
             boolean offlineTokenRequested = Arrays.asList(scope.split(" ")).contains(OAuth2Constants.OFFLINE_ACCESS) ;
             if (offlineTokenRequested)
                 clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scope, session);
             generateRefreshToken(offlineTokenRequested);
             if (realm.isRevokeRefreshToken()) {
                 refreshToken.getOtherClaims().put(Constants.REUSE_ID, reuseId);
+                clientSession.setRefreshTokenLastRefresh(getReuseIdKey(oldRefreshToken), refreshToken.getIat().intValue());
             }
             refreshToken.setScope(scope);
             return this;
@@ -1132,11 +1133,10 @@ public class TokenManager {
             refreshToken = new RefreshToken(accessToken);
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            int currentTime = Time.currentTime();
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            clientSession.setTimestamp(currentTime);
+            clientSession.setTimestamp(refreshToken.getIat().intValue());
             UserSessionModel userSession = clientSession.getUserSession();
-            userSession.setLastSessionRefresh(currentTime);
+            userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
             if (offlineTokenRequested) {
                 UserSessionManager sessionManager = new UserSessionManager(session);
                 if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
@@ -1467,6 +1467,10 @@ public class TokenManager {
             }
         }
         return false;
+    }
+
+    private String getReuseIdKey(AccessToken refreshToken) {
+        return Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
     }
 
 }

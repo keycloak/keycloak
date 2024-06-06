@@ -457,3 +457,9 @@ The following variables were deprecated in the Admin theme:
 The following variables from the environment script injected into the page of the Admin theme are deprecated:
 
 * `authUrl`. Do not use this variable.
+
+= Methods to get and set current refresh token in client session are now deprecated
+
+The methods `String getCurrentRefreshToken()`, `void setCurrentRefreshToken(String currentRefreshToken)`, `int getCurrentRefreshTokenUseCount()`, and `void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount)` in the interface `org.keycloak.models.AuthenticatedClientSessionModel` are deprecated. They have been replaced by similar methods that require an identifier as a parameter such as `getRefreshToken(String reuseId)` to manage multiple refresh tokens within a client session.
+The methods will be removed in one of the future {project_name} releases. It might be {project_name} 27 release.
+

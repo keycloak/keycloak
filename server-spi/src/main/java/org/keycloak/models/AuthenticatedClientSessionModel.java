@@ -66,27 +66,55 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     void detachFromUserSession();
     UserSessionModel getUserSession();
 
-    default String getRefreshToken(String id) {
-        return getNote(REFRESH_TOKEN_PREFIX + id);
-    }
-    default void setRefreshToken(String id,String refreshTokenId) {
-        setNote(REFRESH_TOKEN_PREFIX + id, refreshTokenId);
+    /**
+     * @deprecated use {@link #getRefreshToken(String)}
+     */
+    @Deprecated
+    default String getCurrentRefreshToken() {
+        return null;
     }
 
-    default int getRefreshTokenUseCount(String id) {
-        String count = getNote(REFRESH_TOKEN_USE_PREFIX + id);
+    /**
+     *  @deprecated use {@link #setRefreshToken(String, String)}}
+     */
+    @Deprecated
+    default void setCurrentRefreshToken(String currentRefreshToken) {
+    }
+
+    /**
+     * @deprecated use {@link #getRefreshTokenUseCount(String)}
+     */
+    @Deprecated
+    default int getCurrentRefreshTokenUseCount() {
+        return 0;
+    }
+
+    /**
+     * deprecated use {@link #setRefreshTokenUseCount(String, int)}
+     */
+    @Deprecated
+    default void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+    }
+
+    default String getRefreshToken(String reuseId) {
+        return getNote(REFRESH_TOKEN_PREFIX + reuseId);
+    }
+    default void setRefreshToken(String reuseId, String refreshTokenId) {
+        setNote(REFRESH_TOKEN_PREFIX + reuseId, refreshTokenId);
+    }
+    default int getRefreshTokenUseCount(String reuseId) {
+        String count = getNote(REFRESH_TOKEN_USE_PREFIX + reuseId);
         return count == null ? 0 : Integer.parseInt(count);
     }
-    default void setRefreshTokenUseCount(String id, int refreshTokenUseCount) {
-        setNote(REFRESH_TOKEN_USE_PREFIX + id, String.valueOf(refreshTokenUseCount));
+    default void setRefreshTokenUseCount(String reuseId, int refreshTokenUseCount) {
+        setNote(REFRESH_TOKEN_USE_PREFIX + reuseId, String.valueOf(refreshTokenUseCount));
     }
-
-    default int getRefreshTokenLastRefresh(String id) {
-        String timestamp = getNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + id);
+    default int getRefreshTokenLastRefresh(String reuseId) {
+        String timestamp = getNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId);
         return timestamp == null ? 0 : Integer.parseInt(timestamp);
     }
-    default void setRefreshTokenLastRefresh(String id, int refreshTokenLastRefresh) {
-        setNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + id, String.valueOf(refreshTokenLastRefresh));
+    default void setRefreshTokenLastRefresh(String reuseId, int refreshTokenLastRefresh) {
+        setNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId, String.valueOf(refreshTokenLastRefresh));
     }
 
     String getNote(String name);
