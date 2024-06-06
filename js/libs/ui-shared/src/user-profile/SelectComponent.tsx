@@ -1,13 +1,7 @@
-import {
-  Chip,
-  ChipGroup,
-  MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
-} from "@patternfly/react-core";
+import { SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, ControllerRenderProps } from "react-hook-form";
+import { KeycloakSelect, SelectVariant } from "../select/KeycloakSelect";
 import {
   OptionLabel,
   Options,
@@ -19,6 +13,7 @@ import { UserFormFields, fieldName, label } from "./utils";
 export const SelectComponent = (props: UserProfileFieldProps) => {
   const { t, form, inputType, attribute } = props;
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState("");
   const isMultiValue = inputType === "multiselect";
 
   const setValue = (
@@ -36,7 +31,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
         }
       }
     } else {
-      field.onChange(value);
+      field.onChange(value === field.value ? "" : value);
     }
   };
 
@@ -45,8 +40,24 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
 
   const optionLabel =
     (attribute.annotations?.["inputOptionLabels"] as OptionLabel) || {};
+
   const fetchLabel = (option: string) =>
     label(props.t, optionLabel[option], option);
+
+  const convertOptions = (selected: string) =>
+    options
+      .filter((o) =>
+        fetchLabel(o)!.toLowerCase().includes(filter.toLowerCase()),
+      )
+      .map((option) => (
+        <SelectOption
+          selected={selected === option}
+          key={option}
+          value={option}
+        >
+          {fetchLabel(option)}
+        </SelectOption>
+      ));
 
   return (
     <UserProfileGroup {...props}>
@@ -55,58 +66,39 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
         defaultValue=""
         control={form.control}
         render={({ field }) => (
-          <Select
-            toggle={(ref) => (
-              <MenuToggle
-                id={attribute.name}
-                ref={ref}
-                onClick={() => setOpen(!open)}
-                isExpanded={open}
-                isFullWidth
-                isDisabled={attribute.readOnly}
-              >
-                {(isMultiValue && Array.isArray(field.value) ? (
-                  <ChipGroup>
-                    {field.value.map((selection, index: number) => (
-                      <Chip
-                        key={index}
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          setValue(selection, field);
-                        }}
-                      >
-                        {selection}
-                      </Chip>
-                    ))}
-                  </ChipGroup>
-                ) : (
-                  fetchLabel(field.value)
-                )) || t("choose")}
-              </MenuToggle>
-            )}
-            onSelect={(_, value) => {
-              const option = value?.toString() || "";
+          <KeycloakSelect
+            toggleId={attribute.name}
+            onToggle={(b) => setOpen(b)}
+            onClear={() => setValue("", field)}
+            onSelect={(value) => {
+              const option = value.toString();
               setValue(option, field);
-              if (!isMultiValue) {
+              if (!Array.isArray(field.value)) {
                 setOpen(false);
               }
             }}
-            selected={field.value}
+            selections={
+              isMultiValue && Array.isArray(field.value)
+                ? field.value
+                : fetchLabel(field.value)
+            }
+            variant={
+              isMultiValue
+                ? SelectVariant.typeaheadMulti
+                : options.length >= 10
+                  ? SelectVariant.typeahead
+                  : SelectVariant.single
+            }
             aria-label={t("selectOne")}
             isOpen={open}
+            isDisabled={attribute.readOnly}
+            onFilter={(value) => {
+              setFilter(value);
+              return convertOptions(field.value);
+            }}
           >
-            <SelectList>
-              {options.map((option) => (
-                <SelectOption
-                  selected={field.value === option}
-                  key={option}
-                  value={option}
-                >
-                  {fetchLabel(option)}
-                </SelectOption>
-              ))}
-            </SelectList>
-          </Select>
+            {convertOptions(field.value)}
+          </KeycloakSelect>
         )}
       />
     </UserProfileGroup>

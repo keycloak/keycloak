@@ -58,3 +58,5 @@ export { isDefined } from "./utils/isDefined";
 export { useRequiredContext } from "./utils/useRequiredContext";
 export { useStoredState } from "./utils/useStoredState";
 export { default as KeycloakMasthead } from "./masthead/Masthead";
+export { KeycloakSelect } from "./select/KeycloakSelect";
+export type { Variant, KeycloakSelectProps } from "./select/KeycloakSelect";

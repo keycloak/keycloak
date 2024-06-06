@@ -1,5 +1,6 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -15,10 +16,6 @@ import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { emptyFormatter } from "../../util";

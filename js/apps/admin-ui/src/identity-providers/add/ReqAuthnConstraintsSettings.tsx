@@ -1,11 +1,13 @@
+import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
 import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { KeycloakSelect } from "../../components/select/KeycloakSelect";
 
 const comparisonValues = ["exact", "minimum", "maximum", "better"];
 

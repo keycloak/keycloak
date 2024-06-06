@@ -3,6 +3,7 @@ import { DecisionStrategy } from "@keycloak/keycloak-admin-client/lib/defs/polic
 import {
   FormErrorText,
   HelpItem,
+  SelectVariant,
   TextAreaControl,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
@@ -39,7 +40,6 @@ import {
 } from "../routes/PermissionDetails";
 import { ResourcesPolicySelect } from "./ResourcesPolicySelect";
 import { ScopeSelect } from "./ScopeSelect";
-import { SelectVariant } from "../../components/select/KeycloakSelect";
 
 type FormFields = PolicyRepresentation & {
   resourceType: string;
