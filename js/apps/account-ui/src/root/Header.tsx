@@ -1,13 +1,14 @@
+import {
+  KeycloakMasthead,
+  label,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { Button } from "@patternfly/react-core";
 import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { useHref } from "react-router-dom";
-import {
-  KeycloakMasthead,
-  environment,
-  label,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+
+import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";
 
 import style from "./header.module.css";

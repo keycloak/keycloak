@@ -3,8 +3,9 @@ import {
   createNamedContext,
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
-import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
 import type Keycloak from "keycloak-js";
+
+import type { Environment } from "./environment";
 
 export type AdminClientProps = {
   keycloak: Keycloak;
@@ -19,12 +20,12 @@ export const useAdminClient = () => useRequiredContext(AdminClientContext);
 
 export async function initAdminClient(
   keycloak: Keycloak,
-  environment: BaseEnvironment,
+  environment: Environment,
 ) {
   const adminClient = new KeycloakAdminClient();
 
   adminClient.setConfig({ realmName: environment.realm });
-  adminClient.baseUrl = environment.authUrl;
+  adminClient.baseUrl = environment.authServerUrl;
   adminClient.registerTokenProvider({
     async getAccessToken() {
       try {

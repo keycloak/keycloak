@@ -1,7 +1,7 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import { AdminEnvironment, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -29,6 +30,7 @@ import { useRealms } from "../context/RealmsContext";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
+import type { Environment } from "../environment";
 import helpUrls from "../help-urls";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
@@ -74,7 +76,7 @@ const RealmSettingsHeader = ({
   refresh,
 }: RealmSettingsHeaderProps) => {
   const { adminClient } = useAdminClient();
-  const { environment } = useEnvironment<AdminEnvironment>();
+  const { environment } = useEnvironment<Environment>();
   const { t } = useTranslation();
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();

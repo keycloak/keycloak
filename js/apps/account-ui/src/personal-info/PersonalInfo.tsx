@@ -1,5 +1,4 @@
 import {
-  AccountEnvironment,
   UserProfileFields,
   beerify,
   debeerify,
@@ -20,6 +19,7 @@ import { TFunction } from "i18next";
 import { useState } from "react";
 import { ErrorOption, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
 import {
   getPersonalInfo,
   getSupportedLocales,
@@ -30,12 +30,13 @@ import {
   UserRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
+import type { Environment } from "../environment";
 import { TFuncKey, i18n } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
 export const PersonalInfo = () => {
   const { t } = useTranslation();
-  const context = useEnvironment<AccountEnvironment>();
+  const context = useEnvironment<Environment>();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);

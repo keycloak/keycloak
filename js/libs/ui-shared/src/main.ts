@@ -7,10 +7,8 @@ export {
   type KeycloakContext,
 } from "./context/KeycloakContext";
 export {
-  environment,
-  type AccountEnvironment,
-  type AdminEnvironment,
-  type Feature,
+  getInjectedEnvironment,
+  type BaseEnvironment,
 } from "./context/environment";
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";
 export {

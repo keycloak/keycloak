@@ -105,7 +105,10 @@ public class AccountConsole implements AccountResourceProvider {
 
         URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
         URI authUrl = uriInfo.getBaseUri();
-        map.put("authUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
+        var authServerUrl = authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/";
+        // TODO: The 'authUrl' variable is deprecated and only exists to provide backwards compatibility for older themes, it should be removed in a future version.
+        map.put("authUrl", authServerUrl);
+        map.put("authServerUrl", authServerUrl);
         map.put("baseUrl", accountBaseUrl.getPath().endsWith("/") ? accountBaseUrl : accountBaseUrl + "/");
         map.put("realm", realm);
         map.put("clientId", Constants.ACCOUNT_CONSOLE_CLIENT_ID);

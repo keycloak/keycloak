@@ -49,7 +49,7 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
   const [error, setError] = useState<unknown>();
   const keycloak = useMemo(() => {
     const keycloak = new Keycloak({
-      url: environment.authUrl,
+      url: environment.authServerUrl,
       realm: environment.realm,
       clientId: environment.clientId,
     });

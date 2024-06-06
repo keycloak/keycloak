@@ -438,3 +438,22 @@ An external {jdgserver_name} deployment is supported for multi-site setups as ou
 
 The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
 If you wish to use Oracle DB, you must manually install a version of the Oracle Driver that is compatible with your specific environment. Instructions for this process can be found in the https://www.keycloak.org/server/db[Configuring the database] {section}.
+
+= Deprecated theme variables
+
+The following variables were deprecated in the Account theme:
+
+* `authUrl`. Use `authServerUrl` instead.
+
+The following variables from the environment script injected into the page of the Account theme are deprecated:
+
+* `authUrl`. Use `authServerUrl` instead.
+* `features.isInternationalizationEnabled`. Do not use this variable.
+
+The following variables were deprecated in the Admin theme:
+
+* `authUrl`. Do not use this variable.
+
+The following variables from the environment script injected into the page of the Admin theme are deprecated:
+
+* `authUrl`. Do not use this variable.

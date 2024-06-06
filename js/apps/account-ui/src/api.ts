@@ -1,13 +1,16 @@
-import { KeycloakContext } from "@keycloak/keycloak-ui-shared";
-import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
+import {
+  KeycloakContext,
+  type BaseEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+
 import { CallOptions } from "./api/methods";
 import { Links, parseLinks } from "./api/parse-links";
 import { parseResponse } from "./api/parse-response";
 import {
+  CredentialsIssuer,
   Permission,
   Resource,
   Scope,
-  CredentialsIssuer,
   SupportedCredentialConfiguration,
 } from "./api/representations";
 import { request } from "./api/request";
@@ -85,7 +88,7 @@ export async function getIssuer(context: KeycloakContext<BaseEnvironment>) {
     {},
     new URL(
       joinPath(
-        context.environment.authUrl +
+        context.environment.authServerUrl +
           "/realms/" +
           context.environment.realm +
           "/.well-known/openid-credential-issuer",
