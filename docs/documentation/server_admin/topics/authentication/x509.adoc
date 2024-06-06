@@ -211,11 +211,11 @@ exactly is the content from the certificate mapped to the {project_name} user as
 According to your environment, it might be needed to use more options to CURL commands like for instance:
 
 * Option `--insecure` if you are using self-signed certificates
-* Option `--capath` for include the whole directory containing the certificate authority path
+* Option `--capath` to include the whole directory containing the certificate authority path
 * Options `--cert-type` or `--key-type` in case you want to use different files than `PEM`
 
-Please consult the documentation of the `curl` tool for the details if needed. If you are using other tool than `curl`, you may need to
-consult the documentation of your tool, but the setup would be similar. There is a need to include keystore and truststore as well as client credentials in case you are using confidential
+Please consult the documentation of the `curl` tool for the details if needed. If you are using other tools than `curl`, 
+consult the documentation of your tool. However, the setup would be similar.  A need exists to include keystore and truststore as well as client credentials in case you are using a confidential
 client.
 
 NOTE: If it is possible, it is preferred to use <<_service_accounts, Service accounts>> together with the MTLS client authentication (client authenticator `X509 Certificate`) rather than using
