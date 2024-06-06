@@ -1,3 +1,4 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 import { label } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
@@ -15,18 +16,27 @@ import {
   Stack,
   StackItem,
 } from "@patternfly/react-core";
-import { CheckIcon } from "@patternfly/react-icons";
-import { Fragment, useMemo, useState } from "react";
+import {
+  AngleLeftIcon,
+  AngleRightIcon,
+  CheckIcon,
+} from "@patternfly/react-icons";
+import { debounce } from "lodash-es";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { useRealms } from "../../context/RealmsContext";
+import { useAdminClient } from "../../admin-client";
 import { useRecentRealms } from "../../context/RecentRealms";
+import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
+import { useFetch } from "../../utils/useFetch";
 
 import "./realm-selector.css";
+
+const MAX_RESULTS = 10;
 
 type AddRealmProps = {
   onClick: () => void;
@@ -80,49 +90,59 @@ const RealmText = ({ name, displayName, showIsRecent }: RealmTextProps) => {
   );
 };
 
+type RealmNameRepresentation = {
+  name: string;
+  displayName?: string;
+};
+
 export const RealmSelector = () => {
   const { realm } = useRealm();
-  const { realms } = useRealms();
+  const { adminClient } = useAdminClient();
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
   const { t } = useTranslation();
   const recentRealms = useRecentRealms();
   const navigate = useNavigate();
 
-  const all = useMemo(
-    () =>
-      realms
-        .map((realm) => {
-          const used = recentRealms.some((name) => name === realm.name);
-          return { realm, used };
-        })
-        .sort((r1, r2) => {
-          if (r1.used == r2.used) return 0;
-          if (r1.used) return -1;
-          if (r2.used) return 1;
-          return 0;
-        }),
-    [recentRealms, realm, realms],
+  const [search, setSearch] = useState("");
+  const [first, setFirst] = useState(0);
+
+  const debounceFn = useCallback(
+    debounce((value: string) => {
+      setFirst(0);
+      setSearch(value);
+    }, 1000),
+    [],
   );
 
-  const filteredItems = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    if (normalizedSearch.length === 0) {
-      return all;
-    }
-
-    return search.trim() === ""
-      ? all
-      : all.filter(
-          (r) =>
-            r.realm.name.toLowerCase().includes(normalizedSearch) ||
-            label(t, r.realm.displayName)
-              ?.toLowerCase()
-              .includes(normalizedSearch),
+  useFetch(
+    async () => {
+      try {
+        return await fetchAdminUI<RealmNameRepresentation[]>(
+          adminClient,
+          "ui-ext/realms/names",
+          { first: `${first}`, max: `${MAX_RESULTS + 1}`, search },
         );
-  }, [search, all]);
+      } catch (error) {
+        if (error instanceof NetworkError && error.response.status < 500) {
+          return [];
+        }
+
+        throw error;
+      }
+    },
+    setRealms,
+    [first, search],
+  );
+
+  const sortedRealms = useMemo(
+    () => [
+      ...(first === 0 && !search ? recentRealms.map((name) => ({ name })) : []),
+      ...realms.filter((r) => !recentRealms.includes(r.name)),
+    ],
+    [recentRealms, realms, first, search],
+  );
 
   const realmDisplayName = useMemo(
     () => realms.find((r) => r.name === realm)?.displayName,
@@ -148,13 +168,13 @@ export const RealmSelector = () => {
       )}
     >
       <DropdownList>
-        {realms.length > 5 && (
+        {(realms.length > 5 || search || first !== 0) && (
           <>
             <DropdownGroup>
               <DropdownList>
                 <SearchInput
                   value={search}
-                  onChange={(_, value) => setSearch(value)}
+                  onChange={(_, value) => debounceFn(value)}
                   onClear={() => setSearch("")}
                 />
               </DropdownList>
@@ -163,25 +183,51 @@ export const RealmSelector = () => {
           </>
         )}
         {(realms.length !== 0
-          ? filteredItems.map((i) => (
-              <DropdownItem
-                key={i.realm.name}
-                onClick={() => {
-                  navigate(toDashboard({ realm: i.realm.name }));
-                  setOpen(false);
-                }}
-              >
-                <RealmText
-                  {...i.realm}
-                  showIsRecent={realms.length > 5 && i.used}
-                />
-              </DropdownItem>
-            ))
-          : [
-              <DropdownItem key="loader">
-                <Spinner size="sm" /> {t("loadingRealms")}
-              </DropdownItem>,
+          ? [
+              first !== 0 ? (
+                <DropdownItem onClick={() => setFirst(first - MAX_RESULTS)}>
+                  <AngleLeftIcon /> {t("previous")}
+                </DropdownItem>
+              ) : (
+                []
+              ),
+              ...sortedRealms.map((realm) => (
+                <DropdownItem
+                  key={realm.name}
+                  onClick={() => {
+                    navigate(toDashboard({ realm: realm.name }));
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  <RealmText
+                    {...realm}
+                    showIsRecent={
+                      realms.length > 5 && recentRealms.includes(realm.name)
+                    }
+                  />
+                </DropdownItem>
+              )),
+              realms.length > MAX_RESULTS ? (
+                <DropdownItem onClick={() => setFirst(first + MAX_RESULTS)}>
+                  <AngleRightIcon />
+                  {t("next")}
+                </DropdownItem>
+              ) : (
+                []
+              ),
             ]
+          : !search
+            ? [
+                <DropdownItem key="loader">
+                  <Spinner size="sm" /> {t("loadingRealms")}
+                </DropdownItem>,
+              ]
+            : [
+                <DropdownItem key="no-results">
+                  {t("noResultsFound")}
+                </DropdownItem>,
+              ]
         ).concat([
           <Fragment key="add-realm">
             {whoAmI.canCreateRealm() && (

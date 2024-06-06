@@ -11,7 +11,6 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -22,7 +21,6 @@ export default function NewRealmForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { refresh, whoAmI } = useWhoAmI();
-  const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const [realm, setRealm] = useState<RealmRepresentation>();
 
@@ -47,7 +45,6 @@ export default function NewRealmForm() {
       addAlert(t("saveRealmSuccess"));
 
       refresh();
-      await refreshRealms();
       navigate(toDashboard({ realm: fields.realm }));
     } catch (error) {
       addError("saveRealmError", error);
