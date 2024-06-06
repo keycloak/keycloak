@@ -32,7 +32,7 @@ NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes preceden
 NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the ‘http-enabled’ setting is required.
 
 == Proxy modes
-NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. Enabling HTTP via `http-enabled` is necessary if edge termination is used. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
+NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
 
 For {project_name}, your choice of proxy modes depends on the TLS termination in your environment. The following proxy modes are available:
 
