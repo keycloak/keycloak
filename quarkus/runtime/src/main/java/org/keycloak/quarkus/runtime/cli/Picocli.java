@@ -280,6 +280,7 @@ public final class Picocli {
         }
 
         try {
+            getConfig(); // ensure the config is initialized before the interceptor is disabled
             PropertyMappingInterceptor.disable(); // we don't want the mapped / transformed properties, we want what the user effectively supplied
             List<String> ignoredBuildTime = new ArrayList<>();
             List<String> ignoredRunTime = new ArrayList<>();
