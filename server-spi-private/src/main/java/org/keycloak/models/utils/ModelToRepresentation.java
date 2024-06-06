@@ -908,6 +908,19 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static AuthenticationExecutionRepresentation toRepresentation(AuthenticationExecutionModel model) {
+        AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
+        rep.setId(model.getId());
+        rep.setAuthenticatorConfig(model.getAuthenticatorConfig());
+        rep.setAuthenticator(model.getAuthenticator());
+        rep.setFlowId(model.getFlowId());
+        rep.setAuthenticatorFlow(model.isAuthenticatorFlow());
+        rep.setRequirement(model.getRequirement().name());
+        rep.setPriority(model.getPriority());
+        rep.setParentFlow(model.getParentFlow());
+        return rep;
+    }
+
     public static AuthenticatorConfigRepresentation toRepresentation(AuthenticatorConfigModel model) {
         AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
         rep.setId(model.getId());
