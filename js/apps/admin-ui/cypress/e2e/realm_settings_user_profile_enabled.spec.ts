@@ -371,7 +371,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeLabel(attrName, attrName)
-        .assertAttributeSelect(attrName, supportedOptions, "Choose...")
+        .assertAttributeSelect(attrName, supportedOptions, "Select an option")
         .setUsername(userName)
         .setAttributeValueOnSelect(attrName, opt1)
         .create()
