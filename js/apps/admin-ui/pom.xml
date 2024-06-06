@@ -144,6 +144,11 @@
                             <token><![CDATA[</head>]]></token>
                             <value xml:space="preserve">
 <![CDATA[
+    <#if properties.scripts?has_content>
+      <#list properties.scripts?split(' ') as script>
+        <script src="${resourceUrl}/${script}"></script>
+      </#list>
+    </#if>
     <#if properties.styles?has_content>
       <#list properties.styles?split(' ') as style>
       <link href="${resourceUrl}/${style}" rel="stylesheet"/>
