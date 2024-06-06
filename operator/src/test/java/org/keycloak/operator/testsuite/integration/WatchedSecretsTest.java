@@ -19,6 +19,7 @@ package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -33,10 +34,10 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
 import java.util.Base64;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,42 +92,24 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             var kc = getDefaultKeycloakDeployment();
             deployKeycloak(k8sclient, kc, true);
 
-            var prevPodNames = getPodNamesForCrs(Set.of(kc));
-
             var dbSecret = getDbSecret();
 
             dbSecret.getData().put("username",
                     Base64.getEncoder().encodeToString(username.getBytes()));
             k8sclient.resource(dbSecret).update();
 
-            Awaitility.await()
-                    .ignoreExceptions()
-                    .untilAsserted(() -> {
-                        Log.info("Checking pod logs for DB auth failures");
-                        var podlogs = getPodNamesForCrs(Set.of(kc)).stream()
-                                .filter(n -> !prevPodNames.contains(n)) // checking just new pods
-                                .map(n -> {
-                                        var name = k8sclient
-                                                .pods()
-                                                .inNamespace(namespace)
-                                                .list()
-                                                .getItems()
-                                                .stream()
-                                                .filter(p -> (p.getMetadata().getName() + p.getMetadata().getCreationTimestamp()).equals(n))
-                                                .findAny()
-                                                .get()
-                                                .getMetadata()
-                                                .getName();
+            // dynamically check pod 0 to avoid race conditions
+            Awaitility.await().atMost(2, TimeUnit.MINUTES).ignoreExceptions().until(() ->
+                    k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog().contains("password authentication failed for user \"" + username + "\""));
 
-                                        return k8sclient.pods().inNamespace(namespace).withName(name).getLog();
-                                })
-                                .collect(Collectors.toList());
-                        assertThat(podlogs).anyMatch(l -> l.contains("password authentication failed for user \"" + username + "\""));
-                    });
         } catch (Exception e) {
             savePodLogs();
             throw e;
         }
+    }
+
+    private StatefulSet getStatefulSet(Keycloak kc) {
+        return k8sclient.apps().statefulSets().withName(kc.getMetadata().getName()).require();
     }
 
     @Test
@@ -203,8 +186,8 @@ public class WatchedSecretsTest extends BaseOperatorTest {
     private void testDeploymentRestarted(Set<Keycloak> crsToBeRestarted, Set<Keycloak> crsNotToBeRestarted, Runnable action) {
         boolean restartExpected = !crsToBeRestarted.isEmpty();
 
-        List<String> podsToBeRestarted = getPodNamesForCrs(crsToBeRestarted);
-        List<String> podsNotToBeRestarted = getPodNamesForCrs(crsNotToBeRestarted);
+        var toBeRestarted = crsToBeRestarted.stream().collect(Collectors.toMap(Function.identity(), k -> getStatefulSet(k).getStatus().getUpdateRevision()));
+        var notToBeRestarted = crsNotToBeRestarted.stream().collect(Collectors.toMap(Function.identity(), k -> getStatefulSet(k).getStatus().getUpdateRevision()));
 
         action.run();
 
@@ -214,35 +197,26 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         if (restartExpected) {
             Awaitility.await()
                     .untilAsserted(() -> {
-                        List<String> newPods = getPodNamesForCrs(allCrs);
-                        Log.infof("Pods to be restarted: %s\nPods NOT to be restarted: %s\nCurrent Pods: %s",
-                                podsToBeRestarted, podsNotToBeRestarted, newPods);
-                        assertThat(newPods).noneMatch(podsToBeRestarted::contains);
-                        assertThat(newPods).containsAll(podsNotToBeRestarted);
+                        toBeRestarted.forEach((k, version) -> {
+                            // make sure a new version was fully rolled in
+                            var status = getStatefulSet(k).getStatus();
+                            assertThat(status.getUpdateRevision()).isEqualTo(status.getCurrentRevision());
+                            assertThat(status.getUpdateRevision()).isNotEqualTo(version);
+                        });
                     });
         }
-        else {
+        if (!notToBeRestarted.isEmpty()) {
             Awaitility.await()
                     .during(10, TimeUnit.SECONDS) // to ensure no pods were created
                     .untilAsserted(() -> {
-                        List<String> newPods = getPodNamesForCrs(allCrs);
-                        Log.infof("Pods NOT to be restarted: %s, expected pods: %s\nAsserting current pods are unchanged: %s",
-                                podsNotToBeRestarted, newPods);
-                        assertThat(newPods).isEqualTo(podsNotToBeRestarted);
+                        notToBeRestarted.forEach((k, version) -> {
+                            // make sure the version has stayed the same
+                            var status = getStatefulSet(k).getStatus();
+                            assertThat(status.getUpdateRevision()).isEqualTo(status.getCurrentRevision());
+                            assertThat(status.getUpdateRevision()).isEqualTo(version);
+                        });
                     });
         }
-    }
-
-    private List<String> getPodNamesForCrs(Set<Keycloak> crs) {
-        return k8sclient
-                .pods()
-                .inNamespace(namespace)
-                .list()
-                .getItems()
-                .stream()
-                .map(pod -> pod.getMetadata().getName() + pod.getMetadata().getCreationTimestamp())
-                .filter(pod -> crs.stream().map(c -> c.getMetadata().getName()).anyMatch(pod::startsWith))
-                .collect(Collectors.toList());
     }
 
     private Secret getDbSecret() {
