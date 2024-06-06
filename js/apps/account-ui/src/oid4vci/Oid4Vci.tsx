@@ -105,7 +105,7 @@ export const Oid4Vci = () => {
                   <SelectOption
                     key={option}
                     value={option}
-                    data-testid="select-${option}"
+                    data-testid={option}
                   >
                     {option}
                   </SelectOption>
