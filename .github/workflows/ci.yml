@@ -369,6 +369,7 @@ jobs:
           export CLUSTER_NAME=keycloak_$(git rev-parse --short HEAD)
           echo "ec2_cluster=${CLUSTER_NAME}" >> $GITHUB_OUTPUT
           ./aws_ec2.sh requirements
+          pipx inject ansible-core boto3 botocore
           ./aws_ec2.sh create ${REGION}
           ./keycloak_ec2_installer.sh ${REGION} /tmp/keycloak.zip
           ./mvn_ec2_runner.sh ${REGION} "clean install -B -DskipTests -Pdistribution"
