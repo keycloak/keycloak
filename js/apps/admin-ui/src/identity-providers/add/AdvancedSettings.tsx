@@ -3,7 +3,9 @@ import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client
 import {
   FormErrorText,
   HelpItem,
+  KeycloakSelect,
   SelectControl,
+  SelectVariant,
 } from "@keycloak/keycloak-ui-shared";
 import {
   FormGroup,
@@ -16,10 +18,6 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";

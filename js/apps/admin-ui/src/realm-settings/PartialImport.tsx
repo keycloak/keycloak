@@ -5,6 +5,7 @@ import type {
   PartialImportResult,
 } from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   Button,
@@ -30,7 +31,6 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
-import { KeycloakSelect } from "../components/select/KeycloakSelect";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 

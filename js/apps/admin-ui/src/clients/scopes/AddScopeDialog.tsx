@@ -1,4 +1,5 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -17,7 +18,6 @@ import {
 } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import {
   ClientScopeType,
   clientScopeTypesDropdown,
@@ -26,7 +26,6 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import useToggle from "../../utils/useToggle";
 import { getProtocolName } from "../utils";
-import { KeycloakSelect } from "../../components/select/KeycloakSelect";
 
 import "./client-scopes.css";
 
