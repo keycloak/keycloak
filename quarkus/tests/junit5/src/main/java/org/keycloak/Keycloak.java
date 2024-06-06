@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+
+import io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.common.Version;
 import org.keycloak.common.crypto.FipsMode;
@@ -60,6 +62,7 @@ public class Keycloak {
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
         System.setProperty("quarkus.http.test-port", "${kc.http-port}");
         System.setProperty("quarkus.http.test-ssl-port", "${kc.https-port}");
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.threadFactory", QuarkusForkJoinWorkerThreadFactory.class.getName());
     }
 
     public static void main(String[] args) {
