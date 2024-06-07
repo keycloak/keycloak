@@ -39,7 +39,7 @@
                 let userid = "${userid}";
                 let username = "${username}";
 
-                let signatureAlgorithms =[<#list signatureAlgorithms as sigAlg>${sigAlg},</#list>]
+                let signatureAlgorithms =[<#list signatureAlgorithms as sigAlg>${sigAlg?c},</#list>]
                 let pubKeyCredParams = getPubKeyCredParams(signatureAlgorithms);
 
                 let rpEntityName = "${rpEntityName}";
