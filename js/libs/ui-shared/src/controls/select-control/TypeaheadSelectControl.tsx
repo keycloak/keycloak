@@ -156,6 +156,7 @@ export const TypeaheadSelectControl = <
           <Select
             {...rest}
             onClick={() => setOpen(!open)}
+            onOpenChange={() => setOpen(false)}
             selected={
               isSelectBasedOptions(options)
                 ? options
@@ -182,7 +183,15 @@ export const TypeaheadSelectControl = <
                     placeholder={placeholderText}
                     value={
                       variant === SelectVariant.typeahead && field.value
-                        ? field.value
+                        ? isSelectBasedOptions(options)
+                          ? options.find(
+                              (o) =>
+                                o.key ===
+                                (Array.isArray(field.value)
+                                  ? field.value[0]
+                                  : field.value),
+                            )?.value
+                          : field.value
                         : filterValue
                     }
                     onClick={() => setOpen(!open)}
@@ -248,20 +257,15 @@ export const TypeaheadSelectControl = <
                 variant === SelectVariant.typeaheadMulti &&
                 Array.isArray(field.value)
               ) {
-                const select = key(option!);
                 if (field.value.includes(key)) {
                   field.onChange(
-                    field.value.filter((item: string) => item !== select),
+                    field.value.filter((item: string) => item !== option),
                   );
                 } else {
                   field.onChange([...field.value, option]);
                 }
               } else {
-                const val = isSelectBasedOptions(options)
-                  ? options.find((o) => o.key === option)?.value
-                  : option;
-                field.onChange(Array.isArray(field.value) ? [val] : val);
-                setFilterValue(val || "");
+                field.onChange(Array.isArray(field.value) ? [option] : option);
                 setOpen(false);
               }
             }}

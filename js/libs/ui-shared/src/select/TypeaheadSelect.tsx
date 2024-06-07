@@ -113,6 +113,7 @@ export const TypeaheadSelect = ({
     <Select
       {...rest}
       onClick={toggle}
+      onOpenChange={() => onToggle?.(false)}
       onSelect={(_, value) => onSelect?.(value || "")}
       maxMenuHeight={propertyToString(maxHeight)}
       popperProps={{ direction, width: propertyToString(width) }}

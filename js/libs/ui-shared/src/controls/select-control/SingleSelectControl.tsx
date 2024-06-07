@@ -55,6 +55,7 @@ export const SingleSelectControl = <
           <Select
             {...rest}
             onClick={() => setOpen(!open)}
+            onOpenChange={() => setOpen(false)}
             selected={
               isSelectBasedOptions(options)
                 ? options
@@ -84,11 +85,9 @@ export const SingleSelectControl = <
                   : value}
               </MenuToggle>
             )}
-            onSelect={(event, v) => {
-              event?.stopPropagation();
+            onSelect={(_event, v) => {
               const option = v?.toString();
-              const selected = key(option!);
-              onChange(Array.isArray(value) ? [selected] : selected);
+              onChange(Array.isArray(value) ? [option] : option);
               setOpen(false);
             }}
             isOpen={open}
