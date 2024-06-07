@@ -35,8 +35,10 @@ import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserFormFields, toUserFormFields } from "./form-state";
+import { toUsers } from "./routes/Users";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
+import { useNavigate } from "react-router-dom";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -84,6 +86,7 @@ export const UserForm = ({
   );
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setValue("requiredActions", user?.requiredActions || []);
@@ -129,7 +132,11 @@ export const UserForm = ({
   };
 
   const onFormReset = () => {
-    user?.id ? reset(toUserFormFields(user)) : undefined;
+    if (user?.id) {
+      reset(toUserFormFields(user));
+    } else {
+      navigate(toUsers({ realm: realm.realm! }));
+    }
   };
 
   return (

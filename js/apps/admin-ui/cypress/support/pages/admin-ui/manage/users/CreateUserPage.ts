@@ -23,7 +23,7 @@ export default class CreateUserPage {
     this.joinBtn = "join-button";
     this.createBtn = "user-creation-save";
     this.saveBtn = "user-creation-save";
-    this.cancelBtn = "cancel-create-user";
+    this.cancelBtn = "user-creation-revert";
   }
 
   //#region General Settings
