@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import {
+  KeycloakSelect,
+  KeycloakSelectProps,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
 import {
   SelectOption,
   Split,
@@ -7,11 +10,8 @@ import {
   TextInput,
   TextInputProps,
 } from "@patternfly/react-core";
-import {
-  KeycloakSelect,
-  KeycloakSelectProps,
-  SelectVariant,
-} from "../select/KeycloakSelect";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type Unit = "second" | "minute" | "hour" | "day";
 

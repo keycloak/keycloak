@@ -1,3 +1,4 @@
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -28,10 +29,6 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];

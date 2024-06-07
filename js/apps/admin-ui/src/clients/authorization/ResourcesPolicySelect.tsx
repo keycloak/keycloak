@@ -26,7 +26,7 @@ import {
   KeycloakSelect,
   SelectVariant,
   Variant,
-} from "../../components/select/KeycloakSelect";
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";

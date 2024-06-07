@@ -1,4 +1,9 @@
 import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ExpandableSection,
   Form,
   FormGroup,
@@ -8,9 +13,6 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem, SelectVariant } from "@keycloak/keycloak-ui-shared";
-import { KeycloakSelect } from "../../components/select/KeycloakSelect";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";

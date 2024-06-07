@@ -1,7 +1,11 @@
 import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventRepresentation";
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakSelect,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -37,10 +41,6 @@ import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../components/select/KeycloakSelect";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";

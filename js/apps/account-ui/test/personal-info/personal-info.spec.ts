@@ -63,10 +63,10 @@ test.describe("Personal info with userprofile enabled", () => {
   test("render long select options as typeahead", async ({ page }) => {
     await login(page, user, "jdoe", realm);
 
-    await page.getByText("Alternate Language").click();
+    await page.locator('#alternatelang').click();
     await page.waitForSelector("text=Italiano");
 
-    await page.getByText("Alternate Language").click();
+    await page.locator('#alternatelang').click();
     await page.locator("*:focus").press("Control+A");
     await page.locator("*:focus").pressSequentially("S");
     await expect(page.getByText("Italiano")).toHaveCount(0);

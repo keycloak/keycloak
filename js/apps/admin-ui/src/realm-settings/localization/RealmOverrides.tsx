@@ -1,22 +1,23 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
   Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
   Form,
   FormGroup,
+  MenuToggle,
+  SelectGroup,
+  SelectOption,
   Text,
   TextContent,
   TextInput,
   TextVariants,
   ToolbarItem,
-  SelectGroup,
-  SelectOption,
-  Dropdown,
-  MenuToggle,
-  DropdownList,
-  DropdownItem,
 } from "@patternfly/react-core";
 import {
   CheckIcon,
@@ -51,10 +52,6 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import { AddTranslationModal } from "../AddTranslationModal";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 type RealmOverridesProps = {
   internationalizationEnabled: boolean;
