@@ -106,6 +106,12 @@ export const TypeaheadSelectControl = <
         field.onChange(undefined);
         break;
       }
+      case "Backspace": {
+        if (variant === SelectVariant.typeahead) {
+          field.onChange("");
+        }
+        break;
+      }
       case "ArrowUp":
       case "ArrowDown": {
         event.preventDefault();
@@ -174,7 +180,11 @@ export const TypeaheadSelectControl = <
                 <TextInputGroup isPlain>
                   <TextInputGroupMain
                     placeholder={placeholderText}
-                    value={filterValue}
+                    value={
+                      variant === SelectVariant.typeahead && field.value
+                        ? field.value
+                        : filterValue
+                    }
                     onClick={() => setOpen(!open)}
                     onChange={(_, value) => {
                       setFilterValue(value);
@@ -234,7 +244,10 @@ export const TypeaheadSelectControl = <
             onSelect={(event, v) => {
               event?.stopPropagation();
               const option = v?.toString();
-              if (Array.isArray(field.value)) {
+              if (
+                variant === SelectVariant.typeaheadMulti &&
+                Array.isArray(field.value)
+              ) {
                 const select = key(option!);
                 if (field.value.includes(key)) {
                   field.onChange(
@@ -247,7 +260,7 @@ export const TypeaheadSelectControl = <
                 const val = isSelectBasedOptions(options)
                   ? options.find((o) => o.key === option)?.value
                   : option;
-                field.onChange(val);
+                field.onChange(Array.isArray(field.value) ? [val] : val);
                 setFilterValue(val || "");
                 setOpen(false);
               }
