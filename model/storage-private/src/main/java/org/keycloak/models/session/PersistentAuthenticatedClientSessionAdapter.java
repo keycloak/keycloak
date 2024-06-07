@@ -17,6 +17,7 @@
 
 package org.keycloak.models.session;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -257,6 +258,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         return getId();
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     protected static class PersistentClientSessionData {
 
         @JsonProperty("authMethod")
