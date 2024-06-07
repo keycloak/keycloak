@@ -89,11 +89,14 @@ export const TypeaheadSelectControl = <
 
         if (variant !== SelectVariant.typeaheadMulti) {
           setFilterValue(getValue(focusedItem));
+        } else {
+          setFilterValue("");
         }
+
         field.onChange(
           Array.isArray(field.value)
-            ? [...field.value, getValue(focusedItem)]
-            : getValue(focusedItem),
+            ? [...field.value, key(focusedItem)]
+            : key(focusedItem),
         );
         setOpen(false);
         setFocusedItemIndex(0);
@@ -257,7 +260,7 @@ export const TypeaheadSelectControl = <
                 variant === SelectVariant.typeaheadMulti &&
                 Array.isArray(field.value)
               ) {
-                if (field.value.includes(key)) {
+                if (field.value.includes(option)) {
                   field.onChange(
                     field.value.filter((item: string) => item !== option),
                   );
