@@ -1,15 +1,16 @@
+import {
+  HelpItem,
+  KeycloakSelect,
+  SelectControl,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
 import { FormGroup, NumberInput, SelectOption } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 export type SettingsCacheProps = {
   form: UseFormReturn;

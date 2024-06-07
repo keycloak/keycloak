@@ -1,3 +1,4 @@
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
   Grid,
   GridItem,
@@ -9,7 +10,6 @@ import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import useToggle from "../../utils/useToggle";
 import { DefaultValue } from "./KeyValueInput";
-import { KeycloakSelect } from "../select/KeycloakSelect";
 
 type KeySelectProp = UseControllerProps & {
   selectItems: DefaultValue[];

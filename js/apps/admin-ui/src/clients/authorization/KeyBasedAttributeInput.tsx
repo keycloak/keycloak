@@ -1,4 +1,5 @@
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { Button, SelectOption, TextInput } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
@@ -6,14 +7,9 @@ import { camelCase } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { defaultContextAttributes } from "../utils";
 
 import "./key-based-attribute-input.css";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 export type AttributeType = {
   key?: string;

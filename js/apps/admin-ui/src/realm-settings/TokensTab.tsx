@@ -1,5 +1,11 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  FormPanel,
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   FormGroup,
@@ -17,8 +23,6 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
-
 import { FormAccess } from "../components/form/FormAccess";
 import {
   TimeSelector,
@@ -30,10 +34,6 @@ import { beerify, convertToFormValues, sortProviders } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 import "./realm-settings-section.css";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../components/select/KeycloakSelect";
 
 type RealmSettingsSessionsTabProps = {
   realm: RealmRepresentation;

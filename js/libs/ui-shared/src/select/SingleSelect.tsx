@@ -54,6 +54,7 @@ export const SingleSelect = ({
       }}
       {...props}
       onClick={toggle}
+      onOpenChange={() => setOpen(false)}
       selected={selections}
       onSelect={(_, value) => {
         onSelect?.(value || "");
