@@ -53,7 +53,39 @@ enum TypedClientExtendedAttribute implements TypedClientAttribute {
     CIBA_GRANT_ENABLED("oidc.ciba.grant.enabled", "false"),
     LOGIN_THEME("login_theme", null),
     LOGO_URI("logoUri", null),
-    POLICY_URI("policyUri", null);
+    POLICY_URI("policyUri", null),
+
+    SAML_ALLOW_ECP_FLOW("saml.allow.ecp.flow", "false"),
+    SAML_ARTIFACT_BINDING("saml.artifact.binding", "false"),
+    SAML_ARTIFACT_BINDING_IDENTIFIER("saml.artifact.binding.identifier", null),
+    SAML_ARTIFACT_BINDING_URL("saml_artifact_binding_url", null),
+    SAML_ARTIFACT_RESOLUTION_SERVICE_URL("saml_artifact_resolution_service_url", null),
+    SAML_ASSERTION_CONSUMER_URL_POST("saml_assertion_consumer_url_post", null),
+    SAML_ASSERTION_CONSUMER_URL_REDIRECT("saml_assertion_consumer_url_redirect", null),
+    SAML_ASSERTION_LIFESPAN("saml.assertion.lifespan", null),
+    SAML_ASSERTION_SIGNATURE("saml.assertion.signature", "false"),
+    SAML_AUTHNSTATEMENT("saml.authnstatement", "false"),
+    SAML_CLIENT_SIGNATURE("saml.client.signature", "false"),
+    SAML_ENCRYPT("saml.encrypt", "false"),
+    SAML_ENCRYPTION_CERTIFICATE("saml.encryption.certificate", null),
+    SAML_ENCRYPTION_PRIVATE_KEY("saml.encryption.private.key", null),
+    SAML_FORCE_POST_BINDING("saml.force.post.binding", "false"),
+    SAML_FORCE_NAME_ID_FORMAT("saml_force_name_id_format", "false"),
+    SAML_IDP_INITIATED_SSO_RELAY_STATE("saml_idp_initiated_sso_relay_state", null),
+    SAML_IDP_INITIATED_SSO_URL_NAME("saml_idp_initiated_sso_url_name", null),
+    SAML_ONETIMEUSE_CONDITION("saml.onetimeuse.condition", "false"),
+    SAML_SERVER_SIGNATURE("saml.server.signature", "false"),
+    SAML_SERVER_SIGNATURE_KEYINFO_EXT("saml.server.signature.keyinfo.ext", "false"),
+    SAML_SERVER_SIGNATURE_KEYINFO_XMLSIGKEYINFOKEYNAMETRANSFORMER("saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer", null),
+    SAML_SIGNATURE_ALGORITHM("saml.signature.algorithm", null),
+    SAML_SIGNATURE_CANONICALIZATION_METHOD("saml_signature_canonicalization_method", null),
+    SAML_SIGNING_CERTIFICATE("saml.signing.certificate", null),
+    SAML_SIGNING_PRIVATE_KEY("saml.signing.private.key", null),
+    SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT("saml_single_logout_service_url_artifact", null),
+    SAML_SINGLE_LOGOUT_SERVICE_URL_POST("saml_single_logout_service_url_post", null),
+    SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT("saml_single_logout_service_url_redirect", null),
+    SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP("saml_single_logout_service_url_soap", null);
+
 
     private static final Map<String, TypedClientExtendedAttribute> attributesByName = new HashMap<>();
 
