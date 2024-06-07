@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.htmlunit.WebClient;
 import java.io.Closeable;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -78,6 +79,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.Cookie;
@@ -663,6 +665,72 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertEquals(400, response4.getStatusCode());
             events.expectRefresh(refreshToken2.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
+            RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
+        }
+    }
+
+    @Test
+    public void refreshTokenReuseOnDifferentTab() {
+        try {
+
+            BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver);
+            RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(true);
+
+            //login with tab 1
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            String sessionId = loginEvent.getSessionId();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+            events.expectCodeToToken(codeId, sessionId).assertEvent();
+            assertNotNull(refreshToken1.getOtherClaims().get(Constants.REUSE_ID));
+            assertNotEquals(refreshToken1.getOtherClaims().get(Constants.REUSE_ID), refreshToken1.getId());
+
+            //login with tab 2
+            tabUtil.newTab(oauth.getLoginFormUrl());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+
+            loginEvent = events.expectLogin().assertEvent();
+            sessionId = loginEvent.getSessionId();
+            codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse responseNew = oauth.doAccessTokenRequest(code, "password");
+            RefreshToken refreshTokenNew = oauth.parseRefreshToken(responseNew.getRefreshToken());
+
+            events.expectCodeToToken(codeId, sessionId).assertEvent();
+            assertNotNull(refreshToken1.getOtherClaims().get(Constants.REUSE_ID));
+            assertNotEquals(refreshTokenNew.getOtherClaims().get(Constants.REUSE_ID), refreshTokenNew.getId());
+            assertNotEquals(refreshToken1.getOtherClaims().get(Constants.REUSE_ID), refreshTokenNew.getOtherClaims().get(Constants.REUSE_ID));
+
+            setTimeOffset(10);
+
+            //refresh with token from tab 1
+            OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
+            assertEquals(200, response2.getStatusCode());
+            RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
+            events.expectRefresh(refreshToken2.getId(), sessionId);
+            assertNotEquals(refreshToken2.getOtherClaims().get(Constants.REUSE_ID), refreshToken2.getId());
+            assertEquals(refreshToken1.getOtherClaims().get(Constants.REUSE_ID), refreshToken2.getOtherClaims().get(Constants.REUSE_ID));
+
+            //refresh with token from tab 2
+            OAuthClient.AccessTokenResponse responseNew1 = oauth.doRefreshTokenRequest(responseNew.getRefreshToken(), "password");
+            assertEquals(200, responseNew1.getStatusCode());
+            RefreshToken refreshTokenNew1 = oauth.parseRefreshToken(responseNew1.getRefreshToken());
+            events.expectRefresh(refreshTokenNew1.getId(), sessionId);
+            assertNotEquals(refreshTokenNew1.getOtherClaims().get(Constants.REUSE_ID), refreshTokenNew1.getId());
+            assertEquals(refreshTokenNew.getOtherClaims().get(Constants.REUSE_ID), refreshTokenNew1.getOtherClaims().get(Constants.REUSE_ID));
+
+            //try refresh token reuse with token from tab 2
+            responseNew1 = oauth.doRefreshTokenRequest(responseNew.getRefreshToken(), "password");
+            assertEquals(400, responseNew1.getStatusCode());
+
+
+        } finally {
+            resetTimeOffset();
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
         }
     }
