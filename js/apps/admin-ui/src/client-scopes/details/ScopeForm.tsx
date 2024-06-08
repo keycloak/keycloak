@@ -33,6 +33,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
   const { control, handleSubmit, setValue, formState } = form;
+  const { isDirty, isValid } = formState;
   const { realm } = useRealm();
 
   const providers = useLoginProviders();
@@ -60,12 +61,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         "attributes.dynamic.scope.regexp",
       ),
       append ? `${value}:*` : value,
+      { shouldDirty: true }, // Mark the field as dirty when we modify the field
     );
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope]);
-
   return (
     <FormAccess
       role="manage-clients"
@@ -187,7 +188,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           min={0}
         />
         <ActionGroup>
-          <FormSubmitButton formState={formState}>{t("save")}</FormSubmitButton>
+          <FormSubmitButton
+            formState={formState}
+            disabled={!isDirty || !isValid}
+          >
+            {t("save")}
+          </FormSubmitButton>
           <Button
             variant="link"
             component={(props) => (
