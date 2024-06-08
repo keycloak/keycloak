@@ -133,12 +133,20 @@ export const RealmSelector = () => {
       }
     },
     setRealms,
-    [first, search],
+    [open, first, search],
   );
 
   const sortedRealms = useMemo(
     () => [
-      ...(first === 0 && !search ? recentRealms.map((name) => ({ name })) : []),
+      ...(first === 0 && !search
+        ? recentRealms.reduce((acc, name) => {
+            const realm = realms.find((r) => r.name === name);
+            if (realm) {
+              acc.push(realm);
+            }
+            return acc;
+          }, [] as RealmNameRepresentation[])
+        : []),
       ...realms.filter((r) => !recentRealms.includes(r.name)),
     ],
     [recentRealms, realms, first, search],
