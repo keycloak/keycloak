@@ -170,7 +170,7 @@ importers:
         version: 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
-        version: file:js/apps/admin-ui(@types/react@18.3.3)
+        version: '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui(@types/react@18.3.3)'
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
@@ -292,6 +292,9 @@ importers:
       vite-plugin-checker:
         specifier: ^0.7.0
         version: 0.7.0(eslint@8.57.0)(optionator@0.9.4)(typescript@5.5.2)(vite@5.3.3(@types/node@20.14.9)(lightningcss@1.25.1)(terser@5.31.0))
+      vite-plugin-dts:
+        specifier: ^3.9.1
+        version: 3.9.1(@types/node@20.14.9)(rollup@4.18.0)(typescript@5.4.5)(vite@5.3.3(@types/node@20.14.9)(lightningcss@1.25.1)(terser@5.31.0))
       vitest:
         specifier: ^1.6.0
         version: 1.6.0(@types/node@20.14.9)(jsdom@24.1.0)(lightningcss@1.25.1)(terser@5.31.0)
@@ -1047,6 +1050,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui':
+    resolution: {directory: js/apps/admin-ui, type: directory}
 
   '@microsoft/api-extractor-model@7.28.13':
     resolution: {integrity: sha512-39v/JyldX4MS9uzHcdfmjjfS6cYGAoXV+io8B5a338pkHiSt+gy2eXQ0Q7cGFJ7quSa1VqqlMdlPrB6sLR/cAw==}
@@ -1852,9 +1858,6 @@ packages:
     resolution: {integrity: sha512-Y9rRfJG5jcKOE0CLisYbojUjIrIEE7AGMzA/Sm4BslANhbS+cDMpgBdcPT91oJ7OuJ9hYJBx59RjbhxVnrF8Xg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
-
-  admin-ui@file:js/apps/admin-ui:
-    resolution: {directory: js/apps/admin-ui, type: directory}
 
   agent-base@7.1.1:
     resolution: {integrity: sha512-H0TSyFNDMomMNJQBn8wFV5YC/2eJ+VXECwOadZJT554xP6cODZHPX3H9QMQECxvrgiSOP1pHjy1sMWQVYJOUOA==}
@@ -3936,6 +3939,10 @@ packages:
     peerDependencies:
       postcss: ^8.2.9
 
+  postcss@8.4.38:
+    resolution: {integrity: sha512-Wglpdk03BSfXkHoQa3b/oulrotAkwrlLDRSOb9D0bN86FdRyE9lppSp33aHNPgBa0JKCoB+drFLZkQoRRYae5A==}
+    engines: {node: ^10 || ^12 || >=14}
+
   postcss@8.4.39:
     resolution: {integrity: sha512-0vzE+lAiG7hZl1/9I8yzKLx3aR9Xbof3fBHKunvMfOCYAtMhrsnccJY2iTURb9EZd5+pLuiNV9/c/GZJOHsgIw==}
     engines: {node: ^10 || ^12 || >=14}
@@ -5539,6 +5546,40 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.15
 
+  '@keycloak/keycloak-admin-ui@file:js/apps/admin-ui(@types/react@18.3.3)':
+    dependencies:
+      '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
+      '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
+      '@patternfly/patternfly': 5.3.1
+      '@patternfly/react-code-editor': 5.3.3(monaco-editor@0.50.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-core': 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-icons': 5.3.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-styles': 5.3.1
+      '@patternfly/react-table': 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      dagre: 0.8.5
+      file-saver: 2.0.5
+      file-selector: 0.6.0
+      flat: 6.0.1
+      i18next: 23.11.5
+      i18next-http-backend: 2.5.2
+      keycloak-js: link:js/libs/keycloak-js
+      lodash-es: 4.17.21
+      monaco-editor: 0.50.0
+      p-debounce: 4.0.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-dropzone: 14.2.3(react@18.3.1)
+      react-hook-form: 7.52.0(react@18.3.1)
+      react-i18next: 14.1.2(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-router-dom: 6.24.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      reactflow: 11.11.4(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.24.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - encoding
+      - immer
+      - react-native
+
   '@microsoft/api-extractor-model@7.28.13(@types/node@20.14.9)':
     dependencies:
       '@microsoft/tsdoc': 0.14.2
@@ -6436,40 +6477,6 @@ snapshots:
 
   acorn@8.11.3: {}
 
-  admin-ui@file:js/apps/admin-ui(@types/react@18.3.3):
-    dependencies:
-      '@keycloak/keycloak-admin-client': link:js/libs/keycloak-admin-client
-      '@keycloak/keycloak-ui-shared': link:js/libs/ui-shared
-      '@patternfly/patternfly': 5.3.1
-      '@patternfly/react-code-editor': 5.3.3(monaco-editor@0.50.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patternfly/react-core': 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patternfly/react-icons': 5.3.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patternfly/react-styles': 5.3.1
-      '@patternfly/react-table': 5.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      dagre: 0.8.5
-      file-saver: 2.0.5
-      file-selector: 0.6.0
-      flat: 6.0.1
-      i18next: 23.11.5
-      i18next-http-backend: 2.5.2
-      keycloak-js: link:js/libs/keycloak-js
-      lodash-es: 4.17.21
-      monaco-editor: 0.50.0
-      p-debounce: 4.0.0
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-dropzone: 14.2.3(react@18.3.1)
-      react-hook-form: 7.52.1(react@18.3.1)
-      react-i18next: 14.1.2(i18next@23.11.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-router-dom: 6.24.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      reactflow: 11.11.4(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.24.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
-    transitivePeerDependencies:
-      - '@types/react'
-      - encoding
-      - immer
-      - react-native
-
   agent-base@7.1.1:
     dependencies:
       debug: 4.3.5(supports-color@8.1.1)
@@ -7154,8 +7161,8 @@ snapshots:
   detective-postcss@6.1.3:
     dependencies:
       is-url: 1.2.4
-      postcss: 8.4.39
-      postcss-values-parser: 6.0.2(postcss@8.4.39)
+      postcss: 8.4.38
+      postcss-values-parser: 6.0.2(postcss@8.4.38)
 
   detective-sass@5.0.3:
     dependencies:
@@ -8767,12 +8774,18 @@ snapshots:
 
   possible-typed-array-names@1.0.0: {}
 
-  postcss-values-parser@6.0.2(postcss@8.4.39):
+  postcss-values-parser@6.0.2(postcss@8.4.38):
     dependencies:
       color-name: 1.1.4
       is-url-superb: 4.0.0
-      postcss: 8.4.39
+      postcss: 8.4.38
       quote-unquote: 1.0.0
+
+  postcss@8.4.38:
+    dependencies:
+      nanoid: 3.3.7
+      picocolors: 1.0.0
+      source-map-js: 1.2.0
 
   postcss@8.4.39:
     dependencies:
@@ -9599,7 +9612,7 @@ snapshots:
     dependencies:
       browserslist: 4.23.0
       escalade: 3.1.2
-      picocolors: 1.0.1
+      picocolors: 1.0.0
 
   uri-js@4.4.1:
     dependencies:
@@ -9712,7 +9725,23 @@ snapshots:
       optionator: 0.9.4
       typescript: 5.5.3
 
-  vite-plugin-dts@3.9.1(@types/node@20.14.9)(rollup@4.18.0)(typescript@5.5.3)(vite@5.3.3(@types/node@20.14.9)(lightningcss@1.25.1)(terser@5.31.0)):
+  vite-plugin-dts@3.9.1(@types/node@20.14.9)(rollup@4.18.0)(typescript@5.4.5)(vite@5.3.3(@types/node@20.14.9)(lightningcss@1.25.1)(terser@5.31.0)):
+    dependencies:
+      '@microsoft/api-extractor': 7.43.0(@types/node@20.14.9)
+      '@rollup/pluginutils': 5.1.0(rollup@4.18.0)
+      '@vue/language-core': 1.8.27(typescript@5.4.5)
+      debug: 4.3.4(supports-color@8.1.1)
+      kolorist: 1.8.0
+      magic-string: 0.30.10
+      typescript: 5.4.5
+      vue-tsc: 1.8.27(typescript@5.4.5)
+    optionalDependencies:
+      vite: 5.3.3(@types/node@20.14.9)(lightningcss@1.25.1)(terser@5.31.0)
+    transitivePeerDependencies:
+      - '@types/node'
+      - rollup
+      - supports-color
+
     dependencies:
       '@microsoft/api-extractor': 7.43.0(@types/node@20.14.9)
       '@rollup/pluginutils': 5.1.0(rollup@4.18.0)
