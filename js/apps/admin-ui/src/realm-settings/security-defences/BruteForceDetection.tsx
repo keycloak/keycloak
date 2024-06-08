@@ -1,5 +1,11 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  HelpItem,
+  KeycloakSelect,
+  NumberControl,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   FormGroup,
@@ -8,14 +14,9 @@ import {
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, NumberControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 type BruteForceDetectionProps = {
   realm: RealmRepresentation;

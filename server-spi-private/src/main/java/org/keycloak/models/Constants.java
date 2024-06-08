@@ -82,7 +82,7 @@ public final class Constants {
     public static final String TOKEN = "token";
     public static final String TAB_ID = "tab_id";
     public static final String CLIENT_DATA = "client_data";
-
+    public static final String REUSE_ID = "reuse_id";
     public static final String SKIP_LOGOUT = "skip_logout";
     public static final String KEY = "key";
 

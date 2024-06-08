@@ -75,6 +75,12 @@ export const TypeaheadSelect = ({
         onToggle?.(false);
         break;
       }
+      case "Backspace": {
+        if (variant === SelectVariant.typeahead) {
+          onSelect?.("");
+        }
+        break;
+      }
       case "ArrowUp":
       case "ArrowDown": {
         event.preventDefault();
@@ -107,6 +113,7 @@ export const TypeaheadSelect = ({
     <Select
       {...rest}
       onClick={toggle}
+      onOpenChange={() => onToggle?.(false)}
       onSelect={(_, value) => onSelect?.(value || "")}
       maxMenuHeight={propertyToString(maxHeight)}
       popperProps={{ direction, width: propertyToString(width) }}
@@ -124,7 +131,11 @@ export const TypeaheadSelect = ({
           <TextInputGroup isPlain>
             <TextInputGroupMain
               placeholder={placeholderText}
-              value={filterValue}
+              value={
+                variant === SelectVariant.typeahead && selections
+                  ? (selections as string)
+                  : filterValue
+              }
               onClick={toggle}
               onChange={(_, value) => {
                 setFilterValue(value);
@@ -165,6 +176,7 @@ export const TypeaheadSelect = ({
                   onClick={() => {
                     onSelect?.("");
                     setFilterValue("");
+                    onFilter?.("");
                     textInputRef?.current?.focus();
                   }}
                   aria-label="Clear input value"

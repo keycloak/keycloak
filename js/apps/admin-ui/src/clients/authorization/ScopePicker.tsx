@@ -1,15 +1,15 @@
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
 import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 import { useFetch } from "../../utils/useFetch";
 
 type Scope = {

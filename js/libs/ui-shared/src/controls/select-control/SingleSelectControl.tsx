@@ -39,13 +39,6 @@ export const SingleSelectControl = <
   } = useFormContext();
   const [open, setOpen] = useState(false);
 
-  const convert = () =>
-    options.map((option) => (
-      <SelectOption key={key(option)} value={key(option)}>
-        {isString(option) ? option : option.value}
-      </SelectOption>
-    ));
-
   return (
     <FormLabel
       name={name}
@@ -62,6 +55,7 @@ export const SingleSelectControl = <
           <Select
             {...rest}
             onClick={() => setOpen(!open)}
+            onOpenChange={() => setOpen(false)}
             selected={
               isSelectBasedOptions(options)
                 ? options
@@ -84,28 +78,27 @@ export const SingleSelectControl = <
                 aria-label="toggle"
               >
                 {isSelectBasedOptions(options)
-                  ? options.find((o) => o.key === value)?.value
+                  ? options.find(
+                      (o) =>
+                        o.key === (Array.isArray(value) ? value[0] : value),
+                    )?.value
                   : value}
               </MenuToggle>
             )}
-            onSelect={(event, v) => {
-              event?.stopPropagation();
-              if (Array.isArray(value)) {
-                const option = v?.toString();
-                const selected = key(option!);
-                if (value.includes(key)) {
-                  onChange(value.filter((item: string) => item !== selected));
-                } else {
-                  onChange([...value, option]);
-                }
-              } else {
-                onChange(v);
-                setOpen(false);
-              }
+            onSelect={(_event, v) => {
+              const option = v?.toString();
+              onChange(Array.isArray(value) ? [option] : option);
+              setOpen(false);
             }}
             isOpen={open}
           >
-            <SelectList>{convert()}</SelectList>
+            <SelectList>
+              {options.map((option) => (
+                <SelectOption key={key(option)} value={key(option)}>
+                  {isString(option) ? option : option.value}
+                </SelectOption>
+              ))}
+            </SelectList>
           </Select>
         )}
       />

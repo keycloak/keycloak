@@ -52,9 +52,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
-    private String currentRefreshToken;
-    private int currentRefreshTokenUseCount;
-
     private final UUID id;
 
     private transient String userSessionId;
@@ -123,22 +120,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     public void setNotes(Map<String, String> notes) {
         this.notes = notes;
-    }
-
-    public String getCurrentRefreshToken() {
-        return currentRefreshToken;
-    }
-
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-        this.currentRefreshToken = currentRefreshToken;
-    }
-
-    public int getCurrentRefreshTokenUseCount() {
-        return currentRefreshTokenUseCount;
-    }
-
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
     }
 
     public UUID getId() {
@@ -214,8 +195,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             Map<String, String> notes = session.getNotes();
             KeycloakMarshallUtil.writeMap(notes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
 
-            MarshallUtil.marshallString(session.getCurrentRefreshToken(), output);
-            KeycloakMarshallUtil.marshall(session.getCurrentRefreshTokenUseCount(), output);
         }
 
 
@@ -233,9 +212,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
                     new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());
             sessionEntity.setNotes(notes);
-
-            sessionEntity.setCurrentRefreshToken(MarshallUtil.unmarshallString(input));
-            sessionEntity.setCurrentRefreshTokenUseCount(KeycloakMarshallUtil.unmarshallInteger(input));
 
             return sessionEntity;
         }
