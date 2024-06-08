@@ -272,7 +272,9 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   placeholderText={t("scopeParameterPlaceholder")}
                 >
                   {selectableScopes.map((option, index) => (
-                    <SelectOption key={index} value={option.name} />
+                    <SelectOption key={index} value={option.name}>
+                      {option.name}
+                    </SelectOption>
                   ))}
                 </KeycloakSelect>
               </SplitItem>
