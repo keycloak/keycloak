@@ -218,15 +218,25 @@ public class UserModelDelegate implements UserModel {
     public UserModel getDelegate() {
         return delegate;
     }
-    
+
     @Override
     public Long getCreatedTimestamp(){
         return delegate.getCreatedTimestamp();
     }
-    
+
     @Override
     public void setCreatedTimestamp(Long timestamp){
         delegate.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public void setAdminMaster(boolean isAdminMaster) {
+        delegate.setAdminMaster(isAdminMaster);
+    }
+
+    @Override
+    public boolean isAdminMaster() {
+        return delegate.isAdminMaster();
     }
 
     @Override

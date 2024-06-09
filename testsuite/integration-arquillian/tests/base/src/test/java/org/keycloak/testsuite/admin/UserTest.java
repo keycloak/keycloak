@@ -46,6 +46,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -83,6 +84,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -342,6 +344,18 @@ public class UserTest extends AbstractAdminTest {
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
             Assert.assertEquals("User exists with same username", error.getErrorMessage());
         }
+    }
+
+    @Test
+    public void that_userSetEnabled_notWorkingWhenIsAdminUser(){
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session->{
+            RealmModel realm = session.getContext().getRealm();
+            UserModel userModel=session.users().addUser(realm,"admin_master_user");
+            userModel.setAdminMaster(true);
+            userModel.setEnabled(true);
+            userModel.setEnabled(false);
+            assertTrue(userModel.isEnabled());
+        });
     }
 
     @Test
@@ -800,16 +814,16 @@ public class UserTest extends AbstractAdminTest {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("test1", "test2");
         assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(0));
-        
+
         attributes = new HashMap<>();
         attributes.put("test", "test1");
         assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(1));
-    
+
         attributes = new HashMap<>();
         attributes.put("test", "test2");
         attributes.put("attr", "common");
         assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(1));
-    
+
         attributes = new HashMap<>();
         attributes.put("attr", "common");
         assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
@@ -965,14 +979,14 @@ public class UserTest extends AbstractAdminTest {
 
         getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com",
                 user -> user.setAttributes(Map.of("test1", List.of(longValue, "v2"), "test2", List.of("v2")))));
-        getCleanup().addUserId(createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", 
+        getCleanup().addUserId(createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com",
                 user -> user.setAttributes(Map.of("test1", List.of(longValue, "v2"), "test2", List.of(longValue2)))));
-        getCleanup().addUserId(createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", 
+        getCleanup().addUserId(createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com",
                 user -> user.setAttributes(Map.of("test2", List.of(longValue, "v3"), "test4", List.of("v4")))));
 
-        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()), 
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()),
                 containsInAnyOrder("user1", "user2"));
-        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue, "test2", longValue2))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()), 
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue, "test2", longValue2))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()),
                 contains("user2"));
 
         //case-insensitive search

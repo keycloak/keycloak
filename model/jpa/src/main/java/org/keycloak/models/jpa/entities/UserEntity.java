@@ -90,6 +90,8 @@ public class UserEntity {
     @Column(name = "EMAIL_CONSTRAINT")
     protected String emailConstraint = KeycloakModelUtils.generateId();
 
+    @Column(name = "ADMIN_MASTER")
+    protected boolean adminMaster;
     @Column(name = "REALM_ID")
     protected String realmId;
 
@@ -152,6 +154,14 @@ public class UserEntity {
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
+    }
+
+    public boolean isAdminMaster() {
+        return adminMaster;
+    }
+
+    public void setAdminMaster(boolean adminMaster) {
+        this.adminMaster = adminMaster;
     }
 
     public String getLastName() {

@@ -160,6 +160,17 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
+    public void setAdminMaster(boolean isAdminMaster) {
+
+    }
+
+    @Override
+    public boolean isAdminMaster() {
+        if(updated!=null)return updated.isAdminMaster();
+        return cached.isAdminMaster();
+    }
+
+    @Override
     public boolean isEnabled() {
         if (updated != null) return updated.isEnabled();
         return cached.isEnabled();

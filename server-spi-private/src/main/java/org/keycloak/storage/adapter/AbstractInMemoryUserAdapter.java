@@ -43,6 +43,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     private Long createdTimestamp = Time.currentTimeMillis();
     private boolean emailVerified;
     private boolean enabled;
+    private boolean isAdminMaster;
 
     private Set<String> roleIds = new HashSet<>();
     private Set<String> groupIds = new HashSet<>();
@@ -75,6 +76,16 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     public void setUsername(String username) {
         username = username==null ? null : username.toLowerCase();
         setSingleAttribute(UserModel.USERNAME, username);
+    }
+
+    @Override
+    public boolean isAdminMaster() {
+        return isAdminMaster;
+    }
+
+    @Override
+    public void setAdminMaster(boolean adminMaster) {
+        isAdminMaster = adminMaster;
     }
 
     public void addDefaults() {

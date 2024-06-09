@@ -44,6 +44,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final Long createdTimestamp;
     private final boolean emailVerified;
     private final boolean enabled;
+    private final boolean adminMaster;
     private final String federationLink;
     private final String serviceAccountClientLink;
     private final int notBefore;
@@ -60,6 +61,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.createdTimestamp = user.getCreatedTimestamp();
         this.emailVerified = user.isEmailVerified();
         this.enabled = user.isEnabled();
+        this.adminMaster=user.isAdminMaster();
         this.federationLink = user.getFederationLink();
         this.serviceAccountClientLink = user.getServiceAccountClientLink();
         this.notBefore = notBefore;
@@ -75,6 +77,9 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.storedCredentials = new DefaultLazyLoader<>(userModel -> userModel.credentialManager().getStoredCredentialsStream().collect(Collectors.toCollection(LinkedList::new)), LinkedList::new);
     }
 
+    public boolean isAdminMaster(){
+        return adminMaster;
+    }
     public String getRealm() {
         return realm;
     }

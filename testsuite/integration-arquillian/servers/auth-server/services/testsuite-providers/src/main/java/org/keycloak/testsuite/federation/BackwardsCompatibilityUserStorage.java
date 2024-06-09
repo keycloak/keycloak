@@ -101,6 +101,16 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
                     throw new RuntimeException("Unsupported to change username");
                 }
             }
+
+            @Override
+            public void setAdminMaster(boolean isAdminMaster) {
+
+            }
+
+            @Override
+            public boolean isAdminMaster() {
+                return false;
+            }
         };
     }
 

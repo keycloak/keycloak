@@ -147,4 +147,12 @@
             <column name="OWNER"/>
         </createIndex>
     </changeSet>
+
+    <changeSet id="25.0.0-28862-adding-master-admin-info-userentity" author="keycloak">
+            <addColumn tableName="USER_ENTITY">
+                <column name="ADMIN_MASTER" type="BOOLEAN" defaultValueBoolean="false" >
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+    </changeSet>
 </databaseChangeLog>

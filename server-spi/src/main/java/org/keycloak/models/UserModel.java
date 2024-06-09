@@ -73,6 +73,9 @@ public interface UserModel extends RoleMapperModel {
 
     void setCreatedTimestamp(Long timestamp);
 
+    void setAdminMaster(boolean isAdminMaster);
+    boolean isAdminMaster();
+
     boolean isEnabled();
 
     void setEnabled(boolean enabled);

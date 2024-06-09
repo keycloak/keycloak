@@ -34,7 +34,7 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected Boolean totp;
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
-
+    protected boolean adminUser;
     protected List<CredentialRepresentation> credentials;
     protected Set<String> disableableCredentialTypes;
     protected List<String> requiredActions;
@@ -74,6 +74,14 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isAdminUser() {
+        return adminUser;
+    }
+
+    public void setAdminUser(boolean adminUser) {
+        this.adminUser = adminUser;
     }
 
     @Deprecated

@@ -165,6 +165,16 @@ public class PassThroughFederatedUserStorageProvider implements
             @Override
             public void setUsername(String username) {
             }
+
+            @Override
+            public void setAdminMaster(boolean isAdminMaster) {
+
+            }
+
+            @Override
+            public boolean isAdminMaster() {
+                return false;
+            }
         };
     }
 }

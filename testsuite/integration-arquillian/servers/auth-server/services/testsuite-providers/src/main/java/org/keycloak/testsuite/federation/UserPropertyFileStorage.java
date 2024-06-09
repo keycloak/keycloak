@@ -61,7 +61,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     protected ComponentModel model;
     protected KeycloakSession session;
     protected boolean federatedStorageEnabled;
-    
+
     public static Map<String, List<UserPropertyFileStorageCall>> storageCalls = new HashMap<>();
 
     public static class UserPropertyFileStorageCall implements Serializable {
@@ -87,7 +87,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
             return max;
         }
     }
-    
+
     public UserPropertyFileStorage(KeycloakSession session, ComponentModel model, Properties userPasswords) {
         this.session = session;
         this.model = model;
@@ -109,7 +109,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     @Override
     public int getUsersCount(RealmModel realm, Map<String, String> params) {
         addCall(COUNT_SEARCH_METHOD);
-        
+
         return (int) searchForUser(realm, params.get(UserModel.SEARCH), null, null, username -> username.contains(params.get(UserModel.SEARCH))).count();
     }
 
@@ -134,12 +134,32 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
                 public void setUsername(String username) {
                     throw new RuntimeException("Unsupported");
                 }
+
+                @Override
+                public void setAdminMaster(boolean isAdminMaster) {
+
+                }
+
+                @Override
+                public boolean isAdminMaster() {
+                    return false;
+                }
             };
         } else {
             return new AbstractUserAdapter.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
                     return username;
+                }
+
+                @Override
+                public void setAdminMaster(boolean isAdminMaster) {
+
+                }
+
+                @Override
+                public boolean isAdminMaster() {
+                    return false;
                 }
 
                 @Override

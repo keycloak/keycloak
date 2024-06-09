@@ -61,7 +61,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserQueryProvider, ImportedUserValidation {
 
     private static final Logger log = Logger.getLogger(UserMapStorage.class);
-    
+
     protected final Map<String, String> userPasswords;
     protected final ConcurrentMap<String, Set<String>> userGroups;
     protected ComponentModel model;
@@ -127,6 +127,16 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
                     if (! Objects.equals(innerUsername, username.toLowerCase())) {
                         throw new RuntimeException("Unsupported");
                     }
+                }
+
+                @Override
+                public void setAdminMaster(boolean isAdminMaster) {
+
+                }
+
+                @Override
+                public boolean isAdminMaster() {
+                    return false;
                 }
 
                 @Override
@@ -329,7 +339,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
                 case UserModel.USERNAME:
                 case UserModel.SEARCH:
                     if (Boolean.valueOf(params.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
-                        userStream = userStream.filter(s -> s.toLowerCase().equals(value.toLowerCase()));           
+                        userStream = userStream.filter(s -> s.toLowerCase().equals(value.toLowerCase()));
                     } else {
                         userStream = userStream.filter(s -> s.toLowerCase().contains(value.toLowerCase()));
                     }

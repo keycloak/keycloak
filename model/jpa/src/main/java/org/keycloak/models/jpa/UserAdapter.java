@@ -104,13 +104,23 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
+    public void setAdminMaster(boolean isAdminMaster) {
+        user.setAdminMaster(isAdminMaster);
+    }
+
+    @Override
+    public boolean isAdminMaster() {
+        return user.isAdminMaster();
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        user.setEnabled(enabled);
+        if(!user.isAdminMaster() || enabled) user.setEnabled(enabled);
     }
 
     @Override
