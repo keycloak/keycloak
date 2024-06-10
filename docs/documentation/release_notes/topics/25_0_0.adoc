@@ -244,4 +244,4 @@ This remaining work is mainly about preparing the feature for production deploym
 on the feedback we get until the next major release, we might eventually accept additional capabilities and add more value to
 the feature, without compromising its roadmap.
 
-For more details, see link:{adminguide_link}#_managing_organizations_[{adminguide_name}].
+For more details, see link:{adminguide_link}#_managing_organizations[{adminguide_name}].

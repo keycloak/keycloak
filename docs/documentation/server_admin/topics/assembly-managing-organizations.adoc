@@ -1,5 +1,5 @@
 [id="assembly-managing-organizations_{context}"]
-[[_managing_organizations_]]
+[[_managing_organizations]]
 ==  Managing organizations
 
 :tech_feature_name: Organizations
