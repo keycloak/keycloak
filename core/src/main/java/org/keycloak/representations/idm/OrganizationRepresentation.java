@@ -29,6 +29,7 @@ public class OrganizationRepresentation {
 
     private String id;
     private String name;
+    private String alias;
     private boolean enabled = true;
     private String description;
     private Map<String, List<String>> attributes;
@@ -50,6 +51,14 @@ public class OrganizationRepresentation {
 
     public String getName() {
         return name;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public boolean isEnabled() {

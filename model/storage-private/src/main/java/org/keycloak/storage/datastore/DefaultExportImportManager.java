@@ -1589,7 +1589,8 @@ public class DefaultExportImportManager implements ExportImportManager {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
-                OrganizationModel org = provider.create(orgRep.getName());
+                OrganizationModel org = provider.create(orgRep.getName(), orgRep.getAlias());
+
                 org.setDomains(orgRep.getDomains().stream().map(r -> new OrganizationDomainModel(r.getName(), r.isVerified())).collect(Collectors.toSet()));
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {

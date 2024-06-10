@@ -146,6 +146,7 @@ public class Organizations {
 
         rep.setId(model.getId());
         rep.setName(model.getName());
+        rep.setAlias(model.getAlias());
         rep.setEnabled(model.isEnabled());
         rep.setDescription(model.getDescription());
         rep.setAttributes(model.getAttributes());
@@ -168,6 +169,7 @@ public class Organizations {
         }
 
         model.setName(rep.getName());
+        model.setAlias(rep.getAlias());
         model.setEnabled(rep.isEnabled());
         model.setDescription(rep.getDescription());
         model.setAttributes(rep.getAttributes());
@@ -193,5 +195,42 @@ public class Organizations {
         }
 
         return TokenVerifier.create(tokenFromQuery, InviteOrgActionToken.class).getToken();
+    }
+
+    public static String getEmailDomain(String email) {
+        if (email == null) {
+            return null;
+        }
+
+        int domainSeparator = email.indexOf('@');
+
+        if (domainSeparator == -1) {
+            return null;
+        }
+
+        return email.substring(domainSeparator + 1);
+    }
+
+    public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user) {
+        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+
+        if (organization != null) {
+            return organization;
+        }
+
+        if (user == null) {
+            return null;
+        }
+
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        OrganizationModel memberOrg = provider.getByMember(user);
+
+        if (memberOrg != null) {
+            return memberOrg;
+        }
+
+        String domain = Organizations.getEmailDomain(user.getEmail());
+
+        return domain == null ? null : provider.getByDomainName(domain);
     }
 }

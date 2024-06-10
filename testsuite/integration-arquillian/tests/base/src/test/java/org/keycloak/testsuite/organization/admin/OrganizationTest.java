@@ -45,11 +45,13 @@ import java.io.IOException;
 import java.util.stream.IntStream;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.OrganizationsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -80,6 +82,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation existing = organization.toRepresentation();
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getName(), existing.getName());
+        assertEquals(expected.getAlias(), existing.getAlias());
         assertEquals(1, existing.getDomains().size());
         assertThat(existing.isEnabled(), is(false));
         assertThat(existing.getDescription(), notNullValue());
@@ -462,5 +465,44 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
             assertEquals(9, orgProvider.count());
         });
+    }
+
+    @Test
+    public void testFailUpdateAlias() {
+        OrganizationRepresentation rep = createOrganization();
+
+        rep.setAlias("changed");
+
+        OrganizationsResource organizations = testRealm().organizations();
+        OrganizationResource organization = organizations.get(rep.getId());
+
+        try (Response response = organization.update(rep)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Cannot change the alias", error.getErrorMessage());
+        }
+
+        rep.setAlias(rep.getName());
+
+        try (Response response = organization.update(rep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testFailDuplicatedAlias() {
+        OrganizationRepresentation rep = createOrganization();
+        OrganizationsResource organizations = testRealm().organizations();
+
+        rep.setId(null);
+        rep.getDomains().clear();
+        rep.addDomain(new OrganizationDomainRepresentation("acme-2"));
+        rep.setName("acme-2");
+
+        try (Response response = organizations.create(rep)) {
+            assertEquals(Status.CONFLICT.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("A organization with the same alias already exists", error.getErrorMessage());
+        }
     }
 }

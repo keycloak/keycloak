@@ -133,6 +133,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected OrganizationRepresentation createRepresentation(String name, String... orgDomains) {
         OrganizationRepresentation org = new OrganizationRepresentation();
         org.setName(name);
+        org.setAlias(name);
 
         for (String orgDomain : orgDomains) {
             OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();

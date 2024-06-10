@@ -87,6 +87,18 @@ public class OrganizationAdapter implements OrganizationModel {
     }
 
     @Override
+    public String getAlias() {
+        if (isUpdated()) return updated.getAlias() ;
+        return cached.getAlias();
+    }
+
+    @Override
+    public void setAlias(String alias) {
+        getDelegateForUpdate();
+        updated.setAlias(alias);
+    }
+
+    @Override
     public boolean isEnabled() {
         if (isUpdated()) return updated.isEnabled();
         return cached.isEnabled();
@@ -145,4 +157,17 @@ public class OrganizationAdapter implements OrganizationModel {
         return delegate.isManagedMember(this, user);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OrganizationModel)) return false;
+
+        OrganizationModel that = (OrganizationModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
 }

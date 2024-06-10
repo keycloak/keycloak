@@ -47,6 +47,7 @@ import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
+import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean;
@@ -63,6 +64,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -101,6 +103,7 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+import static org.keycloak.organization.utils.Organizations.resolveOrganization;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -539,6 +542,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 }
 
                 attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
+            }
+
+            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+                OrganizationModel organization = resolveOrganization(session, user);
+
+                if (organization != null) {
+                    attributes.put("org", new OrganizationBean(session, organization, user));
+                }
             }
         }
         if (realm != null && user != null && session != null) {

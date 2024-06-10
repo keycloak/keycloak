@@ -55,6 +55,9 @@ public class OrganizationEntity {
     @Column(name = "NAME")
     private String name;
 
+    @Column(name = "ALIAS")
+    private String alias;
+
     @Column(name = "ENABLED")
     private boolean enabled;
 
@@ -80,6 +83,14 @@ public class OrganizationEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public boolean isEnabled() {
