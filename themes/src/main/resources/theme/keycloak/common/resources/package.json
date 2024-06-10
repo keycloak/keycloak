@@ -1,5 +1,6 @@
 {
   "name": "keycloak-npm-dependencies",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "pnpm build:clean && rollup --config",
