@@ -30,6 +30,10 @@ An organization has the following settings:
 Name::
 A user-friendly name for the organization. The name is unique within a realm.
 
+Alias::
+An alias for this organization, used to reference the organization internally. The alias is unique within a realm.
+If not set, the value is the same as the organization name. The alias cannot change afterwards.
+
 Domains::
 A set of one or more domains that belongs to this organization. A domain cannot be shared by different organizations
 within a realm.

@@ -94,6 +94,25 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public String getAlias() {
+        return entity.getAlias();
+    }
+
+    @Override
+    public void setAlias(String alias) {
+        if (StringUtil.isBlank(alias)) {
+            alias = getName();
+        }
+        if (alias.equals(entity.getAlias())) {
+            return;
+        }
+        if (StringUtil.isNotBlank(entity.getAlias())) {
+            throw new ModelValidationException("Cannot change the alias");
+        }
+        entity.setAlias(alias);
+    }
+
+    @Override
     public boolean isEnabled() {
         return provider.isEnabled() && entity.isEnabled();
     }

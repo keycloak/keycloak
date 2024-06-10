@@ -28,6 +28,7 @@ public interface OrganizationModel {
     String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String BROKER_PUBLIC = "kc.org.broker.public";
+    String ALIAS = "alias";
 
     enum IdentityProviderRedirectMode {
         EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
@@ -52,6 +53,10 @@ public interface OrganizationModel {
     void setName(String name);
 
     String getName();
+
+    String getAlias();
+
+    void setAlias(String alias);
 
     boolean isEnabled();
 

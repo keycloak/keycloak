@@ -265,6 +265,7 @@ public class ExportUtils {
                 OrganizationRepresentation org = new OrganizationRepresentation();
 
                 org.setName(m.getName());
+                org.setAlias(m.getAlias());
                 org.setEnabled(m.isEnabled());
                 org.setDescription(m.getDescription());
                 m.getDomains().map(d -> {

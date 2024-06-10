@@ -117,6 +117,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         List<OrganizationRepresentation> organizations = testRealm().organizations().getAll();
         assertEquals(expectedOrganizations.size(), organizations.size());
         assertThat(organizations.stream().map(OrganizationRepresentation::getName).toList(), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        assertThat(organizations.stream().map(OrganizationRepresentation::getAlias).toList(), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
 
         for (OrganizationRepresentation orgRep : organizations) {
             OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
