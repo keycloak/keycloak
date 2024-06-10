@@ -338,7 +338,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
                     .clientId(clientId)
                     .initiatingIdp(initiatingIdp);
 
-            if (clientId != null || idTokenHint != null) {
+            if (redirectUri != null && (clientId != null || idTokenHint != null)) {
                 builder.postLogoutRedirectUri(encodeUrl(redirectUri));
             }
 

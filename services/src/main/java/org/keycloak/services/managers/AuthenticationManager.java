@@ -643,16 +643,11 @@ public class AuthenticationManager {
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
 
-        Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession);
-        if (response != null) {
-            return response;
-        }
-
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
         if (brokerId != null && !brokerId.equals(initiatingIdp)) {
             IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
-            response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
+            Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
             if (response != null) {
                 return response;
             }
@@ -686,6 +681,11 @@ public class AuthenticationManager {
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
 
+        Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession);
+        if (response != null) {
+            return response;
+        }
+
         checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
 
         // For resolving artifact we don't need any cookie, all details are stored in session storage so we can remove
@@ -701,7 +701,7 @@ public class AuthenticationManager {
                 .setEventBuilder(event);
 
 
-        Response response = protocol.finishBrowserLogout(userSession, logoutAuthSession);
+        response = protocol.finishBrowserLogout(userSession, logoutAuthSession);
 
         // It may be possible that there are some client sessions that are still in LOGGING_OUT state
         long numberOfUnconfirmedSessions = userSession.getAuthenticatedClientSessions().values().stream()
