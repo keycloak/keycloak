@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import org.openqa.selenium.chrome.ChromeDriver;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.log;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -230,7 +231,7 @@ public final class UIUtils {
     }
 
     public static String getRawPageSource(WebDriver driver) {
-        if (driver instanceof FirefoxDriver) {
+        if ((driver instanceof FirefoxDriver) || (driver instanceof ChromeDriver)) {
             // firefox has some weird "bug" – it wraps xml in html
             return driver.findElement(By.tagName("body")).getText();
         }
