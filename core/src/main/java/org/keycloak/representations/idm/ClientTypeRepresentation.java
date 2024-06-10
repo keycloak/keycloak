@@ -33,6 +33,9 @@ public class ClientTypeRepresentation {
     @JsonProperty("provider")
     private String provider;
 
+    @JsonProperty("parent")
+    private String parent;
+
     @JsonProperty("config")
     private Map<String, PropertyConfig> config;
 
@@ -58,6 +61,14 @@ public class ClientTypeRepresentation {
 
     public void setConfig(Map<String, PropertyConfig> config) {
         this.config = config;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 
     public static class PropertyConfig {
