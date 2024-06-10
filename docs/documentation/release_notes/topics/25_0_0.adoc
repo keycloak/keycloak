@@ -231,3 +231,17 @@ For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 = Support for PostgreSQL 16
 
 The supported and tested databases now include PostgreSQL 16.
+
+= Introducing support for Customer Identity and Access Management (CIAM) and Multi-tenancy
+
+In this release, we are delivering Keycloak Organizations as a technology preview feature.
+
+This feature provides a realm with some core CIAM capabilities, which will serve as the baseline for more capabilities
+in the future to address Business-to-Business (B2B) and Business-to-Business-to-Customers (B2B2C) use cases.
+
+In terms of functionality, the feature is completed. However, we still have work to do to make it fully supported in the next major release.
+This remaining work is mainly about preparing the feature for production deployments with a focus on scalability. Also, depending
+on the feedback we get until the next major release, we might eventually accept additional capabilities and add more value to
+the feature, without compromising its roadmap.
+
+For more details, see link:{adminguide_link}#_managing_organizations_[{adminguide_name}].
