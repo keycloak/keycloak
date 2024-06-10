@@ -147,12 +147,12 @@ public interface OrganizationProvider extends Provider {
 
     /**
      * @param organization the organization
-     * @return The identityProvider associated with a given {@code organization} or {@code null} if there is none.
+     * @return Stream of the identity providers associated with the given {@code organization}. Never returns {@code null}.
      */
     Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization);
 
     /**
-     * Removes the link between the given {@link OrganizationModel} and identity provider associated with it if such a link exists.
+     * Removes the link between the given {@link OrganizationModel} and the identity provider associated with it if such a link exists.
      *
      * @param organization the organization
      * @param identityProvider the identity provider
