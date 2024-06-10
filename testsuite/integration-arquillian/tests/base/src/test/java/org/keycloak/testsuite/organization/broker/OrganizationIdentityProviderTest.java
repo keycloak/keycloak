@@ -111,11 +111,20 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         IdentityProviderRepresentation idpTemplate = organization
                 .identityProviders().get(bc.getIDPAlias()).toRepresentation();
 
+        //remove Org related stuff from the template
+        idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        idpTemplate.getConfig().remove(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+
         for (int i = 0; i < 5; i++) {
             idpTemplate.setAlias("idp-" + i);
             idpTemplate.setInternalId(null);
-            testRealm().identityProviders().create(idpTemplate).close();
-            organization.identityProviders().addIdentityProvider(idpTemplate.getAlias()).close();
+            try (Response response = testRealm().identityProviders().create(idpTemplate)) {
+                assertThat("Falied to create idp-" + i, response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            }
+            try (Response response = organization.identityProviders().addIdentityProvider(idpTemplate.getAlias())) {
+                assertThat("Falied to add idp-" + i, response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
         }
 
         Assert.assertEquals(6, organization.identityProviders().getIdentityProviders().size());

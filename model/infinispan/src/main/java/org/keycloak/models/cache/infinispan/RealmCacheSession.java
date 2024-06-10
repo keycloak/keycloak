@@ -172,6 +172,29 @@ public class RealmCacheSession implements CacheRealmProvider {
         return groupDelegate;
     }
 
+    public Set<String> getInvalidations() {
+        return Collections.unmodifiableSet(invalidations);
+    }
+
+    public RealmCacheManager getCache() {
+        return cache;
+    }
+
+    public long getStartupRevision() {
+        return startupRevision;
+    }
+
+    @Override
+    public void registerInvalidation(String id) {
+        invalidations.add(id);
+        invalidationEvents.add(new InvalidationEvent() {
+            @Override
+            public String getId() {
+                return id;
+            }
+        });
+    }
+
     @Override
     public void registerRealmInvalidation(String id, String name) {
         cache.realmUpdated(id, name, invalidations);

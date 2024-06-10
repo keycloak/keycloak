@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.organization.broker;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -45,6 +47,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
 public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganizationTest {
@@ -783,6 +786,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(user.getUsername(), user.getEmail(), "Firstname", "Lastname");
+        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+
         UserRepresentation account = getUserRepresentation(user.getEmail());
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
         realmsResouce().realm(bc.providerRealmName()).logoutAll();
