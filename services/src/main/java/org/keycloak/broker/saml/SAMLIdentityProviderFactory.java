@@ -104,7 +104,6 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 for (EndpointType endpoint : idpDescriptor.getArtifactResolutionService()) {
                     if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_SOAP_BINDING.get())) {
                         artifactResolutionServiceUrl = endpoint.getLocation().toString();
-                        artifactBindingResponse = true;
                         break;
                     }
                 }
