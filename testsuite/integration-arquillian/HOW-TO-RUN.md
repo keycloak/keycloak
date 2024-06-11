@@ -357,17 +357,17 @@ Make sure the `testsuite/integration-arquillian/servers/auth-server/quarkus` mod
     mvn -f testsuite/integration-arquillian/servers/auth-server/quarkus/pom.xml clean install \
          -Pauth-server-cluster-quarkus
 
-Run tests using the `auth-server-cluster-quarkus` profile:
+Run tests using the `auth-server-cluster-quarkus` profile and with a database which is not H2:
 
      mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install \
-     -Pauth-server-cluster-quarkus \
+     -Pauth-server-cluster-quarkus,db-postgres \
      -Dsession.cache.owners=2  \
      -Dtest=AuthenticationSessionFailoverClusterTest
      
 Alternatively, you can perform both steps using the following command:
 
     mvn -f testsuite/integration-arquillian/pom.xml clean install \
-    -Pauth-server-cluster-quarkus \
+    -Pauth-server-cluster-quarkus,db-postgres \
     -Dsession.cache.owners=2 \
     -Dtest=AuthenticationSessionFailoverClusterTest
      
