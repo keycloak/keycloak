@@ -1,5 +1,11 @@
 package org.keycloak.test.framework.server;
 
-public class DefaultKeycloakTestServerConfig implements KeycloakTestServerConfig {
+import java.util.Optional;
 
+public class DefaultKeycloakTestServerConfig implements KeycloakTestServerConfig {
+    @Override
+    public Optional<String> adminUserName() { return Optional.of("admin"); }
+
+    @Override
+    public Optional<String> adminUserPassword() { return Optional.of("admin"); }
 }
