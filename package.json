@@ -23,7 +23,7 @@
     "prettier": "^3.3.1",
     "tslib": "^2.6.3",
     "typescript": "^5.4.5",
-    "typescript-eslint": "^7.12.0",
+    "typescript-eslint": "^7.13.0",
     "wireit": "^0.14.4"
   },
   "pnpm": {
