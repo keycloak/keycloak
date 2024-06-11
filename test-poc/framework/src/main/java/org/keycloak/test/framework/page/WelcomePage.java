@@ -1,13 +1,18 @@
 package org.keycloak.test.framework.page;
 
 import org.junit.jupiter.api.Assertions;
+import org.keycloak.test.framework.TestPage;
+import org.keycloak.test.framework.webdriver.KeycloakWebDriver;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
+@TestPage
 public class WelcomePage {
-    private final WebDriver driver;
+
+    @KeycloakWebDriver
+    WebDriver driver;
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -23,11 +28,6 @@ public class WelcomePage {
 
     @FindBy(css = ".pf-v5-c-alert")
     private WebElement pageAlert;
-
-    public WelcomePage(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
-    }
 
     public void navigateTo() {
         driver.get("http://localhost:8080");

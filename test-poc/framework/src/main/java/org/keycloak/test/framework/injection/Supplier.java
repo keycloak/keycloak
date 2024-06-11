@@ -8,7 +8,15 @@ public interface Supplier<T, S extends Annotation> {
 
     Class<T> getValueType();
 
+    default InstanceWrapper<T, S> getValue(Registry registry) {
+        return getValue(registry, (S) null);
+    }
+
     InstanceWrapper<T, S> getValue(Registry registry, S annotation);
+
+    default InstanceWrapper<T, S> getValue(Registry registry, InstanceWrapper<T, S> wrapper) {
+        return getValue(registry, wrapper.getAnnotation());
+    }
 
     LifeCycle getLifeCycle();
 

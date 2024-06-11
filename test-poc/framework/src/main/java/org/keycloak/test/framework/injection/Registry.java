@@ -67,7 +67,7 @@ public class Registry {
         Optional<Supplier<?, ?>> supplied = suppliers.stream().filter(s -> s.getValueType().equals(typeClass)).findFirst();
         if (supplied.isPresent()) {
             Supplier<?, ?> supplier = supplied.get();
-            dependency = supplier.getValue(this, null);
+            dependency = supplier.getValue(this);
             deployedInstances.add(dependency);
 
             if (LOGGER.isTraceEnabled()) {
@@ -87,7 +87,7 @@ public class Registry {
         requestedInstances.add(requestedServerInstance);
 
         for (Field f : testClass.getDeclaredFields()) {
-            InstanceWrapper instanceWrapper = createInstanceWrapper(f.getAnnotations());
+            InstanceWrapper instanceWrapper = createInstanceWrapper(f);
             if (instanceWrapper != null) {
                 requestedInstances.add(instanceWrapper);
             }
@@ -125,7 +125,7 @@ public class Registry {
         while (itr.hasNext()) {
             InstanceWrapper requestedInstance = itr.next();
 
-            InstanceWrapper instance = requestedInstance.getSupplier().getValue(this, requestedInstance.getAnnotation());
+            InstanceWrapper instance = requestedInstance.getSupplier().getValue(this, requestedInstance);
 
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.tracev("Created instance: {0}",
@@ -154,6 +154,17 @@ public class Registry {
     public void afterAll() {
         List<InstanceWrapper<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getSupplier().getLifeCycle().equals(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
+    }
+
+    private InstanceWrapper<?, ?> createInstanceWrapper(Field field) {
+        for (Annotation a : field.getAnnotations()) {
+            for (Supplier s : suppliers) {
+                if (s.getAnnotationClass().equals(a.annotationType())) {
+                    return new InstanceWrapper(s, a, field, null);
+                }
+            }
+        }
+        return null;
     }
 
     private InstanceWrapper<?, ?> createInstanceWrapper(Annotation[] annotations) {

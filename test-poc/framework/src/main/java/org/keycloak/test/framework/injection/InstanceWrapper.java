@@ -1,6 +1,7 @@
 package org.keycloak.test.framework.injection;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,17 +12,22 @@ public class InstanceWrapper<T, A extends Annotation> {
     private final Supplier<T, A> supplier;
     private final A annotation;
     private final Set<InstanceWrapper<T, A>> dependencies = new HashSet<>();
+    private final Field field;
     private T value;
     private final Map<String, Object> notes = new HashMap<>();
 
     public InstanceWrapper(Supplier<T, A> supplier, A annotation) {
-        this.supplier = supplier;
-        this.annotation = annotation;
+        this(supplier, annotation, null, null);
     }
 
     public InstanceWrapper(Supplier<T, A> supplier, A annotation, T value) {
+        this(supplier, annotation, null, value);
+    }
+
+    public InstanceWrapper(Supplier<T, A> supplier, A annotation, Field field, T value) {
         this.supplier = supplier;
         this.annotation = annotation;
+        this.field = field;
         this.value = value;
     }
 
@@ -39,6 +45,10 @@ public class InstanceWrapper<T, A extends Annotation> {
 
     public A getAnnotation() {
         return annotation;
+    }
+
+    public Field getField() {
+        return field;
     }
 
     public Set<InstanceWrapper<T, A>> getDependencies() {
