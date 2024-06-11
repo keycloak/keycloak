@@ -41,6 +41,7 @@ import {
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
+import { translationFormatter } from "../ClientsSection";
 import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
 import { AddScopeDialog } from "./AddScopeDialog";
 
@@ -368,7 +369,7 @@ export const ClientScopes = ({
               <TypeSelector clientId={clientId} refresh={refresh} {...row} />
             ),
           },
-          { name: "description" },
+          { name: "description", cellFormatters: [translationFormatter(t)] },
         ]}
         actions={
           isManager
