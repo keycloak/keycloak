@@ -79,7 +79,8 @@
                                         class="${properties.kcInputClass!}" name="username"
                                         value="${(login.username!'')}"
                                         autocomplete="username webauthn"
-                                        type="text" autofocus autocomplete="off"/>
+                                        type="text" autofocus autocomplete="off"
+                                        dir="ltr"/>
                                     <#if messagesPerField.existsError('username')>
                                         <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
                                             ${kcSanitize(messagesPerField.get('username'))?no_esc}
