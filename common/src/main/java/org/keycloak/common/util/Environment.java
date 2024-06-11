@@ -65,13 +65,13 @@ public class Environment {
         return DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile());
     }
 
-    private static String getProfile() {
+    public static String getProfile() {
         String profile = System.getProperty(PROFILE);
 
-        if (profile == null) {
-            profile = System.getenv(ENV_PROFILE);
+        if (profile != null) {
+            return profile;
         }
 
-        return profile;
+        return System.getenv(ENV_PROFILE);
     }
 }
