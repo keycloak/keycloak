@@ -4,4 +4,4 @@ ansible_ssh_user: ec2-user
 kc_home: /opt/keycloak
 update_system_packages: no
 install_java: yes
-java_version: 17
+java_version: 21

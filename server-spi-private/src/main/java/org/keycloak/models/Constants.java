@@ -82,7 +82,7 @@ public final class Constants {
     public static final String TOKEN = "token";
     public static final String TAB_ID = "tab_id";
     public static final String CLIENT_DATA = "client_data";
-
+    public static final String REUSE_ID = "reuse_id";
     public static final String SKIP_LOGOUT = "skip_logout";
     public static final String KEY = "key";
 
@@ -171,6 +171,8 @@ public final class Constants {
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
     public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
+
+    public static final String SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED = "client.introspection.response.allow.jwt.claim.enabled";
 
     public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
 

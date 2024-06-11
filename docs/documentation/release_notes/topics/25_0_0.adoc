@@ -2,6 +2,14 @@
 
 The Account Console v2 theme has been removed from {project_name}. This theme was deprecated in {project_name} 24 and replaced by the Account Console v3 theme. If you are still using this theme, you should migrate to the Account Console v3 theme.
 
+= Java 21 support
+
+{project_name} now supports OpenJDK 21, as we want to stick to the latest LTS OpenJDK versions.
+
+= Java 17 support is deprecated
+
+OpenJDK 17 support is deprecated in {project_name}, and will be removed in a following release in favor of OpenJDK 21.
+
 = Most of Java adapters removed
 
 As stated in the release notes of previous {project_name} version, the most of Java adapters are now removed from the {project_name} codebase and downloads pages.
@@ -111,9 +119,44 @@ by protocol mappers. Some of them affect even the regular access tokens or ID to
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}]..
 
+= Support for application/jwt media-type in token introspection endpoint
+
+You can use the HTTP Header `Accept: application/jwt` when invoking a token introspection endpoint. When enabled for a particular client, it returns a claim `jwt` from the
+token introspection endpoint with the full JWT access token, which can be useful especially for the use-cases when the client calling introspection endpoint used lightweight access
+token. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+
 = Password policy for check if password contains Username
 
 Keycloak supports a new password policy that allows you to deny user passwords which contains the user username.
+
+= Required actions improvements
+
+In the Admin Console, you can now configure some required actions in the *Required actions* tab of a particular realm. Currently, the *Update password* is the only built-in configurable required action. It supports setting *Maximum Age of Authentication*, which is the maximum time users can update their password
+by the `kc_action` parameter (used for instance when updating password in the Account Console) without re-authentication. The sorting of required actions is also improved. When there are multiple required
+actions during authentication, all actions are sorted together regardless of whether those are actions set during authentication (for instance by the `kc_action` parameter) or actions added to the user account manually by an administrator.
+Thanks to https://github.com/thomasdarimont[Thomas Darimont] and https://github.com/danielFesenmeyer[Daniel Fesenmeyer] for the contributions.
+
+= Passkeys improvements
+
+The support for Passkeys conditional UI was added. When the Passkeys preview feature is enabled, there is a dedicated authenticator available, which means you can select from a list of available passkeys accounts
+and authenticate a user based on that. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+
+= Default client profile for SAML
+
+The default client profile to have secured SAML clients was added. When browsing through client policies of a realm in the Admin Console, you see a new client profile `saml-security-profile`. When it is used, there are
+security best practices applied for SAML clients such as signatures are enforced, SAML Redirect binding is disabled, and wildcard redirect URLs are prohibited.
+
+= Authenticator for override existing IDP link during first-broker-login
+
+There was new authenticator `Confirm override existing link` added. This authenticator allows to override linked IDP username for the {project_name} user, which was already linked to different
+IDP identity before. More details in the link:{adminguide_link}#_override_existing_broker_link[{adminguide_name}]. Thanks to https://github.com/lexcao[Lex Cao] for the contribution.
+
+= OpenID for Verifiable Credential Issuance - experimental support
+
+There is work in progress on the support of OpenID for Verifiable Credential Issuance (OID4VCI). Right now, this is still work in progress, but things are being gradually added. {project_name}
+can act as an OID4VC Issuer with support of Pre-Authorized code flow. There is support for verifiable credentials in the JWT-VC, SD-JWT-VC and VCDM formats. Thanks to the members of the OAuth SIG
+groups for the contributions and feedback and especially thanks to https://github.com/wistefan[Stefan Wiedemann], https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/tnorimat[Takashi Norimatsu]
+and https://github.com/bucchi[Yutaka Obuchi].
 
 = Searching by user attribute no longer case insensitive
 
@@ -164,6 +207,10 @@ This eliminates the need to execute the build phase and rebuild your image due t
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+= High availability guide enhanced
+
+The high availability guide now contains a {section} on how to configure an AWS Lambda to prevent an intended automatic failback from the Backup site to the Primary site.
+
 = Removing deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken` classes
 
 In this release, we are finally removing deprecated methods from the following classes:
@@ -180,3 +227,21 @@ As a consequence of the removal of deprecated methods from `AccessToken`, `IDTok
 the `SingleUseObjectKeyModel` also changed to keep consistency with the method names related to expiration values.
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Support for PostgreSQL 16
+
+The supported and tested databases now include PostgreSQL 16.
+
+= Introducing support for Customer Identity and Access Management (CIAM) and Multi-tenancy
+
+In this release, we are delivering Keycloak Organizations as a technology preview feature.
+
+This feature provides a realm with some core CIAM capabilities, which will serve as the baseline for more capabilities
+in the future to address Business-to-Business (B2B) and Business-to-Business-to-Customers (B2B2C) use cases.
+
+In terms of functionality, the feature is completed. However, we still have work to do to make it fully supported in the next major release.
+This remaining work is mainly about preparing the feature for production deployments with a focus on scalability. Also, depending
+on the feedback we get until the next major release, we might eventually accept additional capabilities and add more value to
+the feature, without compromising its roadmap.
+
+For more details, see link:{adminguide_link}#_managing_organizations[{adminguide_name}].

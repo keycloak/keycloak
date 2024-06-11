@@ -1,6 +1,7 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
@@ -259,14 +260,16 @@ class AdminClient {
     await this.#client.users.updateProfile(merge(userProfile, { realm }));
   }
 
-  async patchUserProfile(realm: string, payload: UserProfileConfig) {
+  async addGroupToProfile(realm: string, groupName: string) {
     await this.#login();
 
     const currentProfile = await this.#client.users.getProfile({ realm });
 
-    await this.#client.users.updateProfile(
-      merge(currentProfile, payload, { realm }),
-    );
+    await this.#client.users.updateProfile({
+      ...currentProfile,
+      realm,
+      ...{ groups: [...currentProfile.groups!, { name: groupName }] },
+    });
   }
 
   async createRealmRole(payload: RoleRepresentation) {
@@ -363,6 +366,17 @@ class AdminClient {
     } finally {
       this.#client.realmName = prevRealm;
     }
+  }
+
+  async createOrganization(org: OrganizationRepresentation) {
+    await this.#login();
+    await this.#client.organizations.create(org);
+  }
+
+  async deleteOrganization(name: string) {
+    await this.#login();
+    const { id } = (await this.#client.organizations.find({ search: name }))[0];
+    await this.#client.organizations.delById({ id: id! });
   }
 }
 

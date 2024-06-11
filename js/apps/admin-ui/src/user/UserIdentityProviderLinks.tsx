@@ -39,7 +39,7 @@ export const UserIdentityProviderLinks = ({
   const [federatedId, setFederatedId] = useState("");
   const [isLinkIdPModalOpen, setIsLinkIdPModalOpen] = useState(false);
 
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
   const { hasAccess, hasSomeAccess } = useAccess();
@@ -74,8 +74,8 @@ export const UserIdentityProviderLinks = ({
     return allFedIds;
   };
 
-  const getAvailableIdPs = async () => {
-    return (await adminClient.realms.findOne({ realm }))!.identityProviders;
+  const getAvailableIdPs = () => {
+    return realmRepresentation?.identityProviders;
   };
 
   const linkedIdPsLoader = async () => {
@@ -87,7 +87,7 @@ export const UserIdentityProviderLinks = ({
       (x) => x.identityProvider,
     );
 
-    return (await getAvailableIdPs())?.filter(
+    return getAvailableIdPs()?.filter(
       (item) => !linkedNames.includes(item.alias),
     )!;
   };
@@ -194,7 +194,6 @@ export const UserIdentityProviderLinks = ({
       {
         name: "identityProvider",
         displayKey: "name",
-        cellFormatters: [emptyFormatter()],
         cellRenderer: idpLinkRenderer,
         transforms: [cellWidth(20)],
       },
@@ -213,7 +212,6 @@ export const UserIdentityProviderLinks = ({
       },
       {
         name: "",
-        cellFormatters: [emptyFormatter()],
         cellRenderer: unlinkRenderer,
         transforms: [cellWidth(20)],
       },
@@ -223,7 +221,6 @@ export const UserIdentityProviderLinks = ({
       columns.splice(1, 0, {
         name: "type",
         displayKey: "type",
-        cellFormatters: [emptyFormatter()],
         cellRenderer: badgeRenderer1,
         transforms: [cellWidth(10)],
       });
@@ -286,13 +283,11 @@ export const UserIdentityProviderLinks = ({
                 {
                   name: "type",
                   displayKey: "type",
-                  cellFormatters: [emptyFormatter()],
                   cellRenderer: badgeRenderer2,
                   transforms: [cellWidth(60)],
                 },
                 {
                   name: "",
-                  cellFormatters: [emptyFormatter()],
                   cellRenderer: linkRenderer,
                 },
               ]}

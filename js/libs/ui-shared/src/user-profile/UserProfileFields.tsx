@@ -192,7 +192,8 @@ const FormField = ({
   const inputType = useMemo(() => determineInputType(attribute), [attribute]);
 
   const Component =
-    attribute.multivalued || isMultiValue(value)
+    attribute.multivalued ||
+    (isMultiValue(value) && attribute.annotations?.inputType === undefined)
       ? FIELDS["multi-input"]
       : FIELDS[inputType];
 

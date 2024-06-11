@@ -118,7 +118,9 @@ Migrating in-memory sessions for {project_name} 24 is not supported as all {proj
 ====
 The migration of user sessions only works when the persistent user sessions is enabled when upgrading to {project_name} 25.
 If you chose to upgrade to 25 without enabling persistent user sessions, there is currently no possibility to trigger the migration of existing sessions at a later point in time.
-When you enable it later, only newly created user sessions will be persisted.
+
+Enabling this feature later, by a configuration change, can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist. To prevent that, remove all existing online user and client sessions before the first node is started with the feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
 ====
 
 To migrate the user sessions during an upgrade of {project_name}, perform the following steps:
@@ -162,7 +164,7 @@ TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduc
 In previous versions and when the feature is disabled, a restart of all {project_name} nodes logged out all users.
 To sign out all online users sessions of a realm with the `persistent-user-session` feature enabled, use the following steps as before:
 
-. Login to the Admin Console.
+. Log in to the Admin Console.
 . Select the menu entry *Sessions*.
 . Select the action *Sign out all active sessions*.
 
@@ -218,10 +220,10 @@ bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size
 
 = Hostname Verification Policy
 
-The default for `spi-truststore-file-hostname-verification-policy` and the new `tls-hostname-verifier` option is now DEFAULT, rather than WILDCARD. The WILDCARD and STRICT option values have been deprecated - you should simply rely upon DEFAULT instead. 
+The default for `spi-truststore-file-hostname-verification-policy` and the new `tls-hostname-verifier` option is now DEFAULT, rather than WILDCARD. The WILDCARD and STRICT option values have been deprecated - you should simply rely upon DEFAULT instead.
 
 Behavior supported by WILDCARD, that is not supported by DEFAULT:
-* allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com). 
+* allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com).
 * allows matching against well known public suffixes - e.g. foo.co.gl may match *.co.gl
 
 Behavior supported by STRICT, that is not supported by DEFAULT:
@@ -264,7 +266,7 @@ When searching for users by user attribute, Keycloak no longer searches for user
 
 = New default client scope `basic`
 
-The new client scope named `basic` is added as a realm "default" client scope and hence will be added to all newly created clients. The client scope is also automatically added to all existing clients during migration.
+The new client scope named `basic` is added as a realm "default" client scope and hence will be added to all newly created OIDC clients. The client scope is also automatically added to all existing OIDC clients during migration.
 
 This scope contains preconfigured protocol mappers for the following claims:
 
@@ -272,6 +274,11 @@ This scope contains preconfigured protocol mappers for the following claims:
  * `auth_time`
 
 This provides additional help to reduce the number of claims in a lightweight access token, but also gives the chance to configure claims that were always added automatically.
+
+NOTE: In case you already have client scope named `basic` in some of your realms, then the new client scope `basic` will not be added to your realm and will not be added to any clients. The
+migration would be ignored for this particular case. In that case, you either need to make sure to rename your client scope to something different than `basic` before you migrate to this
+{project_name} version or you need to manually deal with missing `sub` and `auth_time` claims in case you need them in your tokens and you may need to manually add corresponding protocol mappers
+to some of your client scopes.
 
 = Removed `session_state` claim
 
@@ -410,6 +417,10 @@ to avoid overflow after 2038.
 Method `String encode(String rawPassword, int iterations)` on the interface `org.keycloak.credential.hash.PasswordHashProvider` is deprecated. The method will be removed in
 one of the future {project_name} releases. It might be {project_name} 27 release.
 
+= CollectionUtil intesection method removed
+
+The method `org.keycloak.common.util.CollectionUtil.intersection` has been removed. You should use the 'java.util.Collection.retainAll' instead on an existing collection.
+
 = Resteasy util class is deprecated
 
 `org.keycloak.common.util.Resteasy` has been deprecated. You should use the `org.keycloak.util.KeycloakSessionUtil` to obtain the `KeycloakSession` instead.
@@ -426,3 +437,33 @@ If the session is using the remember me feature, the idle timeout and max lifesp
 
 {project_name} now requires a {jdgserver_name} server version of at least 15.0.0 for external {jdgserver_name} deployments.
 An external {jdgserver_name} deployment is supported for multi-site setups as outlined in the HA guide.
+
+= Oracle Database driver not part of the distribution
+
+The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
+If you wish to use Oracle DB, you must manually install a version of the Oracle Driver that is compatible with your specific environment. Instructions for this process can be found in the https://www.keycloak.org/server/db[Configuring the database] {section}.
+
+= Deprecated theme variables
+
+The following variables were deprecated in the Account theme:
+
+* `authUrl`. Use `authServerUrl` instead.
+
+The following variables from the environment script injected into the page of the Account theme are deprecated:
+
+* `authUrl`. Use `authServerUrl` instead.
+* `features.isInternationalizationEnabled`. Do not use this variable.
+
+The following variables were deprecated in the Admin theme:
+
+* `authUrl`. Do not use this variable.
+
+The following variables from the environment script injected into the page of the Admin theme are deprecated:
+
+* `authUrl`. Do not use this variable.
+
+= Methods to get and set current refresh token in client session are now deprecated
+
+The methods `String getCurrentRefreshToken()`, `void setCurrentRefreshToken(String currentRefreshToken)`, `int getCurrentRefreshTokenUseCount()`, and `void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount)` in the interface `org.keycloak.models.AuthenticatedClientSessionModel` are deprecated. They have been replaced by similar methods that require an identifier as a parameter such as `getRefreshToken(String reuseId)` to manage multiple refresh tokens within a client session.
+The methods will be removed in one of the future {project_name} releases. It might be {project_name} 27 release.
+

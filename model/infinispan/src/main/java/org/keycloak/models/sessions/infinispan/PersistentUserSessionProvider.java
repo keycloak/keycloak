@@ -22,6 +22,7 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
+import org.infinispan.commons.util.ByRef;
 import org.infinispan.context.Flag;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.persistence.manager.PersistenceManager;
@@ -955,8 +956,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         entity.setClientId(clientId);
         entity.setRedirectUri(clientSession.getRedirectUri());
         entity.setTimestamp(clientSession.getTimestamp());
-        entity.setCurrentRefreshToken(clientSession.getCurrentRefreshToken());
-        entity.setCurrentRefreshTokenUseCount(clientSession.getCurrentRefreshTokenUseCount());
         entity.setOffline(offline);
 
         return entity;
@@ -1030,8 +1029,12 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         AtomicInteger currentBatch = new AtomicInteger(0);
         var persistence = ComponentRegistry.componentOf(sessionCache, PersistenceManager.class);
         if (persistence != null && !persistence.getStoresAsString().isEmpty()) {
+            ByRef<Throwable> ref = ByRef.create(null);
             Flowable.fromPublisher(persistence.<String, SessionEntityWrapper<UserSessionEntity>>publishEntries(true, false))
-                    .blockingSubscribe(e -> processEntryFromCache(e.getValue(), userSessionPerformer, clientSessionPerformer, currentBatch));
+                    .blockingSubscribe(e -> processEntryFromCache(e.getValue(), userSessionPerformer, clientSessionPerformer, currentBatch), ref::set);
+            if (ref.get() != null) {
+                throw new RuntimeException("Unable to migrate sessions", ref.get());
+            }
         } else {
             // Usually we assume sessions are stored in a persistence. To be extra safe, iterate over local sessions if no persistent is available.
             sessionCache.forEach((key, value) -> processEntryFromCache(value, userSessionPerformer, clientSessionPerformer, currentBatch));
@@ -1053,6 +1056,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
      */
     private void processEntryFromCache(SessionEntityWrapper<UserSessionEntity> sessionEntityWrapper, JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer, JpaChangesPerformer<UUID, AuthenticatedClientSessionEntity> clientSessionPerformer, AtomicInteger count) {
         RealmModel realm = session.realms().getRealm(sessionEntityWrapper.getEntity().getRealmId());
+        if (realm == null) {
+            // ignoring old and unknown realm found in the session
+            return;
+        }
         sessionEntityWrapper.getEntity().getAuthenticatedClientSessions().forEach((k, uuid) -> {
             SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessionCache.get(uuid);
             if (clientSession != null) {

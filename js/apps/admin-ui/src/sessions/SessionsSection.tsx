@@ -1,10 +1,10 @@
 import UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
-import { PageSection } from "@patternfly/react-core";
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
   DropdownItem,
-  Select,
+  PageSection,
   SelectOption,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,12 +34,12 @@ const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
   const [open, toggle] = useToggle();
 
   return (
-    <Select
+    <KeycloakSelect
       data-testid="filter-session-type-select"
       isOpen={open}
       onToggle={toggle}
       toggleIcon={<FilterIcon />}
-      onSelect={(_, value) => {
+      onSelect={(value) => {
         const filter = value as FilterType;
         onChange(filter);
         toggle();
@@ -55,7 +55,7 @@ const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
       <SelectOption data-testid="offline-option" value="OFFLINE">
         {t("sessionsType.offline")}
       </SelectOption>
-    </Select>
+    </KeycloakSelect>
   );
 };
 
@@ -106,31 +106,29 @@ export default function SessionsSection() {
     },
   });
 
-  const dropdownItems = [
-    <DropdownItem
-      key="toggle-modal"
-      data-testid="revocation"
-      component="button"
-      onClick={() => handleRevocationModalToggle()}
-    >
-      {t("revocation")}
-    </DropdownItem>,
-    <DropdownItem
-      key="delete-role"
-      data-testid="logout-all"
-      component="button"
-      isDisabled={noSessions}
-      onClick={toggleLogoutDialog}
-    >
-      {t("signOutAllActiveSessions")}
-    </DropdownItem>,
-  ];
-
   return (
     <>
       <LogoutConfirm />
       <ViewHeader
-        dropdownItems={dropdownItems}
+        dropdownItems={[
+          <DropdownItem
+            key="toggle-modal"
+            data-testid="revocation"
+            component="button"
+            onClick={() => handleRevocationModalToggle()}
+          >
+            {t("revocation")}
+          </DropdownItem>,
+          <DropdownItem
+            key="delete-role"
+            data-testid="logout-all"
+            component="button"
+            isDisabled={noSessions}
+            onClick={toggleLogoutDialog}
+          >
+            {t("signOutAllActiveSessions")}
+          </DropdownItem>,
+        ]}
         titleKey="titleSessions"
         subKey="sessionExplain"
         helpUrl={helpUrls.sessionsUrl}

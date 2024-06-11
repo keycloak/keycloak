@@ -1,58 +1,54 @@
 {
   "realm": "test-realm-authz",
   "auth-server-url": "http://localhost:8180/auth",
-  "ssl-required": "external",
   "resource": "test-app-authz",
-  "bearer-only": true,
   "credentials": {
     "secret": "secret"
   },
-  "policy-enforcer": {
-    "paths": [
-      {
-        "path": "/v1/product/*",
-        "methods": [
-          {
-            "method": "POST",
-            "scopes": [
-              "create"
-            ]
-          }
-        ]
-      },
-      {
-        "path": "/v1/product/*",
-        "methods": [
-          {
-            "method": "GET",
-            "scopes": [
-              "view"
-            ]
-          }
-        ]
-      },
-      {
-        "path": "/v1/product/*",
-        "methods": [
-          {
-            "method": "PUT",
-            "scopes": [
-              "update"
-            ]
-          }
-        ]
-      },
-      {
-        "path": "/v1/product/*",
-        "methods": [
-          {
-            "method": "DELETE",
-            "scopes": [
-              "delete"
-            ]
-          }
-        ]
-      }
-    ]
-  }
+  "paths": [
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "POST",
+          "scopes": [
+            "create"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "GET",
+          "scopes": [
+            "view"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "PUT",
+          "scopes": [
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "DELETE",
+          "scopes": [
+            "delete"
+          ]
+        }
+      ]
+    }
+  ]
 }

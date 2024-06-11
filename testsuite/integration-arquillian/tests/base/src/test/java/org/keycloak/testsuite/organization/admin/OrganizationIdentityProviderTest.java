@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.models.OrganizationModel.BROKER_PUBLIC;
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
 
@@ -80,6 +81,27 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         actual = idpResource.toRepresentation();
         // the link to the organization should not change
         Assert.assertEquals(actual.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE), organization.getId());
+
+        String domain = actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+        assertNotNull(domain);
+        actual.getConfig().put(ORGANIZATION_DOMAIN_ATTRIBUTE, " ");
+        idpResource.update(actual);
+        actual = idpResource.toRepresentation();
+        // domain removed
+        Assert.assertNull(actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
+
+        actual.getConfig().put(ORGANIZATION_DOMAIN_ATTRIBUTE, domain);
+        idpResource.update(actual);
+        actual = idpResource.toRepresentation();
+        // domain set again
+        Assert.assertNotNull(actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
+
+        actual.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
+        idpResource.update(actual);
+        actual = idpResource.toRepresentation();
+        // domain removed
+        Assert.assertNull(actual.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE));
     }
 
     @Test

@@ -731,7 +731,7 @@ the same time both hosts must use different domains to be considered cross-origi
 Also, those new cookies policies are currently not yet enabled by default (which will change in the near future). To test
 those policies, you need the latest stable Firefox together with `firefox-strict-cookies` profile. This profile sets the
 browser to Firefox, configures the proper cookies behavior and makes Firefox to run in the headless mode (which is ok
-because this is not UI testing). For debugging purposes you can override the headless mode with `-DfirefoxHeadless=false`. 
+because this is not UI testing). For debugging purposes you can override the headless mode with `-DfirefoxArguments=''`. 
 
 **Broker tests:**
 
@@ -786,7 +786,7 @@ mvn clean install -f crypto/fips1402 -Dorg.bouncycastle.fips.approved_only=true
 
 ### Integration tests
 
-On the FIPS enabled platform with FIPS enabled OpenJDK 17, you can run this to test against a Keycloak server on Quarkus
+On the FIPS enabled platform with FIPS enabled OpenJDK 21, you can run this to test against a Keycloak server on Quarkus
 with FIPS 140-2 integration enabled
 
 ```

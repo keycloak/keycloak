@@ -27,7 +27,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -126,6 +125,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
@@ -136,13 +136,7 @@ public class RepresentationToModel {
 
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
-        KeycloakContext context = session.getContext();
-        try {
-            context.setRealm(newRealm);
-            session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
-        } finally {
-            context.setRealm(null);
-        }
+        session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
     }
 
     public static void importRoles(RolesRepresentation realmRoles, RealmModel realm) {
@@ -414,7 +408,7 @@ public class RepresentationToModel {
 
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
             if (!ObjectUtil.isEqualOrBothNull(resource.getType(), rep.getType())) {
-                throw new ClientTypeException("Not supported to change client type");
+                throw ClientTypeException.Message.CANNOT_CHANGE_CLIENT_TYPE.exception();
             }
             if (rep.getType() != null) {
                 RealmModel realm = session.getContext().getRealm();
@@ -545,9 +539,8 @@ public class RepresentationToModel {
                 .collect(Collectors.toList());
 
         if (propertyUpdateExceptions.size() > 0) {
-            throw new ClientTypeException(
-                    "Cannot change property of client as it is not allowed by the specified client type.",
-                    propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
+            Object[] paramsWithFailures = propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray();
+            throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception(paramsWithFailures);
         }
     }
 
@@ -634,7 +627,7 @@ public class RepresentationToModel {
             }
         }
     }
-    
+
     public static void updateClientScopes(ClientRepresentation resourceRep, ClientModel client) {
         if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
             // First remove all default/built in client scopes
@@ -661,8 +654,8 @@ public class RepresentationToModel {
     }
 
     /**
-     * Create Supplier to update property, if not null.
-     * Captures {@link ClientTypeException} if thrown by the setter.
+     * Create Supplier to update property.
+     * Captures and returns {@link ClientTypeException} if thrown by the setter.
      *
      * @param modelSetter setter to call.
      * @param representationGetter getter supplying the property update.
@@ -693,12 +686,9 @@ public class RepresentationToModel {
     private static <T> Supplier<ClientTypeException> updatePropertyAction(Consumer<T> modelSetter, Supplier<T>... getters) {
         Stream<T> firstNonNullSupplied = Stream.of(getters)
                 .map(Supplier::get)
-                .map(Optional::ofNullable)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .filter(Objects::nonNull);
         return updateProperty(modelSetter, () -> firstNonNullSupplied.findFirst().orElse(null));
     }
-
 
     private static String generateProtocolNameKey(String protocol, String name) {
         return String.format("%s%%%s", protocol, name);
@@ -858,16 +848,16 @@ public class RepresentationToModel {
     public static IdentityProviderModel toModel(RealmModel realm, IdentityProviderRepresentation representation, KeycloakSession session) {
         IdentityProviderFactory providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                 IdentityProvider.class, representation.getProviderId());
-        
+
         if (providerFactory == null) {
             providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                     SocialIdentityProvider.class, representation.getProviderId());
         }
-        
+
         if (providerFactory == null) {
             throw new IllegalArgumentException("Invalid identity provider id [" + representation.getProviderId() + "]");
         }
-        
+
         IdentityProviderModel identityProviderModel = providerFactory.createConfig();
 
         identityProviderModel.setInternalId(representation.getInternalId());
@@ -983,7 +973,9 @@ public class RepresentationToModel {
         model.setFlowId(rep.getFlowId());
 
         model.setAuthenticator(rep.getAuthenticator());
-        model.setPriority(rep.getPriority());
+        if (rep.getPriority() != null) {
+            model.setPriority(rep.getPriority());
+        }
         model.setParentFlow(rep.getParentFlow());
         model.setAuthenticatorFlow(rep.isAuthenticatorFlow());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
@@ -1667,7 +1659,9 @@ public class RepresentationToModel {
 
             String domain = representation.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
 
-            if (domain != null && org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
+            if (StringUtil.isBlank(domain)) {
+                representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+            } else if (org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
                 throw new IllegalArgumentException("Domain does not match any domain from the organization");
             }
 

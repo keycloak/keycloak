@@ -1,5 +1,4 @@
 import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   AlertVariant,
   Button,
@@ -11,13 +10,11 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useFetch } from "../utils/useFetch";
 
 type RevocationModalProps = {
   handleModalToggle: () => void;
@@ -33,23 +30,8 @@ export const RevocationModal = ({
   const { t } = useTranslation();
   const { addAlert } = useAlerts();
 
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm, refresh } = useRealm();
   const { register, handleSubmit } = useForm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
-
-  const [key, setKey] = useState(0);
-
-  const refresh = () => {
-    setKey(new Date().getTime());
-  };
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      setRealm(realm);
-    },
-    [key],
-  );
 
   const parseResult = (result: GlobalRequestResult, prefixKey: string) => {
     const successCount = result.successRequests?.length || 0;

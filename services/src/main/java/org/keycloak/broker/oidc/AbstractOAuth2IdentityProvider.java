@@ -562,7 +562,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
                 }
 
-                federatedIdentity.setIdpConfig(providerConfig);
                 federatedIdentity.setIdp(provider);
                 federatedIdentity.setAuthenticationSession(authSession);
 
@@ -712,7 +711,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         BrokeredIdentityContext context = exchangeExternalImpl(event, params);
         if (context != null) {
             context.setIdp(this);
-            context.setIdpConfig(getConfig());
         }
         return context;
     }

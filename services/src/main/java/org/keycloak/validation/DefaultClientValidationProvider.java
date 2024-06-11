@@ -35,6 +35,9 @@ import org.keycloak.services.util.ResolveRelative;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -235,13 +238,21 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
     }
 
+
     private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment) {
         if (url == null || url.isEmpty()) {
             return;
         }
 
         try {
-            URI uri = new URI(url);
+            String urlToCheck=url;
+            if(field==FieldMessages.BACKCHANNEL_LOGOUT_URL){
+                if(checkCurlyBracketsBalanced(url))
+                    // This allow user to set parametrized backchannel logout url in this format : http://{example}/{example2}
+                    urlToCheck=url.replace("{","%7B").replace("}","%7D");
+                else throw new MalformedURLException();
+            }
+            URI uri = new URI(urlToCheck);
 
             boolean valid = true;
             if (uri.getScheme() != null && (uri.getScheme().equals("data") || uri.getScheme().equals("javascript"))) {
@@ -262,9 +273,40 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                 uri.toURL(); // throws an exception
             }
         }
+
         catch (MalformedURLException | IllegalArgumentException | URISyntaxException e) {
             context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
         }
+    }
+
+    /**
+     * Check if url has curly brackets in correct position ('{' before '}')
+     * @param url to check
+     * @return true if curly brackets are balanced, else false
+     */
+    public static boolean checkCurlyBracketsBalanced(String url)
+    {
+        Deque<Character> stack
+                = new ArrayDeque<>();
+
+        for(char singleLetter:url.toCharArray()){
+            if (singleLetter == '{')
+            {
+                // Push the element in the stack
+                stack.push(singleLetter);
+                continue;
+            }
+            if(stack.isEmpty() && (singleLetter=='}')) return false;
+            char check;
+            if(singleLetter=='}'){
+                check=stack.pop();
+                if(check!='{') return false;
+            }
+
+        }
+
+
+        return stack.isEmpty();
     }
 
     private void checkUriLogo(FieldMessages field, String url, ValidationContext<ClientModel> context) {

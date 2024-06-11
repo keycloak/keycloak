@@ -1,8 +1,8 @@
 import {
-  AccountEnvironment,
-  KeycloakContext,
+  BaseEnvironment,
+  type KeycloakContext,
 } from "@keycloak/keycloak-ui-shared";
-import { BaseEnvironment } from "@keycloak/keycloak-ui-shared/dist/context/environment";
+
 import { joinPath } from "../utils/joinPath";
 import { parseResponse } from "./parse-response";
 import {
@@ -45,7 +45,7 @@ export async function getSupportedLocales({
 }
 
 export async function savePersonalInfo(
-  context: KeycloakContext<AccountEnvironment>,
+  context: KeycloakContext<BaseEnvironment>,
   info: UserRepresentation,
 ): Promise<void> {
   const response = await request("/", context, { body: info, method: "POST" });
@@ -134,7 +134,7 @@ export async function linkAccount(
 ) {
   const redirectUri = encodeURIComponent(
     joinPath(
-      context.environment.authUrl,
+      context.environment.authServerUrl,
       "realms",
       context.environment.realm,
       "account",

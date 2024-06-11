@@ -25,9 +25,9 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
+import org.keycloak.testsuite.adapter.page.SalesPostClockSkewServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -39,7 +39,6 @@ import static org.hamcrest.Matchers.not;
 import org.jboss.arquillian.graphene.page.Page;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import org.keycloak.testsuite.adapter.page.SalesPostClockSkewServlet;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 
 
@@ -57,16 +56,16 @@ public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Deployment(name = DEPLOYMENT_NAME_3_SEC, managed = false)
     protected static WebArchive salesPostClockSkewServlet3Sec() {
-        return samlServletDeployment(SalesPostClockSkewServlet.DEPLOYMENT_NAME, DEPLOYMENT_NAME_3_SEC, SalesPostClockSkewServlet.DEPLOYMENT_NAME + "/WEB-INF/web.xml", 3, AdapterActionsFilter.class, PublicKeyLocator.class, SendUsernameServlet.class);
+        return samlServletDeployment(SalesPostClockSkewServlet.DEPLOYMENT_NAME, DEPLOYMENT_NAME_3_SEC, SalesPostClockSkewServlet.DEPLOYMENT_NAME + "/WEB-INF/web.xml", 3, AdapterActionsFilter.class, SendUsernameServlet.class);
     }
     @Deployment(name = DEPLOYMENT_NAME_30_SEC, managed = false)
     protected static WebArchive salesPostClockSkewServlet30Sec() {
-        return samlServletDeployment(SalesPostClockSkewServlet.DEPLOYMENT_NAME, DEPLOYMENT_NAME_30_SEC, SalesPostClockSkewServlet.DEPLOYMENT_NAME + "/WEB-INF/web.xml", 30, AdapterActionsFilter.class, PublicKeyLocator.class, SendUsernameServlet.class);
+        return samlServletDeployment(SalesPostClockSkewServlet.DEPLOYMENT_NAME, DEPLOYMENT_NAME_30_SEC, SalesPostClockSkewServlet.DEPLOYMENT_NAME + "/WEB-INF/web.xml", 30, AdapterActionsFilter.class, SendUsernameServlet.class);
     }
 
     @Deployment(name = SalesPostClockSkewServlet.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive salesPostClockSkewServlet5Sec() {
-        return samlServletDeployment(SalesPostClockSkewServlet.DEPLOYMENT_NAME, SalesPostClockSkewServlet.DEPLOYMENT_NAME + "/WEB-INF/web.xml", 5, AdapterActionsFilter.class, PublicKeyLocator.class, SendUsernameServlet.class);
+        return samlServletDeployment(SalesPostClockSkewServlet.DEPLOYMENT_NAME, SalesPostClockSkewServlet.DEPLOYMENT_NAME + "/WEB-INF/web.xml", 5, AdapterActionsFilter.class, SendUsernameServlet.class);
     }
 
     @Override

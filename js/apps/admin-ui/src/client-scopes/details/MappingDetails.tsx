@@ -5,11 +5,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  DropdownItem,
   FormGroup,
   PageSection,
   TextInput,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

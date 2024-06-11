@@ -66,17 +66,15 @@ export default function UserFederationKerberosSettings() {
       );
     } catch (error) {
       addError(
-        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
+        !id ? "createUserProviderError" : "userProviderSaveError",
         error,
       );
     }
   };
 
   return (
-    <>
-      <FormProvider {...form}>
-        <Header provider="Kerberos" save={() => form.handleSubmit(save)()} />
-      </FormProvider>
+    <FormProvider {...form}>
+      <Header provider="Kerberos" save={() => form.handleSubmit(save)()} />
       <PageSection variant="light">
         <KerberosSettingsRequired form={form} showSectionHeading />
       </PageSection>
@@ -102,6 +100,6 @@ export default function UserFederationKerberosSettings() {
           </ActionGroup>
         </Form>
       </PageSection>
-    </>
+    </FormProvider>
   );
 }

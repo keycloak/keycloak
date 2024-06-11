@@ -21,6 +21,8 @@ package org.keycloak.services.clienttype;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -69,7 +71,8 @@ public class DefaultClientTypeManager implements ClientTypeManager {
                 result = JsonSerialization.readValue(asStr, ClientTypesRepresentation.class);
                 result.setGlobalClientTypes(globalClientTypes);
             } catch (IOException ioe) {
-                throw new ClientTypeException("Failed to deserialize client types from JSON string", ioe);
+                logger.errorf("Failed to load client type for realm '%s'.", realm.getName());
+                throw ClientTypeException.Message.CLIENT_TYPE_FAILED_TO_LOAD.exception(ioe);
             }
         }
         return result;
@@ -86,7 +89,8 @@ public class DefaultClientTypeManager implements ClientTypeManager {
             String asStr = JsonSerialization.writeValueAsString(noGlobalsCopy);
             realm.setAttribute(CLIENT_TYPE_REALM_ATTRIBUTE, asStr);
         } catch (IOException ioe) {
-            throw new ClientTypeException("Failed to serialize client types to String", ioe);
+            logger.errorf("Failed to load global client type.");
+            throw ClientTypeException.Message.CLIENT_TYPE_FAILED_TO_LOAD.exception(ioe);
         }
     }
 
@@ -97,26 +101,31 @@ public class DefaultClientTypeManager implements ClientTypeManager {
         ClientTypeRepresentation clientType = getClientTypeByName(clientTypes, typeName);
         if (clientType == null) {
             logger.errorf("Referenced client type '%s' not found", typeName);
-            throw new ClientTypeException("Client type not found");
+            throw ClientTypeException.Message.CLIENT_TYPE_NOT_FOUND.exception();
+        }
+
+        ClientType parent = null;
+        if (clientType.getParent() != null) {
+            parent = getClientType(realm, clientType.getParent());
         }
 
         ClientTypeProvider provider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
-        return provider.getClientType(clientType);
+        return provider.getClientType(clientType, parent);
     }
 
     @Override
     public ClientModel augmentClient(ClientModel client) throws ClientTypeException {
         if (client.getType() == null) {
             return client;
-        } else {
-            try {
-                ClientType clientType = getClientType(client.getRealm(), client.getType());
-                return new TypeAwareClientModelDelegate(clientType, () -> client);
-            } catch(ClientTypeException cte) {
-                logger.errorf("Could not augment client, %s, due to client type exception: %s",
-                        client, cte);
-                throw cte;
-            }
+        }
+
+        try {
+            ClientType clientType = getClientType(client.getRealm(), client.getType());
+            return new TypeAwareClientModelDelegate(clientType, () -> client);
+        } catch(ClientTypeException cte) {
+            logger.errorf("Could not augment client, %s, due to client type exception: %s",
+                    client, cte);
+            throw cte;
         }
     }
 
@@ -136,13 +145,13 @@ public class DefaultClientTypeManager implements ClientTypeManager {
         ClientTypeProvider clientTypeProvider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
         if (clientTypeProvider == null) {
             logger.errorf("Did not find client type provider '%s' for the client type '%s'", clientType.getProvider(), clientType.getName());
-            throw new ClientTypeException("Did not find client type provider");
+            throw ClientTypeException.Message.INVALID_CLIENT_TYPE_PROVIDER.exception();
         }
 
         // Validate name is not duplicated
         if (currentNames.contains(clientType.getName())) {
             logger.errorf("Duplicated client type name '%s'", clientType.getName());
-            throw new ClientTypeException("Duplicated client type name");
+            throw ClientTypeException.Message.DUPLICATE_CLIENT_TYPE.exception();
         }
 
         clientType = clientTypeProvider.checkClientTypeConfig(clientType);

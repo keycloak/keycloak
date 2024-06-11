@@ -45,8 +45,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.8.4</quarkus.version>
-        <quarkus.build.version>3.8.4</quarkus.build.version>
+        <quarkus.version>3.8.5</quarkus.version>
+        <quarkus.build.version>3.8.5</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -157,8 +157,8 @@
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
-        <postgresql.version>15</postgresql.version>
-        <aurora-postgresql.version>15.5</aurora-postgresql.version>
+        <postgresql.version>16</postgresql.version>
+        <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.2</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
@@ -553,7 +553,6 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
@@ -708,7 +707,6 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.common</groupId>

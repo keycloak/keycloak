@@ -125,7 +125,10 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     void removeClientScope(RealmModel realm, ClientModel client, ClientScopeModel clientScope);
 
     /**
-     * Add specified client scope to all non bearer-only clients in the realm, which have same protocol as specified client scope
+     * Add specified client scope to all non bearer-only clients in the realm, which have same protocol as specified client scope.
+     *
+     * Method may be used just for new client scopes, which are not yet assigned to any clients as if specified clientScope is already assigned
+     * to some client, there might be issues related to duplicate entries.
      *
      * @param realm Realm
      * @param clientScope client scope from the specified realm, which would be added to all clients

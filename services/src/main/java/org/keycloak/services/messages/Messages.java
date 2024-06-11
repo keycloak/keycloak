@@ -192,7 +192,7 @@ public class Messages {
     public static final String STALE_INVITE_ORG_LINK = "staleInviteOrgLink";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
-    
+
     public static final String IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR = "federatedIdentityUnmatchedEssentialClaimMessage";
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
@@ -244,6 +244,8 @@ public class Messages {
     public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActiveMessage";
 
     public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProviderMessage";
+
+    public static final String FEDERATED_IDENTITY_BOUND_ORGANIZATION = "federatedIdentityBoundOrganization";
 
     public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectErrorMessage";
 
@@ -321,4 +323,6 @@ public class Messages {
     public static final String OAUTH2_DEVICE_CONSENT_DENIED = "oauth2DeviceConsentDeniedMessage";
 
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP = "organization.confirm-membership";
+    public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
+    public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
 }

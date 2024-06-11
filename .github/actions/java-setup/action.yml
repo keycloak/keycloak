@@ -9,7 +9,7 @@ inputs:
   java-version:
     description: The Java version that is going to be set up.
     required: false
-    default: "17"
+    default: "21"
 
 runs:
   using: composite

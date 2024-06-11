@@ -18,16 +18,14 @@ export default class CommonElements {
     this.secondaryBtn = this.parentSelector + ".pf-v5-c-button.pf-m-secondary";
     this.secondaryBtnLink = this.parentSelector + ".pf-v5-c-button.pf-m-link";
     this.dropdownMenuItem =
-      this.parentSelector +
-      ".pf-v5-c-dropdown__menu .pf-v5-c-dropdown__menu-item";
+      this.parentSelector + ".pf-v5-c-menu__list .pf-v5-c-menu__item";
     this.selectMenuItem =
-      this.parentSelector + ".pf-v5-c-select__menu .pf-v5-c-select__menu-item";
-    this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-select__toggle";
-    this.tableKebabBtn = this.parentSelector + ".pf-v5-c-dropdown__toggle";
-    this.dropdownSelectToggleBtn =
-      this.parentSelector + ".pf-v5-c-select__toggle";
+      this.parentSelector + ".pf-v5-c-menu__list .pf-v5-c-menu__list-item";
+    this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-menu-toggle";
+    this.tableKebabBtn = this.parentSelector + ".pf-v5-c-menu-toggle";
+    this.dropdownSelectToggleBtn = this.parentSelector + ".pf-v5-c-menu-toggle";
     this.dropdownSelectToggleItem =
-      this.parentSelector + ".pf-v5-c-select__menu > li";
+      this.parentSelector + ".pf-v5-c-menu__list > li";
   }
 
   clickPrimaryBtn() {

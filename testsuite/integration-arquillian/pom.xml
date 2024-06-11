@@ -44,18 +44,20 @@
         <arquillian-core.version>1.8.0.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.2.1</shrinkwrap-resolver.version>
-        <selenium.version>3.14.0</selenium.version>
-        <arquillian-drone.version>2.5.5</arquillian-drone.version>
-        <arquillian-graphene.version>3.0.0-alpha.3</arquillian-graphene.version>
+        <selenium.version>4.21.0</selenium.version>
+        <arquillian-drone.version>3.0.0-alpha.8</arquillian-drone.version>
+        <arquillian-graphene.version>3.0.0-alpha.4</arquillian-graphene.version>
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
         <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
-        <appium.client.version>6.1.0</appium.client.version>
+        <appium.client.version>9.2.2</appium.client.version>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
         <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
+        <commons.validator.version>1.8.0</commons.validator.version>
+        <byte-buddy.version>1.14.13</byte-buddy.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
@@ -122,6 +124,11 @@
                 <artifactId>lift</artifactId>
                 <version>${selenium.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-manager</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
 
             <!-- Drivers -->
             <dependency>
@@ -153,6 +160,16 @@
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-remote-driver</artifactId>
                 <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>htmlunit3-driver</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-validator</groupId>
+                <artifactId>commons-validator</artifactId>
+                <version>${commons.validator.version}</version>
             </dependency>
 
             <dependency>
@@ -609,30 +626,6 @@
                 <dballocator.type>oracle19cRAC</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
-        </profile>
-
-        <!-- Workaround for issues related to PhantomJS in some newer linux environment. See for example here for more details https://github.com/nodejs/node/issues/43132 -->
-        <profile>
-            <id>phantomjs-openssl-workaround</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                </os>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <environmentVariables>
-                                    <OPENSSL_CONF>/dev/null</OPENSSL_CONF>
-                                </environmentVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
         </profile>
     </profiles>
 

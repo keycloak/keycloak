@@ -44,6 +44,11 @@ public class KcAdmMain {
             return DEFAULT_CONFIG_FILE_PATH;
         }
 
+        @Override
+        public boolean isTokenGlobal() {
+            return true;
+        };
+
     };
 
     public static void main(String [] args) {

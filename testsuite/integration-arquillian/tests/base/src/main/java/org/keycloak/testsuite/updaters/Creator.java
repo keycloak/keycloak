@@ -178,7 +178,7 @@ public class Creator<T> implements AutoCloseable {
         }
 
         public AuthenticationExecutionInfoRepresentation addExecution(String providerId) {
-            Map<String, String> c = new HashMap<>();
+            Map<String, Object> c = new HashMap<>();
             c.put("provider", providerId);
             resource().addExecution(alias, c);  // addExecution only handles "provider" in data
             return resource().getExecutions(alias).stream()

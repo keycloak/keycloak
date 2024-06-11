@@ -17,7 +17,6 @@
 package org.keycloak.organization;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
@@ -35,11 +34,10 @@ public interface OrganizationProvider extends Provider {
      * Creates a new organization with given {@code name} to the realm.
      * The internal ID of the organization will be created automatically.
      * @param name String name of the organization.
-     * @param domains the domains
      * @throws ModelDuplicateException If there is already an organization with the given name
      * @return Model of the created organization.
      */
-    OrganizationModel create(String name, Set<String> domains);
+    OrganizationModel create(String name);
 
     /**
      * Returns a {@link OrganizationModel} by its {@code id};
@@ -140,7 +138,7 @@ public interface OrganizationProvider extends Provider {
 
     /**
      * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
-     * 
+     *
      * @param organization the organization
      * @param identityProvider the identityProvider
      * @return {@code true} if the identityProvider was associated with the organization. Otherwise, returns {@code false}
@@ -155,7 +153,7 @@ public interface OrganizationProvider extends Provider {
 
     /**
      * Removes the link between the given {@link OrganizationModel} and identity provider associated with it if such a link exists.
-     * 
+     *
      * @param organization the organization
      * @param identityProvider the identity provider
      * @return {@code true} if the link was removed, {@code false} otherwise
@@ -199,4 +197,10 @@ public interface OrganizationProvider extends Provider {
      * @return {@code true} if the given {@code member} is a member and was successfully removed from the organization. Otherwise, returns {@code false}
      */
     boolean removeMember(OrganizationModel organization, UserModel member);
+
+    /**
+     * Returns number of organizations in the realm.
+     * @return long Number of organizations
+     */
+    long count();
 }

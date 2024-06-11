@@ -3,6 +3,7 @@ import {
   AlertVariant,
   ButtonVariant,
   CardTitle,
+  DropdownItem,
   Gallery,
   GalleryItem,
   Icon,
@@ -13,7 +14,6 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -44,7 +44,7 @@ export default function UserFederationSection() {
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
@@ -59,9 +59,8 @@ export default function UserFederationSection() {
 
   useFetch(
     async () => {
-      const realmModel = await adminClient.realms.findOne({ realm });
       const testParams: { [name: string]: string | number } = {
-        parentId: realmModel!.id!,
+        parentId: realmRepresentation!.id!,
         type: "org.keycloak.storage.UserStorageProvider",
       };
       return adminClient.components.find(testParams);
@@ -159,8 +158,8 @@ export default function UserFederationSection() {
           footerText={toUpperCase(userFederation.providerId!)}
           labelText={
             userFederation.config?.["enabled"]?.[0] !== "false"
-              ? `${t("enabled")}`
-              : `${t("disabled")}`
+              ? t("enabled")
+              : t("disabled")
           }
           labelColor={
             userFederation.config?.["enabled"]?.[0] !== "false"

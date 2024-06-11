@@ -4,9 +4,9 @@ import {
   ActionGroup,
   Button,
   ButtonVariant,
+  DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -39,21 +39,18 @@ export default function DetailProvider() {
   });
   const { control, handleSubmit, reset } = form;
 
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [provider, setProvider] = useState<ComponentTypeRepresentation>();
-  const [parentId, setParentId] = useState("");
 
   useFetch(
     async () =>
       await Promise.all([
         adminClient.realms.getClientRegistrationPolicyProviders({ realm }),
-        adminClient.realms.findOne({ realm }),
         id ? adminClient.components.findOne({ id }) : Promise.resolve(),
       ]),
-    ([providers, realm, data]) => {
+    ([providers, data]) => {
       setProvider(providers.find((p) => p.id === providerId));
-      setParentId(realm?.id || "");
       reset(data || { providerId });
     },
     [],
@@ -71,7 +68,7 @@ export default function DetailProvider() {
       const updatedComponent = {
         ...component,
         subType: subTab,
-        parentId,
+        parentId: realmRepresentation?.id,
         providerType:
           "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
         providerId,

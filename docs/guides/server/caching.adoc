@@ -90,7 +90,6 @@ to the node where their sessions were initially created. By doing that, you are 
 CPU, memory, and network utilization.
 
 .User sessions
-
 Once the user is authenticated, a user session is created. The user session tracks your active users and their state so that they can seamlessly
 authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session
 is created too, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
@@ -109,6 +108,7 @@ CPU, memory, and network utilization.
 
 ifeval::[{project_community}==true]
 
+.Persistent user sessions
 The feature `persistent-user-session` stores online user and client sessions also in the database.
 This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
 
@@ -118,15 +118,21 @@ The feature is disabled by default. To use it, enable the feature:
 bin/kc.sh start --features=persistent-user-session ...
 ----
 
-With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to by default 10000 entries per node which will reduce the overall memory usage of {project_name} for larger installations.
+With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to, by default, 10000 entries per node which will reduce the overall memory usage of {project_name} for larger installations.
 The internal caches will run with only a single owner for each cache entry.
 Items which are evicted from memory will be loaded on-demand from the database when needed.
 To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
-This feature can be enabled via a rolling configuration upgrade.
-After the change, all new online user and client sessions are written to the database.
+
+[WARNING]
+====
+Enabling this feature via a rolling configuration upgrade can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist.
+To prevent that, remove all online user and client sessions before the first node is started with this feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
+====
 
 endif::[]
 
+.Offline user sessions
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
 when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
 of offline tokens, offline sessions are handled differently as they are long-lived and should survive a complete cluster shutdown. Because of that, they are also persisted to the database.

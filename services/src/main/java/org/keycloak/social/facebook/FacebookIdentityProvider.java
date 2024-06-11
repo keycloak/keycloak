@@ -74,7 +74,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
 		String id = getJsonProperty(profile, "id");
 
-		BrokeredIdentityContext user = new BrokeredIdentityContext(id);
+		BrokeredIdentityContext user = new BrokeredIdentityContext(id, getConfig());
 
 		String email = getJsonProperty(profile, "email");
 
@@ -101,7 +101,6 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 
 		user.setFirstName(firstName);
 		user.setLastName(lastName);
-		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 
 		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());

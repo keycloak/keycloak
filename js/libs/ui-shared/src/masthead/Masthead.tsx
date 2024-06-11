@@ -1,6 +1,11 @@
-import { Avatar, AvatarProps, Brand, BrandProps } from "@patternfly/react-core";
 import {
+  Avatar,
+  AvatarProps,
+  Brand,
+  BrandProps,
   DropdownItem,
+} from "@patternfly/react-core";
+import {
   PageHeader,
   PageHeaderProps,
   PageHeaderTools,

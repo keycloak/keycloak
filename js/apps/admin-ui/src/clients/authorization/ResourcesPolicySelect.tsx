@@ -5,12 +5,13 @@ import type {
   Clients,
   PolicyQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { Button, ButtonVariant, Chip, ChipGroup } from "@patternfly/react-core";
 import {
-  Select,
+  Button,
+  ButtonVariant,
+  Chip,
+  ChipGroup,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { useState } from "react";
 import {
   Controller,
@@ -21,6 +22,11 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import {
+  KeycloakSelect,
+  SelectVariant,
+  Variant,
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
@@ -35,7 +41,7 @@ type ResourcesPolicySelectProps = {
   name: Type;
   clientId: string;
   permissionId?: string;
-  variant?: SelectVariant;
+  variant?: Variant;
   preSelected?: string;
   isRequired?: boolean;
 };
@@ -230,11 +236,11 @@ export const ResourcesPolicySelect = ({
         control={control}
         rules={{ validate: (value) => !isRequired || value!.length > 0 }}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={name}
             variant={variant}
-            onToggle={(_event, val) => setOpen(val)}
-            onFilter={(_, filter) => {
+            onToggle={(val) => setOpen(val)}
+            onFilter={(filter) => {
               setSearch(filter);
               return toSelectOptions();
             }}
@@ -243,7 +249,7 @@ export const ResourcesPolicySelect = ({
               setSearch("");
             }}
             selections={field.value}
-            onSelect={(_, selectedValue) => {
+            onSelect={(selectedValue) => {
               const option = selectedValue.toString();
               if (variant === SelectVariant.typeaheadMulti) {
                 const changedValue = field.value?.find(
@@ -287,7 +293,7 @@ export const ResourcesPolicySelect = ({
             }
           >
             {toSelectOptions()}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </>

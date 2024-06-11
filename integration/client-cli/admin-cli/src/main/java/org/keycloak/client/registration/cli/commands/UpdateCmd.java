@@ -28,7 +28,6 @@ import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.client.registration.cli.EndpointType;
 import org.keycloak.client.registration.cli.EndpointTypeConverter;
 import org.keycloak.client.registration.cli.ReflectionUtil;
-import org.keycloak.client.registration.cli.KcRegMain;
 import org.keycloak.client.cli.common.AttributeOperation;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -311,10 +310,6 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " update CLIENT [ARGUMENTS]");
@@ -323,19 +318,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println("Otherwise, if 'registrationAccessToken' attribute is set, that is used. Otherwise, if registration access");
         out.println("token is available in configuration file, we use that. Finally, if it's not available anywhere, the current ");
         out.println("active session is used.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
+        globalOptions(out);
         out.println("  Command specific options:");
         out.println("    CLIENT                ClientId of the client to update");
         out.println("    -t, --token TOKEN     Use the specified Registration Access Token for authorization");

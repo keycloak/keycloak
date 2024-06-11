@@ -3,13 +3,13 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  ToolbarItem,
-} from "@patternfly/react-core";
-import {
   Dropdown,
   DropdownItem,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
+  DropdownList,
+  MenuToggle,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import { EllipsisVIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -297,12 +297,21 @@ export const ClientScopes = ({
                 </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
-                    toggle={
-                      <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
-                    }
+                    toggle={(ref) => (
+                      <MenuToggle
+                        data-testid="kebab"
+                        aria-label="Kebab toggle"
+                        ref={ref}
+                        variant="plain"
+                        onClick={() => setKebabOpen(!kebabOpen)}
+                        isExpanded={kebabOpen}
+                      >
+                        <EllipsisVIcon />
+                      </MenuToggle>
+                    )}
                     isOpen={kebabOpen}
-                    isPlain
-                    dropdownItems={[
+                  >
+                    <DropdownList>
                       <DropdownItem
                         key="deleteAll"
                         isDisabled={selectedRows.length === 0}
@@ -329,9 +338,9 @@ export const ClientScopes = ({
                         }}
                       >
                         {t("remove")}
-                      </DropdownItem>,
-                    ]}
-                  />
+                      </DropdownItem>
+                    </DropdownList>
+                  </Dropdown>
                 </ToolbarItem>
               </>
             )}

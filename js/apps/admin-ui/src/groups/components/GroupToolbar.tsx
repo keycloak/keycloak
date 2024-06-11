@@ -1,14 +1,16 @@
-import { useTranslation } from "react-i18next";
-import { Button, ToolbarItem } from "@patternfly/react-core";
 import {
+  Button,
   Dropdown,
   DropdownItem,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
-
-import { useSubGroups } from "../SubGroupsContext";
+  DropdownList,
+  MenuToggle,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import { EllipsisVIcon } from "@patternfly/react-icons";
+import { useTranslation } from "react-i18next";
 import { useAccess } from "../../context/access/Access";
 import useToggle from "../../utils/useToggle";
+import { useSubGroups } from "../SubGroupsContext";
 
 type GroupToolbarProps = {
   toggleCreate: () => void;
@@ -43,12 +45,21 @@ export const GroupToolbar = ({
       </ToolbarItem>
       <ToolbarItem>
         <Dropdown
-          toggle={
-            <KebabToggle onToggle={toggleKebab} isDisabled={kebabDisabled} />
-          }
+          toggle={(ref) => (
+            <MenuToggle
+              ref={ref}
+              isExpanded={openKebab}
+              onClick={toggleKebab}
+              isDisabled={kebabDisabled}
+              variant="plain"
+              aria-label="Actions"
+            >
+              <EllipsisVIcon />
+            </MenuToggle>
+          )}
           isOpen={openKebab}
-          isPlain
-          dropdownItems={[
+        >
+          <DropdownList>
             <DropdownItem
               key="action"
               component="button"
@@ -58,9 +69,9 @@ export const GroupToolbar = ({
               }}
             >
               {t("delete")}
-            </DropdownItem>,
-          ]}
-        />
+            </DropdownItem>
+          </DropdownList>
+        </Dropdown>
       </ToolbarItem>
     </>
   );

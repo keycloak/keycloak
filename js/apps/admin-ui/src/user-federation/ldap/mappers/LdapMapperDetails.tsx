@@ -2,24 +2,25 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { DirectionType } from "@keycloak/keycloak-admin-client/lib/resources/userStorageProvider";
 import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
+  DropdownItem,
   FormGroup,
   PageSection,
-} from "@patternfly/react-core";
-import {
-  DropdownItem,
-  Select,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
@@ -264,15 +265,14 @@ export default function LdapMapperDetails() {
                   control={form.control}
                   data-testid="ldap-mapper-type-select"
                   render={({ field }) => (
-                    <Select
+                    <KeycloakSelect
                       toggleId="kc-providerId"
                       typeAheadAriaLabel={t("mapperType")}
-                      required
                       onToggle={() =>
                         setIsMapperDropdownOpen(!isMapperDropdownOpen)
                       }
                       isOpen={isMapperDropdownOpen}
-                      onSelect={(_, value) => {
+                      onSelect={(value) => {
                         setupForm({
                           providerId: value as string,
                           ...Object.fromEntries(
@@ -292,9 +292,11 @@ export default function LdapMapperDetails() {
                       aria-label={t("selectMapperType")}
                     >
                       {components.map((c) => (
-                        <SelectOption key={c.id} value={c.id} />
+                        <SelectOption key={c.id} value={c.id}>
+                          {c.id}
+                        </SelectOption>
                       ))}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 ></Controller>
               </FormGroup>

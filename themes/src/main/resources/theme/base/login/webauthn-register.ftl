@@ -5,7 +5,7 @@
     <#if section = "title">
         title
     <#elseif section = "header">
-        <span class="${properties.kcWebAuthnKeyIcon}"></span>
+        <span class="${properties.kcWebAuthnKeyIcon!}"></span>
         ${kcSanitize(msg("webauthn-registration-title"))?no_esc}
     <#elseif section = "form">
 

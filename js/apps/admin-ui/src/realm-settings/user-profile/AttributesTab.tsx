@@ -1,32 +1,29 @@
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
   Divider,
+  SelectOption,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { useAdminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import useLocale from "../../utils/useLocale";
 import useToggle from "../../utils/useToggle";
 import { toAddAttribute } from "../routes/AddAttribute";
 import { toAttribute } from "../routes/Attribute";
 import { useUserProfile } from "./UserProfileContext";
-import useLocale from "../../utils/useLocale";
-import { useAdminClient } from "../../admin-client";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
 
@@ -168,14 +165,15 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       <Toolbar>
         <ToolbarContent>
           <ToolbarItem>
-            <Select
+            <KeycloakSelect
+              toggleId="kc-group-filter"
               width={200}
               data-testid="filter-select"
               isOpen={isFilterTypeDropdownOpen}
               variant={SelectVariant.single}
               onToggle={toggleIsFilterTypeDropdownOpen}
               toggleIcon={<FilterIcon />}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 const filter = value.toString();
                 setFilter(filter);
                 setData(
@@ -199,14 +197,12 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                   attributes.filter((attr) => !!attr.group),
                   "group",
                 ).map((attr) => (
-                  <SelectOption
-                    key={attr.group}
-                    data-testid={`${attr.group}-option`}
-                    value={attr.group}
-                  />
+                  <SelectOption key={attr.group} value={attr.group}>
+                    {attr.group}
+                  </SelectOption>
                 )),
               ]}
-            </Select>
+            </KeycloakSelect>
           </ToolbarItem>
           <ToolbarItem className="kc-toolbar-attributesTab">
             <Button

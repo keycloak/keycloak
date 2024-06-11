@@ -33,7 +33,7 @@ jobs:
         - documentation.yml
         - js-ci.yml
         - operator-ci.yml
-       #- snyk-analysis.yml
+        - snyk-analysis.yml
         - trivy-analysis.yml
 
     steps:

@@ -149,26 +149,28 @@
   <script id="environment" type="application/json">
     {
       "authUrl": "${authUrl}",
-      "baseUrl": "${baseUrl}",
+      "authServerUrl": "${authServerUrl}",
       "realm": "${realm.name}",
       "clientId": "${clientId}",
       "resourceUrl": "${resourceUrl}",
       "logo": "${properties.logo!""}",
       "logoUrl": "${properties.logoUrl!""}",
+      "baseUrl": "${baseUrl}",
       "locale": "${locale}",
+      "referrerName": "${referrerName!""}",
+      "referrerUrl": "${referrer_uri!""}",
       "features": {
-            "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
-            "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
-            "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
-            "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
-            "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
-            "deleteAccountAllowed": ${deleteAccountAllowed?c},
-            "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
-            "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
-            "isViewGroupsEnabled": ${isViewGroupsEnabled?c}
-        },
-        "referrerName": "${referrerName!""}",
-        "referrerUrl": "${referrer_uri!""}"
+        "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
+        "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
+        "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
+        "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
+        "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
+        "deleteAccountAllowed": ${deleteAccountAllowed?c},
+        "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
+        "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
+        "isViewGroupsEnabled": ${isViewGroupsEnabled?c},
+        "isOid4VciEnabled": ${isOid4VciEnabled?c}
+      }
     }
   </script>
 </body>

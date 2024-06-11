@@ -154,6 +154,7 @@ export const RoleMapping = ({
       try {
         await Promise.all(deleteMapping(adminClient, type, id, selected));
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
+        setSelected([]);
         refresh();
       } catch (error) {
         addError("clientScopeRemoveError", error);

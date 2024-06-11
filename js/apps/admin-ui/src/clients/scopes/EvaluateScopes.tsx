@@ -3,12 +3,19 @@ import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/l
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+  useHelp,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ClipboardCopy,
   Form,
   FormGroup,
   Grid,
   GridItem,
   PageSection,
+  SelectOption,
   Split,
   SplitItem,
   Tab,
@@ -18,16 +25,10 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, useHelp } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { UserSelect } from "../../components/users/UserSelect";
@@ -250,14 +251,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           >
             <Split hasGutter>
               <SplitItem isFilled>
-                <Select
+                <KeycloakSelect
                   toggleId="scopeParameter"
                   variant={SelectVariant.typeaheadMulti}
                   typeAheadAriaLabel={t("scopeParameter")}
                   onToggle={() => setIsScopeOpen(!isScopeOpen)}
                   isOpen={isScopeOpen}
                   selections={selected}
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     const option = value as string;
                     if (selected.includes(option)) {
                       if (option !== prefix) {
@@ -271,9 +272,11 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   placeholderText={t("scopeParameterPlaceholder")}
                 >
                   {selectableScopes.map((option, index) => (
-                    <SelectOption key={index} value={option.name} />
+                    <SelectOption key={index} value={option.name}>
+                      {option.name}
+                    </SelectOption>
                   ))}
-                </Select>
+                </KeycloakSelect>
               </SplitItem>
               <SplitItem>
                 <ClipboardCopy className="keycloak__scopes_evaluate__clipboard-copy">

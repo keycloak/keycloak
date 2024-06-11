@@ -6,6 +6,7 @@ deploy-keycloak-kubernetes
 deploy-infinispan-kubernetes-crossdc
 connect-keycloak-to-external-infinispan
 deploy-aws-route53-loadbalancer
+deploy-aws-route53-failover-lambda
 operate-failover
 operate-switch-over
 operate-network-partition-recovery

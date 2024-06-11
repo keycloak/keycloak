@@ -5,18 +5,18 @@ import {
   Checkbox,
   InputGroup,
   InputGroupItem,
+  Spinner,
   Tooltip,
   TreeView,
   TreeViewDataItem,
-} from "@patternfly/react-core";
-import {
   Dropdown,
+  MenuToggle,
+  DropdownList,
+  Divider,
   DropdownItem,
-  DropdownPosition,
-  DropdownSeparator,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
-import { AngleRightIcon } from "@patternfly/react-icons";
+} from "@patternfly/react-core";
+
+import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -104,26 +104,38 @@ const GroupTreeContextMenu = ({
         }}
       />
       <Dropdown
-        toggle={<KebabToggle onToggle={toggleOpen} />}
+        popperProps={{
+          position: "right",
+        }}
+        toggle={(ref) => (
+          <MenuToggle
+            ref={ref}
+            onClick={toggleOpen}
+            isExpanded={isOpen}
+            variant="plain"
+            aria-label="Actions"
+          >
+            <EllipsisVIcon />
+          </MenuToggle>
+        )}
         isOpen={isOpen}
-        isPlain
-        position={DropdownPosition.right}
-        dropdownItems={[
+      >
+        <DropdownList>
           <DropdownItem key="rename" onClick={toggleRenameOpen}>
             {t("rename")}
-          </DropdownItem>,
+          </DropdownItem>
           <DropdownItem key="move" onClick={toggleMoveOpen}>
             {t("moveTo")}
-          </DropdownItem>,
+          </DropdownItem>
           <DropdownItem key="create" onClick={toggleCreateOpen}>
             {t("createChildGroup")}
-          </DropdownItem>,
-          <DropdownSeparator key="separator" />,
+          </DropdownItem>
+          <Divider key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
             {t("delete")}
-          </DropdownItem>,
-        ]}
-      />
+          </DropdownItem>
+        </DropdownList>
+      </Dropdown>
     </>
   );
 };
@@ -179,10 +191,17 @@ export const GroupTree = ({
         </Tooltip>
       ),
       access: group.access || {},
-      children:
-        group.subGroups && group.subGroups.length > 0
-          ? group.subGroups.map((g) => mapGroup(g, refresh))
-          : undefined,
+      children: group.subGroupCount
+        ? [
+            {
+              name: (
+                <>
+                  <Spinner size="sm" /> {t("spinnerLoading")}
+                </>
+              ),
+            },
+          ]
+        : undefined,
       action: (hasAccess("manage-users") || group.access?.manage) && (
         <GroupTreeContextMenu group={group} refresh={refresh} />
       ),
@@ -285,6 +304,29 @@ export const GroupTree = ({
     return path;
   };
 
+  const nav = (item: TreeViewDataItem, data: ExtendedTreeViewDataItem[]) => {
+    if (item.id === "next") return;
+    setActiveItem(item);
+
+    const path = findGroup(data, item.id!, []);
+    if (!subGroups.every(({ id }) => path.find((t) => t.id === id))) clear();
+    if (
+      canViewDetails ||
+      path.at(-1)?.access?.view ||
+      subGroups.at(-1)?.access?.view
+    ) {
+      navigate(
+        toGroups({
+          realm,
+          id: path.map((g) => g.id).join("/"),
+        }),
+      );
+    } else {
+      addAlert(t("noViewRights"), AlertVariant.warning);
+      navigate(toGroups({ realm }));
+    }
+  };
+
   return data ? (
     <PaginatingTableToolbar
       count={count}
@@ -326,28 +368,11 @@ export const GroupTree = ({
           hasGuides
           hasSelectableNodes
           className="keycloak_groups_treeview"
+          onExpand={(_, item) => {
+            nav(item, data);
+          }}
           onSelect={(_, item) => {
-            if (item.id === "next") return;
-            setActiveItem(item);
-
-            const path = findGroup(data, item.id!, []);
-            if (!subGroups.every(({ id }) => path.find((t) => t.id === id)))
-              clear();
-            if (
-              canViewDetails ||
-              path.at(-1)?.access?.view ||
-              subGroups.at(-1)?.access?.view
-            ) {
-              navigate(
-                toGroups({
-                  realm,
-                  id: path.map((g) => g.id).join("/"),
-                }),
-              );
-            } else {
-              addAlert(t("noViewRights"), AlertVariant.warning);
-              navigate(toGroups({ realm }));
-            }
+            nav(item, data);
           }}
         />
       )}

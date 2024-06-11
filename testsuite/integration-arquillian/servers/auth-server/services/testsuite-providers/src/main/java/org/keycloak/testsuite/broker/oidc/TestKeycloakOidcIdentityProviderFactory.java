@@ -40,6 +40,7 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
     public static final String ID = "test-keycloak-oidc";
     public static final String IGNORE_MAX_AGE_PARAM = "ignore-max-age-param";
     public static final String USE_SINGLE_REFRESH_TOKEN = "use-single-refresh-token";
+    public static final String PREFERRED_USERNAME = "preferred-username";
 
     public static void setIgnoreMaxAgeParam(IdentityProviderRepresentation rep) {
         rep.getConfig().put(IGNORE_MAX_AGE_PARAM, Boolean.TRUE.toString());
@@ -59,6 +60,11 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
             @Override
             public BrokeredIdentityContext getFederatedIdentity(String response) {
                 BrokeredIdentityContext context = super.getFederatedIdentity(response);
+                String preferredUsername = getPreferredUsername();
+
+                if (preferredUsername != null) {
+                    context.setUsername(preferredUsername);
+                }
                 if (Boolean.valueOf(model.getConfig().get(USE_SINGLE_REFRESH_TOKEN))) {
                     // refresh token will be available only in the first login.
                     if (!usernames.add(context.getUsername())) {
@@ -91,6 +97,10 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
 
             private boolean isIgnoreMaxAgeParam() {
                 return Boolean.parseBoolean(model.getConfig().getOrDefault(IGNORE_MAX_AGE_PARAM, Boolean.FALSE.toString()));
+            }
+
+            private String getPreferredUsername() {
+                return model.getConfig().get(PREFERRED_USERNAME);
             }
         };
     }

@@ -15,7 +15,7 @@
   line-height: 0px;
 }
 
-.keycloak__events_search__type_select .pf-v5-c-select__menu {
+.keycloak__events_search__type_select .pf-v5-c-menu__list {
   max-height: 200px;
   overflow: auto;
 }

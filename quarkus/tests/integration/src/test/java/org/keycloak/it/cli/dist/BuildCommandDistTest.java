@@ -103,16 +103,8 @@ class BuildCommandDistTest {
     void missingOracleJdbcDriver(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        String dbDriver = Database.getDriver("oracle", true).orElse("");
-        String errorMessage = String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver);
-
-        boolean isProduct = System.getProperty("product") != null;
-        if (isProduct) {
-            cliResult.assertError(errorMessage);
-            cliResult.assertNoBuild();
-        } else {
-            cliResult.assertNoMessage(errorMessage);
-            cliResult.assertBuild();
-        }
+        String dbDriver = Database.getDriver("oracle", false).orElse("");
+        cliResult.assertError(String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver));
+        cliResult.assertNoBuild();
     }
 }

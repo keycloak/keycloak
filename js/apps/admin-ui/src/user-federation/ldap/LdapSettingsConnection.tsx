@@ -1,15 +1,19 @@
 import type TestLdapConnectionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/testLdapConnection";
 import {
+  HelpItem,
+  KeycloakSelect,
+  PasswordControl,
+  SelectControl,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   Button,
   FormGroup,
+  SelectOption,
   Switch,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { get, isEqual } from "lodash-es";
 import { useState } from "react";
 import {
@@ -19,11 +23,6 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  HelpItem,
-  PasswordControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -86,9 +85,6 @@ export const LdapSettingsConnection = ({
     }
   };
 
-  const [isTruststoreSpiDropdownOpen, setIsTruststoreSpiDropdownOpen] =
-    useState(false);
-
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
 
   const ldapBindType = useWatch({
@@ -145,39 +141,19 @@ export const LdapSettingsConnection = ({
             )}
           />
         </FormGroup>
-        <FormGroup
+        <SelectControl
+          id="useTruststoreSpi"
+          name="config.useTruststoreSpi[0]"
           label={t("useTruststoreSpi")}
-          labelIcon={
-            <HelpItem
-              helpText={t("useTruststoreSpiHelp")}
-              fieldLabelId="useTruststoreSpi"
-            />
-          }
-          fieldId="kc-use-truststore-spi"
-        >
-          <Controller
-            name="config.useTruststoreSpi[0]"
-            control={form.control}
-            defaultValue="always"
-            render={({ field }) => (
-              <Select
-                toggleId="kc-use-truststore-spi"
-                onToggle={() =>
-                  setIsTruststoreSpiDropdownOpen(!isTruststoreSpiDropdownOpen)
-                }
-                isOpen={isTruststoreSpiDropdownOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value.toString());
-                  setIsTruststoreSpiDropdownOpen(false);
-                }}
-                selections={field.value}
-              >
-                <SelectOption value="always">{t("always")}</SelectOption>
-                <SelectOption value="never">{t("never")}</SelectOption>
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("useTruststoreSpiHelp")}
+          controller={{
+            defaultValue: "always",
+          }}
+          options={[
+            { key: "always", value: t("always") },
+            { key: "never", value: t("never") },
+          ]}
+        />
         <FormGroup
           label={t("connectionPooling")}
           labelIcon={
@@ -237,14 +213,13 @@ export const LdapSettingsConnection = ({
             defaultValue="simple"
             control={form.control}
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 toggleId="kc-bind-type"
-                required
                 onToggle={() =>
                   setIsBindTypeDropdownOpen(!isBindTypeDropdownOpen)
                 }
                 isOpen={isBindTypeDropdownOpen}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setIsBindTypeDropdownOpen(false);
                 }}
@@ -253,9 +228,9 @@ export const LdapSettingsConnection = ({
                 data-testid="ldap-bind-type"
                 aria-label={t("selectBindType")}
               >
-                <SelectOption value="simple" />
-                <SelectOption value="none" />
-              </Select>
+                <SelectOption value="simple">simple</SelectOption>
+                <SelectOption value="none">none</SelectOption>
+              </KeycloakSelect>
             )}
           />
         </FormGroup>

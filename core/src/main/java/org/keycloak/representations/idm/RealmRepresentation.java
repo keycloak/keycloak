@@ -182,15 +182,15 @@ public class RealmRepresentation {
     protected String accountTheme;
     protected String adminTheme;
     protected String emailTheme;
-    
+
     protected Boolean eventsEnabled;
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
     protected List<String> enabledEventTypes;
-    
+
     protected Boolean adminEventsEnabled;
     protected Boolean adminEventsDetailsEnabled;
-    
+
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
@@ -216,6 +216,7 @@ public class RealmRepresentation {
     protected Boolean userManagedAccessAllowed;
 
     protected Boolean organizationsEnabled;
+    private List<OrganizationRepresentation> organizations;
 
     @Deprecated
     protected Boolean social;
@@ -623,7 +624,7 @@ public class RealmRepresentation {
     public void setVerifyEmail(Boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
     }
-    
+
     public Boolean isLoginWithEmailAllowed() {
         return loginWithEmailAllowed;
     }
@@ -631,7 +632,7 @@ public class RealmRepresentation {
     public void setLoginWithEmailAllowed(Boolean loginWithEmailAllowed) {
         this.loginWithEmailAllowed = loginWithEmailAllowed;
     }
-    
+
     public Boolean isDuplicateEmailsAllowed() {
         return duplicateEmailsAllowed;
     }
@@ -856,7 +857,7 @@ public class RealmRepresentation {
     public void setEventsListeners(List<String> eventsListeners) {
         this.eventsListeners = eventsListeners;
     }
-    
+
     public List<String> getEnabledEventTypes() {
         return enabledEventTypes;
     }
@@ -1442,5 +1443,20 @@ public class RealmRepresentation {
     @JsonIgnore
     public Map<String, String> getAttributesOrEmpty() {
         return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
+    }
+
+    public List<OrganizationRepresentation> getOrganizations() {
+        return organizations;
+    }
+
+    public void setOrganizations(List<OrganizationRepresentation> organizations) {
+        this.organizations = organizations;
+    }
+
+    public void addOrganization(OrganizationRepresentation org) {
+        if (organizations == null) {
+            organizations = new ArrayList<>();
+        }
+        organizations.add(org);
     }
 }

@@ -41,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
@@ -92,15 +93,15 @@ public class OrganizationsResource {
             throw ErrorResponse.error("Organization cannot be null.", Response.Status.BAD_REQUEST);
         }
 
-        Set<String> domains = ofNullable(organization.getDomains()).orElse(Set.of()).stream()
-                .map(OrganizationDomainRepresentation::getName)
-                .filter(StringUtil::isNotBlank)
-                .collect(Collectors.toSet());
-        OrganizationModel model = provider.create(organization.getName(), domains);
+        try {
+            OrganizationModel model = provider.create(organization.getName());
 
-        Organizations.toModel(organization, model);
+            Organizations.toModel(organization, model);
 
-        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
+        } catch (ModelValidationException mve) {
+            throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     /**

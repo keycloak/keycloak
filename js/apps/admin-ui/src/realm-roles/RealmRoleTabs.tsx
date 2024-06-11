@@ -1,13 +1,12 @@
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
+  DropdownItem,
   PageSection,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import {
   FormProvider,
@@ -68,7 +67,7 @@ export default function RealmRoleTabs() {
   const { id, clientId } = useParams<ClientRoleParams>();
   const { pathname } = useLocation();
 
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
 
   const [key, setKey] = useState(0);
   const [attributes, setAttributes] = useState<KeyValueType[] | undefined>();
@@ -98,19 +97,10 @@ export default function RealmRoleTabs() {
     name: "composite",
   });
 
-  const [realm, setRealm] = useState<RealmRepresentation>();
-
   useFetch(
-    async () => {
-      const [realm, role] = await Promise.all([
-        adminClient.realms.findOne({ realm: realmName }),
-        adminClient.roles.findOneById({ id }),
-      ]);
-
-      return { realm, role };
-    },
-    ({ realm, role }) => {
-      if (!realm || !role) {
+    async () => adminClient.roles.findOneById({ id }),
+    (role) => {
+      if (!role) {
         throw new Error(t("notFound"));
       }
 
@@ -118,7 +108,6 @@ export default function RealmRoleTabs() {
 
       reset(convertedRole);
       setAttributes(convertedRole.attributes);
-      setRealm(realm);
     },
     [key],
   );

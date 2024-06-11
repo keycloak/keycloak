@@ -68,7 +68,7 @@ public class TokenIntrospectionEndpoint {
 
     @POST
     @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
     public Response introspect() {
         event.event(EventType.INTROSPECT_TOKEN);
 

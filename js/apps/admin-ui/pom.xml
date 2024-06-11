@@ -124,16 +124,16 @@
 <![CDATA[
   <script id="environment" type="application/json">
     {
+      "authUrl": "${authUrl}",
+      "authServerUrl": "${authServerUrl}",
       "realm": "${loginRealm!"master"}",
       "clientId": "${clientId}",
-      "authServerUrl": "${authServerUrl}",
-      "authUrl": "${authUrl}",
-      "consoleBaseUrl": "${consoleBaseUrl}",
       "resourceUrl": "${resourceUrl}",
-      "masterRealm": "${masterRealm}",
-      "resourceVersion": "${resourceVersion}",
       "logo": "${properties.logo!""}",
-      "logoUrl": "${properties.logoUrl!""}"
+      "logoUrl": "${properties.logoUrl!""}",
+      "consoleBaseUrl": "${consoleBaseUrl}",
+      "masterRealm": "${masterRealm}",
+      "resourceVersion": "${resourceVersion}"
     }
   </script>
 </body>

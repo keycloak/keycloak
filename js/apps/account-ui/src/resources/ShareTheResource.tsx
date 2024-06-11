@@ -192,10 +192,14 @@ export const ShareTheResource = ({
           )}
         </FormGroup>
         <FormProvider {...form}>
-          <FormGroup label="" fieldId="permissions-selected">
+          <FormGroup
+            label=""
+            fieldId="permissions-selected"
+            data-testid="permissions"
+          >
             <SelectControl
               name="permissions"
-              variant="typeaheadmulti"
+              variant="typeaheadMulti"
               controller={{ defaultValue: [] }}
               options={resource.scopes.map(({ name, displayName }) => ({
                 key: name,

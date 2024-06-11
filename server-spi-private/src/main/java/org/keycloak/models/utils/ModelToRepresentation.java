@@ -172,6 +172,7 @@ public class ModelToRepresentation {
     @Deprecated
     public static Stream<GroupRepresentation> toGroupHierarchy(KeycloakSession session, RealmModel realm, boolean full) {
         return session.groups().getTopLevelGroupsStream(realm, null, null)
+                .filter(g -> !g.getAttributes().containsKey(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                 .map(g -> toGroupHierarchy(g, full));
     }
 
@@ -344,6 +345,10 @@ public class ModelToRepresentation {
     }
 
     public static RealmRepresentation toRepresentation(KeycloakSession session, RealmModel realm, boolean internal) {
+        return toRepresentation(session, realm, internal, false);
+    }
+
+    public static RealmRepresentation toRepresentation(KeycloakSession session, RealmModel realm, boolean internal, boolean export) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());
@@ -501,7 +506,7 @@ public class ModelToRepresentation {
         }
 
         List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
-                .map(provider -> toRepresentation(realm, provider)).collect(Collectors.toList());
+                .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
         rep.setIdentityProviders(identityProviders);
 
         List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
@@ -789,6 +794,10 @@ public class ModelToRepresentation {
     }
 
     public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
+        return toRepresentation(realm, identityProviderModel, false);
+    }
+
+    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel, boolean export) {
         IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
 
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
@@ -820,6 +829,10 @@ public class ModelToRepresentation {
                 throw new ModelException("Couldn't find authentication flow with id " + postBrokerLoginFlowId);
             }
             providerRep.setPostBrokerLoginFlowAlias(flow.getAlias());
+        }
+
+        if (export) {
+            providerRep.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }
 
         return providerRep;
@@ -894,6 +907,19 @@ public class ModelToRepresentation {
         }
         rep.setPriority(model.getPriority());
         rep.setRequirement(model.getRequirement().name());
+        return rep;
+    }
+
+    public static AuthenticationExecutionRepresentation toRepresentation(AuthenticationExecutionModel model) {
+        AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
+        rep.setId(model.getId());
+        rep.setAuthenticatorConfig(model.getAuthenticatorConfig());
+        rep.setAuthenticator(model.getAuthenticator());
+        rep.setFlowId(model.getFlowId());
+        rep.setAuthenticatorFlow(model.isAuthenticatorFlow());
+        rep.setRequirement(model.getRequirement().name());
+        rep.setPriority(model.getPriority());
+        rep.setParentFlow(model.getParentFlow());
         return rep;
     }
 

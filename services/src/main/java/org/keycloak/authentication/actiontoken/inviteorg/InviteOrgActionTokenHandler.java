@@ -1,13 +1,13 @@
 /*
  * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +17,7 @@
 package org.keycloak.authentication.actiontoken.inviteorg;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.TokenVerifier.Predicate;
@@ -43,7 +44,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.util.List;
+import java.net.URI;
 import java.util.Objects;
 
 /**
@@ -112,9 +113,9 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
 
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
-                    .setSuccess(Messages.CONFIRM_EXECUTION_OF_ACTIONS)
+                    .setSuccess(Messages.CONFIRM_ORGANIZATION_MEMBERSHIP, organization.getName())
+                    .setAttribute("messageHeader", Messages.CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
-                    .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, List.of(Messages.CONFIRM_ORGANIZATION_MEMBERSHIP))
                     .setAttribute(OrganizationModel.ORGANIZATION_NAME_ATTRIBUTE, organization.getName())
                     .createInfoPage();
         }
@@ -135,6 +136,17 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         tokenContext.setEvent(event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN));
 
         String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
+
+        if (nextAction == null) {
+            // do not show account updated page
+            authSession.removeAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS);
+
+            if (redirectUri != null) {
+                // always redirect to the expected URI if provided
+                return Response.status(Status.FOUND).location(URI.create(redirectUri)).build();
+            }
+        }
+
         return AuthenticationManager.redirectToRequiredActions(session, realm, authSession, uriInfo, nextAction);
     }
 }

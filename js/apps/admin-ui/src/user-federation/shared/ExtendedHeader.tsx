@@ -1,8 +1,4 @@
-import { AlertVariant } from "@patternfly/react-core";
-import {
-  DropdownItem,
-  DropdownSeparator,
-} from "@patternfly/react-core/deprecated";
+import { AlertVariant, Divider, DropdownItem } from "@patternfly/react-core";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -157,7 +153,7 @@ export const ExtendedHeader = ({
           <DropdownItem key="remove" onClick={toggleRemoveUsersDialog}>
             {t("removeImported")}
           </DropdownItem>,
-          <DropdownSeparator key="separator" />,
+          <Divider key="separator" />,
         ]}
       />
     </>

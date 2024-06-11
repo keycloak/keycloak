@@ -52,35 +52,35 @@ public class HelpCmd implements Runnable {
                 break;
             }
             case "create": {
-                printOut(CreateCmd.usage());
+                printOut(new CreateCmd().help());
                 break;
             }
             case "get": {
-                printOut(GetCmd.usage());
+                printOut(new GetCmd().help());
                 break;
             }
             case "update": {
-                printOut(UpdateCmd.usage());
+                printOut(new UpdateCmd().help());
                 break;
             }
             case "delete": {
-                printOut(DeleteCmd.usage());
+                printOut(new DeleteCmd().help());
                 break;
             }
             case "get-roles": {
-                printOut(GetRolesCmd.usage());
+                printOut(new GetRolesCmd().help());
                 break;
             }
             case "add-roles": {
-                printOut(AddRolesCmd.usage());
+                printOut(new AddRolesCmd().help());
                 break;
             }
             case "remove-roles": {
-                printOut(RemoveRolesCmd.usage());
+                printOut(new RemoveRolesCmd().help());
                 break;
             }
             case "set-password": {
-                printOut(SetPasswordCmd.usage());
+                printOut(new SetPasswordCmd().help());
                 break;
             }
             case "new-object": {

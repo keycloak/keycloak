@@ -8,7 +8,7 @@ export default class AssociatedRolesPage {
   #filterTypeDropdownItem = "clients";
   #usersPage = "users-page";
   #removeRolesButton = "unAssignRole";
-  #addRoleTable = '[aria-label="Roles"] td[data-label="Name"]';
+  #addRoleTable = '[aria-label="Roles"] td';
 
   addAssociatedRealmRole(roleName: string) {
     cy.findByTestId(this.#actionDropdown).last().click();

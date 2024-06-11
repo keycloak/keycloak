@@ -321,8 +321,8 @@ describe("Clients test", () => {
       clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
       cy.get("div#generatedUserInfo").contains("No generated user info");
 
-      cy.get("input#user-select-typeahead").type("admin-a");
-      cy.get("li[id*=select-option-] > button:first-child").click();
+      cy.get("[data-testid='user'] input").type("admin-a");
+      cy.get(".pf-v5-c-menu__item-text").click();
 
       clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
       cy.get("div#generatedAccessToken").contains(
@@ -777,7 +777,7 @@ describe("Clients test", () => {
       commonPage.sidebar().waitForPageLoad();
       rolesTab.goToAssociatedRolesTab();
 
-      cy.get('td[data-label="Name"]')
+      cy.get("td")
         .contains("manage-account")
         .parent()
         .within(() => {

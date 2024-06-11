@@ -215,15 +215,15 @@
         <ieDriverArch>Win32</ieDriverArch>
         <ieDriverVersion/>
         <js.browser>chrome</js.browser>
-        <js.chromeArguments>--headless</js.chromeArguments>
+        <js.chromeArguments>--headless --ignore-ssl-errors=yes --ignore-certificate-errors</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
-        <firefoxHeadless>true</firefoxHeadless>
+        <firefoxArguments>-headless</firefoxArguments>
         <chromeBinary/>
-        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
+        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=* --ignore-ssl-errors=yes --ignore-certificate-errors</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
@@ -290,7 +290,7 @@
                                         <outputDirectory>${containers.home}/auth-server-undertow</outputDirectory>
                                     </artifactItem>
                                 </artifactItems>
-                                <includes>*.jks,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
+                                <includes>*.jks,*.p12,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
                                 <skip>${auth.server.undertow.skip.unpack}</skip>
                             </configuration>
                         </execution>
@@ -600,7 +600,7 @@
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
                             <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
                             <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
-                            <firefoxHeadless>${firefoxHeadless}</firefoxHeadless>
+                            <firefoxArguments>${firefoxArguments}</firefoxArguments>
 
                             <appium.platformName>${appium.platformName}</appium.platformName>
                             <appium.deviceName>${appium.deviceName}</appium.deviceName>
@@ -686,6 +686,9 @@
                               ~ See KEYCLOAK-15692, ELY-1891 issues & PRs of EAP7-1219 issue for details.
                               -->
                             <wildfly-client.config.path>${project.build.directory}${file.separator}dependency${file.separator}wildfly-config.xml</wildfly-client.config.path>
+
+                            <!-- needed when running the embedded Quarkus auth server -->
+                            <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -1608,7 +1611,7 @@
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>1.12.18</version>
+                    <version>${byte-buddy.version}</version>
                 </dependency>
 
                 <dependency>
@@ -1625,11 +1628,6 @@
                 <dependency>
                     <groupId>org.jboss.arquillian.protocol</groupId>
                     <artifactId>arquillian-protocol-servlet</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.extension</groupId>
-                    <artifactId>arquillian-phantom-driver</artifactId>
-                    <version>1.2.1.Final</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
@@ -1862,17 +1860,6 @@
 
             </dependencies>
 
-            <dependencyManagement>
-                <dependencies>
-                    <!-- we need to specify the correct version because of conflict in arquillian-drone-webdriver-depchain -->
-                    <dependency>
-                        <groupId>org.seleniumhq.selenium</groupId>
-                        <artifactId>htmlunit-driver</artifactId>
-                        <version>2.27</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-
             <build>
                 <plugins>
                     <plugin>
@@ -2077,7 +2064,7 @@
                 <browser>firefox</browser>
                 <js.browser>firefox</js.browser>
                 <firefoxUserPreferences>${project.build.directory}/dependency/firefox-cookies-prefs.js</firefoxUserPreferences>
-                <firefoxHeadless>true</firefoxHeadless>
+                <firefoxArguments>-headless</firefoxArguments>
                 <browser.strict.cookies>true</browser.strict.cookies>
             </properties>
         </profile>

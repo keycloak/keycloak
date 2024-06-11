@@ -469,7 +469,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
         String id = idToken.getSubject();
-        BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
+        BrokeredIdentityContext identity = new BrokeredIdentityContext(id, getConfig());
         String name = (String) idToken.getOtherClaims().get(IDToken.NAME);
         String givenName = (String)idToken.getOtherClaims().get(IDToken.GIVEN_NAME);
         String familyName = (String)idToken.getOtherClaims().get(IDToken.FAMILY_NAME);
@@ -791,7 +791,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
         }
-        BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
+        BrokeredIdentityContext identity = new BrokeredIdentityContext(id, getConfig());
 
         String name = getJsonProperty(userInfo, "name");
         String preferredUsername = getUsernameFromUserInfo(userInfo);
@@ -881,7 +881,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
             context.getContextData().put(EXCHANGE_PROVIDER, getConfig().getAlias());
             context.setIdp(this);
-            context.setIdpConfig(getConfig());
             return context;
         } catch (IOException e) {
             logger.debug("Unable to extract identity from identity token", e);

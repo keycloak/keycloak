@@ -1,7 +1,8 @@
 import { LanguageDetectorModule, createInstance } from "i18next";
 import HttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
-import { environment } from "@keycloak/keycloak-ui-shared";
+
+import { environment } from "./environment";
 import { joinPath } from "./utils/joinPath";
 
 const DEFAULT_LOCALE = "en";
@@ -28,7 +29,7 @@ export const i18n = createInstance({
   },
   backend: {
     loadPath: joinPath(
-      environment.authUrl,
+      environment.authServerUrl,
       `resources/${environment.realm}/account/{{lng}}`,
     ),
     parse: (data: string) => {

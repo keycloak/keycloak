@@ -182,26 +182,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 }
 
                 @Override
-                public String getCurrentRefreshToken() {
-                    return entity.getCurrentRefreshToken();
-                }
-
-                @Override
-                public void setCurrentRefreshToken(String currentRefreshToken) {
-                    throw new IllegalStateException("not implemented");
-                }
-
-                @Override
-                public int getCurrentRefreshTokenUseCount() {
-                    return entity.getCurrentRefreshTokenUseCount();
-                }
-
-                @Override
-                public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-                    throw new IllegalStateException("not implemented");
-                }
-
-                @Override
                 public String getNote(String name) {
                     return entity.getNotes().get(name);
                 }
@@ -311,16 +291,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     }
 
                     @Override
-                    public void setCurrentRefreshToken(String currentRefreshToken) {
-                        clientSessionModel.setCurrentRefreshToken(currentRefreshToken);
-                    }
-
-                    @Override
-                    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-                        clientSessionModel.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
-                    }
-
-                    @Override
                     public void setAction(String action) {
                         clientSessionModel.setAction(action);
                     }
@@ -379,16 +349,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     public void setNotes(Map<String, String> notes) {
                         clientSessionModel.getNotes().keySet().forEach(clientSessionModel::removeNote);
                         notes.forEach((k, v) -> clientSessionModel.setNote(k, v));
-                    }
-
-                    @Override
-                    public String getCurrentRefreshToken() {
-                        return clientSessionModel.getCurrentRefreshToken();
-                    }
-
-                    @Override
-                    public int getCurrentRefreshTokenUseCount() {
-                        return clientSessionModel.getCurrentRefreshTokenUseCount();
                     }
 
                     @Override

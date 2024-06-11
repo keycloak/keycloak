@@ -19,6 +19,7 @@ package org.keycloak.testsuite.securityprofile;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -35,11 +36,15 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.ClientBuilder;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @SetDefaultProvider(spi = "security-profile", providerId = "default", config = {"name", "strict-security-profile"})
 public class StrictSecurityProfileTest extends AbstractTestRealmKeycloakTest {
@@ -66,6 +71,50 @@ public class StrictSecurityProfileTest extends AbstractTestRealmKeycloakTest {
                 () -> realm.clientPoliciesPoliciesResource().updatePolicies(policiesRep));
         ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
         MatcherAssert.assertThat(error.getErrorMessage(), Matchers.containsString("duplicated as a global policy"));
+    }
+
+    @Test
+    public void testUpdatingGlobalPoliciesNotAllowed() throws Exception {
+        ClientPoliciesRepresentation clientPoliciesRep = getClientPolicies();
+        List<ClientPolicyRepresentation> origGlobalPolicies = clientPoliciesRep.getGlobalPolicies();
+
+        // Attempt to update description of some global policy. Should fail
+        clientPoliciesRep = getClientPolicies();
+        clientPoliciesRep.getGlobalPolicies().stream()
+                .filter(clientPolicy -> "Saml secure client (signatures, post, https)".equals(clientPolicy.getName()))
+                .forEach(clientPolicy -> clientPolicy.setDescription("some new description"));
+        try {
+            updatePolicies(clientPoliciesRep);
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals("update policies failed", cpe.getError());
+        }
+
+        // Attempt to add new global policy. Should fail
+        clientPoliciesRep = getClientPolicies();
+        ClientPolicyRepresentation newPolicy = new ClientPolicyRepresentation();
+        newPolicy.setName("new-name");
+        newPolicy.setDescription("desc");
+        clientPoliciesRep.getGlobalPolicies().add(newPolicy);
+        try {
+            updatePolicies(clientPoliciesRep);
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals("update policies failed", cpe.getError());
+        }
+
+        // Attempt to update without global policies. Should be OK
+        clientPoliciesRep = getClientPolicies();
+        clientPoliciesRep.setGlobalPolicies(null);
+        updatePolicies(clientPoliciesRep);
+
+        // Attempt to update with global policies, but not change them. Should be OK
+        clientPoliciesRep = getClientPolicies();
+        updatePolicies(clientPoliciesRep);
+
+        // Doublecheck global policies were not changed
+        clientPoliciesRep = getClientPolicies();
+        org.keycloak.testsuite.Assert.assertEquals(origGlobalPolicies, clientPoliciesRep.getGlobalPolicies());
     }
 
     @Test
@@ -196,5 +245,16 @@ public class StrictSecurityProfileTest extends AbstractTestRealmKeycloakTest {
         resp = realm.clients().create(clientRep);
         Assert.assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
         getCleanup().addClientUuid(ApiUtil.getCreatedId(resp));
+    }
+
+    private ClientPoliciesRepresentation getClientPolicies() {
+        return adminClient.realm(TEST_REALM_NAME).clientPoliciesPoliciesResource().getPolicies(true);
+    }
+    protected void updatePolicies(ClientPoliciesRepresentation rep) throws ClientPolicyException {
+        try {
+            adminClient.realm(TEST_REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(rep);
+        } catch (BadRequestException e) {
+            throw new ClientPolicyException("update policies failed", e.getResponse().getStatusInfo().toString());
+        }
     }
 }

@@ -16,6 +16,7 @@ type DeleteFunctions =
   | keyof Pick<Roles, "delCompositeRoles">;
 
 type ListEffectiveFunction =
+  | keyof Pick<Clients, "listCompositeRealmScopeMappings">
   | keyof Pick<Groups, "listRoleMappings" | "listAvailableRealmRoleMappings">
   | keyof Pick<
       ClientScopes,
@@ -65,7 +66,7 @@ const clientFunctions: FunctionMapping = {
   delete: ["delClientScopeMappings", "delRealmScopeMappings"],
   listEffective: [
     "listScopeMappings",
-    "listAvailableRealmScopeMappings",
+    "listCompositeRealmScopeMappings",
     "listCompositeClientScopeMappings",
   ],
   listAvailable: [

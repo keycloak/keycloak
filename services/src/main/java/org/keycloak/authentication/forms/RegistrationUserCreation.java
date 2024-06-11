@@ -19,7 +19,6 @@ package org.keycloak.authentication.forms;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.keycloak.Config;
-import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.FormAction;
@@ -37,7 +36,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OrganizationModel;
@@ -46,6 +44,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
@@ -290,27 +289,22 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     private boolean validateOrganizationInvitation(ValidationContext context, MultivaluedMap<String, String> formData, String email) {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            MultivaluedMap<String, String> queryParameters = context.getHttpRequest().getUri().getQueryParameters();
-            String tokenFromQuery = queryParameters.getFirst(Constants.TOKEN);
-
-            if (tokenFromQuery == null) {
-                return true;
-            }
-
             Consumer<List<FormMessage>> error = messages -> {
-                context.getEvent().detail(Messages.INVALID_ORG_INVITE, tokenFromQuery);
                 context.error(Errors.INVALID_TOKEN);
                 context.validationError(formData, messages);
             };
 
-            TokenVerifier<InviteOrgActionToken> tokenVerifier = TokenVerifier.create(tokenFromQuery, InviteOrgActionToken.class);
             InviteOrgActionToken token;
 
             try {
-                token = tokenVerifier.getToken();
+                token = Organizations.parseInvitationToken(context.getHttpRequest());
             } catch (VerificationException e) {
                 error.accept(List.of(new FormMessage("Unexpected error parsing the invitation token")));
                 return false;
+            }
+
+            if (token == null) {
+                return true;
             }
 
             KeycloakSession session = context.getSession();

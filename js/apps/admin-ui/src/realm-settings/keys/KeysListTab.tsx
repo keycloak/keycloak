@@ -1,11 +1,12 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
-import { Button, ButtonVariant, PageSection } from "@patternfly/react-core";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
-  Select,
+  Button,
+  ButtonVariant,
+  PageSection,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+} from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
@@ -46,7 +47,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 
   const [filterDropdownOpen, toggleFilter] = useToggle();
   return (
-    <Select
+    <KeycloakSelect
       width={300}
       data-testid="filter-type-select"
       isOpen={filterDropdownOpen}
@@ -54,7 +55,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
       variant={SelectVariant.single}
       onToggle={toggleFilter}
       toggleIcon={<FilterIcon />}
-      onSelect={(_, value) => {
+      onSelect={(value) => {
         const filter =
           FILTER_OPTIONS.find((o) => o === value.toString()) ||
           FILTER_OPTIONS[0];
@@ -74,7 +75,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
           {t(`keysFilter.${option}`)}
         </SelectOption>
       ))}
-    </Select>
+    </KeycloakSelect>
   );
 };
 
@@ -149,7 +150,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             }
           />
         }
-        canSelectAll
         columns={[
           {
             name: "algorithm",
@@ -178,16 +178,14 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           {
             name: "provider",
             displayKey: "provider",
-            cellRenderer: ({ provider }: KeyData) => provider || "",
-            cellFormatters: [emptyFormatter()],
+            cellRenderer: ({ provider }: KeyData) => provider || "-",
             transforms: [cellWidth(10)],
           },
           {
             name: "validTo",
             displayKey: "validTo",
             cellRenderer: ({ validTo }: KeyData) =>
-              validTo ? formatDate(new Date(validTo)) : "",
-            cellFormatters: [emptyFormatter()],
+              validTo ? formatDate(new Date(validTo)) : "-",
             transforms: [cellWidth(10)],
           },
           {
@@ -248,7 +246,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                 );
               } else return "";
             },
-            cellFormatters: [],
             transforms: [cellWidth(20)],
           },
         ]}

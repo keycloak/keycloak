@@ -16,7 +16,6 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.operations.ClientOperations;
 import org.keycloak.client.admin.cli.operations.GroupOperations;
 import org.keycloak.client.admin.cli.operations.RoleOperations;
@@ -293,10 +292,6 @@ public class GetRolesCmd extends GetCmd {
 
     @Override
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " get-roles [--cclientid CLIENT_ID | --cid ID] [ARGUMENTS]");
@@ -319,21 +314,7 @@ public class GetRolesCmd extends GetCmd {
         out.println("If --effective is specified, then roles added to the target user or group are transitively resolved and a full");
         out.println("set of roles in effect for that user, group or composite role is returned.");
         out.println("If --all is specified, then client roles for all clients are returned in addition to realm roles.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + KcAdmMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
-        out.println("  Command specific options:");
+        globalOptions(out);
         out.println("    --uusername               User's 'username'. If more than one user exists with the same username");
         out.println("                              you'll have to use --uid to specify the target user");
         out.println("    --uid                     User's 'id' attribute");

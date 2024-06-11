@@ -21,7 +21,6 @@ package org.keycloak.migration.migrators;
 
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientScopeModel;
@@ -63,6 +62,8 @@ public class MigrateTo25_0_0 implements Migration {
 
             //add basic scope to all existing OIDC clients
             session.clients().addClientScopeToAllClients(realm, basicScope, true);
+        } else {
+            LOG.warnf("Client scope '%s' already exists in the realm '%s'. Please migrate this realm manually if you need basic claims in your tokens.", basicScope.getName(), realm.getName());
         }
 
         // offer a migration for persistent user sessions which was added in KC25

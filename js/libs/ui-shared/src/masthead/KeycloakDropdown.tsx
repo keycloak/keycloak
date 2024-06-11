@@ -1,12 +1,14 @@
-import { ReactNode, useState } from "react";
 import {
   Dropdown,
+  DropdownList,
   DropdownProps,
-  DropdownToggle,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
+  MenuToggle,
+} from "@patternfly/react-core";
+import { EllipsisVIcon } from "@patternfly/react-icons";
+import { ReactNode, useState } from "react";
 
 type KeycloakDropdownProps = Omit<DropdownProps, "toggle"> & {
+  "data-testid"?: string;
   isKebab?: boolean;
   title?: ReactNode;
   dropDownItems: ReactNode[];
@@ -23,21 +25,23 @@ export const KeycloakDropdown = ({
   return (
     <Dropdown
       {...rest}
-      isPlain
-      position="right"
-      toggle={
-        isKebab ? (
-          <KebabToggle onToggle={(_event, val) => setOpen(val)}>
-            {title}
-          </KebabToggle>
-        ) : (
-          <DropdownToggle onToggle={(_event, val) => setOpen(val)}>
-            {title}
-          </DropdownToggle>
-        )
-      }
+      popperProps={{
+        position: "right",
+      }}
+      toggle={(ref) => (
+        <MenuToggle
+          data-testid={`${rest["data-testid"]}-toggle`}
+          ref={ref}
+          onClick={() => setOpen(!open)}
+          isExpanded={open}
+          variant={isKebab ? "plain" : "default"}
+        >
+          {isKebab ? <EllipsisVIcon /> : title}
+        </MenuToggle>
+      )}
       isOpen={open}
-      dropdownItems={dropDownItems}
-    />
+    >
+      <DropdownList>{dropDownItems}</DropdownList>
+    </Dropdown>
   );
 };
