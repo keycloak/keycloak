@@ -19,8 +19,6 @@ package org.keycloak.testsuite.utils.arquillian;
 public interface ContainerConstants {
     String APP_SERVER_PREFIX = "app-server-";
 
-    String APP_SERVER_UNDERTOW = APP_SERVER_PREFIX + "undertow";
-
     String APP_SERVER_WILDFLY = APP_SERVER_PREFIX + "wildfly";
     String APP_SERVER_WILDFLY_CLUSTER = APP_SERVER_WILDFLY + "-ha-node-1;" + APP_SERVER_WILDFLY + "-ha-node-2";
 

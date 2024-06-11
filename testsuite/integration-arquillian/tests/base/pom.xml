@@ -477,26 +477,6 @@
         </profile>
 
         <profile>
-            <id>app-server-undertow</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>undertow</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>undertow</app.server> <!--in case the profile is called directly-->
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>app-server-wildfly</id>
             <activation>
                 <property>
