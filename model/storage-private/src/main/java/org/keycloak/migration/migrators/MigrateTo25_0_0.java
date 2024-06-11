@@ -45,6 +45,12 @@ public class MigrateTo25_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
+        // Can be null during store model tests.
+        if (session.sessions() != null) {
+            // Offer a migration for persistent user sessions which was added in KC25.
+            session.sessions().migrate(VERSION.toString());
+        }
+
         session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
     }
 
@@ -66,8 +72,6 @@ public class MigrateTo25_0_0 implements Migration {
             LOG.warnf("Client scope '%s' already exists in the realm '%s'. Please migrate this realm manually if you need basic claims in your tokens.", basicScope.getName(), realm.getName());
         }
 
-        // offer a migration for persistent user sessions which was added in KC25
-        session.sessions().migrate(VERSION.toString());
     }
 }
 
