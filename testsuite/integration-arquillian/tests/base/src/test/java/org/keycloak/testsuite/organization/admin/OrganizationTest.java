@@ -42,10 +42,13 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.stream.IntStream;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -452,13 +455,18 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
     @Test
     public void testCount() {
-        for (int i = 0; i < 10; i++) {
-            createOrganization("kc.org." + i);
-        }
+        List<String> orgIds = IntStream.range(0, 10)
+             .mapToObj(i -> createOrganization("kc.org." + i).getId())
+             .collect(Collectors.toList());
 
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             assertEquals(10, orgProvider.count());
+
+            OrganizationModel org = orgProvider.getById(orgIds.get(0));
+            orgProvider.remove(org);
+
+            assertEquals(9, orgProvider.count());
         });
     }
 }
