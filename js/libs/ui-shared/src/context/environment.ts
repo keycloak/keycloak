@@ -20,25 +20,21 @@ export type BaseEnvironment = {
 };
 
 /**
- * Extracts the environment variables that are passed if the application is running as a Keycloak theme and combines them with the provided defaults.
- * These variables are injected by Keycloak into the `index.ftl` as a script tag, the contents of which can be parsed as JSON.
+ *  Extracts the environment variables from the document, these variables are injected by Keycloak as a script tag, the contents of which can be parsed as JSON.
  *
- * @argument defaults - The default values to fall to if a value is not present in the environment.
+ * @argument defaults - The default values to fall to if a value is not found in the environment.
  */
 export function getInjectedEnvironment<T>(defaults: T): T {
   const element = document.getElementById("environment");
-  let env = {} as T;
+  const contents = element?.textContent;
 
-  // Attempt to parse the contents as JSON and return its value.
-  try {
-    // If the element cannot be found, return an empty record.
-    if (element?.textContent) {
-      env = JSON.parse(element.textContent);
-    }
-  } catch (error) {
-    console.error("Unable to parse environment variables.");
+  if (typeof contents !== "string") {
+    throw new Error("Environment variables not found in the document.");
   }
 
-  // Return the merged environment variables with the defaults.
-  return { ...defaults, ...env };
+  try {
+    return { ...defaults, ...JSON.parse(contents) };
+  } catch (error) {
+    throw new Error("Unable to parse environment variables as JSON.");
+  }
 }

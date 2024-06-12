@@ -4,8 +4,6 @@ import { defineConfig, loadEnv } from "vite";
 import { checker } from "vite-plugin-checker";
 import dts from "vite-plugin-dts";
 
-import { getRootPath } from "./src/utils/getRootPath";
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -28,8 +26,8 @@ export default defineConfig(({ mode }) => {
   return {
     base: "",
     server: {
-      port: 8080,
-      open: getRootPath(),
+      origin: "http://localhost:5173",
+      port: 5173,
     },
     build: {
       ...lib,
@@ -37,7 +35,9 @@ export default defineConfig(({ mode }) => {
       target: "esnext",
       modulePreload: false,
       cssMinify: "lightningcss",
+      manifest: true,
       rollupOptions: {
+        input: "src/main.tsx",
         external,
       },
     },

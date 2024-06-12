@@ -6,14 +6,17 @@ import { checker } from "vite-plugin-checker";
 export default defineConfig({
   base: "",
   server: {
-    port: 8080,
+    origin: "http://localhost:5174",
+    port: 5174,
   },
   build: {
     sourcemap: true,
     target: "esnext",
     modulePreload: false,
     cssMinify: "lightningcss",
+    manifest: true,
     rollupOptions: {
+      input: "src/main.tsx",
       external: ["react", "react/jsx-runtime", "react-dom"],
     },
   },

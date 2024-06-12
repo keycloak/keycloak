@@ -1,29 +1,14 @@
 package org.keycloak.services.resources.account;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
-import org.keycloak.events.EventStoreProvider;
+import org.keycloak.common.util.Environment;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -40,6 +25,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.services.util.ViteManifest;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
@@ -48,6 +34,19 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Scanner;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by st on 29/03/17.
@@ -160,6 +159,26 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
         RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
         map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
+
+        final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ACCOUNT_VITE_URL) : null;
+
+        if (devServerUrl != null) {
+            map.put("devServerUrl", devServerUrl);
+        }
+
+        final var manifestFile = theme.getResourceAsStream(ViteManifest.MANIFEST_FILE_PATH);
+
+        if (devServerUrl == null && manifestFile != null) {
+            final var manifest = ViteManifest.parseFromInputStream(manifestFile);
+            final var entryChunk = manifest.getEntryChunk();
+            final var entryStyles = entryChunk.css().orElse(new String[] {});
+            final var entryScript = entryChunk.file();
+            final var entryImports = entryChunk.imports().orElse(new String[] {});
+
+            map.put("entryStyles", entryStyles);
+            map.put("entryScript", entryScript);
+            map.put("entryImports", entryImports);
+        }
 
         FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
         String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
