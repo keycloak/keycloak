@@ -20,7 +20,6 @@
         <module>servlet-authz</module>
         <module>servlet-policy-enforcer</module>
         <module>servlets</module>
-        <module>servlets-jakarta</module>
         <module>cors</module>
     </modules>
 </project>
