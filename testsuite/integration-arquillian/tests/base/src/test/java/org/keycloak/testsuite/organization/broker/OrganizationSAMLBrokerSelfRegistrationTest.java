@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.admin;
+package org.keycloak.testsuite.organization.broker;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.common.Profile.Feature;
