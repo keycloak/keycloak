@@ -109,13 +109,13 @@ CPU, memory, and network utilization.
 ifeval::[{project_community}==true]
 
 .Persistent user sessions
-The feature `persistent-user-session` stores online user and client sessions also in the database.
+The feature `persistent-user-sessions` stores online user and client sessions also in the database.
 This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
 
 The feature is disabled by default. To use it, enable the feature:
 
 ----
-bin/kc.sh start --features=persistent-user-session ...
+bin/kc.sh start --features=persistent-user-sessions ...
 ----
 
 With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to, by default, 10000 entries per node which will reduce the overall memory usage of {project_name} for larger installations.
@@ -146,7 +146,7 @@ Upon a cluster restart, offline sessions are lazily loaded from the database and
 
 ifeval::[{project_community}==true]
 
-With feature `persistent-user-session` enabled, the in-memory caches for offline user sessions and offline client sessions are limited to 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
+With feature `persistent-user-sessions` enabled, the in-memory caches for offline user sessions and offline client sessions are limited to 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
 Items which are evicted from memory will be loaded on-demand from the database when needed.
 To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
 
