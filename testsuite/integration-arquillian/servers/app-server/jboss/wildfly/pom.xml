@@ -30,17 +30,13 @@
     <name>App Server - Wildfly</name>
     
     <properties>
-        <wildfly.server.version>23.0.2.Final</wildfly.server.version>
+        <wildfly.server.version>29.0.1.Final</wildfly.server.version>
         <app.server.jboss>wildfly</app.server.jboss>
         
         <app.server.jboss.groupId>org.wildfly</app.server.jboss.groupId>
         <app.server.jboss.artifactId>wildfly-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${wildfly.server.version}</app.server.jboss.version>
         <app.server.jboss.unpacked.folder.name>wildfly-${wildfly.server.version}</app.server.jboss.unpacked.folder.name>
-        
-        <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
-
-        <skip.elytron.adapter.installation>false</skip.elytron.adapter.installation>
     </properties>
 
     <dependencies>
@@ -59,4 +55,49 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${wildfly.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>provision</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <provisioningDir>${app.server.jboss.home}</provisioningDir>
+                    <recordProvisioningState>true</recordProvisioningState>
+                    <logProvisioningTime>true</logProvisioningTime>
+                    <feature-packs>
+                        <feature-pack>
+                            <location>wildfly@maven(org.jboss.universe:community-universe)#${wildfly.server.version}</location>
+                        </feature-pack>
+                        <feature-pack>
+                            <groupId>org.keycloak</groupId>
+                            <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                            <version>${project.version}</version>
+                        </feature-pack>
+                    </feature-packs>
+                    <layers>
+                        <layer>core-server</layer>
+                        <layer>web-server</layer>
+                        <layer>jaxrs-server</layer>
+                        <layer>datasources-web-server</layer>
+                        <layer>webservices</layer>
+                        <layer>web-console</layer>
+                        <layer>keycloak-saml</layer>
+                        <layer>keycloak-client-saml</layer>
+                        <layer>keycloak-client-saml-ejb</layer>
+                    </layers>
+                    <skip>false</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

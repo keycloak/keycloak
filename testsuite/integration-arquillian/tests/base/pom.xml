@@ -32,7 +32,7 @@
     <description></description>
 
     <properties>
-        <arquillian.protocol.default>Servlet 3.0</arquillian.protocol.default>
+        <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
         <cli.log.output>false</cli.log.output>
         <test.intermittent>false</test.intermittent>
         <exclude.test>-</exclude.test>
@@ -127,6 +127,11 @@
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-test-apps-servlets</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -525,7 +530,6 @@
                 <app.server>eap8</app.server>
                 <app.server.skip.unpack>false</app.server.skip.unpack>
                 <app.server.artifactId>integration-arquillian-servers-app-server-jboss-galleon</app.server.artifactId>
-                <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
                 <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>

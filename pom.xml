@@ -59,7 +59,7 @@
         <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
 
         <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
-        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
+        <tests.wildfly.core.version>21.1.1.Final</tests.wildfly.core.version>
 
         <!-- Upstream WildFly Versions -->
         <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
@@ -190,7 +190,7 @@
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <osgi.bundle.plugin.version>5.1.8</osgi.bundle.plugin.version>
-        <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
+        <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
