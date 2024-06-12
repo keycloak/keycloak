@@ -47,4 +47,4 @@ echo "Building quarkus keyclok server with SSSD integration"
 ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus
 
 echo "Executing SSSD tests"
-./mvnw -f testsuite/integration-arquillian/tests/other/sssd/pom.xml test -Psssd-testing -Dbrowser=chrome "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Pauth-server-quarkus
+./mvnw -f testsuite/integration-arquillian/tests/other/sssd/pom.xml test -Psssd-testing -Dbrowser=htmlUnit -Dlogin.theme.default=base -Pauth-server-quarkus
