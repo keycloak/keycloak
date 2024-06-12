@@ -83,7 +83,7 @@ public final class PropertyMappers {
                 && !ConfigArgsConfigSource.CLI_ARGS.equals(name)
                 && !"kc.home.dir".equals(name)
                 && !"kc.config.file".equals(name)
-                && !Environment.PROFILE.equals(name)
+                && !org.keycloak.common.util.Environment.PROFILE.equals(name)
                 && !"kc.show.config".equals(name)
                 && !"kc.show.config.runtime".equals(name)
                 && !"kc.config-file".equals(name);
