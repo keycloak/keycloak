@@ -24,11 +24,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
+import io.quarkus.logging.Log;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -107,7 +110,17 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
 
         final var hostnameSpec = keycloak.getSpec().getHostnameSpec();
         if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
-            ingress.getSpec().getRules().get(0).setHost(hostnameSpec.getHostname());
+            String hostname = hostnameSpec.getHostname();
+
+            try {
+                hostname = new URL(hostname).getHost();
+                Log.debug("Hostname is a URL, extracting host: " + hostname);
+            }
+            catch (MalformedURLException e) {
+                Log.debug("Hostname is not a URL, using as is: " + hostname);
+            }
+
+            ingress.getSpec().getRules().get(0).setHost(hostname);
         }
 
         return ingress;
