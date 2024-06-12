@@ -31,19 +31,19 @@ import org.keycloak.organization.OrganizationProvider;
 public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private final KeycloakSession session;
-    private final OrganizationProvider jpaOrgDelegate;
+    private final OrganizationProvider orgDelegate;
     private final RealmCacheSession realmCache;
     private final Map<String, OrganizationAdapter> managedOrganizations = new HashMap<>();
 
     public InfinispanOrganizationProvider(KeycloakSession session) {
         this.session = session;
-        this.jpaOrgDelegate = session.getProvider(OrganizationProvider.class, "jpa");
+        this.orgDelegate = session.getProvider(OrganizationProvider.class, "jpa");
         this.realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
     }
 
     @Override
     public OrganizationModel create(String name) {
-        return jpaOrgDelegate.create(name);
+        return orgDelegate.create(name);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(id);
-            OrganizationModel model = jpaOrgDelegate.getById(id);
+            OrganizationModel model = orgDelegate.getById(id);
             if (model == null) return null;
             if (realmCache.getInvalidations().contains(id)) return model;
             cached = new CachedOrganization(loaded, getRealm(), model);
@@ -68,7 +68,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         } else if (managedOrganizations.containsKey(id)) {
             return managedOrganizations.get(id);
         }
-        OrganizationAdapter adapter = new OrganizationAdapter(cached, realmCache, jpaOrgDelegate);
+        OrganizationAdapter adapter = new OrganizationAdapter(cached, realmCache, orgDelegate);
         managedOrganizations.put(id, adapter);
         return adapter;
     }
@@ -84,7 +84,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
-            OrganizationModel model = jpaOrgDelegate.getByDomainName(domainName);
+            OrganizationModel model = orgDelegate.getByDomainName(domainName);
             if (model == null) return null;
             if (realmCache.getInvalidations().contains(model.getId())) return model;
             cached = new CachedOrganization(loaded, getRealm(), model);
@@ -96,7 +96,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         } else if (managedOrganizations.containsKey(cached.getId())) {
             return managedOrganizations.get(cached.getId());
         }
-        OrganizationAdapter adapter = new OrganizationAdapter(cached, realmCache, jpaOrgDelegate);
+        OrganizationAdapter adapter = new OrganizationAdapter(cached, realmCache, orgDelegate);
         managedOrganizations.put(cacheKey, adapter);
         return adapter;
     }
@@ -104,19 +104,19 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<OrganizationModel> getAllStream(String search, Boolean exact, Integer first, Integer max) {
         // Return cache delegates to ensure cache invalidation during write operations
-        return getCacheDelegates(jpaOrgDelegate.getAllStream(search, exact, first, max));
+        return getCacheDelegates(orgDelegate.getAllStream(search, exact, first, max));
     }
 
     @Override
     public Stream<OrganizationModel> getAllStream(Map<String, String> attributes, Integer first, Integer max) {
         // Return cache delegates to ensure cache invalidation during write operations
-        return getCacheDelegates(jpaOrgDelegate.getAllStream(attributes, first, max));
+        return getCacheDelegates(orgDelegate.getAllStream(attributes, first, max));
     }
 
     @Override
     public boolean remove(OrganizationModel organization) {
         registerOrganizationInvalidation(organization.getId());
-        return jpaOrgDelegate.remove(organization);
+        return orgDelegate.remove(organization);
     }
 
     @Override
@@ -128,38 +128,38 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean addMember(OrganizationModel organization, UserModel user) {
-        return jpaOrgDelegate.addMember(organization, user);
+        return orgDelegate.addMember(organization, user);
     }
 
     @Override
     public boolean removeMember(OrganizationModel organization, UserModel member) {
-        return jpaOrgDelegate.removeMember(organization, member);
+        return orgDelegate.removeMember(organization, member);
     }
 
     @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max) {
-        return jpaOrgDelegate.getMembersStream(organization, search, exact, first, max);
+        return orgDelegate.getMembersStream(organization, search, exact, first, max);
     }
 
     @Override
     public UserModel getMemberById(OrganizationModel organization, String id) {
-        return jpaOrgDelegate.getMemberById(organization, id);
+        return orgDelegate.getMemberById(organization, id);
     }
 
     @Override
     public OrganizationModel getByMember(UserModel member) {
         // Return cache delegate to ensure cache invalidation during write operations
-        return getCacheDelegate(jpaOrgDelegate.getByMember(member));
+        return getCacheDelegate(orgDelegate.getByMember(member));
     }
 
     @Override
     public boolean isManagedMember(OrganizationModel organization, UserModel member) {
-        return jpaOrgDelegate.isManagedMember(organization, member);
+        return orgDelegate.isManagedMember(organization, member);
     }
 
     @Override
     public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
-        boolean added = jpaOrgDelegate.addIdentityProvider(organization, identityProvider);
+        boolean added = orgDelegate.addIdentityProvider(organization, identityProvider);
         if (added) {
             registerOrganizationInvalidation(organization.getId());
         }
@@ -168,12 +168,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization) {
-        return jpaOrgDelegate.getIdentityProviders(organization);
+        return orgDelegate.getIdentityProviders(organization);
     }
 
     @Override
     public boolean removeIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
-        boolean removed = jpaOrgDelegate.removeIdentityProvider(organization, identityProvider);
+        boolean removed = orgDelegate.removeIdentityProvider(organization, identityProvider);
         if (removed) {
             registerOrganizationInvalidation(organization.getId());
         }
@@ -187,12 +187,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public long count() {
-        return jpaOrgDelegate.count();
+        return orgDelegate.count();
     }
 
     @Override
     public void close() {
-        jpaOrgDelegate.close();
+        orgDelegate.close();
     }
 
     void registerOrganizationInvalidation(String orgId) {
