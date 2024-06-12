@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -46,6 +47,7 @@ import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -165,11 +167,13 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     }
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void proceedSetupWebAuthnLogoutOtherSessionsChecked() throws IOException {
         testWebAuthnLogoutOtherSessions(true);
     }
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void proceedSetupWebAuthnLogoutOtherSessionsNotChecked() throws IOException {
         testWebAuthnLogoutOtherSessions(false);
     }

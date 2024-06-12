@@ -45,7 +45,7 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
     protected WebAuthnErrorPage webAuthnErrorPage;
 
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void errorPageWithTimeout() throws IOException {
         final int timeoutSec = 3;
         final String authenticatorLabel = "authenticator";
