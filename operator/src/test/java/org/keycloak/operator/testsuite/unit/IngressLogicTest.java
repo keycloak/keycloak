@@ -41,7 +41,7 @@ public class IngressLogicTest {
 
     static class MockKeycloakIngress {
 
-        private static Keycloak getKeycloak(boolean tlsConfigured, IngressSpec ingressSpec) {
+        private static Keycloak getKeycloak(boolean tlsConfigured, IngressSpec ingressSpec, String hostname) {
             var kc = K8sUtils.getDefaultKeycloakDeployment();
             kc.getMetadata().setUid("this-is-a-fake-uid");
             if (ingressSpec != null) {
@@ -49,6 +49,9 @@ public class IngressLogicTest {
             }
             if (!tlsConfigured) {
                 kc.getSpec().getHttpSpec().setTlsSecret(null);
+            }
+            if (hostname != null) {
+                kc.getSpec().getHostnameSpec().setHostname(hostname);
             }
             return kc;
         }
@@ -58,10 +61,18 @@ public class IngressLogicTest {
         }
 
         public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured) {
-            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, tlsConfigured, null);
+            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, tlsConfigured, null, null);
+        }
+
+        public static MockKeycloakIngress build(String hostname) {
+            return build(true, false, true, true, null, hostname);
         }
 
         public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations) {
+            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, tlsConfigured, annotations, null);
+        }
+
+        public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations, String hostname) {
             IngressSpec ingressSpec = null;
             if (ingressSpecDefined) {
                 ingressSpec = new IngressSpec();
@@ -72,7 +83,7 @@ public class IngressLogicTest {
                     ingressSpec.setAnnotations(annotations);
                 }
             }
-            MockKeycloakIngress mock = new MockKeycloakIngress(tlsConfigured, ingressSpec);
+            MockKeycloakIngress mock = new MockKeycloakIngress(tlsConfigured, ingressSpec, hostname);
             mock.ingressExists = ingressExists;
             return mock;
         }
@@ -82,8 +93,12 @@ public class IngressLogicTest {
         private boolean deleted = false;
         private Keycloak keycloak;
 
+        public MockKeycloakIngress(boolean tlsConfigured, IngressSpec ingressSpec, String hostname) {
+            this.keycloak = getKeycloak(tlsConfigured, ingressSpec, hostname);
+        }
+
         public MockKeycloakIngress(boolean tlsConfigured, IngressSpec ingressSpec) {
-            this.keycloak = getKeycloak(tlsConfigured, ingressSpec);
+            this(tlsConfigured, ingressSpec, null);
         }
 
         public boolean reconciled() {
@@ -101,7 +116,7 @@ public class IngressLogicTest {
                 }
                 return Optional.empty();
             }
-            
+
             return Optional.of(keycloakIngressDependentResource.desired(keycloak, null));
         }
     }
@@ -216,5 +231,13 @@ public class IngressLogicTest {
         Optional<HasMetadata> reconciled = kc.getReconciledResource();
         Ingress ingress = reconciled.map(Ingress.class::cast).orElseThrow();
         assertEquals("my-class", ingress.getSpec().getIngressClassName());
+    }
+
+    @Test
+    public void testHostnameSanitizing() {
+        var kc = MockKeycloakIngress.build("https://my-other.example.com:443/my-path");
+        Optional<HasMetadata> reconciled = kc.getReconciledResource();
+        Ingress ingress = reconciled.map(Ingress.class::cast).orElseThrow();
+        assertEquals("my-other.example.com", ingress.getSpec().getRules().get(0).getHost());
     }
 }
