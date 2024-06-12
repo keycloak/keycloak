@@ -32,7 +32,9 @@ import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeTrue;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -58,6 +60,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
     // Similar to MultipleTabsLoginTest.multipleTabsParallelLogin but with IDP brokering test involved
     @Test
     public void testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInBothConsumerAndProvider() {
+        assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // Open login page in tab1 and click "login with IDP"
             oauth.clientId("broker-app");
@@ -120,6 +123,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
 
     @Test
     public void testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInProvider() throws Exception {
+        assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
         // Testing the scenario when authenticationSession expired only in "provider" realm and "consumer" is able to handle it  at IDP.
         // So need to increase authSession timeout on "consumer"
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver);
