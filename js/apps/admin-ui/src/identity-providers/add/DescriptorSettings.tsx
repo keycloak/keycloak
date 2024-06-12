@@ -75,7 +75,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           label={t("artifactResolutionServiceUrl")}
           labelIcon={t("artifactResolutionServiceUrlHelp")}
           type="url"
-          readOnly={readOnly}
+          isDisabled={readOnly}
         />
         <TextControl
           name="config.singleLogoutServiceUrl"

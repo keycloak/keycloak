@@ -180,7 +180,7 @@ public class SAMLEndpoint {
     }
 
     @GET
-    public Response redirectBindingWithArtifact(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
+    public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                     @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                     @QueryParam(GeneralConstants.SAML_ARTIFACT_KEY) String samlArt,
                                     @QueryParam(GeneralConstants.RELAY_STATE) String relayState)  {
@@ -195,7 +195,7 @@ public class SAMLEndpoint {
      */
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response postBindingWithArtifact(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
+    public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                 @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                 @FormParam(GeneralConstants.SAML_ARTIFACT_KEY) String samlArt,
                                 @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
@@ -207,10 +207,10 @@ public class SAMLEndpoint {
 
     @Path("clients/{client_id}")
     @GET
-    public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                    @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                    @QueryParam(GeneralConstants.RELAY_STATE) String relayState,
-                                    @PathParam("client_id") String clientId)  {
+    public Response redirectBindingIdpInitiated(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
+                                                @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+                                                @QueryParam(GeneralConstants.RELAY_STATE) String relayState,
+                                                @PathParam("client_id") String clientId)  {
         return new RedirectBinding().execute(samlRequest, samlResponse, null, relayState, clientId);
     }
 
@@ -220,10 +220,10 @@ public class SAMLEndpoint {
     @Path("clients/{client_id}")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                @FormParam(GeneralConstants.RELAY_STATE) String relayState,
-                                @PathParam("client_id") String clientId) {
+    public Response postBindingIdpInitiated(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
+                                            @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+                                            @FormParam(GeneralConstants.RELAY_STATE) String relayState,
+                                            @PathParam("client_id") String clientId) {
         return new PostBinding().execute(samlRequest, samlResponse, null, relayState, clientId);
     }
 
