@@ -38,14 +38,14 @@ public class FeedbackMessage {
     private final static String ERROR = "danger";
     private final static String INFO = "info";
 
-    private static final Pattern ALERT_TYPE_CLASS_PATTERN = Pattern.compile("pf-m-("
+    private static final Pattern ALERT_TYPE_CLASS_PATTERN = Pattern.compile("(pf-m|alert)-("
       + SUCCESS + "|"
       + WARNING + "|"
       + ERROR + "|"
       + INFO
       + ")");
 
-    @FindBy(css = "div[class^='pf-v5-c-alert']")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert']")
     private WebElement alertRoot;
 
     @FindBy(css = "span[id^='input-error']")
