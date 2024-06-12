@@ -42,7 +42,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     }
 
     private static void initializeSources() {
-        String profile = Environment.getProfile();
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         if (profile != null) {
             System.setProperty("quarkus.profile", profile);
