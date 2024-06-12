@@ -176,7 +176,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Response response = realm.identityProviders().create(newIdentityProvider);
         Assert.assertEquals(400, response.getStatus());
     }
-    
+
     @Test
     public void testCreate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
@@ -276,11 +276,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
             }
         }
     }
-    
+
     @Test
     public void shouldFailWhenAliasHasSpaceDuringCreation() {
         IdentityProviderRepresentation newIdentityProvider = createRep("New Identity Provider", "oidc");
-        
+
         newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "some secret value");
@@ -703,7 +703,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void importShouldFailDueAliasWithSpace() {
-        
+
         Map<String, Object> data = new HashMap<>();
         data.put("providerId", "saml");
         data.put("alias", "Alias With Space");
@@ -761,7 +761,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEqual(rep, providers.get(0));
 
     }
-    
+
     @Test
     public void testSamlImportAndExportDisabled() throws URISyntaxException, IOException, ParsingException {
 
@@ -784,7 +784,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
         assertCreatedSamlIdp(rep, false);
-        
+
     }
 
 
@@ -1059,9 +1059,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         ));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
-        assertThat(config, hasEntry("artifactResolutionServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
+        assertThat(config, hasEntry("artifactResolutionServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml/resolve"));
         assertThat(config, hasEntry("postBindingResponse", "true"));
-        assertThat(config, hasEntry("artifactBindingResponse", "true"));
+        assertThat(config, hasEntry("artifactBindingResponse", "false"));
         assertThat(config, hasEntry("postBindingAuthnRequest", "true"));
         assertThat(config, hasEntry("singleSignOnServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
