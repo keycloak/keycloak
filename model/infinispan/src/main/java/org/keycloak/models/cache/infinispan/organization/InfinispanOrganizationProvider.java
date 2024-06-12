@@ -41,9 +41,21 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         this.realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
     }
 
+    static String cacheKeyOrgCount(RealmModel realm) {
+        return realm.getId() + ".org.count";
+    }
+
     @Override
     public OrganizationModel create(String name) {
+        registerCountInvalidation();
         return orgDelegate.create(name);
+    }
+
+    @Override
+    public boolean remove(OrganizationModel organization) {
+        registerOrganizationInvalidation(organization.getId());
+        registerCountInvalidation();
+        return orgDelegate.remove(organization);
     }
 
     @Override
@@ -114,12 +126,6 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean remove(OrganizationModel organization) {
-        registerOrganizationInvalidation(organization.getId());
-        return orgDelegate.remove(organization);
-    }
-
-    @Override
     public void removeAll() {
         //TODO: won't scale, requires a better mechanism for bulk deleting organizations within a realm
         //this way, all organizations in the realm will be invalidated ... or should it be invalidated whole realm instead?
@@ -187,7 +193,20 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public long count() {
-        return orgDelegate.count();
+        String cacheKey = cacheKeyOrgCount(getRealm());
+        CachedOrganizationCount cached = realmCache.getCache().get(cacheKey, CachedOrganizationCount.class);
+
+        // cached and not invalidated
+        if (cached != null && !realmCache.getInvalidations().contains(cacheKey)) {
+            return cached.getCount();
+        }
+
+        Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+        long count = orgDelegate.count();
+        cached = new CachedOrganizationCount(loaded, getRealm(), count);
+        realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+
+        return count;
     }
 
     @Override
@@ -202,6 +221,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         }
 
         realmCache.registerInvalidation(orgId);
+    }
+
+    private void registerCountInvalidation() {
+        realmCache.registerInvalidation(cacheKeyOrgCount(getRealm()));
     }
 
     private RealmModel getRealm() {
