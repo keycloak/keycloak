@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
-import { getRootPath } from "./src/utils/getRootPath";
+
+import { getAccountUrl } from "./test/utils";
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -16,7 +17,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: `http://localhost:8080${getRootPath()}`,
+    baseURL: getAccountUrl(),
     trace: "on-first-retry",
   },
 

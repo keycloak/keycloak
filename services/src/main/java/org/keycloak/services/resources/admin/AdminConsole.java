@@ -18,12 +18,21 @@ package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
@@ -42,20 +51,13 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotAuthorizedException;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.OPTIONS;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -357,6 +359,26 @@ public class AdminConsole {
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
+
+            final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ADMIN_VITE_URL) : null;
+
+            if (devServerUrl != null) {
+                map.put("devServerUrl", devServerUrl);
+            }
+
+            final var manifestFile = theme.getResourceAsStream(".vite/manifest.json");
+
+            if (devServerUrl == null && manifestFile != null) {
+                final var manifest = ViteManifest.parseFromInputStream(manifestFile);
+                final var entryChunk = manifest.getEntryChunk();
+                final var entryStyles = entryChunk.css().orElse(new String[] {});
+                final var entryScript = entryChunk.file();
+                final var entryImports = entryChunk.imports().orElse(new String[] {});
+
+                map.put("entryStyles", entryStyles);
+                map.put("entryScript", entryScript);
+                map.put("entryImports", entryImports);
+            }
 
             FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

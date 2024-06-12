@@ -541,10 +541,10 @@ class KeycloakProcessor {
             Configuration.markAsOptimized(properties);
         }
 
-        String profile = Environment.getProfile();
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         if (profile != null) {
-            properties.put(Environment.PROFILE, profile);
+            properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
             properties.put(LaunchMode.current().getProfileKey(), profile);
         }
 

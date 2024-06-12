@@ -32,7 +32,7 @@ public final class Messages {
 
     public static String httpsConfigurationNotSet() {
         StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
-        if (!Environment.DEV_PROFILE_VALUE.equals(Environment.getProfile())) {
+        if (!org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(org.keycloak.common.util.Environment.getProfile())) {
             builder.append(" or start the server in development mode");
         }
         builder.append(".");
@@ -44,7 +44,7 @@ public final class Messages {
     }
 
     public static String devProfileNotAllowedError(String cmd) {
-        return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using 'kc.sh build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(Environment.DEV_PROFILE_VALUE));
+        return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using 'kc.sh build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE));
     }
 
     public static String invalidLogLevel(String logLevel) {
