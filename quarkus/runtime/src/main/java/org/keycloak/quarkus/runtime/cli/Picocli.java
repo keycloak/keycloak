@@ -34,7 +34,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getCurren
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -222,7 +222,7 @@ public final class Picocli {
                     return;
                 }
 
-                properties.add(key + "=" + formatValue(key, value));
+                properties.add(key + "=" + maskValue(key, value));
             }
         }, arg -> {
             properties.add(arg);
