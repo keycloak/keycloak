@@ -199,6 +199,7 @@
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <infinispan.maven-plugins.version>1.0.5.Final</infinispan.maven-plugins.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -236,6 +237,9 @@
         <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
         <!-- The clean step is skipped on Windows -->
         <js.skip.clean>false</js.skip.clean>
+
+        <!-- Set to true on release to update proto.lock files -->
+        <commitProtoLockChanges>false</commitProtoLockChanges>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1720,6 +1724,14 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.infinispan.maven-plugins</groupId>
+                    <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
+                    <version>${infinispan.maven-plugins.version}</version>
+                    <configuration>
+                        <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
