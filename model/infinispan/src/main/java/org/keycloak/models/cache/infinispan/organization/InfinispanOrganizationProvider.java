@@ -154,8 +154,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public OrganizationModel getByMember(UserModel member) {
-        // Return cache delegate to ensure cache invalidation during write operations
-        return getCacheDelegate(orgDelegate.getByMember(member));
+        return orgDelegate.getByMember(member);
     }
 
     @Override
@@ -235,11 +234,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         return realm;
     }
 
-    private OrganizationModel getCacheDelegate(OrganizationModel model) {
-        return model == null ? null : getById(model.getId());
-    }
-
     private Stream<OrganizationModel> getCacheDelegates(Stream<OrganizationModel> backendOrganizations) {
-        return backendOrganizations.map(this::getCacheDelegate);
+        return backendOrganizations.map(OrganizationModel::getId).map(this::getById);
     }
 }
