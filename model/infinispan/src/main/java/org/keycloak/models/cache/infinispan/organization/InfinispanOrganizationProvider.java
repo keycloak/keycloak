@@ -30,6 +30,8 @@ import org.keycloak.organization.OrganizationProvider;
 
 public class InfinispanOrganizationProvider implements OrganizationProvider {
 
+    private static final String ORG_COUNT_KEY_SUFFIX = ".org.count";
+
     private final KeycloakSession session;
     private final OrganizationProvider orgDelegate;
     private final RealmCacheSession realmCache;
@@ -42,7 +44,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     static String cacheKeyOrgCount(RealmModel realm) {
-        return realm.getId() + ".org.count";
+        return realm.getId() + ORG_COUNT_KEY_SUFFIX;
     }
 
     @Override
