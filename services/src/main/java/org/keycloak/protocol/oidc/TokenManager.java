@@ -153,7 +153,7 @@ public class TokenManager {
             if (userSession != null) {
 
                 // Revoke timeouted offline userSession
-                if (!AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+                if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                     sessionManager.revokeOfflineUserSession(userSession);
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
@@ -196,6 +196,12 @@ public class TokenManager {
             } else {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
             }
+        }
+
+        if (!AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {
+            logger.debug("Client session not active");
+            userSession.removeAuthenticatedClientSessions(Collections.singletonList(client.getId()));
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Client session not active");
         }
 
         if (oldToken.isIssuedBeforeSessionStart(clientSession.getStarted())) {
@@ -414,7 +420,7 @@ public class TokenManager {
             validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
         if (clientConfig.isUseRefreshToken()) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
-            responseBuilder.generateRefreshToken(refreshToken.getScope(), clientSession);
+            responseBuilder.generateRefreshToken(refreshToken, clientSession);
         }
 
         if (validation.newToken.getAuthorization() != null
@@ -436,8 +442,9 @@ public class TokenManager {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
             try {
                 validateTokenReuse(session, realm, refreshToken, clientSession, true);
-                int currentCount = clientSession.getCurrentRefreshTokenUseCount();
-                clientSession.setCurrentRefreshTokenUseCount(currentCount + 1);
+                String key = getReuseIdKey(refreshToken);
+                int currentCount = clientSession.getRefreshTokenUseCount(key);
+                clientSession.setRefreshTokenUseCount(key, currentCount + 1);
             } catch (OAuthErrorException oee) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
@@ -450,27 +457,27 @@ public class TokenManager {
     }
 
     // Will throw OAuthErrorException if validation fails
-    private void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken,
-        AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
+    private void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
         int startupTime = session.getProvider(UserSessionProvider.class).getStartupTime(realm);
+        String key = getReuseIdKey(refreshToken);
+        String refreshTokenId = clientSession.getRefreshToken(key);
+        int lastRefresh = clientSession.getRefreshTokenLastRefresh(key);
 
-        if (clientSession.getCurrentRefreshToken() != null
-            && !refreshToken.getId().equals(clientSession.getCurrentRefreshToken())
-            && refreshToken.getIat() < clientSession.getTimestamp()
-            && startupTime <= clientSession.getTimestamp()) {
+        //check if a more recent refresh token is already used on this tab, if yes the refresh token is invalid
+        if (refreshTokenId != null && !refreshToken.getId().equals(refreshTokenId) && refreshToken.getIat() < lastRefresh && startupTime <= lastRefresh) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
 
-        if (!refreshToken.getId().equals(clientSession.getCurrentRefreshToken())) {
+        if (!refreshToken.getId().equals(refreshTokenId)) {
             if (refreshFlag) {
-                clientSession.setCurrentRefreshToken(refreshToken.getId());
-                clientSession.setCurrentRefreshTokenUseCount(0);
+                clientSession.setRefreshToken(key, refreshToken.getId());
+                clientSession.setRefreshTokenUseCount(key, 0);
             } else {
                 return;
             }
         }
 
-        int currentCount = clientSession.getCurrentRefreshTokenUseCount();
+        int currentCount = clientSession.getRefreshTokenUseCount(key);
         if (currentCount > realm.getRefreshTokenMaxReuse()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
                 "Maximum allowed refresh token reuse exceeded");
@@ -567,7 +574,10 @@ public class TokenManager {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-        if (clientSession == null) {
+        if (clientSession != null && !AuthenticationManager.isClientSessionValid(userSession.getRealm(), client, userSession, clientSession)) {
+            // session exists but not active so re-start it
+            clientSession.restartClientSession();
+        } else if (clientSession == null) {
             clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
         }
 
@@ -595,7 +605,6 @@ public class TokenManager {
 
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(session, authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
         clientSession.setTimestamp(userSession.getLastSessionRefresh());
-
         // Remove authentication session now (just current tab, not whole "rootAuthenticationSession" in case we have more browser tabs with "authentications in progress")
         new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(userSession.getRealm(), authSession);
 
@@ -734,7 +743,7 @@ public class TokenManager {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -1095,18 +1104,27 @@ public class TokenManager {
             boolean offlineTokenRequested = offlineAccessScope==null ? false : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
             generateRefreshToken(offlineTokenRequested);
             refreshToken.setScope(clientSessionCtx.getScopeString(true));
+            if (realm.isRevokeRefreshToken()) {
+                refreshToken.getOtherClaims().put(Constants.REUSE_ID, KeycloakModelUtils.generateId());
+            }
             return this;
         }
 
-        public AccessTokenResponseBuilder generateRefreshToken(String scope, AuthenticatedClientSessionModel clientSession) {
+        public AccessTokenResponseBuilder generateRefreshToken(RefreshToken oldRefreshToken, AuthenticatedClientSessionModel clientSession) {
             if (accessToken == null) {
                 throw new IllegalStateException("accessToken not set");
             }
 
+            String scope = oldRefreshToken.getScope();
+            Object reuseId = oldRefreshToken.getOtherClaims().get(Constants.REUSE_ID);
             boolean offlineTokenRequested = Arrays.asList(scope.split(" ")).contains(OAuth2Constants.OFFLINE_ACCESS) ;
             if (offlineTokenRequested)
                 clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scope, session);
             generateRefreshToken(offlineTokenRequested);
+            if (realm.isRevokeRefreshToken()) {
+                refreshToken.getOtherClaims().put(Constants.REUSE_ID, reuseId);
+                clientSession.setRefreshTokenLastRefresh(getReuseIdKey(oldRefreshToken), refreshToken.getIat().intValue());
+            }
             refreshToken.setScope(scope);
             return this;
         }
@@ -1115,12 +1133,10 @@ public class TokenManager {
             refreshToken = new RefreshToken(accessToken);
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            int currentTime = Time.currentTime();
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            clientSession.setTimestamp(currentTime);
+            clientSession.setTimestamp(refreshToken.getIat().intValue());
             UserSessionModel userSession = clientSession.getUserSession();
-            userSession.setLastSessionRefresh(currentTime);
-
+            userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
             if (offlineTokenRequested) {
                 UserSessionManager sessionManager = new UserSessionManager(session);
                 if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
@@ -1451,6 +1467,10 @@ public class TokenManager {
             }
         }
         return false;
+    }
+
+    private String getReuseIdKey(AccessToken refreshToken) {
+        return Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
     }
 
 }

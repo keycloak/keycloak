@@ -1,12 +1,18 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
+import { IconMapper } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
   Button,
   ButtonVariant,
   CardTitle,
+  Dropdown,
+  DropdownGroup,
+  DropdownItem,
+  DropdownList,
   Gallery,
+  MenuToggle,
   PageSection,
   Split,
   SplitItem,
@@ -15,18 +21,12 @@ import {
   TextVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  Dropdown,
-  DropdownGroup,
-  DropdownItem,
-  DropdownToggle,
-} from "@patternfly/react-core/deprecated";
+import { IFormatterValueType } from "@patternfly/react-table";
 import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { IconMapper } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
@@ -73,6 +73,8 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
 };
 
 export default function IdentityProvidersSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const identityProviders = groupBy(
     useServerInfo().identityProviders,
@@ -125,18 +127,19 @@ export default function IdentityProvidersSection() {
           <DropdownItem
             key={provider.id}
             value={provider.id}
-            component={
-              <Link
-                to={toIdentityProviderCreate({
+            component="a"
+            data-testid={provider.id}
+            onClick={() =>
+              navigate(
+                toIdentityProviderCreate({
                   realm,
                   providerId: provider.id,
-                })}
-                data-testid={provider.id}
-              >
-                {provider.name}
-              </Link>
+                }),
+              )
             }
-          />
+          >
+            {provider.name}
+          </DropdownItem>
         ))}
       </DropdownGroup>
     ));
@@ -226,17 +229,19 @@ export default function IdentityProvidersSection() {
                 <ToolbarItem>
                   <Dropdown
                     data-testid="addProviderDropdown"
-                    toggle={
-                      <DropdownToggle
-                        onToggle={() => setAddProviderOpen(!addProviderOpen)}
-                        toggleVariant="primary"
+                    toggle={(ref) => (
+                      <MenuToggle
+                        ref={ref}
+                        onClick={() => setAddProviderOpen(!addProviderOpen)}
+                        variant="primary"
                       >
                         {t("addProvider")}
-                      </DropdownToggle>
-                    }
+                      </MenuToggle>
+                    )}
                     isOpen={addProviderOpen}
-                    dropdownItems={identityProviderOptions()}
-                  />
+                  >
+                    <DropdownList>{identityProviderOptions()}</DropdownList>
+                  </Dropdown>
                 </ToolbarItem>
 
                 <ToolbarItem>
@@ -269,6 +274,15 @@ export default function IdentityProvidersSection() {
                 name: "providerId",
                 displayKey: "providerDetails",
                 cellFormatters: [upperCaseFormatter()],
+              },
+              {
+                name: "config['kc.org']",
+                displayKey: "linkedOrganization",
+                cellFormatters: [
+                  (data?: IFormatterValueType) => {
+                    return data ? "X" : "—";
+                  },
+                ],
               },
             ]}
           />

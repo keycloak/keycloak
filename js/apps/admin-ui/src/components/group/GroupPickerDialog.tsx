@@ -20,7 +20,7 @@ import {
 import { AngleRightIcon } from "@patternfly/react-icons";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
@@ -53,6 +53,8 @@ export const GroupPickerDialog = ({
   onClose,
   onConfirm,
 }: GroupPickerDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<SelectableGroup[]>([]);
 

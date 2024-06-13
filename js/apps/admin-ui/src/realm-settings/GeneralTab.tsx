@@ -21,8 +21,7 @@ import {
   SelectControl,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
@@ -37,15 +36,19 @@ import {
 import { useFetch } from "../utils/useFetch";
 import { UIRealmRepresentation } from "./RealmSettingsTabs";
 
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
-  save: (realm: UIRealmRepresentation) => void;
+  save: (realm: UIRealmRepresentation) => Promise<void>;
 };
 
 export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm: realmName } = useRealm();
   const [userProfileConfig, setUserProfileConfig] =
     useState<UserProfileConfig>();
@@ -71,7 +74,7 @@ export const RealmSettingsGeneralTab = ({
 
 type RealmSettingsGeneralTabFormProps = {
   realm: UIRealmRepresentation;
-  save: (realm: UIRealmRepresentation) => void;
+  save: (realm: UIRealmRepresentation) => Promise<void>;
   userProfileConfig: UserProfileConfig;
 };
 
@@ -93,6 +96,8 @@ function RealmSettingsGeneralTabForm({
   save,
   userProfileConfig,
 }: RealmSettingsGeneralTabFormProps) {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useForm<FormFields>();
@@ -102,9 +107,16 @@ function RealmSettingsGeneralTabForm({
     setValue,
     formState: { isDirty, errors },
   } = form;
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const isOrganizationsEnabled = isFeatureEnabled(Feature.Organizations);
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
+    setValue(
+      "unmanagedAttributePolicy",
+      userProfileConfig.unmanagedAttributePolicy ||
+        UNMANAGED_ATTRIBUTE_POLICIES[0],
+    );
     if (realm.attributes?.["acr.loa.map"]) {
       const result = Object.entries(
         JSON.parse(realm.attributes["acr.loa.map"]),
@@ -119,17 +131,19 @@ function RealmSettingsGeneralTabForm({
 
   useEffect(setupForm, []);
 
-  const onSubmit = handleSubmit(({ unmanagedAttributePolicy, ...data }) => {
-    const upConfig = { ...userProfileConfig };
+  const onSubmit = handleSubmit(
+    async ({ unmanagedAttributePolicy, ...data }) => {
+      const upConfig = { ...userProfileConfig };
 
-    if (unmanagedAttributePolicy === UnmanagedAttributePolicy.Disabled) {
-      delete upConfig.unmanagedAttributePolicy;
-    } else {
-      upConfig.unmanagedAttributePolicy = unmanagedAttributePolicy;
-    }
+      if (unmanagedAttributePolicy === UnmanagedAttributePolicy.Disabled) {
+        delete upConfig.unmanagedAttributePolicy;
+      } else {
+        upConfig.unmanagedAttributePolicy = unmanagedAttributePolicy;
+      }
 
-    save({ ...data, upConfig });
-  });
+      await save({ ...data, upConfig });
+    },
+  );
 
   return (
     <PageSection variant="light">
@@ -204,6 +218,13 @@ function RealmSettingsGeneralTabForm({
             label={t("userManagedAccess")}
             labelIcon={t("userManagedAccessHelp")}
           />
+          {isOrganizationsEnabled && (
+            <DefaultSwitchControl
+              name="organizationsEnabled"
+              label={t("organizationsEnabled")}
+              labelIcon={t("organizationsEnabledHelp")}
+            />
+          )}
           <SelectControl
             name="unmanagedAttributePolicy"
             label={t("unmanagedAttributes")}

@@ -1,8 +1,7 @@
 import { ActionGroup, Button } from "@patternfly/react-core";
-import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { SelectControl, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 type EventListenersFormProps = {
@@ -15,9 +14,6 @@ export const EventListenersForm = ({
   reset,
 }: EventListenersFormProps) => {
   const { t } = useTranslation();
-  const {
-    formState: { isDirty },
-  } = form;
 
   const serverInfo = useServerInfo();
   const eventListeners = serverInfo.providers?.eventsListener.providers;
@@ -39,14 +35,12 @@ export const EventListenersForm = ({
         }}
         variant={SelectVariant.typeaheadMulti}
         options={Object.keys(eventListeners!)}
-        typeAheadAriaLabel="Select"
       />
       <ActionGroup>
         <Button
           variant="primary"
           type="submit"
           data-testid={"saveEventListenerBtn"}
-          isDisabled={!isDirty}
         >
           {t("save")}
         </Button>

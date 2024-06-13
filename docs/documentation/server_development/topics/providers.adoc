@@ -241,7 +241,7 @@ If you find that your server will not start due to a `NoSuchFileException` error
 
 [source,bash]
 ----
-./kc.sh -Dquarkus.launch.rebuild=true
+./kc.sh -Dquarkus.launch.rebuild=true --help
 ----
 
 This will force Quarkus to rebuild the classloading related index files. From there you should be able to perform a non-optimized start or build without an exception.

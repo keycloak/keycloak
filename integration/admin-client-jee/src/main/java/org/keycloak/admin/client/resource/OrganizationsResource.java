@@ -19,15 +19,15 @@ package org.keycloak.admin.client.resource;
 
 import java.util.List;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 
 public interface OrganizationsResource {
@@ -40,7 +40,7 @@ public interface OrganizationsResource {
     OrganizationResource get(@PathParam("id") String id);
 
     /**
-     * Return all organizations in the realm.
+     * Returns all organizations in the realm.
      *
      * @return a list containing the organizations.
      */
@@ -49,7 +49,17 @@ public interface OrganizationsResource {
     List<OrganizationRepresentation> getAll();
 
     /**
-     * Return all organizations that match the specified filters.
+     * Returns all organizations that match the specified filter.
+     *
+     * @param search a {@code String} representing either an organization name or domain.
+     * @return a list containing the matched organizations.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> search(@QueryParam("search") String search);
+
+    /**
+     * Returns all organizations that match the specified filters.
      *
      * @param search a {@code String} representing either an organization name or domain.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
@@ -69,12 +79,30 @@ public interface OrganizationsResource {
     );
 
     /**
-     * Return all organizations that match the specified filter.
+     * Returns all organizations that contain attributes matching the specified query.
      *
-     * @param search a {@code String} representing either an organization name or domain.
-     * @return a list containing the matched organizations.
+     * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
+     * @return a list containing the organizations that match the attribute query.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<OrganizationRepresentation> search(@QueryParam("search") String search);
+    List<OrganizationRepresentation> searchByAttribute(
+            @QueryParam("q") String searchQuery
+    );
+
+    /**
+     * Returns all organizations that contain attributes matching the specified query.
+     *
+     * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return a list containing the organizations that match the attribute query.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> searchByAttribute(
+            @QueryParam("q") String searchQuery,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max
+    );
 }

@@ -34,7 +34,9 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.dsl.Loggable;
+import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.Operator;
@@ -68,6 +70,7 @@ import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.opentest4j.TestAbortedException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -76,6 +79,7 @@ import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -401,9 +405,34 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
                   if (statefulSet != null) {
                       Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
                       k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
-                              .getItems().stream().forEach(pod -> logFailed(k8sclient.pods().resource(pod), Pod::getStatus));
+                              .getItems().stream().map(pod -> k8sclient.pods().resource(pod)).forEach(p -> {
+                                  logFailed(p, Pod::getStatus);
+                                  threadDump(p);
+                              });
                   }
               });
+  }
+
+  private void threadDump(PodResource pr) {
+      int exitCode = -1;
+      Exception ex = null;
+      String output = null;
+      Pod pod = pr.item();
+      try {
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          ExecWatch execWatch = pr.writingOutput(baos).withReadyWaitTimeout(0).exec("sh", "-c", "jcmd 1 Thread.print");
+          exitCode = execWatch.exitCode().get(1, TimeUnit.MINUTES);
+          output = baos.toString(StandardCharsets.UTF_8);
+          if (exitCode == 0) {
+              Log.info("Thread dump for " + pod.getMetadata().getName() + ": " + output);
+          }
+      } catch (Exception e) {
+          ex = e;
+      }
+      if (exitCode != 0) {
+          Log.warn("A thread dump was not successful for " + pod.getMetadata().getName()
+                  + ", exit code " + exitCode + " output: " + output, ex);
+      }
   }
 
   private void logEvents() {

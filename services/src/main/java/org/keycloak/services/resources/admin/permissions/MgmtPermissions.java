@@ -97,12 +97,17 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
-        if (Constants.ADMIN_CLI_CLIENT_ID.equals(auth.getToken().getIssuedFor())
-                || Constants.ADMIN_CONSOLE_CLIENT_ID.equals(auth.getToken().getIssuedFor())) {
-            this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
+        final String issuedFor = auth.getToken().getIssuedFor();
 
+        if (Constants.ADMIN_CLI_CLIENT_ID.equals(issuedFor) || Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
+            this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
         } else {
-            this.identity = new KeycloakIdentity(auth.getToken(), session);
+            ClientModel client  = session.clients().getClientByClientId(auth.getRealm(), issuedFor);
+            if (client != null && Boolean.parseBoolean(client.getAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR))) {
+                this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
+            } else {
+                this.identity = new KeycloakIdentity(auth.getToken(), session);
+            }
         }
     }
 

@@ -8,9 +8,8 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { FormSubmitButton, SelectControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -22,12 +21,14 @@ import { NameDescription } from "./NameDescription";
 const TYPES = ["basic-flow", "client-flow"] as const;
 
 export default function CreateFlow() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { addAlert } = useAlerts();
   const form = useForm<AuthenticationFlowRepresentation>();
-  const { handleSubmit } = form;
+  const { handleSubmit, formState } = form;
 
   const onSubmit = async (formValues: AuthenticationFlowRepresentation) => {
     const flow = { ...formValues, builtIn: false, topLevel: true };
@@ -76,9 +77,14 @@ export default function CreateFlow() {
               }))}
             />
             <ActionGroup>
-              <Button data-testid="create" type="submit">
+              <FormSubmitButton
+                formState={formState}
+                data-testid="create"
+                allowInvalid
+                allowNonDirty
+              >
                 {t("create")}
-              </Button>
+              </FormSubmitButton>
               <Button
                 data-testid="cancel"
                 variant="link"

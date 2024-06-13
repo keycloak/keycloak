@@ -60,6 +60,7 @@
                 <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('totp')>pf-m-error</#if>">
                     <input type="text" required id="totp" name="totp" autocomplete="off"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                           dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('totp')>
@@ -88,6 +89,7 @@
                 <div class="${properties.kcInputClass!}">
                     <input type="text" id="userLabel" name="userLabel" autocomplete="off"
                            aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>"
+                           dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('userLabel')>

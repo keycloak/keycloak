@@ -17,6 +17,9 @@
 package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import org.apache.http.Header;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -62,6 +65,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
@@ -81,9 +85,11 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -592,6 +598,26 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
+    @Test
+    public void testCors() throws IOException {
+        String accountUrl = getAccountUrl(null);
+        SimpleHttp a = SimpleHttpDefault.doGet(accountUrl + "/linked-accounts", httpClient).auth(tokenUtil.getToken())
+                .header("Origin", "http://localtest.me:8180")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        try (SimpleHttp.Response response = a.asResponse()) {
+            Set<String> expected = new HashSet<>();
+            Header[] actual = response.getAllHeaders();
+
+            for (Header header : actual) {
+                assertTrue(expected.add(header.getName()));
+            }
+
+            assertThat(expected, Matchers.hasItems(Cors.ACCESS_CONTROL_ALLOW_ORIGIN, Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        }
+
+    }
+
     protected UserRepresentation getUser() throws IOException {
         return getUser(true);
     }
@@ -1028,7 +1054,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     private void configureBrowserFlowWithWebAuthnAuthenticator(String newFlowAlias) {
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", newFlowAlias);
         Response response = testRealm().flows().copy("browser", params);
         response.close();

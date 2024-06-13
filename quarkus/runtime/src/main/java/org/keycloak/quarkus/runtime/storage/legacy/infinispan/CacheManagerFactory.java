@@ -26,9 +26,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.micrometer.core.instrument.Metrics;
+import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -46,6 +48,7 @@ import org.jgroups.util.TLSClientAuth;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
@@ -70,12 +73,10 @@ public class CacheManagerFactory {
 
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
 
-    private final String config;
     private final CompletableFuture<DefaultCacheManager> cacheManagerFuture;
 
     public CacheManagerFactory(String config) {
-        this.config = config;
-        this.cacheManagerFuture = CompletableFuture.supplyAsync(this::startEmbeddedCacheManager);
+        this.cacheManagerFuture = startEmbeddedCacheManager(config);
     }
 
     public DefaultCacheManager getOrCreateEmbeddedCacheManager() {
@@ -104,7 +105,7 @@ public class CacheManagerFactory {
         }
     }
 
-    private DefaultCacheManager startEmbeddedCacheManager() {
+    private CompletableFuture<DefaultCacheManager> startEmbeddedCacheManager(String config) {
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
         if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
@@ -113,12 +114,26 @@ public class CacheManagerFactory {
         }
 
         DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) &&
-                (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME))) {
+            if (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
                 ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
-                if (configurationBuilder.memory().maxSize() == null && configurationBuilder.memory().maxCount() == -1) {
-                    logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries", cacheName);
-                    configurationBuilder.memory().maxCount(10000);
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                    if (configurationBuilder.memory().maxCount() == -1) {
+                        logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries.", cacheName);
+                        configurationBuilder.memory().maxCount(10000);
+                    }
+                    /* The number of owners for these caches then need to be set to `1` to avoid backup owners with inconsistent data.
+                     As primary owner evicts a key based on its locally evaluated maxCount setting, it wouldn't tell the backup owner about this, and then the backup owner would be left with a soon-to-be-outdated key.
+                     While a `remove` is forwarded to the backup owner regardless if the key exists on the primary owner, a `computeIfPresent` is not, and it would leave a backup owner with an outdated key.
+                     With the number of owners set to `1`, there will be no backup owners, so this is the setting to choose with persistent sessions enabled to ensure consistent data in the caches. */
+                    configurationBuilder.clustering().hash().numOwners(1);
+                } else {
+                    if (configurationBuilder.memory().maxCount() != -1) {
+                        logger.warnf("Persistent user sessions NOT enabled and memory limit found in configuration for cache %s. This might be a misconfiguration!", cacheName);
+                    }
+                    if (configurationBuilder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1
+                        && configurationBuilder.persistence().stores().isEmpty()) {
+                        logger.warnf("Number of owners is one for cache %s, and no persistence is configured. This might be a misconfiguration as you will lose data when a single node is restarted!", cacheName);
+                    }
                 }
             }
         });
@@ -135,7 +150,8 @@ public class CacheManagerFactory {
         }
 
         Marshalling.configure(builder.getGlobalConfigurationBuilder());
-        return new DefaultCacheManager(builder, isStartEagerly());
+        var start = isStartEagerly();
+        return CompletableFuture.supplyAsync(() -> new DefaultCacheManager(builder, start));
     }
 
     private static boolean isRemoteTLSEnabled() {

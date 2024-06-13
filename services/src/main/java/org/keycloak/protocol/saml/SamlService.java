@@ -291,8 +291,8 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.event(EventType.LOGOUT);
             } else {
                 event.event(EventType.LOGIN);
-                event.error(Errors.INVALID_TOKEN);
                 event.detail(Details.REASON, "Unhandled SAML document type: " + (samlObject == null ? "<null>" : samlObject.getClass().getSimpleName()));
+                event.error(Errors.INVALID_TOKEN);
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
 

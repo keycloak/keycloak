@@ -108,7 +108,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
     
     private void addFlowToParent(String parentAlias, String childAlias) {
-        Map<String, String> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("alias", childAlias);
         data.put("type", "generic");
         data.put("description", childAlias + " flow");
@@ -179,14 +179,14 @@ public class FlowTest extends AbstractAuthenticationTest {
 
 
         // add execution flow to some parent flow
-        Map<String, String> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("alias", "SomeFlow");
         data.put("type", "basic-flow");
         data.put("description", "Test flow");
         // This tests against a regression in KEYCLOAK-16656
         data.put("provider", "registration-page-form");
 
-        Map<String, String> data2 = new HashMap<>();
+        Map<String, Object> data2 = new HashMap<>();
         data2.put("alias", "SomeFlow2");
         data2.put("type", "form-flow");
         data2.put("description", "Test flow 2");
@@ -265,7 +265,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     @Test
     public void testCopyFlow() {
 
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "clients");
 
         // copy using existing alias as new name
@@ -321,7 +321,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     @Test
     // KEYCLOAK-2580
     public void addExecutionFlow() {
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "parent");
         Response response = authMgmtResource.copy("browser", params);
         Assert.assertEquals(201, response.getStatus());
@@ -347,7 +347,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         List<AuthenticationFlowRepresentation> flows;
 
         //copy an existing one first
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "Copy of browser");
         Response response = authMgmtResource.copy("browser", params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
@@ -423,7 +423,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
     @Test
     public void editExecutionFlowTest() {
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         List<AuthenticationExecutionInfoRepresentation> executionReps;
         //create new parent flow
         AuthenticationFlowRepresentation newFlow = newFlow("Parent-Flow", "This is a parent flow", "basic-flow", true, false);
@@ -484,6 +484,66 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    public void prioritySetTest() {
+        //create new parent flow
+        AuthenticationFlowRepresentation newFlow = newFlow("Parent-Flow", "This is a parent flow", "basic-flow", true, false);
+        createFlow(newFlow);
+
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("alias", "Child-Flow1");
+        params.put("description", "This is a child flow");
+        params.put("provider", "registration-page-form");
+        params.put("type", "basic-flow");
+        params.put("priority", 50);
+
+        authMgmtResource.addExecutionFlow("Parent-Flow", params);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+
+        params.clear();
+        params.put("alias", "Child-Flow2");
+        params.put("description", "This is a second child flow");
+        params.put("provider", "registration-page-form");
+        params.put("type", "basic-flow");
+        params.put("priority", 10);
+
+        authMgmtResource.addExecutionFlow("Parent-Flow", params);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+
+        params.clear();
+        params.put("alias", "Child-Flow3");
+        params.put("description", "This is a third child flow");
+        params.put("provider", "registration-page-form");
+        params.put("type", "basic-flow");
+        params.put("priority", 20);
+
+        authMgmtResource.addExecutionFlow("Parent-Flow", params);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+
+        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("Parent-Flow");
+        // Verify the initial order and priority value
+        Assert.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
+        Assert.assertEquals(10, executionReps.get(0).getPriority());
+        Assert.assertEquals("Child-Flow3", executionReps.get(1).getDisplayName());
+        Assert.assertEquals(20, executionReps.get(1).getPriority());
+        Assert.assertEquals("Child-Flow1", executionReps.get(2).getDisplayName());
+        Assert.assertEquals(50, executionReps.get(2).getPriority());
+
+        // Move last execution to the beginning
+        AuthenticationExecutionInfoRepresentation lastToFirst = executionReps.get(2);
+        lastToFirst.setPriority(5);
+        authMgmtResource.updateExecutions("Parent-Flow", lastToFirst);
+        executionReps = authMgmtResource.getExecutions("Parent-Flow");
+
+        // Verify new order and priority
+        Assert.assertEquals("Child-Flow1", executionReps.get(0).getDisplayName());
+        Assert.assertEquals(5, executionReps.get(0).getPriority());
+        Assert.assertEquals("Child-Flow2", executionReps.get(1).getDisplayName());
+        Assert.assertEquals(10, executionReps.get(1).getPriority());
+        Assert.assertEquals("Child-Flow3", executionReps.get(2).getDisplayName());
+        Assert.assertEquals(20, executionReps.get(2).getPriority());
+    }
+
+    @Test
     public void failWithLongDescription() throws IOException {
         ContainerAssume.assumeAuthServerQuarkus();
         AuthenticationFlowRepresentation rep = authMgmtResource.getFlows().stream()
@@ -525,7 +585,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         Assert.assertNotNull("There is no builtin flow", flow);
 
         // adding an execution should fail
-        Map<String, String> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("provider", "allow-access-authenticator");
         BadRequestException e = Assert.assertThrows(BadRequestException.class, () -> authMgmtResource.addExecution(flow.getAlias(), data));
         OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
@@ -579,7 +639,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         }
 
         String newFlowName = "Duplicated of " + DefaultAuthenticationFlows.BROWSER_FLOW;
-        Map<String, String> copyFlowParams = Map.of("newName", newFlowName);
+        Map<String, Object> copyFlowParams = Map.of("newName", newFlowName);
         authMgmtResource.copy(existingFlow.getAlias(), copyFlowParams).close();
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), copyFlowParams, ResourceType.AUTH_FLOW);
 

@@ -30,17 +30,132 @@ import java.util.stream.Stream;
  */
 public interface GroupModel extends RoleMapperModel {
 
-    interface GroupRemovedEvent extends ProviderEvent {
+    interface GroupEvent extends ProviderEvent {
         RealmModel getRealm();
         GroupModel getGroup();
         KeycloakSession getKeycloakSession();
     }
 
-    interface GroupPathChangeEvent extends ProviderEvent {
-        RealmModel getRealm();
+    interface GroupCreatedEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupCreatedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupRemovedEvent extends GroupEvent {
+
+    }
+
+    interface GroupUpdatedEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupUpdatedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupMemberJoinEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupMemberJoinEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupMemberLeaveEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupMemberLeaveEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupPathChangeEvent extends GroupEvent {
         String getNewPath();
         String getPreviousPath();
-        KeycloakSession getKeycloakSession();
+
+        static void fire(GroupModel group, String newPath, String previousPath, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupPathChangeEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+
+                @Override
+                public String getNewPath() {
+                    return newPath;
+                }
+
+                @Override
+                public String getPreviousPath() {
+                    return previousPath;
+                }
+            });
+        }
     }
 
     Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);

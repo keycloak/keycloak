@@ -1,19 +1,15 @@
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useNavigate } from "react-router-dom";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 
@@ -71,21 +67,14 @@ export const RolesList = ({
   toDetail,
   isReadOnly,
 }: RolesListProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName } = useRealm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { realmRepresentation: realm } = useRealm();
 
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      setRealm(realm);
-    },
-    [],
-  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roleDeleteConfirm",
@@ -112,10 +101,6 @@ export const RolesList = ({
       }
     },
   });
-
-  if (!realm) {
-    return <KeycloakSpinner />;
-  }
 
   return (
     <>
@@ -145,7 +130,7 @@ export const RolesList = ({
                   onRowClick: (role) => {
                     setSelectedRole(role);
                     if (
-                      realm!.defaultRole &&
+                      realm?.defaultRole &&
                       role.name === realm!.defaultRole!.name
                     ) {
                       addAlert(
@@ -164,7 +149,7 @@ export const RolesList = ({
             cellRenderer: (row) => (
               <RoleDetailLink
                 {...row}
-                defaultRoleName={realm.defaultRole?.name}
+                defaultRoleName={realm?.defaultRole?.name}
                 toDetail={toDetail}
                 messageBundle={messageBundle}
               />

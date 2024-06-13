@@ -1,5 +1,4 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
@@ -27,8 +26,7 @@ import type { IRowData } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { SearchType } from "../../user/details/SearchFilter";
 import { toAddUser } from "../../user/routes/AddUser";
@@ -95,13 +93,14 @@ const ValidatedEmail = (user: UserRepresentation) => {
 };
 
 export function UserDataTable() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   const navigate = useNavigate();
   const [userStorage, setUserStorage] = useState<ComponentRepresentation[]>();
   const [searchUser, setSearchUser] = useState("");
-  const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
   const [searchType, setSearchType] = useState<SearchType>("default");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
@@ -121,22 +120,16 @@ export function UserDataTable() {
       try {
         return await Promise.all([
           adminClient.components.find(testParams),
-          adminClient.realms.findOne({ realm: realmName }),
           adminClient.users.getProfile(),
         ]);
       } catch {
-        return [[], {}, {}] as [
-          ComponentRepresentation[],
-          RealmRepresentation | undefined,
-          UserProfileConfig,
-        ];
+        return [[], {}] as [ComponentRepresentation[], UserProfileConfig];
       }
     },
-    ([storageProviders, realm, profile]) => {
+    ([storageProviders, profile]) => {
       setUserStorage(
         storageProviders.filter((p) => p.config?.enabled?.[0] === "true"),
       );
-      setRealm(realm);
       setProfile(profile);
     },
     [],
@@ -159,7 +152,7 @@ export function UserDataTable() {
     }
 
     try {
-      return await findUsers({
+      return await findUsers(adminClient, {
         briefRepresentation: true,
         ...params,
       });

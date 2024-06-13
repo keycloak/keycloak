@@ -58,6 +58,7 @@
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="totp" name="totp" autocomplete="off" class="${properties.kcInputClass!}"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                           dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('totp')>
@@ -78,7 +79,7 @@
 
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" class="${properties.kcInputClass!}" id="userLabel" name="userLabel" autocomplete="off"
-                           aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>"
+                           aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>" dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('userLabel')>

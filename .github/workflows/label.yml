@@ -31,7 +31,7 @@ jobs:
             BACKPORT_LABEL="backport/main"
           elif [[ "$GITHUB_BASE_REF" = release/* ]]; then
             MAJOR_MINOR="$(echo $GITHUB_BASE_REF | cut -d '/' -f 2)"
-            LAST_MICRO="$(gh api /repos/$GITHUB_REPOSITORY/tags --jq .[].name | sort -n -r | grep $MAJOR_MINOR | head -n 1 | cut -d '.' -f 3)"
+            LAST_MICRO="$(gh api /repos/$GITHUB_REPOSITORY/tags --jq .[].name | sort -V -r | grep $MAJOR_MINOR | head -n 1 | cut -d '.' -f 3)"
             NEXT_MICRO="$(($LAST_MICRO + 1))"
             LABEL="release/$MAJOR_MINOR.$NEXT_MICRO"
             BACKPORT_LABEL="backport/$MAJOR_MINOR"

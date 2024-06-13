@@ -18,6 +18,7 @@
 package org.keycloak.connections.infinispan;
 
 import org.infinispan.Cache;
+import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
 import org.keycloak.health.LoadBalancerCheckProvider;
@@ -60,9 +61,7 @@ public class InfinispanMultiSiteLoadBalancerCheckProvider implements LoadBalance
                 return true; // no need to check other caches
             }
 
-            PersistenceManager persistenceManager = cache.getAdvancedCache()
-                    .getComponentRegistry()
-                    .getComponent(PersistenceManager.class);
+            var persistenceManager = ComponentRegistry.componentOf(cache, PersistenceManager.class);
 
             if (persistenceManager != null && !persistenceManager.isAvailable()) {
                 LOG.debugf("PersistenceManager for cache '%s' is down.", cacheName);

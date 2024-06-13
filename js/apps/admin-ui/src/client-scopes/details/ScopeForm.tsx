@@ -1,11 +1,11 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import { ActionGroup, Button } from "@patternfly/react-core";
-import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
+  FormSubmitButton,
   SelectControl,
   TextAreaControl,
   TextControl,
@@ -32,12 +32,8 @@ type ScopeFormProps = {
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    formState: { isDirty, isValid },
-  } = form;
+  const { control, handleSubmit, setValue, formState } = form;
+  const { isDirty, isValid } = formState;
   const { realm } = useRealm();
 
   const providers = useLoginProviders();
@@ -65,12 +61,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         "attributes.dynamic.scope.regexp",
       ),
       append ? `${value}:*` : value,
+      { shouldDirty: true }, // Mark the field as dirty when we modify the field
     );
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope]);
-
   return (
     <FormAccess
       role="manage-clients"
@@ -133,11 +129,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           }}
         />
         <SelectControl
+          id="kc-type"
           name="type"
           label={t("type")}
-          toggleId="kc-type"
           labelIcon={t("scopeTypeHelp")}
-          variant={SelectVariant.single}
           controller={{ defaultValue: allClientScopeTypes[0] }}
           options={allClientScopeTypes.map((key) => ({
             key,
@@ -146,11 +141,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         />
         {!clientScope && (
           <SelectControl
+            id="kc-protocol"
             name="protocol"
             label={t("protocol")}
-            toggleId="kc-protocol"
             labelIcon={t("protocolHelp")}
-            variant={SelectVariant.single}
             controller={{ defaultValue: providers[0] }}
             options={providers.map((option) => ({
               key: option,
@@ -194,13 +188,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           min={0}
         />
         <ActionGroup>
-          <Button
-            variant="primary"
-            type="submit"
-            isDisabled={!isDirty || !isValid}
+          <FormSubmitButton
+            formState={formState}
+            disabled={!isDirty || !isValid}
           >
             {t("save")}
-          </Button>
+          </FormSubmitButton>
           <Button
             variant="link"
             component={(props) => (

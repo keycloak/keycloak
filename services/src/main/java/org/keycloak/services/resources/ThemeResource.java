@@ -109,7 +109,7 @@ public class ThemeResource {
     @Path("/{realm}/{themeType}/{locale}")
     @OPTIONS
     public Response localizationTextPreflight() {
-        return Cors.add(session.getContext().getHttpRequest(), Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     @GET
@@ -151,8 +151,7 @@ public class ThemeResource {
                     new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
         }
 
-        Response.ResponseBuilder responseBuilder = Response.ok(result);
-        return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").auth().build();
+        return Cors.builder().allowedOrigins("*").auth().add(Response.ok(result));
     }
 }
 

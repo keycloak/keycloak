@@ -319,7 +319,7 @@ public class GroupSearchTest extends AbstractGroupTest {
         reconnectAdminClient();
     }
 
-    private static String buildSearchQuery(String firstAttrName, String firstAttrValue, String... furtherAttrKeysAndValues) {
+    public static String buildSearchQuery(String firstAttrName, String firstAttrValue, String... furtherAttrKeysAndValues) {
         if (furtherAttrKeysAndValues.length % 2 != 0) {
             throw new IllegalArgumentException("Invalid length of furtherAttrKeysAndValues. Must be even, but is: " + furtherAttrKeysAndValues.length);
         }

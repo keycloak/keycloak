@@ -49,7 +49,7 @@ Use this value to invoke the *<trusted service>*.
 
 When setting up audience checking:
 
-* Ensure that services are configured to check audience on the access token sent to them by adding the flag *_verify-token-audience_* in the adapter configuration. See link:{adapterguide_link_latest}#_java_adapter_config[Adapter configuration] for details.
+* Ensure that services are configured to check audience on the access token sent to them. This may be done in a way specific to your client OIDC adapter, which you are using to secure your OIDC client application.
 
 * Ensure that access tokens issued by {project_name} contain all necessary audiences. Audiences can be added using the client roles as described in the <<_audience_resolve, next section>> or hardcoded. See <<_audience_hardcoded, Hardcoded audience>>.
 
@@ -113,7 +113,6 @@ See <<_client_scopes_linking, Client Scopes Linking section>> for more details.
 +
 See:
 +
-** link:{adapterguide_link}#_params_forwarding[parameters forwarding section] if your application uses the servlet adapter.
 ** link:{adapterguide_link}#_javascript_adapter[javascript adapter section] if your application uses the javascript adapter.
 
 NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the audience mappers added it.

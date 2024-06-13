@@ -1,12 +1,11 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -26,10 +25,11 @@ export const PageHandler = ({
   providerType,
   page: { id: providerId, ...page },
 }: PageHandlerProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<ComponentTypeRepresentation>();
-  const { realm: realmName } = useRealm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [id, setId] = useState(idAttribute);
   const params = useParams();
@@ -37,14 +37,12 @@ export const PageHandler = ({
   useFetch(
     async () =>
       await Promise.all([
-        adminClient.realms.findOne({ realm: realmName }),
         id ? adminClient.components.findOne({ id }) : Promise.resolve(),
         providerType === TAB_PROVIDER
           ? adminClient.components.find({ type: TAB_PROVIDER })
           : Promise.resolve(),
       ]),
-    ([realm, data, tabs]) => {
-      setRealm(realm);
+    ([data, tabs]) => {
       const tab = (tabs || []).find((t) => t.providerId === providerId);
       form.reset(data || tab || {});
       if (tab) setId(tab.id);

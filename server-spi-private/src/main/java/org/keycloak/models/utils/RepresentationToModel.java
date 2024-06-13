@@ -18,7 +18,6 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,7 +27,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -60,6 +58,8 @@ import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
@@ -80,6 +80,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -92,6 +94,7 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -122,6 +125,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
@@ -132,13 +136,7 @@ public class RepresentationToModel {
 
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
-        KeycloakContext context = session.getContext();
-        try {
-            context.setRealm(newRealm);
-            session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
-        } finally {
-            context.setRealm(null);
-        }
+        session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
     }
 
     public static void importRoles(RolesRepresentation realmRoles, RealmModel realm) {
@@ -409,8 +407,8 @@ public class RepresentationToModel {
     public static void updateClient(ClientRepresentation rep, ClientModel resource, KeycloakSession session) {
 
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
-            if (!ObjectUtil.isEqualOrBothNull(rep.getType(), rep.getType())) {
-                throw new ClientTypeException("Not supported to change client type");
+            if (!ObjectUtil.isEqualOrBothNull(resource.getType(), rep.getType())) {
+                throw ClientTypeException.Message.CANNOT_CHANGE_CLIENT_TYPE.exception();
             }
             if (rep.getType() != null) {
                 RealmModel realm = session.getContext().getRealm();
@@ -522,8 +520,8 @@ public class RepresentationToModel {
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
-            add(updatePropertyAction(client::setRedirectUris, () -> collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
-            add(updatePropertyAction(client::setWebOrigins, () -> collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+            add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
+            add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
         }};
 
         // Extended client attributes
@@ -541,9 +539,8 @@ public class RepresentationToModel {
                 .collect(Collectors.toList());
 
         if (propertyUpdateExceptions.size() > 0) {
-            throw new ClientTypeException(
-                    "Cannot change property of client as it is not allowed by the specified client type.",
-                    propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray());
+            Object[] paramsWithFailures = propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray();
+            throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception(paramsWithFailures);
         }
     }
 
@@ -630,7 +627,7 @@ public class RepresentationToModel {
             }
         }
     }
-    
+
     public static void updateClientScopes(ClientRepresentation resourceRep, ClientModel client) {
         if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
             // First remove all default/built in client scopes
@@ -657,8 +654,8 @@ public class RepresentationToModel {
     }
 
     /**
-     * Create Supplier to update property, if not null.
-     * Captures {@link ClientTypeException} if thrown by the setter.
+     * Create Supplier to update property.
+     * Captures and returns {@link ClientTypeException} if thrown by the setter.
      *
      * @param modelSetter setter to call.
      * @param representationGetter getter supplying the property update.
@@ -685,15 +682,13 @@ public class RepresentationToModel {
      * @return {@link Supplier} with results of operation.
      * @param <T> Type of property.
      */
+    @SafeVarargs
     private static <T> Supplier<ClientTypeException> updatePropertyAction(Consumer<T> modelSetter, Supplier<T>... getters) {
         Stream<T> firstNonNullSupplied = Stream.of(getters)
                 .map(Supplier::get)
-                .map(Optional::ofNullable)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .filter(Objects::nonNull);
         return updateProperty(modelSetter, () -> firstNonNullSupplied.findFirst().orElse(null));
     }
-
 
     private static String generateProtocolNameKey(String protocol, String name) {
         return String.format("%s%%%s", protocol, name);
@@ -853,16 +848,16 @@ public class RepresentationToModel {
     public static IdentityProviderModel toModel(RealmModel realm, IdentityProviderRepresentation representation, KeycloakSession session) {
         IdentityProviderFactory providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                 IdentityProvider.class, representation.getProviderId());
-        
+
         if (providerFactory == null) {
             providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                     SocialIdentityProvider.class, representation.getProviderId());
         }
-        
+
         if (providerFactory == null) {
             throw new IllegalArgumentException("Invalid identity provider id [" + representation.getProviderId() + "]");
         }
-        
+
         IdentityProviderModel identityProviderModel = providerFactory.createConfig();
 
         identityProviderModel.setInternalId(representation.getInternalId());
@@ -875,6 +870,7 @@ public class RepresentationToModel {
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
+        updateOrganizationBroker(realm, representation, session);
         identityProviderModel.setConfig(removeEmptyString(representation.getConfig()));
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
@@ -898,7 +894,7 @@ public class RepresentationToModel {
             }
             identityProviderModel.setPostBrokerLoginFlowId(flowModel.getId());
         }
-        
+
         identityProviderModel.validate(realm);
 
         return identityProviderModel;
@@ -977,7 +973,9 @@ public class RepresentationToModel {
         model.setFlowId(rep.getFlowId());
 
         model.setAuthenticator(rep.getAuthenticator());
-        model.setPriority(rep.getPriority());
+        if (rep.getPriority() != null) {
+            model.setPriority(rep.getPriority());
+        }
         model.setParentFlow(rep.getParentFlow());
         model.setAuthenticatorFlow(rep.isAuthenticatorFlow());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
@@ -1121,11 +1119,11 @@ public class RepresentationToModel {
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
         DecisionStrategy decisionStrategy = rep.getDecisionStrategy();
-        
+
         if (decisionStrategy == null) {
             decisionStrategy = DecisionStrategy.UNANIMOUS;
         }
-        
+
         resourceServer.setDecisionStrategy(decisionStrategy);
 
         for (ScopeRepresentation scope : rep.getScopes()) {
@@ -1548,7 +1546,7 @@ public class RepresentationToModel {
     public static Scope toModel(ScopeRepresentation scope, ResourceServer resourceServer, AuthorizationProvider authorization) {
         return toModel(scope, resourceServer, authorization, true);
     }
-    
+
     public static Scope toModel(ScopeRepresentation scope, ResourceServer resourceServer, AuthorizationProvider authorization, boolean updateIfExists) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ScopeStore scopeStore = storeFactory.getScopeStore();
@@ -1640,9 +1638,35 @@ public class RepresentationToModel {
         return toModel(representation, authorization, client);
     }
 
-    private static <T> Set<T> collectionToSet(Collection<T> collection) {
-        return Optional.ofNullable(collection)
-                .map(HashSet::new)
-                .orElse(null);
+    private static void updateOrganizationBroker(RealmModel realm, IdentityProviderRepresentation representation, KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return;
+        }
+
+        IdentityProviderModel existing = realm.getIdentityProvidersStream()
+                .filter(p -> Objects.equals(p.getAlias(), representation.getAlias()) || Objects.equals(p.getInternalId(), representation.getInternalId()))
+                .findFirst().orElse(null);
+        String orgId = existing == null ? representation.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE) : existing.getOrganizationId();
+
+        if (orgId != null) {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = provider.getById(orgId);
+            String newOrgId = representation.getConfig().get(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+
+            if (org == null || (newOrgId != null && provider.getById(newOrgId) == null)) {
+                throw new IllegalArgumentException("Organization associated with broker does not exist");
+            }
+
+            String domain = representation.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+            if (StringUtil.isBlank(domain)) {
+                representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+            } else if (org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
+                throw new IllegalArgumentException("Domain does not match any domain from the organization");
+            }
+
+            // make sure the link to an organization does not change
+            representation.getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, orgId);
+        }
     }
 }

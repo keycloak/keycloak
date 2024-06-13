@@ -1,4 +1,9 @@
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
+import {
+  KeycloakSelect,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
@@ -12,25 +17,23 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+  SelectOption,
 } from "@patternfly/react-core";
 import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
-import { TableVariant, cellWidth } from "@patternfly/react-table";
-import {
   Table,
-  TableBody,
-  TableHeader,
-} from "@patternfly/react-table/deprecated";
+  TableVariant,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  cellWidth,
+} from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
@@ -93,6 +96,8 @@ const DisplayDialog = ({
 };
 
 export const AdminEvents = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
@@ -204,16 +209,31 @@ export const AdminEvents = () => {
             aria-label="authData"
             data-testid="auth-dialog"
             variant={TableVariant.compact}
-            cells={[t("attribute"), t("value")]}
-            rows={[
-              [t("realm"), authEvent.authDetails?.realmId],
-              [t("client"), authEvent.authDetails?.clientId],
-              [t("user"), authEvent.authDetails?.userId],
-              [t("ipAddress"), authEvent.authDetails?.ipAddress],
-            ]}
           >
-            <TableHeader />
-            <TableBody />
+            <Thead>
+              <Tr>
+                <Th>{t("attribute")}</Th>
+                <Th>{t("value")}</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              <Tr>
+                <Td>{t("realm")}</Td>
+                <Td>{authEvent.authDetails?.realmId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("client")}</Td>
+                <Td>{authEvent.authDetails?.clientId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("user")}</Td>
+                <Td>{authEvent.authDetails?.userId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("ipAddress")}</Td>
+                <Td>{authEvent.authDetails?.ipAddress}</Td>
+              </Tr>
+            </Tbody>
           </Table>
         </DisplayDialog>
       )}
@@ -265,9 +285,8 @@ export const AdminEvents = () => {
                         name="resourceTypes"
                         control={control}
                         render={({ field }) => (
-                          <Select
+                          <KeycloakSelect
                             className="keycloak__events_search__type_select"
-                            name="resourceTypes"
                             data-testid="resource-types-searchField"
                             chipGroupProps={{
                               numChips: 1,
@@ -276,11 +295,11 @@ export const AdminEvents = () => {
                             }}
                             variant={SelectVariant.typeaheadMulti}
                             typeAheadAriaLabel="Select"
-                            onToggle={(_event, isOpen) =>
+                            onToggle={(isOpen) =>
                               setSelectResourceTypesOpen(isOpen)
                             }
                             selections={field.value}
-                            onSelect={(_, selectedValue) => {
+                            onSelect={(selectedValue) => {
                               const option = selectedValue.toString();
                               const changedValue = field.value.includes(option)
                                 ? field.value.filter((item) => item !== option)
@@ -288,8 +307,7 @@ export const AdminEvents = () => {
 
                               field.onChange(changedValue);
                             }}
-                            onClear={(resource) => {
-                              resource.stopPropagation();
+                            onClear={() => {
                               field.onChange([]);
                             }}
                             isOpen={selectResourceTypesOpen}
@@ -317,7 +335,7 @@ export const AdminEvents = () => {
                             {resourceTypes?.map((option) => (
                               <SelectOption key={option} value={option} />
                             ))}
-                          </Select>
+                          </KeycloakSelect>
                         )}
                       />
                     </FormGroup>
@@ -330,9 +348,8 @@ export const AdminEvents = () => {
                         name="operationTypes"
                         control={control}
                         render={({ field }) => (
-                          <Select
+                          <KeycloakSelect
                             className="keycloak__events_search__type_select"
-                            name="operationTypes"
                             data-testid="operation-types-searchField"
                             chipGroupProps={{
                               numChips: 1,
@@ -341,11 +358,11 @@ export const AdminEvents = () => {
                             }}
                             variant={SelectVariant.typeaheadMulti}
                             typeAheadAriaLabel="Select"
-                            onToggle={(_event, isOpen) =>
+                            onToggle={(isOpen) =>
                               setSelectOperationTypesOpen(isOpen)
                             }
                             selections={field.value}
-                            onSelect={(_, selectedValue) => {
+                            onSelect={(selectedValue) => {
                               const option = selectedValue.toString();
                               const changedValue = field.value.includes(option)
                                 ? field.value.filter((item) => item !== option)
@@ -353,8 +370,7 @@ export const AdminEvents = () => {
 
                               field.onChange(changedValue);
                             }}
-                            onClear={(operation) => {
-                              operation.stopPropagation();
+                            onClear={() => {
                               field.onChange([]);
                             }}
                             isOpen={selectOperationTypesOpen}
@@ -380,9 +396,12 @@ export const AdminEvents = () => {
                             }
                           >
                             {operationTypes?.map((option) => (
-                              <SelectOption key={option} value={option} />
+                              <SelectOption
+                                key={option.toString()}
+                                value={option}
+                              />
                             ))}
-                          </Select>
+                          </KeycloakSelect>
                         )}
                       />
                     </FormGroup>

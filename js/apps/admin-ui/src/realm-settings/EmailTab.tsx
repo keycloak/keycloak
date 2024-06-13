@@ -15,11 +15,11 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   FormPanel,
+  PasswordControl,
   SwitchControl,
   TextControl,
-  PasswordControl,
 } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -41,6 +41,8 @@ export const RealmSettingsEmailTab = ({
   realm,
   save,
 }: RealmSettingsEmailTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -205,6 +207,7 @@ export const RealmSettingsEmailTab = ({
               defaultValue=""
               labelOn={t("enabled")}
               labelOff={t("disabled")}
+              stringify
             />
             {authenticationEnabled === "true" && (
               <>

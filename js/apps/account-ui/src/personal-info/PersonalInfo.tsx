@@ -4,6 +4,7 @@ import {
   debeerify,
   setUserProfileServerError,
   useAlerts,
+  useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -29,14 +30,13 @@ import {
   UserRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
-import { environment } from "../environment";
+import type { Environment } from "../environment";
 import { TFuncKey, i18n } from "../i18n";
-import { useEnvironment } from "../root/KeycloakContext";
 import { usePromise } from "../utils/usePromise";
 
 export const PersonalInfo = () => {
   const { t } = useTranslation();
-  const context = useEnvironment();
+  const context = useEnvironment<Environment>();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
@@ -106,7 +106,7 @@ export const PersonalInfo = () => {
           form={form}
           userProfileMetadata={userProfileMetadata}
           supportedLocales={supportedLocales}
-          currentLocale={environment.locale}
+          currentLocale={context.environment.locale}
           t={
             ((key: unknown, params) =>
               t(key as TFuncKey, params as any)) as TFunction

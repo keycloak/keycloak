@@ -203,7 +203,7 @@ describe("User creation", () => {
 
     cy.wait("@save-user").should(({ request, response }) => {
       expect(response?.statusCode).to.equal(204);
-      expect(request.body.attributes, "response body").deep.equal({
+      expect(request.body.attributes, "response body").deep.contains({
         "key-multiple": ["other value"],
       });
     });
@@ -438,7 +438,7 @@ describe("User creation", () => {
     cy.get("table")
       .contains(itemCredential)
       .parentsUntil("tbody")
-      .find(".pf-v5-c-dropdown__toggle")
+      .find(".pf-v5-c-table__action .pf-v5-c-menu-toggle")
       .click();
     cy.get("table").contains("Delete").click();
     modalUtils.checkModalTitle("Delete credentials?").confirmModal();
@@ -490,6 +490,7 @@ describe("User creation", () => {
   describe("Accessibility tests for users", () => {
     const a11yUser = "a11y-user";
     const role = "admin";
+    const roleType = "roles";
     const roleMappingTab = new RoleMappingTab("");
 
     beforeEach(() => {
@@ -552,7 +553,7 @@ describe("User creation", () => {
       roleMappingTab.goToRoleMappingTab();
       cy.findByTestId("assignRole").click();
       cy.checkA11y();
-      roleMappingTab.selectRow(role).assign();
+      roleMappingTab.changeRoleTypeFilter(roleType).selectRow(role).assign();
     });
 
     it("Check a11y violations on user groups tab", () => {

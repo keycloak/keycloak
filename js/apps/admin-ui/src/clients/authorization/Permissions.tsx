@@ -5,15 +5,14 @@ import {
   AlertVariant,
   ButtonVariant,
   DescriptionList,
+  Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  Dropdown,
-  DropdownItem,
-  DropdownSeparator,
-  DropdownToggle,
-} from "@patternfly/react-core/deprecated";
 import {
   ExpandableRowContent,
   Table,
@@ -26,8 +25,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -73,6 +71,8 @@ export const AuthorizationPermissions = ({
   clientId,
   isDisabled = false,
 }: PermissionsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
@@ -208,21 +208,22 @@ export const AuthorizationPermissions = ({
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <DropdownToggle
-                      onToggle={toggleCreate}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      onClick={toggleCreate}
                       isDisabled={isDisabled}
-                      toggleVariant="primary"
+                      variant="primary"
                       data-testid="permissionCreateDropdown"
                     >
                       {t("createPermission")}
-                    </DropdownToggle>
-                  }
+                    </MenuToggle>
+                  )}
                   isOpen={createOpen}
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
                       data-testid="create-resource"
-                      key="createResourceBasedPermission"
                       isDisabled={isDisabled || disabledCreate?.resources}
                       component="button"
                       onClick={() =>
@@ -236,11 +237,10 @@ export const AuthorizationPermissions = ({
                       }
                     >
                       {t("createResourceBasedPermission")}
-                    </DropdownItem>,
-                    <DropdownSeparator key="separator" />,
+                    </DropdownItem>
+                    <Divider />
                     <DropdownItem
                       data-testid="create-scope"
-                      key="createScopeBasedPermission"
                       isDisabled={isDisabled || disabledCreate?.scopes}
                       component="button"
                       onClick={() =>
@@ -263,9 +263,9 @@ export const AuthorizationPermissions = ({
                           title={t("noScopeCreateHint")}
                         />
                       )}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           }

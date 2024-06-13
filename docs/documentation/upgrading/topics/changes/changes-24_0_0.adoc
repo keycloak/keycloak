@@ -313,6 +313,9 @@ This change adds new indexes on the tables `USER_ATTRIBUTE` and `FED_USER_ATTRIB
 If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
+NOTE: The newly added indexes `USER_ATTR_LONG_VALUES_LOWER_CASE` and `FED_USER_ATTR_LONG_VALUES_LOWER_CASE` may exceed the maximum limit of 30 characters set by Oracle, 
+in case the database is running in compatibility mode. Since Oracle version 12.2, there is a support for longer index names.
+
 == Additional migration steps for LDAP
 
 This is for installations that match all the following criteria:

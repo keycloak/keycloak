@@ -20,7 +20,6 @@ package org.keycloak.client.registration.cli.commands;
 import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.client.registration.cli.EndpointType;
 import org.keycloak.client.registration.cli.EndpointTypeConverter;
-import org.keycloak.client.registration.cli.KcRegMain;
 import org.keycloak.client.cli.common.AttributeOperation;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.util.HttpUtil;
@@ -173,7 +172,7 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
                 printOut("Response from server: " + readFully(response));
             }
         } catch (UnrecognizedPropertyException e) {
-            throw new RuntimeException("Failed to process HTTP reponse - " + e.getMessage(), e);
+            throw new RuntimeException("Failed to process HTTP response - " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Failed to process HTTP response", e);
         }
@@ -200,10 +199,6 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " create [ARGUMENTS]");
@@ -211,20 +206,7 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
         out.println("Command to create new client configurations on the server. If Initial Access Token is specified (-t TOKEN)");
         out.println("or has previously been set for the server, and realm in the configuration ('" + CMD + " config initial-token'),");
         out.println("then that will be used, otherwise session access / refresh tokens will be used.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + KcRegMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
-        out.println("  Command specific options:");
+        globalOptions(out);
         out.println("    -t, --token TOKEN     Use the specified Initial Access Token for authorization or read it from standard input ");
         out.println("                          if '-' is specified. This overrides any token set by '" + CMD + " config initial-token'.");
         out.println("                          If not specified, session credentials are used - see: CREDENTIALS OPTIONS.");

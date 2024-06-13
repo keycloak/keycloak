@@ -307,8 +307,8 @@ public class RoleMapperResource {
         return auth.roles().canMapRole(roleModel);
     }
 
-    @Path("clients/{client}")
-    public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client") String client) {
+    @Path("clients/{client-id}")
+    public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client-id") @Parameter(description = "client id (not clientId!)") String client) {
         ClientModel clientModel = realm.getClientById(client);
         if (clientModel == null) {
             throw new NotFoundException("Client not found");

@@ -1,16 +1,15 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   PageSection,
 } from "@patternfly/react-core";
-import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -28,6 +27,8 @@ import { SyncSettings } from "./SyncSettings";
 import "./custom-provider-settings.css";
 
 export default function CustomProviderSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id, providerId } = useParams<CustomUserFederationRouteParams>();
   const navigate = useNavigate();
@@ -42,8 +43,7 @@ export default function CustomProviderSettings() {
   } = form;
 
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName } = useRealm();
-  const [parentId, setParentId] = useState("");
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
 
   const provider = (
     useServerInfo().componentTypes?.[
@@ -68,15 +68,6 @@ export default function CustomProviderSettings() {
     [],
   );
 
-  useFetch(
-    () =>
-      adminClient.realms.findOne({
-        realm: realmName,
-      }),
-    (realm) => setParentId(realm?.id!),
-    [],
-  );
-
   const save = async (component: ComponentRepresentation) => {
     const saveComponent = convertFormValuesToObject({
       ...component,
@@ -88,7 +79,7 @@ export default function CustomProviderSettings() {
       ),
       providerId,
       providerType: "org.keycloak.storage.UserStorageProvider",
-      parentId,
+      parentId: realm?.id,
     });
 
     try {
@@ -105,7 +96,7 @@ export default function CustomProviderSettings() {
       );
     } catch (error) {
       addError(
-        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
+        !id ? "createUserProviderError" : "userProviderSaveError",
         error,
       );
     }

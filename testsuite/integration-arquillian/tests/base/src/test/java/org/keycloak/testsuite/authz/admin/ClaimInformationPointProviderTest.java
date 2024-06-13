@@ -22,17 +22,12 @@ import static org.junit.Assert.assertNull;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.security.cert.X509Certificate;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
@@ -41,29 +36,20 @@ import io.undertow.Undertow;
 import io.undertow.server.handlers.form.FormData;
 import io.undertow.server.handlers.form.FormDataParser;
 import io.undertow.server.handlers.form.FormParserFactory;
-import org.apache.http.impl.client.HttpClients;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.pep.HttpAuthzRequest;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.authorization.cip.spi.ClaimInformationPointProvider;
 import org.keycloak.adapters.authorization.cip.spi.ClaimInformationPointProviderFactory;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
-import org.keycloak.adapters.spi.AuthenticationError;
-import org.keycloak.adapters.spi.HttpFacade.Cookie;
-import org.keycloak.adapters.spi.HttpFacade.Request;
-import org.keycloak.adapters.spi.HttpFacade.Response;
-import org.keycloak.adapters.spi.LogoutError;
+import org.keycloak.adapters.authorization.spi.HttpRequest;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.IDToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.util.AuthzTestUtils;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -88,7 +74,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
                         FormDataParser parser = parserFactory.createParser(exchange);
                         FormData formData = parser.parseBlocking();
 
-                        if (!"Bearer tokenString".equals(exchange.getRequestHeaders().getFirst("Authorization"))
+                        if (!("Bearer "  + accessTokenString()).equals(exchange.getRequestHeaders().getFirst("Authorization"))
                                 || !"post".equalsIgnoreCase(exchange.getRequestMethod().toString())
                                 || !"application/x-www-form-urlencoded".equals(exchange.getRequestHeaders().getFirst("Content-Type"))
                                 || !exchange.getRequestHeaders().get("header-b").contains("header-b-value1")
@@ -105,7 +91,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
                         exchange.setStatusCode(200);
                     } else if (exchange.getRelativePath().equals("/get-claim-information-provider")) {
-                        if (!"Bearer tokenString".equals(exchange.getRequestHeaders().getFirst("Authorization"))
+                        if (!("Bearer "  + accessTokenString()).equals(exchange.getRequestHeaders().getFirst("Authorization"))
                                 || !"get".equalsIgnoreCase(exchange.getRequestMethod().toString())
                                 || !exchange.getRequestHeaders().get("header-b").contains("header-b-value1")
                                 || !exchange.getRequestHeaders().get("header-b").contains("header-b-value2")
@@ -154,9 +140,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
     }
 
     private ClaimInformationPointProvider getClaimInformationProviderForPath(String path, String providerName) {
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/authorization-test/enforcer-config-claims-provider.json"));
-        deployment.setClient(HttpClients.createDefault());
-        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        PolicyEnforcer policyEnforcer = AuthzTestUtils.createPolicyEnforcer("enforcer-config-claims-provider.json", true);
         Map<String, ClaimInformationPointProviderFactory> providers = policyEnforcer.getClaimInformationPointProviderFactories();
 
         PathConfig pathConfig = policyEnforcer.getPaths().get(path);
@@ -178,8 +162,8 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testBasicClaimsInformationPoint() {
-        OIDCHttpFacade httpFacade = createHttpFacade();
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(new HttpAuthzRequest(httpFacade));
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims")
+                .resolve(createHttpRequest());
 
         assertEquals("parameter-a", claims.get("claim-from-request-parameter").get(0));
         assertEquals("header-b", claims.get("claim-from-header").get(0));
@@ -204,9 +188,9 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         ObjectMapper mapper = JsonSerialization.mapper;
         JsonParser parser = mapper.getFactory().createParser("{\"a\": {\"b\": {\"c\": \"c-value\"}}, \"d\": [\"d-value1\", \"d-value2\"], \"e\": {\"number\": 123}}");
         TreeNode treeNode = mapper.readTree(parser);
-        OIDCHttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
 
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(new HttpAuthzRequest(httpFacade));
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(
+                createHttpRequest(headers, new ByteArrayInputStream(treeNode.toString().getBytes())));
 
         assertEquals("c-value", claims.get("claim-from-json-body-object").get(0));
         assertEquals("d-value2", claims.get("claim-from-json-body-array").get(0));
@@ -244,9 +228,9 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
                 + "\n"
                 + "}}");
         TreeNode treeNode = mapper.readTree(parser);
-        OIDCHttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
 
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(new HttpAuthzRequest(httpFacade));
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims")
+                .resolve(createHttpRequest(headers, new ByteArrayInputStream(treeNode.toString().getBytes())));
 
         assertEquals(1, claims.size());
         assertEquals(2, claims.get("individualRoles").size());
@@ -255,8 +239,8 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
         headers.put("Content-Type", Arrays.asList("application/json; charset=utf-8"));
 
-        httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
-        claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(new HttpAuthzRequest(httpFacade));
+        claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims")
+                .resolve(createHttpRequest(headers, new ByteArrayInputStream(treeNode.toString().getBytes())));
 
         assertEquals(1, claims.size());
         assertEquals(2, claims.get("individualRoles").size());
@@ -266,18 +250,16 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testBodyClaimsInformationPoint() {
-        OIDCHttpFacade httpFacade = createHttpFacade(new HashMap<>(), new ByteArrayInputStream("raw-body-text".getBytes()));
-
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims").resolve(new HttpAuthzRequest(httpFacade));
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-provider", "claims")
+                .resolve(createHttpRequest(new HashMap<>(), new ByteArrayInputStream("raw-body-text".getBytes())));
 
         assertEquals("raw-body-text", claims.get("claim-from-body").get(0));
     }
 
     @Test
     public void testHttpClaimInformationPointProviderWithoutClaims() {
-        OIDCHttpFacade httpFacade = createHttpFacade();
-
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-get-claim-provider", "http").resolve(new HttpAuthzRequest(httpFacade));
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-get-claim-provider", "http")
+                .resolve(createHttpRequest(new HashMap<>(), null));
 
         assertEquals("a-value1", claims.get("a").get(0));
         assertEquals("b-value1", claims.get("b").get(0));
@@ -292,9 +274,8 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testHttpClaimInformationPointProviderWithClaims() {
-        OIDCHttpFacade httpFacade = createHttpFacade();
-
-        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-post-claim-provider", "http").resolve(new HttpAuthzRequest(httpFacade));
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/http-post-claim-provider", "http")
+                .resolve(createHttpRequest(new HashMap<>(), null));
 
         assertEquals("a-value1", claims.get("claim-a").get(0));
         assertEquals("d-value1", claims.get("claim-d").get(0));
@@ -308,208 +289,29 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         assertNull(claims.get("d"));
     }
 
-    private OIDCHttpFacade createHttpFacade(Map<String, List<String>> headers, InputStream requestBody) {
-        return new OIDCHttpFacade() {
-            private Request request;
-
-            @Override
-            public KeycloakSecurityContext getSecurityContext() {
-                AccessToken token = new AccessToken();
-
-                token.subject("sub");
-                token.setPreferredUsername("username");
-                token.getOtherClaims().put("custom_claim", Arrays.asList("param-other-claims-value1", "param-other-claims-value2"));
-
-                IDToken idToken = new IDToken();
-
-                idToken.subject("sub");
-                idToken.setPreferredUsername("username");
-                idToken.getOtherClaims().put("custom_claim", Arrays.asList("param-other-claims-value1", "param-other-claims-value2"));
-
-                return new KeycloakSecurityContext("tokenString", token, "idTokenString", idToken);
-            }
-
-            @Override
-            public Request getRequest() {
-                if (request == null) {
-                    request = createHttpRequest(headers, requestBody);
-                }
-                return request;
-            }
-
-            @Override
-            public Response getResponse() {
-                return createHttpResponse();
-            }
-
-            @Override
-            public X509Certificate[] getCertificateChain() {
-                return new X509Certificate[0];
-            }
-        };
+    private static HttpRequest createHttpRequest() {
+        return createHttpRequest(new HashMap<>(), null);
     }
 
-    private OIDCHttpFacade createHttpFacade() {
-        return createHttpFacade(new HashMap<>(), null);
-    }
-
-    private Response createHttpResponse() {
-        return new Response() {
-            @Override
-            public void setStatus(int status) {
-
-            }
-
-            @Override
-            public void addHeader(String name, String value) {
-
-            }
-
-            @Override
-            public void setHeader(String name, String value) {
-
-            }
-
-            @Override
-            public void resetCookie(String name, String path) {
-
-            }
-
-            @Override
-            public void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly) {
-
-            }
-
-            @Override
-            public OutputStream getOutputStream() {
-                return null;
-            }
-
-            @Override
-            public void sendError(int code) {
-
-            }
-
-            @Override
-            public void sendError(int code, String message) {
-
-            }
-
-            @Override
-            public void end() {
-
-            }
-        };
-    }
-
-    private Request createHttpRequest(Map<String, List<String>> headers, InputStream requestBody) {
+    private static HttpRequest createHttpRequest(Map<String, List<String>> headers, InputStream requestBody) {
         Map<String, List<String>> queryParameter = new HashMap<>();
-
         queryParameter.put("a", Arrays.asList("parameter-a"));
-
         headers.put("b", Arrays.asList("header-b"));
+        Map<String, String> cookies = new HashMap<>();
+        cookies.put("c", "cookie-c");
+        return AuthzTestUtils.createHttpRequest("/app/request-uri", "/request-relative-path", "GET",
+                accessTokenString(), headers, queryParameter, cookies, requestBody);
+    }
 
-        Map<String, Cookie> cookies = new HashMap<>();
+    private static AccessToken accessToken() {
+        AccessToken token = new AccessToken();
+        token.subject("sub");
+        token.setPreferredUsername("username");
+        token.getOtherClaims().put("custom_claim", Arrays.asList("param-other-claims-value1", "param-other-claims-value2"));
+        return token;
+    }
 
-        cookies.put("c", new Cookie("c", "cookie-c", 1, "localhost", "/"));
-
-        return new Request() {
-
-            private InputStream inputStream;
-
-            @Override
-            public String getMethod() {
-                return "GET";
-            }
-
-            @Override
-            public String getURI() {
-                return "/app/request-uri";
-            }
-
-            @Override
-            public String getRelativePath() {
-                return "/request-relative-path";
-            }
-
-            @Override
-            public boolean isSecure() {
-                return true;
-            }
-
-            @Override
-            public String getFirstParam(String param) {
-                List<String> values = queryParameter.getOrDefault(param, Collections.emptyList());
-
-                if (!values.isEmpty()) {
-                    return values.get(0);
-                }
-
-                return null;
-            }
-
-            @Override
-            public String getQueryParamValue(String param) {
-                return getFirstParam(param);
-            }
-
-            @Override
-            public Cookie getCookie(String cookieName) {
-                return cookies.get(cookieName);
-            }
-
-            @Override
-            public String getHeader(String name) {
-                List<String> headers = getHeaders(name);
-
-                if (!headers.isEmpty()) {
-                    return headers.get(0);
-                }
-
-                return null;
-            }
-
-            @Override
-            public List<String> getHeaders(String name) {
-                return headers.getOrDefault(name, Collections.emptyList());
-            }
-
-            @Override
-            public InputStream getInputStream() {
-                return getInputStream(false);
-            }
-
-            @Override
-            public InputStream getInputStream(boolean buffer) {
-                if (requestBody == null) {
-                    return new ByteArrayInputStream(new byte[] {});
-                }
-
-                if (inputStream != null) {
-                    return inputStream;
-                }
-
-                if (buffer) {
-                    return inputStream = new BufferedInputStream(requestBody);
-                }
-
-                return requestBody;
-            }
-
-            @Override
-            public String getRemoteAddr() {
-                return "user-remote-addr";
-            }
-
-            @Override
-            public void setError(AuthenticationError error) {
-
-            }
-
-            @Override
-            public void setError(LogoutError error) {
-
-            }
-        };
+    private static String accessTokenString() {
+        return new JWSBuilder().jsonContent(accessToken()).none();
     }
 }

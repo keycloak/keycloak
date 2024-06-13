@@ -22,10 +22,10 @@ import {
   FormErrorText,
   SelectControl,
   useAlerts,
+  useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useEnvironment } from "../root/KeycloakContext";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {
@@ -192,10 +192,14 @@ export const ShareTheResource = ({
           )}
         </FormGroup>
         <FormProvider {...form}>
-          <FormGroup label="" fieldId="permissions-selected">
+          <FormGroup
+            label=""
+            fieldId="permissions-selected"
+            data-testid="permissions"
+          >
             <SelectControl
               name="permissions"
-              variant="typeaheadmulti"
+              variant="typeaheadMulti"
               controller={{ defaultValue: [] }}
               options={resource.scopes.map(({ name, displayName }) => ({
                 key: name,

@@ -7,6 +7,7 @@ import {
   ButtonVariant,
   DataList,
   DragDrop,
+  DropdownItem,
   Droppable,
   Label,
   PageSection,
@@ -16,12 +17,11 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DomainIcon, TableIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -52,6 +52,8 @@ export const providerConditionFilter = (
 ) => value.displayName?.startsWith("Condition ");
 
 export default function FlowDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();

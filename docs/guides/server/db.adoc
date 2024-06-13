@@ -30,13 +30,11 @@ The server has built-in support for different databases. You can query the avail
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
-<@profile.ifProduct>
-
 == Installing a database driver
 
-Database drivers are shipped as part of {project_name} except for the Oracle Database and Microsoft SQL Server drivers which need to be installed separately.
+Database drivers are shipped as part of {project_name} except for the Oracle Database<@profile.ifProduct> and Microsoft SQL Server drivers</@profile.ifProduct>.
 
-Install the necessary driver if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
+Install the necessary missing driver manually if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
 
 === Installing the Oracle Database driver
 
@@ -59,8 +57,8 @@ A minimal Dockerfile to build an image which can be used with the {project_name}
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel}
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
 # Setting the build parameter for the database:
 ENV KC_DB=oracle
 # Add all other build parameters needed, for example enable health and metrics:
@@ -73,6 +71,8 @@ RUN /opt/keycloak/bin/kc.sh build
 See the <@links.server id="containers" /> {section} for details on how to build optimized images.
 
 Then continue configuring the database as described in the next section.
+
+<@profile.ifProduct>
 
 === Installing the Microsoft SQL Server driver
 
@@ -95,7 +95,7 @@ A minimal Dockerfile to build an image which can be used with the {project_name}
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel}
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
 # Setting the build parameter for the database:
 ENV KC_DB=mssql
 # Add all other build parameters needed, for example enable health and metrics:

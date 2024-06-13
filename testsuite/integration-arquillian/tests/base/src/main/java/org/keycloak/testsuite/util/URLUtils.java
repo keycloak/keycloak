@@ -9,6 +9,7 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +91,7 @@ public final class URLUtils {
         WebDriver driver = getCurrentDriver();
 
         try {
-            (new WebDriverWait(driver, 5, 100)).until(condition);
+            (new WebDriverWait(driver, Duration.ofSeconds(5), Duration.ofMillis(100))).until(condition);
         } catch (TimeoutException e) {
             return false;
         }

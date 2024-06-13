@@ -1,14 +1,10 @@
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
+import { SelectOption } from "@patternfly/react-core";
 import { useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 
 type ScopeSelectProps = {
@@ -22,6 +18,8 @@ export const ScopeSelect = ({
   resourceId,
   preSelected,
 }: ScopeSelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const {
@@ -86,11 +84,11 @@ export const ScopeSelect = ({
       control={control}
       rules={{ validate: (value) => value.length > 0 }}
       render={({ field }) => (
-        <Select
+        <KeycloakSelect
           toggleId="scopes"
           variant={SelectVariant.typeaheadMulti}
-          onToggle={(_event, val) => setOpen(val)}
-          onFilter={(_, filter) => {
+          onToggle={(val) => setOpen(val)}
+          onFilter={(filter) => {
             setSearch(filter);
             return toSelectOptions(scopes);
           }}
@@ -98,8 +96,8 @@ export const ScopeSelect = ({
             field.onChange([]);
             setSearch("");
           }}
-          selections={selectedScopes.map((s) => s.name)}
-          onSelect={(_, selectedValue) => {
+          selections={selectedScopes.map((s) => s.name!)}
+          onSelect={(selectedValue) => {
             const option =
               typeof selectedValue === "string"
                 ? selectedScopes.find((s) => s.name === selectedValue)!
@@ -119,7 +117,7 @@ export const ScopeSelect = ({
           typeAheadAriaLabel={t("scopes")}
         >
           {toSelectOptions(scopes)}
-        </Select>
+        </KeycloakSelect>
       )}
     />
   );

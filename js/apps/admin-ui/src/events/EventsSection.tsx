@@ -2,6 +2,11 @@ import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/e
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
 import {
+  KeycloakSelect,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   Chip,
@@ -17,15 +22,11 @@ import {
   FormGroup,
   Icon,
   PageSection,
+  SelectOption,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth, expandable } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
@@ -33,8 +34,8 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   RoutableTabs,
@@ -42,7 +43,6 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
@@ -51,7 +51,6 @@ import { useFetch } from "../utils/useFetch";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { AdminEvents } from "./AdminEvents";
 import { EventsTab, toEvents } from "./routes/Events";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
 
 import "./events.css";
 
@@ -134,6 +133,8 @@ const UserDetailLink = (event: EventRepresentation) => {
 };
 
 export default function EventsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const formatDate = useFormatDate();
@@ -265,9 +266,8 @@ export default function EventsSection() {
                     name="type"
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <KeycloakSelect
                         className="keycloak__events_search__type_select"
-                        name="eventType"
                         data-testid="event-type-searchField"
                         chipGroupProps={{
                           numChips: 1,
@@ -276,9 +276,9 @@ export default function EventsSection() {
                         }}
                         variant={SelectVariant.typeaheadMulti}
                         typeAheadAriaLabel="Select"
-                        onToggle={(_event, isOpen) => setSelectOpen(isOpen)}
+                        onToggle={(isOpen) => setSelectOpen(isOpen)}
                         selections={field.value}
-                        onSelect={(_, selectedValue) => {
+                        onSelect={(selectedValue) => {
                           const option = selectedValue.toString() as EventType;
                           const changedValue = field.value.includes(option)
                             ? field.value.filter((item) => item !== option)
@@ -286,8 +286,7 @@ export default function EventsSection() {
 
                           field.onChange(changedValue);
                         }}
-                        onClear={(event) => {
-                          event.stopPropagation();
+                        onClear={() => {
                           field.onChange([]);
                         }}
                         isOpen={selectOpen}
@@ -315,7 +314,7 @@ export default function EventsSection() {
                             {t(`eventTypes.${option}.name`)}
                           </SelectOption>
                         ))}
-                      </Select>
+                      </KeycloakSelect>
                     )}
                   />
                 </FormGroup>

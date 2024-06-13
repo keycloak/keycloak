@@ -28,6 +28,11 @@ public class KcRegMain {
             return DEFAULT_CONFIG_FILE_PATH;
         }
 
+        @Override
+        public boolean isTokenGlobal() {
+            return false;
+        };
+
     };
 
     public static void main(String [] args) {

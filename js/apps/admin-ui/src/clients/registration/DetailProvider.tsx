@@ -4,15 +4,15 @@ import {
   ActionGroup,
   Button,
   ButtonVariant,
+  DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -29,6 +29,8 @@ import {
 import { toClientRegistration } from "../routes/ClientRegistration";
 
 export default function DetailProvider() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id, providerId, subTab } = useParams<RegistrationProviderParams>();
   const navigate = useNavigate();
@@ -37,21 +39,18 @@ export default function DetailProvider() {
   });
   const { control, handleSubmit, reset } = form;
 
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [provider, setProvider] = useState<ComponentTypeRepresentation>();
-  const [parentId, setParentId] = useState("");
 
   useFetch(
     async () =>
       await Promise.all([
         adminClient.realms.getClientRegistrationPolicyProviders({ realm }),
-        adminClient.realms.findOne({ realm }),
         id ? adminClient.components.findOne({ id }) : Promise.resolve(),
       ]),
-    ([providers, realm, data]) => {
+    ([providers, data]) => {
       setProvider(providers.find((p) => p.id === providerId));
-      setParentId(realm?.id || "");
       reset(data || { providerId });
     },
     [],
@@ -69,7 +68,7 @@ export default function DetailProvider() {
       const updatedComponent = {
         ...component,
         subType: subTab,
-        parentId,
+        parentId: realmRepresentation?.id,
         providerType:
           "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
         providerId,

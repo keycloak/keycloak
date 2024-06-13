@@ -10,10 +10,8 @@ import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.DeploymentArchiveProcessor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -22,10 +20,10 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -189,35 +187,39 @@ public class KeycloakContainerFeaturesController {
         }
     }
 
+    private UpdateFeature getUpdateFeature(State state, boolean enableFeature, boolean skipRestart, AnnotatedElement annotatedElement, Profile.Feature feature) {
+
+        if (state.equals(State.BEFORE)) {
+            return new UpdateFeature(feature, skipRestart, enableFeature ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotatedElement);
+        }
+
+        //in case of method, checks if there is a feature annotation on the class to set the correct state for the feature
+        if (annotatedElement instanceof Method) {
+            Class<?> clazz = ((Method) annotatedElement).getDeclaringClass();
+            while (clazz != null) {
+                if(Arrays.stream(clazz.getAnnotationsByType(EnableFeature.class)).anyMatch(a -> a.value() == feature)) {
+                    return new UpdateFeature(feature, skipRestart, FeatureAction.ENABLE_AND_RESET, annotatedElement);
+                } else if(Arrays.stream(clazz.getAnnotationsByType(DisableFeature.class)).anyMatch(a -> a.value() == feature)) {
+                    return new UpdateFeature(feature, skipRestart, FeatureAction.DISABLE_AND_RESET, annotatedElement);
+                }
+                clazz = clazz.getSuperclass();
+            }
+        }
+
+        //class element or no feature annotation found for the method, using state from profile
+        Profile activeProfile = Optional.ofNullable(Profile.getInstance()).orElse(Profile.defaults());
+        return new UpdateFeature(feature, skipRestart, activeProfile.getDisabledFeatures().contains(feature) ? FeatureAction.DISABLE_AND_RESET : FeatureAction.ENABLE_AND_RESET, annotatedElement);
+    }
+
     private Set<UpdateFeature> getUpdateFeaturesSet(AnnotatedElement annotatedElement, State state) {
         Set<UpdateFeature> ret = new HashSet<>();
 
-        Profile activeProfile = Optional.ofNullable(Profile.getInstance()).orElse(Profile.defaults());
-
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
-                .map(annotation -> {
-                    if (state == State.BEFORE) {
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.ENABLE, annotatedElement);
-                    } else if (activeProfile.getDisabledFeatures().contains(annotation.value())) {
-                        // only disable if it should be
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.DISABLE_AND_RESET, annotatedElement);
-                    } else {
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.ENABLE, annotatedElement);
-                    }
-                })
+                .map(annotation -> getUpdateFeature(state, true, annotation.skipRestart(), annotatedElement, annotation.value()))
                 .collect(Collectors.toSet()));
 
         ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
-                .map(annotation -> {
-                    if (state == State.BEFORE) {
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.DISABLE, annotatedElement);
-                    } else if (activeProfile.getDisabledFeatures().contains(annotation.value())) {
-                        // we do not want to enable features that should be disabled by default
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.DISABLE_AND_RESET, annotatedElement);
-                    } else {
-                        return new UpdateFeature(annotation.value(), annotation.skipRestart(), FeatureAction.ENABLE_AND_RESET, annotatedElement);
-                    }
-                })
+                .map(annotation -> getUpdateFeature(state, false, annotation.skipRestart(), annotatedElement, annotation.value()))
                 .collect(Collectors.toSet()));
 
         return ret;

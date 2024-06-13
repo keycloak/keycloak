@@ -90,6 +90,8 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sanitize(sb, event.getType().toString());
             sb.append(", realmId=");
             sanitize(sb, event.getRealmId());
+            sb.append(", realmName=");
+            sanitize(sb, event.getRealmName());
             sb.append(", clientId=");
             sanitize(sb, event.getClientId());
             sb.append(", userId=");
@@ -145,6 +147,8 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sanitize(sb, adminEvent.getOperationType().toString());
             sb.append(", realmId=");
             sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sb.append(", realmName=");
+            sanitize(sb, adminEvent.getAuthDetails().getRealmName());
             sb.append(", clientId=");
             sanitize(sb, adminEvent.getAuthDetails().getClientId());
             sb.append(", userId=");

@@ -26,6 +26,7 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
@@ -44,6 +45,12 @@ public class MigrateTo25_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
+        // Can be null during store model tests.
+        if (session.sessions() != null) {
+            // Offer a migration for persistent user sessions which was added in KC25.
+            session.sessions().migrate(VERSION.toString());
+        }
+
         session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
     }
 
@@ -54,11 +61,17 @@ public class MigrateTo25_0_0 implements Migration {
     protected void migrateRealm(KeycloakSession session, RealmModel realm) {
         MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
 
-        // create 'basic' client scope in the realm.
-        ClientScopeModel basicScope = migrationProvider.addOIDCBasicClientScope(realm);
+        ClientScopeModel basicScope = KeycloakModelUtils.getClientScopeByName(realm, "basic");
+        if (basicScope == null) {
+            // create 'basic' client scope in the realm.
+            basicScope = migrationProvider.addOIDCBasicClientScope(realm);
 
-        //add basic scope to existing clients
-        realm.getClientsStream().forEach(c-> c.addClientScope(basicScope, true));
+            //add basic scope to all existing OIDC clients
+            session.clients().addClientScopeToAllClients(realm, basicScope, true);
+        } else {
+            LOG.warnf("Client scope '%s' already exists in the realm '%s'. Please migrate this realm manually if you need basic claims in your tokens.", basicScope.getName(), realm.getName());
+        }
+
     }
 }
 

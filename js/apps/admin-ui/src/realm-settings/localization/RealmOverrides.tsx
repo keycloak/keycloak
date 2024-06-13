@@ -1,27 +1,27 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
   Divider,
-  Form,
-  FormGroup,
-  TextContent,
-  Text,
-  ToolbarItem,
-  TextVariants,
-  TextInput,
-} from "@patternfly/react-core";
-import {
   Dropdown,
   DropdownItem,
-  KebabToggle,
-  Select,
+  DropdownList,
+  Form,
+  FormGroup,
+  MenuToggle,
   SelectGroup,
   SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+  Text,
+  TextContent,
+  TextInput,
+  TextVariants,
+  ToolbarItem,
+} from "@patternfly/react-core";
 import {
   CheckIcon,
+  EllipsisVIcon,
   PencilAltIcon,
   SearchIcon,
   TimesIcon,
@@ -30,19 +30,18 @@ import {
   ActionsColumn,
   IRow,
   IRowCell,
+  Table,
   Tbody,
   Td,
   Th,
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { Table } from "@patternfly/react-table/deprecated";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { ChangeEvent, useEffect, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeyValueType } from "../../components/key-value-form/key-value-convert";
@@ -82,6 +81,8 @@ export const RealmOverrides = ({
   realm,
   tableData,
 }: RealmOverridesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [addTranslationModalOpen, setAddTranslationModalOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
@@ -373,13 +374,22 @@ export const RealmOverrides = ({
             </Button>
             <ToolbarItem>
               <Dropdown
-                toggle={
-                  <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
-                }
+                toggle={(ref) => (
+                  <MenuToggle
+                    ref={ref}
+                    onClick={() => setKebabOpen(!kebabOpen)}
+                    variant="plain"
+                    isExpanded={kebabOpen}
+                    data-testid="toolbar-deleteBtn"
+                    aria-label="kebab"
+                  >
+                    <EllipsisVIcon />
+                  </MenuToggle>
+                )}
                 isOpen={kebabOpen}
                 isPlain
-                data-testid="toolbar-deleteBtn"
-                dropdownItems={[
+              >
+                <DropdownList>
                   <DropdownItem
                     key="action"
                     component="button"
@@ -393,24 +403,22 @@ export const RealmOverrides = ({
                     }}
                   >
                     {t("delete")}
-                  </DropdownItem>,
-                ]}
-              />
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
             </ToolbarItem>
           </>
         }
         searchTypeComponent={
           <ToolbarItem>
-            <Select
+            <KeycloakSelect
               width={180}
               isOpen={filterDropdownOpen}
               className="kc-filter-by-locale-select"
               variant={SelectVariant.single}
               isDisabled={!internationalizationEnabled}
-              onToggle={(_event, isExpanded) =>
-                setFilterDropdownOpen(isExpanded)
-              }
-              onSelect={(_, value) => {
+              onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
+              onSelect={(value) => {
                 setSelectMenuLocale(value.toString());
                 setSelectMenuValueSelected(true);
                 refreshTable();
@@ -425,7 +433,7 @@ export const RealmOverrides = ({
               }
             >
               {options}
-            </Select>
+            </KeycloakSelect>
           </ToolbarItem>
         }
       >

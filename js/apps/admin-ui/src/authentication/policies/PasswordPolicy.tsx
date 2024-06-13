@@ -7,26 +7,25 @@ import {
   ButtonVariant,
   Divider,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
+  EmptyStateHeader,
   EmptyStateIcon,
   PageSection,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
-  EmptyStateActions,
-  EmptyStateHeader,
-  EmptyStateFooter,
   Select,
-  SelectOption,
   MenuToggle,
   SelectList,
+  SelectOption,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -54,9 +53,6 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
 
   return (
     <Select
-      style={{
-        width: "300px",
-      }}
       onSelect={(_, selection) => {
         onSelect(selection as PasswordPolicyTypeRepresentation);
         setOpen(false);
@@ -67,6 +63,7 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
           onClick={() => setOpen(!open)}
           isExpanded={open}
           isDisabled={policies?.length === 0}
+          style={{ width: "300px" }}
           data-testid="add-policy"
         >
           {t("addPolicy")}
@@ -94,6 +91,8 @@ export const PasswordPolicy = ({
   realm,
   realmUpdated,
 }: PasswordPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { passwordPolicies } = useServerInfo();
 

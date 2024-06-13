@@ -125,12 +125,27 @@ public class SimpleHttp {
         return new SimpleHttp(url, "POST", client, maxConsumedResponseSize);
     }
 
+    public static SimpleHttp doPut(String url, KeycloakSession session) {
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doPut(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
+    }
+
     protected static SimpleHttp doPut(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "PUT", client, maxConsumedResponseSize);
     }
 
+    public static SimpleHttp doHead(String url, KeycloakSession session) {
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doHead(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
+    }
+
     protected static SimpleHttp doHead(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "HEAD", client, maxConsumedResponseSize);
+    }
+
+    public static SimpleHttp doPatch(String url, KeycloakSession session) {
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doPatch(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
     protected static SimpleHttp doPatch(String url, HttpClient client, long maxConsumedResponseSize) {

@@ -13,12 +13,12 @@ import {
   Title,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { omit } from "lodash-es";
 import { useState } from "react";
 import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -41,6 +41,8 @@ type ClientPolicy = ClientPolicyRepresentation & {
 };
 
 export const PoliciesTab = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -112,6 +114,9 @@ export const PoliciesTab = () => {
     }
   };
 
+  const normalizePolicy = (policy: ClientPolicy): ClientPolicyRepresentation =>
+    omit(policy, "global");
+
   const save = async () => {
     if (!code) {
       return;
@@ -120,9 +125,18 @@ export const PoliciesTab = () => {
     try {
       const obj: ClientPolicy[] = JSON.parse(code);
 
+      const changedPolicies = obj
+        .filter((policy) => !policy.global)
+        .map((policy) => normalizePolicy(policy));
+
+      const changedGlobalPolicies = obj
+        .filter((policy) => policy.global)
+        .map((policy) => normalizePolicy(policy));
+
       try {
         await adminClient.clientPolicies.updatePolicy({
-          policies: obj,
+          policies: changedPolicies,
+          globalPolicies: changedGlobalPolicies,
         });
         addAlert(t("updateClientPoliciesSuccess"), AlertVariant.success);
         refresh();
@@ -131,7 +145,7 @@ export const PoliciesTab = () => {
       }
     } catch (error) {
       console.warn("Invalid json, ignoring value using {}");
-      addError("updateClientPoliciesError", error);
+      addError("invalidJsonClientPoliciesError", error);
     }
   };
 

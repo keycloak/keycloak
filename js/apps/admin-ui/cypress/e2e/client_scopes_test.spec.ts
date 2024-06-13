@@ -192,11 +192,9 @@ describe("Client Scopes test", () => {
         .checkDropdownItemIsDisabled("Delete")
         .clickItemCheckbox(itemName)
         .checkInSearchBarChangeTypeToButtonIsDisabled(false)
-        .clickSearchBarActionButton()
         .checkDropdownItemIsDisabled("Delete", false)
         .clickItemCheckbox(itemName)
         .checkInSearchBarChangeTypeToButtonIsDisabled()
-        .clickSearchBarActionButton()
         .checkDropdownItemIsDisabled("Delete");
     });
 
@@ -342,8 +340,14 @@ describe("Client Scopes test", () => {
 
     it("Assign and unassign role", () => {
       const role = "admin";
+      const roleType = "roles";
       listingPage.searchItem(scopeName, false).goToItemDetails(scopeName);
-      scopeTab.goToScopeTab().assignRole().selectRow(role).assign();
+      scopeTab
+        .goToScopeTab()
+        .assignRole()
+        .changeRoleTypeFilter(roleType)
+        .selectRow(role)
+        .assign();
       masthead.checkNotificationMessage("Role mapping updated");
       scopeTab.checkRoles([role]);
       scopeTab.hideInheritedRoles().selectRow(role).unAssign();
@@ -446,6 +450,7 @@ describe("Client Scopes test", () => {
       const predefinedMapper = "Allowed Web Origins";
       const scopeTab = new RoleMappingTab("client-scope");
       const role = "admin";
+      const roleType = "roles";
 
       listingPage.goToCreateItem();
       createClientScopePage.fillClientScopeData(scopeName).save();
@@ -475,7 +480,12 @@ describe("Client Scopes test", () => {
       cy.checkA11y();
       cy.findByTestId("cancel").click();
 
-      scopeTab.goToScopeTab().assignRole().selectRow(role).assign();
+      scopeTab
+        .goToScopeTab()
+        .assignRole()
+        .changeRoleTypeFilter(roleType)
+        .selectRow(role)
+        .assign();
       cy.checkA11y();
     });
   });

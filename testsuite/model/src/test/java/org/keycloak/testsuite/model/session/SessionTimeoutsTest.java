@@ -61,6 +61,8 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
+        super.createEnvironment(s);
+
         RealmModel realm = createRealm(s, "test");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
@@ -78,8 +80,29 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         UserModel user1 = s.users().getUserByUsername(realm, "user1");
         s.sessions().removeUserSessions(realm);
         s.sessions().getOfflineUserSessionsStream(realm, user1).forEach(us -> s.sessions().removeOfflineUserSession(realm, us));
-
         s.realms().removeRealm(realmId);
+
+        // explicitly clear session caches, as removeUserSessions() contains asynchronous processing or might be incomplete due to a previous failure
+        clearSessionCaches(s);
+
+        super.cleanEnvironment(s);
+    }
+
+    private void clearSessionCaches(KeycloakSession s) {
+        InfinispanConnectionProvider provider = s.getProvider(InfinispanConnectionProvider.class);
+        if (provider != null) {
+            for (String cache : InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+                provider.getCache(cache).clear();
+            }
+        }
+
+        HotRodServerRule hotRodServer = getParameters(HotRodServerRule.class).findFirst().orElse(null);
+        if (hotRodServer != null) {
+           for (String cache : InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+               hotRodServer.getHotRodCacheManager().getCache(cache).clear();
+               hotRodServer.getHotRodCacheManager2().getCache(cache).clear();
+           }
+       }
     }
 
     protected static UserSessionModel createUserSession(KeycloakSession session, RealmModel realm, UserModel user, boolean offline) {
@@ -345,12 +368,12 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         testUserClientMaxLifespanSmallerThanSession(true, true);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOfflineUserClientIdleTimeoutSmallerThanSessionNoRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(0, true, false);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOfflineUserClientIdleTimeoutSmallerThanSessionOneRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(1, true, false);
     }
@@ -375,12 +398,12 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         testUserClientMaxLifespanSmallerThanSession(false, true);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOnlineUserClientIdleTimeoutSmallerThanSessionNoRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(0, false, false);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOnlineUserClientIdleTimeoutSmallerThanSessionOneRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(1, false, false);
     }
@@ -397,7 +420,15 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
             while (hotRodServer.getHotRodCacheManager().getCache(cacheName).size() != hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()) {
                 try {
                     Thread.sleep(5);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.errorf("Interrupted while waiting. Cache: %s, Cache sizes: %d vs %d",
+                            cacheName,
+                            hotRodServer.getHotRodCacheManager().getCache(cacheName).size(),
+                            hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()
+                    );
+                    throw new RuntimeException(e);
+                }
             }
         }
     }

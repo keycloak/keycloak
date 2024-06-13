@@ -42,7 +42,7 @@ public class OrganizationDomainModel implements Serializable {
         return this.name;
     }
 
-    public boolean getVerified() {
+    public boolean isVerified() {
         return this.verified;
     }
 

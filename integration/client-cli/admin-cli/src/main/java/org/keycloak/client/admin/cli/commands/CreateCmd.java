@@ -16,8 +16,6 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.keycloak.client.admin.cli.KcAdmMain;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -75,10 +73,6 @@ public class CreateCmd extends AbstractRequestCmd {
 
     @Override
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " create ENDPOINT_URI [ARGUMENTS]");
@@ -87,21 +81,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println();
         out.println("Use '" + CMD + " config credentials' to establish an authenticated sessions, or use --no-config with ");
         out.println("CREDENTIALS OPTIONS to perform one time authentication.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + KcAdmMain.DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
-        out.println("  Command specific options:");
+        globalOptions(out);
         out.println("    ENDPOINT_URI              URI used to compose a target resource url. Commonly used values are:");
         out.println("                              realms, users, roles, groups, clients, keys, serverinfo, components ...");
         out.println("                              If it starts with 'http://' then it will be used as target resource url");
@@ -122,7 +102,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println();
         out.println();
-        out.println("Nested attributes are supported by using '.' to separate components of a KEY. Optionaly, the KEY components ");
+        out.println("Nested attributes are supported by using '.' to separate components of a KEY. Optionally, the KEY components ");
         out.println("can be quoted with double quotes - e.g. my_client.attributes.\"external.user.id\". If VALUE starts with [ and ");
         out.println("ends with ] the attribute will be set as a JSON array. If VALUE starts with { and ends with } the attribute ");
         out.println("will be set as a JSON object. If KEY ends with an array index - e.g. clients[3]=VALUE - then the specified item");

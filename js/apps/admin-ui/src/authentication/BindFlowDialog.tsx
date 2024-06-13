@@ -6,15 +6,13 @@ import {
   Form,
   Modal,
 } from "@patternfly/react-core";
-import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SelectControl } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { REALM_FLOWS } from "./AuthenticationSection";
+import { useAdminClient } from "../admin-client";
 
 type BindingForm = {
   bindingType: keyof RealmRepresentation;
@@ -26,6 +24,8 @@ type BindFlowDialogProps = {
 };
 
 export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<BindingForm>();
   const { addAlert, addError } = useAlerts();
@@ -82,7 +82,6 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
                 value: t(`flow.${REALM_FLOWS.get(key)}`),
               }))}
             controller={{ defaultValue: flowKeys[0] }}
-            variant={SelectVariant.single}
             menuAppendTo="parent"
             aria-label={t("chooseBindingType")}
           />

@@ -31,8 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-core</module>
         <module>js</module>
-        <module>undertow</module>
     </modules>
 </project>

@@ -18,13 +18,12 @@ package org.keycloak.testsuite.authz.admin;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.AuthzTestUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -55,8 +54,7 @@ public class EnforcerConfigTest extends AbstractKeycloakTest {
 
     @Test
     public void testMultiplePathsWithSameName() {
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/authorization-test/enforcer-config-paths-same-name.json"));
-        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        PolicyEnforcer policyEnforcer = AuthzTestUtils.createPolicyEnforcer("enforcer-config-paths-same-name.json", true);
         Map<String, PolicyEnforcerConfig.PathConfig> paths = policyEnforcer.getPaths();
         assertEquals(1, paths.size());
         assertEquals(4, paths.values().iterator().next().getMethods().size());
@@ -64,8 +62,7 @@ public class EnforcerConfigTest extends AbstractKeycloakTest {
 
     @Test
     public void testPathConfigClaimInformationPoint() {
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/authorization-test/enforcer-config-path-cip.json"));
-        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        PolicyEnforcer policyEnforcer = AuthzTestUtils.createPolicyEnforcer("enforcer-config-path-cip.json", true);
         Map<String, PolicyEnforcerConfig.PathConfig> paths = policyEnforcer.getPaths();
 
         assertEquals(1, paths.size());

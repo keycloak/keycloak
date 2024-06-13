@@ -1,18 +1,19 @@
-import { Select, SelectOption } from "@patternfly/react-core/deprecated";
+import { SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, ControllerRenderProps } from "react-hook-form";
+import { KeycloakSelect, SelectVariant } from "../select/KeycloakSelect";
 import {
   OptionLabel,
   Options,
   UserProfileFieldProps,
 } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { UserFormFields, fieldName, isRequiredAttribute, label } from "./utils";
+import { UserFormFields, fieldName, label } from "./utils";
 
 export const SelectComponent = (props: UserProfileFieldProps) => {
   const { t, form, inputType, attribute } = props;
   const [open, setOpen] = useState(false);
-  const isRequired = isRequiredAttribute(attribute);
+  const [filter, setFilter] = useState("");
   const isMultiValue = inputType === "multiselect";
 
   const setValue = (
@@ -23,10 +24,14 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
       if (field.value.includes(value)) {
         field.onChange(field.value.filter((item: string) => item !== value));
       } else {
-        field.onChange([...field.value, value]);
+        if (Array.isArray(field.value)) {
+          field.onChange([...field.value, value]);
+        } else {
+          field.onChange([value]);
+        }
       }
     } else {
-      field.onChange(value);
+      field.onChange(value === field.value ? "" : value);
     }
   };
 
@@ -35,8 +40,24 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
 
   const optionLabel =
     (attribute.annotations?.["inputOptionLabels"] as OptionLabel) || {};
+
   const fetchLabel = (option: string) =>
     label(props.t, optionLabel[option], option);
+
+  const convertOptions = (selected: string) =>
+    options
+      .filter((o) =>
+        fetchLabel(o)!.toLowerCase().includes(filter.toLowerCase()),
+      )
+      .map((option) => (
+        <SelectOption
+          selected={selected === option}
+          key={option}
+          value={option}
+        >
+          {fetchLabel(option)}
+        </SelectOption>
+      ));
 
   return (
     <UserProfileGroup {...props}>
@@ -45,10 +66,11 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
         defaultValue=""
         control={form.control}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={attribute.name}
-            onToggle={(_event, b) => setOpen(b)}
-            onSelect={(_, value) => {
+            onToggle={(b) => setOpen(b)}
+            onClear={() => setValue("", field)}
+            onSelect={(value) => {
               const option = value.toString();
               setValue(option, field);
               if (!Array.isArray(field.value)) {
@@ -56,30 +78,27 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
               }
             }}
             selections={
-              field.value ? field.value : isMultiValue ? [] : t("choose")
+              isMultiValue && Array.isArray(field.value)
+                ? field.value
+                : fetchLabel(field.value)
             }
             variant={
               isMultiValue
-                ? "typeaheadmulti"
+                ? SelectVariant.typeaheadMulti
                 : options.length >= 10
-                  ? "typeahead"
-                  : "single"
+                  ? SelectVariant.typeahead
+                  : SelectVariant.single
             }
             aria-label={t("selectOne")}
             isOpen={open}
             isDisabled={attribute.readOnly}
-            required={isRequired}
+            onFilter={(value) => {
+              setFilter(value);
+              return convertOptions(field.value);
+            }}
           >
-            {["", ...options].map((option) => (
-              <SelectOption
-                selected={field.value === option}
-                key={option}
-                value={option}
-              >
-                {option ? fetchLabel(option) : t("choose")}
-              </SelectOption>
-            ))}
-          </Select>
+            {convertOptions(field.value)}
+          </KeycloakSelect>
         )}
       />
     </UserProfileGroup>

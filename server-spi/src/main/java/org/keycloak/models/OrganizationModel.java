@@ -25,8 +25,27 @@ import java.util.stream.Stream;
 public interface OrganizationModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
+    String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String BROKER_PUBLIC = "kc.org.broker.public";
+
+    enum IdentityProviderRedirectMode {
+        EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
+
+        private final String key;
+
+        IdentityProviderRedirectMode(String key) {
+            this.key = key;
+        }
+
+        public boolean isSet(IdentityProviderModel broker) {
+            return Boolean.parseBoolean(broker.getConfig().get(key));
+        }
+
+        public String getKey() {
+            return key;
+        }
+    }
 
     String getId();
 
@@ -37,6 +56,10 @@ public interface OrganizationModel {
     boolean isEnabled();
 
     void setEnabled(boolean enabled);
+
+    String getDescription();
+
+    void setDescription(String description);
 
     Map<String, List<String>> getAttributes();
 

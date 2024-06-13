@@ -1,7 +1,7 @@
 
 [[_stackoverflow]]
 
-==== Stack overflow
+==== Stack Overflow
 
 .Procedure
 . Click *Identity Providers* in the menu.

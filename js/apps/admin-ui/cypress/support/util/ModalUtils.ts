@@ -9,8 +9,8 @@ export default class ModalUtils extends PageObject {
   #cancelModalBtn = "cancel";
   #closeModalBtn = ".pf-v5-c-modal-box .pf-m-plain";
   #copyToClipboardBtn = '[id*="copy-button"]';
-  #addModalDropdownBtn = "#add-dropdown > button";
-  #addModalDropdownItem = "#add-dropdown [role='menuitem']";
+  #addModalDropdownBtn = "#add-dropdown";
+  #addModalDropdownItem = ".pf-v5-c-modal-box__footer .pf-v5-c-menu__content";
   #addBtn = "add";
   #tablePage = new TablePage(TablePage.tableSelector);
 

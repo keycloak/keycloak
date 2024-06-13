@@ -113,6 +113,14 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 exceptions.forEach(ex::addSuppressed);
                 throw ex;
             }
+            changes.clear();
+        }
+    }
+
+    public void applyChangesSynchronously(KeycloakSession session) {
+        if (!changes.isEmpty()) {
+            changes.forEach(persistentUpdate -> persistentUpdate.perform(session));
+            changes.clear();
         }
     }
 
@@ -171,26 +179,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                             return entity.getUserSessionId();
                         }
                     };
-                }
-
-                @Override
-                public String getCurrentRefreshToken() {
-                    return entity.getCurrentRefreshToken();
-                }
-
-                @Override
-                public void setCurrentRefreshToken(String currentRefreshToken) {
-                    throw new IllegalStateException("not implemented");
-                }
-
-                @Override
-                public int getCurrentRefreshTokenUseCount() {
-                    return entity.getCurrentRefreshTokenUseCount();
-                }
-
-                @Override
-                public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-                    throw new IllegalStateException("not implemented");
                 }
 
                 @Override
@@ -303,16 +291,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     }
 
                     @Override
-                    public void setCurrentRefreshToken(String currentRefreshToken) {
-                        clientSessionModel.setCurrentRefreshToken(currentRefreshToken);
-                    }
-
-                    @Override
-                    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-                        clientSessionModel.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
-                    }
-
-                    @Override
                     public void setAction(String action) {
                         clientSessionModel.setAction(action);
                     }
@@ -371,16 +349,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     public void setNotes(Map<String, String> notes) {
                         clientSessionModel.getNotes().keySet().forEach(clientSessionModel::removeNote);
                         notes.forEach((k, v) -> clientSessionModel.setNote(k, v));
-                    }
-
-                    @Override
-                    public String getCurrentRefreshToken() {
-                        return clientSessionModel.getCurrentRefreshToken();
-                    }
-
-                    @Override
-                    public int getCurrentRefreshTokenUseCount() {
-                        return clientSessionModel.getCurrentRefreshTokenUseCount();
                     }
 
                     @Override
@@ -550,7 +518,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         } else {
             PersistentUserSessionAdapter userSessionModel = (PersistentUserSessionAdapter) userSessionPersister.loadUserSession(realm, entry.getKey().toString(), entity.isOffline());
             if (userSessionModel != null) {
-                UserSessionEntity userSessionEntity = new UserSessionEntity() {
+                UserSessionEntity userSessionEntity = new UserSessionEntity(userSessionModel.getId()) {
                     @Override
                     public Map<String, String> getNotes() {
                         return new HashMap<>() {
@@ -609,16 +577,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     @Override
                     public void setRealmId(String realmId) {
                         userSessionModel.setRealm(innerSession.realms().getRealm(realmId));
-                    }
-
-                    @Override
-                    public String getId() {
-                        return userSessionModel.getId();
-                    }
-
-                    @Override
-                    public void setId(String id) {
-                        throw new IllegalStateException("not supported");
                     }
 
                     @Override

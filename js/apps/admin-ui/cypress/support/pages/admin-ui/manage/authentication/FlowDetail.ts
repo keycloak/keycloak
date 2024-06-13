@@ -40,6 +40,7 @@ export default class FlowDetails {
       .parentsUntil(".keycloak__authentication__flow-row")
       .find(".keycloak__authentication__requirement-dropdown")
       .click()
+      .parent()
       .contains(requirement)
       .click();
     return this;
@@ -53,6 +54,7 @@ export default class FlowDetails {
   #clickEditDropdownForFlow(subFlowName: string, option: string) {
     cy.findByTestId(`${subFlowName}-edit-dropdown`)
       .click()
+      .parent()
       .contains(option)
       .click();
   }

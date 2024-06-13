@@ -1,25 +1,23 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
   Popover,
   Text,
   TextContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
-} from "@patternfly/react-core/deprecated";
-import { QuestionCircleIcon } from "@patternfly/react-icons";
+import { EllipsisVIcon, QuestionCircleIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { useHelp } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
@@ -35,6 +33,8 @@ import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 
 export const DefaultsGroupsTab = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [isKebabOpen, toggleKebab] = useToggle();
@@ -172,15 +172,21 @@ export const DefaultsGroupsTab = () => {
             </ToolbarItem>
             <ToolbarItem>
               <Dropdown
-                toggle={
-                  <KebabToggle
-                    onToggle={toggleKebab}
+                toggle={(ref) => (
+                  <MenuToggle
+                    ref={ref}
+                    isExpanded={isKebabOpen}
+                    variant="plain"
+                    onClick={toggleKebab}
                     isDisabled={selectedRows!.length === 0}
-                  />
-                }
+                  >
+                    <EllipsisVIcon />
+                  </MenuToggle>
+                )}
                 isOpen={isKebabOpen}
-                isPlain
-                dropdownItems={[
+                shouldFocusToggleOnSelect
+              >
+                <DropdownList>
                   <DropdownItem
                     key="action"
                     component="button"
@@ -190,9 +196,9 @@ export const DefaultsGroupsTab = () => {
                     }}
                   >
                     {t("remove")}
-                  </DropdownItem>,
-                ]}
-              />
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
             </ToolbarItem>
           </>
         }

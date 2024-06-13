@@ -1,7 +1,6 @@
 export { PersonalInfo } from "./personal-info/PersonalInfo";
 export { ErrorPage } from "./root/ErrorPage";
 export { Header } from "./root/Header";
-export { KeycloakProvider, useEnvironment } from "./root/KeycloakContext";
 export { PageNav } from "./root/PageNav";
 export { DeviceActivity } from "./account-security/DeviceActivity";
 export { LinkedAccounts } from "./account-security/LinkedAccounts";
@@ -39,6 +38,7 @@ export { Resources } from "./resources/Resources";
 export { ResourcesTab } from "./resources/ResourcesTab";
 export { ResourceToolbar } from "./resources/ResourceToolbar";
 export { SharedWith } from "./resources/SharedWith";
+export { Oid4Vci } from "./oid4vci/Oid4Vci";
 export { ShareTheResource } from "./resources/ShareTheResource";
 export {
   deleteConsent,
@@ -55,3 +55,10 @@ export {
   savePersonalInfo,
   unLinkAccount,
 } from "./api/methods";
+export type { Environment as AccountEnvironment } from "./environment";
+export {
+  KeycloakProvider,
+  useEnvironment,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
+export { usePromise } from "./utils/usePromise";

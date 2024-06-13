@@ -66,6 +66,11 @@ public enum ResourceType {
     /**
      *
      */
+    , REQUIRED_ACTION_CONFIG
+
+    /**
+     *
+     */
     , REQUIRED_ACTION
 
     /**

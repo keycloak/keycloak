@@ -88,10 +88,10 @@ public final class Configuration {
         }
 
         if (value.isEmpty()) {
-            String profile = Environment.getProfile();
+            String profile = org.keycloak.common.util.Environment.getProfile();
 
             if (profile == null) {
-                profile = getConfig().getRawValue(Environment.PROFILE);
+                profile = getConfig().getRawValue(org.keycloak.common.util.Environment.PROFILE);
             }
 
             value = getRawPersistedProperty("%" + profile + "." + name);

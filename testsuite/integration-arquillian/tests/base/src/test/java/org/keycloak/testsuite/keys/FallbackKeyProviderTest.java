@@ -82,7 +82,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         providers = realmsResouce().realm("test").components().query(realmId, "org.keycloak.keys.KeyProvider");
-        assertProviders(providers, "fallback-RS256", "fallback-" + Constants.INTERNAL_SIGNATURE_ALGORITHM);
+        assertProviders(providers, "fallback-RS256", "fallback-AES", "fallback-" + Constants.INTERNAL_SIGNATURE_ALGORITHM);
     }
 
     @Test

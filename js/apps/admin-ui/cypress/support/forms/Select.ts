@@ -15,6 +15,6 @@ export default class Select {
   }
 
   static #getSelectMenu(chain: Cypress.Chainable<JQuery<HTMLElement>>) {
-    return chain.parent().get(".pf-v5-c-select__menu");
+    return chain.parent().get(".pf-v5-c-menu__list");
   }
 }

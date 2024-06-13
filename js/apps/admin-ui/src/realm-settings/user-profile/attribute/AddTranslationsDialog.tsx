@@ -1,4 +1,4 @@
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Flex,
@@ -12,21 +12,24 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-import { Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { Table } from "@patternfly/react-table/deprecated";
 import { SearchIcon } from "@patternfly/react-icons";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useAdminClient } from "../../../admin-client";
+import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
+import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
-import { adminClient } from "../../../admin-client";
-import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
-import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import { useFetch } from "../../../utils/useFetch";
 import { localeToDisplayName } from "../../../util";
-import { DEFAULT_LOCALE } from "../../../i18n/i18n";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useFetch } from "../../../utils/useFetch";
+import useLocale from "../../../utils/useLocale";
+
+export type TranslationsType =
+  | "displayName"
+  | "displayHeader"
+  | "displayDescription";
 
 type TranslationForm = {
   locale: string;
@@ -41,6 +44,7 @@ type Translations = {
 export type AddTranslationsDialogProps = {
   translationKey: string;
   translations: Translations;
+  type: TranslationsType;
   onCancel: () => void;
   toggleDialog: () => void;
   onTranslationsAdded: (translations: Translations) => void;
@@ -49,13 +53,15 @@ export type AddTranslationsDialogProps = {
 export const AddTranslationsDialog = ({
   translationKey,
   translations,
+  type,
   onCancel,
   toggleDialog,
   onTranslationsAdded,
 }: AddTranslationsDialogProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realm: realmName } = useRealm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
+  const combinedLocales = useLocale();
   const { whoAmI } = useWhoAmI();
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
@@ -78,30 +84,9 @@ export const AddTranslationsDialog = ({
     formState: { isValid },
   } = form;
 
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      if (!realm) {
-        throw new Error(t("notFound"));
-      }
-      setRealm(realm);
-    },
-    [],
-  );
-
-  const defaultSupportedLocales = useMemo(() => {
-    return realm?.supportedLocales!.length
-      ? realm.supportedLocales
-      : [DEFAULT_LOCALE];
-  }, [realm]);
-
   const defaultLocales = useMemo(() => {
     return realm?.defaultLocale!.length ? [realm.defaultLocale] : [];
   }, [realm]);
-
-  const combinedLocales = useMemo(() => {
-    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
-  }, [defaultLocales, defaultSupportedLocales]);
 
   const filteredLocales = useMemo(() => {
     return combinedLocales.filter((locale) =>
@@ -232,7 +217,9 @@ export const AddTranslationsDialog = ({
         <FlexItem>
           <TextContent>
             <Text component={TextVariants.p}>
-              {t("addTranslationsModalSubTitle")}{" "}
+              {type !== "displayHeader"
+                ? t("addTranslationsModalSubTitleDescription")
+                : t("addTranslationsModalSubTitle")}{" "}
               <strong>{t("addTranslationsModalSubTitleBolded")}</strong>
             </Text>
           </TextContent>

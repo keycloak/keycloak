@@ -34,7 +34,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getCurren
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -64,7 +64,6 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.cli.command.HelpAllMixin;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
@@ -169,7 +168,7 @@ public final class Picocli {
         }
 
         if (currentCommandName.equals(StartDev.NAME)) {
-            String profile = Environment.getProfile();
+            String profile = org.keycloak.common.util.Environment.getProfile();
 
             if (profile == null) {
                 // force the server image to be set with the dev profile
@@ -223,7 +222,7 @@ public final class Picocli {
                     return;
                 }
 
-                properties.add(key + "=" + formatValue(key, value));
+                properties.add(key + "=" + maskValue(key, value));
             }
         }, arg -> {
             properties.add(arg);
@@ -349,8 +348,11 @@ public final class Picocli {
                     }
 
                     if (mapper.isBuildTime() && !options.includeBuildTime) {
-                        ignoredBuildTime.add(mapper.getFrom());
-                        continue;
+                        String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
+                        if (!configValueStr.equals(currentValue)) {
+                            ignoredBuildTime.add(mapper.getFrom());
+                            continue;
+                        }
                     }
                     if (mapper.isRunTime() && !options.includeRuntime) {
                         ignoredRunTime.add(mapper.getFrom());
@@ -368,9 +370,11 @@ public final class Picocli {
             Logger logger = Logger.getLogger(Picocli.class); // logger can't be instantiated in a class field
 
             if (!ignoredBuildTime.isEmpty()) {
-                outputIgnoredProperties(ignoredBuildTime, true, logger);
+                logger.warn(format("The following build time non-cli options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
+                        String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
-                outputIgnoredProperties(ignoredRunTime, false, logger);
+                logger.warn(format("The following run time non-cli options were found, but will be ignored during build time: %s\n",
+                        String.join(", ", ignoredRunTime)));
             }
 
             if (!disabledBuildTime.isEmpty()) {
@@ -450,12 +454,6 @@ public final class Picocli {
         disabledInUse.add(sb.toString());
     }
 
-    private static void outputIgnoredProperties(List<String> properties, boolean build, Logger logger) {
-        logger.warn(format("The following %s time non-cli options were found, but will be ignored during %s time: %s\n",
-                build ? "build" : "run", build ? "run" : "build",
-                String.join(", ", properties)));
-    }
-
     private static void outputDisabledProperties(Set<String> properties, boolean build, Logger logger) {
         logger.warn(format("The following used %s time options are UNAVAILABLE and will be ignored during %s time:\n %s",
                 build ? "build" : "run", build ? "run" : "build",
@@ -463,7 +461,7 @@ public final class Picocli {
     }
 
     private static boolean hasConfigChanges(CommandLine cmdCommand) {
-        Optional<String> currentProfile = ofNullable(Environment.getProfile());
+        Optional<String> currentProfile = ofNullable(org.keycloak.common.util.Environment.getProfile());
         Optional<String> persistedProfile = getBuildTimeProperty("kc.profile");
 
         if (!persistedProfile.orElse("").equals(currentProfile.orElse(""))) {

@@ -17,9 +17,15 @@
 
 package org.keycloak.organization.validator;
 
+import static java.util.Optional.ofNullable;
+import static org.keycloak.organization.utils.Organizations.resolveBroker;
 import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -73,54 +79,90 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
     }
 
     private void validateEmailDomain(String email, String inputHint, ValidationContext context, OrganizationModel organization) {
-        if (UserModel.EMAIL.equals(inputHint)) {
-            if (StringUtil.isBlank(email)) {
-                context.addError(new ValidationError(ID, inputHint, "Email not set"));
-                return;
-            }
+        if (!UserModel.EMAIL.equals(inputHint)) {
+            return;
+        }
 
-            if (!emailValidator().validate(email, inputHint, context).isValid()) {
-                return;
-            }
+        if (StringUtil.isBlank(email)) {
+            context.addError(new ValidationError(ID, inputHint, "Email not set"));
+            return;
+        }
 
-            UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
-            AttributeContext attributeContext = upContext.getAttributeContext();
-            UserModel user = attributeContext.getUser();
-            String emailDomain = email.substring(email.indexOf('@') + 1);
-            List<String> expectedDomains = organization.getDomains().map(OrganizationDomainModel::getName).toList();
+        if (!emailValidator().validate(email, inputHint, context).isValid()) {
+            return;
+        }
 
-            if (UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext())) {
-                KeycloakSession session = attributeContext.getSession();
-                BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) session.getAttribute(BrokeredIdentityContext.class.getName());
+        UserProfileAttributeValidationContext upContext = (UserProfileAttributeValidationContext) context;
+        AttributeContext attributeContext = upContext.getAttributeContext();
+        UserModel user = attributeContext.getUser();
+        String emailDomain = email.substring(email.indexOf('@') + 1);
+        Set<String> expectedDomains = organization.getDomains().map(OrganizationDomainModel::getName).collect(Collectors.toSet());
 
-                if (brokerContext != null) {
-                    String alias = brokerContext.getIdpConfig().getAlias();
-                    IdentityProviderModel broker = organization.getIdentityProviders().filter((p) -> p.getAlias().equals(alias)).findAny().orElse(null);
+        if (expectedDomains.isEmpty()) {
+            // no domain to check
+            return;
+        }
 
-                    if (broker == null) {
-                        return;
-                    }
+        if (UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext())) {
+            expectedDomains = resolveExpectedDomainsWhenReviewingFederatedUserProfile(organization, attributeContext);
+        } else if (organization.isManaged(user)) {
+            expectedDomains = resolveExpectedDomainsForManagedUser(context, user);
+        } else {
+            // no validation happens for unmanaged users as they are realm users linked to an organization
+            return;
+        }
 
-                    String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        if (expectedDomains.isEmpty() || expectedDomains.contains(emailDomain)) {
+            // valid email domain
+            return;
+        }
 
-                    if (brokerDomain == null) {
-                        return;
-                    }
+        context.addError(new ValidationError(ID, inputHint, "Email domain does not match any domain from the organization"));
+    }
 
-                    expectedDomains = List.of(brokerDomain);
-                }
-            } else if (!organization.isManaged(user)) {
-                return;
-            }
+    private static Set<String> resolveExpectedDomainsForManagedUser(ValidationContext context, UserModel user) {
+        List<IdentityProviderModel> brokers = resolveBroker(context.getSession(), user);
 
-            if (expectedDomains.isEmpty()) {
-                return;
-            }
+        if (brokers.isEmpty()) {
+            return Set.of();
+        }
 
-            if (!expectedDomains.contains(emailDomain)) {
-                context.addError(new ValidationError(ID, inputHint, "Email domain does not match any domain from the organization"));
+        Set<String> domains = new HashSet<>();
+
+        for (IdentityProviderModel broker : brokers) {
+            String domain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+            if (domain != null) {
+                domains.add(domain);
             }
         }
+
+        return Collections.unmodifiableSet(domains);
+    }
+
+    private static Set<String> resolveExpectedDomainsWhenReviewingFederatedUserProfile(OrganizationModel organization, AttributeContext attributeContext) {
+        // validating in the context of the brokering flow
+        KeycloakSession session = attributeContext.getSession();
+        BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) session.getAttribute(BrokeredIdentityContext.class.getName());
+
+        if (brokerContext == null) {
+            return Set.of();
+        }
+
+        String alias = brokerContext.getIdpConfig().getAlias();
+        IdentityProviderModel broker = organization.getIdentityProviders()
+                .filter((p) -> p.getAlias().equals(alias))
+                .findAny()
+                .orElse(null);
+
+        if (broker == null) {
+            // the broker the user is authenticating is not linked to the organization
+            return Set.of();
+        }
+
+        // expect the email domain to match the domain set to the broker or none if not set
+        String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        return  ofNullable(brokerDomain).map(Set::of).orElse(Set.of());
     }
 
     private OrganizationModel resolveOrganization(ValidationContext context, KeycloakSession session) {

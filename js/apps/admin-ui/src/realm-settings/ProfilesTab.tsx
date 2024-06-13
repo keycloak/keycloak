@@ -19,8 +19,7 @@ import { omit } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -42,6 +41,8 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 export default function ProfilesTab() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -158,7 +159,7 @@ export default function ProfilesTab() {
         addError("updateClientProfilesError", error);
       }
     } catch (error) {
-      console.warn("Invalid json, ignoring value using {}");
+      addError("invalidJsonClientProfilesError", error);
     }
   };
 

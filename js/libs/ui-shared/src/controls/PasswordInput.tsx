@@ -22,7 +22,7 @@ const PasswordInputBase = ({
   const [hidePassword, setHidePassword] = useState(true);
   return (
     <InputGroup>
-      <InputGroupItem>
+      <InputGroupItem isFill>
         <TextInput
           {...rest}
           type={hidePassword ? "password" : "text"}

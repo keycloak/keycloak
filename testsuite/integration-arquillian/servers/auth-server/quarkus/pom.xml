@@ -63,7 +63,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${auth.server.home}</outputDirectory>
+                            <outputDirectory>${auth.server.home}/conf</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${common.resources}/keystore</directory>
@@ -71,6 +71,9 @@
                                         <include>ca.crt</include>
                                         <include>client.crt</include>
                                         <include>client.key</include>
+                                        <include>client.p12</include>
+                                        <include>client-ca.crt</include>
+                                        <include>client-ca.key</include>
                                         <include>*.crl</include>
                                     </includes>
                                 </resource>
@@ -78,7 +81,9 @@
                                     <directory>${common.resources}/pki/root/ca</directory>
                                     <includes>
                                         <include>certs/clients/test-user-san@localhost.cert.pem</include>
+                                        <include>certs/clients/test-user-san@localhost.p12</include>
                                         <include>certs/clients/test-user@localhost.key.pem</include>
+                                        <include>certs/clients/test-user-san-cert-test-user-key@localhost.p12</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -182,6 +187,31 @@
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>includeOracleJdbcDriver</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.jdbc</groupId>
+                                    <artifactId>ojdbc11</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.nls</groupId>
+                                    <artifactId>orai18n</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -358,20 +388,6 @@
                                 </goals>
                                 <configuration>
                                     <artifactItems>
-                                        <artifactItem>
-                                            <groupId>com.oracle.database.jdbc</groupId>
-                                            <artifactId>ojdbc11</artifactId>
-                                            <version>${oracle-jdbc.version}</version>
-                                            <type>jar</type>
-                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>com.oracle.database.nls</groupId>
-                                            <artifactId>orai18n</artifactId>
-                                            <version>${oracle-jdbc.version}</version>
-                                            <type>jar</type>
-                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                        </artifactItem>
                                         <artifactItem>
                                             <groupId>com.microsoft.sqlserver</groupId>
                                             <artifactId>mssql-jdbc</artifactId>

@@ -32,7 +32,7 @@ export default class CreateClientPage extends CommonPage {
   #adminUrlInput = "adminUrl";
 
   #loginThemeDrpDwn = "#login_theme";
-  #loginThemeList = 'ul[class="pf-v5-c-select__menu"]';
+  #loginThemeList = 'ul[class="pf-v5-c-menu__list"]';
   #consentRequiredSwitch = '[for="consentRequired"] .pf-v5-c-switch__toggle';
   #consentRequiredSwitchInput = "#consentRequired";
   #displayClientOnScreenSwitch =
@@ -55,10 +55,10 @@ export default class CreateClientPage extends CommonPage {
   #actionDrpDwn = "action-dropdown";
   #deleteClientBtn = "delete-client";
 
-  #saveBtn = "save";
-  #continueBtn = "next";
-  #backBtn = "back";
-  #cancelBtn = "cancel";
+  #saveBtn = "Save";
+  #continueBtn = "Next";
+  #backBtn = "Back";
+  #cancelBtn = "Cancel";
 
   //#region General Settings
   selectClientType(clientType: string) {
@@ -174,25 +174,25 @@ export default class CreateClientPage extends CommonPage {
   //#endregion
 
   save() {
-    cy.findByTestId(this.#saveBtn).click();
+    cy.contains("button", this.#saveBtn).click();
 
     return this;
   }
 
   continue() {
-    cy.findByTestId(this.#continueBtn).click();
+    cy.contains("button", this.#continueBtn).click();
 
     return this;
   }
 
   back() {
-    cy.findByTestId(this.#backBtn).click();
+    cy.contains("button", this.#backBtn).click();
 
     return this;
   }
 
   cancel() {
-    cy.findByTestId(this.#cancelBtn).click();
+    cy.contains("button", this.#cancelBtn).click();
 
     return this;
   }

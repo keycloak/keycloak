@@ -104,7 +104,7 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -216,6 +216,13 @@
             <id>jpa+infinispan+persistentsessions</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa+cross-dc-infinispan+persistentsessions</id>
+            <properties>
+                <keycloak.model.parameters>CrossDCInfinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
             </properties>
         </profile>
 

@@ -68,7 +68,6 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -800,7 +799,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         @Override
         protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
             JsonWebToken reqToken = new JsonWebToken();
-            if (isClaimEnabled("id")) reqToken.id(AdapterUtils.generateId());
+            if (isClaimEnabled("id")) reqToken.id(KeycloakModelUtils.generateId());
             if (isClaimEnabled("issuer")) reqToken.issuer(clientId);
             if (isClaimEnabled("subject")) reqToken.subject(clientId);
             if (isClaimEnabled("audience")) reqToken.audience(realmInfoUrl);
@@ -928,7 +927,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
     protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken reqToken = new JsonWebToken();
-        reqToken.id(AdapterUtils.generateId());
+        reqToken.id(KeycloakModelUtils.generateId());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);

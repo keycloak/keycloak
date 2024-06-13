@@ -1,12 +1,15 @@
+import {
+  KeycloakMasthead,
+  label,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { Button } from "@patternfly/react-core";
 import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { useHref } from "react-router-dom";
-import { KeycloakMasthead, label } from "@keycloak/keycloak-ui-shared";
 
 import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";
-import { useEnvironment } from "./KeycloakContext";
 
 import style from "./header.module.css";
 
@@ -43,6 +46,7 @@ export const Header = () => {
 
   return (
     <KeycloakMasthead
+      data-testid="page-header"
       keycloak={keycloak}
       features={{ hasManageAccount: false }}
       showNavToggle

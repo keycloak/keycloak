@@ -39,6 +39,12 @@ public final class ValidationException extends RuntimeException implements Consu
 
 	private final Map<String, List<Error>> errors = new HashMap<>();
 
+	public ValidationException() {}
+
+	public ValidationException(ValidationError error) {
+		addError(error);
+	}
+
 	public List<Error> getErrors() {
 		return errors.values().stream().reduce(new ArrayList<>(), (l, r) -> {
 			l.addAll(r);

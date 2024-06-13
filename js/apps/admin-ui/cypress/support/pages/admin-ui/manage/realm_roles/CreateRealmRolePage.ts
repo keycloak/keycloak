@@ -31,6 +31,7 @@ class CreateRealmRolePage {
   clickActionMenu(item: string) {
     cy.findByTestId("action-dropdown")
       .click()
+      .parent()
       .within(() => {
         cy.findByText(item).click();
       });

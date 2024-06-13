@@ -6,6 +6,11 @@ import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/def
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
+  HelpItem,
+  SelectControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   ExpandableSection,
@@ -17,22 +22,11 @@ import {
   Switch,
   Title,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  FormErrorText,
-  HelpItem,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
-
 import { ForbiddenSection } from "../../ForbiddenSection";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -98,18 +92,18 @@ export const AuthorizationEvaluate = (props: Props) => {
 };
 
 const AuthorizationEvaluateContent = ({ client }: Props) => {
+  const { adminClient } = useAdminClient();
+
   const form = useForm<EvaluateFormInputs>({ mode: "onChange" });
   const {
     control,
     reset,
     trigger,
-    formState: { isValid, errors },
+    formState: { isValid },
   } = form;
   const { t } = useTranslation();
   const { addError } = useAlerts();
   const realm = useRealm();
-  const [scopesDropdownOpen, setScopesDropdownOpen] = useState(false);
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [applyToResourceType, setApplyToResourceType] = useState(false);
   const [resources, setResources] = useState<ResourceRepresentation[]>([]);
@@ -218,64 +212,26 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 label="users"
                 helpText={t("selectUser")}
                 defaultValue={[]}
-                variant={SelectVariant.typeahead}
+                variant="typeahead"
                 isRequired={roles?.length === 0}
               />
-              <FormGroup
+              <SelectControl
+                name="roleIds"
                 label={t("roles")}
-                labelIcon={
-                  <HelpItem helpText={t("rolesHelp")} fieldLabelId="roles" />
-                }
-                fieldId="realmRole"
-                isRequired={user.length === 0}
-              >
-                <Controller
-                  name="roleIds"
-                  control={control}
-                  defaultValue={[]}
-                  rules={{
-                    validate: (value) =>
-                      (value || "").length > 0 || user.length > 0,
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      placeholderText={t("selectARole")}
-                      variant={SelectVariant.typeaheadMulti}
-                      toggleId="role"
-                      onToggle={(_event, val) => setRoleDropdownOpen(val)}
-                      selections={field.value}
-                      onSelect={(_, v) => {
-                        const option = v.toString();
-                        if (field.value?.includes(option)) {
-                          field.onChange(
-                            field.value.filter(
-                              (item: string) => item !== option,
-                            ),
-                          );
-                        } else {
-                          field.onChange([...(field.value || []), option]);
-                        }
-                        setRoleDropdownOpen(false);
-                      }}
-                      onClear={(event) => {
-                        event.stopPropagation();
-                        field.onChange([]);
-                      }}
-                      aria-label={t("realmRole")}
-                      isOpen={roleDropdownOpen}
-                    >
-                      {clientRoles.map((role) => (
-                        <SelectOption
-                          selected={role.name === field.value}
-                          key={role.name}
-                          value={role.name}
-                        />
-                      ))}
-                    </Select>
-                  )}
-                />
-                {errors.roleIds && <FormErrorText message={t("required")} />}
-              </FormGroup>
+                labelIcon={t("rolesHelp")}
+                variant="typeaheadMulti"
+                placeholderText={t("selectARole")}
+                controller={{
+                  defaultValue: [],
+                  rules: {
+                    required: {
+                      value: user.length === 0,
+                      message: t("required"),
+                    },
+                  },
+                }}
+                options={clientRoles.map((role) => role.name!)}
+              />
             </FormAccess>
           </PanelMainBody>
         </Panel>
@@ -333,54 +289,16 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     labelIcon={t("resourceTypeHelp")}
                     rules={{ required: t("required") }}
                   />
-                  <FormGroup
+                  <SelectControl
+                    name="authScopes"
                     label={t("authScopes")}
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("scopesSelect")}
-                        fieldLabelId="client"
-                      />
-                    }
-                    fieldId="authScopes"
-                  >
-                    <Controller
-                      name="authScopes"
-                      defaultValue={[]}
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          toggleId="authScopes"
-                          onToggle={(_event, val) => setScopesDropdownOpen(val)}
-                          onSelect={(_, v) => {
-                            const option = v.toString();
-                            if (field.value.includes(option)) {
-                              field.onChange(
-                                field.value.filter(
-                                  (item: string) => item !== option,
-                                ),
-                              );
-                            } else {
-                              field.onChange([...field.value, option]);
-                            }
-                            setScopesDropdownOpen(false);
-                          }}
-                          selections={field.value}
-                          variant={SelectVariant.typeaheadMulti}
-                          typeAheadAriaLabel={t("selectAuthScopes")}
-                          isOpen={scopesDropdownOpen}
-                          aria-label={t("selectAuthScopes")}
-                        >
-                          {scopes.map((scope) => (
-                            <SelectOption
-                              selected={field.value.includes(scope.name!)}
-                              key={scope.id}
-                              value={scope.name}
-                            />
-                          ))}
-                        </Select>
-                      )}
-                    />
-                  </FormGroup>
+                    labelIcon={t("scopesSelect")}
+                    controller={{
+                      defaultValue: [],
+                    }}
+                    variant="typeaheadMulti"
+                    options={scopes.map((s) => s.name!)}
+                  />
                 </>
               )}
               <ExpandableSection

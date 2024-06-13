@@ -1,5 +1,4 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { ComponentQuery } from "@keycloak/keycloak-admin-client/lib/resources/components";
 import {
   Button,
@@ -11,7 +10,7 @@ import { IRowData } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -19,7 +18,6 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { useFetch } from "../utils/useFetch";
 import { PageListParams, toDetailPage } from "./routes";
 
 export const PAGE_PROVIDER = "org.keycloak.services.ui.extend.UiPageProvider";
@@ -37,6 +35,8 @@ const DetailLink = (obj: ComponentRepresentation) => {
   );
 };
 export default function PageList() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
@@ -44,19 +44,12 @@ export default function PageList() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
-  const { realm: realmName } = useRealm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   const [selectedItem, setSelectedItem] = useState<ComponentRepresentation>();
   const { componentTypes } = useServerInfo();
   const pages = componentTypes?.[PAGE_PROVIDER];
 
   const page = pages?.find((p) => p.id === providerId)!;
-
-  useFetch(
-    async () => adminClient.realms.findOne({ realm: realmName }),
-    setRealm,
-    [],
-  );
 
   const loader = async () => {
     const params: ComponentQuery = {

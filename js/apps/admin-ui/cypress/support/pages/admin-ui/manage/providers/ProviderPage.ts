@@ -8,25 +8,20 @@ export default class ProviderPage {
   // LdapSettingsGeneral input values
   #ldapNameInput = "name";
   #ldapVendorInput = "#kc-vendor";
-  #ldapVendorList = "#kc-vendor + ul";
 
   // LdapSettingsConnection input values
   connectionUrlInput = "config.connectionUrl.0";
-  truststoreSpiInput = "#kc-use-truststore-spi";
-  truststoreSpiList = "#kc-use-truststore-spi + ul";
+  truststoreSpiInput = "#useTruststoreSpi";
   connectionTimeoutInput = "config.connectionTimeout.0";
   bindTypeInput = "#kc-bind-type";
-  #bindTypeList = "#kc-bind-type + ul";
   bindDnInput = "config.bindDn.0";
   bindCredsInput = "config.bindCredential.0";
   #testConnectionBtn = "test-connection-button";
   #testAuthBtn = "test-auth-button";
 
   // LdapSettingsSearching input values
-  ldapEditModeInput = "#kc-edit-mode";
-  #ldapEditModeList = "#kc-edit-mode + ul";
+  ldapEditModeInput = "#editMode";
   ldapSearchScopeInput = "#kc-search-scope";
-  #ldapSearchScopeInputList = "#kc-search-scope + ul";
   ldapPagination = "ui-pagination";
   ldapUsersDnInput = "config.usersDn.0";
   ldapUserLdapAttInput = "config.usernameLDAPAttribute.0";
@@ -54,13 +49,9 @@ export default class ProviderPage {
 
   // SettingsCache input values
   #cacheDayInput = "#kc-eviction-day";
-  #cacheDayList = "#kc-eviction-day + ul";
   #cacheHourInput = "#kc-eviction-hour";
-  #cacheHourList = "#kc-eviction-hour + ul";
   #cacheMinuteInput = "#kc-eviction-minute";
-  #cacheMinuteList = "#kc-eviction-minute + ul";
   #cachePolicyInput = "#kc-cache-policy";
-  #cachePolicyList = "#kc-cache-policy + ul";
 
   // Mapper input values
   #userModelAttInput = "config.user🍺model🍺attribute";
@@ -119,15 +110,19 @@ export default class ProviderPage {
     switch (unit) {
       case "day":
         cy.get(this.#cacheDayInput).click();
-        cy.get(this.#cacheDayList).contains(time).click();
+        cy.get(this.#cacheDayInput).parent().find("ul").contains(time).click();
         break;
       case "hour":
         cy.get(this.#cacheHourInput).click();
-        cy.get(this.#cacheHourList).contains(time).click();
+        cy.get(this.#cacheHourInput).parent().find("ul").contains(time).click();
         break;
       case "minute":
         cy.get(this.#cacheMinuteInput).click();
-        cy.get(this.#cacheMinuteList).contains(time).click();
+        cy.get(this.#cacheMinuteInput)
+          .parent()
+          .find("ul")
+          .contains(time)
+          .click();
         break;
       default:
         console.log("Invalid cache time, must be 'day', 'hour', or 'minute'.");
@@ -187,7 +182,7 @@ export default class ProviderPage {
 
   fillSelect(selectField: string, value: string) {
     cy.get(selectField).click();
-    cy.get(`${selectField} + ul`).contains(value).click();
+    cy.get(selectField).parent().find("ul").contains(value).click();
   }
 
   fillTextField(textField: string, value: string) {
@@ -218,7 +213,11 @@ export default class ProviderPage {
     cy.findByTestId(this.#ldapNameInput).clear().type(name);
     if (vendor) {
       cy.get(this.#ldapVendorInput).click();
-      cy.get(this.#ldapVendorList).contains(vendor).click();
+      cy.get(this.#ldapVendorInput)
+        .parent()
+        .find("ul")
+        .contains(vendor)
+        .click();
     }
     return this;
   }
@@ -234,11 +233,15 @@ export default class ProviderPage {
     cy.findByTestId(this.connectionUrlInput).clear().type(connectionUrl);
 
     cy.get(this.bindTypeInput).click();
-    cy.get(this.#bindTypeList).contains(bindType).click();
+    cy.get(this.bindTypeInput).parent().find("ul").contains(bindType).click();
 
     if (truststoreSpi) {
       cy.get(this.truststoreSpiInput).click();
-      cy.get(this.truststoreSpiList).contains(truststoreSpi).click();
+      cy.get(this.truststoreSpiInput)
+        .parent()
+        .find("ul")
+        .contains(truststoreSpi)
+        .click();
     }
     if (connectionTimeout) {
       cy.findByTestId(this.connectionTimeoutInput)
@@ -266,7 +269,11 @@ export default class ProviderPage {
     readTimeout?: string,
   ) {
     cy.get(this.ldapEditModeInput).click();
-    cy.get(this.#ldapEditModeList).contains(editMode).click();
+    cy.get(this.ldapEditModeInput)
+      .parent()
+      .find("ul")
+      .contains(editMode)
+      .click();
     cy.findByTestId(this.ldapUsersDnInput).clear().type(usersDn);
     if (userLdapAtt) {
       cy.findByTestId(this.ldapUserLdapAttInput).clear().type(userLdapAtt);
@@ -287,7 +294,11 @@ export default class ProviderPage {
     }
     if (searchScope) {
       cy.get(this.ldapSearchScopeInput).click();
-      cy.get(this.#ldapSearchScopeInputList).contains(searchScope).click();
+      cy.get(this.ldapSearchScopeInput)
+        .parent()
+        .find("ul")
+        .contains(searchScope)
+        .click();
     }
     if (readTimeout) {
       cy.findByTestId(this.ldapReadTimeout).clear().type(readTimeout);
@@ -297,7 +308,11 @@ export default class ProviderPage {
 
   selectCacheType(cacheType: string) {
     cy.get(this.#cachePolicyInput).click();
-    cy.get(this.#cachePolicyList).contains(cacheType).click();
+    cy.get(this.#cachePolicyInput)
+      .parent()
+      .find("ul")
+      .contains(cacheType)
+      .click();
     return this;
   }
 

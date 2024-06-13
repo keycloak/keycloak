@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import { KeySelect } from "../key-value-form/KeySelect";
 import { convertToName } from "./DynamicComponents";
@@ -17,6 +16,8 @@ export const UserProfileAttributeListComponent = ({
   helpText,
   required = false,
 }: ComponentProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const {
     formState: { errors },

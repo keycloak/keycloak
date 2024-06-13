@@ -19,8 +19,16 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.encoder.QRCode;
+import jakarta.annotation.Nullable;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -29,6 +37,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -50,6 +59,7 @@ import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
+import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -59,8 +69,14 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.utils.MediaType;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +97,7 @@ public class OID4VCIssuerEndpoint {
 
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
+    public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
     private final KeycloakSession session;
     private final AppAuthManager.BearerTokenAuthenticator bearerTokenAuthenticator;
     private final ObjectMapper objectMapper;
@@ -107,18 +124,18 @@ public class OID4VCIssuerEndpoint {
 
     }
 
+
     /**
      * Provides the URI to the OID4VCI compliant credentials offer
      */
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
     @Path("credential-offer-uri")
-    public Response getCredentialOfferURI(@QueryParam("credential_configuration_id") String vcId) {
+    public Response getCredentialOfferURI(@QueryParam("credential_configuration_id") String vcId, @QueryParam("type") @DefaultValue("uri") OfferUriType type, @QueryParam("width") @DefaultValue("200") int width, @QueryParam("height") @DefaultValue("200") int height) {
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
 
         Map<String, SupportedCredentialConfiguration> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
-
         LOGGER.debugf("Get an offer for %s", vcId);
         if (!credentialsMap.containsKey(vcId)) {
             LOGGER.debugf("No credential with id %s exists.", vcId);
@@ -142,14 +159,36 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
 
+        return switch (type) {
+            case URI -> getOfferUriAsUri(nonce);
+            case QR_CODE -> getOfferUriAsQr(nonce, width, height);
+        };
+
+    }
+
+    private Response getOfferUriAsUri(String nonce) {
         CredentialOfferURI credentialOfferURI = new CredentialOfferURI()
                 .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH)
                 .setNonce(nonce);
 
         return Response.ok()
+                .type(MediaType.APPLICATION_JSON)
                 .entity(credentialOfferURI)
                 .build();
+    }
 
+    private Response getOfferUriAsQr(String nonce, int width, int height) {
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        String endcodedOfferUri = URLEncoder.encode(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH + nonce, StandardCharsets.UTF_8);
+        try {
+            BitMatrix bitMatrix = qrCodeWriter.encode("openid-credential-offer://?credential_offer_uri=" + endcodedOfferUri, BarcodeFormat.QR_CODE, width, height);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
+            return Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()).build();
+        } catch (WriterException | IOException e) {
+            LOGGER.warnf("Was not able to create a qr code of dimension %s:%s.", width, height, e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Was not able to generate qr.").build();
+        }
     }
 
     /**
@@ -373,11 +412,15 @@ public class OID4VCIssuerEndpoint {
 
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers
+                .stream()
+                .filter(mapper -> mapper.isTypeSupported(vcType))
                 .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, userSessionModel));
 
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
+                .stream()
+                .filter(mapper -> mapper.isTypeSupported(vcType))
                 .forEach(mapper -> mapper.setClaimsForCredential(vc, userSessionModel));
 
         LOGGER.debugf("The credential to sign is: %s", vc);

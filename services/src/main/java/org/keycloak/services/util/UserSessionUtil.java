@@ -54,7 +54,7 @@ public class UserSessionUtil {
             return userSession;
         } else {
             offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionId(), true, client.getId());
-            if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
+            if (AuthenticationManager.isSessionValid(realm, offlineUserSession)) {
                 checkTokenIssuedAt(realm, token, offlineUserSession, event, client);
                 event.session(offlineUserSession);
                 return offlineUserSession;

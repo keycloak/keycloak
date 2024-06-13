@@ -17,16 +17,26 @@
 package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.http.HttpResponse;
-import jakarta.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -41,23 +51,17 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.OPTIONS;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -185,13 +189,13 @@ public class AdminConsole {
     @Path("whoami")
     @OPTIONS
     public Response whoAmIPreFlight() {
-        return new AdminCorsPreflightService(request).preflight();
+        return new AdminCorsPreflightService().preflight();
     }
 
     /**
      * Permission information
      *
-     * @param headers
+     * @param currentRealm
      * @return
      */
     @Path("whoami")
@@ -199,6 +203,10 @@ public class AdminConsole {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response whoAmI(@QueryParam("currentRealm") String currentRealm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
+            throw new NotFoundException();
+        }
+
         RealmManager realmManager = new RealmManager(session);
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
@@ -207,8 +215,21 @@ public class AdminConsole {
                 .authenticate();
 
         if (authResult == null) {
-            return Response.status(401).build();
+            throw new NotAuthorizedException("Bearer");
         }
+
+        final String issuedFor = authResult.getToken().getIssuedFor();
+        if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
+            if (issuedFor == null) {
+                throw new ForbiddenException("No azp claim in the token");
+            }
+            // check the attribute to see if the app is defined as an admin console
+            ClientModel client  = session.clients().getClientByClientId(realm, issuedFor);
+            if (client == null || !Boolean.parseBoolean(client.getAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR))) {
+                throw new ForbiddenException("Token issued for an application that is not the admin console: " + issuedFor);
+            }
+        }
+
         UserModel user= authResult.getUser();
         String displayName;
         if ((user.getFirstName() != null && !user.getFirstName().trim().equals("")) || (user.getLastName() != null && !user.getLastName().trim().equals(""))) {
@@ -237,12 +258,18 @@ public class AdminConsole {
             addRealmAccess(realm, user, realmAccess);
         }
 
+        if (realmAccess.isEmpty() || realmAccess.values().iterator().next().isEmpty()) {
+            // if the user has no access in the realm just return forbidden/403
+            throw new ForbiddenException("No realm access");
+        }
+
         Locale locale = session.getContext().resolveLocale(user);
 
-        Cors.add(request).allowedOrigins(authResult.getToken()).allowedMethods("GET").auth()
-                .build(response);
-
-        return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)).build();
+        return Cors.builder()
+                .allowedOrigins(authResult.getToken())
+                .allowedMethods("GET")
+                .auth()
+                .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)));
     }
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
@@ -256,29 +283,13 @@ public class AdminConsole {
         getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
     }
 
-    private static <T> HashSet<T> union(Set<T> set1, Set<T> set2) {
-        if (set1 == null && set2 == null) {
-            return null;
-        }
-        HashSet<T> res;
-        if (set1 instanceof HashSet) {
-            res = (HashSet <T>) set1;
-        } else {
-            res = set1 == null ? new HashSet<>() : new HashSet<>(set1);
-        }
-        if (set2 != null) {
-            res.addAll(set2);
-        }
-        return res;
-    }
-
     private void getRealmAdminAccess(RealmModel realm, ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         Set<String> realmRoles = client.getRolesStream()
           .filter(user::hasRole)
           .map(RoleModel::getName)
           .collect(Collectors.toSet());
 
-        realmAdminAccess.merge(realm.getName(), realmRoles, AdminConsole::union);
+        realmAdminAccess.put(realm.getName(), realmRoles);
     }
 
     /**
@@ -337,6 +348,7 @@ public class AdminConsole {
             }
 
             map.put("authServerUrl", authServerBaseUrl);
+            // TODO: The 'authUrl' variable is deprecated and only exists to provide backwards compatibility for older themes, it should be removed in a future version.
             map.put("authUrl", adminBaseUrl);
             map.put("consoleBaseUrl", Urls.adminConsoleRoot(adminBaseUri, realm.getName()).getPath());
             map.put("resourceUrl", Urls.themeRoot(adminBaseUri).getPath() + "/admin/" + theme.getName());
@@ -347,6 +359,26 @@ public class AdminConsole {
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
+
+            final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ADMIN_VITE_URL) : null;
+
+            if (devServerUrl != null) {
+                map.put("devServerUrl", devServerUrl);
+            }
+
+            final var manifestFile = theme.getResourceAsStream(".vite/manifest.json");
+
+            if (devServerUrl == null && manifestFile != null) {
+                final var manifest = ViteManifest.parseFromInputStream(manifestFile);
+                final var entryChunk = manifest.getEntryChunk();
+                final var entryStyles = entryChunk.css().orElse(new String[] {});
+                final var entryScript = entryChunk.file();
+                final var entryImports = entryChunk.imports().orElse(new String[] {});
+
+                map.put("entryStyles", entryStyles);
+                map.put("entryScript", entryScript);
+                map.put("entryImports", entryImports);
+            }
 
             FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

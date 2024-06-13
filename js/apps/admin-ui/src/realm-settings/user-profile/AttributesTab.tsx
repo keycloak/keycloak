@@ -1,34 +1,29 @@
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
   Divider,
+  SelectOption,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { useAdminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import useLocale from "../../utils/useLocale";
 import useToggle from "../../utils/useToggle";
 import { toAddAttribute } from "../routes/AddAttribute";
 import { toAttribute } from "../routes/Attribute";
 import { useUserProfile } from "./UserProfileContext";
-import { useFetch } from "../../utils/useFetch";
-import { adminClient } from "../../admin-client";
-import { DEFAULT_LOCALE } from "../../i18n/i18n";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
 
@@ -41,41 +36,17 @@ type AttributesTabProps = {
 };
 
 export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
+  const { adminClient } = useAdminClient();
   const { config, save } = useUserProfile();
-  const { realm: realmName } = useRealm();
+  const { realm } = useRealm();
   const { t } = useTranslation();
+  const combinedLocales = useLocale();
   const navigate = useNavigate();
   const [filter, setFilter] = useState("allGroups");
   const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
     useToggle();
   const [data, setData] = useState(config?.attributes);
   const [attributeToDelete, setAttributeToDelete] = useState("");
-  const [realm, setRealm] = useState<RealmRepresentation>();
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      if (!realm) {
-        throw new Error(t("notFound"));
-      }
-      setRealm(realm);
-    },
-    [],
-  );
-
-  const defaultSupportedLocales = useMemo(() => {
-    return realm?.supportedLocales?.length
-      ? realm.supportedLocales
-      : [DEFAULT_LOCALE];
-  }, [realm]);
-
-  const defaultLocales = useMemo(() => {
-    return realm?.defaultLocale?.length ? [realm.defaultLocale] : [];
-  }, [realm]);
-
-  const combinedLocales = useMemo(() => {
-    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
-  }, [defaultLocales, defaultSupportedLocales]);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteAttributeConfirmTitle"),
@@ -103,20 +74,20 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
             try {
               const response =
                 await adminClient.realms.getRealmLocalizationTexts({
-                  realm: realmName,
+                  realm,
                   selectedLocale: locale,
                 });
 
               if (response) {
                 await adminClient.realms.deleteRealmLocalizationTexts({
-                  realm: realmName,
+                  realm,
                   selectedLocale: locale,
                   key: formattedTranslationsToDelete,
                 });
 
                 const updatedData =
                   await adminClient.realms.getRealmLocalizationTexts({
-                    realm: realmName,
+                    realm,
                     selectedLocale: locale,
                   });
                 setTableData([updatedData]);
@@ -180,7 +151,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   const cellFormatter = (row: UserProfileAttribute) => (
     <Link
       to={toAttribute({
-        realm: realmName,
+        realm,
         attributeName: row.name!,
       })}
       key={row.name}
@@ -194,14 +165,15 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       <Toolbar>
         <ToolbarContent>
           <ToolbarItem>
-            <Select
+            <KeycloakSelect
+              toggleId="kc-group-filter"
               width={200}
               data-testid="filter-select"
               isOpen={isFilterTypeDropdownOpen}
               variant={SelectVariant.single}
               onToggle={toggleIsFilterTypeDropdownOpen}
               toggleIcon={<FilterIcon />}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 const filter = value.toString();
                 setFilter(filter);
                 setData(
@@ -225,21 +197,19 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                   attributes.filter((attr) => !!attr.group),
                   "group",
                 ).map((attr) => (
-                  <SelectOption
-                    key={attr.group}
-                    data-testid={`${attr.group}-option`}
-                    value={attr.group}
-                  />
+                  <SelectOption key={attr.group} value={attr.group}>
+                    {attr.group}
+                  </SelectOption>
                 )),
               ]}
-            </Select>
+            </KeycloakSelect>
           </ToolbarItem>
           <ToolbarItem className="kc-toolbar-attributesTab">
             <Button
               data-testid="createAttributeBtn"
               variant="primary"
               component={(props) => (
-                <Link {...props} to={toAddAttribute({ realm: realmName })} />
+                <Link {...props} to={toAddAttribute({ realm })} />
               )}
             >
               {t("createAttribute")}
@@ -266,7 +236,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
             onClick: (_key, _idx, component) => {
               navigate(
                 toAttribute({
-                  realm: realmName,
+                  realm,
                   attributeName: component.name,
                 }),
               );

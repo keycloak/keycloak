@@ -1,3 +1,4 @@
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -8,22 +9,17 @@ import {
   FlexItem,
   Form,
   FormGroup,
+  SelectOption,
   Text,
   TextContent,
   TextInput,
   TextVariants,
 } from "@patternfly/react-core";
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
 import { pickBy } from "lodash-es";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
@@ -57,6 +53,8 @@ export const EffectiveMessageBundles = ({
   defaultSupportedLocales,
   defaultLocales,
 }: EffectiveMessageBundlesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
@@ -235,8 +233,7 @@ export const EffectiveMessageBundles = ({
                     validate: (value) => (value || "").length > 0,
                   }}
                   render={({ field }) => (
-                    <Select
-                      name="theme"
+                    <KeycloakSelect
                       data-testid="effective_message_bundles-theme-searchField"
                       chipGroupProps={{
                         numChips: 1,
@@ -245,14 +242,13 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(_event, val) => setSelectThemesOpen(val)}
+                      onToggle={(val) => setSelectThemesOpen(val)}
                       selections={field.value}
-                      onSelect={(_, selectedValue) => {
+                      onSelect={(selectedValue) => {
                         field.onChange(selectedValue.toString());
                         setSelectThemesOpen(false);
                       }}
-                      onClear={(theme) => {
-                        theme.stopPropagation();
+                      onClear={() => {
                         field.onChange("");
                       }}
                       isOpen={selectThemesOpen}
@@ -284,7 +280,7 @@ export const EffectiveMessageBundles = ({
                           <SelectOption key={option} value={option} />
                         )),
                       )}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 />
               </FormGroup>
@@ -300,8 +296,7 @@ export const EffectiveMessageBundles = ({
                     validate: (value) => (value || "").length > 0,
                   }}
                   render={({ field }) => (
-                    <Select
-                      name="themeType"
+                    <KeycloakSelect
                       data-testid="effective-message-bundles-feature-searchField"
                       chipGroupProps={{
                         numChips: 1,
@@ -310,14 +305,13 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(_event, val) => setSelectThemeTypeOpen(val)}
+                      onToggle={(val) => setSelectThemeTypeOpen(val)}
                       selections={field.value}
-                      onSelect={(_, selectedValue) => {
+                      onSelect={(selectedValue) => {
                         field.onChange(selectedValue.toString());
                         setSelectThemeTypeOpen(false);
                       }}
-                      onClear={(themeType) => {
-                        themeType.stopPropagation();
+                      onClear={() => {
                         field.onChange("");
                       }}
                       isOpen={selectThemeTypeOpen}
@@ -349,7 +343,7 @@ export const EffectiveMessageBundles = ({
                           <SelectOption key={option} value={option} />
                         )),
                       )}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 />
               </FormGroup>
@@ -361,8 +355,7 @@ export const EffectiveMessageBundles = ({
                     validate: (value) => (value || "").length > 0,
                   }}
                   render={({ field }) => (
-                    <Select
-                      name="language"
+                    <KeycloakSelect
                       data-testid="effective-message-bundles-language-searchField"
                       chipGroupProps={{
                         numChips: 1,
@@ -371,14 +364,13 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(_event, val) => setSelectLanguageOpen(val)}
+                      onToggle={(val) => setSelectLanguageOpen(val)}
                       selections={field.value}
-                      onSelect={(_, selectedValue) => {
+                      onSelect={(selectedValue) => {
                         field.onChange(selectedValue.toString());
                         setSelectLanguageOpen(false);
                       }}
-                      onClear={(language) => {
-                        language.stopPropagation();
+                      onClear={() => {
                         field.onChange("");
                       }}
                       isOpen={selectLanguageOpen}
@@ -417,7 +409,7 @@ export const EffectiveMessageBundles = ({
                           </SelectOption>
                         )),
                       )}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 />
               </FormGroup>

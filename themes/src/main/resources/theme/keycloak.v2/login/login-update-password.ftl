@@ -12,7 +12,7 @@
                     </span>
                 </label>
                 <div class="${properties.kcInputGroup!}">
-                    <span class="${properties.kcInputClass!}">
+                    <span class="${properties.kcInputClass!}" dir="ltr">
                         <input type="password" id="password-new" name="password-new" autofocus autocomplete="new-password"
                                 aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
                         />
@@ -39,7 +39,7 @@
                     </span>
                 </label>
                 <div class="${properties.kcInputGroup!}">
-                    <span class="${properties.kcInputClass!}">
+                    <span class="${properties.kcInputClass!}" dir="ltr">
                         <input type="password" id="password-confirm" name="password-confirm"
                                 autocomplete="new-password"
                                 aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"

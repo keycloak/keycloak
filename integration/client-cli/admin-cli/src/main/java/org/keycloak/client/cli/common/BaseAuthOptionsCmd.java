@@ -28,6 +28,7 @@ import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.client.cli.util.IoUtil;
 
 import java.io.File;
+import java.io.PrintWriter;
 
 import picocli.CommandLine.Option;
 
@@ -62,19 +63,19 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
     @Option(names = "--user", description = "Username to login with")
     protected String user;
 
-    @Option(names = "--password", description = "Password to login with (prompted for if not specified and --user is used)")
+    @Option(names = "--password", description = "Password to login with (prompted for if not specified, --user is used, and the env variable KC_CLI_PASSWORD is not defined)", defaultValue = "${env:KC_CLI_PASSWORD}")
     protected String password;
 
-    @Option(names = "--secret", description = "Secret to authenticate the client (prompted for if no --user or --keystore is specified)")
+    @Option(names = "--secret", description = "Secret to authenticate the client (prompted for if no --user nor --keystore is specified, and the env variable KC_CLI_CLIENT_SECRET is not defined)", defaultValue = "${env:KC_CLI_CLIENT_SECRET}")
     protected String secret;
 
     @Option(names = "--keystore", description = "Path to a keystore containing private key")
     protected String keystore;
 
-    @Option(names = "--storepass", description = "Keystore password (prompted for if not specified and --keystore is used)")
+    @Option(names = "--storepass", description = "Keystore password (prompted for if not specified, --keystore is used, and the env variable KC_CLI_STORE_PASSWORD is undefined)", defaultValue = "${env:KC_CLI_STORE_PASSWORD}")
     protected String storePass;
 
-    @Option(names = "--keypass", description = "Key password (prompted for if not specified and --keystore is used without --storepass, \n                             otherwise defaults to keystore password)")
+    @Option(names = "--keypass", description = "Key password (prompted for if not specified and --keystore is used without --storepass, \n                             otherwise defaults to keystore password)", defaultValue = "${env:KC_CLI_KEY_PASSWORD}")
     protected String keyPass;
 
     @Option(names = "--alias", description = "Alias of the key inside a keystore (defaults to the value of ClientId)")
@@ -83,7 +84,7 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
     @Option(names = "--truststore", description = "Path to a truststore")
     protected String trustStore;
 
-    @Option(names = "--trustpass", description = "Truststore password (prompted for if not specified and --truststore is used)")
+    @Option(names = "--trustpass", description = "Truststore password (prompted for if not specified, --user is used, and the env variable KC_CLI_TRUSTSTORE_PASSWORD is not defined)", defaultValue = "${env:KC_CLI_TRUSTSTORE_PASSWORD}")
     protected String trustPass;
 
     @Option(names = "--insecure", description = "Turns off TLS validation")
@@ -271,6 +272,25 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
 
     protected String ensureToken(ConfigData config) {
         return AuthUtil.ensureToken(config, getCommand());
+    }
+
+    protected void globalOptions(PrintWriter out) {
+        out.println();
+        out.println("Arguments:");
+        out.println();
+        out.println("  Global options:");
+        out.println("    -x                    Print full stack trace when exiting with error");
+        out.println("    --config              Path to the config file (" + commandState.getDefaultConfigFilePath() + " by default)");
+        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
+        if (commandState.isTokenGlobal()) {
+            out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
+        }
+        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
+        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified, --truststore is used, and the KC_CLI_TRUSTSTORE_PASSWORD env property is not defined)");
+        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + commandState.getCommand() + " config credentials' in order to establish");
+        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
+        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
+        out.println();
     }
 
 }

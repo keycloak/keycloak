@@ -7,32 +7,32 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  DropdownItem,
   FormGroup,
   PageSection,
 } from "@patternfly/react-core";
-import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAccess } from "../../context/access/Access";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ResourceDetailsParams, toResourceDetails } from "../routes/Resource";
 import { ScopePicker } from "./ScopePicker";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
-import { useAccess } from "../../context/access/Access";
 import "./resource-details.css";
 
 type SubmittedResource = Omit<
@@ -43,6 +43,8 @@ type SubmittedResource = Omit<
 };
 
 export default function ResourceDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [client, setClient] = useState<ClientRepresentation>();
   const [resource, setResource] = useState<ResourceRepresentation>();

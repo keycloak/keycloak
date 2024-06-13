@@ -17,6 +17,9 @@
 
 package org.keycloak.organization.jpa;
 
+import static java.util.Optional.ofNullable;
+
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
@@ -36,6 +39,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.StringUtil;
@@ -46,6 +50,15 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     private final OrganizationEntity entity;
     private final OrganizationProvider provider;
     private GroupModel group;
+    private Map<String, List<String>> attributes;
+
+    public OrganizationAdapter(RealmModel realm, OrganizationProvider provider) {
+        entity = new OrganizationEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setRealmId(realm.getId());
+        this.realm = realm;
+        this.provider = provider;
+    }
 
     public OrganizationAdapter(RealmModel realm, OrganizationEntity entity, OrganizationProvider provider) {
         this.realm = realm;
@@ -66,6 +79,10 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         return entity.getGroupId();
     }
 
+    void setGroupId(String id) {
+        entity.setGroupId(id);
+    }
+
     @Override
     public void setName(String name) {
         entity.setName(name);
@@ -78,7 +95,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     @Override
     public boolean isEnabled() {
-        return entity.isEnabled();
+        return provider.isEnabled() && entity.isEnabled();
     }
 
     @Override
@@ -87,10 +104,22 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public String getDescription() {
+        return entity.getDescription();
+    }
+
+    @Override
+    public void setDescription(String description) {
+        entity.setDescription(description);
+    }
+
+    @Override
     public void setAttributes(Map<String, List<String>> attributes) {
         if (attributes == null) {
             return;
         }
+        // make sure the kc.org attribute is never removed or updated
+        attributes.put(ORGANIZATION_ATTRIBUTE, getGroup().getAttributes().get(OrganizationModel.ORGANIZATION_ATTRIBUTE));
         Set<String> attrsToRemove = getAttributes().keySet();
         attrsToRemove.removeAll(attributes.keySet());
         attrsToRemove.forEach(group::removeAttribute);
@@ -99,7 +128,12 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return getGroup().getAttributes();
+        if (attributes == null) {
+            attributes = new HashMap<>(ofNullable(getGroup().getAttributes()).orElse(Map.of()));
+            // do not expose the kc.org attribute
+            attributes.remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        }
+        return attributes;
     }
 
     @Override
@@ -120,20 +154,27 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
             // update the existing domain (for now, only the verified flag can be changed).
             if (modelMap.containsKey(domainEntity.getName())) {
-                domainEntity.setVerified(modelMap.get(domainEntity.getName()).getVerified());
+                domainEntity.setVerified(modelMap.get(domainEntity.getName()).isVerified());
                 modelMap.remove(domainEntity.getName());
-            }
-            // remove domain that is not found in the new set.
-            else {
+            } else {
+                // remove domain that is not found in the new set.
                 this.entity.removeDomain(domainEntity);
+                // check if any idp is assigned to the removed domain, and unset the domain if that's the case.
+                getIdentityProviders()
+                        .filter(idp -> Objects.equals(domainEntity.getName(), idp.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE)))
+                        .forEach(idp -> {
+                            idp.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
+                            realm.updateIdentityProvider(idp);
+                        });
             }
         }
 
         // create the remaining domains.
         for (OrganizationDomainModel model : modelMap.values()) {
             OrganizationDomainEntity domainEntity = new OrganizationDomainEntity();
+            domainEntity.setId(KeycloakModelUtils.generateId());
             domainEntity.setName(model.getName());
-            domainEntity.setVerified(model.getVerified());
+            domainEntity.setVerified(model.isVerified());
             domainEntity.setOrganization(this.entity);
             this.entity.addDomain(domainEntity);
         }
@@ -204,7 +245,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
         OrganizationModel orgModel = provider.getByDomainName(domainName);
         if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
-            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization");
+            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization in realm " + realm.getName());
         }
         return domainModel;
     }

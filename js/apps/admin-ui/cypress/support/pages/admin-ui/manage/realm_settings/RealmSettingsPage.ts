@@ -23,49 +23,45 @@ export default class RealmSettingsPage extends CommonPage {
   userProfileTab = "rs-user-profile-tab";
   tokensTab = "rs-tokens-tab";
   selectLoginTheme = "#kc-login-theme";
-  loginThemeList = "#kc-login-theme + ul";
+  loginThemeList = "[data-testid='select-login-theme']";
   selectAccountTheme = "#kc-account-theme";
-  accountThemeList = "#kc-account-theme + ul";
+  accountThemeList = "[data-testid='select-account-theme']";
   selectAdminTheme = "#kc-admin-ui-theme";
-  adminThemeList = "#kc-admin-ui-theme + ul";
+  adminThemeList = "[data-testid='select-admin-theme']";
   selectEmailTheme = "#kc-email-theme";
-  emailThemeList = "#kc-email-theme + ul";
+  emailThemeList = "[data-testid='select-email-theme']";
   ssoSessionIdleSelectMenu = "#kc-sso-session-idle-select-menu";
-  ssoSessionIdleSelectMenuList = "#kc-sso-session-idle-select-menu > div > ul";
+  ssoSessionIdleSelectMenuList = "#kc-sso-session-idle-select-menu ul";
   ssoSessionMaxSelectMenu = "#kc-sso-session-max-select-menu";
-  ssoSessionMaxSelectMenuList = "#kc-sso-session-max-select-menu > div > ul";
+  ssoSessionMaxSelectMenuList = "#kc-sso-session-max-select-menu ul";
 
   ssoSessionMaxRememberMeSelectMenu =
     "#kc-sso-session-max-remember-me-select-menu";
   ssoSessionMaxRememberMeSelectMenuList =
-    "#kc-sso-session-max-remember-me-select-menu > div > ul";
+    "#kc-sso-session-max-remember-me-select-menu ul";
 
   ssoSessionIdleRememberMeSelectMenu =
     "#kc-sso-session-idle-remember-me-select-menu";
   ssoSessionIdleRememberMeSelectMenuList =
-    "#kc-sso-session-idle-remember-me-select-menu > div > ul";
+    "#kc-sso-session-idle-remember-me-select-menu ul";
 
   clientSessionIdleSelectMenu = "#kc-client-session-idle-select-menu";
-  clientSessionIdleSelectMenuList =
-    "#kc-client-session-idle-select-menu > div > ul";
+  clientSessionIdleSelectMenuList = "#kc-client-session-idle-select-menu ul";
 
   clientSessionMaxSelectMenu = "#kc-client-session-max-select-menu";
-  clientSessionMaxSelectMenuList =
-    "#kc-client-session-max-select-menu > div > ul";
+  clientSessionMaxSelectMenuList = "#kc-client-session-max-select-menu ul";
 
   offlineSessionIdleSelectMenu = "#kc-offline-session-idle-select-menu";
 
   loginTimeoutSelectMenu = "#kc-login-timeout-select-menu";
-  loginTimeoutSelectMenuList = "#kc-login-timeout-select-menu > div > ul";
+  loginTimeoutSelectMenuList = "#kc-login-timeout-select-menu ul";
 
   loginActionTimeoutSelectMenu = "#kc-login-action-timeout-select-menu";
-  loginActionTimeoutSelectMenuList =
-    "#kc-login-action-timeout-select-menu > div > ul";
+  loginActionTimeoutSelectMenuList = "#kc-login-action-timeout-select-menu ul";
 
   selectDefaultLocale = "#kc-default-locale";
   defaultLocaleList = "select-default-locale";
-  supportedLocalesTypeahead =
-    "#kc-l-supported-locales-select-multi-typeahead-typeahead";
+  supportedLocalesTypeahead = "#supportedLocales";
   supportedLocalesToggle = "#kc-l-supported-locales";
   emailSaveBtn = "email-tab-save";
   managedAccessSwitch = "userManagedAccessAllowed";
@@ -89,7 +85,7 @@ export default class RealmSettingsPage extends CommonPage {
   eventsUserSave = "save-user";
   enableAdminEvents = "adminEventsEnabled";
   eventsAdminSave = "save-admin";
-  eventTypeColumn = 'tbody > tr > [data-label="Event saved type"]';
+  eventTypeColumn = "tbody > tr td";
   filterSelectMenu = ".kc-filter-type-select";
   passiveKeysOption = "PASSIVE-option";
   disabledKeysOption = "DISABLED-option";
@@ -129,29 +125,27 @@ export default class RealmSettingsPage extends CommonPage {
 
   accessTokenLifespanSelectMenu = "#kc-access-token-lifespan-select-menu";
   accessTokenLifespanSelectMenuList =
-    "#kc-access-token-lifespan-select-menu > div > ul";
+    "#kc-access-token-lifespan-select-menu ul";
 
   parRequestUriLifespanSelectMenu = "#par-request-uri-lifespan-select-menu";
   parRequestUriLifespanSelectMenuList =
-    "#par-request-uri-lifespan-select-menu > div > ul";
+    "#par-request-uri-lifespan-select-menu ul";
 
   accessTokenLifespanImplicitSelectMenu =
     "#kc-access-token-lifespan-implicit-select-menu";
   accessTokenLifespanImplicitSelectMenuList =
-    "#kc-access-token-lifespan-implicit-select-menu > div > ul";
+    "#kc-access-token-lifespan-implicit-select-menu ul";
 
   clientLoginTimeoutSelectMenu = "#kc-client-login-timeout-select-menu";
-  clientLoginTimeoutSelectMenuList =
-    "#kc-client-login-timeout-select-menu > div > ul";
+  clientLoginTimeoutSelectMenuList = "#kc-client-login-timeout-select-menu ul";
 
   offlineSessionMaxSelectMenu = "#kc-offline-session-max-select-menu";
-  offlineSessionMaxSelectMenuList =
-    "#kc-offline-session-max-select-menu > div > ul";
+  offlineSessionMaxSelectMenuList = "#kc-offline-session-max-select-menu ul";
 
   userInitiatedActionLifespanSelectMenu =
     "#kc-user-initiated-action-lifespan-select-menu";
   userInitiatedActionLifespanSelectMenuList =
-    "#kc-user-initiated-action-lifespan-select-menu > div > ul";
+    "#kc-user-initiated-action-lifespan-select-menu ul";
 
   defaultAdminInitatedInputSelectMenu =
     "#kc-default-admin-initiated-select-menu";
@@ -159,18 +153,17 @@ export default class RealmSettingsPage extends CommonPage {
     "#kc-default-admin-initiated-select-menu";
 
   emailVerificationSelectMenu = "#kc-email-verification-select-menu";
-  emailVerificationSelectMenuList =
-    "#kc-email-verification-select-menu > div > ul";
+  emailVerificationSelectMenuList = "#kc-email-verification-select-menu ul";
 
   idpEmailVerificationSelectMenu = "#kc-idp-email-verification-select-menu";
   idpEmailVerificationSelectMenuList =
-    "#kc-idp-email-verification-select-menu > div > ul";
+    "#kc-idp-email-verification-select-menu ul";
 
   forgotPasswordSelectMenu = "#kc-forgot-pw-select-menu";
-  forgotPasswordSelectMenuList = "#kc-forgot-pw-select-menu > div > ul";
+  forgotPasswordSelectMenuList = "#kc-forgot-pw-select-menu ul";
 
   executeActionsSelectMenu = "#kc-execute-actions-select-menu";
-  executeActionsSelectMenuList = "#kc-execute-actions-select-menu > div > ul";
+  executeActionsSelectMenuList = "#kc-execute-actions-select-menu ul";
 
   #formViewProfilesView = "formView-profilesView";
   #jsonEditorProfilesView = "jsonEditor-profilesView";
@@ -197,7 +190,7 @@ export default class RealmSettingsPage extends CommonPage {
   #jsonEditorSavePoliciesBtn = "jsonEditor-policies-saveBtn";
   #jsonEditorReloadBtn = "jsonEditor-reloadBtn";
   #jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
-  #clientPolicyDrpDwn = '[data-testid="action-dropdown"] button';
+  #clientPolicyDrpDwn = '[data-testid="action-dropdown"]';
   #deleteclientPolicyDrpDwn = "deleteClientPolicyDropdown";
   #clientProfileOne =
     'a[href*="realm-settings/client-policies/Test/edit-profile"]';
@@ -206,8 +199,8 @@ export default class RealmSettingsPage extends CommonPage {
   #clientPolicy = 'a[href*="realm-settings/client-policies/Test/edit-policy"]';
   #reloadBtn = "reloadProfile";
   #addExecutor = "addExecutor";
-  #addExecutorDrpDwn = ".pf-v5-c-select__toggle";
-  #addExecutorDrpDwnOption = "executorType-select";
+  #addExecutorDrpDwn = "#kc-executor";
+  #addExecutorDrpDwnOption = ".pf-v5-c-menu__list";
   #addExecutorCancelBtn = ".pf-v5-c-form__actions a";
   #addExecutorSaveBtn = "addExecutor-saveBtn";
   #availablePeriodExecutorFld = "available-period";
@@ -217,22 +210,21 @@ export default class RealmSettingsPage extends CommonPage {
 
   #listingPage = new ListingPage();
   #addCondition = "addCondition";
-  #addConditionDrpDwn = ".pf-v5-c-select__toggle";
-  #addConditionDrpDwnOption = "conditionType-select";
+  #addConditionDrpDwn = "#provider";
+  #addConditionDrpDwnOption = ".pf-v5-c-menu__list";
   #addConditionCancelBtn = "addCondition-cancelBtn";
   #addConditionSaveBtn = "addCondition-saveBtn";
   #clientRolesConditionLink = "client-roles-condition-link";
   #clientScopesConditionLink = "client-scopes-condition-link";
   #eventListenersFormLabel = ".pf-v5-c-form__label-text";
-  #eventListenersDrpDwn = ".pf-v5-c-select.kc_eventListeners_select";
+  #eventListenersDrpDwn = "#eventsListeners";
   #eventListenersSaveBtn = "saveEventListenerBtn";
   #eventListenersRevertBtn = "revertEventListenerBtn";
   #eventListenersInputFld =
-    ".pf-v5-c-form-control.pf-v5-c-select__toggle-typeahead";
-  #eventListenersDrpDwnOption = ".pf-v5-c-select__menu";
-  #eventListenersDrwDwnSelect =
-    ".pf-v5-c-button.pf-v5-c-select__toggle-button.pf-m-plain";
-  #eventListenerRemove = '[data-ouia-component-id="Remove"]';
+    "#eventsListeners .pf-v5-c-text-input-group__text-input";
+  #eventListenersDrpDwnOption = ".pf-v5-c-menu__list";
+  #eventListenersDrwDwnSelect = "#eventsListeners .pf-v5-c-menu-toggle__button";
+  #eventListenerRemove = ".pf-v5-c-chip__actions";
   #roleSelect = "config.roles0";
   #selectScopeButton = "addValue";
   #deleteClientRolesConditionBtn = "delete-client-roles-condition";
@@ -753,7 +745,8 @@ export default class RealmSettingsPage extends CommonPage {
 
   shouldRemoveEventFromEventListener() {
     cy.get(this.#eventListenerRemove).last().click({ force: true });
-    cy.findByTestId(this.#eventListenersSaveBtn).click({ force: true });
+    cy.get(this.#eventListenersInputFld).click();
+    cy.findByTestId(this.#eventListenersSaveBtn).click();
     cy.get(this.#alertMessage).should(
       "be.visible",
       "Event listener has been updated.",
@@ -762,7 +755,8 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   shouldRemoveAllEventListeners() {
-    cy.get(".pf-v5-c-button.pf-m-plain.pf-v5-c-select__toggle-clear").click();
+    cy.get(".pf-v5-c-chip__actions").first().click();
+    cy.get(".pf-v5-c-chip__actions").click();
     cy.findByTestId(this.#eventListenersSaveBtn).click();
     cy.get(this.#eventListenersDrpDwn).should("not.have.text", "jboss-logging");
     cy.get(this.#eventListenersDrpDwn).should("not.have.text", "email");
@@ -908,7 +902,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientProfileTwo).click();
     cy.findByTestId(this.#addExecutor).click();
     cy.get(this.#addExecutorDrpDwn).click();
-    cy.findByTestId(this.#addExecutorDrpDwnOption)
+    cy.get(this.#addExecutorDrpDwnOption)
       .contains("secure-ciba-signed-authn-req")
       .click();
     cy.get(this.#addExecutorCancelBtn).click();
@@ -922,7 +916,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientProfileTwo).click();
     cy.findByTestId(this.#addExecutor).click();
     cy.get(this.#addExecutorDrpDwn).click();
-    cy.findByTestId(this.#addExecutorDrpDwnOption)
+    cy.get(this.#addExecutorDrpDwnOption)
       .contains("secure-ciba-signed-authn-req")
       .click();
     cy.findByTestId(this.#addExecutorSaveBtn).click();
@@ -1136,9 +1130,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientPolicy).click();
     cy.findByTestId(this.#addCondition).click();
     cy.get(this.#addConditionDrpDwn).click();
-    cy.findByTestId(this.#addConditionDrpDwnOption)
-      .contains("any-client")
-      .click();
+    cy.get(this.#addConditionDrpDwnOption).contains("any-client").click();
     cy.findByTestId(this.#addConditionCancelBtn).click();
     cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
@@ -1150,9 +1142,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientPolicy).click();
     cy.findByTestId(this.#addCondition).click();
     cy.get(this.#addConditionDrpDwn).click();
-    cy.findByTestId(this.#addConditionDrpDwnOption)
-      .contains("client-roles")
-      .click();
+    cy.get(this.#addConditionDrpDwnOption).contains("client-roles").click();
     cy.findByTestId(this.#roleSelect).clear().type("manage-realm");
 
     cy.findByTestId(this.#addConditionSaveBtn).click();
@@ -1178,9 +1168,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#clientPolicy).click();
     cy.findByTestId(this.#addCondition).click();
     cy.get(this.#addConditionDrpDwn).click();
-    cy.findByTestId(this.#addConditionDrpDwnOption)
-      .contains("client-scopes")
-      .click();
+    cy.get(this.#addConditionDrpDwnOption).contains("client-scopes").click();
 
     this.addClientScopes();
 
@@ -1282,18 +1270,20 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   checkElementNotInList(name: string) {
-    cy.get('tbody [data-label="Name"]').should("not.contain.text", name);
+    cy.get("tbody").should("not.contain.text", name);
     return this;
   }
 
   checkElementInList(name: string) {
-    cy.get('tbody [data-label="Name"]').should("contain.text", name);
+    cy.get("tbody").should("contain.text", name);
     return this;
   }
 
   deleteClientPolicyFromDetails() {
     cy.get(this.#clientPolicyDrpDwn).click({ force: true });
-    cy.findByTestId(this.#deleteclientPolicyDrpDwn).click({ force: true });
+    cy.findByTestId(this.#deleteclientPolicyDrpDwn)
+      .find("button")
+      .click({ force: true });
     return this;
   }
 

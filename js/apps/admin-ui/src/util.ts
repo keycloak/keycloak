@@ -1,10 +1,10 @@
-import { saveAs } from "file-saver";
-import { cloneDeep } from "lodash-es";
-import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
-import { flatten } from "flat";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
+import { saveAs } from "file-saver";
+import { flatten } from "flat";
+import { cloneDeep } from "lodash-es";
+import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
 
 import {
   arrayToKeyValue,
@@ -181,3 +181,22 @@ export const localeToDisplayName = (locale: string, displayLocale: string) => {
     return locale;
   }
 };
+
+const DARK_MODE_CLASS = "pf-v5-theme-dark";
+const mediaQuery =
+  window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+
+updateDarkMode(mediaQuery?.matches);
+mediaQuery?.addEventListener("change", (event: MediaQueryListEvent) =>
+  updateDarkMode(event.matches),
+);
+
+function updateDarkMode(isEnabled: boolean = false) {
+  const { classList } = document.documentElement;
+
+  if (isEnabled) {
+    classList.add(DARK_MODE_CLASS);
+  } else {
+    classList.remove(DARK_MODE_CLASS);
+  }
+}

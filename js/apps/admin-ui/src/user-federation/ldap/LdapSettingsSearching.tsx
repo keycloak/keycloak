@@ -1,18 +1,11 @@
-import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
-import { useState } from "react";
-import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import {
-  FormErrorText,
   HelpItem,
+  SelectControl,
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
-
+import { FormGroup, Switch } from "@patternfly/react-core";
+import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
@@ -29,11 +22,6 @@ export const LdapSettingsSearching = ({
 }: LdapSettingsSearchingProps) => {
   const { t } = useTranslation();
 
-  const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] =
-    useState(false);
-  const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
-  const [isReferralDropdownOpen, setIsReferralDropdownOpen] = useState(false);
-
   return (
     <FormProvider {...form}>
       {showSectionHeading && (
@@ -45,73 +33,19 @@ export const LdapSettingsSearching = ({
       )}
 
       <FormAccess role="manage-realm" isHorizontal>
-        <FormGroup
+        <SelectControl
+          id="editMode"
+          name="config.editMode[0]"
           label={t("editMode")}
-          labelIcon={
-            <HelpItem
-              helpText={t("editModeLdapHelp")}
-              fieldLabelId="editMode"
-            />
-          }
-          fieldId="kc-edit-mode"
-          isRequired
-        >
-          <Controller
-            name="config.editMode[0]"
-            defaultValue=""
-            control={form.control}
-            rules={{
+          labelIcon={t("editModeLdapHelp")}
+          controller={{
+            defaultValue: "",
+            rules: {
               required: { value: true, message: t("validateEditMode") },
-            }}
-            render={({ field }) => (
-              <Select
-                toggleId="kc-edit-mode"
-                required
-                onToggle={() =>
-                  setIsEditModeDropdownOpen(!isEditModeDropdownOpen)
-                }
-                isOpen={isEditModeDropdownOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value.toString());
-                  setIsEditModeDropdownOpen(false);
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-                aria-label={t("selectEditMode")}
-                validated={
-                  (form.formState.errors.config as any)?.editMode?.[0]
-                    ? "error"
-                    : "default"
-                }
-              >
-                <SelectOption
-                  aria-label={t("emptySelection")}
-                  value=""
-                  isPlaceholder
-                />
-                <SelectOption
-                  aria-label={t("readOnlySelection")}
-                  value="READ_ONLY"
-                />
-                <SelectOption
-                  aria-label={t("writableSelection")}
-                  value="WRITABLE"
-                />
-                <SelectOption
-                  aria-label={t("unsyncedSelection")}
-                  value="UNSYNCED"
-                />
-              </Select>
-            )}
-          />
-          {(form.formState.errors.config as any)?.editMode?.[0] && (
-            <FormErrorText
-              message={
-                (form.formState.errors.config as any)?.editMode?.[0].message
-              }
-            />
-          )}
-        </FormGroup>
+            },
+          }}
+          options={["", "READ_ONLY", "WRITABLE", "UNSYNCED"]}
+        />
         <TextControl
           name="config.usersDn.0"
           label={t("usersDN")}
@@ -167,45 +101,19 @@ export const LdapSettingsSearching = ({
             },
           }}
         />
-        <FormGroup
+        <SelectControl
+          id="kc-search-scope"
+          name="config.searchScope[0]"
           label={t("searchScope")}
-          labelIcon={
-            <HelpItem
-              helpText={t("searchScopeHelp")}
-              fieldLabelId="searchScope"
-            />
-          }
-          fieldId="kc-search-scope"
-        >
-          <Controller
-            name="config.searchScope[0]"
-            defaultValue=""
-            control={form.control}
-            render={({ field }) => (
-              <Select
-                toggleId="kc-search-scope"
-                required
-                onToggle={() =>
-                  setIsSearchScopeDropdownOpen(!isSearchScopeDropdownOpen)
-                }
-                isOpen={isSearchScopeDropdownOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setIsSearchScopeDropdownOpen(false);
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-              >
-                <SelectOption key={0} value="1" isPlaceholder>
-                  {t("oneLevel")}
-                </SelectOption>
-                <SelectOption key={1} value="2">
-                  {t("subtree")}
-                </SelectOption>
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("searchScopeHelp")}
+          controller={{
+            defaultValue: "1",
+          }}
+          options={[
+            { key: "1", value: t("oneLevel") },
+            { key: "2", value: t("subtree") },
+          ]}
+        />
         <TextControl
           name="config.readTimeout.0"
           label={t("readTimeout")}
@@ -242,37 +150,15 @@ export const LdapSettingsSearching = ({
             )}
           ></Controller>
         </FormGroup>
-        <FormGroup
+        <SelectControl
+          name="config.referral.0"
           label={t("referral")}
-          labelIcon={
-            <HelpItem helpText={t("referralHelp")} fieldLabelId="referral" />
-          }
-          fieldId="kc-referral"
-        >
-          <Controller
-            name="config.referral.0"
-            defaultValue=""
-            control={form.control}
-            render={({ field }) => (
-              <Select
-                toggleId="kc-referral"
-                onToggle={() =>
-                  setIsReferralDropdownOpen(!isReferralDropdownOpen)
-                }
-                isOpen={isReferralDropdownOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setIsReferralDropdownOpen(false);
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-              >
-                <SelectOption value="ignore" isPlaceholder />
-                <SelectOption value="follow" />
-              </Select>
-            )}
-          ></Controller>
-        </FormGroup>
+          labelIcon={t("referralHelp")}
+          controller={{
+            defaultValue: "",
+          }}
+          options={["ignore", "follow"]}
+        />
       </FormAccess>
     </FormProvider>
   );

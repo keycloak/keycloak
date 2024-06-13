@@ -23,4 +23,6 @@ public interface CommandState {
 
     String getDefaultConfigFilePath();
 
+    boolean isTokenGlobal();
+
 }

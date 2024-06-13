@@ -2,15 +2,14 @@ import { Button, Form, Modal } from "@patternfly/react-core";
 import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import {
   SelectControl,
   TextControl,
   useAlerts,
+  useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import { updatePermissions } from "../api";
 import type { Permission, Resource } from "../api/representations";
-import { useEnvironment } from "../root/KeycloakContext";
 
 type EditTheResourceProps = {
   resource: Resource;
@@ -86,7 +85,7 @@ export const EditTheResource = ({
                 id={`permissions-${p.id}`}
                 name={`permissions.${index}.scopes`}
                 label="permissions"
-                variant="typeaheadmulti"
+                variant="typeaheadMulti"
                 controller={{ defaultValue: [] }}
                 options={resource.scopes.map(({ name, displayName }) => ({
                   key: name,

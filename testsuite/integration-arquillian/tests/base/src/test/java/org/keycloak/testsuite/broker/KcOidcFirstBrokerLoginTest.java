@@ -6,11 +6,13 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -41,6 +43,8 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.ATTRIBUTE_DEPARTMENT;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -803,6 +807,59 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
         assertEquals(null, user.firstAttribute(ATTRIBUTE_DEPARTMENT));
+    }
+
+    @Test
+    public void testFederatedIdentityCaseSensitiveOriginalUsername() {
+        String expectedBrokeredUserName = "camelCase";
+        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = idp.toRepresentation();
+        representation.getConfig().put(TestKeycloakOidcIdentityProviderFactory.PREFERRED_USERNAME, expectedBrokeredUserName);
+        representation.getConfig().put(IdentityProviderModel.CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.TRUE.toString());
+        idp.update(representation);
+        createUser(bc.providerRealmName(), expectedBrokeredUserName, BrokerTestConstants.USER_PASSWORD, "f", "l", "fl@example.org");
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        // the username is stored as lower-case in the provider realm local database
+        logInWithIdp(bc.getIDPAlias(), expectedBrokeredUserName.toLowerCase(), BrokerTestConstants.USER_PASSWORD);
+
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(realm, expectedBrokeredUserName.toLowerCase());
+        // the username is in lower case in the local database
+        assertEquals(userRepresentation.getUsername(), expectedBrokeredUserName.toLowerCase());
+
+        // the original username is preserved
+        List<FederatedIdentityRepresentation> federatedIdentities = realm.users().get(userRepresentation.getId()).getFederatedIdentity();
+        assertFalse(federatedIdentities.isEmpty());
+        FederatedIdentityRepresentation federatedIdentity = federatedIdentities.get(0);
+        assertEquals(expectedBrokeredUserName, federatedIdentity.getUserName());
+    }
+
+    @Test
+    public void testFederatedIdentityCaseInsensitiveOriginalUsername() {
+        String expectedBrokeredUserName = "camelCase";
+        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = idp.toRepresentation();
+        representation.getConfig().put(TestKeycloakOidcIdentityProviderFactory.PREFERRED_USERNAME, expectedBrokeredUserName);
+        idp.update(representation);
+        createUser(bc.providerRealmName(), expectedBrokeredUserName, BrokerTestConstants.USER_PASSWORD, "f", "l", "fl@example.org");
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        // the username is stored as lower-case in the provider realm local database
+        logInWithIdp(bc.getIDPAlias(), expectedBrokeredUserName.toLowerCase(), BrokerTestConstants.USER_PASSWORD);
+
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(realm, expectedBrokeredUserName.toLowerCase());
+        // the username is in lower case in the local database
+        assertEquals(userRepresentation.getUsername(), expectedBrokeredUserName.toLowerCase());
+
+        // the original username is preserved
+        List<FederatedIdentityRepresentation> federatedIdentities = realm.users().get(userRepresentation.getId()).getFederatedIdentity();
+        assertFalse(federatedIdentities.isEmpty());
+        FederatedIdentityRepresentation federatedIdentity = federatedIdentities.get(0);
+        assertEquals(expectedBrokeredUserName.toLowerCase(), federatedIdentity.getUserName());
     }
 
     public void addDepartmentScopeIntoRealm() {

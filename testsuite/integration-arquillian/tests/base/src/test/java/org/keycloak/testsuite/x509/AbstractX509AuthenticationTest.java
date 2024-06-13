@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.x509;
 
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
@@ -62,13 +63,14 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.UserProfileConstants;
+import org.keycloak.utils.StringUtil;
 import org.openqa.selenium.WebDriver;
 
-import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
@@ -89,7 +91,11 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
+import static org.keycloak.testsuite.drone.KeycloakDronePostSetup.HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP;
+import static org.keycloak.testsuite.drone.KeycloakDronePostSetup.HTML_UNIT_SSL_KEYSTORE_PROP;
+import static org.keycloak.testsuite.drone.KeycloakDronePostSetup.HTML_UNIT_SSL_KEYSTORE_TYPE_PROP;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -125,7 +131,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     protected AuthenticationExecutionInfoRepresentation directGrantExecution;
 
-    private static SetSystemProperty phantomjsCliArgs;
+    private static final List<SetSystemProperty> systemProperties = new ArrayList<>(10);
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -134,15 +140,15 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Page
-    @PhantomJSBrowser
+    @HtmlUnitBrowser
     protected AppPage appPage;
 
     @Page
-    @PhantomJSBrowser
+    @HtmlUnitBrowser
     protected X509IdentityConfirmationPage loginConfirmationPage;
 
     @Page
-    @PhantomJSBrowser
+    @HtmlUnitBrowser
     protected LoginPage loginPage;
 
 
@@ -159,39 +165,30 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     @BeforeClass
     public static void onBeforeTestClass() {
-        configurePhantomJS("/ca.crt", "/client.crt", "/client.key", "password");
+        configureHtmlUnit("/client.p12");
     }
 
     @AfterClass
     public static void onAfterTestClass() {
-        phantomjsCliArgs.revert();
+        systemProperties.forEach(SetSystemProperty::revert);
     }
 
-    /**
-     * Setup phantom JS to be used for mutual TLS testing. All file paths are relative to "authServerHome"
-     *
-     * @param certificatesPath
-     * @param clientCertificateFile
-     * @param clientKeyFile
-     * @param clientKeyPassword
-     */
-    protected static void configurePhantomJS(String certificatesPath, String clientCertificateFile, String clientKeyFile, String clientKeyPassword) {
+    protected static void configureHtmlUnit(String keystore) {
+        configureHtmlUnit(keystore, "password", "pkcs12");
+    }
+
+    protected static void configureHtmlUnit(String keystore, String keystorePassword, String keystoreType) {
         String authServerHome = getAuthServerHome();
 
         if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
-            StringBuilder cliArgs = new StringBuilder();
-
-            cliArgs.append("--ignore-ssl-errors=true ");
-            cliArgs.append("--web-security=false ");
-            cliArgs.append("--ssl-certificates-path=").append(authServerHome).append(certificatesPath).append(" ");
-            cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append(clientCertificateFile).append(" ");
-            cliArgs.append("--ssl-client-key-file=").append(authServerHome).append(clientKeyFile).append(" ");
-            cliArgs.append("--ssl-client-key-passphrase=" + clientKeyPassword).append(" ");
-
-            phantomjsCliArgs = new SetSystemProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
+            if (isBlank(keystore) || isBlank(keystorePassword) || isBlank(keystoreType)) {
+                throw new IllegalArgumentException("You need to specify keystore name, password, and type.");
+            }
+            systemProperties.add(new SetSystemProperty(HTML_UNIT_SSL_KEYSTORE_PROP, authServerHome + keystore));
+            systemProperties.add(new SetSystemProperty(HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP, keystorePassword));
+            systemProperties.add(new SetSystemProperty(HTML_UNIT_SSL_KEYSTORE_TYPE_PROP, keystoreType));
         }
     }
-
 
     private static boolean isAuthServerJBoss() {
         return Boolean.parseBoolean(System.getProperty("auth.server.jboss"));
@@ -208,6 +205,10 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         if (isAuthServerJBoss()) {
             authServerHome = authServerHome + "/standalone/configuration";
+        }
+
+        if (AuthServerTestEnricher.isAuthServerQuarkus()) {
+            authServerHome = authServerHome + "/conf";
         }
 
         return authServerHome;
@@ -369,7 +370,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     AuthenticationFlowRepresentation copyFlow(String existingFlow, String newFlow) {
         // copy that should succeed
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", newFlow);
         Response response = authMgmtResource.copy(existingFlow, params);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Encode.decode(AdminEventPaths.authCopyFlowPath(existingFlow)), params, ResourceType.AUTH_FLOW);
@@ -564,6 +565,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         Assert.assertNotNull(cfgId);
 
         loginConfirmationPage.open();
+
+        WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals(username, loginConfirmationPage.getUsernameText());

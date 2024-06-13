@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
+  KeycloakSelect,
+  KeycloakSelectProps,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
+  SelectOption,
   Split,
   SplitItem,
   TextInput,
   TextInputProps,
 } from "@patternfly/react-core";
-import {
-  DropdownProps,
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core/deprecated";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type Unit = "second" | "minute" | "hour" | "day";
 
@@ -28,7 +28,7 @@ export type TimeSelectorProps = Omit<
   TextInputProps,
   "onChange" | "defaultValue"
 > &
-  Pick<DropdownProps, "menuAppendTo"> & {
+  Pick<KeycloakSelectProps, "menuAppendTo"> & {
     value?: number;
     units?: Unit[];
     onChange?: (time: number | string) => void;
@@ -131,17 +131,17 @@ export const TimeSelector = ({
         />
       </SplitItem>
       <SplitItem id={`${className}-select-menu`}>
-        <Select
+        <KeycloakSelect
           variant={SelectVariant.single}
           aria-label={t("unitLabel")}
           className={`${className}-select`}
-          onSelect={(_, value) => {
+          onSelect={(value) => {
             setMultiplier(value as number);
             updateTimeout(timeValue, value as number);
             setOpen(false);
           }}
           menuAppendTo={menuAppendTo}
-          selections={[multiplier]}
+          selections={multiplier}
           onToggle={() => {
             setOpen(!open);
           }}
@@ -157,7 +157,7 @@ export const TimeSelector = ({
               {t(time.label)}
             </SelectOption>
           ))}
-        </Select>
+        </KeycloakSelect>
       </SplitItem>
     </Split>
   );

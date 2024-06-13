@@ -1,5 +1,15 @@
 export { AlertProvider, useAlerts } from "./alerts/Alerts";
+export { ErrorPage } from "./context/ErrorPage";
 export { Help, useHelp } from "./context/HelpContext";
+export {
+  KeycloakProvider,
+  useEnvironment,
+  type KeycloakContext,
+} from "./context/KeycloakContext";
+export {
+  getInjectedEnvironment,
+  type BaseEnvironment,
+} from "./context/environment";
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";
 export {
   FormErrorText,
@@ -9,8 +19,14 @@ export { HelpItem } from "./controls/HelpItem";
 export { NumberControl } from "./controls/NumberControl";
 export { PasswordControl } from "./controls/PasswordControl";
 export { PasswordInput } from "./controls/PasswordInput";
-export { SelectControl } from "./controls/SelectControl";
-export type { SelectControlOption } from "./controls/SelectControl";
+export {
+  SelectControl,
+  SelectVariant,
+} from "./controls/select-control/SelectControl";
+export type {
+  SelectControlOption,
+  SelectControlProps,
+} from "./controls/select-control/SelectControl";
 export {
   SwitchControl,
   type SwitchControlProps,
@@ -24,6 +40,10 @@ export {
 export { IconMapper } from "./icons/IconMapper";
 export { FormPanel } from "./scroll-form/FormPanel";
 export { ScrollForm, mainPageContentId } from "./scroll-form/ScrollForm";
+export {
+  FormSubmitButton,
+  type FormSubmitButtonProps,
+} from "./buttons/FormSubmitButton";
 export { UserProfileFields } from "./user-profile/UserProfileFields";
 export {
   beerify,
@@ -38,3 +58,5 @@ export { isDefined } from "./utils/isDefined";
 export { useRequiredContext } from "./utils/useRequiredContext";
 export { useStoredState } from "./utils/useStoredState";
 export { default as KeycloakMasthead } from "./masthead/Masthead";
+export { KeycloakSelect } from "./select/KeycloakSelect";
+export type { Variant, KeycloakSelectProps } from "./select/KeycloakSelect";

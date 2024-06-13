@@ -17,3 +17,4 @@
 
 org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningServiceProviderFactory
 org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningServiceProviderFactory
+org.keycloak.protocol.oid4vc.issuance.signing.LDSigningServiceProviderFactory

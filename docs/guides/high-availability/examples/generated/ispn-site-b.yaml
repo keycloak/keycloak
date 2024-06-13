@@ -363,7 +363,7 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:14.0.27.Final
+  image: quay.io/infinispan/server:15.0.4.Final
   configListener:
     enabled: false
   container:

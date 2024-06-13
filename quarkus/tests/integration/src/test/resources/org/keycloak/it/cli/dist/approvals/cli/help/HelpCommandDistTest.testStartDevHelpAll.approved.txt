@@ -312,7 +312,8 @@ Proxy:
 
 --proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
                        reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
-                       Default: none. Use the following option instead: proxy-headers.
+                       Default: none. Use the following options instead: http-enabled,
+                       proxy-headers.
 --proxy-headers <headers>
                      The proxy headers that should be accepted by the server. Misconfiguration
                        might leave the server exposed to security vulnerabilities. Takes precedence
@@ -366,7 +367,7 @@ Logging:
                      DEPRECATED. Include message parameters from the log event. Default: true.
                        Available only when GELF is activated.
 --log-gelf-include-stack-trace <true|false>
-                     DEPRECATED. If set to true, occuring stack traces are included in the
+                     DEPRECATED. If set to true, occurring stack traces are included in the
                        'StackTrace' field in the GELF output. Default: true. Available only when
                        GELF is activated.
 --log-gelf-level <level>

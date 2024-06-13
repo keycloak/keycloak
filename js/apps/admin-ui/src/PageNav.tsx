@@ -17,9 +17,9 @@ import { useServerInfo } from "./context/server-info/ServerInfoProvider";
 import { toPage } from "./page/routes";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
+import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 import "./page-nav.css";
-import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 type LeftNavProps = { title: string; path: string; id?: string };
 
@@ -66,6 +66,7 @@ export const PageNav = () => {
   const pages =
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
   const navigate = useNavigate();
+  const { realmRepresentation } = useRealm();
 
   type SelectedItem = {
     groupId: number | string;
@@ -107,6 +108,10 @@ export const PageNav = () => {
           <Divider />
           {showManage && !isOnAddRealm && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
+              {isFeatureEnabled(Feature.Organizations) &&
+                realmRepresentation?.organizationsEnabled && (
+                  <LeftNav title="organizations" path="/organizations" />
+                )}
               <LeftNav title="clients" path="/clients" />
               <LeftNav title="clientScopes" path="/client-scopes" />
               <LeftNav title="realmRoles" path="/roles" />
