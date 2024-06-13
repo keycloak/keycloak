@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.organization.member;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -40,7 +41,6 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -109,11 +109,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         expected.getAttributes().remove(ORGANIZATION_ATTRIBUTE);
         userResource.update(expected);
         expected = userResource.toRepresentation();
-        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), containsInAnyOrder(expectedOrganizations.toArray()));
 
         userResource.update(expected);
         expected = userResource.toRepresentation();
-        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        assertThat(expected.getAttributes().get(ORGANIZATION_ATTRIBUTE), containsInAnyOrder(expectedOrganizations.toArray()));
     }
 
     @Test
@@ -144,9 +144,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
         OrganizationRepresentation expected = organization.toRepresentation();
-        OrganizationRepresentation actual = organization.members().getOrganization(member.getId());
+        List<OrganizationRepresentation> actual = organization.members().getOrganization(member.getId());
         assertNotNull(actual);
-        assertEquals(expected.getId(), actual.getId());
+        assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
     }
 
     @Test
@@ -457,5 +457,26 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
                 session.users().removeUser(realm, user);
             }
         });
+    }
+
+    @Test
+    public void testMemberInMultipleOrganizations() {
+        OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
+
+        addMember(orga);
+
+        UserRepresentation member = getUserRepresentation(memberEmail);
+
+        orgb.members().addMember(member.getId()).close();
+
+        Assert.assertTrue(orga.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orgb.members().getAll().stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+
+        member = getUserRepresentation(memberEmail);
+
+        String orgbId = orgb.toRepresentation().getId();
+        String orgaId = orga.toRepresentation().getId();
+        assertThat(List.of(orgaId, orgbId), containsInAnyOrder(member.getAttributes().get(ORGANIZATION_ATTRIBUTE).toArray()));
     }
 }

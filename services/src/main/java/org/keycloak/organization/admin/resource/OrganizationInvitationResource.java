@@ -74,9 +74,7 @@ public class OrganizationInvitationResource {
         UserModel user = session.users().getUserByEmail(realm, email);
 
         if (user != null) {
-            OrganizationModel org = provider.getByMember(user);
-
-            if (org != null && org.equals(organization)) {
+            if (provider.getByMember(user).anyMatch(organization::equals)) {
                 throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
             }
 
