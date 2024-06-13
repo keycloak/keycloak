@@ -274,7 +274,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return null;
         }
 
-        return getById(orgId);
+        // need to go via the session to avoid bypassing the cache
+        return session.getProvider(OrganizationProvider.class).getById(orgId);
     }
 
     @Override
