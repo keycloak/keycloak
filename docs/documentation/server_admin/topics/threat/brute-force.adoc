@@ -48,7 +48,7 @@ The time period that the account is disabled increases as the attack continues a
 |Name |Description |Default
 
 |Transparent to user
-|When a user is temporarily locked and attempts to log in, {project_name} displays the default `Invalid username or password` error message. This message is the same error message as the message displayed for an invalid username or invalid password to ensure the attacker is unaware the account is disabled. This setting will display a more transparent message to the user.
+|If enabled, a user-friendly message is shown to users to indicate the account is permanently or temporarily disabled. By enabling this option, accounts are more vulnerable to username and password enumeration attacks.
 |off
 
 |Wait Increment
