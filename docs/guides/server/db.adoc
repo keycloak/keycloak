@@ -32,7 +32,7 @@ only exists for development use-cases. The `dev-file` database is not suitable f
 
 == Installing a database driver
 
-Database drivers are shipped as part of {project_name} except for the Oracle Database<@profile.ifProduct> and Microsoft SQL Server drivers</@profile.ifProduct>.
+Database drivers are shipped as part of {project_name} except for the Oracle Database <@profile.ifProduct> and Microsoft SQL Server drivers</@profile.ifProduct>.
 
 Install the necessary missing driver manually if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
 
