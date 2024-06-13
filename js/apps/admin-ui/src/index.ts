@@ -148,7 +148,6 @@ export {
   useErrorBoundary,
   ErrorBoundaryProvider,
 } from "./context/ErrorBoundary";
-export { useRealms, RealmsProvider } from "./context/RealmsContext";
 export { useRecentRealms, RecentRealmsProvider } from "./context/RecentRealms";
 export * as DashboardSection from "./dashboard/Dashboard";
 export { ProviderInfo } from "./dashboard/ProviderInfo";
@@ -317,3 +316,5 @@ export { Header } from "./PageHeader";
 export { PageNav } from "./PageNav";
 export { PageNotFoundSection } from "./PageNotFoundSection";
 export { App as AdminUi } from "./App";
+export type { Environment as AccountEnvironment } from "./environment";
+export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
