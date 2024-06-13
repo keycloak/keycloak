@@ -30,6 +30,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
 import java.net.URI;
@@ -142,6 +143,11 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public Locale resolveLocale(UserModel user) {
         return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user);
+    }
+
+    @Override
+    public Locale resolveLocale(UserModel user, Theme.Type themeType) {
+        return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user, themeType);
     }
 
     @Override

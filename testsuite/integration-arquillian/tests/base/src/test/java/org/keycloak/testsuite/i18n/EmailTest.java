@@ -29,14 +29,18 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
@@ -127,6 +131,33 @@ public class EmailTest extends AbstractI18NTest {
         }
     }
 
+    @Test
+    public void updatePasswordFromAdmin() throws MessagingException, IOException {
+        changeUserLocale(null);
+        try {
+            UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "login-test");
+            CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+            SimpleHttp.Response responseGet = SimpleHttpDefault.doPut(getAuthServerRoot() + "admin/realms/test/users/" + testUser.toRepresentation().getId() + "/execute-actions-email", httpClient)
+                    .auth(adminClient.tokenManager().getAccessTokenString())
+                    .header("Accept-Language", "de")
+                    .json(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()))
+                    .asResponse();
+
+            assertEquals(responseGet.getStatus(), 204);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+            String textBody = MailUtils.getBody(message).getText();
+
+            Assert.assertThat(textBody, containsString("Your administrator has just requested"));
+
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
+        } finally {
+            // Revert
+            changeUserLocale("en");
+        }
+    }
+
     private void verifyResetPassword(String expectedSubject, String expectedTextBodyContent, int expectedMsgCount)
             throws MessagingException, IOException {
         loginPage.open();
@@ -152,32 +183,32 @@ public class EmailTest extends AbstractI18NTest {
     public void changeLocaleOnInfoPage() throws InterruptedException, IOException {
         UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "login-test");
         testUser.executeActionsEmail(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
-        
+
         if (!greenMail.waitForIncomingEmail(1)) {
             Assert.fail("Error when receiving email");
         }
-        
+
         String link = MailUtils.getPasswordResetEmailLink(greenMail.getLastReceivedMessage());
 
         // Make sure kc_locale added to link doesn't set locale
         link += "&kc_locale=de";
-        
+
         DroneUtils.getCurrentDriver().navigate().to(link);
         WaitUtils.waitForPageToLoad();
-        
+
         Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
         assertThat(infoPage.getLanguageDropdownText(), is(equalTo("English")));
-        
+
         infoPage.openLanguage("Deutsch");
 
         assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Passwort aktualisieren"));
-        
+
         infoPage.clickToContinueDe();
-        
+
         loginPasswordUpdatePage.openLanguage("English");
         loginPasswordUpdatePage.changePassword("pass", "pass");
         WaitUtils.waitForPageToLoad();
-        
+
         Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
 
