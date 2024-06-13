@@ -18,7 +18,6 @@ import {
   ErrorBoundaryFallback,
   ErrorBoundaryProvider,
 } from "./context/ErrorBoundary";
-import { RealmsProvider } from "./context/RealmsContext";
 import { RecentRealmsProvider } from "./context/RecentRealms";
 import { AccessContextProvider } from "./context/access/Access";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
@@ -33,15 +32,13 @@ const AppContexts = ({ children }: PropsWithChildren) => (
     <ServerInfoProvider>
       <RealmContextProvider>
         <WhoAmIContextProvider>
-          <RealmsProvider>
-            <RecentRealmsProvider>
-              <AccessContextProvider>
-                <AlertProvider>
-                  <SubGroups>{children}</SubGroups>
-                </AlertProvider>
-              </AccessContextProvider>
-            </RecentRealmsProvider>
-          </RealmsProvider>
+          <RecentRealmsProvider>
+            <AccessContextProvider>
+              <AlertProvider>
+                <SubGroups>{children}</SubGroups>
+              </AlertProvider>
+            </AccessContextProvider>
+          </RecentRealmsProvider>
         </WhoAmIContextProvider>
       </RealmContextProvider>
     </ServerInfoProvider>

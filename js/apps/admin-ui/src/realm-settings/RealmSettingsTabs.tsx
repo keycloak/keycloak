@@ -26,7 +26,6 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useRealms } from "../context/RealmsContext";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
@@ -78,7 +77,6 @@ const RealmSettingsHeader = ({
   const { adminClient } = useAdminClient();
   const { environment } = useEnvironment<Environment>();
   const { t } = useTranslation();
-  const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
@@ -105,7 +103,6 @@ const RealmSettingsHeader = ({
       try {
         await adminClient.realms.del({ realm: realmName });
         addAlert(t("deletedSuccessRealmSetting"), AlertVariant.success);
-        await refreshRealms();
         navigate(toDashboard({ realm: environment.masterRealm }));
         refresh();
       } catch (error) {
@@ -179,7 +176,6 @@ export const RealmSettingsTabs = () => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName, realmRepresentation: realm, refresh } = useRealm();
-  const { refresh: refreshRealms } = useRealms();
   const combinedLocales = useLocale();
   const navigate = useNavigate();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -271,7 +267,6 @@ export const RealmSettingsTabs = () => {
 
     const isRealmRenamed = realmName !== (r.realm || realm?.realm);
     if (isRealmRenamed) {
-      await refreshRealms();
       navigate(toRealmSettings({ realm: r.realm!, tab: "general" }));
     }
     refresh();
