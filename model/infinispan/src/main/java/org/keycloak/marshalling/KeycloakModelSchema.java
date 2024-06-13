@@ -48,6 +48,7 @@ import org.keycloak.models.cache.infinispan.events.GroupAddedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupMovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.RoleAddedEvent;
@@ -158,6 +159,7 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
 
                 // models.cache.infinispan.events package
                 AuthenticationSessionAuthNoteUpdateEvent.class,
+                CacheKeyInvalidatedEvent.class,
                 ClientAddedEvent.class,
                 ClientUpdatedEvent.class,
                 ClientRemovedEvent.class,

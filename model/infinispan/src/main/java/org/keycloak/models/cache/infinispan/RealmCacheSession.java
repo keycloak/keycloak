@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -73,6 +74,7 @@ import org.keycloak.models.cache.infinispan.events.GroupMovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.RoleAddedEvent;
@@ -232,13 +234,8 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public void registerInvalidation(String id) {
-        invalidations.add(id);
-        invalidationEvents.add(new InvalidationEvent() {
-            @Override
-            public String getId() {
-                return id;
-            }
-        });
+        cache.invalidateCacheKey(id, invalidations);
+        invalidationEvents.add(new CacheKeyInvalidatedEvent(id));
     }
 
     @Override

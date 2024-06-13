@@ -120,6 +120,10 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(InClientPredicate.create().client(clientUUID), invalidations);
     }
 
+    public void invalidateCacheKey(String key, Set<String> invalidations) {
+        invalidations.add(key);
+    }
+
     @Override
     protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
         invalidations.add(event.getId());
