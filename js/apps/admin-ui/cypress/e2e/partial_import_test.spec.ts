@@ -119,8 +119,8 @@ describe("Partial import test", () => {
 
     //clear button should be disabled if there is nothing in the dialog
     modal.clearButton().should("be.disabled");
-    modal.textArea().type("{}", { force: true });
-    modal.textArea().get(".view-lines").should("have.text", "{}");
+    modal.textArea().type("test", { force: true });
+    modal.textArea().get(".view-lines").should("have.text", "test");
     modal.clearButton().should("not.be.disabled");
     modal.clearButton().click();
     modal.clickClearConfirmButton();
