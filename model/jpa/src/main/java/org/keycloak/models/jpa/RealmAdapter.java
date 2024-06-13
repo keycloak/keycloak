@@ -257,13 +257,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
-    public boolean isTransparentUserMessage() {
-        return getAttribute("lockoutTransparentUserMessage", false);
+    public boolean isUserFriendlyMessage() {
+        return getAttribute("lockoutUserFriendlyMessage", false);
     }
 
     @Override
-    public void setTransparentUserMessage(boolean value) {
-        setAttribute("lockoutTransparentUserMessage", value);
+    public void setUserFriendlyMessage(boolean value) {
+        setAttribute("lockoutUserFriendlyMessage", value);
     }
 
     @Override
@@ -2148,7 +2148,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     /**
      * This just exists for testing purposes
-     * 
+     *
      */
     public static final String COMPONENT_PROVIDER_EXISTS_DISABLED = "component.provider.exists.disabled";
 

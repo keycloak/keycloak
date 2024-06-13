@@ -122,7 +122,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     protected String disabledByBruteForceError(AuthenticationFlowContext context) {
-        return context.getRealm().isTransparentUserMessage() ? Messages.ACCOUNT_TEMPORARILY_DISABLED : Messages.INVALID_TOTP;
+        return context.getRealm().isUserFriendlyMessage() ? Messages.ACCOUNT_TEMPORARILY_DISABLED : Messages.INVALID_TOTP;
     }
 
     @Override

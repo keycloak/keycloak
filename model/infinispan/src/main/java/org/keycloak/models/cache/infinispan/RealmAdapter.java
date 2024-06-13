@@ -234,15 +234,15 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public boolean isTransparentUserMessage() {
-        if (isUpdated()) return updated.isTransparentUserMessage();
-        return cached.isTransparentUserMessage();
+    public boolean isUserFriendlyMessage() {
+        if (isUpdated()) return updated.isUserFriendlyMessage();
+        return cached.isUserFriendlyMessage();
     }
 
     @Override
-    public void setTransparentUserMessage(boolean value) {
+    public void setUserFriendlyMessage(boolean value) {
         getDelegateForUpdate();
-        updated.setTransparentUserMessage(value);
+        updated.setUserFriendlyMessage(value);
     }
 
     @Override
@@ -1086,7 +1086,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<RoleModel> getRolesStream() {
         return cacheSession.getRealmRolesStream(this);
     }
-    
+
     @Override
     public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
         return cacheSession.getRealmRolesStream(this, first, max);
@@ -1096,7 +1096,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
         return cacheSession.searchForRolesStream(this, search, first, max);
     }
-    
+
     @Override
     public RoleModel addRole(String name) {
         return cacheSession.addRealmRole(this, name);
@@ -1613,10 +1613,10 @@ public class RealmAdapter implements CachedRealmModel {
 
     public void executeEvictions(ComponentModel model) {
         if (model == null) return;
-        
+
         // if user cache is disabled this is null
         UserCache userCache = UserStorageUtil.userCache(session);
-        if (userCache != null) {        
+        if (userCache != null) {
           // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
           if (model.getParentId() != null && !model.getParentId().equals(getId())) {
               ComponentModel parent = getComponent(model.getParentId());
@@ -1625,13 +1625,13 @@ public class RealmAdapter implements CachedRealmModel {
               }
               return;
           }
-  
+
           // invalidate entire user cache if we're dealing with user storage SPI
           if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
             userCache.evict(this);
           }
         }
-        
+
         // invalidate entire realm if we're dealing with client storage SPI
         // entire realm because of client roles, client lists, and clients
         if (ClientStorageProvider.class.getName().equals(model.getProviderType())) {

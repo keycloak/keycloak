@@ -136,9 +136,9 @@ export const BruteForceDetection = ({
               bruteForceMode ===
                 BruteForceMode.PermanentAfterTemporaryLockout) && (
               <SwitchControl
-                name="transparentUserMessage"
-                label={t("transparentUserMessage")}
-                id="kc-transparent-user-message-switch"
+                name="userFriendlyMessage"
+                label={t("userFriendlyMessage")}
+                id="kc-user-friendly-message-switch"
                 labelOn={t("on")}
                 labelOff={t("off")}
               />

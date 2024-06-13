@@ -669,10 +669,10 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
-        public boolean isTransparentUserMessage() { return false; }
+        public boolean isUserFriendlyMessage() { return false; }
 
         @Override
-        public void setTransparentUserMessage(boolean value) {
+        public void setUserFriendlyMessage(boolean value) {
 
         }
 

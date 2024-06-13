@@ -188,13 +188,13 @@ public class RealmModelDelegate implements RealmModel {
     }
 
     @Override
-    public boolean isTransparentUserMessage() {
-        return delegate.isTransparentUserMessage();
+    public boolean isUserFriendlyMessage() {
+        return delegate.isUserFriendlyMessage();
     }
 
     @Override
-    public void setTransparentUserMessage(boolean value) {
-        delegate.setTransparentUserMessage(value);
+    public void setUserFriendlyMessage(boolean value) {
+        delegate.setUserFriendlyMessage(value);
     }
 
     public boolean isPermanentLockout() {

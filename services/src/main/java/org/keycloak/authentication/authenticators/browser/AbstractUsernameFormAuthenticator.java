@@ -84,7 +84,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected String disabledByBruteForceError(AuthenticationFlowContext context) {
-        return context.getRealm().isTransparentUserMessage() ? Messages.ACCOUNT_TEMPORARILY_DISABLED :  Messages.INVALID_USER;
+        return context.getRealm().isUserFriendlyMessage() ? Messages.ACCOUNT_TEMPORARILY_DISABLED :  Messages.INVALID_USER;
     }
 
     protected String disabledByBruteForceFieldError(){

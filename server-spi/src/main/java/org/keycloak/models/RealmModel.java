@@ -138,8 +138,8 @@ public interface RealmModel extends RoleContainerModel {
     //--- brute force settings
     boolean isBruteForceProtected();
     void setBruteForceProtected(boolean value);
-    boolean isTransparentUserMessage();
-    void setTransparentUserMessage(boolean value);
+    boolean isUserFriendlyMessage();
+    void setUserFriendlyMessage(boolean value);
     boolean isPermanentLockout();
     void setPermanentLockout(boolean val);
     int getMaxTemporaryLockouts();
@@ -497,7 +497,7 @@ public interface RealmModel extends RoleContainerModel {
     /**
      * Removes given component. Will call preRemove() method of ComponentFactory.
      * Also calls {@code this.removeComponents(component.getId())}.
-     * 
+     *
      * @param component to be removed
      */
     void removeComponent(ComponentModel component);
@@ -695,7 +695,7 @@ public interface RealmModel extends RoleContainerModel {
     ClientScopeModel addClientScope(String name);
 
     /**
-     * Creates new client scope with the given internal ID and name. 
+     * Creates new client scope with the given internal ID and name.
      * If given name contains spaces, those are replaced by underscores.
      * @param id {@code String} id of the client scope.
      * @param name {@code String} name of the client scope.
@@ -718,10 +718,10 @@ public interface RealmModel extends RoleContainerModel {
     ClientScopeModel getClientScopeById(String id);
 
     /**
-     * Adds given client scope among default/optional client scopes of this realm. 
+     * Adds given client scope among default/optional client scopes of this realm.
      * The scope will be assigned to each new client.
      * @param clientScope to be added
-     * @param defaultScope if {@code true} the scope will be added among default client scopes, 
+     * @param defaultScope if {@code true} the scope will be added among default client scopes,
      * if {@code false} it will be added among optional client scopes
      */
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
@@ -744,16 +744,16 @@ public interface RealmModel extends RoleContainerModel {
 
     /**
      * Returns default client scopes of this realm either default ones or optional ones.
-     * @param defaultScope if {@code true} default client scopes are returned, 
+     * @param defaultScope if {@code true} default client scopes are returned,
      * if {@code false} optional client scopes are returned.
      * @return Stream of {@link ClientScopeModel}. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope);
 
     /**
-     * Adds a role as a composite to default role of this realm. 
+     * Adds a role as a composite to default role of this realm.
      * @param role to be added
-     */ 
+     */
     default void addToDefaultRoles(RoleModel role) {
         getDefaultRole().addCompositeRole(role);
     }

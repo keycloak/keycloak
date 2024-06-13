@@ -47,7 +47,7 @@ The time period that the account is disabled increases as the attack continues a
 |===
 |Name |Description |Default
 
-|Transparent to user
+|User-Friendly Message
 |If enabled, a user-friendly message is shown to users to indicate the account is permanently or temporarily disabled. By enabling this option, accounts are more vulnerable to username and password enumeration attacks.
 |off
 

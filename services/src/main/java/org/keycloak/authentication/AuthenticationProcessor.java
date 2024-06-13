@@ -429,7 +429,7 @@ public class AuthenticationProcessor {
             this.challenge = challenge;
 
         }
-        
+
         @Override
         public void failure(AuthenticationFlowError error, Response challenge, String eventDetails, String userErrorMessage) {
             this.error = error;
@@ -1164,7 +1164,7 @@ public class AuthenticationProcessor {
         if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
         if (authenticatedUser.getServiceAccountClientLink() != null) throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
     }
-    
+
     protected Response authenticationComplete() {
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(authenticationSession);
@@ -1191,9 +1191,9 @@ public class AuthenticationProcessor {
     }
 
     private String getTemporaryLockoutMessage() {
-        boolean isTransparentUserMessage = this.session.getContext().getRealm().isTransparentUserMessage();
+        boolean isUserFriendlyMessage = this.session.getContext().getRealm().isUserFriendlyMessage();
 
-        return isTransparentUserMessage ? Messages.ACCOUNT_TEMPORARILY_DISABLED : Messages.INVALID_USER;
+        return isUserFriendlyMessage ? Messages.ACCOUNT_TEMPORARILY_DISABLED : Messages.INVALID_USER;
     }
 
 

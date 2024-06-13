@@ -74,7 +74,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean organizationsEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
-    protected boolean transparentUserMessage;
+    protected boolean userFriendlyMessage;
     protected boolean permanentLockout;
     protected int maxTemporaryLockouts;
     protected int maxFailureWaitSeconds;
@@ -199,7 +199,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         organizationsEnabled = model.isOrganizationsEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
-        transparentUserMessage = model.isTransparentUserMessage();
+        userFriendlyMessage = model.isUserFriendlyMessage();
         permanentLockout = model.isPermanentLockout();
         maxTemporaryLockouts = model.getMaxTemporaryLockouts();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
@@ -384,8 +384,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return bruteForceProtected;
     }
 
-    public boolean isTransparentUserMessage() {
-        return this.transparentUserMessage;
+    public boolean isUserFriendlyMessage() {
+        return this.userFriendlyMessage;
     }
 
     public boolean isPermanentLockout() {
@@ -423,11 +423,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public boolean isVerifyEmail() {
         return verifyEmail;
     }
-    
+
     public boolean isLoginWithEmailAllowed() {
         return loginWithEmailAllowed;
     }
-    
+
     public boolean isDuplicateEmailsAllowed() {
         return duplicateEmailsAllowed;
     }
@@ -656,7 +656,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
         return executionsByFlowId.get(flowId);
     }
-    
+
     public Map<String, AuthenticationExecutionModel> getExecutionsById() {
         return executionsById;
     }
