@@ -337,7 +337,9 @@ export const UserForm = ({
       </FormProvider>
       <FixedButtonsGroup
         name="user-creation"
+        saveText={user?.id ? t("save") : t("create")}
         reset={onFormReset}
+        resetText={user?.id ? t("revert") : t("cancel")}
         isActive
         isSubmit
       />
