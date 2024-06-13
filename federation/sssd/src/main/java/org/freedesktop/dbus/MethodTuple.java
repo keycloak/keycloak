@@ -1,37 +1,52 @@
-/*
-   D-Bus Java Implementation
-   Copyright (c) 2005-2006 Matthew Johnson
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of either the GNU Lesser General Public License Version 2 or the
-   Academic Free Licence Version 2.1.
-
-   Full licence texts are included in the COPYING file with this program.
-*/
 package org.freedesktop.dbus;
 
-import cx.ath.matthew.debug.Debug;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-class MethodTuple {
-    String name;
-    String sig;
+import java.util.Objects;
 
-    public MethodTuple(String name, String sig) {
-        this.name = name;
-        if (null != sig)
-            this.sig = sig;
-        else
-            this.sig = "";
-        if (Debug.debug) Debug.print(Debug.VERBOSE, "new MethodTuple(" + this.name + ", " + this.sig + ")");
+public class MethodTuple {
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    private final String name;
+    private final String sig;
+
+    public MethodTuple(String _name, String _sig) {
+        name = _name;
+        if (null != _sig) {
+            sig = _sig;
+        } else {
+            sig = "";
+        }
+        logger.trace("new MethodTuple({}, {})", name, sig);
     }
 
-    public boolean equals(Object o) {
-        return o.getClass().equals(MethodTuple.class)
-                && ((MethodTuple) o).name.equals(this.name)
-                && ((MethodTuple) o).sig.equals(this.sig);
-    }
-
+    @Override
     public int hashCode() {
-        return name.hashCode() + sig.hashCode();
+        return Objects.hash(name, sig);
+    }
+
+    @Override
+    public boolean equals(Object _obj) {
+        if (this == _obj) {
+            return true;
+        }
+        if (!(_obj instanceof MethodTuple)) {
+            return false;
+        }
+        MethodTuple other = (MethodTuple) _obj;
+        return Objects.equals(name, other.name) && Objects.equals(sig, other.sig);
+    }
+
+    public Logger getLogger() {
+        return logger;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getSig() {
+        return sig;
     }
 }

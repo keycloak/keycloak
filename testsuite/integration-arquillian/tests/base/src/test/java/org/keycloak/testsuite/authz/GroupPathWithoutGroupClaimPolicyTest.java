@@ -29,8 +29,6 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -41,7 +39,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class GroupPathWithoutGroupClaimPolicyTest extends GroupPathPolicyTest {
 
     @Override

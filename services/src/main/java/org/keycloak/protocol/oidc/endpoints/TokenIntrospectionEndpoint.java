@@ -16,8 +16,8 @@
  */
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -32,12 +32,12 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 /**
  * A token introspection endpoint based on RFC-7662.
@@ -46,30 +46,29 @@ import javax.ws.rs.core.Response.Status;
  */
 public class TokenIntrospectionEndpoint {
 
-    private static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
-    private static final String PARAM_TOKEN = "token";
+    public static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
+    public static final String PARAM_TOKEN = "token";
 
-    @Context
-    private KeycloakSession session;
-    @Context
-    private HttpRequest request;
+    private final KeycloakSession session;
 
-    @Context
-    private HttpHeaders headers;
+    private final HttpRequest request;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private final RealmModel realm;
     private final EventBuilder event;
 
-    public TokenIntrospectionEndpoint(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public TokenIntrospectionEndpoint(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST
     @NoCache
+    @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
     public Response introspect() {
         event.event(EventType.INTROSPECT_TOKEN);
 
@@ -101,13 +100,14 @@ public class TokenIntrospectionEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
+            token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
         }
 
         try {
 
-            Response response = provider.introspect(token);
+            Response response = provider.introspect(token, event);
 
             this.event.success();
 

@@ -22,26 +22,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriBuilder;
 
-import com.google.common.base.Charsets;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -69,8 +70,6 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -80,7 +79,6 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resourceA;
@@ -98,7 +96,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         authorization.policies().js().create(policy).close();
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
-        resourceA = addResource("Resource A", "ScopeA", "ScopeB", "ScopeC");
+        resourceA = addResource("Resource A", null, Collections.singleton("/resource"), false, "ScopeA", "ScopeB", "ScopeC");
 
         permission.setName(resourceA.getName() + " Permission");
         permission.addResource(resourceA.getName());
@@ -375,6 +373,60 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
+    public void testObtainDecisionUsingAccessToken() throws Exception {
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+
+        // use "rsid" as "uri"
+        // uri and scopes exist
+        AuthorizationResponse response = authorizeDecision(accessTokenResponse.getToken(), null,
+            new PermissionRequest("/resource", "ScopeA", "ScopeB"));
+        assertTrue((Boolean) response.getOtherClaims().getOrDefault("result", "false"));
+
+        // uri and scopes are empty
+        try {
+            response = authorizeDecision(accessTokenResponse.getToken(), null, new PermissionRequest(null));
+            fail();
+        } catch (Exception ignore) {
+        }
+
+        // uri is empty but scopes exist
+        response = authorizeDecision(accessTokenResponse.getToken(), null, new PermissionRequest(null, "ScopeA", "ScopeB"));
+        assertTrue((Boolean) response.getOtherClaims().getOrDefault("result", "false"));
+
+        // test wild card
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        ResourceRepresentation resourceB = addResource("Resource B", null, Collections.singleton("/rs/*"), false, "ScopeD",
+            "ScopeE");
+
+        permission.setName(resourceB.getName() + " Permission");
+        permission.addResource(resourceB.getName());
+        permission.addPolicy("Default Policy");
+
+        getClient(getRealm()).authorization().permissions().resource().create(permission).close();
+
+        // matchingUri is null, then result error
+        try {
+            response = authorizeDecision(accessTokenResponse.getToken(), null,
+                new PermissionRequest("/rs/data", "ScopeD", "ScopeE"));
+            fail();
+        } catch (Exception ignore) {
+        }
+
+        // matchingUri is true, then result true
+        response = authorizeDecision(accessTokenResponse.getToken(), true,
+            new PermissionRequest("/rs/data", "ScopeD", "ScopeE"));
+        assertTrue((Boolean) response.getOtherClaims().getOrDefault("result", "false"));
+
+        // matchingUri is false, then result error
+        try {
+            response = authorizeDecision(accessTokenResponse.getToken(), false,
+                new PermissionRequest("/rs/data", "ScopeD", "ScopeE"));
+            fail();
+        } catch (Exception ignore) {
+        }
+    }
+
+    @Test
     public void testCORSHeadersInFailedRptRequest() throws Exception {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
 
@@ -393,7 +445,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
         parameters.add(new BasicNameValuePair("ticket", ticket));
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         CloseableHttpResponse response = oauth.getHttpClient().get().execute(post);

@@ -106,6 +106,10 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
                 return Collections.emptyList();
             }
 
+            return getConfigSources(classLoader, configFile);
+        }
+
+        public List<ConfigSource> getConfigSources(final ClassLoader classLoader, Path configFile) {
             return loadConfigSources(configFile.toUri().toString(), 450, classLoader);
         }
 
@@ -114,7 +118,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
             return Collections.emptyList();
         }
 
-        private Path getConfigurationFile() {
+        public Path getConfigurationFile() {
             String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
 
             if (filePath == null)
@@ -144,7 +148,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         Map<String, String> result = new HashMap<>(properties.size());
         properties.keySet().forEach(k -> {
             String key = transformKey(k);
-            PropertyMapper mapper = PropertyMappers.getMapper(key);
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
             //TODO: remove explicit checks for spi and feature options once we have proper support in our config mappers
             if (mapper != null
@@ -164,9 +168,9 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
     }
 
     /**
-     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest 
+     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest
      * path is to just have the "kc" namespace for Keycloak-specific properties.
-     * 
+     *
      * @param key the key to transform
      * @return the same key but prefixed with the namespace
      */

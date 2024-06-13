@@ -1,21 +1,23 @@
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import org.junit.Test;
-import org.keycloak.models.IdentityProviderMapperSyncMode;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.List;
-
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
+
+import org.junit.Test;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.representations.idm.UserRepresentation;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author hmlnarik,
  * <a href="mailto:external.benjamin.weimer@bosch-si.com">Benjamin Weimer</a>,
- * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>
+ * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public abstract class AbstractAdvancedRoleMapperTest extends AbstractRoleMapperTest {
 
@@ -23,6 +25,10 @@ public abstract class AbstractAdvancedRoleMapperTest extends AbstractRoleMapperT
             "  {\n" +
             "    \"key\": \"" + KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME + "\",\n" +
             "    \"value\": \"value 1\"\n" +
+            "  },\n" +
+            "  {\n" +
+            "    \"key\": \"" + KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME + "\",\n" +
+            "    \"value\": \"value 2\"\n" +
             "  },\n" +
             "  {\n" +
             "    \"key\": \"" + KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2 + "\",\n" +
@@ -46,134 +52,145 @@ public abstract class AbstractAdvancedRoleMapperTest extends AbstractRoleMapperT
     @Test
     public void allValuesMatch() {
         createAdvancedRoleMapper(CLAIMS_OR_ATTRIBUTES, false);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add("value 2").build())
-                .build());
+        createUserInProviderRealm(createMatchingUserConfig());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void valuesMismatch() {
         createAdvancedRoleMapper(CLAIMS_OR_ATTRIBUTES, false);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add("value mismatch").build())
+        createUserInProviderRealm(ImmutableMap.<String, List<String>> builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
+                        ImmutableList.<String> builder().add("value 1").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
+                        ImmutableList.<String> builder().add("value mismatch").build())
                 .build());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void valuesMatchIfNoClaimsSpecified() {
         createAdvancedRoleMapper("[]", false);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("some value").build())
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add("some value").build())
+        createUserInProviderRealm(ImmutableMap.<String, List<String>> builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
+                        ImmutableList.<String> builder().add("some value").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
+                        ImmutableList.<String> builder().add("some value").build())
                 .build());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void allValuesMatchRegex() {
         createAdvancedRoleMapper(CLAIMS_OR_ATTRIBUTES_REGEX, true);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add("value 2").build())
-                .build());
+        createUserInProviderRealm(createMatchingUserConfig());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void valuesMismatchRegex() {
         createAdvancedRoleMapper(CLAIMS_OR_ATTRIBUTES_REGEX, true);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("mismatch").build())
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add("value 2").build())
+        createUserInProviderRealm(ImmutableMap.<String, List<String>> builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
+                        ImmutableList.<String> builder().add("mismatch").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
+                        ImmutableList.<String> builder().add("value 2").build())
                 .build());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserMismatchDeletesRole() {
         newValueForAttribute2 = "value mismatch";
-        UserRepresentation user = createMapperAndLoginAsUserTwiceWithMapper(FORCE, false);
+        createMapperAndLoginAsUserTwiceWithMapper(FORCE, false);
 
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserMismatchDoesNotDeleteRoleInImportMode() {
         newValueForAttribute2 = "value mismatch";
-        UserRepresentation user = createMapperAndLoginAsUserTwiceWithMapper(IMPORT, false);
+        createMapperAndLoginAsUserTwiceWithMapper(IMPORT, false);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserMatchDoesntDeleteRole() {
         newValueForAttribute2 = "value 2";
-        UserRepresentation user = createMapperAndLoginAsUserTwiceWithMapper(FORCE, false);
+        createMapperAndLoginAsUserTwiceWithMapper(FORCE, false);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserAssignsRoleInForceModeWhenCreatingTheMapperAfterFirstLogin() {
         newValueForAttribute2 = "value 2";
-        UserRepresentation user = createMapperAndLoginAsUserTwiceWithMapper(FORCE, true);
+        createMapperAndLoginAsUserTwiceWithMapper(FORCE, true);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
-    public UserRepresentation createMapperAndLoginAsUserTwiceWithMapper(IdentityProviderMapperSyncMode syncMode, boolean createAfterFirstLogin) {
-        return loginAsUserTwiceWithMapper(syncMode, createAfterFirstLogin, ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add("value 2").build())
-                .build());
+    public void createMapperAndLoginAsUserTwiceWithMapper(IdentityProviderMapperSyncMode syncMode,
+            boolean createAfterFirstLogin) {
+        loginAsUserTwiceWithMapper(syncMode, createAfterFirstLogin, createMatchingUserConfig());
     }
 
     @Override
     protected void updateUser() {
         UserRepresentation user = findUser(bc.providerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        ImmutableMap<String, List<String>> matchingAttributes = ImmutableMap.<String, List<String>>builder()
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
-                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add(newValueForAttribute2).build())
-                .put("some.other.attribute", ImmutableList.<String>builder().add("some value").build())
+        ImmutableMap<String, List<String>> matchingAttributes = ImmutableMap.<String, List<String>> builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
+                        ImmutableList.<String> builder().add("value 1").add("value 2").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
+                        ImmutableList.<String> builder().add(newValueForAttribute2).build())
+                .put("some.other.attribute", ImmutableList.<String> builder().add("some value").build())
                 .build();
         user.setAttributes(matchingAttributes);
         adminClient.realm(bc.providerRealmName()).users().get(user.getId()).update(user);
     }
 
     @Override
-    protected void createMapperInIdp(IdentityProviderRepresentation idp, IdentityProviderMapperSyncMode syncMode) {
-        createMapperInIdp(idp, CLAIMS_OR_ATTRIBUTES, false, syncMode);
+    protected void createMapperInIdp(IdentityProviderMapperSyncMode syncMode, String roleValue) {
+        createMapperInIdp(CLAIMS_OR_ATTRIBUTES, false, syncMode, roleValue);
     }
 
-    protected void createAdvancedRoleMapper(String claimsOrAttributeRepresentation, boolean areClaimsOrAttributeValuesRegexes) {
-        IdentityProviderRepresentation idp = setupIdentityProvider();
-        createMapperInIdp(idp, claimsOrAttributeRepresentation, areClaimsOrAttributeValuesRegexes, IMPORT);
+    @Override
+    protected Map<String, List<String>> createUserConfigForRole(String roleValue) {
+        return createMatchingUserConfig();
     }
 
-    abstract protected void createMapperInIdp(
-            IdentityProviderRepresentation idp, String claimsOrAttributeRepresentation, boolean areClaimsOrAttributeValuesRegexes, IdentityProviderMapperSyncMode syncMode);
+    private static Map<String, List<String>> createMatchingUserConfig() {
+        return ImmutableMap.<String, List<String>> builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
+                        ImmutableList.<String> builder().add("value 1").add("value 2").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
+                        ImmutableList.<String> builder().add("value 2").build())
+                .build();
+    }
+
+    protected void createAdvancedRoleMapper(String claimsOrAttributeRepresentation,
+            boolean areClaimsOrAttributeValuesRegexes) {
+        setupIdentityProvider();
+        createMapperInIdp(claimsOrAttributeRepresentation, areClaimsOrAttributeValuesRegexes, IMPORT,
+                CLIENT_ROLE_MAPPER_REPRESENTATION);
+    }
+
+    abstract protected void createMapperInIdp(String claimsOrAttributeRepresentation,
+            boolean areClaimsOrAttributeValuesRegexes, IdentityProviderMapperSyncMode syncMode, String roleValue);
 }

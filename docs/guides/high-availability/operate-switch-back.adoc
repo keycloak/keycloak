@@ -1,0 +1,84 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Switch back to the primary site"
+summary="This describes the operational procedures necessary" >
+
+These procedures switch back to the primary site back after a failover or switchover to the secondary site.
+In a setup as outlined in <@links.ha id="concepts-active-passive-sync" /> together with the blueprints outlined in <@links.ha id="bblocks-active-passive-sync" />.
+
+include::partials/infinispan/infinispan-attributes.adoc[]
+
+// used by the CLI commands to avoid duplicating the code.
+:stale-site: primary
+:keep-site: secondary
+:keep-site-name: {site-b-cr}
+:stale-site-name: {site-a-cr}
+
+== When to use this procedure
+
+These procedures bring the primary site back to operation when the secondary site is handling all the traffic.
+At the end of the {section}, the primary site is online again and handles the traffic.
+
+This procedure is necessary when the primary site has lost its state in {jdgserver_name}, a network partition occurred between the primary and the secondary site while the secondary site was active, or the replication was disabled as described in the <@links.ha id="operate-switch-over"/> {section}.
+
+If the data in {jdgserver_name} on both sites is still in sync, the procedure for {jdgserver_name} can be skipped.
+
+See the <@links.ha id="introduction" /> {section} for different operational procedures.
+
+== Procedures
+
+=== {jdgserver_name} Cluster
+
+For the context of this {section}, `{site-a}` is the primary site, recovering back to operation, and `{site-b}` is the secondary site, running in production.
+
+After the {jdgserver_name} in the primary site is back online and has joined the cross-site channel (see <@links.ha id="deploy-infinispan-kubernetes-crossdc" />#verifying-the-deployment on how to verify the {jdgserver_name} deployment), the state transfer must be manually started from the secondary site.
+
+After clearing the state in the primary site, it transfers the full state from the secondary site to the primary site, and it must be completed before the primary site can start handling incoming requests.
+
+WARNING: Transferring the full state may impact the {jdgserver_name} cluster perform by increasing the response time and/or resources usage.
+
+The first procedure is to delete any stale data from the primary site.
+
+. Log in to the primary site.
+
+. Shutdown {project_name}.
+This action will clear all {project_name} caches and prevents the state of {project_name} from being out-of-sync with {jdgserver_name}.
++
+When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to 0.
+
+<#include "partials/infinispan/infinispan-cli-connect.adoc" />
+
+include::partials/infinispan/infinispan-cli-clear-caches.adoc[]
+
+Now we are ready to transfer the state from the secondary site to the primary site.
+
+. Log in into your secondary site.
+
+<#include "partials/infinispan/infinispan-cli-connect.adoc" />
+
+include::partials/infinispan/infinispan-cli-state-transfer.adoc[]
+
+. Log in to the primary site.
+
+. Start {project_name}.
++
+When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to the original value.
+
+Both {jdgserver_name} clusters are in sync and the switchover from secondary back to the primary site can be performed.
+
+=== AWS Aurora Database
+
+include::partials/aurora/aurora-failover.adoc[]
+
+=== Route53
+
+If switching over to the secondary site has been triggered by changing the health endpoint, edit the health check in AWS to point to a correct endpoint (`/lb-check`).
+After some minutes, the clients will notice the change and traffic will gradually move over to the secondary site.
+
+== Further reading
+
+See <@links.ha id="concepts-infinispan-cli-batch" /> on how to automate Infinispan CLI commands.
+
+</@tmpl.guide>

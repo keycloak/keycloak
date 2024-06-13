@@ -26,7 +26,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.ImportedRsaEncKeyProviderFactory;
@@ -42,7 +41,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.security.KeyPair;
 import java.security.cert.Certificate;
 import java.util.List;
@@ -77,7 +76,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void privateKeyOnlyForEnc() throws Exception {
-        privateKeyOnly(ImportedRsaEncKeyProviderFactory.ID, KeyUse.ENC, JWEConstants.RSA_OAEP);
+        privateKeyOnly(ImportedRsaEncKeyProviderFactory.ID, KeyUse.ENC, Algorithm.RSA_OAEP);
     }
 
     private void privateKeyOnly(String providerId, KeyUse keyUse, String algorithm) throws Exception {

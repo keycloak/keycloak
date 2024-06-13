@@ -31,8 +31,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.services.Urls;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -160,7 +160,9 @@ public abstract class OIDCRedirectUriBuilder {
             builder.append("  </HEAD>");
             builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
 
-            builder.append("    <FORM METHOD=\"POST\" ACTION=\"" + redirectUri.toString() + "\">");
+            builder.append("    <FORM METHOD=\"POST\" ACTION=\"")
+                    .append(HtmlUtils.escapeAttribute(redirectUri.toString()))
+                    .append("\">");
 
             for (Map.Entry<String, String> param : params.entrySet()) {
                 builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
@@ -261,7 +263,9 @@ public abstract class OIDCRedirectUriBuilder {
             builder.append("  </HEAD>");
             builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
 
-            builder.append("    <FORM METHOD=\"POST\" ACTION=\"" + redirectUri.toString() + "\">");
+            builder.append("    <FORM METHOD=\"POST\" ACTION=\"")
+                    .append(HtmlUtils.escapeAttribute(redirectUri.toString()))
+                    .append("\">");
 
             builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"response\" VALUE=\"")
                     .append(HtmlUtils.escapeAttribute(session.tokens().encodeAndEncrypt(responseJWT)))

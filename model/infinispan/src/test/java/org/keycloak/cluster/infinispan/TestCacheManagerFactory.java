@@ -74,7 +74,6 @@ class TestCacheManagerFactory {
                 .remoteCacheName(cacheName)
                 .rawValues(true)
                 .forceReturnValues(false)
-                .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
                 .protocolVersion(ProtocolVersion.PROTOCOL_VERSION_29)
                 .addServer()
                     .host(host)

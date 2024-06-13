@@ -1,7 +1,0 @@
-{
-  "realm" : "cors",
-  "auth-server-url" : "http://localhost-auth:8080/auth",
-  "ssl-required" : "external",
-  "resource" : "angular-cors-product",
-  "public-client" : true
-}

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-model-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -30,22 +30,21 @@
     <description/>
 
     <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
         <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
-        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
         <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
-        <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
     </properties>
     
     <dependencies>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
@@ -64,30 +63,23 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
+            <artifactId>keycloak-model-storage</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -110,8 +102,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -119,7 +112,7 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <artifactId>slf4j-reload4j</artifactId>
         </dependency>
         <dependency>
             <groupId>${jdbc.mvn.groupId}</groupId>
@@ -141,7 +134,7 @@
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <org.jboss.logging.provider>log4j</org.jboss.logging.provider>
+                        <org.jboss.logging.provider>jboss</org.jboss.logging.provider>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

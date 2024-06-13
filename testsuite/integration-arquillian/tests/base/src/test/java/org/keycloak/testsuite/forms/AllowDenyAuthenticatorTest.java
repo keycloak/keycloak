@@ -8,31 +8,33 @@ import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticator
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalRoleAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
+import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@AuthServerContainerExclude(REMOTE)
 public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
     @Page
@@ -123,6 +125,42 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
         attributeConfigMap.put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_NAME, "attribute");
         attributeConfigMap.put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_EXPECTED_VALUE, "value");
         attributeConfigMap.put(ConditionalUserAttributeValueFactory.CONF_NOT, "true");
+
+        Map<String, String> denyAccessConfigMap = new HashMap<>();
+        denyAccessConfigMap.put(DenyAccessAuthenticatorFactory.ERROR_MESSAGE, errorMessage);
+
+        configureBrowserFlowWithDenyAccessInConditionalFlow(flowAlias, ConditionalUserAttributeValueFactory.PROVIDER_ID, attributeConfigMap, denyAccessConfigMap);
+
+        try {
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.assertCurrent();
+            loginUsernameOnlyPage.login(userWithoutAttribute);
+
+            errorPage.assertCurrent();
+            assertThat(errorPage.getError(), is(errorMessage));
+
+            events.expectLogin()
+                    .user((String) null)
+                    .session((String) null)
+                    .error(Errors.ACCESS_DENIED)
+                    .detail(Details.USERNAME, userWithoutAttribute)
+                    .removeDetail(Details.CONSENT)
+                    .assertEvent();
+        } finally {
+            revertFlows(testRealm(), flowAlias);
+        }
+    }
+
+    @Test
+    public void testDenyAccessWithRegexUserAttributeCondition() {
+        final String flowAlias = "browser - user attribute condition";
+        final String userWithoutAttribute = "test-user@localhost";
+        final String errorMessage = "You don't have necessary attribute.";
+
+        Map<String, String> attributeConfigMap = new HashMap<>();
+        attributeConfigMap.put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_NAME, "firstName");
+        attributeConfigMap.put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_EXPECTED_VALUE, "T(.*)");
+        attributeConfigMap.put(ConditionalUserAttributeValueFactory.REGEX, "true");
 
         Map<String, String> denyAccessConfigMap = new HashMap<>();
         denyAccessConfigMap.put(DenyAccessAuthenticatorFactory.ERROR_MESSAGE, errorMessage);
@@ -296,6 +334,25 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void testDenyAccessInDirectGrantFlow() throws Exception {
+        String flowAlias = "direct grant - deny defaultMessage";
+        String user = "test-user@localhost";
+        String clientId = "direct-grant";
+
+        configureDirectGrantFlowWithDenyAccess(flowAlias, new HashMap<>());
+
+        try {
+            oauth.clientId(clientId);
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", user, "password");
+            assertEquals(401, response.getStatusCode());
+            assertEquals("Access denied", response.getError());
+            assertNull(response.getErrorDescription());
+        } finally {
+            DirectGrantFlowTest.revertFlows(testRealm(), flowAlias);
+        }
+    }
+
     /**
      * This flow contains:
      * UsernameForm REQUIRED
@@ -377,6 +434,27 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
                         ))
                 .defineAsBrowserFlow() // Activate this new flow
+        );
+    }
+
+    /**
+     * This flow contains:
+     * Validate Username REQUIRED
+     * Validate Password REQUIRED
+     * Deny Access REQUIRED
+     *
+     * @param newFlowAlias
+     * @param denyConfig
+     */
+    private void configureDirectGrantFlowWithDenyAccess(String newFlowAlias, Map<String, String> denyConfig) {
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyDirectGrantFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .clear()
+                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ValidateUsername.PROVIDER_ID)
+                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ValidatePassword.PROVIDER_ID)
+                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, DenyAccessAuthenticatorFactory.PROVIDER_ID, config -> config.setConfig(denyConfig))
+                .defineAsDirectGrantFlow() // Activate this new flow
         );
     }
 }

@@ -3,6 +3,7 @@ description: Any tasks that are not directly adding a new feature, enhancement o
 labels: ["kind/task"]
 body:
   - type: textarea
+    id: description
     attributes:
       label: Description
       description: Describe the task.

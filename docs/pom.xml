@@ -19,7 +19,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Docs Parent</name>
@@ -29,18 +29,22 @@
     <artifactId>keycloak-docs-parent</artifactId>
     <packaging>pom</packaging>
 
+    <modules>
+        <module>maven-plugin</module>
+        <module>guides</module>
+    </modules>
+
     <profiles>
         <profile>
-            <id>quarkus</id>
-            <activation>
-                <jdk>[11,)</jdk>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
+            <id>documentation</id>
             <modules>
-                <module>maven-plugin</module>
-                <module>guides</module>
+                <module>documentation</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>all</id>
+            <modules>
+                <module>documentation</module>
             </modules>
         </profile>
     </profiles>

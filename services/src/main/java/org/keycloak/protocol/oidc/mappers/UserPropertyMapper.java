@@ -30,12 +30,12 @@ import java.util.List;
 /**
  * Mappings UserModel property (the property name of a getter method) to an ID Token claim.  Token claim name can be a full qualified nested object name,
  * i.e. "address.country".  This will create a nested
- * json object within the toke claim.
+ * json object within the token claim.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
@@ -89,10 +89,10 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken) {
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
         return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
-                accessToken, idToken,
+                accessToken, idToken, introspectionEndpoint,
                 PROVIDER_ID);
     }
 }

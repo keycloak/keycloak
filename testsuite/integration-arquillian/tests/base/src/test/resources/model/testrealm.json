@@ -13,6 +13,12 @@
     "requiredCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
     "verifyEmail" : "true",
+    "localizationTexts" : {
+        "en" : {
+            "key1" : "value1",
+            "key2" : "value2"
+        }
+    },
     "smtpServer": {
         "from": "auto@keycloak.org",
         "host": "localhost",
@@ -22,6 +28,16 @@
         {
             "providerId" : "google",
             "alias" : "google1",
+            "enabled": true,
+            "config": {
+                "syncMode": "IMPORT",
+                "clientId": "googleId",
+                "clientSecret": "googleSecret"
+            }
+        },
+        {
+            "providerId" : "github",
+            "alias" : "github1",
             "enabled": true,
             "config": {
                 "syncMode": "IMPORT",
@@ -56,6 +72,7 @@
             "providerName": "ldap",
             "priority": 1,
             "config": {
+                "enabled": false,
                 "connectionUrl": "ldap://foo",
                 "editMode": "WRITABLE"
             }
@@ -65,6 +82,7 @@
             "providerName": "ldap",
             "priority": 2,
             "config": {
+                "enabled": false,
                 "connectionUrl": "ldap://bar",
                 "editMode": "WRITABLE"
             }
@@ -228,6 +246,17 @@
                     "identityProvider": "google1",
                     "userId": "google1",
                     "userName": "mySocialUser@gmail.com"
+                }
+            ]
+        },
+        {
+            "username": "lowercasesocialuser",
+            "enabled": true,
+            "federatedIdentities": [
+                {
+                    "identityProvider": "github1",
+                    "userId": "github1",
+                    "userName": "lowercasesocialuser@gmail.com"
                 }
             ]
         },

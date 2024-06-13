@@ -1,29 +1,26 @@
 {
   "name": "keycloak-npm-dependencies",
-  "version": "1.0.0",
-  "description": "Keycloak NPM Dependencies",
-  "license": "Apache-2.0",
-  "repository": "https://github.com/keycloak/keycloak",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm build:clean && rollup --config",
+    "build:clean": "shx rm -rf vendor"
+  },
   "dependencies": {
-    "angular": "1.8.0",
-    "angular-cookies": "1.8.0",
-    "angular-loader": "1.8.0",
-    "angular-resource": "1.8.0",
-    "angular-route": "1.8.0",
-    "angular-sanitize": "1.8.0",
-    "angular-translate": "2.18.2",
-    "angular-translate-loader-url": "2.18.2",
-    "angular-treeview": "0.1.5",
-    "angular-ui-select2": "0.0.5",
-    "autofill-event": "0.0.1",
-    "bootstrap": "3.4.1",
-    "filesaver": "0.0.13",
-    "font-awesome": "4.7.0",
-    "jquery": "3.5.1",
-    "ng-file-upload": "12.2.13",
-    "patternfly": "3.59.4",
-    "rcue": "3.48.1",
-    "select2": "3.5.1",
-    "text-security": "2.0.0-alpha.2"
+    "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.3.1",
+    "@patternfly/patternfly": "^4.224.5",
+    "alpinejs": "^3.14.0",
+    "jquery": "^3.7.1",
+    "patternfly": "^3.59.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rfc4648": "^1.5.3"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.7",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.18.0",
+    "shx": "^0.3.4"
   }
 }

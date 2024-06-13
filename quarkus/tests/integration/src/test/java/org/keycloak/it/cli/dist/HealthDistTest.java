@@ -20,11 +20,18 @@ package org.keycloak.it.cli.dist;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 
-@DistributionTest(keepAlive =true)
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+@DistributionTest(keepAlive = true,
+        requestPort = 9000,
+        containerExposedPorts = {8080, 9000})
 public class HealthDistTest {
 
     @Test
@@ -32,9 +39,17 @@ public class HealthDistTest {
     void testHealthEndpointNotEnabled() {
         when().get("/health").then()
                 .statusCode(404);
+        when().get("/q/health").then()
+                .statusCode(404);
         when().get("/health/live").then()
                 .statusCode(404);
+        when().get("/q/health/live").then()
+                .statusCode(404);
         when().get("/health/ready").then()
+                .statusCode(404);
+        when().get("/q/health/ready").then()
+                .statusCode(404);
+        when().get("/lb-check").then()
                 .statusCode(404);
     }
 
@@ -47,15 +62,73 @@ public class HealthDistTest {
                 .statusCode(200);
         when().get("/health/ready").then()
                 .statusCode(200);
-        // Metrics is endpoint independent
+        // Metrics should not be enabled
         when().get("/metrics").then()
+                .statusCode(404);
+        when().get("/lb-check").then()
                 .statusCode(404);
     }
 
     @Test
-    @Launch({ "start-dev", "--health-enabled=true" })
-    void testHealthEndpointDoesNotEnableMetrics() {
-        when().get("/metrics").then()
+    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true" })
+    void testNonBlockingProbes() {
+        when().get("/health/live").then()
+                .statusCode(200);
+        when().get("/health/ready").then()
+                .statusCode(200)
+                .body("checks[0].name", equalTo("Keycloak database connections async health check"))
+                .body("checks.size()", equalTo(1));
+        when().get("/lb-check").then()
                 .statusCode(404);
+    }
+
+    @Test
+    void testUsingRelativePath(KeycloakDistribution distribution) {
+        for (String relativePath : List.of("/auth", "/auth/", "auth")) {
+            distribution.run("start-dev", "--health-enabled=true", "--http-management-relative-path=" + relativePath);
+            if (!relativePath.endsWith("/")) {
+                relativePath = relativePath + "/";
+            }
+            when().get(relativePath + "health").then().statusCode(200);
+            distribution.stop();
+        }
+    }
+
+    @Test
+    void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
+        for (String relativePath : List.of("/", "/auth/", "auth")) {
+            distribution.run("start-dev", "--health-enabled=true", "--http-management-relative-path=" + relativePath);
+            CompletableFuture future = CompletableFuture.completedFuture(null);
+
+            for (int i = 0; i < 3; i++) {
+                future = CompletableFuture.allOf(CompletableFuture.runAsync(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < 200; i++) {
+                            String healthPath = "health";
+
+                            if (!relativePath.endsWith("/")) {
+                                healthPath = "/" + healthPath;
+                            }
+
+                            when().get(relativePath + healthPath).then().statusCode(200);
+                        }
+                    }
+                }), future);
+            }
+
+            future.get(5, TimeUnit.MINUTES);
+
+            distribution.stop();
+        }
+    }
+
+    @Test
+    @Launch({ "start-dev", "--features=multi-site" })
+    void testLoadBalancerCheck(KeycloakDistribution distribution) {
+        distribution.setRequestPort(8080);
+
+        when().get("/lb-check").then()
+                .statusCode(200);
     }
 }

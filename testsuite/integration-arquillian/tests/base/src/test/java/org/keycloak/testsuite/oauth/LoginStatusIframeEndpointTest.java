@@ -38,10 +38,14 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.runonserver.ServerVersion;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.RealmBuilder;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Collections;
@@ -53,12 +57,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
     @Test
@@ -90,8 +92,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             post.setEntity(new UrlEncodedFormEntity(params));
 
             response = client.execute(post);
-
-            assertEquals("CP=\"This is not a P3P policy!\"", response.getFirstHeader("P3P").getValue());
 
             Header setIdentityCookieHeader = null;
             Header setSessionCookieHeader = null;
@@ -126,10 +126,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             response = client.execute(get);
 
             assertEquals(200, response.getStatusLine().getStatusCode());
-            s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
-            assertTrue(s.contains("function getCookie()"));
-
-            assertEquals("CP=\"This is not a P3P policy!\"", response.getFirstHeader("P3P").getValue());
             assertNull(response.getFirstHeader(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName()));
             assertEquals("frame-src 'self'; object-src 'none';", response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getHeaderName()).getValue());
             assertEquals("none", response.getFirstHeader(BrowserSecurityHeaders.X_ROBOTS_TAG.getHeaderName()).getValue());
@@ -209,8 +205,23 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void checkEmptyCsp() throws Exception {
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(adminClient.realm("test"))
+                .setBrowserSecurityHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey(), "")
+                .update();
+                Client client = AdminClientUtil.createResteasyClient();
+                Response response = client.target(suiteContext.getAuthServerInfo().getContextRoot()
+                        + "/auth/realms/test/protocol/openid-connect/login-status-iframe.html").request().get()) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            assertNull(response.getHeaderString(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey()));
+            assertNull(response.getHeaderString(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName()));
+        }
+    }
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
+        testRealms.add(RealmBuilder.create().name("test").build());
     }
 
 }

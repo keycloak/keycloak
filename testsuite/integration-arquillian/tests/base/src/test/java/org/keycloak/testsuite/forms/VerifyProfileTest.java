@@ -21,15 +21,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.graphene.page.Page;
@@ -39,35 +39,44 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
+import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
+import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     public static final String SCOPE_DEPARTMENT = "department";
@@ -98,44 +107,28 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     private static String user6Id;
 
+    private static String userWithoutEmailId;
+
     private static ClientRepresentation client_scope_default;
     private static ClientRepresentation client_scope_optional;
 
     @Override
+    protected boolean removeVerifyProfileAtImport() {
+        // we need the verify profile action enabled as default
+        return false;
+    }
+
+    @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-
-        enableDynamicUserProfile(testRealm);
-
         UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test").email("login@test.com").enabled(true).password("password").build();
-        userId = user.getId();
-
         UserRepresentation user2 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test2").email("login2@test.com").enabled(true).password("password").build();
-        user2Id = user2.getId();
-
         UserRepresentation user3 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test3").email("login3@test.com").enabled(true).password("password").lastName("ExistingLast").build();
-        user3Id = user3.getId();
-
         UserRepresentation user4 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test4").email("login4@test.com").enabled(true).password("password").lastName("ExistingLast").build();
-        user4Id = user4.getId();
-
         UserRepresentation user5 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test5").email("login5@test.com").enabled(true).password("password").firstName("ExistingFirst").lastName("ExistingLast").build();
-        user5Id = user5.getId();
-
         UserRepresentation user6 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test6").email("login6@test.com").enabled(true).password("password").firstName("ExistingFirst").lastName("ExistingLast").build();
-        user6Id = user6.getId();
+        UserRepresentation userWithoutEmail = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-nomail").enabled(true).password("password").firstName("NoMailFirst").lastName("NoMailLast").build();
 
-        RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6);
-
-        RequiredActionProviderRepresentation action = new RequiredActionProviderRepresentation();
-        action.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
-        action.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
-        action.setEnabled(true);
-        action.setDefaultAction(false);
-        action.setPriority(10);
-
-        List<RequiredActionProviderRepresentation> actions = new ArrayList<>();
-        actions.add(action);
-        testRealm.setRequiredActions(actions);
+        RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6).user(userWithoutEmail);
 
         testRealm.setClientScopes(new ArrayList<>());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name(SCOPE_DEPARTMENT).protocol("openid-connect").build());
@@ -148,8 +141,23 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         client_scope_optional.setRedirectUris(Collections.singletonList("*"));
     }
 
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("login-test", true).get(0).getId();
+        user2Id = adminClient.realm("test").users().search("login-test2", true).get(0).getId();
+        user3Id = adminClient.realm("test").users().search("login-test3", true).get(0).getId();
+        user4Id = adminClient.realm("test").users().search("login-test4", true).get(0).getId();
+        user5Id = adminClient.realm("test").users().search("login-test5", true).get(0).getId();
+        user6Id = adminClient.realm("test").users().search("login-test6", true).get(0).getId();
+        userWithoutEmailId = adminClient.realm("test").users().search("login-nomail", true).get(0).getId();
+    }
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Page
     protected AppPage appPage;
@@ -212,7 +220,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         verifyProfilePage.assertCurrent();
         String htmlFormId="kc-update-profile-form";
 
-        //assert fields and groups location in form
+        //assert fields and groups location in form, attributes without a group appear first
         Assert.assertTrue(
                 driver.findElement(
                         By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
@@ -268,6 +276,10 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + "}"
                 + "]}");
+
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setEditUsernameAllowed(true);
+        testRealm().update(realm);
 
         loginPage.open();
         loginPage.login("login-test5", "password");
@@ -338,7 +350,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         verifyProfilePage.assertCurrent();
         //event when form is shown
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).detail("fields_to_update", "department").assertEvent();
+        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id)
+                .detail(Details.FIELDS_TO_UPDATE, "department")
+                .assertEvent();
 
         verifyProfilePage.update("First", "Last", "Department");
         //event after profile is updated
@@ -354,6 +368,8 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testDefaultProfile() {
         setUserProfileConfiguration(null);
+
+        testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
 
         loginPage.open();
         loginPage.login("login-test", "password");
@@ -378,8 +394,29 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testIgnoreCustomAttributeWhenUserProfileIsDisabled() {
+        testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
+        testDefaultProfile();
+    }
+
+    private static RunOnServer setEmptyFirstNameAndCustomAttribute() {
+        return session -> {
+            UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "login-test");
+
+            // need to set directly to the model because user profile does not allow empty values
+            // an empty value should fail validation and force rendering the verify profile page
+            user.setFirstName("");
+            // this attribute does not exist in the default user profile configuration
+            user.setAttribute("test", List.of("test"));
+        };
+    }
+
+    @Test
     public void testUsernameOnlyIfEditAllowed() {
         RealmRepresentation realm = testRealm().toRepresentation();
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, null, "ExistingLast", null);
 
         boolean r = realm.isEditUsernameAllowed();
         try {
@@ -389,9 +426,11 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
 
             loginPage.open();
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test5", "password");
 
+            verifyProfilePage.assertCurrent();
             assertFalse(verifyProfilePage.isUsernamePresent());
+            assertTrue(verifyProfilePage.isEmailPresent());
 
             realm.setEditUsernameAllowed(true);
             testRealm().update(realm);
@@ -400,6 +439,98 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             assertTrue(verifyProfilePage.isUsernamePresent());
         } finally {
             realm.setEditUsernameAllowed(r);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
+    public void testUsernameOnlyIfEmailAsUsernameIsDisabled() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, null, "ExistingLast", null);
+
+        try {
+            setUserProfileConfiguration(null);
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            loginPage.open();
+            loginPage.login("login-test5", "password");
+
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertTrue(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertTrue(verifyProfilePage.isUsernamePresent());
+            assertTrue(verifyProfilePage.isEmailPresent());
+        } finally {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
+    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
+    public void testUsernameOnlyIfEmailAsUsernameIsDisabledWithUpdateEmailFeature() throws Exception {
+        reconnectAdminClient();
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, null, "ExistingLast", null);
+
+        try {
+            setUserProfileConfiguration(null);
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            loginPage.open();
+            loginPage.login("login-test5", "password");
+
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertTrue(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+        } finally {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
             testRealm().update(realm);
         }
     }
@@ -530,6 +661,95 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user = getUser(user3Id);
         assertEquals("First", user.getFirstName());
         assertEquals("Last", user.getLastName());
+    }
+
+    @Test
+    public void testAdminOnlyAttributeNotVisibleToUser() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + "},"
+                + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test6", "password");
+
+        verifyProfilePage.assertCurrent();
+        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+        Assert.assertFalse("Admin-only attribute should not be visible for user", verifyProfilePage.isDepartmentPresent());
+    }
+
+
+    @Test
+    public void testUsernameReadOnlyInProfile() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
+                + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test6", "password");
+
+        verifyProfilePage.assertCurrent();
+        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+
+        Assert.assertFalse("username should not be editable by user", verifyProfilePage.isUsernameEnabled());
+    }
+
+    @Test
+    public void testUsernameReadNotVisibleInProfile() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\"," + PERMISSIONS_ADMIN_ONLY + "},"
+                + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test6", "password");
+
+        verifyProfilePage.assertCurrent();
+        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+
+        Assert.assertFalse("username should not be shown to user", verifyProfilePage.isUsernamePresent());
+    }
+
+    @Test
+    public void testEMailRequiredInProfileWithLocalPartLength() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\"," + PERMISSIONS_ADMIN_ONLY + "},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\":{\"roles\":[\"user\"]}, \"validations\": {\"email\": {\"max-local-length\": \"16\"}}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-nomail", "password");
+
+        // no email is set => expect verify profile page to be displayed
+        verifyProfilePage.assertCurrent();
+
+        // set e-mail with legth 17 => error
+        verifyProfilePage.updateEmail("abcdefg0123456789@bar.com", "HasNowMailFirst", "HasNowMailLast");
+        verifyProfilePage.assertCurrent();
+
+        // set e-mail, update firstname/lastname and complete login
+        verifyProfilePage.updateEmail("abcdef0123456789@bar.com", "HasNowMailFirst", "HasNowMailLast");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        UserRepresentation user = getUser(userWithoutEmailId);
+        assertEquals("HasNowMailFirst", user.getFirstName());
+        assertEquals("HasNowMailLast", user.getLastName());
+        assertEquals("abcdef0123456789@bar.com", user.getEmail());
     }
 
     @Test
@@ -929,6 +1149,19 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
     }
 
+    @Test
+    public void testConfigurationPersisted() throws IOException {
+        String customConfig = "{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", " + VALIDATIONS_LENGTH + "}"
+                + "]}";
+
+        UPConfig persistedConfig = setUserProfileConfiguration(customConfig);
+
+        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), testRealm().users().userProfile().getConfiguration());
+    }
+
     protected UserRepresentation getUser(String userId) {
         return getUser(testRealm(), userId);
     }
@@ -945,33 +1178,48 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         testRealm().users().get(userId).update(ur);
     }
 
-    protected void setUserProfileConfiguration(String configuration) {
-        setUserProfileConfiguration(testRealm(), configuration);
+    protected UPConfig setUserProfileConfiguration(String configuration) {
+        assertAdminEvents.clear();
+        UPConfig result = setUserProfileConfiguration(testRealm(), configuration);
+        AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME,
+                OperationType.UPDATE, AdminEventPaths.userProfilePath(), ResourceType.USER_PROFILE);
+        Assert.assertTrue("Incorrect representation in event", StringUtils.isBlank(configuration)
+                ? StringUtils.isBlank(adminEvent.getRepresentation())
+                : StringUtils.isNotBlank(adminEvent.getRepresentation()));
+        return result;
     }
 
-    public static void enableDynamicUserProfile(RealmRepresentation testRealm) {
-        if (testRealm.getAttributes() == null) {
-            testRealm.setAttributes(new HashMap<>());
-        }
-        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-    }
+    public static UPConfig setUserProfileConfiguration(RealmResource testRealm, String configuration) {
+        try {
+            UPConfig config = configuration == null ? null : JsonSerialization.readValue(configuration, UPConfig.class);
 
-    public static void disableDynamicUserProfile(RealmResource realm) {
-        RealmRepresentation realmRep = realm.toRepresentation();
-        if (realmRep.getAttributes() == null) {
-            realmRep.setAttributes(new HashMap<>());
-        }
-        realmRep.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.FALSE.toString());
-        realm.update(realmRep);
-    }
+            if (config != null) {
+                UPAttribute username = config.getAttribute(UserModel.USERNAME);
 
+                if (username == null) {
+                    config.addOrReplaceAttribute(new UPAttribute(UserModel.USERNAME));
+                }
 
-    public static void setUserProfileConfiguration(RealmResource testRealm, String configuration) {
-        try (Response r = testRealm.users().userProfile().update(configuration)) {
-            if (r.getStatus() != 200) {
-                Assert.fail("UserProfile Configuration not set due to error: " + r.readEntity(String.class));
+                UPAttribute email = config.getAttribute(UserModel.EMAIL);
+
+                if (email == null) {
+                    config.addOrReplaceAttribute(new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_USER, ROLE_ADMIN)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
+                }
             }
+
+            testRealm.users().userProfile().update(config);
+
+            return config;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to read configuration", ioe);
         }
+    }
+
+    public static UPConfig enableUnmanagedAttributes(UserProfileResource upResource) {
+        UPConfig cfg = upResource.getConfiguration();
+        cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        upResource.update(cfg);
+        return cfg;
     }
 
     public static UserRepresentation getUser(RealmResource testRealm, String userId) {

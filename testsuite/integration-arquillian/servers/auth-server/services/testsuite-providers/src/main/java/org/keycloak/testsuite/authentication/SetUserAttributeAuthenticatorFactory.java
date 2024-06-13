@@ -1,11 +1,8 @@
 package org.keycloak.testsuite.authentication;
 
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
-import org.keycloak.authentication.DisplayTypeAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.AttemptedAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -15,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class SetUserAttributeAuthenticatorFactory implements AuthenticatorFactory, DisplayTypeAuthenticatorFactory {
+public class SetUserAttributeAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "set-attribute";
 
@@ -24,13 +21,6 @@ public class SetUserAttributeAuthenticatorFactory implements AuthenticatorFactor
     protected static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.DISABLED};
-
-    @Override
-    public Authenticator createDisplay(KeycloakSession keycloakSession, String displayType) {
-        if (displayType == null) return create(keycloakSession);
-        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
-        return AttemptedAuthenticator.SINGLETON;
-    }
 
     @Override
     public String getReferenceCategory() {

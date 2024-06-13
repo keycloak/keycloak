@@ -10,7 +10,7 @@ import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorException
 import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorUnavailableException;
 import org.keycloak.testsuite.dballocator.client.mock.MockResponse;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;

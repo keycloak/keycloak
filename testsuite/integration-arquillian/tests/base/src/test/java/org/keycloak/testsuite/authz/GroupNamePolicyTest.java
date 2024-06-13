@@ -48,8 +48,6 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -60,7 +58,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class GroupNamePolicyTest extends AbstractAuthzTest {
 
     @Override
@@ -262,7 +259,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
                 continue;
             }
 
-            GroupRepresentation group = getGroup(part, parent.getSubGroups());
+            GroupRepresentation group = getGroup(part, realm.groups().group(parent.getId()).getSubGroups(0, 10, true));
 
             if (path.endsWith(group.getName())) {
                 return group;
@@ -275,12 +272,13 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     }
 
     private GroupRepresentation getGroup(String name, List<GroupRepresentation> groups) {
+        RealmResource realm = getRealm();
         for (GroupRepresentation group : groups) {
             if (name.equals(group.getName())) {
                 return group;
             }
 
-            GroupRepresentation child = getGroup(name, group.getSubGroups());
+            GroupRepresentation child = getGroup(name, realm.groups().group(group.getId()).getSubGroups(0, 10, true));
 
             if (child != null && name.equals(child.getName())) {
                 return child;

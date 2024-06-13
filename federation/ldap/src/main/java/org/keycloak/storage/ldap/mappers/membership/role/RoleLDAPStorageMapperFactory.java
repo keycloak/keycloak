@@ -94,6 +94,7 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
                 .label("LDAP Roles DN")
                 .helpText("LDAP DN where are roles of this tree saved. For example 'ou=finance,dc=example,dc=org' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
+                .required(true)
                 .add()
                 .property().name(RoleMapperConfig.ROLE_NAME_LDAP_ATTRIBUTE)
                 .label("Role Name LDAP Attribute")

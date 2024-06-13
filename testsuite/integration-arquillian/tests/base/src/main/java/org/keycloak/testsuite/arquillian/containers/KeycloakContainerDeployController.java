@@ -29,7 +29,6 @@ import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Injector;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
 /**
  * Overrides a condition that container cannot be in manual mode, and deploys the deployment
@@ -53,7 +52,6 @@ public class KeycloakContainerDeployController extends ContainerDeployController
 
             @Override
             public void perform(Container container, Deployment deployment) throws Exception {
-                if (runOnServerDeploymentOnRemote(deployment)) return;
                 if (container.getState().equals(Container.State.STARTED)) {
                     event.fire(new DeployDeployment(container, deployment));
                 }
@@ -80,11 +78,5 @@ public class KeycloakContainerDeployController extends ContainerDeployController
             Container container = containerRegistry.getContainer(deployment.getDescription().getTarget());
             operation.perform(container, deployment);
         }
-    }
-
-    //do not deploy run-on-server-classes.war into server in remote mode
-    private boolean runOnServerDeploymentOnRemote(Deployment deployment) {
-        return AuthServerTestEnricher.isAuthServerRemote() && 
-                deployment.getDescription().getArchive().getName().equals("run-on-server-classes.war");
     }
 }

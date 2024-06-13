@@ -19,13 +19,13 @@ package org.keycloak.storage.jpa.entity;
 
 import org.keycloak.storage.jpa.KeyUtils;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -40,7 +40,7 @@ import java.io.Serializable;
         @NamedQuery(name="deleteFederatedUserRoleMappingsByRealmAndLink", query="delete from  FederatedUserRoleMappingEntity mapping where mapping.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
         @NamedQuery(name="deleteFederatedUserRoleMappingsByRole", query="delete from FederatedUserRoleMappingEntity m where m.roleId = :roleId"),
         @NamedQuery(name="deleteFederatedUserRoleMappingsByUser", query="delete from FederatedUserRoleMappingEntity m where m.userId = :userId and m.realmId = :realmId"),
-
+        @NamedQuery(name="fedRoleMembership", query="select m.userId FROM FederatedUserRoleMappingEntity m where m.roleId = :roleId AND m.realmId = :realmId"),  
 })
 @Table(name="FED_USER_ROLE_MAPPING")
 @Entity

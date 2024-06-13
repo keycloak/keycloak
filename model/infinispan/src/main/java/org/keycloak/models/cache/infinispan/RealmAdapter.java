@@ -32,6 +32,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.keycloak.common.Profile;
+import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -241,6 +243,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setPermanentLockout(final boolean val) {
         getDelegateForUpdate();
         updated.setPermanentLockout(val);
+    }
+
+    @Override
+    public int getMaxTemporaryLockouts() {
+        if(isUpdated()) return updated.getMaxTemporaryLockouts();
+        return cached.getMaxTemporaryLockouts();
+    }
+
+    @Override
+    public void setMaxTemporaryLockouts(final int val) {
+        getDelegateForUpdate();
+        updated.setMaxTemporaryLockouts(val);
     }
 
     @Override
@@ -667,12 +681,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<RequiredCredentialModel> getRequiredCredentials() {
-        if (isUpdated()) return updated.getRequiredCredentials();
-        return cached.getRequiredCredentials();
-    }
-
-    @Override
     public void addRequiredCredential(String cred) {
         getDelegateForUpdate();
         updated.addRequiredCredential(cred);
@@ -754,32 +762,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    @Deprecated
-    public Stream<String> getDefaultRolesStream() {
-        if (isUpdated()) return updated.getDefaultRolesStream();
-        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
-    }
-
-    private boolean isRealmRole(RoleModel role) {
-        return ! role.isClientRole();
-    }
-
-    @Override
-    @Deprecated
-    public void addDefaultRole(String name) {
-        getDelegateForUpdate();
-        updated.addDefaultRole(name);
-    }
-
-    @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        getDelegateForUpdate();
-        updated.removeDefaultRoles(defaultRoles);
-
-    }
-
-    @Override
     public void addToDefaultRoles(RoleModel role) {
         getDelegateForUpdate();
         updated.addToDefaultRoles(role);
@@ -832,6 +814,11 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return cacheSession.searchClientsByAuthenticationFlowBindingOverrides(this, overrides, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults) {
         return cacheSession.getClientsStream(this, firstResult, maxResults);
     }
@@ -875,17 +862,34 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        if (isUpdated()) return updated.getIdentityProvidersStream();
-        return cached.getIdentityProviders().stream();
+        if (isUpdated()) return updated.getIdentityProvidersStream().map(this::createOrganizationAwareIdentityProviderModel);
+        return cached.getIdentityProviders().stream().map(this::createOrganizationAwareIdentityProviderModel);
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        if (isUpdated()) return updated.getIdentityProviderByAlias(alias);
+        if (isUpdated()) return createOrganizationAwareIdentityProviderModel(updated.getIdentityProviderByAlias(alias));
         return getIdentityProvidersStream()
                 .filter(model -> Objects.equals(model.getAlias(), alias))
                 .findFirst()
+                .map(this::createOrganizationAwareIdentityProviderModel)
                 .orElse(null);
+    }
+
+    private IdentityProviderModel createOrganizationAwareIdentityProviderModel(IdentityProviderModel idp) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return idp;
+        return new IdentityProviderModel(idp) {
+            @Override
+            public boolean isEnabled() {
+                // if IdP is bound to an org
+                if (getOrganizationId() != null) {
+                    OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                    OrganizationModel org = provider == null ? null : provider.getById(getOrganizationId());
+                    return org != null && provider.isEnabled() && org.isEnabled() && super.isEnabled();
+                }
+                return super.isEnabled();
+            }
+        };
     }
 
     @Override
@@ -1057,6 +1061,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public RoleModel getDefaultRole() {
+        if (isUpdated()) return updated.getDefaultRole();
         return cached.getDefaultRoleId() == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId());
     }
 
@@ -1281,6 +1286,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+        if (isUpdated()) return updated.getFirstBrokerLoginFlow();
+        return cached.getFirstBrokerLoginFlow();
+    }
+
+    @Override
+    public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setFirstBrokerLoginFlow(flow);
+    }
+
+    @Override
     public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
         if (isUpdated()) return updated.getAuthenticationFlowsStream();
         return cached.getAuthenticationFlowList().stream();
@@ -1400,6 +1417,36 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+        if (isUpdated()) return updated.getRequiredActionConfigById(id);
+        return cached.getRequiredActionProviderConfigs().get(id);
+    }
+
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+        if (isUpdated()) return updated.getRequiredActionConfigByAlias(alias);
+        return cached.getRequiredActionProviderConfigsByAlias().get(alias);
+    }
+
+    @Override
+    public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+        getDelegateForUpdate();
+        updated.updateRequiredActionConfig(model);
+    }
+
+    @Override
+    public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+        getDelegateForUpdate();
+        updated.removeRequiredActionProviderConfig(model);
+    }
+
+    @Override
+    public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+        if (isUpdated()) return updated.getRequiredActionConfigsStream();
+        return cached.getRequiredActionProviderConfigsByAlias().values().stream();
+    }
+
+    @Override
     public Stream<RequiredActionProviderModel> getRequiredActionProvidersStream() {
         if (isUpdated()) return updated.getRequiredActionProvidersStream();
         return cached.getRequiredActionProviderList().stream();
@@ -1478,11 +1525,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return cacheSession.searchForGroupByNameStream(this, search, first, max);
-    }
-
-    @Override
     public boolean removeGroup(GroupModel group) {
         return cacheSession.removeGroup(this, group);
     }
@@ -1490,13 +1532,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
         if (isUpdated()) return updated.getClientScopesStream();
-        return cached.getClientScopes().stream().map(scope -> {
-            ClientScopeModel model = cacheSession.getClientScopeById(this, scope);
-            if (model == null) {
-                throw new IllegalStateException("Cached clientScope not found: " + scope);
-            }
-            return model;
-        });
+        return cacheSession.getClientScopesStream(this);
     }
 
     @Override
@@ -1760,5 +1796,22 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
+    }
+
+    @Override
+    public boolean isOrganizationsEnabled() {
+        if (isUpdated()) return featureAwareIsOrganizationsEnabled(updated.isOrganizationsEnabled());
+        return featureAwareIsOrganizationsEnabled(cached.isOrganizationsEnabled());
+    }
+
+    @Override
+    public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        getDelegateForUpdate();
+        updated.setOrganizationsEnabled(organizationsEnabled);
+    }
+
+    private boolean featureAwareIsOrganizationsEnabled(boolean isOrganizationsEnabled) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return false;
+        return isOrganizationsEnabled;
     }
 }

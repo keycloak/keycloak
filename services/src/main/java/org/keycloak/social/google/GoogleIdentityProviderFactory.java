@@ -20,6 +20,10 @@ import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.List;
 
 /**
  * @author Pedro Igor
@@ -46,5 +50,28 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property().name("hostedDomain")
+                .label("Hosted Domain")
+                .helpText("Set 'hd' query parameter when logging in with Google. Google will list accounts only for this " +
+                        "domain. Keycloak validates that the returned identity token has a claim for this domain. When '*' " +
+                        "is entered, any hosted account can be used. Comma ',' separated list of domains is supported.")
+                .type(ProviderConfigProperty.STRING_TYPE).add()
+                .property().name("userIp")
+                .label("Use userIp param")
+                .helpText("Set 'userIp' query parameter when invoking on Google's User Info service.  This will use the " +
+                        "user's ip address.  Useful if Google is throttling access to the User Info service.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE).add()
+                .property().name("offlineAccess")
+                .label("Request refresh token")
+                .helpText("Set 'access_type' query parameter to 'offline' when redirecting to google authorization " +
+                        "endpoint, to get a refresh token back. Useful if planning to use Token Exchange to retrieve " +
+                        "Google token to access Google APIs when the user is not at the browser.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .add().build();
     }
 }

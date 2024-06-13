@@ -17,19 +17,11 @@
 
 package org.keycloak.models;
 
-import org.keycloak.storage.SearchableModelField;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserLoginFailureModel {
-
-   class SearchableFields {
-      public static final SearchableModelField<UserLoginFailureModel> ID       = new SearchableModelField<>("id", String.class);
-      public static final SearchableModelField<UserLoginFailureModel> REALM_ID = new SearchableModelField<>("realmId", String.class);
-      public static final SearchableModelField<UserLoginFailureModel> USER_ID  = new SearchableModelField<>("userId", String.class);
-   }
 
    String getId();
    String getUserId();
@@ -37,6 +29,8 @@ public interface UserLoginFailureModel {
    void setFailedLoginNotBefore(int notBefore);
    int getNumFailures();
    void incrementFailures();
+   int getNumTemporaryLockouts();
+   void incrementTemporaryLockouts();
    void clearFailures();
    long getLastFailure();
    void setLastFailure(long lastFailure);

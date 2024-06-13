@@ -17,72 +17,53 @@
 
 package org.keycloak.storage.ldap.idm.model;
 
-import javax.naming.ldap.Rdn;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPDn {
-    
-    private static final Pattern DN_PATTERN = Pattern.compile("(?<!\\\\),");
-    private static final Pattern ENTRY_PATTERN = Pattern.compile("(?<!\\\\)\\+");
-    private static final Pattern SUB_ENTRY_PATTERN = Pattern.compile("(?<!\\\\)=");
 
-    private final Deque<RDN> entries;
+    private final LdapName ldapName;
 
     private LDAPDn() {
-        this.entries = new LinkedList<>();
+        this.ldapName = new LdapName(Collections.emptyList());
     }
 
-    private LDAPDn(Deque<RDN> entries) {
-        this.entries = entries;
+    private LDAPDn(LdapName ldapName) {
+        this.ldapName = ldapName;
+    }
+
+    public static LDAPDn fromLdapName(LdapName ldapName) {
+        return new LDAPDn(ldapName);
     }
 
     public static LDAPDn fromString(String dnString) {
-        LDAPDn dn = new LDAPDn();
-        
         // In certain OpenLDAP implementations the uniqueMember attribute is mandatory
         // Thus, if a new group is created, it will contain an empty uniqueMember attribute
         // Later on, when adding members, this empty attribute will be kept
         // Keycloak must be able to process it, properly, w/o throwing an ArrayIndexOutOfBoundsException
-        if(dnString.trim().isEmpty())
-            return dn;
-
-        String[] rdns = DN_PATTERN.split(dnString);
-        for (String entryStr : rdns) {
-            if (entryStr.indexOf('+') == -1) {
-                // This is 99.9% of cases where RDN consists of single key-value pair
-                SubEntry subEntry = parseSingleSubEntry(dn, entryStr);
-                dn.addLast(new RDN(subEntry));
-            } else {
-                // This is 0.1% of cases where RDN consists of more key-value pairs like "uid=foo+cn=bar"
-                String[] subEntries = ENTRY_PATTERN.split(entryStr);
-                RDN entry = new RDN();
-                for (String subEntryStr : subEntries) {
-                    SubEntry subEntry = parseSingleSubEntry(dn, subEntryStr);
-                    entry.addSubEntry(subEntry);
-                }
-                dn.addLast(entry);
-            }
+        if(dnString.trim().isEmpty()) {
+            return new LDAPDn();
         }
 
-        return dn;
+        try {
+            return new LDAPDn(new LdapName(dnString));
+        } catch (NamingException e) {
+            throw new IllegalArgumentException("Invalid DN:" + dnString, e);
+        }
     }
 
-    // parse single sub-entry and add it to the "dn" . Assumption is that subentry is something like "uid=bar" and does not contain + character
-    private static SubEntry parseSingleSubEntry(LDAPDn dn, String subEntryStr) {
-        String[] rdn = SUB_ENTRY_PATTERN.split(subEntryStr);
-        if (rdn.length >1) {
-            return new SubEntry(rdn[0].trim(), rdn[1].trim());
-        } else {
-            return new SubEntry(rdn[0].trim(), "");
-        }
+    public LdapName getLdapName() {
+        return ldapName;
     }
 
     @Override
@@ -91,50 +72,27 @@ public class LDAPDn {
             return false;
         }
 
-        return toString().equals(obj.toString());
+        return ldapName.equals(((LDAPDn) obj).ldapName);
     }
 
     @Override
     public int hashCode() {
-        return toString().hashCode();
+        return ldapName.hashCode();
     }
 
     @Override
     public String toString() {
-        return toString(entries);
-    }
-
-    private static String toString(Collection<RDN> entries) {
-        StringBuilder builder = new StringBuilder();
-
-        boolean first = true;
-        for (RDN rdn : entries) {
-            if (first) {
-                first = false;
-            } else {
-                builder.append(",");
-            }
-            builder.append(rdn.toString());
-        }
-
-        return builder.toString();
+        return ldapName.toString();
     }
 
     /**
      * @return first entry. Usually entry corresponding to something like "uid=joe" from the DN like "uid=joe,dc=something,dc=org"
      */
     public RDN getFirstRdn() {
-        return entries.getFirst();
-    }
-
-    private static String unescapeValue(String escaped) {
-        // Something needed to handle non-String types?
-        return Rdn.unescapeValue(escaped).toString();
-    }
-
-    private static String escapeValue(String unescaped) {
-        // Something needed to handle non-String types?
-        return Rdn.escapeValue(unescaped);
+        if (ldapName.size() > 0) {
+            return new RDN(ldapName.getRdn(ldapName.size() - 1));
+        }
+        return null;
     }
 
     /**
@@ -144,37 +102,31 @@ public class LDAPDn {
      *
      */
     public LDAPDn getParentDn() {
-        LinkedList<RDN> parentDnEntries = new LinkedList<>(entries);
-        parentDnEntries.remove();
-        return new LDAPDn(parentDnEntries);
+        if (ldapName.size() > 0) {
+            LdapName parent = (LdapName) ldapName.getPrefix(ldapName.size() - 1);
+            return new LDAPDn(parent);
+        }
+        return null;
     }
 
     public boolean isDescendantOf(LDAPDn expectedParentDn) {
-        int parentEntriesCount = expectedParentDn.entries.size();
-
-        Deque<RDN> myEntries = new LinkedList<>(this.entries);
-        boolean someRemoved = false;
-        while (myEntries.size() > parentEntriesCount) {
-            myEntries.removeFirst();
-            someRemoved = true;
+        LDAPDn parent = getParentDn();
+        if (parent == null) {
+            return false;
         }
-
-        String myEntriesParentStr = toString(myEntries).toLowerCase();
-        String expectedParentDnStr = expectedParentDn.toString().toLowerCase();
-        return someRemoved && myEntriesParentStr.equals(expectedParentDnStr);
+        return parent.ldapName.startsWith(expectedParentDn.ldapName);
     }
 
     public void addFirst(String rdnName, String rdnValue) {
-        rdnValue = escapeValue(rdnValue);
-        entries.addFirst(new RDN(new SubEntry(rdnName, rdnValue)));
+        try {
+            ldapName.add(rdnName + "=" + Rdn.escapeValue(rdnValue));
+        } catch (NamingException e) {
+            throw new IllegalArgumentException("Invalid RDN name=" + rdnName + " value=" + rdnValue, e);
+        }
     }
 
     public void addFirst(RDN entry) {
-        entries.addFirst(entry);
-    }
-
-    private void addLast(RDN entry) {
-        entries.addLast(entry);
+        ldapName.add(entry.rdn);
     }
 
     /**
@@ -183,24 +135,27 @@ public class LDAPDn {
      */
     public static class RDN {
 
-        private List<SubEntry> subs = new LinkedList<>();
+        private Rdn rdn;
 
-        private RDN() {
-        }
-
-        private RDN(SubEntry subEntry) {
-            subs.add(subEntry);
-        }
-
-        private void addSubEntry(SubEntry subEntry) {
-            subs.add(subEntry);
+        private RDN(Rdn rdn) {
+            this.rdn = rdn;
         }
 
         /**
          * @return Keys in the RDN. Returned list is the copy, which is not linked to the original RDN
          */
         public List<String> getAllKeys() {
-            return subs.stream().map(SubEntry::getAttrName).collect(Collectors.toList());
+            try {
+                Attributes attrs = rdn.toAttributes();
+                List<String> result = new ArrayList<>(attrs.size());
+                NamingEnumeration<? extends Attribute> ne = attrs.getAll();
+                while (ne.hasMore()) {
+                    result.add(ne.next().getID());
+                }
+                return result;
+            } catch (NamingException e) {
+                throw new IllegalStateException(e);
+            }
         }
 
         /**
@@ -213,44 +168,52 @@ public class LDAPDn {
          * @return
          */
         public String getAttrValue(String attrName) {
-            for (SubEntry sub : subs) {
-                if (attrName.equalsIgnoreCase(sub.attrName)) {
-                    return LDAPDn.unescapeValue(sub.attrValue);
+            try {
+                Attribute attr = rdn.toAttributes().get(attrName);
+                if (attr != null) {
+                    Object value = attr.get();
+                    if (value != null) {
+                        return value.toString();
+                    }
                 }
+                return null;
+            } catch (NamingException e) {
+                throw new IllegalStateException(e);
             }
-            return null;
         }
 
         public void setAttrValue(String attrName, String newAttrValue) {
-            for (SubEntry sub : subs) {
-                if (attrName.equalsIgnoreCase(sub.attrName)) {
-                    sub.attrValue = escapeValue(newAttrValue);
-                    return;
+            try {
+                Attributes attrs = rdn.toAttributes();
+                Attribute attr = attrs.get(attrName);
+                if (attr != null) {
+                    attr.clear();
+                    attr.add(newAttrValue);
+                } else {
+                    attrs.put(attrName, newAttrValue);
                 }
+                rdn = new Rdn(attrs);
+            } catch (NamingException e) {
+                throw new IllegalStateException(e);
             }
-            addSubEntry(new SubEntry(attrName, escapeValue(newAttrValue)));
         }
 
         public boolean removeAttrValue(String attrName) {
-            SubEntry toRemove = null;
-            for (SubEntry sub : subs) {
-                if (attrName.equalsIgnoreCase(sub.attrName)) {
-                    toRemove = sub;
-                    continue;
+            try {
+                Attributes attrs = rdn.toAttributes();
+                if (attrs.remove(attrName) != null) {
+                    rdn = new Rdn(attrs);
+                    return true;
                 }
-            }
-
-            if (toRemove != null) {
-                subs.remove(toRemove);
-                return true;
-            } else {
                 return false;
+            } catch (NamingException e) {
+                throw new IllegalStateException(e);
             }
         }
 
         @Override
         public String toString() {
-            return toString(true);
+            return rdn.toString();
         }
 
         /**
@@ -259,43 +222,26 @@ public class LDAPDn {
          * @return
          */
         public String toString(boolean escaped) {
-            StringBuilder builder = new StringBuilder();
+            if (escaped) {
+                return toString();
+            }
 
-            boolean first = true;
-            for (SubEntry subEntry : subs) {
-                if (first) {
-                    first = false;
-                } else {
-                    builder.append('+');
+            StringBuilder builder = new StringBuilder();
+            try {
+                NamingEnumeration<? extends Attribute> attrs = rdn.toAttributes().getAll();
+                while (attrs.hasMore()) {
+                    Attribute attr = attrs.next();
+                    NamingEnumeration<?> values = attr.getAll();
+                    while (values.hasMore()) {
+                        builder.append(attr.getID()).append("=").append(values.next().toString()).append("+");
+                    }
                 }
-                builder.append(subEntry.toString(escaped));
+                builder.setLength(builder.length() - 1);
+            } catch (NamingException e) {
+                throw new IllegalStateException(e);
             }
 
             return builder.toString();
-        }
-    }
-
-    private static class SubEntry {
-        private final String attrName;
-        private String attrValue;
-
-        private SubEntry(String attrName, String attrValue) {
-            this.attrName = attrName;
-            this.attrValue = attrValue;
-        }
-
-        private String getAttrName() {
-            return attrName;
-        }
-
-        @Override
-        public String toString() {
-            return toString(true);
-        }
-
-        private String toString(boolean escaped) {
-            String val = escaped ? attrValue : unescapeValue(attrValue);
-            return attrName + '=' + val;
         }
     }
 }

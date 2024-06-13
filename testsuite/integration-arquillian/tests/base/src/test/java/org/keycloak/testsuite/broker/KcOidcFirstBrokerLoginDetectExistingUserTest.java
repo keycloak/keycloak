@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
@@ -14,16 +13,15 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 
-import static org.junit.Assert.*;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
 public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitializedBaseBrokerTest {
-
-    @Page
-    protected LoginUpdateProfilePage loginUpdateProfilePage;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -102,7 +100,9 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         String username = "firstandlastname";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
         loginPage.assertCurrent(bc.consumerRealmName());
@@ -112,24 +112,26 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
 
     @Test
     public void loginWhenUserExistsOnConsumer() {
-
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        final String firstname = "Firstname(loginWhenUserExistsOnConsumer)";
-        final String lastname = "Lastname(loginWhenUserExistsOnConsumer)";
+        final String firstname = "Firstname_loginWhenUserExistsOnConsumer";
+        final String lastname = "Lastname_loginWhenUserExistsOnConsumer";
         final String username = "firstandlastname";
         final String email = "firstnamelastname@example.org";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email);
         createUser(bc.consumerRealmName(), username, "THIS PASSWORD IS USELESS", null, null, email);
 
-        String accountUrl = getAccountUrl(getConsumerRoot(), bc.consumerRealmName());
-        getLogger().error("> LOG INTO " + accountUrl);
-        driver.navigate().to(accountUrl);
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
-        assertTrue(driver.getTitle().contains("Account Management"));
-        assertTrue("email must be in the page", driver.getPageSource().contains("value=\""+ email + "\""));
-        assertTrue("firstname must appear in the page", driver.getPageSource().contains("value=\""+ firstname + "\""));
-        assertTrue("lastname must appear in the page", driver.getPageSource().contains("value=\""+ lastname + "\""));
+        assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(
+                adminClient.realm(bc.consumerRealmName()), username);
+
+        assertEquals("Email is not correct", userRepresentation.getEmail(), email);
+        assertEquals("Firstname is not correct", userRepresentation.getFirstName(), firstname);
+        assertEquals("Lastname is not correct", userRepresentation.getLastName(), lastname);
     }
 }

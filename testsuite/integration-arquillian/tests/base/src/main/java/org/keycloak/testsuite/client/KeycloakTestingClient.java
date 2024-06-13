@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.client;
 
-import javax.ws.rs.core.Response;
-
+import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.junit.Assert;
 import org.keycloak.common.Profile;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
@@ -31,7 +32,7 @@ import org.keycloak.testsuite.runonserver.*;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
 
-import static org.junit.Assert.assertEquals;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -45,16 +46,21 @@ public class KeycloakTestingClient implements AutoCloseable {
         if (resteasyClient != null) {
             client = resteasyClient;
         } else {
-            ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
-            resteasyClientBuilder.connectionPoolSize(10);
-            if (serverUrl.startsWith("https")) {
-                // Disable PKIX path validation errors when running tests using SSL
-                resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
-            }
-            resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+            ResteasyClientBuilder resteasyClientBuilder = getRestEasyClientBuilder(serverUrl);
             client = resteasyClientBuilder.build();
         }
         target = client.target(serverUrl);
+    }
+
+    public static ResteasyClientBuilder getRestEasyClientBuilder(String serverUrl) {
+        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
+        resteasyClientBuilder.connectionPoolSize(10);
+        if (serverUrl.startsWith("https")) {
+            // Disable PKIX path validation errors when running tests using SSL
+            resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
+        }
+        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+        return resteasyClientBuilder;
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {
@@ -74,15 +80,24 @@ public class KeycloakTestingClient implements AutoCloseable {
     }
 
     public void enableFeature(Profile.Feature feature) {
-        try (Response response = testing().enableFeature(feature.toString())) {
-            assertEquals(204, response.getStatus());
-        }
+        Set<Profile.Feature> enabledFeatures = testing().enableFeature(feature.toString());
+        Assert.assertFalse(enabledFeatures.contains(feature));
+        ProfileAssume.updateDisabledFeatures(enabledFeatures);
     }
 
     public void disableFeature(Profile.Feature feature) {
-        try (Response response = testing().disableFeature(feature.toString())) {
-            assertEquals(204, response.getStatus());
-        }
+        Set<Profile.Feature> disabledFeatures = testing().disableFeature(feature.toString());
+        Assert.assertTrue(disabledFeatures.contains(feature));
+        ProfileAssume.updateDisabledFeatures(disabledFeatures);
+    }
+
+    /**
+     * Resets the feature to it's default setting.
+     *
+     * @param feature
+     */
+    public void resetFeature(Profile.Feature feature) {
+        testing().resetFeature(feature.toString());
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }
@@ -155,6 +170,11 @@ public class KeycloakTestingClient implements AutoCloseable {
                     throw new RunOnServerException(t);
                 }
             }
+        }
+
+        public Response runWithResponse(RunOnServer function) throws RunOnServerException {
+            String encoded = SerializationUtil.encode(function);
+            return testing(realm != null ? realm : "master").runOnServerWithResponse(encoded);
         }
 
         public void runModelTest(String testClassName, String testMethodName) throws RunOnServerException {

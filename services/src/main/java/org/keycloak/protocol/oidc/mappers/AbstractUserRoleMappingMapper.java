@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     @Override
     public int getPriority() {
@@ -70,22 +71,11 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             realmRoleNames = rolesToAdd;
         }
 
-        Object claimValue = realmRoleNames;
-
-        boolean multiValued = "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
-        if (!multiValued) {
-            claimValue = realmRoleNames.toString();
-        }
-
-        //OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
-        mapClaim(token, mappingModel, claimValue, clientId);
+        mapClaim(token, mappingModel, realmRoleNames, clientId);
     }
 
 
-    private static final Pattern CLIENT_ID_PATTERN = Pattern.compile("\\$\\{client_id\\}");
-
-    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
-    private static final String DOT_REPLACEMENT = "\\\\\\\\.";
+    private static final Pattern CLIENT_ID_PATTERN = Pattern.compile(Pattern.quote("${client_id}"));
 
     private static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue, String clientId) {
         attributeValue = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, attributeValue);
@@ -97,9 +87,11 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
         }
 
         if (clientId != null) {
-            // case when clientId contains dots
-            clientId = DOT_PATTERN.matcher(clientId).replaceAll(DOT_REPLACEMENT);
-            protocolClaim = CLIENT_ID_PATTERN.matcher(protocolClaim).replaceAll(clientId);
+            Matcher matcher = CLIENT_ID_PATTERN.matcher(protocolClaim);
+            if (matcher.find()) {
+                // dots and backslashes in clientId should be escaped first for the claim
+                protocolClaim = matcher.replaceAll(Matcher.quoteReplacement(clientId.replace("\\", "\\\\").replace(".", "\\.")));
+            }
         }
 
         List<String> split = splitClaimPath(protocolClaim);

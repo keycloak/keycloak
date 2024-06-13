@@ -21,23 +21,22 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ErrorResponseException;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ClientRegistrationService {
 
-    private EventBuilder event;
+    private final EventBuilder event;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    public ClientRegistrationService(EventBuilder event) {
+    public ClientRegistrationService(KeycloakSession session, EventBuilder event) {
+        this.session = session;
         this.event = event;
     }
 

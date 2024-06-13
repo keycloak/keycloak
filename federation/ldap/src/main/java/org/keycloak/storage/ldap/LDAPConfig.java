@@ -25,7 +25,6 @@ import javax.naming.directory.SearchControls;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -199,6 +198,20 @@ public class LDAPConfig {
         return Boolean.parseBoolean(pagination);
     }
 
+    public int getMaxConditions() {
+        String string = config.getFirst(LDAPConstants.MAX_CONDITIONS);
+        if (string != null) {
+            try {
+                int max = Integer.parseInt(string);
+                if (max > 0) {
+                    return max;
+                }
+            } catch (NumberFormatException e) {
+            }
+        }
+        return LDAPConstants.DEFAULT_MAX_CONDITIONS;
+    }
+
     public int getBatchSizeForSync() {
         String pageSizeConfig = config.getFirst(LDAPConstants.BATCH_SIZE_FOR_SYNC);
         return pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
@@ -249,6 +262,10 @@ public class LDAPConfig {
         } else {
             return UserStorageProvider.EditMode.valueOf(editModeString);
         }
+    }
+
+    public String getReferral() {
+        return config.getFirst(LDAPConstants.REFERRAL);
     }
 
     public void addBinaryAttribute(String attrName) {

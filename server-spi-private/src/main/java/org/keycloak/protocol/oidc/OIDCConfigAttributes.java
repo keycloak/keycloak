@@ -42,8 +42,11 @@ public final class OIDCConfigAttributes {
     public static final String USE_JWKS_STRING = "use.jwks.string";
 
     public static final String EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE = "exclude.session.state.from.auth.response";
+    public static final String EXCLUDE_ISSUER_FROM_AUTH_RESPONSE = "exclude.issuer.from.auth.response";
 
     public static final String USE_MTLS_HOK_TOKEN = "tls.client.certificate.bound.access.tokens";
+
+    public static final String DPOP_BOUND_ACCESS_TOKENS = "dpop.bound.access.tokens";
 
     public static final String ID_TOKEN_SIGNED_RESPONSE_ALG = "id.token.signed.response.alg";
 
@@ -81,6 +84,8 @@ public final class OIDCConfigAttributes {
     public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ENC = "authorization.encrypted.response.enc";
     public static final String FRONT_CHANNEL_LOGOUT_URI = "frontchannel.logout.url";
     public static final String FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED = "frontchannel.logout.session.required";
+
+    public static final String POST_LOGOUT_REDIRECT_URIS = "post.logout.redirect.uris";
 
     private OIDCConfigAttributes() {
     }

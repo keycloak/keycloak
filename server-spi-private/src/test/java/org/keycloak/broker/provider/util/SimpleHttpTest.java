@@ -4,8 +4,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.client.ClientProtocolException;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
@@ -20,16 +21,22 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 /**
@@ -63,7 +70,7 @@ public final class SimpleHttpTest {
         @Test
         public void withCharset() throws IOException {
             HttpResponse httpResponse = createBasicResponse(entity);
-            SimpleHttp.Response response = new SimpleHttp.Response(httpResponse);
+            SimpleHttp.Response response = new SimpleHttp.Response(httpResponse, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
             if (success) {
                 assertEquals(original, response.asString());
             } else {
@@ -89,14 +96,39 @@ public final class SimpleHttpTest {
 
         @Parameters(name = "{index}: requestWithEncoding({0})")
         public static Collection<Object[]> entities() {
-            return Arrays.asList(new Object[][] { { "English" }, { "Русский" }, { "GermanÜmläütß" } });
+            return Arrays.asList(new Object[][] {
+                { "English" },
+                { "Русский" },
+                { "GermanÜmläütß" },
+                { SecretGenerator.getInstance().randomString(1000) },
+                { SecretGenerator.getInstance().randomString(1024) }
+            });
         }
 
         @Test
         public void requestWithEncoding() throws IOException {
+            String expectedResponse = "{\"value\":\"" + value + "\"}";
             HttpClientMock client = new HttpClientMock();
-            SimpleHttp.doPost("", client).json(new DummyEntity(value)).asResponse();
-            assertEquals("{\"value\":\"" + value + "\"}", client.data);
+            if (expectedResponse.getBytes(StandardCharsets.UTF_8).length < 1024) {
+                SimpleHttp.Response response = SimpleHttp.doPost("", client, 1024).json(new DummyEntity(value)).asResponse();
+                assertEquals(expectedResponse, response.asString());
+            } else {
+                IOException e = assertThrows(IOException.class, () -> SimpleHttp.doPost("", client, 1024).json(new DummyEntity(value)).asResponse().asString());
+                assertThat(e.getMessage(), startsWith("Response is at least"));
+            }
+        }
+
+        @Test
+        public void requestWithEncodingParam() throws IOException {
+            String expectedResponse = "dummy=" + URLEncoder.encode(value, "UTF-8");
+            HttpClientMock client = new HttpClientMock();
+            if (expectedResponse.getBytes(StandardCharsets.UTF_8).length < 1024) {
+                SimpleHttp.Response response = SimpleHttp.doPost("", client, 1024).param("dummy", value).asResponse();
+                assertEquals(expectedResponse, response.asString());
+            } else {
+                IOException e = assertThrows(IOException.class, () -> SimpleHttp.doPost("", client, 1024).json(new DummyEntity(value)).asResponse().asString());
+                assertThat(e.getMessage(), startsWith("Response is at least"));
+            }
         }
 
         public static final class DummyEntity {
@@ -111,8 +143,6 @@ public final class SimpleHttpTest {
          */
         public static final class HttpClientMock implements HttpClient {
 
-            String data;
-
             @Override
             public HttpParams getParams() {
                 fail(); return null;
@@ -124,50 +154,52 @@ public final class SimpleHttpTest {
             }
 
             @Override
-            public HttpResponse execute(HttpUriRequest paramHttpUriRequest) throws IOException, ClientProtocolException {
+            public HttpResponse execute(HttpUriRequest paramHttpUriRequest) throws IOException {
                 HttpPost post = (HttpPost) paramHttpUriRequest;
-                data = StreamUtil.readString(post.getEntity().getContent());
-                return null;
+                String content = StreamUtil.readString(post.getEntity().getContent(), StandardCharsets.UTF_8);
+                BasicHttpResponse httpResponse = new BasicHttpResponse(new ProtocolVersion("HTTP", 1, 1), HttpStatus.SC_OK, "OK");
+                httpResponse.setEntity(new StringEntity(content, StandardCharsets.UTF_8));
+                return httpResponse;
             }
 
             @Override
             public HttpResponse execute(HttpUriRequest paramHttpUriRequest, HttpContext paramHttpContext)
-                    throws IOException, ClientProtocolException {
+                    throws IOException {
                 fail(); return null;
             }
 
             @Override
-            public HttpResponse execute(HttpHost paramHttpHost, HttpRequest paramHttpRequest) throws IOException, ClientProtocolException {
+            public HttpResponse execute(HttpHost paramHttpHost, HttpRequest paramHttpRequest) throws IOException {
                 fail(); return null;
             }
 
             @Override
             public HttpResponse execute(HttpHost paramHttpHost, HttpRequest paramHttpRequest, HttpContext paramHttpContext)
-                    throws IOException, ClientProtocolException {
+                    throws IOException {
                 fail(); return null;
             }
 
             @Override
             public <T> T execute(HttpUriRequest paramHttpUriRequest, ResponseHandler<? extends T> paramResponseHandler)
-                    throws IOException, ClientProtocolException {
+                    throws IOException {
                 fail(); return null;
             }
 
             @Override
             public <T> T execute(HttpUriRequest paramHttpUriRequest, ResponseHandler<? extends T> paramResponseHandler,
-                    HttpContext paramHttpContext) throws IOException, ClientProtocolException {
+                    HttpContext paramHttpContext) throws IOException {
                 fail(); return null;
             }
 
             @Override
             public <T> T execute(HttpHost paramHttpHost, HttpRequest paramHttpRequest, ResponseHandler<? extends T> paramResponseHandler)
-                    throws IOException, ClientProtocolException {
+                    throws IOException {
                 fail(); return null;
             }
 
             @Override
             public <T> T execute(HttpHost paramHttpHost, HttpRequest paramHttpRequest, ResponseHandler<? extends T> paramResponseHandler,
-                    HttpContext paramHttpContext) throws IOException, ClientProtocolException {
+                    HttpContext paramHttpContext) throws IOException {
                 fail(); return null;
             }
 

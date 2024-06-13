@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableMap;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.mappers.AdvancedClaimToRoleMapper;
 import org.keycloak.broker.oidc.mappers.ClaimToRoleMapper;
 import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
@@ -25,7 +23,8 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Runs the same tests as {@link OidcClaimToRoleMapperTest} but using multiple OIDC mappers that map different IDP claims
@@ -45,7 +44,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
  * mapper actually succeeds in applying the mapping, the other two do nothing as the test user doesn't have the necessary
  * role/attribute(s). The test then verifies that the user still contains the mapped role after all mappers run.
  *
- * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public class OidcMultipleClaimToRoleMappersTest extends OidcClaimToRoleMapperTest {
 
@@ -57,48 +57,46 @@ public class OidcMultipleClaimToRoleMappersTest extends OidcClaimToRoleMapperTes
             "]";
 
     @Override
-    protected void createClaimToRoleMapper(IdentityProviderRepresentation idp, String claimValue, IdentityProviderMapperSyncMode syncMode) {
+    protected void createClaimToRoleMapper(String claimValue, IdentityProviderMapperSyncMode syncMode,
+            String roleValue) {
         // first mapper that maps attributes the user has - it should perform the mapping to the expected role.
         IdentityProviderMapperRepresentation firstOidcClaimToRoleMapper = new IdentityProviderMapperRepresentation();
         firstOidcClaimToRoleMapper.setName("claim-to-role-mapper");
         firstOidcClaimToRoleMapper.setIdentityProviderMapper(ClaimToRoleMapper.PROVIDER_ID);
-        firstOidcClaimToRoleMapper.setConfig(ImmutableMap.<String, String>builder()
+        firstOidcClaimToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put(ClaimToRoleMapper.CLAIM, OidcClaimToRoleMapperTest.CLAIM)
                 .put(ClaimToRoleMapper.CLAIM_VALUE, claimValue)
-                .put(ConfigConstants.ROLE, CLIENT_ROLE_MAPPER_REPRESENTATION)
+                .put(ConfigConstants.ROLE, roleValue)
                 .build());
 
-        IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
-        firstOidcClaimToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(firstOidcClaimToRoleMapper).close();
+        persistMapper(firstOidcClaimToRoleMapper);
 
-        // second mapper that maps an external role claim the test user doesn't have - it would normally end up removing the
-        // mapped role but it should now check if a previous mapper has already granted the same role.
+        // second mapper that maps an external role claim the test user doesn't have - it would normally end up removing
+        // the mapped role, but it should now check if a previous mapper has already granted the same role.
         IdentityProviderMapperRepresentation secondOidcClaimToRoleMapper = new IdentityProviderMapperRepresentation();
         secondOidcClaimToRoleMapper.setName("external-keycloak-role-mapper");
         secondOidcClaimToRoleMapper.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        secondOidcClaimToRoleMapper.setConfig(ImmutableMap.<String,String>builder()
+        secondOidcClaimToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", "missing-role")
-                .put("role", CLIENT_ROLE_MAPPER_REPRESENTATION)
+                .put(ConfigConstants.ROLE, roleValue)
                 .build());
-        secondOidcClaimToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(secondOidcClaimToRoleMapper).close();
+
+        persistMapper(secondOidcClaimToRoleMapper);
 
         // third mapper (advanced) that maps a claim the test user doesn't have - it would normally end up removing the
-        // mapped role but it should now check if a previous mapper has already granted the same role.
+        // mapped role, but it should now check if a previous mapper has already granted the same role.
         IdentityProviderMapperRepresentation thirdOidcClaimToRoleMapper = new IdentityProviderMapperRepresentation();
         thirdOidcClaimToRoleMapper.setName("advanced-claim-to-role-mapper");
         thirdOidcClaimToRoleMapper.setIdentityProviderMapper(AdvancedClaimToRoleMapper.PROVIDER_ID);
-        thirdOidcClaimToRoleMapper.setConfig(ImmutableMap.<String, String>builder()
+        thirdOidcClaimToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put(AdvancedClaimToRoleMapper.CLAIM_PROPERTY_NAME, CLAIMS_OR_ATTRIBUTES)
                 .put(AdvancedClaimToRoleMapper.ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME, Boolean.TRUE.toString())
-                .put(ConfigConstants.ROLE, CLIENT_ROLE_MAPPER_REPRESENTATION)
+                .put(ConfigConstants.ROLE, roleValue)
                 .build());
 
-        thirdOidcClaimToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(thirdOidcClaimToRoleMapper).close();
+        persistMapper(thirdOidcClaimToRoleMapper);
     }
 }

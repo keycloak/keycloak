@@ -19,8 +19,8 @@ package org.keycloak.services;
 
 import org.keycloak.representations.idm.ErrorRepresentation;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 /**
@@ -28,28 +28,28 @@ import java.util.List;
  */
 public class ErrorResponse {
 
-    public static Response exists(String message) {
+    public static ErrorResponseException exists(String message) {
         return ErrorResponse.error(message, Response.Status.CONFLICT);
     }
 
-    public static Response error(String message, Response.Status status) {
+    public static ErrorResponseException error(String message, Response.Status status) {
         return ErrorResponse.error(message, null, status);
     }
     
-    public static Response error(String message, Object[] params, Response.Status status) {
+    public static ErrorResponseException error(String message, Object[] params, Response.Status status) {
         ErrorRepresentation error = new ErrorRepresentation();
         error.setErrorMessage(message);
         error.setParams(params);
-        return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build();
+        return new ErrorResponseException(Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build());
     }
 
-    public static Response errors(List<ErrorRepresentation> s, Response.Status status) {
+    public static ErrorResponseException errors(List<ErrorRepresentation> s, Response.Status status) {
         return errors(s, status, true);
     }
     
-    public static Response errors(List<ErrorRepresentation> s, Response.Status status, boolean shrinkSingleError) {
+    public static ErrorResponseException errors(List<ErrorRepresentation> s, Response.Status status, boolean shrinkSingleError) {
         if (shrinkSingleError && s.size() == 1) {
-            return Response.status(status).entity(s.get(0)).type(MediaType.APPLICATION_JSON).build();
+            return new ErrorResponseException(Response.status(status).entity(s.get(0)).type(MediaType.APPLICATION_JSON).build());
         }
         ErrorRepresentation error = new ErrorRepresentation();
         error.setErrors(s);
@@ -58,6 +58,6 @@ public class ErrorResponse {
             error.setParams(s.get(0).getParams());
             error.setField(s.get(0).getField());
         }
-        return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build();
+        return new ErrorResponseException(Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build());
     }
 }

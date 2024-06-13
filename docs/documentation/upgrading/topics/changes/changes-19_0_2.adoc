@@ -1,0 +1,61 @@
+= OpenID Connect Logout Prompt
+At Keycloak 18.0.0, the logout is now compatible with the new OIDC specification, which changed the handling for the url parameters. However, to also remain compatible with earlier versions, a compatibility flag is introduced. See the link:{upgradingguide_link}#openid-connect-logout[{upgradingguide_name}] for further information for the backwards compatibility option, which allows your application to still use the old format for the url parameters.
+
+While the url parameters can now be configured to be compatible, there was still one incompatibility with keycloak 17 and earlier releases. If the user does not provide a valid `idTokenHint`, a logout prompt appears instead of a successful logout redirect. Therefore, a new compatibility flag `suppress-logout-confirmation-screen` is introduced to suppress the logout screen.
+
+You can enable this parameter when you start the server by entering the following command:
+
+```
+bin/kc.[sh|bat] --spi-login-protocol-openid-connect-suppress-logout-confirmation-screen=true start
+```
+
+With this configuration, you can still use the logout endpoint without a user prompt.
+
+WARNING: The backwards compatibility switch will be removed in some future version - probably Keycloak 23. You are encouraged to update your clients as soon as possible as described above rather than rely on this switch.
+
+= Deploying scripts through SAML javascript protocol mapper
+
+Until now, administrators, which used SAML javascript protocol mapper on their SAML clients or client scopes, were allowed to upload scripts to the server through the {project_name} Administration Console as well as
+through the RESTful Admin API.
+
+For now on, this capability is *disabled* and users should deploy scripts directly to the server. This behaviour is aligned with other script based providers. For more details,
+please take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
+
+= UserInfo Endpoint Changes
+
+Error response changes::
+  The UserInfo endpoint is now returning error responses fully compliant with https://datatracker.ietf.org/doc/html/rfc6750[RFC 6750] (The OAuth 2.0 Authorization Framework: Bearer Token Usage). Error code and description (if available) are provided as `WWW-Authenticate` challenge attributes rather than JSON object fields.
+  The responses will be the following, depending on the error condition:
+  * In case no access token is provided:
++
+----
+401 Unauthorized
+WWW-Authenticate: Bearer realm="myrealm"
+----
+  * In case several methods are used simultaneously to provide an access token (for example, Authorization header + POST access_token parameter), or POST parameters are duplicated:
++
+----
+400 Bad Request
+WWW-Authenticate: Bearer realm="myrealm", error="invalid_request", error_description="..."
+----
+  * In case an access token is missing `openid` scope:
++
+----
+403 Forbidden
+WWW-Authenticate: Bearer realm="myrealm", error="insufficient_scope", error_description="Missing openid scope"
+----
+  * In case of inability to resolve cryptographic keys for UserInfo response signing/encryption:
++
+----
+500 Internal Server Error
+----
+  * In case of a token validation error, a `401 Unauthorized` is returned in combination with the `invalid_token` error code. This error includes user and client related checks and actually captures all the remaining error cases:
++
+----
+401 Unauthorized
+WWW-Authenticate: Bearer realm="myrealm", error="invalid_token", error_description="..."
+----
+
+Other Changes::
+  * It is now required for access tokens to have the `openid` scope, which is stipulated by UserInfo being a feature specific to OpenID Connect and not OAuth 2.0. If the `openid` scope is missing from the token, the request will be denied with a `403 Forbidden` (see above).
+  * UserInfo now checks the user status, and returns the `invalid_token` response if the user is disabled.

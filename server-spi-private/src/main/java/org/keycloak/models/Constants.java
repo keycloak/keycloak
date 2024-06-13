@@ -63,6 +63,10 @@ public final class Constants {
     // 60 days
     public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
     public static final String DEFAULT_SIGNATURE_ALGORITHM = Algorithm.RS256;
+    public static final String INTERNAL_SIGNATURE_ALGORITHM = Algorithm.HS512;
+
+    public static final int DEFAULT_SESSION_IDLE_TIMEOUT = 1800; // 30 minutes
+    public static final int DEFAULT_SESSION_MAX_LIFESPAN = 36000; // 10 hours
 
     public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256;
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
@@ -73,15 +77,25 @@ public final class Constants {
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
 
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
-    public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
+    public static final String TOKEN = "token";
     public static final String TAB_ID = "tab_id";
+    public static final String CLIENT_DATA = "client_data";
+    public static final String REUSE_ID = "reuse_id";
+    public static final String SKIP_LOGOUT = "skip_logout";
     public static final String KEY = "key";
 
     public static final String KC_ACTION = "kc_action";
+
+    public static final String KC_ACTION_PARAMETER = "kc_action_parameter";
     public static final String KC_ACTION_STATUS = "kc_action_status";
     public static final String KC_ACTION_EXECUTING = "kc_action_executing";
+    /**
+     * Auth session attribute whether an AIA is enforced, which means it cannot be cancelled.
+     * <p>Example use case: the action behind the AIA is also defined on the user (for example, UPDATE_PASSWORD).</p>
+     */
+    public static final String KC_ACTION_ENFORCED = "kc_action_enforced";
     public static final int KC_ACTION_MAX_AGE = 300;
 
     public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";
@@ -101,6 +115,8 @@ public final class Constants {
 
     // Groups already assigned by a mapper when updating brokered users.
     public static final String MAPPER_GRANTED_GROUPS = "MAPPER_GRANTED_GROUPS";
+
+    public static final String MAPPER_SESSION_NOTES = "MAPPER_SESSION_NOTES";
 
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
@@ -134,6 +150,13 @@ public final class Constants {
     // Authentication session note, which contains loa of current authentication in progress
     public static final String LEVEL_OF_AUTHENTICATION = "level-of-authentication";
 
+    // Key in authentication execution config (AuthenticationExecutionModel), storing the configured authentication reference value
+    public static final String AUTHENTICATION_EXECUTION_REFERENCE_VALUE = "default.reference.value";
+    public static final String AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE = "default.reference.maxAge";
+
+    // Authentication session note containing a serialized map of successfully completed authentication executions and their associated times
+    public static final String AUTHENTICATORS_COMPLETED = "authenticators-completed";
+
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
     // so it is possible to check when particular level expires and needs to be re-authenticated
     public static final String LOA_MAP = "loa-map";
@@ -144,4 +167,18 @@ public final class Constants {
     public static final String DEFAULT_ACR_VALUES = "default.acr.values";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
+
+    public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
+
+    public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
+
+    public static final String SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED = "client.introspection.response.allow.jwt.claim.enabled";
+
+    public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
+
+    // Sent to clients when authentication session expired, but user is already logged-in in current browser
+    public static final String AUTHENTICATION_EXPIRED_MESSAGE = "authentication_expired";
+
+    // attribute name used in apps to mark that it is an admin console and its azp is allowed
+    public static final String SECURITY_ADMIN_CONSOLE_ATTR = "security.admin.console";
 }

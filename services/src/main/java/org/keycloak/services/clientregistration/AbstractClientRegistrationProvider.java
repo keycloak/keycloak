@@ -17,20 +17,29 @@
 
 package org.keycloak.services.clientregistration;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientRegistrationAccessTokenConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
@@ -40,7 +49,8 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.validation.ValidationUtil;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -68,7 +78,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             if (client.getDefaultRoles() != null) {
                 for (String name : client.getDefaultRoles()) {
-                    clientModel.addDefaultRole(name);
+                    addDefaultRole(clientModel, name);
                 }
             }
 
@@ -98,7 +108,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             client.setDirectAccessGrantsEnabled(false);
 
-            Stream<String> defaultRolesNames = clientModel.getDefaultRolesStream();
+            Stream<String> defaultRolesNames = getDefaultRolesStream(clientModel);
             if (defaultRolesNames != null) {
                 client.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
             }
@@ -127,7 +137,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 
-        Stream<String> defaultRolesNames = client.getDefaultRolesStream();
+        Stream<String> defaultRolesNames = getDefaultRolesStream(client);
         if (defaultRolesNames != null) {
             rep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
         }
@@ -142,32 +152,40 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         event.event(EventType.CLIENT_UPDATE).client(clientId);
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
+        session.setAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED, true);
         RegistrationAuth registrationAuth = auth.requireUpdate(context, client);
 
         if (!client.getClientId().equals(rep.getClientId())) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
-        RepresentationToModel.updateClient(rep, client);
+        RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
+        RepresentationToModel.updateClientScopes(rep, client);
 
         if (rep.getDefaultRoles() != null) {
-            client.updateDefaultRoles(rep.getDefaultRoles());
+            updateDefaultRoles(client, rep.getDefaultRoles());
         }
 
         rep = ModelToRepresentation.toRepresentation(client, session);
 
         rep.setSecret(client.getSecret());
 
-        Stream<String> defaultRolesNames = client.getDefaultRolesStream();
+        Stream<String> defaultRolesNames = getDefaultRolesStream(client);
         if (defaultRolesNames != null) {
             rep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
         }
 
         if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+            String registrationAccessToken;
+            if ((boolean) session.getAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED)) {
+                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+            } else {
+                registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
+            }
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
+        session.removeAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED);
 
         try {
             session.getContext().setClient(client);
@@ -231,4 +249,50 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     public void close() {
     }
 
+    /* ===========  default roles =========== */
+
+    private void addDefaultRole(ClientModel client, String name) {
+        client.getRealm().getDefaultRole().addCompositeRole(getOrAddRoleId(client, name));
+    }
+
+    private RoleModel getOrAddRoleId(ClientModel client, String name) {
+        RoleModel role = client.getRole(name);
+        if (role == null) {
+            role = client.addRole(name);
+        }
+        return role;
+    }
+
+    private Stream<String> getDefaultRolesStream(ClientModel client) {
+        return client.getRealm().getDefaultRole().getCompositesStream()
+                .filter(role -> role.isClientRole() && Objects.equals(role.getContainerId(), client.getId()))
+                .map(RoleModel::getName);
+    }
+
+    private void updateDefaultRoles(ClientModel client, String... defaultRoles) {
+        List<String> defaultRolesArray = Arrays.asList(String.valueOf(defaultRoles));
+        Collection<String> entities = getDefaultRolesStream(client).collect(Collectors.toList());
+        Set<String> already = new HashSet<>();
+        ArrayList<String> remove = new ArrayList<>();
+        for (String rel : entities) {
+            if (! defaultRolesArray.contains(rel)) {
+                remove.add(rel);
+            } else {
+                already.add(rel);
+            }
+        }
+        removeDefaultRoles(client, remove.toArray(new String[] {}));
+
+        for (String roleName : defaultRoles) {
+            if (!already.contains(roleName)) {
+                addDefaultRole(client, roleName);
+            }
+        }
+    }
+
+    private void removeDefaultRoles(ClientModel client, String... defaultRoles) {
+        for (String defaultRole : defaultRoles) {
+            client.getRealm().getDefaultRole().removeCompositeRole(client.getRole(defaultRole));
+        }
+    }
 }

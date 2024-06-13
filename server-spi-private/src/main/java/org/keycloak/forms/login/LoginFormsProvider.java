@@ -24,10 +24,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -56,13 +58,13 @@ public interface LoginFormsProvider extends Provider {
 
     String getMessage(String message);
 
-    String getMessage(String message, String... parameters);
-
     Response createLoginUsernamePassword();
 
     Response createLoginUsername();
 
     Response createLoginPassword();
+
+    Response  createOtpReset();
 
     Response createPasswordReset();
 
@@ -79,6 +81,8 @@ public interface LoginFormsProvider extends Provider {
     Response createUpdateProfilePage();
 
     Response createIdpLinkConfirmLinkPage();
+
+    Response createIdpLinkConfirmOverrideLinkPage();
 
     Response createIdpLinkEmailPage();
 
@@ -139,6 +143,14 @@ public interface LoginFormsProvider extends Provider {
 
     LoginFormsProvider setInfo(String message, Object ... parameters);
 
+    LoginFormsProvider setMessage(MessageType type, String message, Object... parameters);
+
+    /**
+     * Used when authenticationSession was already removed for this browser session and hence we don't have any
+     * authenticationSession or user data. Would just repeat previous info/error page after language is changed
+     */
+    LoginFormsProvider setDetachedAuthSession();
+
     LoginFormsProvider setUser(UserModel user);
 
     LoginFormsProvider setResponseHeader(String headerName, String headerValue);
@@ -149,11 +161,11 @@ public interface LoginFormsProvider extends Provider {
 
     LoginFormsProvider setStatus(Response.Status status);
 
-    LoginFormsProvider setMediaType(javax.ws.rs.core.MediaType type);
-
     LoginFormsProvider setActionUri(URI requestUri);
 
     LoginFormsProvider setExecution(String execution);
 
     LoginFormsProvider setAuthContext(AuthenticationFlowContext context);
+
+    LoginFormsProvider setAttributeMapper(Function<Map<String, Object>, Map<String, Object>> configurer);
 }

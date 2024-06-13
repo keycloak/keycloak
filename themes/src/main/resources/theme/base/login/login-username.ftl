@@ -17,7 +17,8 @@
                                        aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
                                        class="${properties.kcInputClass!}" name="username"
                                        value="${(login.username!'')}"
-                                       type="text" autofocus autocomplete="off"/>
+                                       type="text" autofocus autocomplete="off"
+                                       dir="ltr"/>
 
                                 <#if messagesPerField.existsError('username')>
                                     <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -62,7 +63,7 @@
             </div>
         </#if>
     <#elseif section = "socialProviders" >
-        <#if realm.password && social.providers??>
+        <#if realm.password && social?? && social.providers?has_content>
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
                 <hr/>
                 <h4>${msg("identity-provider-login-label")}</h4>

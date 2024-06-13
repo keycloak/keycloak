@@ -44,20 +44,24 @@ public class InfinispanTestUtil {
             throw new IllegalStateException("Calling setTestingTimeService when testing TimeService was already set");
         }
 
-        logger.info("Will set KeycloakIspnTimeService to the infinispan cacheManager");
-
         InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
-        EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getCacheManager();
-        origTimeService = setTimeServiceToKeycloakTime(cacheManager);
+        if (ispnProvider != null) {
+            logger.info("Will set KeycloakIspnTimeService to the infinispan cacheManager");
+            EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getCacheManager();
+            origTimeService = setTimeServiceToKeycloakTime(cacheManager);
+        }
     }
 
-    public static void revertTimeService() {
+    public static void revertTimeService(KeycloakSession session) {
         // Testing timeService not set. This shouldn't happen if this utility is properly used
-        if (origTimeService == null) {
-            throw new IllegalStateException("Calling revertTimeService when testing TimeService was not set");
-        }
+        InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
+        if (ispnProvider != null) {
+            if (origTimeService == null) {
+                throw new IllegalStateException("Calling revertTimeService when testing TimeService was not set");
+            }
 
-        origTimeService.run();
-        origTimeService = null;
+            origTimeService.run();
+            origTimeService = null;
+        }
     }
 }

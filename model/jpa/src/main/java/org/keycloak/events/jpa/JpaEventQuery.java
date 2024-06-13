@@ -21,12 +21,12 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventType;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
@@ -48,6 +48,7 @@ public class JpaEventQuery implements EventQuery {
     private final ArrayList<Predicate> predicates;
     private Integer firstResult;
     private Integer maxResults;
+    private boolean orderByDescTime = true;
 
     public JpaEventQuery(EntityManager em) {
         this.em = em;
@@ -117,12 +118,28 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
+    public EventQuery orderByDescTime() {
+        orderByDescTime = true;
+        return this;
+    }
+
+    @Override
+    public EventQuery orderByAscTime() {
+        orderByDescTime = false;
+        return this;
+    }
+
+    @Override
     public Stream<Event> getResultStream() {
         if (!predicates.isEmpty()) {
             cq.where(cb.and(predicates.toArray(new Predicate[predicates.size()])));
         }
 
-        cq.orderBy(cb.desc(root.get("time")));
+        if(orderByDescTime) {
+            cq.orderBy(cb.desc(root.get("time")));
+        } else {
+            cq.orderBy(cb.asc(root.get("time")));
+        }
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
 

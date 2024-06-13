@@ -41,7 +41,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.List;
 
@@ -233,13 +233,13 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         String accessToken = authzResponse.getAccessToken();
         if (idToken != null) {
             header = new JWSInput(idToken).getHeader();
-            assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+            verifySignatureAlgorithm(header, expectedIdTokenAlg);
             assertEquals("JWT", header.getType());
             assertNull(header.getContentType());
         }
         if (accessToken != null) {
             header = new JWSInput(accessToken).getHeader();
-            assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+            verifySignatureAlgorithm(header, expectedAccessAlg);
             assertEquals("JWT", header.getType());
             assertNull(header.getContentType());
         }
@@ -250,6 +250,10 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             Assert.assertEquals("abcdef123456", idt.getNonce());
             Assert.assertEquals(authzResponse.getSessionState(), idt.getSessionState());
         }
+    }
+
+    private void verifySignatureAlgorithm(JWSHeader header, String expectedAlgorithm) {
+        assertEquals(expectedAlgorithm, header.getAlgorithm().name());
     }
 
     @Test
@@ -270,6 +274,16 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     @Test
     public void oidcFlow_RealmPS256_ClientES256() throws Exception {
         oidcFlowRequest(Algorithm.PS256, Algorithm.ES256);
+    }
+
+    @Test
+    public void oidcFlow_RealmEdDSA_ClientES256() throws Exception {
+        oidcFlowRequest(Algorithm.EdDSA, Algorithm.ES256);
+    }
+
+    @Test
+    public void oidcFlow_RealmPS256_ClientEdDSA() throws Exception {
+        oidcFlowRequest(Algorithm.PS256, Algorithm.EdDSA);
     }
 
     private void oidcFlowRequest(String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
@@ -304,7 +318,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         Assert.assertNotNull(accessTokenHash);
         Assert.assertNotNull(accessToken);
-        assertEquals(accessTokenHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), accessToken));
+        assertEquals(accessTokenHash, HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), accessToken));
     }
 
     /**
@@ -316,6 +330,6 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         Assert.assertNotNull(codeHash);
         Assert.assertNotNull(code);
-        Assert.assertEquals(codeHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), code));
+        Assert.assertEquals(codeHash, HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), code));
     }
 }

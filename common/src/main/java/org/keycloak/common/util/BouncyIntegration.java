@@ -17,9 +17,8 @@
 
 package org.keycloak.common.util;
 
-import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.CryptoIntegration;
 
-import java.lang.reflect.Constructor;
 import java.security.Provider;
 import java.security.Security;
 
@@ -29,36 +28,15 @@ import java.security.Security;
  */
 public class BouncyIntegration {
 
-    private static final Logger log = Logger.getLogger(BouncyIntegration.class);
-
-    private static final String[] providerClassNames = {
-            "org.bouncycastle.jce.provider.BouncyCastleProvider",
-            "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider"
-    };
-
     public static final String PROVIDER = loadProvider();
 
     private static String loadProvider() {
-        for (String providerClassName : providerClassNames) {
-            try {
-                Class<?> providerClass = Class.forName(providerClassName, true, BouncyIntegration.class.getClassLoader());
-                Constructor<Provider> constructor = (Constructor<Provider>) providerClass.getConstructor();
-                Provider provider = constructor.newInstance();
-
-                if (Security.getProvider(provider.getName()) == null) {
-                    Security.addProvider(provider);
-                    log.debugv("Loaded {0} security provider", providerClassName);
-                } else {
-                    log.debugv("Security provider {0} already loaded", providerClassName);
-                }
-
-                return provider.getName();
-            } catch (Exception e) {
-                log.debugv("Failed to load {0}", e, providerClassName);
-            }
+        Provider provider = CryptoIntegration.getProvider().getBouncyCastleProvider();
+        if (provider == null) {
+            return Security.getProviders()[0].getName();
+            // throw new RuntimeException("Failed to load required security provider: BouncyCastleProvider or BouncyCastleFipsProvider");
         }
-
-        throw new RuntimeException("Failed to load required security provider: BouncyCastleProvider or BouncyCastleFipsProvider");
+        return provider.getName();
     }
 
 }

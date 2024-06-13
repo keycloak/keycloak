@@ -21,7 +21,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AssertEvents.isUUID;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -35,6 +34,8 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.resource.PermissionResource;
+import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -48,13 +49,10 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserManagedAccessTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resource;
@@ -322,14 +320,14 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         String realmId = getRealm().toRepresentation().getId();
         String clientId = client.toRepresentation().getClientId();
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
-        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(isUUID())
+        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(koloId)
                 .session((String) null)
                 .error("access_denied")
                 .detail("reason", "request_submitted")
@@ -378,14 +376,14 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
-        events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(isUUID())
+        events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(koloId)
                 .session((String) null)
                 .clearDetails()
                 .assertEvent();
@@ -697,6 +695,31 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A");
         assertTrue(permissions.isEmpty());
+    }
+
+    @Test
+    public void testResourceIsUserManagedCheck() throws Exception {
+        resource = addResource("Resource A", null, false, "ScopeA");
+
+        PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
+        ticket.setResource(resource.getId());
+        ticket.setRequesterName("marta");
+        ticket.setScopeName("ScopeA");
+        ticket.setGranted(true);
+
+        ProtectionResource protection = getAuthzClient().protection();
+
+        try {
+            protection.permission().create(ticket);
+            fail("Ticket creation should be denied, resource is not owner managed");
+        } catch (RuntimeException cause) {
+            cause.printStackTrace();
+            assertTrue(HttpResponseException.class.isInstance(cause.getCause()));
+            assertEquals(400, HttpResponseException.class.cast(cause.getCause()).getStatusCode());
+            String errorString = new String((HttpResponseException.class.cast(cause.getCause()).getBytes()));
+            assertTrue(errorString.contains("invalid_permission"));
+            assertTrue(errorString.contains("permission can only be created for resources with user-managed access enabled"));
+        }
     }
 
     private List<Permission> authorize(String userName, String password, AuthorizationRequest request) {

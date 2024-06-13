@@ -23,17 +23,17 @@ import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -42,8 +42,6 @@ import java.util.LinkedList;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
-        @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.username"),
         @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realmId = :realmId"),
@@ -53,6 +51,8 @@ import java.util.LinkedList;
         @NamedQuery(name="getRealmUserCountExcludeServiceAccount", query="select count(u) from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null)"),
         @NamedQuery(name="getRealmUsersByAttributeNameAndValue", query="select u from UserEntity u join u.attributes attr " +
                 "where u.realmId = :realmId and attr.name = :name and attr.value = :value"),
+        @NamedQuery(name="getRealmUsersByAttributeNameAndLongValue", query="select u from UserEntity u join u.attributes attr " +
+                "where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash"),
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId"),
         @NamedQuery(name="deleteUsersByRealmAndLink", query="delete from UserEntity u where u.realmId = :realmId and u.federationLink=:link"),
         @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link")
@@ -96,22 +96,22 @@ public class UserEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<UserAttributeEntity> attributes;
+    protected Collection<UserAttributeEntity> attributes = new LinkedList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<UserRequiredActionEntity> requiredActions;
+    protected Collection<UserRequiredActionEntity> requiredActions = new LinkedList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<CredentialEntity> credentials;
+    protected Collection<CredentialEntity> credentials = new LinkedList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<FederatedIdentityEntity> federatedIdentities;
+    protected Collection<FederatedIdentityEntity> federatedIdentities = new LinkedList<>();
 
     @Column(name="FEDERATION_LINK")
     protected String federationLink;

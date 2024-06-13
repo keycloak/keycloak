@@ -70,6 +70,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
     private void initialize(IdentityProviderModel idp) {
         ResourceServer server = root.initializeRealmResourceServer();
+        if (server == null) return;
         Scope exchangeToScope = root.initializeScope(TOKEN_EXCHANGE, server);
 
         String resourceName = getResourceName(idp);
@@ -91,7 +92,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
     private void deletePolicy(String name, ResourceServer server) {
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
-            authz.getStoreFactory().getPolicyStore().delete(server.getRealm(), policy.getId());
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
 
     }
@@ -101,7 +102,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
         if (server == null) return;
         deletePolicy(getExchangeToPermissionName(idp), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(idp));;
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(server.getRealm(), resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
     @Override
@@ -139,6 +140,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
     @Override
     public Map<String, String> getPermissions(IdentityProviderModel idp) {
+        if (authz==null) return null;
         initialize(idp);
         Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(TOKEN_EXCHANGE, exchangeToPermission(idp).getId());

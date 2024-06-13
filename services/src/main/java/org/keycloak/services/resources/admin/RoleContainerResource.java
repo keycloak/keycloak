@@ -17,8 +17,14 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
+import jakarta.ws.rs.NotFoundException;
+import org.keycloak.common.util.Encode;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -28,48 +34,45 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.services.ErrorResponseException;
 
 /**
  * @resource Roles
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class RoleContainerResource extends RoleResource {
     private final RealmModel realm;
     protected AdminPermissionEvaluator auth;
@@ -98,6 +101,8 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Get all roles for the realm or client")
     public Stream<RoleRepresentation> getRoles(@QueryParam("search") @DefaultValue("") String search,
                                                @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults,
@@ -128,11 +133,13 @@ public class RoleContainerResource extends RoleResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Create a new role for the realm or client")
     public Response createRole(final RoleRepresentation rep) {
         auth.roles().requireManage(roleContainer);
 
         if (rep.getName() == null) {
-            throw new BadRequestException();
+            throw new BadRequestException("role has no name");
         }
 
         try {
@@ -164,11 +171,11 @@ public class RoleContainerResource extends RoleResource {
                     for (String roleName : compositeRealmRoles) {
                         RoleModel realmRole = realm.getRole(roleName);
                         if (realmRole == null) {
-                            return ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                            throw ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
                         }
                         realmRoles.add(realmRole);
                     }
-                    RoleUtils.expandCompositeRoles(realmRoles).forEach(role::addCompositeRole);
+                    realmRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
                 }
 
                 Map<String, List<String>> compositeClientRoles = composites.getClient();
@@ -185,20 +192,20 @@ public class RoleContainerResource extends RoleResource {
                         for (String roleName : clientRoleNames) {
                             RoleModel clientRole = client.getRole(roleName);
                             if (clientRole == null) {
-                                return ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                                throw ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
                             }
                             clientRoles.add(clientRole);
                         }
-                        RoleUtils.expandCompositeRoles(clientRoles).forEach(role::addCompositeRole);
+                        clientRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
                     }
                 }
             }
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(Encode.encodePathSegmentAsIs(role.getName())).build()).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 
@@ -212,7 +219,9 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public RoleRepresentation getRole(final @PathParam("role-name") String roleName) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Get a role by name")
+    public RoleRepresentation getRole(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireView(roleContainer);
 
         RoleModel roleModel = roleContainer.getRole(roleName);
@@ -231,14 +240,16 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}")
     @DELETE
     @NoCache
-    public void deleteRole(final @PathParam("role-name") String roleName) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Delete a role by name")
+    public void deleteRole(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
         } else if (realm.getDefaultRole().getId().equals(role.getId())) {
-            throw new ErrorResponseException(ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.", 
-                    Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.",
+                    Response.Status.BAD_REQUEST);
         }
         deleteRole(role);
 
@@ -262,14 +273,16 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Update a role by name")
+    public Response updateRole(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName, final RoleRepresentation rep) {
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
         try {
-            updateRole(rep, role);
+            updateRole(rep, role, realm, session);
 
             if (role.isClientRole()) {
                 adminEvent.resource(ResourceType.CLIENT_ROLE);
@@ -281,7 +294,7 @@ public class RoleContainerResource extends RoleResource {
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 
@@ -294,7 +307,10 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}/composites")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void addComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Add a composite to the role")
+    @APIResponse(responseCode = "204", description = "No Content")
+    public void addComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -313,7 +329,9 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-name") String roleName) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Get composites of the role")
+    public Stream<RoleRepresentation> getRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -332,7 +350,9 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-name") String roleName) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Get realm-level roles of the role's composite")
+    public Stream<RoleRepresentation> getRealmRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -348,12 +368,14 @@ public class RoleContainerResource extends RoleResource {
      * @param clientUuid
      * @return
      */
-    @Path("{role-name}/composites/clients/{clientUuid}")
+    @Path("{role-name}/composites/clients/{client-uuid}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RoleRepresentation> getClientRoleComposites(final @PathParam("role-name") String roleName,
-                                                                final @PathParam("clientUuid") String clientUuid) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Get client-level roles for the client that are in the role's composite")
+    public Stream<RoleRepresentation> getClientRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
+                                                                final @PathParam("client-uuid") String clientUuid) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -377,9 +399,11 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}/composites")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Remove roles from the role's composite")
     public void deleteComposites(
-                                   final @PathParam("role-name") String roleName,
-                                   List<RoleRepresentation> roles) {
+                                   final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
+                                   @Parameter(description = "roles to remove") List<RoleRepresentation> roles) {
 
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -400,6 +424,8 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions(final @PathParam("role-name") String roleName) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -426,6 +452,8 @@ public class RoleContainerResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(final @PathParam("role-name") String roleName, ManagementPermissionReference ref) {
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -455,9 +483,11 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName,
-                                                    @QueryParam("first") Integer firstResult,
-                                                    @QueryParam("max") Integer maxResults) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Returns a stream of users that have the specified role name.")
+    public Stream<UserRepresentation> getUsersInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
+                                                    @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
+                                                    @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults) {
         
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
@@ -486,10 +516,12 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
-                                                    @QueryParam("first") Integer firstResult,
-                                                    @QueryParam("max") Integer maxResults,
-                                                    @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation( summary = "Returns a stream of groups that have the specified role name")
+    public Stream<GroupRepresentation> getGroupsInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
+                                                    @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
+                                                    @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults,
+                                                    @Parameter(description = "if false, return a full representation of the {@code GroupRepresentation} objects.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;

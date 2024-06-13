@@ -22,6 +22,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.Sort;
@@ -32,6 +33,7 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
 
 import java.util.*;
 
@@ -51,20 +53,19 @@ public class LDAPQuery implements AutoCloseable {
 
     private final LDAPStorageProvider ldapFedProvider;
 
-    private int offset;
     private int limit;
     private PaginationContext paginationContext;
     private LDAPContextManager ldapContextManager;
-    private String searchDn;
-    private final Set<Condition> conditions = new LinkedHashSet<Condition>();
-    private final Set<Sort> ordering = new LinkedHashSet<Sort>();
+    private LdapName searchDn;
+    private final Set<Condition> conditions = new LinkedHashSet<>();
+    private final Set<Sort> ordering = new LinkedHashSet<>();
 
-    private final Set<String> returningLdapAttributes = new LinkedHashSet<String>();
+    private final Set<String> returningLdapAttributes = new LinkedHashSet<>();
 
     // Contains just those returningLdapAttributes, which are read-only. They will be marked as read-only in returned LDAPObject instances as well
     // NOTE: names of attributes are lower-cased to avoid case sensitivity issues (LDAP searching is usually case-insensitive, so we want to be as well)
-    private final Set<String> returningReadOnlyLdapAttributes = new LinkedHashSet<String>();
-    private final Set<String> objectClasses = new LinkedHashSet<String>();
+    private final Set<String> returningReadOnlyLdapAttributes = new LinkedHashSet<>();
+    private final Set<String> objectClasses = new LinkedHashSet<>();
 
     private final List<ComponentModel> mappers = new ArrayList<>();
 
@@ -85,6 +86,11 @@ public class LDAPQuery implements AutoCloseable {
     }
 
     public LDAPQuery setSearchDn(String searchDn) {
+        this.searchDn = LDAPDn.fromString(searchDn).getLdapName();
+        return this;
+    }
+
+    public LDAPQuery setSearchDn(LdapName searchDn) {
         this.searchDn = searchDn;
         return this;
     }
@@ -118,7 +124,7 @@ public class LDAPQuery implements AutoCloseable {
         return unmodifiableSet(this.ordering);
     }
 
-    public String getSearchDn() {
+    public LdapName getSearchDn() {
         return this.searchDn;
     }
 
@@ -146,10 +152,6 @@ public class LDAPQuery implements AutoCloseable {
         return limit;
     }
 
-    public int getOffset() {
-        return offset;
-    }
-
     public PaginationContext getPaginationContext() {
         return paginationContext;
     }
@@ -166,7 +168,7 @@ public class LDAPQuery implements AutoCloseable {
             fedMapper.beforeLDAPQuery(this);
         }
 
-        List<LDAPObject> result = new ArrayList<LDAPObject>();
+        List<LDAPObject> result = new ArrayList<>();
 
         try {
             for (LDAPObject ldapObject : ldapFedProvider.getLdapIdentityStore().fetchQueryResults(this)) {
@@ -193,11 +195,6 @@ public class LDAPQuery implements AutoCloseable {
 
     public int getResultCount() {
         return ldapFedProvider.getLdapIdentityStore().countQueryResults(this);
-    }
-
-    public LDAPQuery setOffset(int offset) {
-        this.offset = offset;
-        return this;
     }
 
     public LDAPQuery setLimit(int limit) {

@@ -17,10 +17,13 @@
 
 package org.keycloak.federation.sssd;
 
+import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
+import org.freedesktop.dbus.exceptions.DBusException;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.federation.sssd.api.Sssd;
+import org.keycloak.federation.sssd.impl.AvailabilityChecker;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -37,6 +40,7 @@ public class SSSDFederationProviderFactory implements UserStorageProviderFactory
     private static final String PROVIDER_NAME = "sssd";
     private static final Logger logger = Logger.getLogger(SSSDFederationProvider.class);
 
+    private volatile DBusConnection dbusConnection;
 
     @Override
     public String getId() {
@@ -45,6 +49,7 @@ public class SSSDFederationProviderFactory implements UserStorageProviderFactory
 
     @Override
     public SSSDFederationProvider create(KeycloakSession session, ComponentModel model) {
+        lazyInit();
         return new SSSDFederationProvider(session, new UserStorageProviderModel(model), this);
     }
 
@@ -60,15 +65,36 @@ public class SSSDFederationProviderFactory implements UserStorageProviderFactory
 
     @Override
     public void close() {
-
+        if (dbusConnection != null) {
+            dbusConnection.disconnect();
+        }
     }
 
     protected PAMAuthenticator createPAMAuthenticator(String username, String... factors) {
         return new PAMAuthenticator(username, factors);
     }
 
+    protected DBusConnection getDbusConnection() {
+        return dbusConnection;
+    }
+
+    private void lazyInit() {
+        if (dbusConnection == null) {
+            synchronized (this) {
+                if (dbusConnection == null) {
+                    try {
+                        dbusConnection = DBusConnectionBuilder.forSystemBus().build();
+                    } catch(DBusException e) {
+                        // should not happen as it should be supported to get this point
+                        throw new IllegalStateException("Cannot create DBUS connection", e);
+                    }
+                }
+            }
+        }
+    }
+
     @Override
-    public boolean isSupported() {
-        return Sssd.isAvailable();
+    public boolean isSupported(Config.Scope config) {
+        return AvailabilityChecker.isAvailable();
     }
 }

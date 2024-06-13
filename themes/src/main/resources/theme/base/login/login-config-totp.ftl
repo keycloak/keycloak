@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
 
     <#if section = "header">
@@ -9,8 +10,8 @@
                 <p>${msg("loginTotpStep1")}</p>
 
                 <ul id="kc-totp-supported-apps">
-                    <#list totp.policy.supportedApplications as app>
-                        <li>${app}</li>
+                    <#list totp.supportedApplications as app>
+                        <li>${msg(app)}</li>
                     </#list>
                 </ul>
             </li>
@@ -57,6 +58,7 @@
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="totp" name="totp" autocomplete="off" class="${properties.kcInputClass!}"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                           dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('totp')>
@@ -77,7 +79,7 @@
 
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" class="${properties.kcInputClass!}" id="userLabel" name="userLabel" autocomplete="off"
-                           aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>"
+                           aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>" dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('userLabel')>
@@ -86,6 +88,10 @@
                         </span>
                     </#if>
                 </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <@passwordCommons.logoutOtherSessions/>
             </div>
 
             <#if isAppInitiatedAction??>

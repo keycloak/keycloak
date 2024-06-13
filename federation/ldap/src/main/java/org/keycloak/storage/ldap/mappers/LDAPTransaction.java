@@ -22,6 +22,7 @@ import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 
@@ -47,16 +48,22 @@ public class LDAPTransaction extends AbstractKeycloakTransaction {
     @Override
     protected void commitImpl() {
         if (logger.isTraceEnabled()) {
-            logger.trace("Transaction commit! Updating LDAP attributes for object " + ldapUser.getDn().toString() + ", attributes: " + ldapUser.getAttributes());
+            logger.trace("Transaction commit! Updating LDAP attributes for object " + ldapUser.getDn() + ", attributes: " + ldapUser.getAttributes());
+        }
+        if (ldapUser.isWaitingForExecutionOnMandatoryAttributesComplete()) {
+            throw new ModelValidationException("LDAPObject cannot be committed because some mandatory attributes are not set: "
+                    + ldapUser.getMandatoryAttributeNamesRemaining());
         }
 
-        ldapProvider.getLdapIdentityStore().update(ldapUser);
+        if (!updatedAttributes.isEmpty()) {
+            ldapProvider.getLdapIdentityStore().update(ldapUser);
+        }
     }
 
 
     @Override
     protected void rollbackImpl() {
-        logger.warn("Transaction rollback! Ignoring LDAP updates for object " + ldapUser.getDn().toString());
+        logger.warn("Transaction rollback! Ignoring LDAP updates for object " + ldapUser.getDn());
     }
 
     /**
@@ -65,7 +72,10 @@ public class LDAPTransaction extends AbstractKeycloakTransaction {
      * @param attributeName model attribute name (For example "firstName", "lastName", "street")
      */
     public void addUpdatedAttribute(String attributeName) {
-        updatedAttributes.add(attributeName);
+        if (ldapUser.getDn() != null) {
+            // only add the attribute if the ldapObject is created, it has a DN
+            updatedAttributes.add(attributeName);
+        }
     }
 
     /**

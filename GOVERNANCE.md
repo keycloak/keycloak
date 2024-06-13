@@ -21,11 +21,10 @@ enabling the less common use cases through custom extensions.
 Keycloak consists of several projects:
 
 * [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
-* [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation) - Documentation for Keycloak
 * [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
-* [Keycloak Containers](https://github.com/keycloak/keycloak-containers) - Container images for Keycloak
-* [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
-* [Keycloak Node.js Admin Client](https://github.com/keycloak/keycloak-nodejs-admin-client) - Node.js library for Keycloak Admin REST API
+* [Keycloak Benchmark](https://github.com/keycloak/keycloak-benchmark) - Load tests for benchmarking Keycloak
+* [Keycloak Community](https://github.com/keycloak/keycloak-community) - Keycloak design documents
+* [Keycloak Web](https://github.com/keycloak/keycloak-web) - Website keycloak.org
 
 The same governance model applies to all projects. However, the list of maintainers may vary per project. 
 
@@ -73,7 +72,14 @@ For the nominee to be accepted as a maintainer at least 2/3 of existing maintain
 
 ### Changes in Maintainership
 
-Maintainers can be removed if at least 2/3 of existing maintainers agree.
+Every 6 months (March and September) active maintainers fill in a survey covering what they have been doing as a maintainer 
+for the last period, and what they are planning on focusing on in the next period. The survey is not made publicly 
+available, but is shared with existing maintainers. This serves two purposes; firstly for the maintainers group to better
+understand what each maintainer is focusing on, and secondly to identify maintainers that are no longer active.
+
+In the majority of cases a maintainer is removed by the maintainer stepping down themselves (by sending an email to
+keycloak-maintainers(at)googlegroups.com). However, in exceptional circumstances a maintainer can also be removed with
+2/3 of votes from existing maintainers.
 
 
 ## Contributing Changes

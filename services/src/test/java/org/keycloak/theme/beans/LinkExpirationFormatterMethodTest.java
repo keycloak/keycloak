@@ -5,13 +5,22 @@
  */
 package org.keycloak.theme.beans;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import freemarker.template.TemplateModelException;
@@ -24,15 +33,10 @@ public class LinkExpirationFormatterMethodTest {
     protected static final Locale locale = Locale.ENGLISH;
     protected static final Properties messages = new Properties();
     static {
-        messages.put("linkExpirationFormatter.timePeriodUnit.seconds.1", "second");
-        messages.put("linkExpirationFormatter.timePeriodUnit.seconds", "seconds");
-        messages.put("linkExpirationFormatter.timePeriodUnit.minutes.1", "minute");
-        messages.put("linkExpirationFormatter.timePeriodUnit.minutes.3", "minutes-3");
-        messages.put("linkExpirationFormatter.timePeriodUnit.minutes", "minutes");
-        messages.put("linkExpirationFormatter.timePeriodUnit.hours.1", "hour");
-        messages.put("linkExpirationFormatter.timePeriodUnit.hours", "hours");
-        messages.put("linkExpirationFormatter.timePeriodUnit.days.1", "day");
-        messages.put("linkExpirationFormatter.timePeriodUnit.days", "days");
+        messages.put("linkExpirationFormatter.timePeriodUnit.seconds", "{0,choice,0#seconds|1#second|1<seconds}");
+        messages.put("linkExpirationFormatter.timePeriodUnit.minutes", "{0,choice,0#minutes|1#minute|2#minutes|3#minutes-3|3<minutes}");
+        messages.put("linkExpirationFormatter.timePeriodUnit.hours", "{0,choice,0#hours|1#hour|1<hours}");
+        messages.put("linkExpirationFormatter.timePeriodUnit.days", "{0,choice,0#days|1#day|1<days}");
     }
 
     protected List<Object> toList(Object... objects) {
@@ -68,8 +72,10 @@ public class LinkExpirationFormatterMethodTest {
     @Test
     public void inputtypes_number() throws TemplateModelException{
         LinkExpirationFormatterMethod tested = new LinkExpirationFormatterMethod(messages, locale);
-        Assert.assertEquals("5 minutes", tested.exec(toList(new Integer(5))));
-        Assert.assertEquals("5 minutes", tested.exec(toList(new Long(5))));
+        //noinspection UnnecessaryBoxing
+        Assert.assertEquals("5 minutes", tested.exec(toList(Integer.valueOf(5))));
+        //noinspection UnnecessaryBoxing
+        Assert.assertEquals("5 minutes", tested.exec(toList(Long.valueOf(5))));
     }
 
     @Test
@@ -122,6 +128,74 @@ public class LinkExpirationFormatterMethodTest {
         LinkExpirationFormatterMethod tested = new LinkExpirationFormatterMethod(messages, locale);
         Assert.assertEquals("2 days", tested.exec(toList(2 * 24 * 60)));
         Assert.assertEquals("5 days", tested.exec(toList(5 * 24 * 60)));
+    }
+
+    /**
+     * There are some languages where the choice format is not needed. Test that this still works.
+     */
+    @Test
+    public void format_simple_no_choice() throws TemplateModelException {
+        Properties simpleMessages = new Properties();
+        simpleMessages.put("linkExpirationFormatter.timePeriodUnit.seconds", "seconds-simple");
+        simpleMessages.put("linkExpirationFormatter.timePeriodUnit.minutes", "minutes-simple");
+        simpleMessages.put("linkExpirationFormatter.timePeriodUnit.hours", "hours-simple");
+        simpleMessages.put("linkExpirationFormatter.timePeriodUnit.days", "days-simple");
+        LinkExpirationFormatterMethod tested = new LinkExpirationFormatterMethod(simpleMessages, locale);
+        Assert.assertEquals("2 days-simple", tested.exec(toList(2 * 24 * 60)));
+        Assert.assertEquals("5 days-simple", tested.exec(toList(5 * 24 * 60)));
+    }
+
+    /**
+     * This ignored test conserves the code to translate the properties from Keycloak 22 and before to the new
+     * {@link java.text.ChoiceFormat}.
+     * The code appends the translated properties to the end of the file, and the user can then review the new properties and remove the old.
+     */
+    @Ignore
+    @Test
+    public void convert() throws IOException {
+        String[] units = { "seconds", "minutes", "hours", "days"};
+        for (Path path : Files.list(Paths.get("../themes/src/main/resources-community/theme/base/email/messages" )).collect(Collectors.toList())) {
+            Properties p = new Properties();
+            p.load(Files.newBufferedReader(path, StandardCharsets.UTF_8));
+            FileWriter fw = new FileWriter(path.toFile(), true);
+            boolean firstEntry = true;
+            for (String unit : units) {
+                StringBuilder choicePattern = new StringBuilder();
+                String base = "linkExpirationFormatter.timePeriodUnit." + unit;
+                String defaultValue = p.getProperty(base);
+                if (defaultValue == null) {
+                    continue;
+                }
+                choicePattern.append("{0,choice,0#").append(defaultValue).append("|");
+                int last = 0;
+                int entry = 0;
+                String previous = defaultValue;
+                for (int i = 0; i < 10; ++i) {
+                    String value = p.getProperty(base + "." + i);
+                    if (value != null) {
+                        last = i;
+                        if (!Objects.equals(value, previous)) {
+                            entry = i;
+                            previous = value;
+                            choicePattern.append(i).append("#").append(value).append("|");
+                        }
+                    }
+                }
+                choicePattern.append(last).append("<").append(defaultValue).append("}");
+                if (entry == 0) {
+                    choicePattern.setLength(0);
+                    choicePattern.append(defaultValue);
+                }
+                choicePattern.insert(0, base + "=");
+                choicePattern.append("\n");
+                if (firstEntry) {
+                    fw.write("\n");
+                    firstEntry = false;
+                }
+                fw.write(choicePattern.toString());
+            }
+            fw.close();
+        }
     }
 
 

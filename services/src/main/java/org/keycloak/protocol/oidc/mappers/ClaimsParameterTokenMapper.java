@@ -109,17 +109,17 @@ public class ClaimsParameterTokenMapper extends AbstractOIDCProtocolMapper imple
                         FullNameMapper fullNameMapper = new FullNameMapper();
                         fullNameMapper.setClaim(token, mappingModel, userSession);
                     } else if (i.equals(IDToken.GIVEN_NAME)) {
-                        UserPropertyMapper userPropertyMapper = new UserPropertyMapper();
-                        userPropertyMapper.setClaim(token, UserPropertyMapper.createClaimMapper("requested firstName", "firstName", IDToken.GIVEN_NAME, "String", false, true), userSession);
+                        UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested firstName", "firstName", IDToken.GIVEN_NAME, "String", false, true, false), userSession);
                     } else if (i.equals(IDToken.FAMILY_NAME)) {
-                        UserPropertyMapper userPropertyMapper = new UserPropertyMapper();
-                        userPropertyMapper.setClaim(token, UserPropertyMapper.createClaimMapper("requested lastName", "lastName", IDToken.FAMILY_NAME, "String", false, true), userSession);
+                        UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested lastName", "lastName", IDToken.FAMILY_NAME, "String", false, true, false), userSession);
                     } else if (i.equals(IDToken.PREFERRED_USERNAME)) {
-                        UserPropertyMapper userPropertyMapper = new UserPropertyMapper();
-                        userPropertyMapper.setClaim(token, UserPropertyMapper.createClaimMapper("requested username", "username", IDToken.PREFERRED_USERNAME, "String", false, true), userSession);
+                        UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested username", "username", IDToken.PREFERRED_USERNAME, "String", false, true, false), userSession);
                     } else if (i.equals(IDToken.EMAIL)) {
-                        UserPropertyMapper userPropertyMapper = new UserPropertyMapper();
-                        userPropertyMapper.setClaim(token, UserPropertyMapper.createClaimMapper("requested email", "email", IDToken.EMAIL, "String", false, true), userSession);
+                        UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested email", "email", IDToken.EMAIL, "String", false, true, false), userSession);
                     }
             });
     }

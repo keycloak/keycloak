@@ -16,13 +16,15 @@
  */
 package org.keycloak.testsuite.broker;
 
+import java.util.Collections;
+import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -31,13 +33,15 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
-import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
+import org.keycloak.testsuite.federation.UserMapStorageFactory;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 
@@ -47,29 +51,31 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+
+import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class AccountLinkTest extends AbstractKeycloakTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
     public static final String PARENT_USERNAME = "parent";
 
     @Page
-    protected AccountFederatedIdentityPage accountFederatedIdentityPage;
-
-    @Page
     protected UpdateAccountInformationPage profilePage;
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected AppPage appPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -129,31 +135,26 @@ public class AccountLinkTest extends AbstractKeycloakTest {
     @Test
     public void testAccountLink() {
         String childUsername = "child";
-        String childPassword = "password";
-        String childIdp = CHILD_IDP;
 
-        testAccountLink(childUsername, childPassword, childIdp);
+        testAccountLink(childUsername);
     }
 
     @Test
+    @Ignore // Ignore should be removed by https://github.com/keycloak/keycloak/issues/20441
     public void testAccountLinkWithUserStorageProvider() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
 
         String childUsername = PassThroughFederatedUserStorageProvider.PASSTHROUGH_USERNAME;
         String childPassword = PassThroughFederatedUserStorageProvider.INITIAL_PASSWORD;
         String childIdp = CHILD_IDP;
 
-        testAccountLink(childUsername, childPassword, childIdp);
-
+        testAccountLink(childUsername);
     }
 
     @Test
     public void testDeleteIdentityOnProviderRemoval() {
         String childUsername = "child";
-        String childPassword = "password";
-        String childIdp = CHILD_IDP;
 
-        assertFederatedIdentity(childUsername, childPassword, childIdp);
+        assertFederatedIdentity(childUsername);
 
         RealmResource realm = adminClient.realm(CHILD_IDP);
         UsersResource users = realm.users();
@@ -170,7 +171,68 @@ public class AccountLinkTest extends AbstractKeycloakTest {
 
         getTestingClient().server(CHILD_IDP).run(AccountLinkTest::checkEmptyFederatedIdentities);
     }
-    
+
+    @Test
+    public void testDeleteFederatedUserFederatedIdentityOnProviderRemoval() {
+        RealmResource realm = adminClient.realm(CHILD_IDP);
+        final String testIdpToDelete = "test-idp-to-delete";
+
+        BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, testIdpToDelete);
+
+        // Create user federation
+
+        ComponentRepresentation memProvider = new ComponentRepresentation();
+        memProvider.setName("memory");
+        memProvider.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+        memProvider.setProviderType(UserStorageProvider.class.getName());
+        memProvider.setConfig(new MultivaluedHashMap<>());
+        memProvider.getConfig().putSingle("priority", Integer.toString(0));
+        memProvider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
+
+        Response resp = realm.components().add(memProvider);
+        resp.close();
+        String memProviderId = ApiUtil.getCreatedId(resp);
+
+        // Create federated user
+        String username = "fed-user1";
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setUsername(username);
+        userRepresentation.setEmail("feduser1@mail.com");
+        userRepresentation.setRequiredActions(Collections.emptyList());
+        userRepresentation.setEnabled(true);
+        userRepresentation.setFederationLink(memProviderId);
+        String userId = createUserWithAdminClient(realm, userRepresentation);
+        Assert.assertFalse(StorageId.isLocalStorage(userId));
+
+        // Link identity provider and federated user
+        FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
+            .userId(userId)
+            .userName(username)
+            .identityProvider(testIdpToDelete)
+            .build();
+
+        UserResource userResource = realm.users().get(userId);
+        Response response = userResource.addFederatedIdentity(testIdpToDelete, identity);
+        Assert.assertEquals("status", 204, response.getStatus());
+
+        userResource = realm.users().get(userId);
+        Assert.assertFalse(userResource.getFederatedIdentity().isEmpty());
+
+        // Delete the identity provider
+        realm.identityProviders().get(testIdpToDelete).remove();
+
+        // Check that links to federated identity has been deleted
+        userResource = realm.users().get(userId);
+        Assert.assertTrue(userResource.getFederatedIdentity().isEmpty());
+
+        getTestingClient().server(CHILD_IDP).run((RunOnServer) session -> {
+            RealmModel realm1 = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm1, username);
+            assertEquals(0, session.users().getFederatedIdentitiesStream(realm1, user).count());
+            assertNull(session.users().getFederatedIdentity(realm1, user, testIdpToDelete));
+        });
+    }
+
     private static void checkEmptyFederatedIdentities(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = session.users().getUserByUsername(realm, "child");
@@ -178,54 +240,25 @@ public class AccountLinkTest extends AbstractKeycloakTest {
         assertNull(session.users().getFederatedIdentity(realm, user, PARENT_IDP));
     }
 
-    protected void testAccountLink(String childUsername, String childPassword, String childIdp) {
-        assertFederatedIdentity(childUsername, childPassword, childIdp);
+    protected void testAccountLink(String childUsername) {
+        assertFederatedIdentity(childUsername);
         assertRemoveFederatedIdentity();
 
     }
 
-    private void assertFederatedIdentity(String childUsername, String childPassword, String childIdp) {
-        accountFederatedIdentityPage.realm(childIdp);
-        accountFederatedIdentityPage.open();
-        loginPage.isCurrent();
-        loginPage.login(childUsername, childPassword);
-        assertTrue(accountFederatedIdentityPage.isCurrent());
+    private void assertFederatedIdentity(String childUsername) {
+        //Link the identity provider through Admin REST API
+        Response response = AccountHelper.addIdentityProvider(adminClient.realm(CHILD_IDP), childUsername, adminClient.realm(PARENT_IDP), PARENT_USERNAME, PARENT_IDP);
+        Assert.assertEquals("status", 204, response.getStatus());
+        assertTrue(AccountHelper.isIdentityProviderLinked(adminClient.realm(CHILD_IDP), childUsername, PARENT_IDP));
 
-        accountFederatedIdentityPage.clickAddProvider(PARENT_IDP);
-
-        this.loginPage.isCurrent();
-        loginPage.login(PARENT_USERNAME, "password");
-
-        // Assert identity linked in account management
-        assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-link-" + PARENT_IDP + "\""));
-
-        // Logout from account management
-        accountFederatedIdentityPage.logout();
-
-        // Assert I am logged immediately to account management due to previously linked "test-user" identity
-        loginPage.isCurrent();
-        loginPage.clickSocial(PARENT_IDP);
-        loginPage.login(PARENT_USERNAME, "password");
-        System.out.println(driver.getCurrentUrl());
-        System.out.println("--------------------------------");
-        System.out.println(driver.getPageSource());
-        assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-link-" + PARENT_IDP + "\""));
     }
 
     private void assertRemoveFederatedIdentity() {
-        // Unlink my "test-user"
-        accountFederatedIdentityPage.clickRemoveProvider(PARENT_IDP);
-        assertTrue(driver.getPageSource().contains("id=\"add-link-" + PARENT_IDP + "\""));
+        // Unlink my "test-user" through Admin REST API
+        AccountHelper.deleteIdentityProvider(adminClient.realm(CHILD_IDP), CHILD_IDP, PARENT_IDP);
+        assertFalse(AccountHelper.isIdentityProviderLinked(adminClient.realm(CHILD_IDP), CHILD_IDP, PARENT_IDP));
 
-        // Logout from account management
-        accountFederatedIdentityPage.logout();
-
-        this.loginPage.clickSocial(PARENT_IDP);
-        this.loginPage.login(PARENT_USERNAME, "password");
-        this.profilePage.assertCurrent();
     }
-
 
 }

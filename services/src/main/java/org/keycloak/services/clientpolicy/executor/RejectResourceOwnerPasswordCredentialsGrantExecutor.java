@@ -17,7 +17,7 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;

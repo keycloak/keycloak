@@ -16,10 +16,10 @@
  */
 package org.keycloak.broker.saml.mappers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -31,13 +31,20 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * Abstract class that handles the logic for importing and updating brokered users for all mappers that map a SAML
  * attribute into a {@code Keycloak} role.
  *
- * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProviderMapper {
+
+    private static final Logger LOG = Logger.getLogger(AbstractAttributeToRoleMapper.class);
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         RoleModel role = this.getRole(realm, mapperModel);
+        if (role == null) {
+            return;
+        }
+
         if (this.applies(mapperModel, context)) {
             user.grantRole(role);
         }
@@ -46,6 +53,10 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         RoleModel role = this.getRole(realm, mapperModel);
+        if (role == null) {
+            return;
+        }
+
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         // KEYCLOAK-8730 if a previous mapper has already granted the same role, skip the checks so we don't accidentally remove a valid role.
         if (!context.hasMapperGrantedRole(roleName)) {
@@ -69,21 +80,22 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
     protected abstract boolean applies(final IdentityProviderMapperModel mapperModel, final BrokeredIdentityContext context);
 
     /**
-     * Obtains the {@link RoleModel} corresponding the role configured in the specified {@link IdentityProviderMapperModel}.
-     * If the role doesn't correspond to one of the realm's client roles or to one of the realm's roles, this method throws
-     * an {@link IdentityBrokerException} to convey that an invalid role was configured.
+     * Obtains the {@link RoleModel} corresponding the role configured in the specified
+     * {@link IdentityProviderMapperModel}.
+     * If the role doesn't correspond to one of the realm's client roles or to one of the realm's roles, this method
+     * returns {@code null}.
      *
      * @param realm a reference to the realm.
      * @param mapperModel a reference to the {@link IdentityProviderMapperModel} containing the configured role.
-     * @return the {@link RoleModel} that corresponds to the mapper model role.
-     * @throws IdentityBrokerException if the role name doesn't correspond to one of the realm's client roles or to one
-     * of the realm's roles.
+     * @return the {@link RoleModel} that corresponds to the mapper model role or {@code null}, if the role could not be
+     *         found
      */
     private RoleModel getRole(final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
         if (role == null) {
-            throw new IdentityBrokerException("Unable to find role: " + roleName);
+            LOG.warnf("Unable to find role '%s' for mapper '%s' on realm '%s'.", roleName, mapperModel.getName(),
+                    realm.getName());
         }
         return role;
     }

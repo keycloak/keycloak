@@ -3,11 +3,13 @@ package org.keycloak.testsuite.cli.registration;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
-import org.keycloak.client.registration.cli.config.RealmConfigData;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.RealmConfigData;
+import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcRegExec;
+import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
@@ -17,11 +19,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
+import static org.keycloak.client.cli.util.OsUtil.EOL;
+import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
@@ -36,7 +36,7 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         KcRegExec exe = execute("");
 
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
 
         List<String> lines = exe.stdoutLines();
         Assert.assertTrue("stdout output not empty", lines.size() > 0);
@@ -49,51 +49,51 @@ public class KcRegTest extends AbstractRegCliTest {
          * Test commands without arguments
          */
         exe = execute("config");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        assertExitCodeAndStreamSizes(exe, 2, 8, 0);
         Assert.assertEquals("error message",
-                "Sub-command required by '" + CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'",
-                exe.stderrLines().get(0));
+                "Usage: kcreg.sh config SUB_COMMAND [ARGUMENTS]",
+                exe.stdoutLines().get(0));
 
         exe = execute("config credentials");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM [ARGUMENTS]", exe.stdoutLines().get(0));
 
         exe = execute("config initial-token");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " config initial-token --server SERVER --realm REALM [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0));
 
         exe = execute("config registration-token");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " config registration-token --server SERVER --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0));
 
         exe = execute("config truststore");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
 
         exe = execute("create");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " create [ARGUMENTS]", exe.stdoutLines().get(0));
         //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = execute("get");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " get CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = execute("update");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " update CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
         //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = execute("delete");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " delete CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
@@ -104,7 +104,7 @@ public class KcRegTest extends AbstractRegCliTest {
         Assert.assertEquals("first line", "Attributes for default format:", exe.stdoutLines().get(0));
 
         exe = execute("update-token");
-        assertExitCodeAndStdErrSize(exe, 1, 0);
+        assertExitCodeAndStdErrSize(exe, 2, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
         Assert.assertEquals("help message", "Usage: " + CMD + " update-token CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
@@ -188,8 +188,8 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         KcRegExec exe = execute("nonexistent");
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("stderr first line", "Unknown command: nonexistent", exe.stderrLines().get(0));
+        assertExitCodeAndStreamSizes(exe, 2, 0, 3);
+        Assert.assertEquals("stderr first line", "Unmatched argument at index 0: 'nonexistent'", exe.stderrLines().get(0));
     }
 
     @Test
@@ -199,8 +199,8 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         KcRegExec exe = execute("--nonexistent");
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("stderr first line", "Unknown command: --nonexistent", exe.stderrLines().get(0));
+        assertExitCodeAndStreamSizes(exe, 2, 0, 2);
+        Assert.assertEquals("stderr first line", "Unknown option: '--nonexistent'", exe.stderrLines().get(0));
     }
 
     @Test
@@ -211,9 +211,9 @@ public class KcRegTest extends AbstractRegCliTest {
 
         KcRegExec exe = execute("get my_client --nonexistent");
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("stderr first line", "Invalid option: --nonexistent", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " help get' for more information", exe.stderrLines().get(1));
+        assertExitCodeAndStreamSizes(exe, 2, 0, 3);
+        Assert.assertEquals("stderr first line", "Unknown option: '--nonexistent'", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " get --help' for more information on the available options.", exe.stderrLines().get(2));
     }
 
     @Test
@@ -233,9 +233,9 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         KcRegExec exe = execute("config credentials --realm master --user admin --password admin");
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("stderr first line", "Required option not specified: --server", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " help config credentials' for more information", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
     }
 
     @Test
@@ -245,9 +245,9 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         KcRegExec exe = execute("config credentials --server " + serverUrl + " --user admin --password admin");
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("stderr first line", "Required option not specified: --realm", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " help config credentials' for more information", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
     }
 
     @Test
@@ -257,13 +257,12 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         KcRegExec exe = KcRegExec.execute("config credentials --no-config --server " + serverUrl + " --realm master --user admin --password admin");
 
-        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " help config credentials' for more information", exe.stderrLines().get(1));
+        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserLoginWithDefaultConfig() {
         /*
          *  Test most basic user login, using the default admin-cli as a client
@@ -364,7 +363,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserLoginWithCustomConfig() {
         /*
          *  Test user login using a custom config file
@@ -402,7 +400,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCustomConfigLoginCreateDelete() throws IOException {
         /*
          *  Test user login, create, delete session using a custom config file
@@ -459,7 +456,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyUserAuth() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -470,7 +466,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyUserAuthWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -482,7 +477,7 @@ public class KcRegTest extends AbstractRegCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
         // try wrong user password
@@ -491,7 +486,7 @@ public class KcRegTest extends AbstractRegCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
         // try wrong client secret
@@ -500,7 +495,7 @@ public class KcRegTest extends AbstractRegCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid client secret [unauthorized_client]", exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Invalid client or Invalid client credentials [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
         // try whole CRUD
@@ -509,14 +504,24 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
-    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient() throws IOException {
+    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getPrimaryExtension());
+    }
+
+    @Test
+    public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
+        KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getPrimaryExtension());
+    }
+
+    private void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(String keystoreFileExtension) throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client JWT signature.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore.jks");
-        Assert.assertTrue("reg-cli-keystore.jks exists", keystore.isFile());
+        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore." + keystoreFileExtension);
+        Assert.assertTrue("reg-cli-keystore." + keystoreFileExtension + " exists", keystore.isFile());
 
         // try client without direct grants enabled
         KcRegExec exe = execute("get test-client --no-config --server " + serverUrl + " --realm test" +
@@ -525,7 +530,7 @@ public class KcRegTest extends AbstractRegCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
         // try wrong user password
@@ -535,7 +540,7 @@ public class KcRegTest extends AbstractRegCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
         // try wrong storepass
@@ -545,7 +550,7 @@ public class KcRegTest extends AbstractRegCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Failed to load private key: Keystore was tampered with, or password was incorrect", exe.stderrLines().get(1));
+        Assert.assertTrue("error message", exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Failed to load private key: "));
 
 
         // try whole CRUD
@@ -557,7 +562,6 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyServiceAccountWithClientSecret() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
@@ -568,14 +572,13 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient() throws IOException {
         /*
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using only client JWT signature - service account is used.
          */
-        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore.jks");
-        Assert.assertTrue("reg-cli-keystore.jks exists", keystore.isFile());
+        File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore.p12");
+        Assert.assertTrue("reg-cli-keystore.p12 exists", keystore.isFile());
 
         testCRUDWithOnTheFlyAuth(serverUrl,
                 "--client reg-cli-jwt --keystore '" + keystore.getAbsolutePath() + "' --storepass storepass --keypass keypass --alias reg-cli", "",
@@ -641,14 +644,12 @@ public class KcRegTest extends AbstractRegCliTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCreateWithAllowedHostsWithoutAuthenticationNoConfig() throws IOException {
 
         testCreateWithAllowedHostsWithoutAuthentication("test", false);
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testCreateWithAllowedHostsWithoutAuthentication() throws IOException {
 
         testCreateWithAllowedHostsWithoutAuthentication("test", true);

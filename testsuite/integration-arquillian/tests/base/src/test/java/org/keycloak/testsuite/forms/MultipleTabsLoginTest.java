@@ -17,17 +17,35 @@
 
 package org.keycloak.testsuite.forms;
 
-import static org.junit.Assert.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.models.Constants.CLIENT_DATA;
+import static org.keycloak.testsuite.AssertEvents.DEFAULT_REDIRECT_URI;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -47,10 +65,15 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.openqa.selenium.NoSuchElementException;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 /**
  * Tries to simulate testing with multiple browser tabs
@@ -88,6 +111,9 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Page
     protected AppPage appPage;
@@ -128,34 +154,293 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void multipleTabsParallelLoginTest() {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
+
+            // Simulate login in different browser tab tab2. I will be on loginPage again.
+            tabUtil.newTab(oauth.getLoginFormUrl());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+
+            // Login in tab2
+            loginSuccessAndDoRequiredActions();
+
+            // Try to go back to tab 1. We should be logged-in automatically
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            // Should be back on tab1
+            waitForAppPage(() -> driver.navigate().refresh());
+            appPage.assertCurrent();
+        }
+    }
+
+    // Simulating scenario described in https://github.com/keycloak/keycloak/issues/24112
+    @Test
+    public void multipleTabsParallelLoginTestWithAuthSessionExpiredInTheMiddle() {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            multipleTabsParallelLogin(tabUtil);
+
+            waitForAppPage(() -> loginPage.login("login-test", "password"));
+            assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN);
+        }
+    }
+
+    @Test
+    public void testWithAuthSessionExpiredInTheMiddle_badRedirectUri() throws Exception {
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        // Simulate incorrect login attempt to make sure that URL is on LoginActionsService URL
+        loginPage.login("invalid", "invalid");
+        String loginUrl = driver.getCurrentUrl();
+        Assert.assertTrue(UriUtils.decodeQueryString(new URL(loginUrl).getQuery()).containsKey(CLIENT_DATA));
+        getLogger().info("URL in tab1: " + driver.getCurrentUrl());
 
-        String tab1Url = driver.getCurrentUrl();
-
-        // Simulate login in different browser tab tab2. I will be on loginPage again.
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
-        // Login in tab2
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        // Wait until authentication session expires
+        setTimeOffset(7200000);
 
+        loginPage.login("login-test", "password");
+        loginPage.assertCurrent();
+        Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+        events.clear();
+
+        loginSuccessAndDoRequiredActions();
+
+        // Remove redirectUri from the client "test-app"
+        try (ClientAttributeUpdater cap = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                .setRedirectUris(List.of("https://foo"))
+                .update()) {
+
+            events.clear();
+
+            // Delete cookie and go to original loginURL. Restore from client_data parameter should fail due the incorrect redirectUri
+            driver.manage().deleteCookieNamed(RestartLoginCookie.KC_RESTART);
+
+            driver.navigate().to(loginUrl);
+            errorPage.assertCurrent();
+            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+            events.expectLogin().user((String) null).session((String) null)
+                    .error(Errors.INVALID_REDIRECT_URI)
+                    .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
+                    .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
+                    .removeDetail(Details.CONSENT)
+                    .removeDetail(Details.CODE_ID)
+                    .assertEvent(true);
+        }
+    }
+
+    private void multipleTabsParallelLogin(BrowserTabUtil tabUtil) {
+        assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+        // Open new tab 2
+        tabUtil.newTab(oauth.getLoginFormUrl());
+        assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+        loginPage.assertCurrent();
+        getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+
+        // Wait until authentication session expires
+        setTimeOffset(7200000);
+
+        // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
+        loginPage.login("login-test", "password");
+        loginPage.assertCurrent();
+        Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+        events.clear();
+
+        loginSuccessAndDoRequiredActions();
+
+        // Go back to tab1. Usually should be automatically authenticated here (previously it showed "You are already logged-in")
+        tabUtil.closeTab(1);
+        assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+    }
+
+    private void loginSuccessAndDoRequiredActions() {
+        loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
                 .email("john@doe3.com").submit();
         appPage.assertCurrent();
+    }
 
-        // Try to go back to tab 1. We should have ALREADY_LOGGED_IN info page
-        driver.navigate().to(tab1Url);
-        infoPage.assertCurrent();
-        Assert.assertEquals("You are already logged in.", infoPage.getInfo());
+    // Assert browser was redirected to the appPage with "error=temporarily_unavailable" and error_description corresponding to Constants.AUTHENTICATION_EXPIRED_MESSAGE
+    private void assertOnAppPageWithAlreadyLoggedInError(EventType expectedEventType) {
+        if (!(driver instanceof HtmlUnitDriver)) {
+            // In case of real browsers, the "tab2" is automatically refreshed when tab1 finish authentication. This is done by invoking LoginActionsService.restartSession endpoint by JS.
+            // Hence event type is always RESTART_AUTHENTICATION
+            expectedEventType = EventType.RESTART_AUTHENTICATION;
+        }
 
-        infoPage.clickBackToApplicationLink();
-        appPage.assertCurrent();
+        events.expect(expectedEventType)
+                .user((String) null).error(Errors.ALREADY_LOGGED_IN)
+                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
+                .detail(Details.REDIRECTED_TO_CLIENT, "true")
+                .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
+                .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
+                .assertEvent(true);
+        appPage.assertCurrent(); // Page "You are already logged in." should not be here
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
+        Assert.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
+    }
+
+    @Test
+    public void multipleTabsParallelLoginTestWithAuthSessionExpiredAndRegisterClick() {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            multipleTabsParallelLogin(tabUtil);
+
+            waitForAppPage(() -> loginPage.clickRegister());
+            assertOnAppPageWithAlreadyLoggedInError(EventType.REGISTER);
+        }
+    }
+
+    @Test
+    public void multipleTabsParallelLoginTestWithAuthSessionExpiredAndResetPasswordClick() {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            multipleTabsParallelLogin(tabUtil);
+
+            waitForAppPage(() -> loginPage.resetPassword());
+            assertOnAppPageWithAlreadyLoggedInError(EventType.RESET_PASSWORD);
+        }
+    }
+
+    @Test
+    public void multipleTabsParallelLoginTestWithAuthSessionExpiredAndRequiredAction() {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // Go through login in tab1 until required actions are shown
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
+            getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+            // Open new tab 2
+            tabUtil.newTab(oauth.getLoginFormUrl());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+
+            // Wait until authentication session expires
+            setTimeOffset(7200000);
+
+            // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
+            loginPage.login("login-test", "password");
+            loginPage.assertCurrent();
+            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+
+            loginSuccessAndDoRequiredActions();
+
+            // Go back to tab1. Usually should be automatically authenticated here (previously it showed "You are already logged-in")
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            waitForAppPage(() -> updatePasswordPage.changePassword("password", "password"));
+            assertOnAppPageWithAlreadyLoggedInError(EventType.CUSTOM_REQUIRED_ACTION);
+        }
+    }
+
+    @Test
+    public void multipleTabsParallelLoginTestWithAuthSessionExpiredAndRefreshInTab1() {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // Go through login in tab1 and do unsuccessful login attempt (to make sure that "action URL" is shown in browser URL instead of OIDC authentication request URL)
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.login("login-test", "bad-password");
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+            // Open new tab 2
+            tabUtil.newTab(oauth.getLoginFormUrl());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+
+            // Wait until authentication session expires
+            setTimeOffset(7200000);
+
+            // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
+            loginPage.login("login-test", "password");
+            loginPage.assertCurrent();
+            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+
+            loginSuccessAndDoRequiredActions();
+
+            // Go back to tab1 and refresh the page. Should be automatically authenticated here (previously it showed "You are already logged-in")
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            waitForAppPage(() -> {
+                events.clear();
+                driver.navigate().refresh();
+            });
+            assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN);
+        }
+    }
+
+    @Test
+    public void testLoginAfterLogoutFromDifferentTab() {
+        try (BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // login in the first tab
+            oauth.openLoginForm();
+            String tab1WindowHandle = util.getActualWindowHandle();
+            loginSuccessAndDoRequiredActions();
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+
+            // seamless login in the second tab, user already authenticated
+            util.newTab(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
+            appPage.assertCurrent();
+            events.clear();
+            // logout in the second tab
+            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            events.expectLogout(accessToken.getSessionState()).user(userId).session(accessToken.getSessionState()).assertEvent();
+            // re-login in the second tab
+            oauth.openLoginForm();
+            loginPage.login("login-test", "password");
+            appPage.assertCurrent();
+
+            // seamless authentication in the first tab
+            util.switchToTab(tab1WindowHandle);
+            oauth.openLoginForm();
+            appPage.assertCurrent();
+        }
+    }
+
+    @Test
+    public void multipleTabsLoginAndPassiveCheck() throws MalformedURLException {
+        try (BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            String originalTab = util.getActualWindowHandle();
+
+            // open a new tab performing the passive check
+            String passiveCheckUrl = oauth.responseType("none").prompt("none").getLoginFormUrl();
+            util.newTab(passiveCheckUrl);
+            MatcherAssert.assertThat(new URL(oauth.getDriver().getCurrentUrl()).getQuery(), Matchers.containsString("error=login_required"));
+
+            // continue with the login in the first tab
+            util.switchToTab(originalTab);
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
+        }
     }
 
 
@@ -183,11 +468,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
 
         // Login success now
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
-        appPage.assertCurrent();
+        loginSuccessAndDoRequiredActions();
     }
 
 
@@ -208,11 +489,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Action expired. Please continue with login now.", loginPage.getError());
 
         // Login success now
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
-        appPage.assertCurrent();
+        loginSuccessAndDoRequiredActions();
     }
 
 
@@ -300,13 +577,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
         // Go back to tab1 and finish login here
         driver.navigate().to(tab1Url);
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
-
-        // Assert I am redirected to the appPage in tab1
-        appPage.assertCurrent();
+        loginSuccessAndDoRequiredActions();
 
         // Go back to tab2 and finish login here. Should be on the root-url-client page
         driver.navigate().to(tab2Url);
@@ -336,10 +607,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
         // Go back to tab1 and finish login here
         driver.navigate().to(tab1Url);
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
+        loginSuccessAndDoRequiredActions();
 
         // Assert I am redirected to the appPage in tab1 and have state corresponding to tab1
         appPage.assertCurrent();
@@ -370,10 +638,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         String tab2Url = driver.getCurrentUrl();
 
         // Continue in tab2 and finish login here
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
+        loginSuccessAndDoRequiredActions();
 
         // Assert I am redirected to the appPage in tab2 and have state corresponding to tab2
         appPage.assertCurrent();
@@ -385,49 +650,56 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-12161
     @Test
     public void testEmptyBaseUrl() throws Exception {
-        String clientUuid = KeycloakModelUtils.generateId();
-        ClientRepresentation emptyBaseclient = ClientBuilder.create()
-                .clientId("empty-baseurl-client")
-                .id(clientUuid)
-                .enabled(true)
-                .baseUrl("")
-                .addRedirectUri("*")
-                .secret("password")
-                .build();
-        testRealm().clients().create(emptyBaseclient);
-        getCleanup().addClientUuid(clientUuid);
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
-        oauth.clientId("empty-baseurl-client");
-        oauth.openLoginForm();
-        loginPage.assertCurrent();
+            String clientUuid = KeycloakModelUtils.generateId();
+            ClientRepresentation emptyBaseclient = ClientBuilder.create()
+                    .clientId("empty-baseurl-client")
+                    .id(clientUuid)
+                    .enabled(true)
+                    .baseUrl("")
+                    .addRedirectUri("*")
+                    .secret("password")
+                    .build();
+            testRealm().clients().create(emptyBaseclient);
+            getCleanup().addClientUuid(clientUuid);
 
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+            oauth.clientId("empty-baseurl-client");
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
 
-        String tab1Url = driver.getCurrentUrl();
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
 
-        // Simulate login in different browser tab tab2. I will be on loginPage again.
-        oauth.openLoginForm();
-        loginPage.assertCurrent();
+            String tab1Url = driver.getCurrentUrl();
 
-        // Login in tab2
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+            // Simulate login in different browser tab tab2. I will be on loginPage again.
+            tabUtil.newTab(oauth.getLoginFormUrl());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
 
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
-        appPage.assertCurrent();
+            loginPage.assertCurrent();
 
-        // Try to go back to tab 1. We should have ALREADY_LOGGED_IN info page
-        driver.navigate().to(tab1Url);
-        infoPage.assertCurrent();
-        Assert.assertEquals("You are already logged in.", infoPage.getInfo());
+            // Login in tab2
+            loginSuccessAndDoRequiredActions();
 
-        try {
-            infoPage.clickBackToApplicationLink();
-            fail();
+            // Try to go back to tab 1. We should be logged-in automatically
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            waitForAppPage(() -> driver.navigate().refresh());
+            appPage.assertCurrent();
         }
-        catch (NoSuchElementException ex) {}
+    }
+
+    private void waitForAppPage(Runnable htmlUnitAction) {
+        if (driver instanceof HtmlUnitDriver) {
+            // authChecker.js javascript does not work with HtmlUnitDriver. So need to "refresh" the current browser tab by running the last action in order to simulate "already_logged_in"
+            // error and being redirected to client
+            htmlUnitAction.run();
+        }
+
+        // Should be back on tab1 and logged-in automatically here
+        WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
     }
 }

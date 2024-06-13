@@ -2,8 +2,8 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findProtocolMapperByName;
@@ -92,6 +93,11 @@ public class ClientManager {
             return this;
         }
 
+        public ClientManagerBuilder alwaysUseLightweightAccessToken(boolean enable) {
+            updateAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(enable));
+            return this;
+        }
+
         public ClientManagerBuilder fullScopeAllowed(boolean enable) {
             ClientRepresentation app = clientResource.toRepresentation();
             app.setFullScopeAllowed(enable);
@@ -159,6 +165,12 @@ public class ClientManager {
                     app.getRedirectUris().remove(redirectUri);
                 }
             }
+            clientResource.update(app);
+        }
+
+        public void setPostLogoutRedirectUri(List<String> postLogoutRedirectUris) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(app).setPostLogoutRedirectUris(postLogoutRedirectUris);
             clientResource.update(app);
         }
 

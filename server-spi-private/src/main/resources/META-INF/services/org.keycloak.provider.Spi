@@ -15,23 +15,21 @@
 # limitations under the License.
 #
 
+org.keycloak.client.clienttype.ClientTypeManagerSpi
+org.keycloak.client.clienttype.ClientTypeSpi
 org.keycloak.component.ComponentFactorySpi
 org.keycloak.provider.ExceptionConverterSpi
-org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.ClientSpi
 org.keycloak.models.ClientScopeSpi
 org.keycloak.models.GroupSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.RoleSpi
 org.keycloak.models.DeploymentStateSpi
-org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.OAuth2DeviceUserCodeSpi
 org.keycloak.models.SingleUseObjectSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserLoginFailureSpi
 org.keycloak.models.UserSpi
-org.keycloak.models.session.UserSessionPersisterSpi
-org.keycloak.models.dblock.DBLockSpi
 org.keycloak.migration.MigrationSpi
 org.keycloak.events.EventListenerSpi
 org.keycloak.events.EventStoreSpi
@@ -40,7 +38,10 @@ org.keycloak.exportimport.ImportSpi
 org.keycloak.timer.TimerSpi
 org.keycloak.scripting.ScriptingSpi
 org.keycloak.services.managers.BruteForceProtectorSpi
+org.keycloak.services.resource.AccountResourceSpi
 org.keycloak.services.resource.RealmResourceSPI
+org.keycloak.services.ui.extend.UiPageSpi
+org.keycloak.services.ui.extend.UiTabSpi
 org.keycloak.sessions.AuthenticationSessionSpi
 org.keycloak.sessions.StickySessionEncoderSpi
 org.keycloak.protocol.ClientInstallationSpi
@@ -49,7 +50,6 @@ org.keycloak.protocol.ProtocolMapperSpi
 org.keycloak.broker.provider.IdentityProviderSpi
 org.keycloak.broker.provider.IdentityProviderMapperSpi
 org.keycloak.broker.social.SocialProviderSpi
-org.keycloak.forms.account.AccountSpi
 org.keycloak.forms.login.LoginFormsSpi
 org.keycloak.email.EmailSenderSpi
 org.keycloak.email.EmailTemplateSpi
@@ -62,13 +62,15 @@ org.keycloak.authentication.ClientAuthenticatorSpi
 org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
-org.keycloak.cluster.ClusterSpi
+org.keycloak.authentication.otp.OTPApplicationSpi
 org.keycloak.authorization.policy.provider.PolicySpi
 org.keycloak.authorization.store.StoreFactorySpi
 org.keycloak.authorization.AuthorizationSpi
+org.keycloak.deployment.DeployedConfigurationsSpi
 org.keycloak.models.cache.authorization.CachedStoreFactorySpi
 org.keycloak.protocol.oidc.TokenExchangeSpi
 org.keycloak.protocol.oidc.TokenIntrospectionSpi
+org.keycloak.protocol.oidc.grants.OAuth2GrantTypeSpi
 org.keycloak.protocol.saml.ArtifactResolverSpi
 org.keycloak.policy.PasswordPolicySpi
 org.keycloak.policy.PasswordPolicyManagerSpi
@@ -78,10 +80,7 @@ org.keycloak.credential.CredentialSpi
 org.keycloak.keys.PublicKeyStorageSpi
 org.keycloak.keys.KeySpi
 org.keycloak.storage.DatastoreSpi
-org.keycloak.storage.client.ClientStorageProviderSpi
-org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
 org.keycloak.storage.role.RoleStorageProviderSpi
-org.keycloak.storage.group.GroupStorageProviderSpi
 org.keycloak.crypto.SignatureSpi
 org.keycloak.crypto.ClientSignatureVerifierSpi
 org.keycloak.crypto.HashSpi
@@ -94,4 +93,10 @@ org.keycloak.headers.SecurityHeadersSpi
 org.keycloak.services.clientpolicy.condition.ClientPolicyConditionSpi
 org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorSpi
 org.keycloak.services.clientpolicy.ClientPolicyManagerSpi
+org.keycloak.services.cors.CorsSpi
 org.keycloak.userprofile.UserProfileSpi
+org.keycloak.device.DeviceRepresentationSpi
+org.keycloak.health.LoadBalancerCheckSpi
+org.keycloak.cookie.CookieSpi
+org.keycloak.organization.OrganizationSpi
+org.keycloak.securityprofile.SecurityProfileSpi

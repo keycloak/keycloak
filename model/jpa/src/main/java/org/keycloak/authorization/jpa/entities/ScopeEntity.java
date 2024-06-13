@@ -18,20 +18,20 @@
 
 package org.keycloak.authorization.jpa.entities;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -68,10 +68,6 @@ public class ScopeEntity {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
-
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "SCOPE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
-    private List<PolicyEntity> policies;
 
     public String getId() {
         return id;
@@ -111,17 +107,6 @@ public class ScopeEntity {
 
     public ResourceServerEntity getResourceServer() {
         return resourceServer;
-    }
-
-    public List<PolicyEntity> getPolicies() {
-        if (policies == null) {
-            policies = new LinkedList<>();
-        }
-        return policies;
-    }
-
-    public void setPolicies(List<PolicyEntity> policies) {
-        this.policies = policies;
     }
 
     public void setResourceServer(final ResourceServerEntity resourceServer) {

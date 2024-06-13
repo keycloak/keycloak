@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.After;
@@ -60,28 +61,21 @@ import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClien
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import static org.junit.Assert.assertTrue;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTest {
 
-    private static final String PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
-    private static final String PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
         testRealms.get(0).setId(REALM_NAME);
-        testRealms.get(0).setPrivateKey(PRIVATE_KEY);
-        testRealms.get(0).setPublicKey(PUBLIC_KEY);
     }
 
     @After
@@ -178,7 +172,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testAnonCreateWithTrustedHost() throws Exception {
         // Failed to create client (untrusted host)
         OIDCClientRepresentation client = createRepOidc("http://root", "http://redirect");
@@ -203,19 +196,34 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
+    public void testAnonCreateWithInvalidRedirectScheme() throws Exception {
+        setTrustedHost("localhost");
+        OIDCClientRepresentation client = createRepOidc();
+
+        client.setRedirectUris(Collections.singletonList("invalid://bad.host"));
+        assertOidcFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
+
+        client.setRedirectUris(Collections.singletonList("invalid://localhost"));
+        OIDCClientRepresentation oidcClientRep = reg.oidc().create(client);
+
+        assertRegAccessToken(oidcClientRep.getRegistrationAccessToken(), RegistrationAuth.ANONYMOUS);
+    }
+
+
+    @Test
     public void testAnonUpdateWithTrustedHost() throws Exception {
         setTrustedHost("localhost");
         OIDCClientRepresentation client = create();
 
         // Fail update client
         client.setRedirectUris(Collections.singletonList("http://bad:8080/foo"));
-        assertOidcFail(ClientRegOp.UPDATE, client, 403, "URL doesn't match");
+        assertOidcFail(ClientRegOp.UPDATE, client, 403, "URI doesn't match");
 
         // Should be fine now
         client.setRedirectUris(Collections.singletonList("http://localhost:8080/foo"));
         reg.oidc().update(client);
     }
+
 
 
     @Test
@@ -238,14 +246,13 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Check new client can't be created anymore
         oidcClientRep = createRepOidc("http://www.host.com", "http://www.example.com");
-        assertOidcFail(ClientRegOp.CREATE, oidcClientRep, 403, "URL doesn't match");
+        assertOidcFail(ClientRegOp.CREATE, oidcClientRep, 403, "URI doesn't match");
     }
 
 
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testAnonConsentRequired() throws Exception {
         setTrustedHost("localhost");
         OIDCClientRepresentation client = create();
@@ -266,7 +273,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testAnonFullScopeAllowed() throws Exception {
         setTrustedHost("localhost");
         OIDCClientRepresentation client = create();
@@ -287,7 +293,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testClientDisabledPolicy() throws Exception {
         setTrustedHost("localhost");
 
@@ -328,7 +333,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testMaxClientsPolicy() throws Exception {
         setTrustedHost("localhost");
 
@@ -431,7 +435,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testClientScopesPolicy() throws Exception {
         setTrustedHost("localhost");
 
@@ -471,7 +474,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testClientScopesPolicyWithPermittedScope() throws Exception {
         setTrustedHost("localhost");
 
@@ -506,7 +508,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     // PROTOCOL MAPPERS
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testProtocolMappersCreate() throws Exception {
         setTrustedHost("localhost");
 
@@ -537,7 +538,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Revert policy change
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
-        protocolMapperPolicyRep.getConfig().remove(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
+        protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
 
@@ -553,7 +554,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testProtocolMappersUpdate() throws Exception {
         setTrustedHost("localhost");
 
@@ -573,7 +573,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         registeredClient.getProtocolMappers().add(createHardcodedMapperRep());
 
         // Check I can't update client because of protocolMapper
-        assertFail(ClientRegOp.UPDATE, registeredClient, 403, "ProtocolMapper type not allowed");
+        assertFail(ClientRegOp.UPDATE, registeredClient, 403, "Missing id for mapper named 'Hardcoded foo role'");
 
         // Remove "bad" protocolMapper
         registeredClient.getProtocolMappers().removeIf((ProtocolMapperRepresentation mapper) -> {
@@ -587,9 +587,96 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
+    @Test
+    public void passingAnAlreadyAssignedProtocolMapperWithDisallowedTypeDoesNotFail() throws Exception {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+        // Check the client can be updated with a representation keeping the disallowed protocolMapper
+        reg.update(clientResource.toRepresentation());
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
+    public void passingNewProtocolMapperOfDisallowedTypeInAdditionToAnAlreadyAssignedOneOfTheSameTypeFails() {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+
+        ClientRepresentation representation = clientResource.toRepresentation();
+        representation.getProtocolMappers().add(createHardcodedMapperRep());
+        assertFail(ClientRegOp.UPDATE, representation, 403, "Missing id for mapper named 'Hardcoded foo role'");
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
+
+    @Test
+    public void alteringAnAlreadyAssignedProtocolMappersConfigWithDisallowedTypeFails() {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+        // Check the client can be updated with a representation keeping the disallowed protocolMapper
+        ClientRepresentation representation = clientResource.toRepresentation();
+        representation.getProtocolMappers().forEach(mapper -> mapper.getConfig().put("foo", "bar"));
+        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
+
+    @Test
+    public void alteringAnAlreadyAssignedProtocolMappersIdWithDisallowedTypeFails() {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+        ClientRepresentation representation = clientResource.toRepresentation();
+        representation.getProtocolMappers().forEach(mapper -> mapper.setId(UUID.randomUUID().toString()));
+        assertFail(ClientRegOp.UPDATE, representation, 403, "No existing mapper model found for id");
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
+
+    @Test
     public void testProtocolMappersConsentRequired() throws Exception {
         setTrustedHost("localhost");
 
@@ -605,7 +692,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // We would need to do domain name -> ip address to set trusted host
     public void testProtocolMappersRemoveBuiltins() throws Exception {
         setTrustedHost("localhost");
 
@@ -625,7 +711,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Revert
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
-        protocolMapperPolicyRep.getConfig().remove(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
+        protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
 

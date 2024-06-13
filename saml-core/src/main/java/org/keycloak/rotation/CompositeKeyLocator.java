@@ -48,6 +48,18 @@ public class CompositeKeyLocator implements KeyLocator, Iterable<Key> {
     }
 
     @Override
+    public Key getKey(Key key) throws KeyManagementException {
+        for (KeyLocator keyLocator : keyLocators) {
+            Key k = keyLocator.getKey(key);
+            if (k != null) {
+                return k;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public void refreshKeyCache() {
         for (KeyLocator keyLocator : keyLocators) {
             keyLocator.refreshKeyCache();

@@ -17,6 +17,9 @@
 
 package org.keycloak.common.util;
 
+import java.security.Provider;
+import java.security.Security;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -25,6 +28,10 @@ public class Environment {
     public static final boolean IS_IBM_JAVA = System.getProperty("java.vendor").contains("IBM");
 
     public static final int DEFAULT_JBOSS_AS_STARTUP_TIMEOUT = 300;
+
+    public static final String PROFILE = "kc.profile";
+    public static final String ENV_PROFILE = "KC_PROFILE";
+    public static final String DEV_PROFILE_VALUE = "dev";
 
     public static int getServerStartupTimeout() {
         String timeout = System.getProperty("jboss.as.management.blocking.timeout");
@@ -35,4 +42,36 @@ public class Environment {
         }
     }
 
+    /**
+     * Tries to detect if Java platform is in the FIPS mode
+     * @return true if java is FIPS mode
+     */
+    public static boolean isJavaInFipsMode() {
+        // Check if FIPS explicitly enabled by system property
+        String property = System.getProperty("com.redhat.fips");
+        if (property != null) {
+            return Boolean.parseBoolean(property);
+        }
+
+        // Otherwise try to auto-detect
+        for (Provider provider : Security.getProviders()) {
+            if (provider.getName().equals("BCFIPS")) continue; // Ignore BCFIPS provider for the detection as we may register it programatically
+            if (provider.getName().toUpperCase().contains("FIPS")) return true;
+        }
+        return false;
+    }
+
+    public static boolean isDevMode() {
+        return DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile());
+    }
+
+    public static String getProfile() {
+        String profile = System.getProperty(PROFILE);
+
+        if (profile != null) {
+            return profile;
+        }
+
+        return System.getenv(ENV_PROFILE);
+    }
 }

@@ -39,6 +39,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -64,9 +65,9 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserManager;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -96,13 +97,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
+        oauth.openid(false);
     }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmBuilder realm = RealmBuilder.create().name("test")
-                .privateKey("MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=")
-                .publicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB")
                 .testEventListener();
 
 
@@ -133,25 +133,20 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .password("password");
         realm.user(defaultUser);
 
-        userId = KeycloakModelUtils.generateId();
         UserRepresentation user = UserBuilder.create()
-                .id(userId)
                 .username("direct-login")
                 .email("direct-login@localhost")
                 .password("password")
                 .build();
         realm.user(user);
 
-        userId2 = KeycloakModelUtils.generateId();
         UserRepresentation user2 = UserBuilder.create()
-                .id(userId2)
                 .username("direct-login-otp")
                 .password("password")
                 .totpSecret("totpSecret")
                 .build();
         realm.user(user2);
 
-        userIdMultipleOTPs = KeycloakModelUtils.generateId();
         UserBuilder userBuilderMultipleOTPs = UserBuilder.create()
                 .id(userIdMultipleOTPs)
                 .username("direct-login-multiple-otps")
@@ -161,6 +156,14 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         realm.user(userBuilderMultipleOTPs.build());
 
         testRealms.add(realm.build());
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userIdMultipleOTPs = adminClient.realm("test").users().search("direct-login-multiple-otps", true).get(0).getId();
+        userId = adminClient.realm("test").users().search("direct-login", true).get(0).getId();
+        userId2 = adminClient.realm("test").users().search("direct-login-otp", true).get(0).getId();
     }
 
     @Test
@@ -233,7 +236,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {;
+    public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {
         oauth.scope("unknown-scope:123");
         oauth.clientId("resource-owner-public");
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login", "password");
@@ -347,12 +350,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     public void grantRequest_ClientES256_RealmPS256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void grantRequest_ClientPS256_RealmES256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.ES256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.ES256);
     }
 
     private void conductGrantRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
@@ -449,7 +452,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).client("resource-owner")
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
+                .client("resource-owner")
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
                 .error(Errors.INVALID_TOKEN).assertEvent();
@@ -645,6 +650,38 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             UserManager.realm(realmResource).username("test-user@localhost")
                     .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         }
+    }
+
+    @Test
+    public void grantAccessTokenInvalidUserCredentialsPerf() throws Exception {
+        int count = 5;
+
+        // Measure the times when username exists, but password is invalid
+        long sumInvalidPasswordMs = perfTest(count, "Invalid password", this::grantAccessTokenInvalidUserCredentials);
+
+        // Measure the times when username does not exists
+        long sumInvalidUsernameMs = perfTest(count, "User not found", this::grantAccessTokenUserNotFound);
+
+        String errorMessage = String.format("Times in ms of %d attempts: For invalid password: %d. For invalid username: %d", count, sumInvalidPasswordMs, sumInvalidUsernameMs);
+
+        // The times should be very similar. Using the bigger difference just to avoid flakiness (Before the fix, the difference was like 3 times shorter time for invalid-username, which allowed quite accurate username enumeration)
+        Assert.assertTrue(errorMessage, sumInvalidUsernameMs * 2 > sumInvalidPasswordMs);
+    }
+
+    private long perfTest(int actionsCount, String actionMessage, RunnableWithException action) throws Exception {
+        long sumTimeMs = 0;
+        for (int i = 0 ; i < actionsCount ; i++) {
+            long start = System.currentTimeMillis();
+            action.run();
+            long took = System.currentTimeMillis() - start;
+            getLogger().infof("%s %d: %d ms", actionMessage, i + 1, took);
+            sumTimeMs = sumTimeMs + took;
+        }
+        return sumTimeMs;
+    }
+
+    private interface RunnableWithException {
+        void run() throws Exception;
     }
 
     @Test

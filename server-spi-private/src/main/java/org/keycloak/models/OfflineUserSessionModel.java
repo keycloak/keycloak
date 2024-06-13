@@ -24,4 +24,6 @@ package org.keycloak.models;
  */
 public interface OfflineUserSessionModel extends UserSessionModel {
     public String getUserId();
+
+    void setLoginUsername(String loginUsername);
 }

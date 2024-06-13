@@ -9,12 +9,15 @@ List of organization names below is based on information collected using Keycloa
 * Accenture
 * Actinver
 * Akvo Foundation
+* AlmaLinux Foundation
 * Appier
 * Associazione Rousseau
 * BISPRO
 * Bluestem Brands, Inc
+* Bundesagentur für Arbeit
 * Bundesversicherungsamt
 * Capgemini
+* CERN (European Organisation for Nuclear Research)
 * Chassi
 * CloudNative Inc.
 * Conciso GmbH
@@ -35,6 +38,7 @@ List of organization names below is based on information collected using Keycloa
 * ISAAC
 * ITROI Solutions
 * Kindly Ops, LLC
+* [Microcks](https://landscape.cncf.io/?selected=microcks)
 * msg systems ag
 * Netdava International
 * Ohio Supercomputer Center

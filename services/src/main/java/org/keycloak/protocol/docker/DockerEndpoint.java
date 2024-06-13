@@ -6,7 +6,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -19,9 +19,9 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.utils.ProfileHelper;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Implements a docker-client understandable format.
@@ -36,8 +36,8 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
     private ClientModel client;
     private AuthenticationSessionModel authenticationSession;
 
-    public DockerEndpoint(final RealmModel realm, final EventBuilder event, final EventType login) {
-        super(realm, event);
+    public DockerEndpoint(KeycloakSession session, final EventBuilder event, final EventType login) {
+        super(session, event);
         this.login = login;
     }
 
@@ -61,18 +61,19 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
             logger.errorv("Failed to lookup client given by service={0} parameter for realm: {1}.", service, realm.getName());
             throw new ErrorResponseException("invalid_client", "Client specified by 'service' parameter does not exist", Response.Status.BAD_REQUEST);
         }
+        session.getContext().setClient(client);
         scope = params.getFirst(DockerAuthV2Protocol.SCOPE_PARAM);
 
         checkSsl();
         checkRealm();
 
-        final AuthorizationEndpointRequest authRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params);
+        final AuthorizationEndpointRequest authRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.DOCKER_ENDPOINT);
         authenticationSession = createAuthenticationSession(client, authRequest.getState());
 
         updateAuthenticationSession();
 
         // So back button doesn't work
-        CacheControlUtil.noBackButtonCacheControlHeader();
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
 
         return handleBrowserAuthenticationRequest(authenticationSession, new DockerAuthV2Protocol(session, realm, session.getContext().getUri(), headers, event.event(login)), false, false);
     }

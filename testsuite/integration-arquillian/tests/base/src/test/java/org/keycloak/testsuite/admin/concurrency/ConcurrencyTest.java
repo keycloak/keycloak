@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.concurrency;
 
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -29,8 +30,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -233,11 +234,12 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
             c = realm.groups().group(id).toRepresentation();
             assertNotNull(c);
+
             assertTrue("Group " + name + " [" + id + "] " + " not found in group list",
-              realm.groups().groups().stream()
-                .map(GroupRepresentation::getName)
-                .filter(Objects::nonNull)
-                .anyMatch(name::equals));
+                    realm.groups().groups().stream()
+                            .map(GroupRepresentation::getName)
+                            .filter(Objects::nonNull)
+                            .anyMatch(name::equals));
         }
     }
 

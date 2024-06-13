@@ -17,17 +17,22 @@
 
 package org.keycloak.it.cli;
 
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLITest;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.ConfigurationTestResource;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
+@QuarkusTestResource(value = ConfigurationTestResource.class, restrictToAnnotatedClass = true)
 @CLITest
 public class ShowConfigCommandTest {
 
@@ -55,5 +60,17 @@ public class ShowConfigCommandTest {
         Assertions.assertFalse(output.contains("testpw2"));
         Assertions.assertFalse(output.contains("testpw3"));
         Assertions.assertTrue(output.contains("kc.db-password =  " + PropertyMappers.VALUE_MASK));
+    }
+
+    @Test
+    @Launch({ CONFIG_FILE_LONG_NAME+"=src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf", ShowConfig.NAME, "all" })
+    void testSmallRyeKeyStoreConfigSource(LaunchResult result) {
+        // keystore is shared with QuarkusPropertiesDistTest#testSmallRyeKeyStoreConfigSource
+        String output = result.getOutput();
+        assertThat(output, containsString("kc.config-keystore-password =  " + PropertyMappers.VALUE_MASK));
+        assertThat(output, containsString("kc.log-level =  " + PropertyMappers.VALUE_MASK));
+
+        assertThat(output, not(containsString("secret")));
+        assertThat(output, not(containsString("debug")));
     }
 }

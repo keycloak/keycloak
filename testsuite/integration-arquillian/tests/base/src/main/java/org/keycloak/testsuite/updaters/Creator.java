@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -41,10 +42,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 
 /**
@@ -112,12 +114,24 @@ public class Creator<T> implements AutoCloseable {
 
     public static Creator<IdentityProviderResource> create(RealmResource realmResource, IdentityProviderRepresentation rep) {
         final IdentityProvidersResource res = realmResource.identityProviders();
-        Assert.assertThat("Identity provider alias must be specified", rep.getAlias(), Matchers.notNullValue());
+        assertThat("Identity provider alias must be specified", rep.getAlias(), Matchers.notNullValue());
         try (Response response = res.create(rep)) {
             String createdId = getCreatedId(response);
             final IdentityProviderResource r = res.get(rep.getAlias());
             LOG.debugf("Created identity provider ID %s", createdId);
             return new Creator(createdId, r, r::remove);
+        }
+    }
+
+    public static Creator<IdentityProviderResource> create(RealmResource realmResource, String identityProviderAlias, IdentityProviderMapperRepresentation rep) {
+        final IdentityProvidersResource res = realmResource.identityProviders();
+        assertThat("Identity provider alias must be specified", identityProviderAlias, Matchers.notNullValue());
+        rep.setIdentityProviderAlias(identityProviderAlias);
+        try (Response response = res.get(identityProviderAlias).addMapper(rep)) {
+            String createdId = getCreatedId(response);
+            final IdentityProviderResource r = res.get(identityProviderAlias);
+            LOG.debugf("Created identity provider mapper ID %s", createdId);
+            return new Creator(createdId, r, () -> r.delete(createdId));
         }
     }
 
@@ -146,7 +160,7 @@ public class Creator<T> implements AutoCloseable {
             LOG.debugf("Removing resource ID %s", id);
             try {
                 closer.run();
-            } catch (javax.ws.rs.NotFoundException ex) {
+            } catch (jakarta.ws.rs.NotFoundException ex) {
                 LOG.debugf("Resource with ID %s perhaps removed in meantime.", id);
             }
         } else {
@@ -164,7 +178,7 @@ public class Creator<T> implements AutoCloseable {
         }
 
         public AuthenticationExecutionInfoRepresentation addExecution(String providerId) {
-            Map<String, String> c = new HashMap<>();
+            Map<String, Object> c = new HashMap<>();
             c.put("provider", providerId);
             resource().addExecution(alias, c);  // addExecution only handles "provider" in data
             return resource().getExecutions(alias).stream()

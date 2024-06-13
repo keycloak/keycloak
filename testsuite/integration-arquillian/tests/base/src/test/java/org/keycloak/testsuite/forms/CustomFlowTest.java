@@ -56,14 +56,14 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 /**
@@ -212,13 +212,13 @@ public class CustomFlowTest extends AbstractFlowTest {
     @Test
     public void testRequiredAfterAlternative() {
         AuthenticationManagementResource authMgmtResource = testRealm().flows();
-        Map<String, String> params = new HashMap();
+        Map<String, Object> params = new HashMap<>();
         String flowAlias = "Browser Flow With Extra";
         params.put("newName", flowAlias);
         Response response = authMgmtResource.copy("browser", params);
         String flowId = null;
         try {
-            Assert.assertThat("Copy flow", response, statusCodeIs(Response.Status.CREATED));
+            assertThat("Copy flow", response, statusCodeIs(Response.Status.CREATED));
             AuthenticationFlowRepresentation newFlow = findFlowByAlias(flowAlias);
             flowId = newFlow.getId();
         } finally {
@@ -337,7 +337,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         testingClient.testing().updateAuthenticator(state);
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
         assertEquals("invalid_client", response.getError());
 
         events.expectLogin()
@@ -347,7 +347,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
-                .error(Errors.INVALID_CLIENT_CREDENTIALS)
+                .error(Errors.CLIENT_NOT_FOUND)
                 .assertEvent();
 
         state.setClientId("test-app");

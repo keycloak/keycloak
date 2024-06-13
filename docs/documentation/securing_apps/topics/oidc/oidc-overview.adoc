@@ -1,0 +1,4 @@
+[[_oidc]]
+== Using OpenID Connect to secure applications and services
+
+This section describes how you can secure applications and services with OpenID Connect using {project_name}.

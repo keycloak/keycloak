@@ -17,10 +17,10 @@
 
 package org.keycloak.events.jpa;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -60,7 +60,7 @@ public class AdminEventEntity {
     @Column(name="RESOURCE_PATH")
     private String resourcePath;
 
-    @Column(name="REPRESENTATION", length = 25500)
+    @Column(name="REPRESENTATION")
     private String representation;
 
     @Column(name="ERROR")

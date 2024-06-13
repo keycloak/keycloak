@@ -122,8 +122,13 @@ public class DefaultEvaluation implements Evaluation {
         return this.parentPolicy;
     }
 
+    @Override
     public Effect getEffect() {
         return effect;
+    }
+
+    public Decision getDecision() {
+        return decision;
     }
 
     public Map<Policy, Map<Object, Effect>> getDecisionCache() {
@@ -150,7 +155,7 @@ public class DefaultEvaluation implements Evaluation {
                 }
 
                 RealmModel realm = session.getContext().getRealm();
-                GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupId);
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupId);
 
                 if (Objects.isNull(group)) {
                     return false;
@@ -226,7 +231,7 @@ public class DefaultEvaluation implements Evaluation {
             public boolean isGroupInRole(String id, String role) {
                 KeycloakSession session = authorizationProvider.getKeycloakSession();
                 RealmModel realm = session.getContext().getRealm();
-                GroupModel group = KeycloakModelUtils.findGroupByPath(realm, id);
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, id);
 
                 return RoleUtils.hasRoleFromGroup(group, realm.getRole(role), false);
             }
@@ -266,6 +271,7 @@ public class DefaultEvaluation implements Evaluation {
         this.effect = null;
     }
 
+    @Override
     public void setEffect(Effect effect) {
         this.effect = effect;
         this.decision.onDecision(this);

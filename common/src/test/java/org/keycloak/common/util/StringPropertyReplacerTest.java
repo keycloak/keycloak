@@ -20,6 +20,8 @@ package org.keycloak.common.util;
 
 import java.security.NoSuchAlgorithmException;
 
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -56,4 +58,23 @@ public class StringPropertyReplacerTest {
         Assert.assertEquals("foo-val6", StringPropertyReplacer.replaceProperties("foo-${prop6,prop7:def}"));
     }
 
+    @Test
+    public void testStackOverflow() {
+        System.setProperty("prop", "${prop}");
+        IllegalStateException ise = Assert.assertThrows(IllegalStateException.class, () -> StringPropertyReplacer.replaceProperties("${prop}"));
+        Assert.assertEquals("Infinite recursion happening when replacing properties on '${prop}'", ise.getMessage());
+    }
+
+    @Test
+    public void testEnvironmentVariables() throws NoSuchAlgorithmException {
+        Map<String, String> env = System.getenv();
+
+        for (String key : env.keySet()) {
+            String value = env.get(key);
+            if ( !(value == null || "".equals(value)) ) {
+                Assert.assertEquals("foo-" + value, StringPropertyReplacer.replaceProperties("foo-${env." + key + "}"));
+                break;
+            }
+        }
+    }
 }

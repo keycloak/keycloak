@@ -1,77 +1,69 @@
-/*
-   D-Bus Java Implementation
-   Copyright (c) 2005-2006 Matthew Johnson
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of either the GNU Lesser General Public License Version 2 or the
-   Academic Free Licence Version 2.1.
-
-   Full licence texts are included in the COPYING file with this program.
-*/
 package org.freedesktop.dbus;
+
+import org.freedesktop.dbus.messages.Message;
 
 /**
  * Holds information on a method call
  */
 public class DBusCallInfo {
     /**
-     * Indicates the caller won't wait for a reply (and we won't send one).
-     */
+    * Indicates the caller won't wait for a reply (and we won't send one).
+    */
     public static final int NO_REPLY = Message.Flags.NO_REPLY_EXPECTED;
-    public static final int ASYNC = 0x100;
-    private String source;
-    private String destination;
-    private String objectpath;
-    private String iface;
-    private String method;
-    private int flags;
+    public static final int ASYNC    = 0x100;
+    private final String    source;
+    private final String    destination;
+    private final String    objectpath;
+    private final String    iface;
+    private final String    method;
+    private final int       flags;
 
-    DBusCallInfo(Message m) {
-        this.source = m.getSource();
-        this.destination = m.getDestination();
-        this.objectpath = m.getPath();
-        this.iface = m.getInterface();
-        this.method = m.getName();
-        this.flags = m.getFlags();
+    public DBusCallInfo(Message _m) {
+        source = _m.getSource();
+        destination = _m.getDestination();
+        objectpath = _m.getPath();
+        iface = _m.getInterface();
+        method = _m.getName();
+        flags = _m.getFlags();
     }
 
-    /**
-     * Returns the BusID which called the method
+    /** Returns the BusID which called the method.
+     * @return source
      */
     public String getSource() {
         return source;
     }
 
-    /**
-     * Returns the name with which we were addressed on the Bus
+    /** Returns the name with which we were addressed on the Bus.
+     * @return destination
      */
     public String getDestination() {
         return destination;
     }
 
-    /**
-     * Returns the object path used to call this method
+    /** Returns the object path used to call this method.
+     * @return objectpath
      */
     public String getObjectPath() {
         return objectpath;
     }
 
-    /**
-     * Returns the interface this method was called with
+    /** Returns the interface this method was called with.
+     * @return interface
      */
     public String getInterface() {
         return iface;
     }
 
-    /**
-     * Returns the method name used to call this method
+    /** Returns the method name used to call this method.
+     * @return method
      */
     public String getMethod() {
         return method;
     }
 
-    /**
-     * Returns any flags set on this method call
+    /** Returns any flags set on this method call.
+     * @return flags
      */
     public int getFlags() {
         return flags;

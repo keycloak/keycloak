@@ -92,6 +92,8 @@ public interface OAuth2Constants {
     String SCOPE_ADDRESS = "address";
     String SCOPE_PHONE = "phone";
 
+    String ORGANIZATION = "organization";
+
     String UI_LOCALES_PARAM = "ui_locales";
 
     String PROMPT = "prompt";
@@ -140,12 +142,16 @@ public interface OAuth2Constants {
 
     String CIBA_GRANT_TYPE = "urn:openid:params:grant-type:ciba";
 
-    String DISPLAY_CONSOLE = "console";
     String INTERVAL = "interval";
     String USER_CODE = "user_code";
 
     // https://openid.net/specs/openid-financial-api-jarm-ID1.html
     String RESPONSE = "response";
+
+    // https://www.rfc-editor.org/rfc/rfc9207.html
+    String ISSUER = "iss";
+
+    String AUTHENTICATOR_METHOD_REFERENCE = "amr";
 }
 
 

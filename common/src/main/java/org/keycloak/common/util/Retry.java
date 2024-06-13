@@ -17,7 +17,8 @@
 
 package org.keycloak.common.util;
 
-import java.util.Random;
+import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -81,6 +82,20 @@ public class Retry {
 
 
     public static int executeWithBackoff(AdvancedRunnable runnable, ThrowableCallback throwableCallback, int attemptsCount, int intervalBaseMillis) {
+        long duration = 0;
+        for (int i = 0; i < attemptsCount; i++) {
+            duration += computeIterationBase(intervalBaseMillis, i);
+        }
+        return executeWithBackoff(runnable, throwableCallback, Duration.ofMillis(duration), intervalBaseMillis);
+    }
+
+    public static int executeWithBackoff(AdvancedRunnable runnable, Duration timeout, int intervalBaseMillis) {
+        return executeWithBackoff(runnable, null, timeout, intervalBaseMillis);
+    }
+
+    public static int executeWithBackoff(AdvancedRunnable runnable, ThrowableCallback throwableCallback, Duration timeout, int intervalBaseMillis) {
+        long maximumTime = Time.currentTimeMillis() + timeout.toMillis();
+
         int iteration = 0;
         while (true) {
             try {
@@ -92,9 +107,8 @@ public class Retry {
                     throwableCallback.handleThrowable(iteration, e);
                 }
 
-                attemptsCount--;
                 iteration++;
-                if (attemptsCount > 0) {
+                if (Time.currentTimeMillis() < maximumTime) {
                     try {
                         if (intervalBaseMillis > 0) {
                             int delay = computeBackoffInterval(intervalBaseMillis, iteration);
@@ -111,11 +125,13 @@ public class Retry {
         }
     }
 
-    private static int computeBackoffInterval(int base, int iteration) {
-        int iterationBase = base * (int)Math.pow(2, iteration);
-        return new Random().nextInt(iterationBase);
+    public static int computeBackoffInterval(int base, int iteration) {
+        return ThreadLocalRandom.current().nextInt(computeIterationBase(base, iteration));
     }
 
+    private static int computeIterationBase(int base, int iteration) {
+        return base * (1 << iteration);
+    }
 
     /**
      * Runs the given {@code runnable} at most {@code attemptsCount} times until it passes,

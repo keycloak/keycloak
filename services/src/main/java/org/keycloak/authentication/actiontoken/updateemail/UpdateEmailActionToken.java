@@ -28,11 +28,26 @@ public class UpdateEmailActionToken extends DefaultActionToken {
 	private String oldEmail;
 	@JsonProperty("newEmail")
 	private String newEmail;
+    @JsonProperty("logoutSessions")
+    private Boolean logoutSessions;
+    @JsonProperty("reduri")
+    private String redirectUri;
 
-	public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail){
+    public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId) {
+          this(userId, absoluteExpirationInSecs, oldEmail, newEmail, clientId, null);
+    }
+
+	public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions){
+		this(userId, absoluteExpirationInSecs, oldEmail, newEmail, clientId, logoutSessions, null);
+	}
+
+	public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId, Boolean logoutSessions, String redirectUri){
 		super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
 		this.oldEmail = oldEmail;
 		this.newEmail = newEmail;
+		this.issuedFor = clientId;
+		this.logoutSessions = Boolean.TRUE.equals(logoutSessions)? true : null;
+		this.redirectUri = redirectUri;
 	}
 
 	private UpdateEmailActionToken(){
@@ -54,4 +69,20 @@ public class UpdateEmailActionToken extends DefaultActionToken {
 	public void setNewEmail(String newEmail) {
 		this.newEmail = newEmail;
 	}
+
+    public Boolean getLogoutSessions() {
+        return this.logoutSessions;
+    }
+
+    public void setLogoutSessions(Boolean logoutSessions) {
+        this.logoutSessions = Boolean.TRUE.equals(logoutSessions)? true : null;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
+	}
+
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
+    }
 }

@@ -1,187 +1,216 @@
-/*
-   D-Bus Java Implementation
-   Copyright (c) 2005-2006 Matthew Johnson
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of either the GNU Lesser General Public License Version 2 or the
-   Academic Free Licence Version 2.1.
-
-   Full licence texts are included in the COPYING file with this program.
-*/
 package org.freedesktop.dbus;
 
-import cx.ath.matthew.debug.Debug;
-import org.freedesktop.DBus;
+import org.freedesktop.dbus.annotations.MethodNoReply;
+import org.freedesktop.dbus.connections.AbstractConnection;
+import org.freedesktop.dbus.errors.Error;
+import org.freedesktop.dbus.errors.NoReply;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.exceptions.NotConnected;
+import org.freedesktop.dbus.interfaces.CallbackHandler;
+import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.freedesktop.dbus.messages.Message;
+import org.freedesktop.dbus.messages.MethodCall;
+import org.freedesktop.dbus.utils.DBusNamingUtil;
+import org.freedesktop.dbus.utils.LoggingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
-import java.text.MessageFormat;
 import java.util.Arrays;
 
-import static org.freedesktop.dbus.Gettext.getString;
-
-class RemoteInvocationHandler implements InvocationHandler {
-    public static final int CALL_TYPE_SYNC = 0;
-    public static final int CALL_TYPE_ASYNC = 1;
+public class RemoteInvocationHandler implements InvocationHandler {
+    public static final int CALL_TYPE_SYNC     = 0;
+    public static final int CALL_TYPE_ASYNC    = 1;
     public static final int CALL_TYPE_CALLBACK = 2;
 
-    public static Object convertRV(String sig, Object[] rp, Method m, AbstractConnection conn) throws DBusException {
-        Class<? extends Object> c = m.getReturnType();
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteInvocationHandler.class);
+    // CHECKSTYLE:OFF
+    AbstractConnection conn;
+    RemoteObject       remote;
+    // CHECKSTYLE:ON
 
-        if (null == rp) {
-            if (null == c || Void.TYPE.equals(c)) return null;
-            else throw new DBusExecutionException(getString("voidReturnType"));
+    public RemoteInvocationHandler(AbstractConnection _conn, RemoteObject _remote) {
+        this.remote = _remote;
+        this.conn = _conn;
+    }
+
+    public RemoteObject getRemote() {
+        return remote;
+    }
+
+    @Override
+    public Object invoke(Object _proxy, Method _method, Object[] _args) throws Throwable {
+        if (_method.getName().equals("isRemote")) {
+            return true;
+        } else if (_method.getName().equals("getObjectPath")) {
+            return remote.getObjectPath();
+        } else if (_method.getName().equals("clone")) {
+            return null;
+        } else if (_method.getName().equals("equals")) {
+            try {
+                if (1 == _args.length) {
+                    return Boolean.valueOf(_args[0] != null && remote.equals(((RemoteInvocationHandler) Proxy.getInvocationHandler(_args[0])).remote));
+                }
+            } catch (IllegalArgumentException _exIa) {
+                return Boolean.FALSE;
+            }
+        } else if (_method.getName().equals("finalize")) {
+            return null;
+        } else if (_method.getName().equals("getClass")) {
+            return DBusInterface.class;
+        } else if (_method.getName().equals("hashCode")) {
+            return remote.hashCode();
+        } else if (_method.getName().equals("notify")) {
+            remote.notify();
+            return null;
+        } else if (_method.getName().equals("notifyAll")) {
+            remote.notifyAll();
+            return null;
+        } else if (_method.getName().equals("wait")) {
+            if (0 == _args.length) {
+                remote.wait();
+            } else if (1 == _args.length && _args[0] instanceof Long) {
+                remote.wait((Long) _args[0]);
+            } else if (2 == _args.length && _args[0] instanceof Long && _args[1] instanceof Integer) {
+                remote.wait((Long) _args[0], (Integer) _args[1]);
+            }
+            if (_args.length <= 2) {
+                return null;
+            }
+        } else if (_method.getName().equals("toString")) {
+            return remote.toString();
+        }
+
+        return executeRemoteMethod(remote, _method, conn, CALL_TYPE_SYNC, null, _args);
+    }
+
+    // CHECKSTYLE:ON
+
+    public static Object convertRV(String _sig, Object[] _rp, Method _m, AbstractConnection _conn) throws DBusException {
+        Class<? extends Object> c = _m.getReturnType();
+        Object[] rp = _rp;
+        if (rp == null) {
+            if (null == c || Void.TYPE.equals(c)) {
+                return null;
+            } else {
+                throw new DBusException("Wrong return type (got void, expected a value)");
+            }
         } else {
             try {
-                if (Debug.debug)
-                    Debug.print(Debug.VERBOSE, "Converting return parameters from " + Arrays.deepToString(rp) + " to type " + m.getGenericReturnType());
-                rp = Marshalling.deSerializeParameters(rp,
-                        new Type[]{m.getGenericReturnType()}, conn);
-            } catch (Exception e) {
-                if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-                throw new DBusExecutionException(MessageFormat.format(getString("invalidReturnType"), new Object[]{e.getMessage()}));
+                LoggingHelper.logIf(LOGGER.isTraceEnabled(), () -> LOGGER.trace("Converting return parameters from {} to type {}",
+                        Arrays.deepToString(_rp), _m.getGenericReturnType()));
+
+                rp = Marshalling.deSerializeParameters(rp, new Type[] {
+                        _m.getGenericReturnType()
+                }, _conn);
+            } catch (Exception _ex) {
+                LOGGER.debug("Wrong return type.", _ex);
+                throw new DBusException(String.format("Wrong return type (failed to de-serialize correct types: %s )", _ex.getMessage()));
             }
         }
 
         switch (rp.length) {
-            case 0:
-                if (null == c || Void.TYPE.equals(c))
-                    return null;
-                else throw new DBusExecutionException(getString("voidReturnType"));
-            case 1:
-                return rp[0];
-            default:
+        case 0:
+            if (null == c || Void.TYPE.equals(c)) {
+                return null;
+            } else {
+                throw new DBusException("Wrong return type (got void, expected a value)");
+            }
+        case 1:
+            return rp[0];
+        default:
 
-                // check we are meant to return multiple values
-                if (!Tuple.class.isAssignableFrom(c))
-                    throw new DBusExecutionException(getString("tupleReturnType"));
+            // check we are meant to return multiple values
+            if (!Tuple.class.isAssignableFrom(c)) {
+                throw new DBusException("Wrong return type (not expecting Tuple)");
+            }
 
-                Constructor<? extends Object> cons = c.getConstructors()[0];
-                try {
-                    return cons.newInstance(rp);
-                } catch (Exception e) {
-                    if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-                    throw new DBusException(e.getMessage());
-                }
+            Constructor<? extends Object> cons = c.getConstructors()[0];
+            try {
+                return cons.newInstance(rp);
+            } catch (Exception _ex) {
+                LOGGER.debug("", _ex);
+                throw new DBusException(_ex.getMessage());
+            }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static Object executeRemoteMethod(RemoteObject ro, Method m, AbstractConnection conn, int syncmethod, CallbackHandler callback, Object... args) throws DBusExecutionException {
-        Type[] ts = m.getGenericParameterTypes();
+    public static Object executeRemoteMethod(RemoteObject _ro, Method _m, AbstractConnection _conn, int _syncmethod, CallbackHandler<?> _callback, Object... _args) throws DBusException {
+        Type[] ts = _m.getGenericParameterTypes();
         String sig = null;
-        if (ts.length > 0) try {
-            sig = Marshalling.getDBusType(ts);
-            args = Marshalling.convertParameters(args, ts, conn);
-        } catch (DBusException DBe) {
-            throw new DBusExecutionException(getString("contructDBusTypeFailure") + DBe.getMessage());
+        Object[] args = _args;
+        if (ts.length > 0) {
+            try {
+                sig = Marshalling.getDBusType(ts);
+                args = Marshalling.convertParameters(args, ts, _conn);
+            } catch (DBusException _ex) {
+                throw new DBusExecutionException("Failed to construct D-Bus type: " + _ex.getMessage());
+            }
         }
         MethodCall call;
         byte flags = 0;
-        if (!ro.autostart) flags |= Message.Flags.NO_AUTO_START;
-        if (syncmethod == CALL_TYPE_ASYNC) flags |= Message.Flags.ASYNC;
-        if (m.isAnnotationPresent(DBus.Method.NoReply.class)) flags |= Message.Flags.NO_REPLY_EXPECTED;
-        try {
-            String name;
-            if (m.isAnnotationPresent(DBusMemberName.class))
-                name = m.getAnnotation(DBusMemberName.class).value();
-            else
-                name = m.getName();
-            if (null == ro.iface)
-                call = new MethodCall(ro.busname, ro.objectpath, null, name, flags, sig, args);
-            else {
-                if (null != ro.iface.getAnnotation(DBusInterfaceName.class)) {
-                    call = new MethodCall(ro.busname, ro.objectpath, ro.iface.getAnnotation(DBusInterfaceName.class).value(), name, flags, sig, args);
-                } else
-                    call = new MethodCall(ro.busname, ro.objectpath, AbstractConnection.dollar_pattern.matcher(ro.iface.getName()).replaceAll("."), name, flags, sig, args);
-            }
-        } catch (DBusException DBe) {
-            if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
-            throw new DBusExecutionException(getString("constructOutgoingMethodCallFailure") + DBe.getMessage());
+        if (!_ro.isAutostart()) {
+            flags |= Message.Flags.NO_AUTO_START;
         }
-        if (null == conn.outgoing) throw new NotConnected(getString("notConnected"));
+        if (_syncmethod == CALL_TYPE_ASYNC) {
+            flags |= Message.Flags.ASYNC;
+        }
+        if (_m.isAnnotationPresent(MethodNoReply.class)) {
+            flags |= Message.Flags.NO_REPLY_EXPECTED;
+        }
+        try {
+            String name = DBusNamingUtil.getMethodName(_m);
+            if (null == _ro.getInterface()) {
+                call = new MethodCall(_ro.getBusName(), _ro.getObjectPath(), null, name, flags, sig, args);
+            } else {
+                String iface = DBusNamingUtil.getInterfaceName(_ro.getInterface());
+                call = new MethodCall(_ro.getBusName(), _ro.getObjectPath(), iface, name, flags, sig, args);
+            }
+        } catch (DBusException _ex) {
+            LOGGER.debug("Failed to construct outgoing method call.", _ex);
+            throw new DBusExecutionException("Failed to construct outgoing method call: " + _ex.getMessage());
+        }
+        if (!_conn.isConnected()) {
+            throw new NotConnected("Not Connected");
+        }
 
-        switch (syncmethod) {
+        switch (_syncmethod) {
             case CALL_TYPE_ASYNC:
-                conn.queueOutgoing(call);
-                return new DBusAsyncReply(call, m, conn);
+                _conn.sendMessage(call);
+                return new DBusAsyncReply<>(call, _m, _conn);
             case CALL_TYPE_CALLBACK:
-                synchronized (conn.pendingCallbacks) {
-                    if (Debug.debug) Debug.print(Debug.VERBOSE, "Queueing Callback " + callback + " for " + call);
-                    conn.pendingCallbacks.put(call, callback);
-                    conn.pendingCallbackReplys.put(call, new DBusAsyncReply(call, m, conn));
-                }
-                conn.queueOutgoing(call);
+                _conn.queueCallback(call, _m, _callback);
+                _conn.sendMessage(call);
                 return null;
             case CALL_TYPE_SYNC:
-                conn.queueOutgoing(call);
+                _conn.sendMessage(call);
                 break;
         }
 
         // get reply
-        if (m.isAnnotationPresent(DBus.Method.NoReply.class)) return null;
+        if (_m.isAnnotationPresent(MethodNoReply.class)) {
+            return null;
+        }
 
         Message reply = call.getReply();
-        if (null == reply) throw new DBus.Error.NoReply(getString("notReplyWithSpecifiedTime"));
+        if (null == reply) {
+            throw new NoReply("No reply within specified time");
+        }
 
-        if (reply instanceof Error)
+        if (reply instanceof Error) {
             ((Error) reply).throwException();
+        }
 
         try {
-            return convertRV(reply.getSig(), reply.getParameters(), m, conn);
-        } catch (DBusException e) {
-            if (AbstractConnection.EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
-            throw new DBusExecutionException(e.getMessage());
+            return convertRV(reply.getSig(), reply.getParameters(), _m, _conn);
+        } catch (DBusException _ex) {
+            LOGGER.debug("", _ex);
+            throw new DBusExecutionException(_ex.getMessage());
         }
     }
-
-    AbstractConnection conn;
-    RemoteObject remote;
-
-    public RemoteInvocationHandler(AbstractConnection conn, RemoteObject remote) {
-        this.remote = remote;
-        this.conn = conn;
-    }
-
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if (method.getName().equals("isRemote")) return true;
-        else if (method.getName().equals("clone")) return null;
-        else if (method.getName().equals("equals")) {
-            try {
-                if (1 == args.length)
-                    return new Boolean(remote.equals(((RemoteInvocationHandler) Proxy.getInvocationHandler(args[0])).remote));
-            } catch (IllegalArgumentException IAe) {
-                return Boolean.FALSE;
-            }
-        } else if (method.getName().equals("finalize")) return null;
-        else if (method.getName().equals("getClass")) return DBusInterface.class;
-        else if (method.getName().equals("hashCode")) return remote.hashCode();
-        else if (method.getName().equals("notify")) {
-            remote.notify();
-            return null;
-        } else if (method.getName().equals("notifyAll")) {
-            remote.notifyAll();
-            return null;
-        } else if (method.getName().equals("wait")) {
-            if (0 == args.length) remote.wait();
-            else if (1 == args.length
-                    && args[0] instanceof Long) remote.wait((Long) args[0]);
-            else if (2 == args.length
-                    && args[0] instanceof Long
-                    && args[1] instanceof Integer)
-                remote.wait((Long) args[0], (Integer) args[1]);
-            if (args.length <= 2)
-                return null;
-        } else if (method.getName().equals("toString"))
-            return remote.toString();
-
-        return executeRemoteMethod(remote, method, conn, CALL_TYPE_SYNC, null, args);
-    }
 }
-

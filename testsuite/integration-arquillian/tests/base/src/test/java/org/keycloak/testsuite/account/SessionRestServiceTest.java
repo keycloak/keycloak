@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -38,8 +38,7 @@ import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -102,30 +101,29 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
 
         // Read sessions with no access
-        assertEquals(403, SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).header("Accept", "application/json")
+        assertEquals(403, SimpleHttpDefault.doGet(getAccountUrl("sessions"), httpClient).header("Accept", "application/json")
                 .auth(noaccessToken.getToken()).asStatus());
 
         // Delete all sessions with no access
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json")
+        assertEquals(403, SimpleHttpDefault.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json")
                 .auth(noaccessToken.getToken()).asStatus());
 
         // Delete all sessions with read only
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json")
+        assertEquals(403, SimpleHttpDefault.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json")
                 .auth(viewToken.getToken()).asStatus());
 
         // Delete single session with no access
         assertEquals(403,
-                SimpleHttp.doDelete(getAccountUrl("sessions/bogusId"), httpClient).header("Accept", "application/json")
+                SimpleHttpDefault.doDelete(getAccountUrl("sessions/bogusId"), httpClient).header("Accept", "application/json")
                         .auth(noaccessToken.getToken()).asStatus());
 
         // Delete single session with read only
         assertEquals(403,
-                SimpleHttp.doDelete(getAccountUrl("sessions/bogusId"), httpClient).header("Accept", "application/json")
+                SimpleHttpDefault.doDelete(getAccountUrl("sessions/bogusId"), httpClient).header("Accept", "application/json")
                         .auth(viewToken.getToken()).asStatus());
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testGetSessions() throws Exception {
         oauth.setDriver(secondBrowser);
         codeGrant("public-client-0");
@@ -145,7 +143,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testGetDevicesResponse() throws Exception {
         assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
                 System.getProperty("browser").equals("htmlUnit"));
@@ -314,14 +311,14 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals(2, sessions.size());
 
         // With `ViewToken` you can only read
-        int status = SimpleHttp.doDelete(getAccountUrl("sessions/" + sessionId), httpClient).acceptJson()
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions/" + sessionId), httpClient).acceptJson()
                 .auth(viewToken.getToken()).asStatus();
         assertEquals(403, status);
         sessions = getSessions(viewToken.getToken());
         assertEquals(2, sessions.size());
 
         // Here you can delete the session
-        status = SimpleHttp.doDelete(getAccountUrl("sessions/" + sessionId), httpClient).acceptJson().auth(tokenUtil.getToken())
+        status = SimpleHttpDefault.doDelete(getAccountUrl("sessions/" + sessionId), httpClient).acceptJson().auth(tokenUtil.getToken())
                 .asStatus();
         assertEquals(204, status);
         sessions = getSessions(tokenUtil.getToken());
@@ -337,25 +334,24 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals(3, getSessions().size());
 
         String currentToken = tokenResponse.getAccessToken();
-        int status = SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient)
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions"), httpClient)
                 .acceptJson()
                 .auth(currentToken).asStatus();
         assertEquals(204, status);
         assertEquals(1, getSessions(currentToken).size());
 
-        status = SimpleHttp.doDelete(getAccountUrl("sessions?current=true"), httpClient)
+        status = SimpleHttpDefault.doDelete(getAccountUrl("sessions?current=true"), httpClient)
                 .acceptJson()
                 .auth(currentToken).asStatus();
         assertEquals(204, status);
 
-        status = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient)
+        status = SimpleHttpDefault.doGet(getAccountUrl("sessions"), httpClient)
                 .acceptJson()
                 .auth(currentToken).asStatus();
         assertEquals(401, status);
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testNullOrEmptyUserAgent() throws Exception {
         assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
                 System.getProperty("browser").equals("htmlUnit"));
@@ -411,7 +407,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private List<SessionRepresentation> getSessions(String sessionOne) throws IOException {
-        return SimpleHttp
+        return SimpleHttpDefault
                 .doGet(getAccountUrl("sessions"), httpClient).auth(sessionOne)
                 .asJson(new TypeReference<List<SessionRepresentation>>() {
                 });
@@ -430,7 +426,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private List<DeviceRepresentation> queryDevices(String token) throws IOException {
-        return SimpleHttp
+        return SimpleHttpDefault
                 .doGet(getAccountUrl("sessions/devices"), httpClient).auth(token)
                 .asJson(new TypeReference<List<DeviceRepresentation>>() {
                 });
@@ -451,7 +447,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private List<SessionRepresentation> getSessions() throws IOException {
-        return SimpleHttp
+        return SimpleHttpDefault
                 .doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken())
                 .asJson(new TypeReference<List<SessionRepresentation>>() {
                 });

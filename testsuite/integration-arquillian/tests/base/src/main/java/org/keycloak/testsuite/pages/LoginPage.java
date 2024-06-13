@@ -21,6 +21,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -37,6 +38,9 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @ArquillianResource
     protected OAuthClient oauth;
 
+    @FindBy(xpath = "//html")
+    protected WebElement htmlRoot;
+
     @FindBy(id = "username")
     protected WebElement usernameInput;
 
@@ -45,9 +49,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "input-error")
     private WebElement inputError;
-
-    @FindBy(id = "totp")
-    private WebElement totp;
 
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
@@ -64,18 +65,11 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
-    @FindBy(linkText = "Username")
-    private WebElement recoverUsernameLink;
-
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
-    @FindBy(className = "alert-warning")
-    private WebElement loginWarningMessage;
-
     @FindBy(className = "alert-success")
     private WebElement loginSuccessMessage;
-
 
     @FindBy(className = "alert-info")
     private WebElement loginInfoMessage;
@@ -83,15 +77,31 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(className = "instruction")
     private WebElement instruction;
 
-
     public void login(String username, String password) {
-        usernameInput.clear();
+        clearUsernameInputAndWaitIfNecessary();
         usernameInput.sendKeys(username);
 
         passwordInput.clear();
         passwordInput.sendKeys(password);
 
         clickLink(submitButton);
+    }
+
+    public void loginUsername(String username) {
+        clearUsernameInputAndWaitIfNecessary();
+        usernameInput.sendKeys(username);
+        clickLink(submitButton);
+    }
+
+    private void clearUsernameInputAndWaitIfNecessary() {
+        try {
+            usernameInput.clear();
+        } catch (NoSuchElementException ex) {
+            // we might have clicked on a social login icon and might need to wait for the login to appear.
+            // avoid waiting by default to avoid the delay.
+            WaitUtils.waitUntilElement(usernameInput).is().present();
+            usernameInput.clear();
+        }
     }
 
     public void login(String password) {
@@ -102,16 +112,19 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public void missingPassword(String username) {
-        usernameInput.clear();
+        clearUsernameInputAndWaitIfNecessary();
         usernameInput.sendKeys(username);
         passwordInput.clear();
         clickLink(submitButton);
-
     }
-    public void missingUsername() {
-        usernameInput.clear();
-        clickLink(submitButton);
 
+    public void missingUsername() {
+        clearUsernameInputAndWaitIfNecessary();
+        clickLink(submitButton);
+    }
+
+    public String getHtmlLanguage() {
+        return htmlRoot.getAttribute("lang");
     }
 
     public String getUsername() {
@@ -136,6 +149,10 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public String getPassword() {
         return passwordInput.getAttribute("value");
+    }
+
+    public boolean isPasswordInputPresent() {
+        return !driver.findElements(By.id("password")).isEmpty();
     }
 
     public void cancel() {
@@ -165,6 +182,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     public String getSuccessMessage() {
         return loginSuccessMessage != null ? loginSuccessMessage.getText() : null;
     }
+
     public String getInfoMessage() {
         try {
             return getTextFromElement(loginInfoMessage);
@@ -172,7 +190,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
             return null;
         }
     }
-
 
     public boolean isCurrent() {
         String realm = "test";
@@ -212,10 +229,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
         clickLink(resetPasswordLink);
     }
 
-    public void recoverUsername() {
-        clickLink(recoverUsernameLink);
-    }
-
     public void setRememberMe(boolean enable) {
         boolean current = rememberMe.isSelected();
         if (current != enable) {
@@ -233,4 +246,9 @@ public class LoginPage extends LanguageComboboxAwarePage {
         assertCurrent();
     }
 
+    public void open(String realm){
+        oauth.realm(realm);
+        oauth.openLoginForm();
+        assertCurrent(realm);
+    }
 }

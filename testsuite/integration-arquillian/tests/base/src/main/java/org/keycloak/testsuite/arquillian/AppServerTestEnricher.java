@@ -30,13 +30,13 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
-import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.wildfly.extras.creaper.commands.web.AddConnector;
 import org.wildfly.extras.creaper.commands.web.AddConnectorSslConfig;
 import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.ManagementProtocol;
+import org.wildfly.extras.creaper.core.online.ModelNodeResult;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.OnlineOptions;
 import org.wildfly.extras.creaper.core.online.operations.Address;
@@ -71,7 +71,7 @@ public class AppServerTestEnricher {
 
     private static final Logger log = Logger.getLogger(AppServerTestEnricher.class);
 
-    public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "undertow");
+    public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "disabled");
     public static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
 
     @Inject private Instance<ContainerController> containerConrollerInstance;
@@ -183,8 +183,8 @@ public class AppServerTestEnricher {
         try {
             return ManagementClient.online(OnlineOptions
                     .standalone()
-                    .hostAndPort(System.getProperty("app.server.host", "localhost"), System.getProperty("app.server","").startsWith("eap6") ? 9999 + portOffset : 9990 + portOffset)
-                    .protocol(System.getProperty("app.server","").startsWith("eap6") ? ManagementProtocol.REMOTE : ManagementProtocol.HTTP_REMOTING)
+                    .hostAndPort(System.getProperty("app.server.host", "localhost"), 9990 + portOffset)
+                    .protocol(ManagementProtocol.HTTP_REMOTING)
                     .build()
             );
         } catch (IOException e) {
@@ -214,7 +214,26 @@ public class AppServerTestEnricher {
         Administration administration = new Administration(client);
         Operations operations = new Operations(client);
 
-        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
+        boolean isElytronConfigured = false;
+        try {
+            // check if the eap is configured to use elytron
+            ModelNodeResult result = operations.readAttribute(Address.subsystem("undertow")
+                    .and("server", "default-server").and("https-listener", "https"), "ssl-context");
+            if (!result.isFailed() && result.hasDefinedValue()) {
+                isElytronConfigured = true;
+            }
+        } catch (IOException e) {
+            log.debug("Error reading 'ssl-context' attribute in undertow, assuming not elytron", e);
+        }
+
+        if (isElytronConfigured && !operations.exists(Address.subsystem("elytron").and("server-ssl-context", "KCSslContext"))) {
+            client.execute("/subsystem=elytron/key-store=KCKeyStore:add(path=adapter.jks,relative-to=jboss.server.config.dir,credential-reference={clear-text=secret},type=JKS)");
+            client.execute("/subsystem=elytron/key-manager=KCKeyManager:add(key-store=KCKeyStore,credential-reference={clear-text=secret,algorithm=PKIX})");
+            client.execute("/subsystem=elytron/key-store=KCTrustStore:add(relative-to=jboss.server.config.dir,path=keycloak.truststore,credential-reference={clear-text=secret},type=JKS)");
+            client.execute("/subsystem=elytron/trust-manager=KCTrustManager:add(key-store=KCTrustStore)");
+            client.execute("/subsystem=elytron/server-ssl-context=KCSslContext:add(key-manager=KCKeyManager,trust-manager=KCTrustManager)");
+            client.execute("/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context,value=KCSslContext)");
+        } else if (!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
             client.execute("/core-service=management/security-realm=UndertowRealm:add()");
             client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
         }
@@ -222,29 +241,7 @@ public class AppServerTestEnricher {
         client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
         client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
 
-        if (AppServerTestEnricher.isEAP6AppServer()) {
-            if(!operations.exists(Address.subsystem("web").and("connector", "https"))) {
-                client.apply(new AddConnector.Builder("https")
-                        .protocol("HTTP/1.1")
-                        .scheme("https")
-                        .socketBinding("https")
-                        .secure(true)
-                        .build());
-
-                client.apply(new AddConnectorSslConfig.Builder("https")
-                        .password("secret")
-                        .certificateKeyFile("${jboss.server.config.dir}/adapter.jks")
-                        .build());
-
-
-                String appServerJavaHome = System.getProperty("app.server.java.home", "");
-                if (appServerJavaHome.contains("ibm")) {
-                    // Workaround for bug in IBM JDK: https://bugzilla.redhat.com/show_bug.cgi?id=1430730
-                    // Source: https://access.redhat.com/solutions/4133531
-                    client.execute("/subsystem=web/connector=https/configuration=ssl:write-attribute(name=cipher-suite, value=\"SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256,SSL_RSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_DSS_WITH_AES_128_CBC_SHA256,SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_AES_128_CBC_SHA,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_DSS_WITH_AES_128_CBC_SHA\")");
-                }
-            }
-        } else {
+        if (!isElytronConfigured) {
             removeHttpsListener(client, administration);
             addHttpsListenerAppServer(client);
         }
@@ -268,7 +265,7 @@ public class AppServerTestEnricher {
      * For Fuse: precedence = 2 - app server has to be stopped 
      * before AuthServerTestEnricher.afterClass is executed
      */
-    public void stopAppServer(@Observes(precedence = 2) AfterClass event) {
+    public void stopAppServer(@Observes(precedence = 2) AfterClass event) throws IOException {
         if (testContext.getAppServerInfo() == null) {
             return; // no adapter test
         }
@@ -278,6 +275,12 @@ public class AppServerTestEnricher {
         if (controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
             log.info("Stopping app server: " + testContext.getAppServerInfo().getQualifier());
             controller.stop(testContext.getAppServerInfo().getQualifier());
+        }
+
+        // remove tmp folder for JBoss based app servers for proper clean-up
+        if (isJBossBased()) {
+            final File tmpFolder = Paths.get(System.getProperty("app.server.home"), "standalone-test", "tmp").toFile();
+            FileUtils.deleteDirectory(tmpFolder);
         }
     }
 
@@ -337,16 +340,8 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("wildfly9");
     }
 
-    public static boolean isTomcatAppServer() {
-        return CURRENT_APP_SERVER.startsWith("tomcat");
-    }
-
-    public static boolean isEAP6AppServer() {
-        return CURRENT_APP_SERVER.equals("eap6");
-    }
-
-    public static boolean isEAPAppServer() {
-        return CURRENT_APP_SERVER.equals("eap");
+    public static boolean isJBossJakartaAppServer() {
+        return CURRENT_APP_SERVER.equals("eap8");
     }
 
     public static boolean isWASAppServer() {

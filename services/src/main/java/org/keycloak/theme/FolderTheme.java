@@ -17,16 +17,19 @@
 
 package org.keycloak.theme;
 
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.util.LocaleUtil;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,10 +51,9 @@ public class FolderTheme implements Theme {
         this.properties = new Properties();
 
         File propertiesFile = new File(themeDir, "theme.properties");
-        if (propertiesFile .isFile()) {
-            Charset encoding = PropertiesUtil.detectEncoding(new FileInputStream(propertiesFile));
-            try (Reader reader = new InputStreamReader(new FileInputStream(propertiesFile), encoding)) {
-                properties.load(reader);
+        if (propertiesFile.isFile()) {
+            try (InputStream stream = Files.newInputStream(propertiesFile.toPath())) {
+                PropertiesUtil.readCharsetAware(properties, stream);
             }
             parentName = properties.getProperty("parent");
             importName = properties.getProperty("import");
@@ -105,22 +107,38 @@ public class FolderTheme implements Theme {
         return getMessages("messages", locale);
     }
 
+    private static final Pattern LEGAL_LOCALE = Pattern.compile("[a-zA-Z0-9-_#]*");
+
     @Override
     public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-        if(locale == null){
+        if (locale == null){
             return null;
         }
 
         Properties m = new Properties();
 
-        File file = new File(themeDir, "messages" + File.separator + baseBundlename + "_" + locale.toString() + ".properties");
+        String filename = baseBundlename + "_" + locale;
+
+        if (!LEGAL_LOCALE.matcher(filename).matches()) {
+            throw new RuntimeException("Found illegal characters in locale or bundle name: " + filename);
+        }
+
+        File file = new File(themeDir, "messages" + File.separator + filename + ".properties");
         if (file.isFile()) {
-            Charset encoding = PropertiesUtil.detectEncoding(new FileInputStream(file));
-            try (Reader reader = new InputStreamReader(new FileInputStream(file), encoding)) {
-                m.load(reader);
+            try (InputStream stream = Files.newInputStream(file.toPath())) {
+                PropertiesUtil.readCharsetAware(m, stream);
             }
         }
         return m;
+    }
+
+    public Properties getEnhancedMessages(RealmModel realm, Locale locale) throws IOException {
+        if (locale == null){
+            return null;
+        }
+
+        Map<Locale, Properties> localeMessages = Collections.singletonMap(locale, getMessages(locale));
+        return LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, localeMessages);
     }
 
     @Override

@@ -31,7 +31,9 @@ public class UserSessionRepresentation {
     private String ipAddress;
     private long start;
     private long lastAccess;
+    private boolean rememberMe;
     private Map<String, String> clients = new HashMap<>();
+    private boolean transientUser;
 
     public String getId() {
         return id;
@@ -48,7 +50,7 @@ public class UserSessionRepresentation {
     public void setUsername(String username) {
         this.username = username;
     }
-    
+
     public String getUserId() {
         return userId;
     }
@@ -81,11 +83,27 @@ public class UserSessionRepresentation {
         this.lastAccess = lastAccess;
     }
 
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
+    }
+
     public Map<String, String> getClients() {
         return clients;
     }
 
     public void setClients(Map<String, String> clients) {
         this.clients = clients;
+    }
+
+    public boolean isTransientUser() {
+        return transientUser;
+    }
+
+    public void setTransientUser(boolean transientUser) {
+        this.transientUser = transientUser;
     }
 }

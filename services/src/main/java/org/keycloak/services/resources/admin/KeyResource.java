@@ -17,17 +17,23 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +42,7 @@ import java.util.stream.Collectors;
  * @resource Key
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class KeyResource {
 
     private RealmModel realm;
@@ -51,6 +58,8 @@ public class KeyResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.KEY)
+    @Operation()
     public KeysMetadataRepresentation getKeyMetadata() {
         auth.realm().requireViewRealm();
 
@@ -81,8 +90,14 @@ public class KeyResource {
         r.setType(key.getType());
         r.setAlgorithm(key.getAlgorithmOrDefault());
         r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
-        r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
         r.setUse(key.getUse());
+
+        X509Certificate cert = key.getCertificate();
+        if (cert != null) {
+            r.setCertificate(PemUtils.encodeCertificate(cert));
+            r.setValidTo(cert.getNotAfter() != null ? cert.getNotAfter().getTime() : null);
+        }
+
         return r;
     }
 }

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,14 +13,15 @@
     <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
 
     <properties>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
-        <common.resources>${basedir}/../jboss/common</common.resources>
+        <auth.server.home>${project.build.directory}/unpacked/${dist.archive.dir}</auth.server.home>
+        <common.resources>${basedir}/../common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <!-- Path to testsuite/test resources : Themes-->
         <keycloak.base.test.resource>${project.parent.basedir}/../../tests/base/src/test/resources</keycloak.base.test.resource>
+        <auth.server.fips.mode>disabled</auth.server.fips.mode>
     </properties>
     
     <dependencies>
@@ -62,7 +63,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${auth.server.home}</outputDirectory>
+                            <outputDirectory>${auth.server.home}/conf</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${common.resources}/keystore</directory>
@@ -70,6 +71,9 @@
                                         <include>ca.crt</include>
                                         <include>client.crt</include>
                                         <include>client.key</include>
+                                        <include>client.p12</include>
+                                        <include>client-ca.crt</include>
+                                        <include>client-ca.key</include>
                                         <include>*.crl</include>
                                     </includes>
                                 </resource>
@@ -77,7 +81,9 @@
                                     <directory>${common.resources}/pki/root/ca</directory>
                                     <includes>
                                         <include>certs/clients/test-user-san@localhost.cert.pem</include>
+                                        <include>certs/clients/test-user-san@localhost.p12</include>
                                         <include>certs/clients/test-user@localhost.key.pem</include>
+                                        <include>certs/clients/test-user-san-cert-test-user-key@localhost.p12</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -186,6 +192,31 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>includeOracleJdbcDriver</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.jdbc</groupId>
+                                    <artifactId>ojdbc11</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.nls</groupId>
+                                    <artifactId>orai18n</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-testsuite-providers</id>
                         <phase>generate-resources</phase>
                         <goals>
@@ -263,35 +294,108 @@
             </properties>
         </profile>
 
-        <!-- Nashorn script engine needs to be manually added for the new Java versions as it is not part of the JDK anymore  -->
         <profile>
-            <id>jdk15</id>
-            <activation>
-                <jdk>[15,)</jdk>
-            </activation>
+            <id>auth-server-fips140-2</id>
+            <properties>
+                <auth.server.fips.mode>non-strict</auth.server.fips.mode>
+            </properties>
 
             <dependencies>
                 <dependency>
-                    <groupId>org.openjdk.nashorn</groupId>
-                    <artifactId>nashorn-core</artifactId>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-crypto-fips1402</artifactId>
                 </dependency>
             </dependencies>
 
             <build>
                 <plugins>
                     <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-fips-pki-conf</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/conf</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/fips</directory>
+                                            <includes>
+                                                <include>**</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>copy-dependencies-quarkus</id>
+                                <id>copy-bcfips-deps</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>copy-dependencies</goal>
                                 </goals>
                                 <configuration>
                                     <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                    <includeArtifactIds>nashorn-core,asm,asm-util,asm-commons</includeArtifactIds>
+                                    <includeArtifactIds>bc-fips,bctls-fips,bcpkix-fips</includeArtifactIds>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-bcfips-deps-client</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/bin/client/lib</outputDirectory>
+                                    <includeArtifactIds>bc-fips,bctls-fips</includeArtifactIds>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>includeProprietaryDependencies</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>com.microsoft.sqlserver</groupId>
+                                            <artifactId>mssql-jdbc</artifactId>
+                                            <version>${mssql-jdbc.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
                                 </configuration>
                             </execution>
                         </executions>
@@ -300,5 +404,35 @@
             </build>
         </profile>
 
+        <profile>
+            <id>db-aurora-postgres</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>includeProprietaryDependencies</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>software.amazon.jdbc</groupId>
+                                            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                                            <version>${aws-jdbc-wrapper.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

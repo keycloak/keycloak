@@ -19,17 +19,17 @@ package org.keycloak.models.jpa.entities;
 
 import org.hibernate.annotations.Nationalized;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -67,7 +67,7 @@ public class AuthenticationFlowEntity {
 
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "parentFlow")
-    Collection<AuthenticationExecutionEntity> executions;
+    Collection<AuthenticationExecutionEntity> executions = new LinkedList<>();
     public String getId() {
         return id;
     }

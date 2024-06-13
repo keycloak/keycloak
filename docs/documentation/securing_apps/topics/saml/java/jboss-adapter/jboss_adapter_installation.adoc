@@ -1,0 +1,15 @@
+
+[[_saml-jboss-adapter-installation]]
+==== Installing adapters from a Galleon feature pack
+
+For the WildFly 29 or newer, the SAML adapter is provided as a Galleon feature pack. More details about this is
+in the https://docs.wildfly.org/30/WildFly_Elytron_Security.html#Keycloak_SAML_Integration[WildFly documentation]. The same option will be provided
+for JBoss EAP 8 GA.
+
+{project_name} provided adapter ZIP download in the past, but it is not provided anymore. For the older WildFly versions, it is recommended to upgrade
+to newer WildFly/EAP and use Galleon. Otherwise, you will need to stick with the older {project_name} adapters, but those are not maintained and officially supported.
+For JBoss EAP 7, it is possible to stick with the Red Hat Single Sign-On 7.6 adapters, which is still supported.
+
+For more details on how to integrate {project_name} with JakartaEE applications running on latest Wildfly/EAP, take a look at the Jakarta EE quickstart in the {quickstartRepo_link}[Keycloak Quickstart GitHub Repository].
+
+Below are the details on how to configure the SAML adapter secured by Galleon.

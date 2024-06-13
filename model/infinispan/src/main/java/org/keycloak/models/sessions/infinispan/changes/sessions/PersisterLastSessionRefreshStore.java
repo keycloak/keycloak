@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan.changes.sessions;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
@@ -26,6 +27,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 
 /**
@@ -59,19 +61,19 @@ public class PersisterLastSessionRefreshStore extends AbstractLastSessionRefresh
             logger.debugf("Updating %d userSessions with lastSessionRefresh: %d", refreshesToSend.size(), lastSessionRefresh);
         }
 
-        UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
-
+        // Separate transaction for each bulk update request to avoid deadlocks
         for (Map.Entry<String, Set<String>> entry : sessionIdsByRealm.entrySet()) {
-            RealmModel realm = kcSession.realms().getRealm(entry.getKey());
+            KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(), (kcSession2) -> {
+                UserSessionPersisterProvider persister = kcSession2.getProvider(UserSessionPersisterProvider.class);
+                RealmModel realm = kcSession2.realms().getRealm(entry.getKey());
 
-            // Case when realm was deleted in the meantime. UserSessions were already deleted as well (callback for realm deletion)
-            if (realm == null) {
-                continue;
-            }
+                // If realm is null, it means that realm was deleted in the meantime. UserSessions were already deleted as well (callback for realm deletion)
+                if (realm != null) {
+                    Set<String> userSessionIds = new TreeSet<>(entry.getValue());
 
-            Set<String> userSessionIds = entry.getValue();
-
-            persister.updateLastSessionRefreshes(realm, lastSessionRefresh, userSessionIds, offline);
+                    persister.updateLastSessionRefreshes(realm, lastSessionRefresh, userSessionIds, offline);
+                }
+            });
         }
     }
 }

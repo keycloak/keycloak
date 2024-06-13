@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -14,16 +16,15 @@ import org.keycloak.credential.CredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
-import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
-public class RecoveryAuthnCodesAction implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
+public class RecoveryAuthnCodesAction implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory, CredentialRegistrator {
 
     private static final String FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN = "generatedRecoveryAuthnCodes";
     private static final String FIELD_GENERATED_AT_HIDDEN = "generatedAt";
@@ -34,6 +35,11 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public String getCredentialType(KeycloakSession session, AuthenticationSessionModel authenticationSession) {
+        return RecoveryAuthnCodesCredentialModel.TYPE;
     }
 
     @Override
@@ -94,6 +100,10 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
 
         RecoveryAuthnCodesCredentialModel credentialModel = createFromValues(generatedCodes, generatedAtTime, generatedUserLabel);
 
+        if ("on".equals(httpReqParamsMap.getFirst("logout-sessions"))) {
+            AuthenticatorUtil.logoutOtherSessions(reqActionContext);
+        }
+
         recoveryCodeCredentialProvider.createCredential(reqActionContext.getRealm(), reqActionContext.getUser(),
                 credentialModel);
 
@@ -110,7 +120,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
     }
 }

@@ -464,31 +464,6 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
-    @Deprecated
-    public Stream<String> getDefaultRolesStream() {
-        if (isUpdated()) return updated.getDefaultRolesStream();
-        return getRealm().getDefaultRole().getCompositesStream().filter(this::isClientRole).map(RoleModel::getName);
-    }
-
-    private boolean isClientRole(RoleModel role) {
-        return role.isClientRole() && Objects.equals(role.getContainerId(), this.getId());
-    }
-
-    @Override
-    @Deprecated
-    public void addDefaultRole(String name) {
-        getDelegateForUpdate();
-        updated.addDefaultRole(name);
-    }
-
-    @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        getDelegateForUpdate();
-        updated.removeDefaultRoles(defaultRoles);
-    }
-
-    @Override
     public boolean isBearerOnly() {
         if (isUpdated()) return updated.isBearerOnly();
         return cached.isBearerOnly();

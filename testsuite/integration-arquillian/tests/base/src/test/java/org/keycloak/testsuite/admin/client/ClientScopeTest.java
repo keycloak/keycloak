@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -34,12 +33,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -49,10 +43,10 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -77,13 +71,56 @@ import static org.keycloak.testsuite.Assert.assertNames;
 public class ClientScopeTest extends AbstractClientTest {
 
     @Test
+    public void testAddFailureWithInvalidScopeName() {
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("マルチバイト");
+
+        ErrorRepresentation error;
+        try (Response response = clientScopes().create(scopeRep)) {
+            Assert.assertEquals(400, response.getStatus());
+            error = response.readEntity(ErrorRepresentation.class);
+        }
+
+        Assert.assertEquals("Unexpected name \"マルチバイト\" for ClientScope", error.getErrorMessage());
+    }
+
+    @Test
+    public void testUpdateFailureWithInvalidScopeName() {
+        // Creating first
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
+        String scope1Id = createClientScope(scopeRep);
+        // Assert created
+        scopeRep = clientScopes().get(scope1Id).toRepresentation();
+        Assert.assertEquals("scope1", scopeRep.getName());
+
+        // Test updating
+        scopeRep.setName("マルチバイト");
+        try {
+            clientScopes().get(scope1Id).update(scopeRep);
+        } catch (ClientErrorException e) {
+            ErrorRepresentation error;
+            try (Response response = e.getResponse()) {
+                Assert.assertEquals(400, response.getStatus());
+                error = response.readEntity(ErrorRepresentation.class);
+            }
+            Assert.assertEquals("Unexpected name \"マルチバイト\" for ClientScope", error.getErrorMessage());
+        }
+
+        removeClientScope(scope1Id);
+    }
+
+    @Test
     public void testAddDuplicatedClientScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
         String scopeId = createClientScope(scopeRep);
 
         scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
         Response response = clientScopes().create(scopeRep);
         assertEquals(409, response.getStatus());
 
@@ -115,6 +152,8 @@ public class ClientScopeTest extends AbstractClientTest {
         // Create scope1
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
+        scopeRep.setProtocol("openid-connect");
+
         String scope1Id = createClientScope(scopeRep);
 
         List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
@@ -123,6 +162,8 @@ public class ClientScopeTest extends AbstractClientTest {
         // Create scope2
         scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope2");
+        scopeRep.setProtocol("openid-connect");
+
         String scope2Id = createClientScope(scopeRep);
 
         clientScopes = clientScopes().findAll();
@@ -192,7 +233,12 @@ public class ClientScopeTest extends AbstractClientTest {
         clientScopes().get(scope1Id).remove();
     }
 
-
+    @Test
+    public void testValidateClientScopeProtocol(){
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("saml");
+        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("openid-connect");
+        Assert.assertThrows(RuntimeException.class,()->org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("other"));
+    }
     @Test
     public void testRenameScope() {
         // Create two scopes
@@ -231,6 +277,7 @@ public class ClientScopeTest extends AbstractClientTest {
         // create client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("bar-scope");
+        scopeRep.setProtocol("openid-connect");
         String scopeId = createClientScope(scopeRep);
 
         // update with some scopes
@@ -302,6 +349,8 @@ public class ClientScopeTest extends AbstractClientTest {
         RealmResource realm = testRealmResource();
         ClientScopeRepresentation clientScopeRep = new ClientScopeRepresentation();
         clientScopeRep.setName("my-scope");
+        clientScopeRep.setProtocol("openid-connect");
+
         String clientScopeId = createClientScope(clientScopeRep);
 
         createRealmRole("realm-composite");
@@ -359,7 +408,7 @@ public class ClientScopeTest extends AbstractClientTest {
         assertNames(scopesResource.clientLevel(roleContainerClientUuid).listEffective(), "client-composite",
                 "client-child");
     }
-    
+
     // KEYCLOAK-2809
     @Test
     public void testRemoveScopedRole() {
@@ -369,6 +418,8 @@ public class ClientScopeTest extends AbstractClientTest {
         // Add client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("bar-scope");
+        scopeRep.setProtocol("openid-connect");
+
         String scopeId = createClientScope(scopeRep);
 
         // Add realm role to scopes of clientScope
@@ -802,6 +853,19 @@ public class ClientScopeTest extends AbstractClientTest {
 
     }
 
+    @Test
+    public void deleteAllClientScopesMustFail() {
+        List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
+        for (int i = 0; i < clientScopes.size(); i++) {
+            ClientScopeRepresentation clientScope = clientScopes.get(i);
+            if (i != clientScopes.size() - 1) {
+                removeClientScope(clientScope.getId());
+            } else {
+                removeClientScopeMustFail(clientScope.getId());
+            }
+        }
+    }
+
     private void handleExpectedCreateFailure(ClientScopeRepresentation scopeRep, int expectedErrorCode, String expectedErrorMessage) {
         try(Response resp = clientScopes().create(scopeRep)) {
             Assert.assertEquals(expectedErrorCode, resp.getStatus());
@@ -835,6 +899,14 @@ public class ClientScopeTest extends AbstractClientTest {
     private void removeClientScope(String clientScopeId) {
         clientScopes().get(clientScopeId).remove();
         assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeResourcePath(clientScopeId), ResourceType.CLIENT_SCOPE);
+    }
+
+    private void removeClientScopeMustFail(String clientScopeId) {
+        try {
+            clientScopes().get(clientScopeId).remove();
+        } catch (Exception expected) {
+
+        }
     }
 
 }

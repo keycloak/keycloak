@@ -20,12 +20,21 @@ package org.keycloak.broker.provider;
  * @author pedroigor
  */
 public class IdentityBrokerException extends RuntimeException {
-
+    private String messageCode;
     public IdentityBrokerException(String message) {
         super(message);
     }
 
     public IdentityBrokerException(String message, Throwable t) {
         super(message, t);
+    }
+
+    public IdentityBrokerException withMessageCode(String messageCode) {
+        this.messageCode = messageCode;
+        return this;
+    }
+
+    public String getMessageCode() {
+        return messageCode;
     }
 }

@@ -1,6 +1,9 @@
 {
   "themes": [{
     "name" : "address",
-    "types": [ "admin", "account", "login" ]
+    "types": [ "admin", "login" ]
+  }, {
+    "name" : "incorrect",
+    "types": [ "admin" ]
   }]
 }

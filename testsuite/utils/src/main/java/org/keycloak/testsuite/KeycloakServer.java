@@ -23,6 +23,7 @@ import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
@@ -39,6 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.platform.Platform;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
@@ -50,6 +52,7 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resteasy.ResteasyKeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 import io.undertow.servlet.api.InstanceHandle;
@@ -61,13 +64,14 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.servlet.DispatcherType;
+import jakarta.servlet.DispatcherType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
@@ -78,7 +82,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
-import javax.servlet.Filter;
+import java.util.stream.Stream;
+import jakarta.servlet.Filter;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -93,6 +98,7 @@ public class KeycloakServer {
     public static class KeycloakServerConfig {
         private String host = "localhost";
         private int port = 8081;
+        private String path = "/auth";
         private int portHttps = -1;
         private int workerThreads = Math.max(Runtime.getRuntime().availableProcessors(), 2) * 8;
         private String resourcesHome;
@@ -113,12 +119,20 @@ public class KeycloakServer {
             return resourcesHome;
         }
 
+        public String getPath() {
+            return path;
+        }
+
         public void setHost(String host) {
             this.host = host;
         }
 
         public void setPort(int port) {
             this.port = port;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
         }
 
         public void setPortHttps(int portHttps) {
@@ -178,6 +192,10 @@ public class KeycloakServer {
 
         if (System.getProperty("keycloak.port") != null) {
             config.setPort(Integer.valueOf(System.getProperty("keycloak.port")));
+        }
+
+        if (System.getProperty("keycloak.path") != null) {
+            config.setPath(System.getProperty("keycloak.path"));
         }
 
         if (System.getProperty("keycloak.port.https") != null) {
@@ -308,8 +326,10 @@ public class KeycloakServer {
 
           if (tmpDataDir.mkdirs()) {
             tmpDataDir.deleteOnExit();
-          } else {
-            throw new IOException("Could not create directory " + tmpDataDir);
+          } else try (Stream<Path> dir = Files.list(tmpDataDir.toPath())) {
+            if (dir.findAny().isPresent()) {    // Works well if directory is empty
+              throw new IOException("Could not create directory " + tmpDataDir);
+            }
           }
 
           dataPath = tmpDataDir.getAbsolutePath();
@@ -352,10 +372,9 @@ public class KeycloakServer {
     }
 
     public void importRealm(RealmRepresentation rep) {
-        KeycloakSession session = sessionFactory.create();;
-        session.getTransactionManager().begin();
 
-        try {
+        try (KeycloakSession session = sessionFactory.create()) {
+            session.getTransactionManager().begin();
             RealmManager manager = new RealmManager(session);
 
             if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
@@ -370,25 +389,17 @@ public class KeycloakServer {
             RealmModel realm = manager.importRealm(rep);
 
             info("Imported realm " + realm.getName());
-
-            session.getTransactionManager().commit();
-        } finally {
-            session.close();
         }
     }
 
     protected void setupDevConfig() {
         if (System.getProperty("keycloak.createAdminUser", "true").equals("true")) {
-            KeycloakSession session = sessionFactory.create();
-            try {
+            try (KeycloakSession session = sessionFactory.create()) {
                 session.getTransactionManager().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
                     new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
                     log.info("Created master user with credentials admin:admin");
                 }
-                session.getTransactionManager().commit();
-            } finally {
-                session.close();
             }
         }
     }
@@ -396,9 +407,9 @@ public class KeycloakServer {
     public void start() throws Throwable {
         long start = System.currentTimeMillis();
 
-        ResteasyDeployment deployment = new ResteasyDeployment();
+        ResteasyDeployment deployment = new ResteasyDeploymentImpl();
 
-        deployment.setApplicationClass(KeycloakApplication.class.getName());
+        deployment.setApplicationClass(ResteasyKeycloakApplication.class.getName());
 
         Builder builder = Undertow.builder()
                 .addHttpListener(config.getPort(), config.getHost())
@@ -417,7 +428,7 @@ public class KeycloakServer {
 
             DeploymentInfo di = server.undertowDeployment(deployment, "");
             di.setClassLoader(getClass().getClassLoader());
-            di.setContextPath("/auth");
+            di.setContextPath(config.getPath());
             di.setDeploymentName("Keycloak");
             di.setDefaultEncoding("UTF-8");
 
@@ -455,7 +466,7 @@ public class KeycloakServer {
                 info("Loading resources from " + config.getResourcesHome());
             }
 
-            info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth"
+            info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + config.getPath()
                     + (config.getPortHttps() > 0 ? ", https://" + config.getHost() + ":" + config.getPortHttps()+ "/auth" : "")
                     + ") in "
                     + (System.currentTimeMillis() - start) + " ms\n");
@@ -600,6 +611,9 @@ public class KeycloakServer {
             addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("mappers", Collections.emptyList()),
                     ProtocolMapperSpi.class,
                     DeployedScriptOIDCProtocolMapper::new);
+            addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("saml-mappers", Collections.emptyList()),
+                    ProtocolMapperSpi.class,
+                    DeployedScriptSAMLProtocolMapper::new);
             addScriptProvider(info, scriptProviderDescriptor.getProviders().getOrDefault("policies", Collections.emptyList()),
                     PolicySpi.class,
                     DeployedScriptPolicyFactory::new);

@@ -27,7 +27,7 @@ class LicenseProcessMojo extends AbstractMojo {
 
         // Property configuration with defaults
         def outputDirectoryRaw = project.properties['outputDirectory'] ?: "${project.build.directory}/licenses"
-        def xmlFileSource = project.properties['xmlFileSource'] ?: "${project.basedir}/src/main/resources/licenses/${project.properties['product.slot']}/licenses.xml"
+        def xmlFileSource = project.properties['xmlFileSource'] ?: "${project.basedir}/src/main/resources/licenses/keycloak/licenses.xml"
         def licenseName = project.properties['licenseName'] ?: "Apache Software License 2.0"
         def licenseUrl = project.properties['licenseUrl'] ?: "https://raw.githubusercontent.com/keycloak/keycloak/${project.version}/LICENSE.txt"
         def groupId = project.properties['groupId'] ?: "org.keycloak"
@@ -91,7 +91,7 @@ class LicenseProcessMojo extends AbstractMojo {
             InputStream input = this.class.getResourceAsStream("keycloak-licenses-common/licenses.xsl")
             transformer = TransformerFactory.newInstance().newTemplates(new StreamSource(input)).newTransformer()
         }
-        transformer.setParameter("productname", project.properties['product.name.full'])
+        transformer.setParameter("productname", "Keycloak")
         transformer.setParameter("version", project.version)
         outputLicensesXmlFile.withInputStream() { inStream ->
             def input = new StreamSource(inStream)

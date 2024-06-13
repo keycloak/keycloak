@@ -23,7 +23,7 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.transaction.JtaTransactionWrapper;
 
-import javax.transaction.TransactionManager;
+import jakarta.transaction.TransactionManager;
 import java.util.LinkedList;
 import java.util.List;
 

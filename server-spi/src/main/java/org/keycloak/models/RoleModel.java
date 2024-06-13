@@ -17,11 +17,9 @@
 
 package org.keycloak.models;
 
-import org.keycloak.storage.SearchableModelField;
+import org.keycloak.provider.ProviderEvent;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -30,15 +28,16 @@ import java.util.stream.Stream;
  */
 public interface RoleModel {
 
-    public static class SearchableFields {
-        public static final SearchableModelField<RoleModel> ID                  = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<RoleModel> REALM_ID            = new SearchableModelField<>("realmId", String.class);
-        /** If client role, ID of the client (not the clientId) */
-        public static final SearchableModelField<RoleModel> CLIENT_ID           = new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<RoleModel> NAME                = new SearchableModelField<>("name", String.class);
-        public static final SearchableModelField<RoleModel> DESCRIPTION         = new SearchableModelField<>("description", String.class);
-        public static final SearchableModelField<RoleModel> IS_CLIENT_ROLE      = new SearchableModelField<>("isClientRole", Boolean.class);
-        public static final SearchableModelField<RoleModel> COMPOSITE_ROLE      = new SearchableModelField<>("compositeRoles", Boolean.class);
+    interface RoleNameChangeEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getNewName();
+        String getPreviousName();
+
+        /**
+         * @return the Client ID of the client, for a client role; {@code null}, for a realm role
+         */
+        String getClientId();
+        KeycloakSession getKeycloakSession();
     }
 
     String getName();
@@ -56,14 +55,6 @@ public interface RoleModel {
     void addCompositeRole(RoleModel role);
 
     void removeCompositeRole(RoleModel role);
-
-    /**
-     * @deprecated Use {@link #getCompositesStream() getCompositesStream} instead.
-     */
-    @Deprecated
-    default Set<RoleModel> getComposites() {
-        return getCompositesStream().collect(Collectors.toSet());
-    }
 
     /**
      * Returns all composite roles as a stream.
@@ -99,14 +90,6 @@ public interface RoleModel {
 
     default String getFirstAttribute(String name) {
         return getAttributeStream(name).findFirst().orElse(null);
-    }
-
-    /**
-     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
-     */
-    @Deprecated
-    default List<String> getAttribute(String name) {
-        return getAttributeStream(name).collect(Collectors.toList());
     }
 
     /**

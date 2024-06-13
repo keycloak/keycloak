@@ -29,12 +29,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.Constants.defaultClients;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -49,6 +51,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -59,8 +62,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -72,6 +73,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,9 +82,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -90,17 +92,23 @@ import javax.ws.rs.core.Response;
 public class ClientTest extends AbstractAdminTest {
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getClients() {
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     private ClientRepresentation createClient() {
+        return createClient(null);
+    }
+
+    private ClientRepresentation createClient(String protocol) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
         rep.setPublicClient(true);
+        if (protocol != null) {
+            rep.setProtocol(protocol);
+        }
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
@@ -136,7 +144,6 @@ public class ClientTest extends AbstractAdminTest {
     }
     
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createClientVerifyWithSecret() {
         String id = createClientNonPublic().getId();
 
@@ -147,7 +154,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createClientVerify() {
         String id = createClient().getId();
 
@@ -186,6 +192,49 @@ public class ClientTest extends AbstractAdminTest {
                 "Redirect URIs must not contain an URI fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testSamlSpecificUrls() {
+        testSamlSpecificUrls(true, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+        testSamlSpecificUrls(false, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+    }
+
+    private void testSamlSpecificUrls(boolean create, String... testUrls) {
+        ClientRepresentation rep;
+        if (create) {
+            rep = new ClientRepresentation();
+            rep.setClientId("my-app2");
+            rep.setEnabled(true);
+            rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        }
+        else {
+            rep = createClient(SamlProtocol.LOGIN_PROTOCOL);
+        }
+        rep.setAttributes(new HashMap<>());
+
+        Map<String, String> attrs = Map.of(
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
+                    SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service");
+
+        for (String testUrl : testUrls) {
+            // admin url
+            rep.setAdminUrl(testUrl);
+            createOrUpdateClientExpectingValidationErrors(rep, create, "Master SAML Processing URL uses an illegal scheme");
+            rep.setAdminUrl(null);
+            // attributes
+            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                rep.getAttributes().put(entry.getKey(), testUrl);
+                createOrUpdateClientExpectingValidationErrors(rep, create, entry.getValue() + " uses an illegal scheme");
+                rep.getAttributes().remove(entry.getKey());
+            }
+        }
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
@@ -340,7 +389,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getAllClientsSearchAndPagination() {
         Set<String> ids = new HashSet<>();
         try {
@@ -434,6 +482,8 @@ public class ClientTest extends AbstractAdminTest {
 
         realm.clients().get(client.getId()).update(newClient);
 
+        newClient.setSecret("**********"); // secrets are masked in events
+
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
         storedClient = realm.clients().get(client.getId()).toRepresentation();
@@ -448,14 +498,13 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void serviceAccount() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccount().build());
         String id = ApiUtil.getCreatedId(response);
         getCleanup().addClientUuid(id);
         response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
-        assertEquals("service-account-serviceclient", userRep.getUsername());
+        MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalTo(userRep.getUsername()));
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
     }
@@ -493,6 +542,7 @@ public class ClientTest extends AbstractAdminTest {
         getCleanup().addClientUuid(id);
         response.close();
 
+        client.setSecret("**********"); // secrets are masked in events
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), client, ResourceType.CLIENT);
 
         client.setId(id);
@@ -553,7 +603,7 @@ public class ClientTest extends AbstractAdminTest {
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
 
         Map<String, Long> offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();
-        assertEquals(new Long(0), offlineSessionCount.get("count"));
+        assertEquals(Long.valueOf(0), offlineSessionCount.get("count"));
 
         List<UserSessionRepresentation> userSessions = realm.users().get(userId).getOfflineSessions(id);
         assertEquals("There should be no offline sessions", 0, userSessions.size());
@@ -566,7 +616,7 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();
-        assertEquals(new Long(1), offlineSessionCount.get("count"));
+        assertEquals(Long.valueOf(1), offlineSessionCount.get("count"));
 
         List<UserSessionRepresentation> offlineUserSessions = realm.clients().get(id).getOfflineUserSessions(0, 100);
         assertEquals(1, offlineUserSessions.size());
@@ -627,7 +677,7 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll(), AccountRoles.VIEW_PROFILE);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective(), AccountRoles.VIEW_PROFILE);
 
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT, AccountRoles.VIEW_GROUPS);
 
         Assert.assertNames(scopesResource.getAll().getRealmMappings(), "realm-composite");
         Assert.assertNames(scopesResource.getAll().getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
@@ -643,7 +693,7 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "realm-composite", "realm-child", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll());
 
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT, AccountRoles.VIEW_GROUPS);
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective());
     }
@@ -821,7 +871,6 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void updateClientWithProtocolMapper() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");

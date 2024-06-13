@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorUnavailableException;
 import org.keycloak.testsuite.dballocator.client.retry.IncrementalBackoffRetryPolicy;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;

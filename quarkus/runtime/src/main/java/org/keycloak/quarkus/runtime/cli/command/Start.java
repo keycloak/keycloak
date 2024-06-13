@@ -18,9 +18,10 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Environment.setProfile;
-import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 
@@ -29,29 +30,28 @@ import picocli.CommandLine.Command;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
         description = {
                 "%nUse this command to run the server in production."
         },
-        footer = "%nYou may use the \"--auto-build\" option when starting the server to avoid running the \"build\" command everytime you need to change a static property:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --auto-build <OPTIONS>%n%n"
-                + "By doing that you have an additional overhead when the server is starting. Run \"${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} build -h\" for more details.")
+        footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
+                + "By doing that, the server should start faster based on any previous configuration you have set when manually running the '" + Build.NAME + "' command.")
 public final class Start extends AbstractStartCommand implements Runnable {
 
     public static final String NAME = "start";
 
-    @CommandLine.Option(names = {AUTO_BUILD_OPTION_SHORT, AUTO_BUILD_OPTION_LONG},
-            description = "Automatically detects whether the server configuration changed and a new server image must be built" +
-                    " prior to starting the server. This option provides an alternative to manually running the '" + Build.NAME + "'" +
-                    " prior to starting the server. Use this configuration carefully in production as it might impact the startup time.",
-            paramLabel = NO_PARAM_LABEL,
-            order = 1)
-    Boolean autoConfig;
+    @CommandLine.Mixin
+    OptimizedMixin optimizedMixin;
 
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;
+
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
 
     @Override
     protected void doBeforeRun() {
@@ -59,21 +59,32 @@ public final class Start extends AbstractStartCommand implements Runnable {
     }
 
     private void devProfileNotAllowedError() {
-        if (isDevProfileNotAllowed(spec.commandLine().getParseResult().expandedArgs())) {
+        if (isDevProfileNotAllowed()) {
             executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
         }
     }
 
-    public static boolean isDevProfileNotAllowed(List<String> currentCliArgs) {
-        Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
+    public static boolean isDevProfileNotAllowed() {
+        Optional<String> currentProfile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile());
         Optional<String> persistedProfile = getRawPersistedProperty("kc.profile");
 
         setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));
 
-        if (Environment.isDevProfile() && (!currentCliArgs.contains(AUTO_BUILD_OPTION_LONG) || !currentCliArgs.contains(AUTO_BUILD_OPTION_SHORT))) {
-            return true;
-        }
+        return Environment.isDevProfile();
+    }
 
-        return false;
+    @Override
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean includeRuntime() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 }

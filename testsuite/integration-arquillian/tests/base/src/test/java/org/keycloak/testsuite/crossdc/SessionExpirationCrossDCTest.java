@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -50,6 +50,8 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests the bulk removal of user sessions and expiration scenarios (eg. removing realm, removing user etc)
@@ -225,7 +227,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
             // Workaround...
             if (checkSomeMessagesSentBetweenDCs) {
-                Assert.assertThat(messagesCount, Matchers.greaterThan(0l));
+                assertThat(messagesCount, Matchers.greaterThan(0l));
             }
 
         }, 50, 50);
@@ -423,7 +425,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Logout single session of user first
         UserResource user = ApiUtil.findUserByUsernameId(getAdminClient().realm(REALM_NAME), "login-test");
         UserSessionRepresentation userSession = user.getUserSessions().get(0);
-        getAdminClient().realm(REALM_NAME).deleteSession(userSession.getId());
+        getAdminClient().realm(REALM_NAME).deleteSession(userSession.getId(), false);
 
         // Just one session expired.
         assertStatisticsExpected("After logout single session", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,

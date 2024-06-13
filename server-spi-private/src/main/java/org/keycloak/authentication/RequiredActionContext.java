@@ -17,21 +17,22 @@
 
 package org.keycloak.authentication;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 
 /**
- * Interface that encapsulates current information about the current requred action
+ * Interface that encapsulates information about the current required action
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -50,6 +51,8 @@ public interface RequiredActionContext {
         ERROR
     }
 
+    String getAction();
+
     /**
      * Get the action URL for the required action.
      *
@@ -64,15 +67,6 @@ public interface RequiredActionContext {
      * @return
      */
     URI getActionUrl();
-
-    /**
-     * Get the action URL for the required action.  This auto-generates the access code.
-     *
-     * @param authSessionIdParam if true, will embed session id as query param.  Useful for clients that don't support cookies (i.e. console)
-     *
-     * @return
-     */
-    URI getActionUrl(boolean authSessionIdParam);
 
     /**
      * Create a Freemarker form builder that presets the user, action URI, and a generated access code
@@ -109,6 +103,12 @@ public interface RequiredActionContext {
     UriInfo getUriInfo();
     KeycloakSession getSession();
     HttpRequest getHttpRequest();
+
+    /**
+     * The configuration of the current required action. Returns {@literal null} if the current required action is not configurable.
+     * @return
+     */
+    RequiredActionConfigModel getConfig();
 
     /**
      * Generates access code and updates clientsession timestamp

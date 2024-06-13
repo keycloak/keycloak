@@ -20,6 +20,7 @@ package org.keycloak.common.util;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
@@ -47,7 +48,17 @@ public class UriUtils {
         return originPattern.matcher(url).matches();
     }
 
-    public static MultivaluedHashMap<String, String> decodeQueryString(String queryString) {
+    public static String getHost(String uri) {
+        try {
+            if (uri == null) return null;
+            URI url = new URI(uri);
+            return url.getHost();
+        } catch (URISyntaxException uriSyntaxException) {
+            throw new IllegalArgumentException("URI '" + uri + "' is not valid.");
+        }
+    }
+
+    public static MultivaluedHashMap<String, String> parseQueryParameters(String queryString, boolean decode) {
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<String, String>();
         if (queryString == null || queryString.equals("")) return map;
 
@@ -60,9 +71,9 @@ public class UriUtils {
                 String[] nv = param.split("=", 2);
                 try
                 {
-                    String name = URLDecoder.decode(nv[0], "UTF-8");
+                    String name = decode ? URLDecoder.decode(nv[0], "UTF-8") : nv[0];
                     String val = nv.length > 1 ? nv[1] : "";
-                    map.add(name, URLDecoder.decode(val, "UTF-8"));
+                    map.add(name, decode ? URLDecoder.decode(val, "UTF-8") : val);
                 }
                 catch (UnsupportedEncodingException e)
                 {
@@ -73,7 +84,7 @@ public class UriUtils {
             {
                 try
                 {
-                    String name = URLDecoder.decode(param, "UTF-8");
+                    String name = decode ? URLDecoder.decode(param, "UTF-8") : param;
                     map.add(name, "");
                 }
                 catch (UnsupportedEncodingException e)
@@ -83,6 +94,10 @@ public class UriUtils {
             }
         }
         return map;
+    }
+
+    public static MultivaluedHashMap<String, String> decodeQueryString(String queryString) {
+        return parseQueryParameters(queryString, true);
     }
 
     public static String stripQueryParam(String url, String name){

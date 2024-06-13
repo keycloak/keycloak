@@ -3,6 +3,7 @@ package org.keycloak.quarkus.deployment;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +29,8 @@ import liquibase.servicelocator.LiquibaseService;
 import liquibase.sqlgenerator.SqlGenerator;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
+import static org.keycloak.quarkus.deployment.KeycloakProcessor.getDefaultDataSource;
+
 class LiquibaseProcessor {
 
     @Record(ExecutionTime.STATIC_INIT)
@@ -36,7 +39,7 @@ class LiquibaseProcessor {
         DotName liquibaseServiceName = DotName.createSimple(LiquibaseService.class.getName());
         Map<String, List<String>> services = new HashMap<>();
         IndexView index = indexBuildItem.getIndex();
-        JdbcDataSourceBuildItem dataSourceBuildItem = jdbcDataSources.get(0);
+        JdbcDataSourceBuildItem dataSourceBuildItem = getDefaultDataSource(jdbcDataSources);
         String dbKind = dataSourceBuildItem.getDbKind();
 
         for (Class<?> c : Arrays.asList(liquibase.diff.compare.DatabaseObjectComparator.class,
@@ -65,15 +68,15 @@ class LiquibaseProcessor {
                         !Modifier.isPublic(found.flags())) {
                     continue;
                 }
-                AnnotationInstance annotationInstance = found.classAnnotation(liquibaseServiceName);
+                AnnotationInstance annotationInstance = found.declaredAnnotation(liquibaseServiceName);
                 if (annotationInstance == null || !annotationInstance.value("skip").asBoolean()) {
                     impls.add(found.name().toString());
                 }
             }
         }
 
-        services.put(LockService.class.getName(), Arrays.asList(DummyLockService.class.getName()));
-        services.put(ChangeLogParser.class.getName(), Arrays.asList(XMLChangeLogSAXParser.class.getName()));
+        services.put(LockService.class.getName(), Collections.singletonList(DummyLockService.class.getName()));
+        services.put(ChangeLogParser.class.getName(), Collections.singletonList(XMLChangeLogSAXParser.class.getName()));
 
         recorder.configureLiquibase(services);
     }

@@ -9,10 +9,11 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -20,6 +21,7 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
@@ -29,6 +31,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
@@ -171,7 +174,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             exe = execute("create --insecure --config '" + configFile.getName() + "' -s clientId=my_client4");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
-            Assert.assertEquals("only clientId returned", "Registered new client with client_id 'my_client4'", exe.stderrLines().get(2));
+            Assert.assertEquals("only clientId returned", "Registered new client with client_id 'my_client4'", exe.stderrLines().get(exe.stderrLines().size() - 1));
 
 
 
@@ -210,23 +213,25 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                 Assert.assertEquals("Error message", "Attribute 'redirect_uris' not supported on document type 'default'", exe.stderrLines().get(0));
             }
 
+            // TODO: SAML is not tested with FIPS enabled as it does not work. This needs to be revisited when SAML works with FIPS
+            if (AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.DISABLED) {
 
-            // test create saml formated xml - format autodetection
-            File samlSpMetaFile = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/saml-sp-metadata.xml");
-            Assert.assertTrue("saml-sp-metadata.xml exists", samlSpMetaFile.isFile());
+                // test create saml formated xml - format autodetection
+                File samlSpMetaFile = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/saml-sp-metadata.xml");
+                Assert.assertTrue("saml-sp-metadata.xml exists", samlSpMetaFile.isFile());
 
-            exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f - < '" + samlSpMetaFile.getAbsolutePath() + "'");
+                exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f - < '" + samlSpMetaFile.getAbsolutePath() + "'");
 
-            assertExitCodeAndStdErrSize(exe, 0, 2);
+                assertExitCodeAndStdErrSize(exe, 0, 2);
 
-            ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assert.assertNotNull("id", client.getId());
-            Assert.assertEquals("clientId", "http://localhost:8080/sales-post-enc/", client.getClientId());
-            Assert.assertEquals("redirectUris", Arrays.asList("http://localhost:8081/sales-post-enc/saml"), client.getRedirectUris());
-            Assert.assertEquals("attributes.saml_name_id_format", "username", client.getAttributes().get("saml_name_id_format"));
-            Assert.assertEquals("attributes.saml_assertion_consumer_url_post", "http://localhost:8081/sales-post-enc/saml", client.getAttributes().get("saml_assertion_consumer_url_post"));
-            Assert.assertEquals("attributes.saml.signature.algorithm", "RSA_SHA256", client.getAttributes().get("saml.signature.algorithm"));
-
+                ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+                Assert.assertNotNull("id", client.getId());
+                Assert.assertEquals("clientId", "http://localhost:8080/sales-post-enc/", client.getClientId());
+                Assert.assertEquals("redirectUris", Arrays.asList("http://localhost:8081/sales-post-enc/saml"), client.getRedirectUris());
+                Assert.assertEquals("attributes.saml_name_id_format", "username", client.getAttributes().get("saml_name_id_format"));
+                Assert.assertEquals("attributes.saml_assertion_consumer_url_post", "http://localhost:8081/sales-post-enc/saml", client.getAttributes().get("saml_assertion_consumer_url_post"));
+                Assert.assertEquals("attributes.saml.signature.algorithm", "RSA_SHA256", client.getAttributes().get("saml.signature.algorithm"));
+            }
 
             // delete initial token
             exe = execute("config initial-token --config '" + configFile.getName() + "' --insecure --server " + serverUrl + " --realm " + realm + " --delete");
@@ -293,7 +298,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
                 Assert.assertNotNull("clientId", oidcClient.getClientId());
                 Assert.assertEquals("redirect_uris", Arrays.asList("http://localhost:8980/myapp5/*"), oidcClient.getRedirectUris());
-                Assert.assertThat("grant_types", oidcClient.getGrantTypes(), Matchers.containsInAnyOrder("authorization_code", "client_credentials", "refresh_token", OAuth2Constants.UMA_GRANT_TYPE));
+                assertThat("grant_types", oidcClient.getGrantTypes(), Matchers.containsInAnyOrder("authorization_code", "client_credentials", "refresh_token", OAuth2Constants.UMA_GRANT_TYPE));
                 Assert.assertEquals("response_types", Arrays.asList("code", "none"), oidcClient.getResponseTypes());
                 Assert.assertEquals("client_name", "My Reg Authz", oidcClient.getClientName());
                 Assert.assertEquals("client_uri", "http://localhost:8980/myapp5", oidcClient.getClientUri());

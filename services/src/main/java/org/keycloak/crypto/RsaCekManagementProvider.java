@@ -17,10 +17,9 @@
 
 package org.keycloak.crypto;
 
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.alg.RsaKeyEncryption256JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.models.KeycloakSession;
 
 public class RsaCekManagementProvider implements CekManagementProvider {
@@ -35,15 +34,12 @@ public class RsaCekManagementProvider implements CekManagementProvider {
 
     @Override
     public JWEAlgorithmProvider jweAlgorithmProvider() {
-        String jcaAlgorithmName = null;
-        if (JWEConstants.RSA1_5.equals(jweAlgorithmName)) {
-            jcaAlgorithmName = "RSA/ECB/PKCS1Padding";
-        } else if (JWEConstants.RSA_OAEP.equals(jweAlgorithmName)) {
-            jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
-        } else if (JWEConstants.RSA_OAEP_256.equals(jweAlgorithmName)) {
-            return new RsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        if (JWEConstants.RSA1_5.equals(jweAlgorithmName) || JWEConstants.RSA_OAEP.equals(jweAlgorithmName) ||
+                JWEConstants.RSA_OAEP_256.equals(jweAlgorithmName)) {
+            return CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, jweAlgorithmName);
+        } else {
+            return null;
         }
-        return new RsaKeyEncryptionJWEAlgorithmProvider(jcaAlgorithmName);
     }
 
 }

@@ -49,8 +49,6 @@ public final class SuiteContext {
     private ContainerInfo migratedAuthServerInfo;
     private final MigrationContext migrationContext = new MigrationContext();
 
-    private ContainerInfo hotRodStoreInfo;
-
     private boolean adminPasswordUpdated;
     private final Map<String, String> smtpServer = new HashMap<>();
 
@@ -174,14 +172,6 @@ public final class SuiteContext {
 
     public void setMigratedAuthServerInfo(ContainerInfo migratedAuthServerInfo) {
         this.migratedAuthServerInfo = migratedAuthServerInfo;
-    }
-
-    public ContainerInfo getHotRodStoreInfo() {
-        return hotRodStoreInfo;
-    }
-
-    public void setHotRodStoreInfo(ContainerInfo hotRodStoreInfo) {
-        this.hotRodStoreInfo = hotRodStoreInfo;
     }
 
     public boolean isAuthServerCluster() {

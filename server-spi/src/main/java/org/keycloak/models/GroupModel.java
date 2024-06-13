@@ -19,12 +19,9 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
-import org.keycloak.storage.SearchableModelField;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -33,25 +30,134 @@ import java.util.stream.Stream;
  */
 public interface GroupModel extends RoleMapperModel {
 
-    public static class SearchableFields {
-        public static final SearchableModelField<GroupModel> ID             = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<GroupModel> REALM_ID       = new SearchableModelField<>("realmId", String.class);
-        /** Parent group ID */
-        public static final SearchableModelField<GroupModel> PARENT_ID      = new SearchableModelField<>("parentGroupId", String.class);
-        public static final SearchableModelField<GroupModel> NAME           = new SearchableModelField<>("name", String.class);
-        /**
-         * Field for comparison with roles granted to this group.
-         * A role can be checked for belonging only via EQ operator. Role is referred by their ID
-         */
-        public static final SearchableModelField<GroupModel> ASSIGNED_ROLE  = new SearchableModelField<>("assignedRole", String.class);
-    }
-
-    interface GroupRemovedEvent extends ProviderEvent {
+    interface GroupEvent extends ProviderEvent {
         RealmModel getRealm();
         GroupModel getGroup();
         KeycloakSession getKeycloakSession();
     }
-    
+
+    interface GroupCreatedEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupCreatedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupRemovedEvent extends GroupEvent {
+
+    }
+
+    interface GroupUpdatedEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupUpdatedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupMemberJoinEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupMemberJoinEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupMemberLeaveEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupMemberLeaveEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface GroupPathChangeEvent extends GroupEvent {
+        String getNewPath();
+        String getPreviousPath();
+
+        static void fire(GroupModel group, String newPath, String previousPath, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupPathChangeEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+
+                @Override
+                public String getNewPath() {
+                    return newPath;
+                }
+
+                @Override
+                public String getPreviousPath() {
+                    return previousPath;
+                }
+            });
+        }
+    }
+
     Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
 
     String getId();
@@ -78,23 +184,13 @@ public interface GroupModel extends RoleMapperModel {
      */
     String getFirstAttribute(String name);
 
-    /**
-     * @param name
-     * @return list of all attribute values or empty list if there are not any values. Never return null
-     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
-     */
-    @Deprecated
-    List<String> getAttribute(String name);
 
     /**
      * Returns group attributes that match the given name as a stream.
      * @param name {@code String} Name of the attribute to be used as a filter.
      * @return Stream of all attribute values or empty stream if there are not any values. Never return {@code null}.
      */
-    default Stream<String> getAttributeStream(String name) {
-        List<String> value = this.getAttribute(name);
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<String> getAttributeStream(String name);
 
     Map<String, List<String>> getAttributes();
 
@@ -102,18 +198,74 @@ public interface GroupModel extends RoleMapperModel {
     String getParentId();
 
     /**
-     * @deprecated Use {@link #getSubGroupsStream() getSubGroupsStream} instead.
-     */
-    @Deprecated
-    Set<GroupModel> getSubGroups();
-
-    /**
      * Returns all sub groups for the parent group as a stream.
+     * The stream is sorted by the group name.
+     *
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
-    default Stream<GroupModel> getSubGroupsStream() {
-        Set<GroupModel> value = this.getSubGroups();
-        return value != null ? value.stream() : Stream.empty();
+    Stream<GroupModel> getSubGroupsStream();
+
+    /**
+     * Returns all sub groups for the parent group matching the fuzzy search as a stream, paginated.
+     * Stream is sorted by the group name.
+     *
+     * @param search searched string. If empty or {@code null} all subgroups are returned.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
+    default Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+       return getSubGroupsStream(search, false, firstResult, maxResults);
+    }
+
+    /**
+     * Returns all sub groups for the parent group as a stream, paginated.
+     *
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return
+     */
+    default Stream<GroupModel> getSubGroupsStream(Integer firstResult, Integer maxResults) {
+        return getSubGroupsStream(null, firstResult, maxResults);
+    }
+
+    /**
+     * Returns all subgroups for the parent group matching the search as a stream, paginated.
+     * Stream is sorted by the group name.
+     *
+     * @param search search string. If empty or {@code null} all subgroups are returned.
+     * @param exact toggles fuzzy searching
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
+    default Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> allSubgroupsGroups = getSubGroupsStream().filter(group -> {
+            if (search == null || search.isEmpty()) return true;
+            if (Boolean.TRUE.equals(exact)) {
+                return group.getName().equals(search);
+            } else {
+                return group.getName().toLowerCase().contains(search.toLowerCase());
+            }
+        });
+
+        // Copied over from StreamsUtil from server-spi-private which is not available here
+        if (firstResult != null && firstResult > 0) {
+            allSubgroupsGroups = allSubgroupsGroups.skip(firstResult);
+        }
+
+        if (maxResults != null && maxResults >= 0) {
+            allSubgroupsGroups = allSubgroupsGroups.limit(maxResults);
+        }
+
+        return allSubgroupsGroups;
+    }
+
+    /**
+     * Returns the number of groups contained beneath this group.
+     *
+     * @return The number of groups beneath this group. Never returns {@code null}.
+     */
+    default Long getSubGroupsCount() {
+        return getSubGroupsStream().count();
     }
 
     /**
@@ -137,28 +289,7 @@ public interface GroupModel extends RoleMapperModel {
      */
     void removeChild(GroupModel subGroup);
 
-    /**
-     * The {@link GroupModel.Streams} interface makes all collection-based methods in {@link GroupModel} default by providing
-     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
-     */
-    interface Streams extends GroupModel, RoleMapperModel.Streams {
-        @Override
-        default List<String> getAttribute(String name) {
-            return this.getAttributeStream(name).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<String> getAttributeStream(String name);
-
-        @Override
-        default Set<GroupModel> getSubGroups() {
-            return this.getSubGroupsStream().collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<GroupModel> getSubGroupsStream();
+    default boolean escapeSlashesInGroupPath() {
+        return GroupProvider.DEFAULT_ESCAPE_SLASHES;
     }
 }

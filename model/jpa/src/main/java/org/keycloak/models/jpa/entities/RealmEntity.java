@@ -17,22 +17,22 @@
 
 package org.keycloak.models.jpa.entities;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapKey;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapKey;
+import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -137,16 +137,16 @@ public class RealmEntity {
     protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.EAGER)
-    Collection<RealmAttributeEntity> attributes;
+    Collection<RealmAttributeEntity> attributes = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredCredentialEntity> requiredCredentials;
+    Collection<RequiredCredentialEntity> requiredCredentials = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<UserFederationProviderEntity> userFederationProviders;
+    List<UserFederationProviderEntity> userFederationProviders = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<UserFederationMapperEntity> userFederationMappers;
+    Collection<UserFederationMapperEntity> userFederationMappers = new LinkedList<>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -187,22 +187,22 @@ public class RealmEntity {
     protected String defaultRoleId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    protected List<IdentityProviderEntity> identityProviders;
+    protected List<IdentityProviderEntity> identityProviders = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<IdentityProviderMapperEntity> identityProviderMappers;
+    Collection<IdentityProviderMapperEntity> identityProviderMappers = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<AuthenticatorConfigEntity> authenticators;
+    Collection<AuthenticatorConfigEntity> authenticators = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredActionProviderEntity> requiredActionProviders;
+    Collection<RequiredActionProviderEntity> requiredActionProviders = new LinkedList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<AuthenticationFlowEntity> authenticationFlows;
+    Collection<AuthenticationFlowEntity> authenticationFlows = new LinkedList<>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.ALL}, orphanRemoval = true, mappedBy = "realm")
-    Set<ComponentEntity> components;
+    Set<ComponentEntity> components = new HashSet<>();
 
     @Column(name="BROWSER_FLOW")
     protected String browserFlow;
@@ -237,9 +237,9 @@ public class RealmEntity {
     @Column(name="ALLOW_USER_MANAGED_ACCESS")
     private boolean allowUserManagedAccess;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realmId")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     @MapKey(name="locale")
-    Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts;
+    Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts = new HashMap<>();
 
     public String getId() {
         return id;
@@ -840,6 +840,13 @@ public class RealmEntity {
         if (!id.equals(that.getId())) return false;
 
         return true;
+    }
+
+    public String toString() {
+        return "Realm{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                '}';
     }
 
     @Override

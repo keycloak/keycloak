@@ -30,6 +30,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+
 /**
  * Extract PrivateKey, PublicKey, and X509Certificate from a DER encoded byte array or file.  Usually
  * generated from openssl
@@ -52,7 +54,7 @@ public final class DerUtils {
 
         PKCS8EncodedKeySpec spec =
                 new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyFactory kf =CryptoIntegration.getProvider().getKeyFactory("RSA");
         return kf.generatePrivate(spec);
     }
 
@@ -63,12 +65,12 @@ public final class DerUtils {
     public static PublicKey decodePublicKey(byte[] der, String type) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec =
                 new X509EncodedKeySpec(der);
-        KeyFactory kf = KeyFactory.getInstance(type, BouncyIntegration.PROVIDER);
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(type);
         return kf.generatePublic(spec);
     }
 
     public static X509Certificate decodeCertificate(InputStream is) throws Exception {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509", BouncyIntegration.PROVIDER);
+        CertificateFactory cf = CryptoIntegration.getProvider().getX509CertFactory();
         X509Certificate cert = (X509Certificate) cf.generateCertificate(is);
         is.close();
         return cert;
@@ -77,7 +79,7 @@ public final class DerUtils {
     public static PrivateKey decodePrivateKey(byte[] der) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec =
                 new PKCS8EncodedKeySpec(der);
-        KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
+        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory("RSA");
         return kf.generatePrivate(spec);
     }
 }

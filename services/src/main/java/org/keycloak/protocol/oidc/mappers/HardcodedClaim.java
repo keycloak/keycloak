@@ -38,7 +38,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper,
-        OIDCAccessTokenResponseMapper {
+        OIDCAccessTokenResponseMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -94,7 +94,7 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
 
     @Override
     protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession,
-            KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
+                            KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
 
         String attributeValue = mappingModel.getConfig().get(CLAIM_VALUE);
         if (attributeValue == null) return;
@@ -102,9 +102,9 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
     }
 
     public static ProtocolMapperModel create(String name,
-                                      String hardcodedName,
-                                      String hardcodedValue, String claimType,
-                                      boolean accessToken, boolean idToken) {
+                                             String hardcodedName,
+                                             String hardcodedValue, String claimType,
+                                             boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -115,6 +115,7 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
         config.put(OIDCAttributeMapperHelper.JSON_TYPE, claimType);
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;
     }

@@ -1,13 +1,10 @@
-./
-    keycloak-server-dist:keycloak-legacy
-    keycloak-quarkus-dist:keycloak
-    keycloak-api-docs-dist:keycloak-api-docs
+mvn:keycloak-quarkus-dist:keycloak
+mvn:keycloak-api-docs-dist:keycloak-api-docs
 
-    keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
-    keycloak-js-adapter-npm-dist:keycloak-oidc-js-adapter
-    keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
-    keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
+mvn:documentation/keycloak-documentation:keycloak-documentation
 
-    keycloak-saml-jetty94-adapter-dist:keycloak-saml-jetty94-adapter
-    keycloak-saml-tomcat-adapter-dist:keycloak-saml-tomcat-adapter
-    keycloak-saml-wildfly-adapter-dist:keycloak-saml-wildfly-adapter
+npm:js/libs/keycloak-admin-client/target/keycloak-keycloak-admin-client-$$VERSION$$.tgz:keycloak-admin-client-$$VERSION$$.tgz
+npm:js/libs/keycloak-js/target/keycloak-js-$$VERSION$$.tgz:keycloak-js-$$VERSION$$.tgz
+npm:js/libs/ui-shared/target/keycloak-keycloak-ui-shared-$$VERSION$$.tgz:keycloak-ui-shared-$$VERSION$$.tgz
+npm:js/apps/account-ui/target/keycloak-keycloak-account-ui-$$VERSION$$.tgz:keycloak-account-ui-$$VERSION$$.tgz
+

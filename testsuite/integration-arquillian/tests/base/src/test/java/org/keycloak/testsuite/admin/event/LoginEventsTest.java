@@ -17,18 +17,11 @@
 
 package org.keycloak.testsuite.admin.event;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.console.page.events.LoginEvents;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -45,17 +38,14 @@ import static org.junit.Assert.fail;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class LoginEventsTest extends AbstractEventTest {
-
-    @Page
-    private LoginEvents loginEventsPage;
 
     @Before
     public void init() {
         configRep.setEventsEnabled(true);
         saveConfig();
         testRealmResource().clearEvents();
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
     }
 
     private List<EventRepresentation> events() {
@@ -63,7 +53,7 @@ public class LoginEventsTest extends AbstractEventTest {
     }
 
     private void badLogin() {
-        accountPage.navigateTo();
+        oauth.openLoginForm();
         loginPage.form().login("bad", "user");
     }
 
@@ -152,6 +142,39 @@ public class LoginEventsTest extends AbstractEventTest {
         assertTrue(realm.getEvents(null, null, null, null, null, null, 0, 1000).size() >= 110);
     }
 
+    @Test
+    public void orderResultsTest() {
+        RealmResource realm = adminClient.realms().realm("test");
+        EventRepresentation firstEvent = new EventRepresentation();
+        firstEvent.setRealmId(realm.toRepresentation().getId());
+        firstEvent.setType(EventType.LOGIN.toString());
+        firstEvent.setTime(System.currentTimeMillis() - 1000);
+
+        EventRepresentation secondEvent = new EventRepresentation();
+        secondEvent.setRealmId(realm.toRepresentation().getId());
+        secondEvent.setType(EventType.LOGOUT.toString());
+        secondEvent.setTime(System.currentTimeMillis());
+
+
+        testingClient.testing("test").onEvent(firstEvent);
+        testingClient.testing("test").onEvent(secondEvent);
+
+        List<EventRepresentation> events = realm.getEvents(null, null, null, null, null, null, null, null);
+        assertEquals(2, events.size());
+        assertEquals(EventType.LOGOUT.toString(), events.get(0).getType());
+        assertEquals(EventType.LOGIN.toString(), events.get(1).getType());
+
+    }
+
+    @Test
+    public void testErrorEventsAreNotStoredWhenDisabled() {
+        configRep.setEventsEnabled(false);
+        saveConfig();
+
+        badLogin();
+        assertEquals(0, events().size());
+    }
+
     /*
     Removed this test because it takes too long.  The default interval for
     event cleanup is 15 minutes (900 seconds).  I don't have time to figure out
@@ -165,5 +188,4 @@ public class LoginEventsTest extends AbstractEventTest {
         pause(900); // pause 900 seconds
         assertEquals(0, events().size());
     }**/
-
 }

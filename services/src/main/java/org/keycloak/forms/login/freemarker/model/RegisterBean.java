@@ -20,9 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -49,7 +50,7 @@ public class RegisterBean extends AbstractUserProfileBean {
 
     @Override
     protected UserProfile createUserProfile(UserProfileProvider provider) {
-        return provider.create(UserProfileContext.REGISTRATION_PROFILE, null, null);
+        return provider.create(UserProfileContext.REGISTRATION, null, (UserModel) null);
     }
 
     @Override
@@ -59,7 +60,7 @@ public class RegisterBean extends AbstractUserProfileBean {
     
     @Override 
     public String getContext() {
-        return UserProfileContext.REGISTRATION_PROFILE.name();
+        return UserProfileContext.REGISTRATION.name();
     }
     
     public Map<String, String> getFormData() {

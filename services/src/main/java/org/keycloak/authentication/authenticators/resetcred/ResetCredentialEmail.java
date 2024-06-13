@@ -17,7 +17,7 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
-import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.Config;
 import org.keycloak.authentication.*;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
@@ -39,8 +39,8 @@ import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.*;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.concurrent.TimeUnit;
 import org.jboss.logging.Logger;
 

@@ -31,15 +31,15 @@
 
         <!-- License Data -->
         <fileSet>
-            <directory>src/main/resources/licenses/${product.slot}</directory>
-            <outputDirectory>content/docs/licenses-${product.slot}</outputDirectory>
+            <directory>src/main/resources/licenses/keycloak</directory>
+            <outputDirectory>content/docs/licenses-keycloak</outputDirectory>
             <excludes>
                 <exclude>licenses.xml</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>target/licenses</directory>
-            <outputDirectory>content/docs/licenses-${product.slot}</outputDirectory>
+            <outputDirectory>content/docs/licenses-keycloak</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

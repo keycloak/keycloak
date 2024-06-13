@@ -16,33 +16,31 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.SystemClientUtil;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.federation.kerberos.AbstractKerberosTest;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -56,43 +54,42 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.TestAppHelper;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.*;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     private String userId;
@@ -151,9 +148,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Page
-    protected AccountUpdateProfilePage account1ProfilePage;
-
-    @Page
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Rule
@@ -162,27 +156,71 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     private int expectedMessagesCount;
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetPasswordLink() throws IOException, MessagingException {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+
+        openResetPasswordUrlAndDoFlow(resetUri, "account", oauth.AUTH_SERVER_ROOT + "/realms/test/account/", false);
+
+        AccountHelper.logout(testRealm(), username);
+        WaitUtils.waitForPageToLoad();
+
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        testAppHelper.login(username, "resetPassword");
+
+        appPage.assertCurrent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void resetPasswordLoggedUser() throws IOException {
+        String username = "login-test";
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
+
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+
+        openResetPasswordUrlAndDoFlow(resetUri, "account", oauth.AUTH_SERVER_ROOT + "/realms/test/account/", true);
+
+        AccountHelper.logout(testRealm(), username);
+        WaitUtils.waitForPageToLoad();
+
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        testAppHelper.login(username, "resetPassword");
+
+        appPage.assertCurrent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    // Starts by opening "reset-password-url". Then go through the successful reset-password flow for the particular user. After user confirms new password, this method ends.
+    private void openResetPasswordUrlAndDoFlow(String resetUri, String expectedClientId, String expectedRedirectUri, boolean userAuthenticated) throws IOException {
+        String username = "login-test";
         driver.navigate().to(resetUri);
 
-        resetPasswordPage.assertCurrent();
-
-        resetPasswordPage.changePassword(username);
+        if (!userAuthenticated) {
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword(username);
+        }
 
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+        AssertEvents.ExpectedEvent event = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
                 .user(userId)
-                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
-                .client("account")
+                .client(expectedClientId)
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, "login@test.com")
-                .session((String)null)
-                .assertEvent();
+                .session((String)null);
+        if (expectedRedirectUri != null) {
+            event.detail(Details.REDIRECT_URI,  expectedRedirectUri);
+        } else {
+            event.removeDetail(Details.REDIRECT_URI);
+        }
+        event.assertEvent();
 
         assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -194,31 +232,77 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.assertCurrent();
 
+        if(userAuthenticated) {
+            updatePasswordPage.uncheckLogoutSessions();
+        }
+
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD)
-                .detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
-                .client("account")
-                .user(userId).detail(Details.USERNAME, username).assertEvent();
+        event = events.expectRequiredAction(EventType.UPDATE_PASSWORD)
+                .client(expectedClientId)
+                .user(userId).detail(Details.USERNAME, username);
+        if (expectedRedirectUri != null) {
+            event.detail(Details.REDIRECT_URI,  expectedRedirectUri);
+        } else {
+            event.removeDetail(Details.REDIRECT_URI);
+        }
+        event.assertEvent();
+    }
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username)
-                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
-                .client("account")
-                .assertEvent();
-        String sessionId = loginEvent.getSessionId();
+    @Test
+    public void resetPasswordLinkTestAppWithoutRedirectUriParam() throws IOException {
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app";
 
-        account1ProfilePage.assertCurrent();
-        account1ProfilePage.logout();
+        openResetPasswordUrlAndDoFlow(resetUri, "test-app", null, false);
 
-        events.expectLogout(sessionId).user(userId).removeDetail(Details.REDIRECT_URI).assertEvent();
+        // Link "Back to application" with the baseUrl of client "test-app"
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
 
-        loginPage.open();
+        infoPage.clickBackToApplicationLink();
+        WaitUtils.waitForPageToLoad();
+        MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
+    }
 
-        loginPage.login("login-test", "resetPassword");
+    @Test
+    public void resetPasswordLinkTestAppWithRedirectUriParam() throws IOException {
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app&redirect_uri=" + oauth.getRedirectUri();
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        openResetPasswordUrlAndDoFlow(resetUri, "test-app", oauth.getRedirectUri(), false);
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        // Should be directly redirected to "application because of "redirect_uri" parameter
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void resetPasswordLinkErrorFlows() throws IOException {
+        // Client not found
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=not_found");
+        errorPage.assertCurrent();
+        Assert.assertEquals("Client not found.", errorPage.getError());
+
+        // Redirect_uri without client
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?redirect_uri=https://foo/bar/");
+        errorPage.assertCurrent();
+        Assert.assertEquals("Missing parameters: client_id", errorPage.getError());
+
+        // Incorrect redirect_uri
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app&redirect_uri=https://foo/bar/");
+        errorPage.assertCurrent();
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+        // Client disabled
+        ClientResource client = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+        clientRep.setEnabled(false);
+        client.update(clientRep);
+        try {
+            driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app");
+            Assert.assertEquals("Client disabled.", errorPage.getError());
+        } finally {
+            clientRep.setEnabled(true);
+            client.update(clientRep);
+        }
     }
 
 
@@ -973,6 +1057,25 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void resetPasswordBeforeUserIsDisabled() throws IOException, MessagingException {
+        initiateResetPasswordFromResetPasswordPage("login-test");
+        
+        assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).session((String)null).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+        
+        UserRepresentation user = findUser("login-test");
+        user.setEnabled(false);
+        updateUser(user);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        errorPage.assertCurrent();
+        assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
+    }
+
+    @Test
     public void resetPasswordWithPasswordHistoryPolicy() throws IOException, MessagingException {
         //Block passwords that are equal to previous passwords. Default value is 3.
         setPasswordPolicy("passwordHistory");
@@ -1050,6 +1153,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         infoPage.assertCurrent();
         assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        // Link "back to application" not present due the fact we use system client
+        assertThat(driver.getPageSource(), Matchers.not(Matchers.containsString("Back to Application")));
     }
 
 
@@ -1092,12 +1198,16 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertThat(driver2.getCurrentUrl(), Matchers.containsString("client_id=test-app"));
 
         assertThat(driver2.getPageSource(), Matchers.containsString("Your account has been updated."));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Back to Application"));
     }
 
 
     // KEYCLOAK-15239
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/20526
     public void resetPasswordWithSpnegoEnabled() throws IOException, MessagingException {
+        KerberosUtils.assumeKerberosSupportExpected();
+
         // Just switch SPNEGO authenticator requirement to alternative. No real usage of SPNEGO needed for this test
         AuthenticationExecutionModel.Requirement origRequirement = AbstractKerberosTest.updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE, testRealm());
 
@@ -1136,30 +1246,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
-    public void resetPasswordLinkNewTabAndProperRedirectAccount() throws IOException {
-        final String REQUIRED_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/applications";
-        final String REDIRECT_URI = getAccountRedirectUrl() + "?path=applications";
-        final String CLIENT_ID = "account";
-        final String ACCOUNT_MANAGEMENT_TITLE = getProjectName() + " Account Management";
-
-        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
-            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
-
-            driver.navigate().to(REQUIRED_URI);
-            resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI, REQUIRED_URI);
-            assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
-
-            account1ProfilePage.assertCurrent();
-            account1ProfilePage.logout();
-
-            driver.navigate().to(REQUIRED_URI);
-            resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI, REQUIRED_URI);
-            assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
-        }
-    }
-
-    @Test
     public void resetPasswordLinkNewTabAndProperRedirectClient() throws IOException {
         final String REDIRECT_URI = getAuthServerRoot() + "realms/master/app/auth";
         final String CLIENT_ID = "test-app";
@@ -1172,7 +1258,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
             loginPage.open();
-            resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI);
+            resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
 
             String logoutUrl = oauth.getLogoutUrl().build();
@@ -1181,7 +1267,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             logoutConfirmPage.confirmLogout();
 
             loginPage.open();
-            resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI);
+            resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
         }
     }
@@ -1262,110 +1348,72 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         submit.click();
     }
 
-    private void resetPasswordTwiceInNewTab(UserRepresentation user, String clientId, boolean shouldLogOut, String redirectUri) throws IOException {
-        resetPasswordTwiceInNewTab(user, clientId, shouldLogOut, redirectUri, redirectUri);
-    }
+    private void resetPasswordInNewTab(UserRepresentation user, String clientId, String redirectUri) throws IOException {
+        try (BrowserTabUtil browserTabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            events.clear();
 
-    private void resetPasswordTwiceInNewTab(UserRepresentation user, String clientId, boolean shouldLogOut, String redirectUri, String requiredUri) throws IOException {
-        events.clear();
-        updateForgottenPassword(user, clientId, redirectUri, requiredUri);
+            final int emailCount = greenMail.getReceivedMessages().length;
 
-        if (shouldLogOut) {
-            String sessionId = events.expectLogin().user(user.getId()).detail(Details.USERNAME, user.getUsername())
+            // In tab1 start "Forget password" flow and make sure the email is sent
+            loginPage.assertCurrent();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword(user.getUsername());
+            WaitUtils.waitForPageToLoad();
+
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+            String tab1Url = driver.getCurrentUrl();
+
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .user(user.getId())
+                    .client(clientId)
+                    .detail(Details.REDIRECT_URI, redirectUri)
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.EMAIL, user.getEmail())
+                    .session((String) null)
+                    .assertEvent();
+
+            assertEquals(emailCount + 1, greenMail.getReceivedMessages().length);
+
+            final MimeMessage message = greenMail.getReceivedMessages()[emailCount];
+            final String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+            // Open link from email in the new tab
+            browserTabUtil.newTab(changePasswordUrl.trim());
+
+            // Change password in tab2
+            changePasswordOnUpdatePage(driver);
+
+            events.expectRequiredAction(EventType.UPDATE_PASSWORD)
                     .detail(Details.REDIRECT_URI, redirectUri)
                     .client(clientId)
-                    .assertEvent().getSessionId();
+                    .user(user.getId()).detail(Details.USERNAME, user.getUsername()).assertEvent();
 
-            String logoutUrl = oauth.getLogoutUrl().build();
-            driver.navigate().to(logoutUrl);
-            logoutConfirmPage.assertCurrent();
-            logoutConfirmPage.confirmLogout();
+            // User should be authenticated in current tab (tab2)
+            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
+            appPage.assertCurrent();
+            assertThat(driver.getCurrentUrl(), Matchers.containsString(redirectUri));
 
-            events.expectLogout(sessionId).user(user.getId()).removeDetail(Details.REDIRECT_URI).assertEvent();
-        }
+            // Close tab2
+            assertThat(browserTabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            browserTabUtil.closeTab(1);
+            assertThat(browserTabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
-        BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver);
-        assertThat(util.getCountOfTabs(), Matchers.equalTo(2));
-        util.closeTab(1);
-        assertThat(util.getCountOfTabs(), Matchers.equalTo(1));
+            if (driver instanceof HtmlUnitDriver) {
+                // With HtmlUnit, authChecker javascript doesn't work. Hence need to manually trigger "reset flow" endpoint
+                KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(tab1Url);
+                String resetFlowPath = builder
+                        .replacePath(builder.getPath().substring(0, builder.getPath().lastIndexOf('/') + 1) + LoginActionsService.RESTART_PATH)
+                        .queryParam(Constants.SKIP_LOGOUT, "true")
+                        .build().toString();
+                driver.navigate().to(resetFlowPath);
+            }
 
-        if (shouldLogOut) {
-            final ClientRepresentation client = testRealm().clients()
-                    .findByClientId(clientId)
-                    .stream()
-                    .findFirst()
-                    .orElse(null);
-
-            assertThat(client, Matchers.notNullValue());
-            updateForgottenPassword(user, clientId, getValidRedirectUriWithRootUrl(client.getRootUrl(), client.getRedirectUris()));
-        } else {
-            doForgotPassword(user.getUsername());
-        }
-    }
-
-    private void updateForgottenPassword(UserRepresentation user, String clientId, String redirectUri) throws IOException {
-        updateForgottenPassword(user, clientId, redirectUri, redirectUri);
-    }
-
-    private void updateForgottenPassword(UserRepresentation user, String clientId, String redirectUri, String requiredUri) throws IOException {
-        final int emailCount = greenMail.getReceivedMessages().length;
-
-        doForgotPassword(user.getUsername());
-        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
-
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
-                .user(user.getId())
-                .client(clientId)
-                .detail(Details.REDIRECT_URI, redirectUri)
-                .detail(Details.USERNAME, user.getUsername())
-                .detail(Details.EMAIL, user.getEmail())
-                .session((String) null)
-                .assertEvent();
-
-        assertEquals(emailCount + 1, greenMail.getReceivedMessages().length);
-
-        final MimeMessage message = greenMail.getReceivedMessages()[emailCount];
-        final String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-        BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver);
-        util.newTab(changePasswordUrl.trim());
-
-        changePasswordOnUpdatePage(driver);
-
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD)
-                .detail(Details.REDIRECT_URI, redirectUri)
-                .client(clientId)
-                .user(user.getId()).detail(Details.USERNAME, user.getUsername()).assertEvent();
-
-        assertThat(driver.getCurrentUrl(), Matchers.containsString(requiredUri));
-    }
-
-    private void doForgotPassword(String username) {
-        loginPage.assertCurrent();
-        loginPage.resetPassword();
-
-        resetPasswordPage.assertCurrent();
-        resetPasswordPage.changePassword(username);
-        WaitUtils.waitForPageToLoad();
-    }
-
-    private String getValidRedirectUriWithRootUrl(String rootUrl, Collection<String> redirectUris) {
-        final boolean isRootUrlValid = isValidUrl(rootUrl);
-
-        return redirectUris.stream()
-                .map(uri -> isRootUrlValid && uri.startsWith("/") ? rootUrl + uri : uri)
-                .map(uri -> uri.startsWith("/") ? OAuthClient.AUTH_SERVER_ROOT + uri : uri)
-                .map(RedirectUtils::validateRedirectUriWildcard)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private boolean isValidUrl(String url) {
-        try {
-            new URL(url);
-            return true;
-        } catch (MalformedURLException e) {
-            return false;
+            // User should be automatically authenticated in tab1 as well (due authChecker.js on real browsers like FF or Chrome)
+            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
+            appPage.assertCurrent();
         }
     }
 }

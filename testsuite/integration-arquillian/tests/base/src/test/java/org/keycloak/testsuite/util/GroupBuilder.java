@@ -34,6 +34,10 @@ public class GroupBuilder {
         return new GroupBuilder(rep);
     }
 
+    public static GroupBuilder edit(GroupRepresentation rep) {
+        return new GroupBuilder(rep);
+    }
+
     private GroupBuilder(GroupRepresentation rep) {
         this.rep = rep;
     }

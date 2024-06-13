@@ -19,12 +19,12 @@ package org.keycloak.testsuite.rest.resource;
 
 import java.util.Map;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
@@ -41,8 +41,6 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
-import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
@@ -164,8 +162,8 @@ public class TestLDAPResource {
         ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, "groupsMapper");
         new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
 
-        realm.addDefaultGroup(KeycloakModelUtils.findGroupByPath(realm, "/defaultGroup1/defaultGroup11"));
-        realm.addDefaultGroup(KeycloakModelUtils.findGroupByPath(realm, "/defaultGroup1/defaultGroup12"));
+        realm.addDefaultGroup(KeycloakModelUtils.findGroupByPath(session, realm, "/defaultGroup1/defaultGroup11"));
+        realm.addDefaultGroup(KeycloakModelUtils.findGroupByPath(session, realm, "/defaultGroup1/defaultGroup12"));
 
         // Delete all LDAP users
         LDAPTestUtils.removeAllLDAPUsers(ldapFedProvider, realm);

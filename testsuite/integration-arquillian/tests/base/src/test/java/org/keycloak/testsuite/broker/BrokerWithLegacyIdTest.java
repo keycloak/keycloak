@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProviderFactory;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -33,8 +34,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProvider.LEGACY_ID;
 
 /**
@@ -86,15 +85,14 @@ public class BrokerWithLegacyIdTest extends AbstractInitializedBaseBrokerTest {
         logInAsUserInIDP();
         // id should be migrated to new one
         assertEquals(userId, getFederatedIdentity().getUserId());
-        assertLoggedInAccountManagement(consumerUser.getUsername(), consumerUser.getEmail());
+        appPage.assertCurrent();
 
-        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         // try to login again to double check the new ID works
         logInAsUserInIDP();
         assertEquals(userId, getFederatedIdentity().getUserId());
-        assertLoggedInAccountManagement(consumerUser.getUsername(), consumerUser.getEmail());
+        appPage.assertCurrent();
     }
 
     private FederatedIdentityRepresentation getFederatedIdentity() {

@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import org.junit.After;
@@ -29,7 +28,9 @@ public abstract class AbstractNestedBrokerTest extends AbstractBaseBrokerTest {
 
     /** Logs in subconsumer realm via consumer IDP via provider IDP and updates account information */
     protected void logInAsUserInNestedIDPForFirstTime() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), nbc.subConsumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(nbc.subConsumerRealmName());
+
         waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + nbc.getSubConsumerIDPDisplayName());
         loginPage.clickSocial(nbc.getSubConsumerIDPDisplayName());

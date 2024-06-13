@@ -24,18 +24,22 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -53,6 +57,8 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -60,6 +66,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientScopeEvaluateResource {
 
     protected static final Logger logger = Logger.getLogger(ClientScopeEvaluateResource.class);
@@ -90,7 +97,7 @@ public class ClientScopeEvaluateResource {
      * @return
      */
     @Path("scope-mappings/{roleContainerId}")
-    public ClientScopeEvaluateScopeMappingsResource scopeMappings(@QueryParam("scope") String scopeParam, @PathParam("roleContainerId") String roleContainerId) {
+    public ClientScopeEvaluateScopeMappingsResource scopeMappings(@QueryParam("scope") String scopeParam, @Parameter(description = "either realm name OR client UUID") @PathParam("roleContainerId") String roleContainerId) {
         auth.clients().requireView(client);
 
         if (roleContainerId == null) {
@@ -102,7 +109,7 @@ public class ClientScopeEvaluateResource {
             throw new NotFoundException("Role Container not found");
         }
 
-        return new ClientScopeEvaluateScopeMappingsResource(roleContainer, auth, client, scopeParam, session);
+        return new ClientScopeEvaluateScopeMappingsResource(roleContainer, auth, client, scopeParam);
     }
 
 
@@ -116,6 +123,9 @@ public class ClientScopeEvaluateResource {
     @Path("protocol-mappers")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
+            description = "This means protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.")
     public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
@@ -156,6 +166,8 @@ public class ClientScopeEvaluateResource {
     @Path("generate-example-userinfo")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Create JSON with payload of example user info")
     public Map<String, Object> generateExampleUserinfo(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
@@ -167,7 +179,7 @@ public class ClientScopeEvaluateResource {
             AccessToken userInfo = new AccessToken();
             TokenManager tokenManager = new TokenManager();
 
-            tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+            userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
             return tokenManager.generateUserInfoClaims(userInfo, user);
         });
     }
@@ -181,6 +193,8 @@ public class ClientScopeEvaluateResource {
     @Path("generate-example-id-token")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Create JSON with payload of example id token")
     public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
@@ -205,6 +219,8 @@ public class ClientScopeEvaluateResource {
     @Path("generate-example-access-token")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Create JSON with payload of example access token")
     public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
@@ -233,7 +249,7 @@ public class ClientScopeEvaluateResource {
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
-            UserSessionModel userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
+            UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
                     clientConnection.getRemoteAddr(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             AuthenticationManager.setClientScopesInSession(authSession);

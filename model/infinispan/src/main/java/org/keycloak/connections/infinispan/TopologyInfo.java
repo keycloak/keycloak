@@ -17,13 +17,9 @@
 
 package org.keycloak.connections.infinispan;
 
-import java.net.InetSocketAddress;
-import java.security.SecureRandom;
-import java.util.Objects;
-import java.util.Optional;
-
 import org.infinispan.Cache;
 import org.infinispan.distribution.DistributionManager;
+import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.LocalModeAddress;
@@ -31,11 +27,13 @@ import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsAddress;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
-import org.jgroups.Event;
-import org.jgroups.JChannel;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.util.NameCache;
 import org.keycloak.Config;
+
+import java.net.InetSocketAddress;
+import java.security.SecureRandom;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,22 +53,28 @@ public class TopologyInfo {
     private final boolean isGeneratedNodeName;
 
 
-    public TopologyInfo(EmbeddedCacheManager cacheManager, Config.Scope config, boolean embedded) {
+    public TopologyInfo(EmbeddedCacheManager cacheManager, Config.Scope config, boolean embedded, String providerId) {
         String siteName;
         String nodeName;
         boolean isGeneratedNodeName = false;
 
+        if (System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME) != null) {
+            throw new IllegalArgumentException(
+                    String.format("System property %s is in use. Use --spi-connections-infinispan-%s-site-name config option instead",
+                            InfinispanConnectionProvider.JBOSS_SITE_NAME, providerId));
+        }
+
         if (!embedded) {
-            Transport transport = cacheManager.getTransport();
-            if (transport != null) {
-                nodeName = transport.getAddress().toString();
+            var addr = cacheManager.getAddress();
+            if (addr != null) {
+                nodeName = addr.toString();
                 siteName = cacheManager.getCacheManagerConfiguration().transport().siteId();
                 if (siteName == null) {
-                    siteName = System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME);
+                    siteName = config.get("siteName");
                 }
             } else {
                 nodeName = System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME);
-                siteName = System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME);
+                siteName = config.get("siteName");
             }
             if (nodeName == null || nodeName.equals("localhost")) {
                 isGeneratedNodeName = true;
@@ -84,7 +88,7 @@ public class TopologyInfo {
                 nodeName = null;
             }
 
-            siteName = config.get("siteName", System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME));
+            siteName = config.get("siteName");
             if (siteName != null && siteName.isEmpty()) {
                 siteName = null;
             }
@@ -128,7 +132,7 @@ public class TopologyInfo {
     /**
      * True if I am primary owner of the key in case of distributed caches. In case of local caches, always return true
      */
-    public boolean amIOwner(Cache cache, Object key) {
+    public boolean amIOwner(Cache<?, ?> cache, Object key) {
         Address myAddress = cache.getCacheManager().getAddress();
         Address objectOwnerAddress = getOwnerAddress(cache, key);
 
@@ -140,7 +144,7 @@ public class TopologyInfo {
     /**
      * Get route to be used as the identifier for sticky session. Return null if I am not able to find the appropriate route (or in case of local mode)
      */
-    public String getRouteName(Cache cache, Object key) {
+    public String getRouteName(Cache<?, ?> cache, Object key) {
         if (cache.getCacheConfiguration().clustering().cacheMode().isClustered() && isGeneratedNodeName) {
             logger.warn("Clustered configuration used, but node name is not properly set. Make sure to start server with jboss.node.name property identifying cluster node");
         }
@@ -163,11 +167,11 @@ public class TopologyInfo {
         // If no logical name exists, create one using physical address
         if (name == null) {
 
-            Transport transport = cache.getCacheManager().getTransport();
-            JChannel jgroupsChannel = ((JGroupsTransport) transport).getChannel();
-
-            IpAddress ipAddress = (IpAddress) jgroupsChannel.down(new Event(Event.GET_PHYSICAL_ADDRESS, jgroupsAddress));
-            // Physical address might be null if node is no longer a member of the cluster
+            var transport = GlobalComponentRegistry.componentOf(cache.getCacheManager(), Transport.class);
+            var channel = ((JGroupsTransport) transport).getChannel();
+            var ipAddress = (IpAddress) channel.getProtocolStack().getTransport().localPhysicalAddress();
+            // Physical address might be null if node is no longer a member of the cluster.
+            // This seems broken, it is returning the IP/PORT for JGroups!?
             InetSocketAddress socketAddress = (ipAddress != null) ? new InetSocketAddress(ipAddress.getIpAddress(), ipAddress.getPort()) : new InetSocketAddress(0);
             name = String.format("%s:%s", socketAddress.getHostString(), socketAddress.getPort());
 
@@ -178,21 +182,16 @@ public class TopologyInfo {
     }
 
 
-    private Address getOwnerAddress(Cache cache, Object key) {
+    private Address getOwnerAddress(Cache<?, ?> cache, Object key) {
         DistributionManager dist = cache.getAdvancedCache().getDistributionManager();
-        Address address = (dist != null) && !cache.getCacheConfiguration().clustering().cacheMode().isScattered() ?
-                dist.getCacheTopology().getDistribution(key).primary() :
-                cache.getCacheManager().getAddress();
-
-        return address;
+        return dist == null ? cache.getCacheManager().getAddress() : dist.getCacheTopology().getDistribution(key).primary();
     }
 
 
     // See org.wildfly.clustering.server.group.CacheGroup
     private static org.jgroups.Address toJGroupsAddress(Address address) {
         if ((address == null) || (address == LocalModeAddress.INSTANCE)) return null;
-        if (address instanceof JGroupsAddress) {
-            JGroupsAddress jgroupsAddress = (JGroupsAddress) address;
+        if (address instanceof JGroupsAddress jgroupsAddress) {
             return jgroupsAddress.getJGroupsAddress();
         }
         throw new IllegalArgumentException(address.toString());

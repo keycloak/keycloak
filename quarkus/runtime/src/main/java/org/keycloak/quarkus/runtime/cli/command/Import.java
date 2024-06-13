@@ -18,30 +18,40 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION_IMPORT;
-import static org.keycloak.exportimport.Strategy.IGNORE_EXISTING;
-import static org.keycloak.exportimport.Strategy.OVERWRITE_EXISTING;
 
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.configuration.mappers.ImportPropertyMappers;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
-@Command(name = "import",
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Command(name = Import.NAME,
         header = "Import data from a directory or a file.",
         description = "%nImport data from a directory or a file.")
 public final class Import extends AbstractExportImportCommand implements Runnable {
 
-    @Option(names = "--override",
-            arity = "1",
-            description = "Set if existing data should be skipped or overridden.",
-            paramLabel = "false",
-            defaultValue = "true")
-    boolean override;
+    public static final String NAME = "import";
 
     public Import() {
         super(ACTION_IMPORT);
     }
 
     @Override
-    protected void doBeforeRun() {
-        System.setProperty("keycloak.migration.strategy", override ? OVERWRITE_EXISTING.name() : IGNORE_EXISTING.name());
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory ->
+                optionCategory != OptionCategory.EXPORT).collect(Collectors.toList());
     }
+
+    @Override
+    public void validateConfig() {
+        ImportPropertyMappers.validateConfig();
+        super.validateConfig();
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
 }

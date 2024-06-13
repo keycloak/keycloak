@@ -16,12 +16,14 @@
  */
 package org.keycloak.userprofile.validator;
 
-import static org.keycloak.validate.Validators.notBlankValidator;
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
+import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
@@ -29,7 +31,6 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.Validators;
 
 /**
  * A validator that fails when the attribute is marked as read only and its value has changed.
@@ -51,24 +52,36 @@ public class ImmutableAttributeValidator implements SimpleValidator {
     public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
         UserProfileAttributeValidationContext ac = (UserProfileAttributeValidationContext) context;
         AttributeContext attributeContext = ac.getAttributeContext();
-
-        if (!isReadOnly(attributeContext)) {
-            return context;
-        }
-
         UserModel user = attributeContext.getUser();
 
         if (user == null) {
             return context;
         }
 
-        List<String> currentValue = user.getAttributeStream(inputHint).collect(Collectors.toList());
+        List<String> currentValue = user.getAttributeStream(inputHint).filter(Objects::nonNull).collect(Collectors.toList());
         List<String> values = (List<String>) input;
 
-        if (!CollectionUtil.collectionEquals(currentValue, values)) {
+        if (!collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
             if (currentValue.isEmpty() && !notBlankValidator().validate(values).isValid()) {
                 return context;
             }
+
+            RealmModel realm = ac.getSession().getContext().getRealm();
+
+            if (realm.isRegistrationEmailAsUsername()) {
+                String attributeName = attributeContext.getMetadata().getName();
+
+                if (UserModel.EMAIL.equals(attributeName)) {
+                    return context;
+                }
+
+                List<String> email = attributeContext.getAttributes().get(UserModel.EMAIL);
+
+                if (UserModel.USERNAME.equals(attributeName) && collectionEquals(values, email)) {
+                    return context;
+                }
+            }
+
             context.addError(new ValidationError(ID, inputHint, DEFAULT_ERROR_MESSAGE));
         }
 

@@ -17,9 +17,9 @@
 
 package org.keycloak.broker.oidc.mappers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,13 +27,24 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+/**
+ * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
+ */
 public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
+
+    private static final Logger LOG = Logger.getLogger(AbstractClaimToGroupMapper.class);
+
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = this.getGroup(realm, mapperModel);
+        GroupModel group = this.getGroup(session, realm, mapperModel);
+        if (group == null) {
+            return;
+        }
+
         if (applies(mapperModel, context)) {
             user.joinGroup(group);
         }
@@ -43,9 +54,12 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = this.getGroup(realm, mapperModel);
-        String groupId = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        GroupModel group = this.getGroup(session, realm, mapperModel);
+        if (group == null) {
+            return;
+        }
 
+        String groupId = group.getId();
         if (!context.hasMapperAssignedGroup(groupId)) {
             if (applies(mapperModel, context)) {
                 context.addMapperAssignedGroup(groupId);
@@ -67,22 +81,16 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     protected abstract boolean applies(final IdentityProviderMapperModel mapperModel,
             final BrokeredIdentityContext context);
 
-    /**
-     * Obtains the {@link GroupModel} corresponding the group configured in the specified
-     * {@link IdentityProviderMapperModel}.
-     * If the group doesn't exist, this method throws an {@link IdentityBrokerException}.
-     *
-     * @param realm a reference to the realm.
-     * @param mapperModel a reference to the {@link IdentityProviderMapperModel} containing the configured group.
-     * @return the {@link GroupModel}
-     * @throws IdentityBrokerException if the group doesn't exist.
-     */
-    private GroupModel getGroup(final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
-        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, mapperModel.getConfig().get(ConfigConstants.GROUP));
+    private GroupModel getGroup(KeycloakSession session, final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
+        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
 
         if (group == null) {
-            throw new IdentityBrokerException("Unable to find group: " + group.getId());
+            LOG.warnf("Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.", groupPath,
+                    mapperModel.getName(), realm.getName());
         }
+
         return group;
     }
+
 }

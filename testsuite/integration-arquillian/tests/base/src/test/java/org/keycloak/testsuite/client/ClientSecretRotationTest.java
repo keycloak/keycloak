@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,8 +47,6 @@ import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorF
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AbstractRestServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
@@ -76,7 +74,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Feature.CLIENT_SECRET_ROTATION)
 public class ClientSecretRotationTest extends AbstractRestServiceTest {
 

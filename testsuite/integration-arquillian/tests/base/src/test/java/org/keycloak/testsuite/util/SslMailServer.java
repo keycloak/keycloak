@@ -20,7 +20,7 @@ package org.keycloak.testsuite.util;
 import org.jboss.logging.Logger;
 import org.subethamail.smtp.server.SMTPServer;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -92,7 +92,7 @@ public class SslMailServer {
         }
     }
 
-    public static void startWithSsl(String privateKey){
+    public static void startWithSsl(String privateKey, boolean enableSsl) {
         InputStream keyStoreIS = null;
         try {
             keyStoreIS = new FileInputStream(privateKey);
@@ -142,10 +142,18 @@ public class SslMailServer {
 
         smtpServer.setHostName(HOST);
         smtpServer.setPort(Integer.parseInt(PORT_SSL));
-        smtpServer.setEnableTLS(true);
+        smtpServer.setEnableTLS(enableSsl);
         smtpServer.start();
 
         log.info("Started mail server (" + smtpServer.getHostName() + ":" + smtpServer.getPort() + ")");
+    }
+
+    public static void startWithSsl(String privateKey) {
+        startWithSsl(privateKey, true);
+    }
+
+    public static void startWithOpportunisticSsl(String privateKey) {
+        startWithSsl(privateKey, false);
     }
 
     public static Map<String, String> getServerConfiguration() {

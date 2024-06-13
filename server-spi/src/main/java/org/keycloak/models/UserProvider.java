@@ -24,9 +24,6 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -69,44 +66,6 @@ public interface UserProvider extends Provider,
      * @return userModel representing service account of the client
      */
     UserModel getServiceAccount(ClientModel client);
-
-    /**
-     * @deprecated Use {@link #getUsersStream(RealmModel, boolean) getUsersStream} instead.
-     */
-    @Deprecated
-    List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts);
-
-    /**
-     * Obtains the users associated with the specified realm.
-     *
-     * @param realm a reference to the realm being used for the search.
-     * @param includeServiceAccounts {@code true} if service accounts should be included in the result; {@code false} otherwise.
-     * @return a non-null {@link Stream} of users associated withe the realm.
-     */
-    default Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-        List<UserModel> value = this.getUsers(realm, includeServiceAccounts);
-        return value != null ? value.stream() : Stream.empty();
-    }
-
-    /**
-     * @deprecated Use {@link #getUsersStream(RealmModel, Integer, Integer, boolean) getUsersStream} instead.
-     */
-    @Deprecated
-    List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
-
-    /**
-     * Obtains the users associated with the specified realm.
-     *
-     * @param realm a reference to the realm being used for the search.
-     * @param firstResult first result to return. Ignored if negative, zero, or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
-     * @param includeServiceAccounts {@code true} if service accounts should be included in the result; {@code false} otherwise.
-     * @return a non-null {@link Stream} of users associated withe the realm.
-     */
-    default Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
-        List<UserModel> value = this.getUsers(realm, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults, includeServiceAccounts);
-        return value != null ? value.stream() : Stream.empty();
-    }
 
     /**
      * Adds a new user into the storage.
@@ -167,22 +126,13 @@ public interface UserProvider extends Provider,
     UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId);
 
     /**
-     * @deprecated Use {@link #getConsentsStream(RealmModel, String) getConsentsStream} instead.
-     */
-    @Deprecated
-    List<UserConsentModel> getConsents(RealmModel realm, String userId);
-
-    /**
      * Obtains the consents associated with the user identified by the specified {@code userId}.
      *
      * @param realm a reference to the realm.
      * @param userId the user identifier.
      * @return a non-null {@link Stream} of consents associated with the user.
      */
-    default Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId) {
-        List<UserConsentModel> value = this.getConsents(realm, userId);
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId);
 
     /**
      * Update client scopes in the stored user consent
@@ -242,22 +192,13 @@ public interface UserProvider extends Provider,
     void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel);
 
     /**
-     * @deprecated Use {@link #getFederatedIdentitiesStream(RealmModel, UserModel) getFederatedIdentitiesStream} instead.
-     */
-    @Deprecated
-    Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm);
-
-    /**
      * Obtains the federated identities of the specified user.
      *
      * @param realm a reference to the realm.
      * @param user the reference to the user.
      * @return a non-null {@link Stream} of federated identities associated with the user.
      */
-    default Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user) {
-        Set<FederatedIdentityModel> value = this.getFederatedIdentities(user, realm);
-        return value != null ? value.stream() : Stream.empty();
-    }
+    Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user);
 
     /**
      * Returns details of the association between the user and the socialProvider.
@@ -267,14 +208,7 @@ public interface UserProvider extends Provider,
      * @param socialProvider the id of the identity provider
      * @return federatedIdentityModel or {@code null} if no association exists
      */
-    default FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
-        return getFederatedIdentity(user, socialProvider, realm);
-    }
-    /**
-     * @deprecated Use {@link #getFederatedIdentity(RealmModel, UserModel, String) getFederatedIdentity} instead.
-     */
-    @Deprecated
-    FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm);
+    FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
 
     /**
      * Returns a userModel that corresponds to the given socialLink.
@@ -285,14 +219,7 @@ public interface UserProvider extends Provider,
      *
      * @throws IllegalStateException when there are more users for the given socialLink
      */
-    default UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink) {
-        return getUserByFederatedIdentity(socialLink, realm);
-    }
-    /**
-     * @deprecated Use {@link #getUserByFederatedIdentity(RealmModel, FederatedIdentityModel) getUserByFederatedIdentity} instead.
-     */
-    @Deprecated
-    UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm);
+    UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink);
 
     /* PRE REMOVE methods - for cleaning user related properties when some other entity is removed */
 
@@ -370,65 +297,4 @@ public interface UserProvider extends Provider,
      */
     void preRemove(RealmModel realm, ComponentModel component);
 
-    void close();
-
-    /**
-     * The {@link UserProvider.Streams} interface makes all collection-based methods in {@link UserProvider} default by
-     * providing implementations that delegate to the {@link Stream}-based variants instead of the other way around.
-     * <p/>
-     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
-     * from the potential memory and performance optimizations of that approach.
-     */
-    interface Streams extends UserProvider, UserQueryProvider.Streams, UserLookupProvider.Streams {
-
-        @Override
-        FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
-
-        @Override
-        default FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
-            return getFederatedIdentity(realm, user, socialProvider);
-        }
-
-        @Override
-        UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink);
-
-        @Override
-        default UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm) {
-            return getUserByFederatedIdentity(realm, socialLink);
-        }
-        
-        @Override
-        default Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
-            return this.getFederatedIdentitiesStream(realm, user).collect(Collectors.toSet());
-        }
-
-        @Override
-        Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user);
-
-        @Override
-        default List<UserConsentModel> getConsents(RealmModel realm, String userId) {
-            return this.getConsentsStream(realm, userId).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId);
-
-        @Override
-        default List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
-            return this.getUsersStream(realm, includeServiceAccounts).collect(Collectors.toList());
-        }
-
-        @Override
-        default Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-            return getUsersStream(realm, null, null, includeServiceAccounts);
-        }
-
-        @Override
-        default List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
-            return this.getUsersStream(realm, firstResult, maxResults, includeServiceAccounts).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts);
-    }
 }

@@ -19,7 +19,6 @@
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.CibaConfig;
@@ -30,9 +29,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorResponseException;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import java.io.InputStream;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.List;
 
@@ -70,10 +68,8 @@ public class BackchannelAuthenticationEndpointRequestParserProcessor {
                     throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
                 }
 
-                try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUri)) {
-                    String retrievedRequest = StreamUtil.readString(is);
-                    new BackchannelAuthenticationEndpointSignedRequestParser(session, retrievedRequest, client, config).parseRequest(request);
-                }
+                String retrievedRequest = session.getProvider(HttpClientProvider.class).getString(requestUri);
+                new BackchannelAuthenticationEndpointSignedRequestParser(session, retrievedRequest, client, config).parseRequest(request);
             }
 
             return request;

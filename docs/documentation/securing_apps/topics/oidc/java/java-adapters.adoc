@@ -1,0 +1,9 @@
+=== {project_name} Java adapters
+
+[WARNING]
+====
+{project_name} Java Adapters were removed from {project_name} codebase and they are not supported anymore.
+
+For more details about how to integrate {project_name} with Java applications, consider looking at the
+{quickstartRepo_link}[Keycloak Quickstart GitHub Repository].
+====

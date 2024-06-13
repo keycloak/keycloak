@@ -1,0 +1,105 @@
+name: CodeQL
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+      - quarkus-next
+  pull_request:
+     branches: [main]
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: codeql-analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  conditional:
+    name: Check conditional workflows and jobs
+    runs-on: ubuntu-latest
+    outputs:
+      java: ${{ steps.conditional.outputs.codeql-java }}
+      themes: ${{ steps.conditional.outputs.codeql-themes }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  java:
+    name: CodeQL Java
+    needs: conditional
+    runs-on: ubuntu-latest
+    if: needs.conditional.outputs.java == 'true'
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          wait-for-processing: true
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+
+  themes:
+    name: CodeQL Themes
+    needs: conditional
+    runs-on: ubuntu-latest
+    if: needs.conditional.outputs.themes == 'true'
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
+        with:
+          languages: javascript
+          source-root: themes/src/main/
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          wait-for-processing: true
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+
+  check:
+    name: Status Check - CodeQL
+    if: always()
+    needs:
+      - conditional
+      - java
+      - themes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/status-check
+        with:
+          jobs: ${{ toJSON(needs) }}

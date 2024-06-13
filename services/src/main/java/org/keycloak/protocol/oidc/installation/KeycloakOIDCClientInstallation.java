@@ -35,8 +35,8 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Iterator;

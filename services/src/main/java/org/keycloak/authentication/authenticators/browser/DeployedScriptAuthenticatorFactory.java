@@ -23,9 +23,11 @@ import java.util.Map;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.common.Profile;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 
@@ -78,14 +80,16 @@ public final class DeployedScriptAuthenticatorFactory extends ScriptBasedAuthent
     }
 
     @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
-    }
-
-    @Override
     public void init(Config.Scope config) {
         model = createModel(metadata);
         configProperties = super.getConfigProperties();
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        KeycloakModelUtils.runJobInTransaction(factory, session -> {
+            new DeployedConfigurationsManager(session).registerDeployedAuthenticatorConfig(model);
+        });
     }
 
     @Override

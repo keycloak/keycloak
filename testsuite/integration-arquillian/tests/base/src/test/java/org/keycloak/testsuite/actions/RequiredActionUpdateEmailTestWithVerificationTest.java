@@ -19,25 +19,36 @@ package org.keycloak.testsuite.actions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
-import javax.mail.Address;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
+import java.util.List;
+import java.util.UUID;
+
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.WaitUtils;
 
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -59,33 +70,83 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		testRealm.setVerifyEmail(true);
 	}
 
-	@Test
-	public void updateEmail() throws IOException, MessagingException {
+	@Override
+	protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions) throws Exception {
+		String redirectUri = OAuthClient.APP_ROOT + "/auth?nonce=" + UUID.randomUUID();
+		oauth.redirectUri(redirectUri);
 		loginPage.open();
 
 		loginPage.login("test-user@localhost", "password");
 
-		updateEmailPage.assertCurrent();
-		updateEmailPage.changeEmail("new@localhost");
+                updateEmailPage.assertCurrent();
+                if (!logoutOtherSessions) {
+                        updateEmailPage.uncheckLogoutSessions();
+                }
+                Assert.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
+                updateEmailPage.changeEmail(newEmail);
 
-		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail).assertEvent();
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		assertEquals("test-user@localhost", user.getEmail());
 		assertTrue(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 
-		driver.navigate().to(fetchEmailConfirmationLink("new@localhost"));
+		driver.navigate().to(fetchEmailConfirmationLink(newEmail));
 
 		infoPage.assertCurrent();
 		assertEquals("The account email has been successfully updated to new@localhost.", infoPage.getInfo());
+		infoPage.clickBackToApplicationLink();
+		WaitUtils.waitForPageToLoad();
+		assertEquals(redirectUri, driver.getCurrentUrl());
+	}
+
+	private void updateEmail(boolean logoutOtherSessions) throws Exception {
+		// login using another session
+		configureRequiredActionsToUser("test-user@localhost");
+		UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+		OAuthClient oauth2 = new OAuthClient();
+		oauth2.init(driver2);
+		oauth2.doLogin("test-user@localhost", "password");
+		EventRepresentation event1 = events.expectLogin().assertEvent();
+		assertEquals(1, testUser.getUserSessions().size());
+
+		// add action and change email
+		configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
+		changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions);
+
+		if (logoutOtherSessions) {
+			events.expectLogout(event1.getSessionId())
+					.detail(Details.REDIRECT_URI,  getAuthServerContextRoot() + "/auth/realms/test/account/")
+					.detail(Details.LOGOUT_TRIGGERED_BY_ACTION_TOKEN, UpdateEmailActionToken.TOKEN_TYPE)
+					.assertEvent();
+		}
 
 		events.expect(EventType.UPDATE_EMAIL)
 				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-				.detail(Details.UPDATED_EMAIL, "new@localhost");
+				.detail(Details.UPDATED_EMAIL, "new@localhost")
+				.assertEvent();
 
-		user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+		List<UserSessionRepresentation> sessions = testUser.getUserSessions();
+		if (logoutOtherSessions) {
+			assertEquals(0, sessions.size());
+		} else {
+			assertEquals(1, sessions.size());
+			assertEquals(event1.getSessionId(), sessions.iterator().next().getId());
+		}
+
+		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		assertEquals("new@localhost", user.getEmail());
 		assertFalse(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 	}
+
+        @Test
+        public void updateEmailLogoutSessionsChecked() throws Exception {
+                updateEmail(true);
+        }
+
+        @Test
+        public void updateEmailLogoutSessionsNotChecked() throws Exception {
+                updateEmail(false);
+        }
 
 	@Test
 	public void confirmEmailUpdateAfterThirdPartyEmailUpdate() throws MessagingException, IOException {

@@ -1,0 +1,158 @@
+[[_service_client_api]]
+= Authorization client java API
+
+Depending on your requirements, a resource server should be able to manage resources remotely or even check for permissions programmatically.
+If you are using Java, you can access the {project_name} Authorization Services using the Authorization Client API.
+
+It is targeted for resource servers that want to access the different endpoints provided by the server such as the Token Endpoint, Resource, and Permission management endpoints.
+
+== Maven dependency
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-authz-client</artifactId>
+        <version>${KEYCLOAK_VERSION}</version>
+    </dependency>
+</dependencies>
+```
+
+== Configuration
+
+The client configuration is defined in a ``keycloak.json`` file as follows:
+
+[source,json,subs="attributes+"]
+----
+{
+  "realm": "hello-world-authz",
+  "auth-server-url" : "http://localhost:8080{kc_base_path}",
+  "resource" : "hello-world-authz-service",
+  "credentials": {
+    "secret": "secret"
+  }
+}
+----
+
+* *realm* (required)
++
+The name of the realm.
+
+* *auth-server-url* (required)
++
+The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually in the form https://host:port{kc_base_path}.
+
+* *resource* (required)
++
+The client-id of the application. Each application has a client-id that is used to identify the application.
+
+* *credentials* (required)
++
+Specifies the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type.
+
+The configuration file is usually located in your application's classpath, the default location from where the client is going to try to find a ```keycloak.json``` file.
+
+== Creating the authorization client
+
+Considering you have a ```keycloak.json``` file in your classpath, you can create a new ```AuthzClient``` instance as follows:
+
+```java
+    // create a new instance based on the configuration defined in a keycloak.json located in your classpath
+    AuthzClient authzClient = AuthzClient.create();
+```
+
+== Obtaining user entitlements
+
+Here is an example illustrating how to obtain user entitlements:
+
+```java
+// create a new instance based on the configuration defined in keycloak.json
+AuthzClient authzClient = AuthzClient.create();
+
+// create an authorization request
+AuthorizationRequest request = new AuthorizationRequest();
+
+// send the entitlement request to the server in order to
+// obtain an RPT with all permissions granted to the user
+AuthorizationResponse response = authzClient.authorization("alice", "alice").authorize(request);
+String rpt = response.getToken();
+
+System.out.println("You got an RPT: " + rpt);
+
+// now you can use the RPT to access protected resources on the resource server
+```
+
+Here is an example illustrating how to obtain user entitlements for a set of one or more resources:
+
+```java
+// create a new instance based on the configuration defined in keycloak.json
+AuthzClient authzClient = AuthzClient.create();
+
+// create an authorization request
+AuthorizationRequest request = new AuthorizationRequest();
+
+// add permissions to the request based on the resources and scopes you want to check access
+request.addPermission("Default Resource");
+
+// send the entitlement request to the server in order to
+// obtain an RPT with permissions for a single resource
+AuthorizationResponse response = authzClient.authorization("alice", "alice").authorize(request);
+String rpt = response.getToken();
+
+System.out.println("You got an RPT: " + rpt);
+
+// now you can use the RPT to access protected resources on the resource server
+```
+
+== Creating a resource using the protection API
+
+```java
+// create a new instance based on the configuration defined in keycloak.json
+AuthzClient authzClient = AuthzClient.create();
+
+// create a new resource representation with the information we want
+ResourceRepresentation newResource = new ResourceRepresentation();
+
+newResource.setName("New Resource");
+newResource.setType("urn:hello-world-authz:resources:example");
+
+newResource.addScope(new ScopeRepresentation("urn:hello-world-authz:scopes:view"));
+
+ProtectedResource resourceClient = authzClient.protection().resource();
+ResourceRepresentation existingResource = resourceClient.findByName(newResource.getName());
+
+if (existingResource != null) {
+    resourceClient.delete(existingResource.getId());
+}
+
+// create the resource on the server
+ResourceRepresentation response = resourceClient.create(newResource);
+String resourceId = response.getId();
+
+// query the resource using its newly generated id
+ResourceRepresentation resource = resourceClient.findById(resourceId);
+
+System.out.println(resource);
+```
+
+== Introspecting an RPT
+
+```java
+// create a new instance based on the configuration defined in keycloak.json
+AuthzClient authzClient = AuthzClient.create();
+
+// send the authorization request to the server in order to
+// obtain an RPT with all permissions granted to the user
+AuthorizationResponse response = authzClient.authorization("alice", "alice").authorize();
+String rpt = response.getToken();
+
+// introspect the token
+TokenIntrospectionResponse requestingPartyToken = authzClient.protection().introspectRequestingPartyToken(rpt);
+
+System.out.println("Token status is: " + requestingPartyToken.getActive());
+System.out.println("Permissions granted by the server: ");
+
+for (Permission granted : requestingPartyToken.getPermissions()) {
+    System.out.println(granted);
+}
+```

@@ -1,6 +1,0 @@
-set ylabel "kB/S"
-set title "Network Usage"
-plot for [i=7:8:1] \
-    datafile using 3:i \
-    title columnheader(i) \
-    with lines

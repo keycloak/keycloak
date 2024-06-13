@@ -19,7 +19,7 @@ package org.keycloak.authentication;
 
 import org.keycloak.models.utils.FormMessage;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.List;
 
 /**
@@ -41,7 +41,7 @@ public interface ValidationContext extends FormContext {
     void error(String error);
 
     /**
-     * Mark this validation as sucessful
+     * Mark this validation as successful
      *
      */
     void success();

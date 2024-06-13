@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -29,10 +28,13 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -45,6 +47,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint.TokenExchangeSamlProtocol;
@@ -57,10 +60,11 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -70,18 +74,22 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Default token exchange implementation
@@ -112,7 +120,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     public Response exchange(TokenExchangeContext context) {
         this.formParams = context.getFormParams();
         this.session = context.getSession();
-        this.cors = (Cors)context.getCors();
+        this.cors = context.getCors();
         this.realm = context.getRealm();
         this.client = context.getClient();
         this.event = context.getEvent();
@@ -223,7 +231,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 disallowOnHolderOfTokenMismatch = false;
             }
 
-            tokenSession = session.sessions().createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+            tokenSession = new UserSessionManager(session).createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
             if (tokenUser != null) {
                 tokenSession.setNote(IMPERSONATOR_ID.toString(), tokenUser.getId());
                 tokenSession.setNote(IMPERSONATOR_USERNAME.toString(), tokenUser.getUsername());
@@ -271,7 +279,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
         Response response = ((ExchangeTokenToIdentityProviderToken)provider).exchangeFromToken(session.getContext().getUri(), event, client, targetUserSession, targetUser, formParams);
-        return cors.builder(Response.fromResponse(response)).build();
+        return cors.add(Response.fromResponse(response));
 
     }
 
@@ -332,13 +340,42 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+        if (token != null && token.getScope() != null && scope == null) {
+            scope = token.getScope();
 
-        switch (requestedTokenType) {
-            case OAuth2Constants.ACCESS_TOKEN_TYPE:
-            case OAuth2Constants.REFRESH_TOKEN_TYPE:
-                return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
-            case OAuth2Constants.SAML2_TOKEN_TYPE:
-                return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+            Set<String> targetClientScopes = new HashSet<String>();
+            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
+            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
+            //from return scope remove scopes that are not default or optional scopes for targetClient
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+        } else if (token != null && token.getScope() != null) {
+            String subjectTokenScopes = token.getScope();
+            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).map(s -> s.split(":")[0]).collect(Collectors.toSet());
+                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc.split(":")[0])).collect(Collectors.joining(" "));
+            } else {
+                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).collect(Collectors.toSet());
+                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc)).collect(Collectors.joining(" "));
+            }
+
+            Set<String> targetClientScopes = new HashSet<String>();
+            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
+            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
+            //from return scope remove scopes that are not default or optional scopes for targetClient
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+        }
+
+        try {
+            session.getContext().setClient(targetClient);
+            switch (requestedTokenType) {
+                case OAuth2Constants.ACCESS_TOKEN_TYPE:
+                case OAuth2Constants.REFRESH_TOKEN_TYPE:
+                    return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+                case OAuth2Constants.SAML2_TOKEN_TYPE:
+                    return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
+            }
+        } finally {
+            session.getContext().setClient(client);
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
@@ -370,6 +407,13 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
+        if (targetUserSession == null) {
+            // if no session is associated with a subject_token, a stateless session is created to only allow building a token to the audience
+            targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
+                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+
+        }
+
         event.session(targetUserSession);
 
         AuthenticationManager.setClientScopesInSession(authSession);
@@ -385,6 +429,11 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             responseBuilder.getAccessToken().addAudience(audience);
         }
 
+        if (formParams.containsKey(OAuth2Constants.REQUESTED_SUBJECT)) {
+            // if "impersonation", store the client that originated the impersonated user session
+            targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
+        }
+
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
             && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
@@ -397,20 +446,19 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         AccessTokenResponse res = responseBuilder.build();
-        event.detail(Details.AUDIENCE, targetClient.getClientId());
+        event.detail(Details.AUDIENCE, targetClient.getClientId())
+            .user(targetUser);
 
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
-    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  ClientModel targetClient, String audience, String scope) {
+    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, ClientModel targetClient) {
         // Create authSession with target SAML 2.0 client and authenticated user
         LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
-        SamlService samlService = (SamlService) factory.createProtocolEndpoint(realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(samlService);
+        SamlService samlService = (SamlService) factory.createProtocolEndpoint(session, event);
         AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realm,
                 targetClient, null);
         if (authSession == null) {
@@ -448,10 +496,12 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         res.setExpiresIn(assertionLifespan <= 0 ? realm.getAccessCodeLifespan() : assertionLifespan);
         res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
-        event.detail(Details.AUDIENCE, targetClient.getClientId());
+        event.detail(Details.AUDIENCE, targetClient.getClientId())
+            .user(targetUser);
+
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     protected Response exchangeExternalToken(String issuer, String subjectToken) {
@@ -490,12 +540,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         UserModel user = importUserFromExternalIdentity(context);
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
         externalIdp.get().exchangeExternalComplete(userSession, context, formParams);
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
         userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
+
+        context.addSessionNotesToUserSession(userSession);
 
         return exchangeClientToClient(user, userSession, null, false);
     }
@@ -504,11 +556,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         IdentityProviderModel identityProviderConfig = context.getIdpConfig();
 
         String providerId = identityProviderConfig.getAlias();
-
-        // do we need this?
-        //AuthenticationSessionModel authenticationSession = clientCode.getClientSession();
-        //context.setAuthenticationSession(authenticationSession);
-        //session.getContext().setClient(authenticationSession.getClient());
 
         context.getIdp().preprocessFederatedIdentity(session, realm, context);
         Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias())
@@ -519,12 +566,15 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             target.preprocessFederatedIdentity(session, realm, mapper, context);
         }
 
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
-                context.getUsername(), context.getToken());
+        UserModel user = null;
+        if (! context.getIdpConfig().isTransientUsers()) {
+            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
+                    context.getUsername(), context.getToken());
 
-        UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+            user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+        }
 
-        if (user == null) {
+        if (user == null || context.getIdpConfig().isTransientUsers()) {
 
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
 
@@ -554,17 +604,22 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
             }
 
-
-            user = session.users().addUser(realm, username);
+            if (context.getIdpConfig().isTransientUsers()) {
+                user = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
+            } else {
+                user = session.users().addUser(realm, username);
+            }
             user.setEnabled(true);
             user.setEmail(context.getEmail());
             user.setFirstName(context.getFirstName());
             user.setLastName(context.getLastName());
 
 
-            federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                    context.getUsername(), context.getToken());
-            session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            if (! context.getIdpConfig().isTransientUsers()) {
+                FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                        context.getModelUsername(), context.getToken());
+                session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            }
 
             context.getIdp().importNewUser(session, realm, user, context);
 
@@ -577,6 +632,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
                 user.setEmailVerified(true);
             }
+
+            event.clone()
+                    .event(EventType.REGISTER)
+                    .user(user.getId())
+                    .detail(Details.REGISTER_METHOD, "token-exchange")
+                    .detail(Details.EMAIL, user.getEmail())
+                    .detail(Details.IDENTITY_PROVIDER, providerId)
+                    .success();
         } else {
             if (!user.isEnabled()) {
                 event.error(Errors.USER_DISABLED);
@@ -596,6 +659,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, user, mapper, context, target);
             }
         }
+
+        // make sure user attributes are updated based on attributes set to the context
+        for (Map.Entry<String, List<String>> attr : context.getAttributes().entrySet()) {
+            if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
+                user.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+
         return user;
     }
 

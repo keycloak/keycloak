@@ -1,0 +1,17 @@
+.keycloak__realm_selector__dropdown .pf-v5-c-menu__list .pf-m-fill {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.keycloak__realm_selector__dropdown .pf-v5-c-menu__list {
+  min-width: 0;
+  width: 15.125rem;
+
+}
+
+.pf-v5-c-nav__item.keycloak__page_nav__nav_item__realm-selector {
+  margin-top: var(--pf-v5-c-nav__link--PaddingTop);
+  padding-right: var(--pf-v5-c-nav__link--PaddingRight);
+  margin-bottom: var(--pf-v5-c-nav__link--PaddingBottom);
+  padding-left: var(--pf-v5-c-nav__link--PaddingLeft);
+}

@@ -26,8 +26,6 @@ import org.jboss.logging.Logger;
  */
 public abstract class AbstractKeycloakTransaction implements KeycloakTransaction {
 
-    public static final Logger logger = Logger.getLogger(AbstractKeycloakTransaction.class);
-
     protected TransactionState state = TransactionState.NOT_STARTED;
 
     @Override

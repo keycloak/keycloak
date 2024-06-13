@@ -17,30 +17,41 @@
 
 package org.keycloak.protocol.saml.profile.util;
 
+import org.apache.http.Header;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
+import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.Name;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPConnection;
-import javax.xml.soap.SOAPConnectionFactory;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPFault;
-import javax.xml.soap.SOAPHeaderElement;
-import javax.xml.soap.SOAPMessage;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.Name;
+import jakarta.xml.soap.SOAPBody;
+import jakarta.xml.soap.SOAPConnection;
+import jakarta.xml.soap.SOAPConnectionFactory;
+import jakarta.xml.soap.SOAPEnvelope;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPFault;
+import jakarta.xml.soap.MimeHeader;
+import jakarta.xml.soap.MimeHeaders;
+import jakarta.xml.soap.SOAPHeaderElement;
+import jakarta.xml.soap.SOAPMessage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Iterator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -74,7 +85,7 @@ public final class Soap {
     }
 
     /**
-     * <p>Returns Docuemnt based on the given <code>inputStream</code> which must contain a valid SOAP message.
+     * <p>Returns Document based on the given <code>inputStream</code> which must contain a valid SOAP message.
      *
      * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
      *
@@ -92,7 +103,7 @@ public final class Soap {
     }
 
     /**
-     * <p>Returns Docuemnt based on the given SOAP message.
+     * <p>Returns Document based on the given SOAP message.
      *
      * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
      * @param soapMessage a SOAPMessage from which to extract the body
@@ -101,13 +112,27 @@ public final class Soap {
     public static Document extractSoapMessage(SOAPMessage soapMessage) {
         try {
             SOAPBody soapBody = soapMessage.getSOAPBody();
-            Node authnRequestNode = soapBody.getFirstChild();
+            Node authnRequestNode = getFirstChild(soapBody);
             Document document = DocumentUtil.createDocument();
             document.appendChild(document.importNode(authnRequestNode, true));
             return document;
         } catch (Exception e) {
             throw new RuntimeException("Error creating fault message.", e);
         }
+    }
+
+    /**
+     * Get the first direct child that is an XML element.
+     * In case of pretty-printed XML (with newlines and spaces), this method skips non-element objects (e.g. text)
+     * to really fetch the next XML tag.
+     */
+    public static Node getFirstChild(Node parent) {
+        Node n = parent.getFirstChild();
+        while (n != null && !(n instanceof Element)) {
+            n = n.getNextSibling();
+        }
+        if (n == null) return null;
+        return n;
     }
 
     public static class SoapMessageBuilder {
@@ -151,6 +176,11 @@ public final class Soap {
             }
         }
 
+        public SoapMessageBuilder addMimeHeader(String name, String value) {
+            this.message.getMimeHeaders().addHeader(name, value);
+            return this;
+        }
+
         public Name createName(String name) {
             try {
                 return this.envelope.createName(name);
@@ -184,7 +214,7 @@ public final class Soap {
         }
 
         /**
-         * Build method for testing, generates an appache httpcomponents HttpPost
+         * Build method for testing, generates an apache httpcomponents HttpPost
          * @param uri the URI to which to POST the soap message
          * @return an HttpPost containing the SOAP message
          */
@@ -199,7 +229,9 @@ public final class Soap {
          * @param url a SOAP endpoint url
          * @return the SOAPMessage returned by the contacted SOAP server
          * @throws SOAPException Raised if there's a problem performing the SOAP call
+         * @deprecated Use {@link #call(String,KeycloakSession)} to use SimpleHttp configuration
          */
+        @Deprecated
         public SOAPMessage call(String url) throws SOAPException {
             SOAPMessage response;
             SOAPConnection soapConnection = null;
@@ -213,6 +245,75 @@ public final class Soap {
                 }
             }
             return response;
+        }
+
+        /**
+         * Performs a synchronous call, sending the current message to the given url.
+         * SimpleHttp is retrieved using the session parameter.
+         * @param url The SOAP endpoint URL to connect
+         * @param session The session to use to locate the SimpleHttp sender
+         * @return the SOAPMessage returned by the contacted SOAP server
+         * @throws SOAPException Raised if there's a problem performing the SOAP call
+         */
+        public SOAPMessage call(String url, KeycloakSession session) throws SOAPException {
+            // https://github.com/eclipse-ee4j/metro-saaj/blob/master/saaj-ri/src/main/java/com/sun/xml/messaging/saaj/client/p2p/HttpSOAPConnection.java
+            // save changes of the message, this adds content-type and content-length headers
+            if (message.saveRequired()) {
+                message.saveChanges();
+            }
+            // use SimpleHttp from the session
+            SimpleHttp simpleHttp = SimpleHttp.doPost(url, session);
+            // add all the headers as HTTP headers except the ones needed for the HttpEntity
+            Iterator<MimeHeader> reqHeaders = message.getMimeHeaders().getAllHeaders();
+            ContentType contentType = null;
+            int length = -1;
+            boolean hasCacheControl = false;
+            while (reqHeaders.hasNext()) {
+                MimeHeader mimeHeader = reqHeaders.next();
+                if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(mimeHeader.getName())) {
+                    contentType = ContentType.parse(mimeHeader.getValue());
+                } else if (HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(mimeHeader.getName())) {
+                    length = Integer.parseInt(mimeHeader.getValue());
+                } else {
+                    if (HttpHeaders.CACHE_CONTROL.equalsIgnoreCase(mimeHeader.getName())) {
+                        hasCacheControl = true;
+                    }
+                    String currentValue = simpleHttp.getHeader(mimeHeader.getName());
+                    simpleHttp.header(mimeHeader.getName(), currentValue == null
+                            ? mimeHeader.getValue() : currentValue + "," + mimeHeader.getValue());
+                }
+            }
+            if (!hasCacheControl) {
+                // set no cache if cache-control was not specified
+                simpleHttp.header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store");
+            }
+            // create the message and send to the parameter URL
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                message.writeTo(out);
+                simpleHttp.entity(new ByteArrayEntity(out.toByteArray(), 0, length, contentType));
+                try (SimpleHttp.Response res = simpleHttp.asResponse()) {
+                    // HTTP_INTERNAL_ERROR (500) and HTTP_BAD_REQUEST (400) should be processed as SOAP faults
+                    if (res.getStatus() == HttpStatus.SC_INTERNAL_SERVER_ERROR
+                            || res.getStatus() == HttpStatus.SC_BAD_REQUEST
+                            || res.getStatus() == HttpStatus.SC_OK) {
+                        MimeHeaders resHeaders = new MimeHeaders();
+                        Header[] headers = res.getAllHeaders();
+                        for (Header header : headers) {
+                            resHeaders.addHeader(header.getName(), header.getValue());
+                        }
+                        String responseString = res.asString();
+                        if (responseString == null || responseString.isEmpty()) {
+                            // return null if no reply message
+                            return null;
+                        }
+                        return MessageFactory.newInstance().createMessage(resHeaders, new ByteArrayInputStream(responseString.getBytes(res.getContentTypeCharset())));
+                    } else {
+                        throw new SOAPException("Bad response (" + res.getStatus() + ") :" + res.asString());
+                    }
+                }
+            } catch (IOException e) {
+                throw new SOAPException(e);
+            }
         }
 
         public SOAPMessage getMessage() {

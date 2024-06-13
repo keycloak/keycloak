@@ -19,48 +19,39 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.configuration.mappers.ExportPropertyMappers;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
-@Command(name = "export",
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Command(name = Export.NAME,
         header = "Export data from realms to a file or directory.",
         description = "%nExport data from realms to a file or directory.")
 public final class Export extends AbstractExportImportCommand implements Runnable {
 
-    @Option(names = "--users",
-            arity = "1",
-            description = "Set how users should be exported. Possible values are: skip, realm_file, same_file, different_files.",
-            paramLabel = "<strategy>",
-            defaultValue = "different_files")
-    String users;
-
-    @Option(names = "--users-per-file",
-            arity = "1",
-            description = "Set the number of users per file. It’s used only if --users=different_files.",
-            paramLabel = "<number>",
-            defaultValue = "50")
-    Integer usersPerFile;
-
-    @Option(names = "--realm",
-            arity = "1",
-            description = "Set the name of the realm to export. If not set, all realms are going to be exported.",
-            paramLabel = "<realm>")
-    String realm;
+    public static final String NAME = "export";
 
     public Export() {
         super(ACTION_EXPORT);
     }
 
     @Override
-    protected void doBeforeRun() {
-        if (realm != null) {
-            System.setProperty("keycloak.migration.realmName", realm);
-        }
-
-        System.setProperty("keycloak.migration.usersExportStrategy", users.toUpperCase());
-
-        if (usersPerFile != null) {
-            System.setProperty("keycloak.migration.usersPerFile", usersPerFile.toString());
-        }
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory ->
+                optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
     }
+
+    @Override
+    public void validateConfig() {
+        ExportPropertyMappers.validateConfig();
+        super.validateConfig();
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
 }

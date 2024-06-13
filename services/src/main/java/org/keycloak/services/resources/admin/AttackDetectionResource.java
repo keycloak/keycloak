@@ -16,8 +16,11 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
@@ -27,16 +30,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,25 +50,26 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class AttackDetectionResource {
     protected static final Logger logger = Logger.getLogger(AttackDetectionResource.class);
-    protected AdminPermissionEvaluator auth;
-    protected RealmModel realm;
-    private AdminEventBuilder adminEvent;
+    protected final AdminPermissionEvaluator auth;
+    protected final RealmModel realm;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected ClientConnection connection;
+    protected final ClientConnection connection;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    public AttackDetectionResource(AdminPermissionEvaluator auth, RealmModel realm, AdminEventBuilder adminEvent) {
+    public AttackDetectionResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
+        this.connection = session.getContext().getConnection();
         this.adminEvent = adminEvent.realm(realm).resource(ResourceType.USER_LOGIN_FAILURE);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     /**
@@ -78,6 +82,8 @@ public class AttackDetectionResource {
     @Path("brute-force/users/{userId}")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ATTACK_DETECTION)
+    @Operation( summary = "Get status of a username in brute force detection")
     public Map<String, Object> bruteForceUserStatus(@PathParam("userId") String userId) {
         UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
@@ -89,28 +95,44 @@ public class AttackDetectionResource {
         Map<String, Object> data = new HashMap<>();
         data.put("disabled", false);
         data.put("numFailures", 0);
+        data.put("numTemporaryLockouts", 0);
         data.put("lastFailure", 0);
         data.put("lastIPFailure", "n/a");
+        data.put("failedLoginNotBefore", 0);
         if (!realm.isBruteForceProtected()) return data;
 
 
         UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, userId);
         if (model == null) return data;
 
-        boolean disabled;
-        if (user == null) {
-            disabled = Time.currentTime() < model.getFailedLoginNotBefore();
-        } else {
-            disabled = session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user);
-        }
+        boolean disabled = isUserDisabled(model, user);
         if (disabled) {
             data.put("disabled", true);
+            if(session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                data.put("failedLoginNotBefore", model.getFailedLoginNotBefore());
+            } else {
+                data.put("failedLoginNotBefore", Long.MAX_VALUE);
+            }
         }
 
         data.put("numFailures", model.getNumFailures());
+        data.put("numTemporaryLockouts", model.getNumTemporaryLockouts());
         data.put("lastFailure", model.getLastFailure());
         data.put("lastIPFailure", model.getLastIPFailure());
         return data;
+    }
+
+    private boolean isUserDisabled(UserLoginFailureModel model, UserModel user) {
+        if(user == null) {
+            return Time.currentTime() < model.getFailedLoginNotBefore();
+        }
+
+        return isUserDisabledOrLockedByBruteForce(session, realm, user);
+    }
+
+    private boolean isUserDisabledOrLockedByBruteForce(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user) 
+        || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user);
     }
 
     /**
@@ -122,6 +144,8 @@ public class AttackDetectionResource {
      */
     @Path("brute-force/users/{userId}")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ATTACK_DETECTION)
+    @Operation( summary="Clear any user login failures for the user This can release temporary disabled user")
     public void clearBruteForceForUser(@PathParam("userId") String userId) {
         UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
@@ -144,6 +168,8 @@ public class AttackDetectionResource {
      */
     @Path("brute-force/users")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ATTACK_DETECTION)
+    @Operation( summary = "Clear any user login failures for all users This can release temporary disabled users")
     public void clearAllBruteForce() {
         auth.users().requireManage();
 

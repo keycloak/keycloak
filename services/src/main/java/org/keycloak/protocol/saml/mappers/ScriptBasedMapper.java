@@ -1,16 +1,23 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.*;
 import org.keycloak.protocol.ProtocolMapperConfigException;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptCompilationException;
 import org.keycloak.scripting.ScriptingProvider;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 
 /**
  * This class provides a mapper that uses javascript to attach a value to an attribute for SAML tokens.
@@ -20,7 +27,7 @@ import java.util.*;
  *
  * @author Alistair Doswald
  */
-public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper {
+public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper, EnvironmentDependentProviderFactory {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
     public static final String PROVIDER_ID = "saml-javascript-mapper";
@@ -92,6 +99,11 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
         return "Evaluates a JavaScript function to produce an attribute value based on context information.";
     }
 
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+    }
+
     /**
      *  This method attaches one or many attributes to the passed attribute statement.
      *  To obtain the attribute values, it executes the mapper's script and returns attaches the returned value to the
@@ -110,7 +122,7 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
                                             KeycloakSession session, UserSessionModel userSession,
                                             AuthenticatedClientSessionModel clientSession) {
         UserModel user = userSession.getUser();
-        String scriptSource = mappingModel.getConfig().get(ProviderConfigProperty.SCRIPT_TYPE);
+        String scriptSource = getScriptCode(mappingModel);
         RealmModel realm = userSession.getRealm();
 
         String single = mappingModel.getConfig().get(SINGLE_VALUE_ATTRIBUTE);
@@ -158,7 +170,7 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
     @Override
     public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
 
-        String scriptCode = mapperModel.getConfig().get(ProviderConfigProperty.SCRIPT_TYPE);
+        String scriptCode = getScriptCode(mapperModel);
         if (scriptCode == null) {
             return;
         }
@@ -171,6 +183,10 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
         } catch (ScriptCompilationException ex) {
             throw new ProtocolMapperConfigException("error", "{0}", ex.getMessage());
         }
+    }
+
+    protected String getScriptCode(ProtocolMapperModel mappingModel) {
+        return mappingModel.getConfig().get(ProviderConfigProperty.SCRIPT_TYPE);
     }
 
     /**

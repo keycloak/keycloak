@@ -27,8 +27,6 @@ import java.io.IOException;
  */
 public interface ExportProvider extends Provider {
 
-    void exportModel(KeycloakSessionFactory factory) throws IOException;
-
-    void exportRealm(KeycloakSessionFactory factory, String realmName) throws IOException;
+    void exportModel() throws IOException;
 
 }

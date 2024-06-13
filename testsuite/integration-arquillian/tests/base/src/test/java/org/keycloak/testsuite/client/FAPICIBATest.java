@@ -29,7 +29,6 @@ import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.AUTH_REQ_ID;
 import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.BINDING_MESSAGE;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import java.net.URISyntaxException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -48,18 +46,13 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
@@ -67,9 +60,7 @@ import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.CibaConfig;
-import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -78,24 +69,17 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
@@ -110,44 +94,10 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
-public class FAPICIBATest extends AbstractClientPoliciesTest {
+public class FAPICIBATest extends AbstractFAPITest {
 
     private final String clientId = "foo";
     private final String bindingMessage = "bbbbmmmm";
-    private final String username = "john";
-
-    @BeforeClass
-    public static void verifySSL() {
-        // FAPI requires SSL and does not makes sense to test it with disabled SSL
-        Assume.assumeTrue("The FAPI test requires SSL to be enabled.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-
-        List<UserRepresentation> users = realm.getUsers();
-
-        LinkedList<CredentialRepresentation> credentials = new LinkedList<>();
-        CredentialRepresentation password = new CredentialRepresentation();
-        password.setType(CredentialRepresentation.PASSWORD);
-        password.setValue("password");
-        credentials.add(password);
-
-        UserRepresentation user = new UserRepresentation();
-        user.setEnabled(true);
-        user.setUsername("john");
-        user.setEmail("john@keycloak.org");
-        user.setFirstName("Johny");
-        user.setCredentials(credentials);
-        user.setClientRoles(Collections.singletonMap(Constants.REALM_MANAGEMENT_CLIENT_ID, Arrays.asList(AdminRoles.CREATE_CLIENT, AdminRoles.MANAGE_CLIENTS)));
-        users.add(user);
-
-        realm.setUsers(users);
-
-        testRealms.add(realm);
-    }
 
     @Test
     public void testFAPIAdvancedClientRegistration() throws Exception {
@@ -273,7 +223,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare valid signed authentication request
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, bindingMessage);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, bindingMessage);
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
         // Get keys of client. Will be used for client authentication and signing of authentication request
@@ -304,10 +254,10 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         // user Token Request
         OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
                 signedJwt2, response.getAuthReqId(), () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
-        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
+        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, TEST_USERNAME);
 
         // Logout and remove consent of the user for next logins
-        logoutUserAndRevokeConsent(clientId, username);
+        logoutUserAndRevokeConsent(clientId, TEST_USERNAME);
     }
 
     @Test
@@ -326,7 +276,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare valid signed authentication request
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, bindingMessage);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, bindingMessage);
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
         // Get keys of client. Will be used for client authentication and signing of authentication request
@@ -371,7 +321,8 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
@@ -379,7 +330,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare valid signed authentication request
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, bindingMessage);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, bindingMessage);
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
         // user Backchannel Authentication Request
@@ -399,10 +350,10 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         // user Token Request
         OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithMTLS(
                 clientId, response.getAuthReqId(), () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
-        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
+        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, TEST_USERNAME);
 
         // Logout and remove consent of the user for next logins
-        logoutUserAndRevokeConsent(clientId, username);
+        logoutUserAndRevokeConsent(clientId, TEST_USERNAME);
     }
 
     @Test
@@ -414,7 +365,8 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
@@ -422,7 +374,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare invalid signed authentication request lacking binding message
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, null);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, null);
 
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
@@ -443,14 +395,15 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
         ClientRepresentation client = clientResource.toRepresentation();
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
-        AuthenticationRequestAcknowledgement response = doInvalidBackchannelAuthenticationRequestWithMTLS(clientId, username, bindingMessage, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AuthenticationRequestAcknowledgement response = doInvalidBackchannelAuthenticationRequestWithMTLS(clientId, TEST_USERNAME, bindingMessage, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(equalTo(OAuthErrorException.INVALID_REQUEST)));
         assertThat(response.getErrorDescription(), is(equalTo("Missing parameter: 'request' or 'request_uri'")));
@@ -620,12 +573,12 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
 
     private void verifyBackchannelAuthenticationTokenRequest(OAuthClient.AccessTokenResponse tokenRes, String clientId, String username) {
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
-        events.expectAuthReqIdToToken(null, null).clearDetails().user(AssertEvents.isUUID()).client(clientId).assertEvent();
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         assertThat(accessToken.getIssuedFor(), is(equalTo(clientId)));
-        Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
+        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
+        events.expectAuthReqIdToToken(null, null).clearDetails().user(accessToken.getSubject()).client(clientId).assertEvent();
 
         RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
         assertThat(refreshToken.getIssuedFor(), is(equalTo(clientId)));
@@ -637,23 +590,4 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
     }
 
-    private void logoutUserAndRevokeConsent(String clientId, String username) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), username);
-        user.logout();
-        List<Map<String, Object>> consents = user.getConsents();
-        org.junit.Assert.assertEquals(1, consents.size());
-        user.revokeConsent(clientId);
-    }
-
-    private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {
-        CloseableHttpClient client = httpClientSupplier.get();
-        try {
-            HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            post.setEntity(formEntity);
-            return client.execute(post);
-        } finally {
-            oauth.closeClient(client);
-        }
-    }
 }

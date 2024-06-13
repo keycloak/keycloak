@@ -5,7 +5,7 @@ import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;

@@ -17,50 +17,32 @@
 
 package org.keycloak.testsuite.arquillian;
 
-import org.keycloak.testsuite.utils.arquillian.KeycloakDependenciesResolver;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenFormatStage;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenResolverSystem;
-import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import org.jboss.logging.Logger;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWLSAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWASAppServer;
-import static org.keycloak.testsuite.utils.io.IOUtil.appendChildInDocument;
 import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
-import static org.keycloak.testsuite.utils.io.IOUtil.getElementTextContent;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadXML;
 import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementAttribute;
-import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementValue;
-import static org.keycloak.testsuite.utils.io.IOUtil.removeElementsFromDoc;
-import static org.keycloak.testsuite.utils.io.IOUtil.removeNodeByAttributeValue;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 
@@ -113,8 +95,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
             ((WebArchive) archive)
                     .addAsLibraries(dependencies.asFile())
-                    .addClass(org.keycloak.testsuite.arquillian.annotation.AppServerContainer.class)
-                    .addClass(org.keycloak.testsuite.utils.annotation.UseServletFilter.class);
+                    .addClass(org.keycloak.testsuite.arquillian.annotation.AppServerContainer.class);
         }
     }
 
@@ -182,30 +163,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         }
     }
 
-    public void addFilterDependencies(Archive<?> archive, TestClass testClass) {
-        TestContext testContext = testContextProducer.get();
-        if (testContext.getAppServerInfo().isUndertow()) {
-            return;
-        }
-
-        Node jbossDeploymentStructureXml = archive.get(JBOSS_DEPLOYMENT_XML_PATH);
-        if (jbossDeploymentStructureXml == null) {
-            log.debug("Archive doesn't contain " + JBOSS_DEPLOYMENT_XML_PATH);
-            return;
-        }
-
-        log.info("Adding filter dependencies to " + archive.getName());
-        
-        String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
-        ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
-
-        Document jbossXmlDoc = loadXML(jbossDeploymentStructureXml.getAsset().openStream());
-        removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
-        removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
-        archive.add(new StringAsset((documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
-
-    }
-
     protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
         if (!archive.contains(WEBXML_PATH)) return;
 
@@ -216,106 +173,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         } catch (IllegalArgumentException ex) {
             throw new RuntimeException("Error when processing " + archive.getName(), ex);
         }
-        if (isTomcatAppServer()) {
-            modifyDocElementValue(webXmlDoc, "auth-method", "KEYCLOAK", "BASIC");
-        }
-
-        if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class) && archive.contains(JBOSS_DEPLOYMENT_XML_PATH)) {
-            addFilterDependencies(archive, testClass);
-
-            //We need to add filter declaration to web.xml
-            log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() + " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() + " for " + archive.getName());
-
-            Element filter = webXmlDoc.createElement("filter");
-            Element filterName = webXmlDoc.createElement("filter-name");
-            Element filterClass = webXmlDoc.createElement("filter-class");
-
-            filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
-            filterClass.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterClass());
-
-            filter.appendChild(filterName);
-            filter.appendChild(filterClass);
-            
-            // check if there was a resolver for OIDC and set as a filter param
-            String keycloakResolverClass = getKeycloakResolverClass(webXmlDoc);
-            if (keycloakResolverClass != null) {
-                Element initParam = webXmlDoc.createElement("init-param");
-                Element paramName = webXmlDoc.createElement("param-name");
-                paramName.setTextContent("keycloak.config.resolver");
-                Element paramValue = webXmlDoc.createElement("param-value");
-                paramValue.setTextContent(keycloakResolverClass);
-                initParam.appendChild(paramName);
-                initParam.appendChild(paramValue);
-                filter.appendChild(initParam);
-            }
-            
-            appendChildInDocument(webXmlDoc, "web-app", filter);
-            addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.SKIP_PATTERN_PARAM, testClass.getAnnotation(UseServletFilter.class).skipPattern());
-            addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.ID_MAPPER_PARAM, testClass.getAnnotation(UseServletFilter.class).idMapper());
-
-            appendChildInDocument(webXmlDoc, "web-app", filter);
-
-            Element filterMapping = webXmlDoc.createElement("filter-mapping");
-
-
-            Element urlPattern = webXmlDoc.createElement("url-pattern");
-
-            filterName = webXmlDoc.createElement("filter-name");
-
-            filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
-            urlPattern.setTextContent(getElementTextContent(webXmlDoc, "web-app/security-constraint/web-resource-collection/url-pattern"));
-
-            filterMapping.appendChild(filterName);
-            filterMapping.appendChild(urlPattern);
-
-            if (!testClass.getAnnotation(UseServletFilter.class).dispatcherType().isEmpty()) {
-                Element dispatcher = webXmlDoc.createElement("dispatcher");
-                dispatcher.setTextContent(testClass.getAnnotation(UseServletFilter.class).dispatcherType());
-                filterMapping.appendChild(dispatcher);
-            }
-            appendChildInDocument(webXmlDoc, "web-app", filterMapping);
-
-            //finally we need to remove all keycloak related configuration from web.xml
-            removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
-            removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
-            removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
-        }
 
         archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);
-    }
-
-    private void addInitParam(Document webXmlDoc, Element filter, String initParamName, String initParamValue) {
-        // Limitation that all deployments of annotated class use same skipPattern. Refactor if something more flexible is needed (would require more tricky web.xml parsing though...)
-        if (initParamValue != null && !initParamValue.isEmpty()) {
-            Element initParam = webXmlDoc.createElement("init-param");
-
-            Element paramName = webXmlDoc.createElement("param-name");
-            paramName.setTextContent(initParamName);
-
-            Element paramValue = webXmlDoc.createElement("param-value");
-            paramValue.setTextContent(initParamValue);
-
-            initParam.appendChild(paramName);
-            initParam.appendChild(paramValue);
-
-            filter.appendChild(initParam);
-        }
-    }
-
-    private String getKeycloakResolverClass(Document doc) {
-        try {
-            XPathFactory factory = XPathFactory.newInstance();
-            XPath xpath = factory.newXPath();
-            XPathExpression expr = xpath.compile("//web-app/context-param[param-name='keycloak.config.resolver']/param-value/text()");
-            NodeList nodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-            if (nodes != null && nodes.getLength() > 0) {
-                return nodes.item(0).getNodeValue();
-            }
-        } catch(DOMException e) {
-            throw new IllegalStateException(e);
-        } catch (XPathExpressionException e) {
-            throw new IllegalStateException(e);
-        }
-        return null;
     }
 }

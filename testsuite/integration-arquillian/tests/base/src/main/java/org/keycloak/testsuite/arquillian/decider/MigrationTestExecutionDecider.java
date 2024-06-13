@@ -42,15 +42,16 @@ public class MigrationTestExecutionDecider implements TestExecutionDecider {
          if (migrationTest && migrationAnnotation != null) {
             log.info("migration from version: " + migratedAuthServerVersion);
             
-            String versionFrom = migrationAnnotation.versionFrom();
+            final String versionPrefix = migrationAnnotation.versionPrefix();
 
-            if (migratedAuthServerVersion.startsWith(versionFrom)) {
+            if (migratedAuthServerVersion.startsWith(versionPrefix)) {
                 return ExecutionDecision.execute();
             } else {
                 return ExecutionDecision.dontExecute(method.getName() + "doesn't fit with migration version.");
             }
         }
-        if ((migrationTest && migrationAnnotation == null) || (!migrationTest && migrationAnnotation != null)) {
+
+        if (migrationTest || migrationAnnotation != null) {
             return ExecutionDecision.dontExecute("Migration test and no migration annotation or no migration test and migration annotation");
         }
         return ExecutionDecision.execute();

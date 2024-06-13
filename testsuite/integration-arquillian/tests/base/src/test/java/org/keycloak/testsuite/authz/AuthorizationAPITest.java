@@ -17,13 +17,16 @@
 package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -39,12 +42,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -57,7 +59,6 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AuthorizationAPITest extends AbstractAuthzTest {
 
     private static final String RESOURCE_SERVER_TEST = "resource-server-test";
@@ -183,6 +184,27 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                 PAIRWISE_TEST_CLIENT,
                 PAIRWISE_RESOURCE_SERVER_TEST,
                 PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testResponseMode() {
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        PermissionRequest permission = new PermissionRequest("Resource A");
+
+        String ticket = authzClient.protection().permission().create(permission).getTicket();
+        AuthorizationRequest request = new AuthorizationRequest(ticket);
+        AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(response.getToken());
+
+        request.setMetadata(new AuthorizationRequest.Metadata());
+        request.getMetadata().setResponseMode("decision");
+        response = authzClient.authorization("marta", "password").authorize(request);
+        assertNull(response.getToken());
+        assertTrue((Boolean) response.getOtherClaims().getOrDefault("result", "false"));
+
+        List<Permission> permissions = authzClient.authorization("marta", "password").getPermissions(request);
+        assertFalse(permissions.isEmpty());
+        assertTrue(permissions.get(0) instanceof Permission);
     }
 
     public void testResourceServerAsAudience(String clientId, String resourceServerClientId, String authzConfigFile) throws Exception {

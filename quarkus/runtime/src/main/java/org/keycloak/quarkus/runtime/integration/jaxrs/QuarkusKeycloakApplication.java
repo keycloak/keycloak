@@ -17,85 +17,82 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.ApplicationPath;
+import io.quarkus.runtime.ShutdownEvent;
+import io.quarkus.runtime.StartupEvent;
+import io.smallrye.common.annotation.Blocking;
 
 import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.quarkus.runtime.services.resources.QuarkusWelcomeResource;
-import org.keycloak.services.resources.WelcomeResource;
+
+import jakarta.enterprise.event.Observes;
+import jakarta.ws.rs.ApplicationPath;
+
+import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 
 @ApplicationPath("/")
+@Blocking
 public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
+    private static final String KEYCLOAK_ADMIN_PROP_VAR = "keycloakAdmin";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
+    private static final String KEYCLOAK_ADMIN_PASSWORD_PROP_VAR = "keycloakAdminPassword";
 
-    private static boolean filterSingletons(Object o) {
-        return !WelcomeResource.class.isInstance(o);
+    void onStartupEvent(@Observes StartupEvent event) {
+        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
+        platform.started();
+        startup();
+        if (!isImportExportMode()) {
+            createAdminUser();
+        }
+    }
+
+    void onShutdownEvent(@Observes ShutdownEvent event) {
+        shutdown();
     }
 
     @Override
-    protected void startup() {
-        initializeKeycloakSessionFactory();
-        createAdminUser();
-    }
-
-    @Override
-    public Set<Object> getSingletons() {
-        Set<Object> singletons = super.getSingletons().stream()
-                .filter(QuarkusKeycloakApplication::filterSingletons)
-                .collect(Collectors.toSet());
-
-        singletons.add(new QuarkusWelcomeResource());
-
-        return singletons;
-    }
-
-    private void initializeKeycloakSessionFactory() {
+    public KeycloakSessionFactory createSessionFactory() {
         QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
-        sessionFactory = instance;
         instance.init();
-        sessionFactory.publish(new PostMigrationEvent(sessionFactory));
+        return instance;
+    }
+
+    @Override
+    protected void loadConfig() {
+        // no need to load config provider because we force quarkus impl
     }
 
     private void createAdminUser() {
-        String adminUserName = System.getenv(KEYCLOAK_ADMIN_ENV_VAR);
-        String adminPassword = System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
+        String adminUserName = getEnvOrProp(KEYCLOAK_ADMIN_ENV_VAR, KEYCLOAK_ADMIN_PROP_VAR);
+        String adminPassword = getEnvOrProp(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR, KEYCLOAK_ADMIN_PASSWORD_PROP_VAR);
 
         if ((adminUserName == null || adminUserName.trim().length() == 0)
-                || (adminPassword == null || adminPassword.trim().length() == 0)) {
+            || (adminPassword == null || adminPassword.trim().length() == 0)) {
             return;
         }
 
         KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
-        KeycloakSession session = sessionFactory.create();
-        KeycloakTransactionManager transaction = session.getTransactionManager();
 
         try {
-            transaction.begin();
-
-            new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
-            ServicesLogger.LOGGER.addUserSuccess(adminUserName, Config.getAdminRealm());
-
-            transaction.commit();
-        } catch (IllegalStateException e) {
-            session.getTransactionManager().rollback();
-            ServicesLogger.LOGGER.addUserFailedUserExists(adminUserName, Config.getAdminRealm());
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
+            });
         } catch (Throwable t) {
-            session.getTransactionManager().rollback();
             ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
-        } finally {
-            session.close();
         }
     }
+
+    private String getEnvOrProp(String envKey, String propKey) {
+        String value = System.getenv(envKey);
+        return value != null ? value : System.getProperty(propKey);
+    }
+
 }

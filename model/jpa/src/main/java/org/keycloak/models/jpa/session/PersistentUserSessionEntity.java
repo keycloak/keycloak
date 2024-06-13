@@ -17,15 +17,16 @@
 
 package org.keycloak.models.jpa.session;
 
+import jakarta.persistence.Version;
 import org.keycloak.storage.jpa.KeyUtils;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -33,6 +34,7 @@ import java.io.Serializable;
  */
 @NamedQueries({
         @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
+        @NamedQuery(name="deleteUserSessionsByRealmSessionType", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId and sess.offline = :offline"),
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
         @NamedQuery(name="deleteExpiredUserSessions", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
         @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh where sess.realmId = :realmId" +
@@ -45,14 +47,16 @@ import java.io.Serializable;
                 " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId"),
         @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.realmId = :realmId AND sess.userId = :userId ORDER BY sess.userSessionId"),
+        @NamedQuery(name="findUserSessionsByBrokerSessionId", query="select sess from PersistentUserSessionEntity sess where sess.brokerSessionId = :brokerSessionId" +
+                " AND sess.realmId = :realmId AND sess.offline = :offline ORDER BY sess.userSessionId"),
         @NamedQuery(name="findUserSessionsByClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
-                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientId = :clientId WHERE sess.offline = :offline " +
+                " ON sess.userSessionId = clientSess.userSessionId AND sess.offline = clientSess.offline AND clientSess.clientId = :clientId WHERE sess.offline = :offline " +
                 " AND sess.realmId = :realmId ORDER BY sess.userSessionId"),
         @NamedQuery(name="findUserSessionsByExternalClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
-                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
+                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND sess.offline = clientSess.offline AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
                 " AND sess.realmId = :realmId ORDER BY sess.userSessionId"),
         @NamedQuery(name="findClientSessionsClientIds", query="SELECT clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider, count(clientSess)" +
-                " FROM PersistentClientSessionEntity clientSess INNER JOIN PersistentUserSessionEntity sess ON clientSess.userSessionId = sess.userSessionId " +
+                " FROM PersistentClientSessionEntity clientSess INNER JOIN PersistentUserSessionEntity sess ON clientSess.userSessionId = sess.userSessionId AND sess.offline = clientSess.offline" +
                 " WHERE sess.offline = :offline AND sess.realmId = :realmId " +
                 " GROUP BY clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider")
 
@@ -77,6 +81,12 @@ public class PersistentUserSessionEntity {
 
     @Column(name = "LAST_SESSION_REFRESH")
     protected int lastSessionRefresh;
+
+    @Column(name = "BROKER_SESSION_ID")
+    protected String brokerSessionId;
+
+    @Version
+    private int version;
 
     @Id
     @Column(name = "OFFLINE_FLAG")
@@ -134,6 +144,14 @@ public class PersistentUserSessionEntity {
         this.offline = offline;
     }
 
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        this.brokerSessionId = brokerSessionId;
+    }
+
     public String getData() {
         return data;
     }
@@ -182,6 +200,14 @@ public class PersistentUserSessionEntity {
             int result = this.userSessionId != null ? this.userSessionId.hashCode() : 0;
             result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return "PersistentUserSessionEntity$Key [" +
+                   "userSessionId='" + userSessionId + '\'' +
+                   ", offline='" + offline + '\'' +
+                   ']';
         }
     }
 }

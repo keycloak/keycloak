@@ -63,7 +63,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     }
 
     void update() {
-        int expirationSeconds = SessionExpiration.getAuthSessionLifespan(realm);
+        int expirationSeconds = getTimestamp() - Time.currentTime() + SessionExpiration.getAuthSessionLifespan(realm);
         provider.tx.replace(cache, entity.getId(), entity, expirationSeconds, TimeUnit.SECONDS);
     }
 

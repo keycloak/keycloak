@@ -16,13 +16,13 @@
  */
 package org.keycloak.testsuite.adapter.example.hal;
 
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+
 import org.jboss.arquillian.drone.api.annotation.Drone;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -33,12 +33,13 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.AppServerWelcomePage;
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.JavascriptBrowser;
-import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+import org.keycloak.testsuite.pages.AppServerWelcomePage;
 import org.openqa.selenium.WebDriver;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -51,8 +52,14 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class ConsoleProtectionTest extends AbstractAdapterTest {
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected AppPage appPage;
 
     // Javascript browser needed KEYCLOAK-4703
     @Drone
@@ -63,10 +70,6 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
     @JavascriptBrowser
     protected AppServerWelcomePage appServerWelcomePage;
 
-    @Page
-    @JavascriptBrowser
-    protected AccountUpdateProfilePage accountUpdateProfilePage;
-
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/wildfly-integration/wildfly-management-realm.json"));
@@ -74,8 +77,6 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
 
     @Before
     public void beforeConsoleProtectionTest() throws IOException, OperationException {
-        Assume.assumeTrue("This testClass doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
-
         try (OnlineManagementClient clientWorkerNodeClient = AppServerTestEnricher.getManagementClient()) {
 
             Operations operations = new Operations(clientWorkerNodeClient);
@@ -112,18 +113,13 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
         log.debug("Added jsDriver");
     }
 
-    private void testLogin() throws InterruptedException {
-        appServerWelcomePage.navigateToConsole();
-        appServerWelcomePage.login("admin", "admin");
-        WaitUtils.pause(2000);
-        assertTrue(appServerWelcomePage.isCurrent());
-    }
-
     @Test
-    public void testUserCanAccessAccountService() throws InterruptedException {
-        testLogin();
+    public void testUserCanAccessAccountService() {
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        testAppHelper.login("admin", "admin");
+        appPage.assertCurrent();
+
         appServerWelcomePage.navigateToAccessControl();
         appServerWelcomePage.navigateManageProfile();
-        assertTrue(accountUpdateProfilePage.isCurrent());
     }
 }

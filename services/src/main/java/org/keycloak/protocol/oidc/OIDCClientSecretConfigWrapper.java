@@ -211,7 +211,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     public ReadOnlyRotatedSecretClientModel toRotatedClientModel() throws InvalidObjectException {
         if (Objects.isNull(this.clientModel))
             throw new InvalidObjectException(getClass().getCanonicalName() + " does not have an attribute of type " + ClientModel.class.getCanonicalName());
-        return new ReadOnlyRotatedSecretClientModel();
+        return new ReadOnlyRotatedSecretClientModel(clientModel);
     }
 
     /**
@@ -219,8 +219,8 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
      */
     public class ReadOnlyRotatedSecretClientModel extends ClientModelLazyDelegate {
 
-        private ReadOnlyRotatedSecretClientModel() {
-            super(() -> OIDCClientSecretConfigWrapper.this.clientModel);
+        private ReadOnlyRotatedSecretClientModel(ClientModel clientModel) {
+            super(() -> clientModel);
         }
 
         @Override

@@ -19,118 +19,68 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.SubjectCredentialManager;
-
-import java.util.List;
-import java.util.stream.Stream;
+import org.keycloak.credential.UserCredentialManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author Alexander Schwartz
  */
-public abstract class SubjectCredentialManagerCacheAdapter implements SubjectCredentialManager {
+public abstract class SubjectCredentialManagerCacheAdapter extends UserCredentialManager {
 
-    private final SubjectCredentialManager subjectCredentialManager;
-
-    protected SubjectCredentialManagerCacheAdapter(SubjectCredentialManager subjectCredentialManager) {
-        this.subjectCredentialManager = subjectCredentialManager;
+    public SubjectCredentialManagerCacheAdapter(KeycloakSession session, RealmModel realm, UserModel user) {
+        super(session, realm, user);
     }
 
     public abstract void invalidateCacheForEntity();
 
     @Override
-    public boolean isValid(List<CredentialInput> inputs) {
-        // validating a password might still update its hashes, similar logic might apply to OTP logic
-        // instead of having each
-        invalidateCacheForEntity();
-        return subjectCredentialManager.isValid(inputs);
-    }
-
-    @Override
     public boolean updateCredential(CredentialInput input) {
         invalidateCacheForEntity();
-        return subjectCredentialManager.updateCredential(input);
+        return super.updateCredential(input);
     }
 
     @Override
     public void updateStoredCredential(CredentialModel cred) {
         invalidateCacheForEntity();
-        subjectCredentialManager.updateStoredCredential(cred);
+        super.updateStoredCredential(cred);
     }
 
     @Override
     public CredentialModel createStoredCredential(CredentialModel cred) {
         invalidateCacheForEntity();
-        return subjectCredentialManager.createStoredCredential(cred);
+        return super.createStoredCredential(cred);
     }
 
     @Override
     public boolean removeStoredCredentialById(String id) {
         invalidateCacheForEntity();
-        return subjectCredentialManager.removeStoredCredentialById(id);
-    }
-
-    @Override
-    public CredentialModel getStoredCredentialById(String id) {
-        return subjectCredentialManager.getStoredCredentialById(id);
-    }
-
-    @Override
-    public Stream<CredentialModel> getStoredCredentialsStream() {
-        return subjectCredentialManager.getStoredCredentialsStream();
-    }
-
-    @Override
-    public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
-        return subjectCredentialManager.getStoredCredentialsByTypeStream(type);
-    }
-
-    @Override
-    public CredentialModel getStoredCredentialByNameAndType(String name, String type) {
-        return subjectCredentialManager.getStoredCredentialByNameAndType(name, type);
+        return super.removeStoredCredentialById(id);
     }
 
     @Override
     public boolean moveStoredCredentialTo(String id, String newPreviousCredentialId) {
         invalidateCacheForEntity();
-        return subjectCredentialManager.moveStoredCredentialTo(id, newPreviousCredentialId);
+        return super.moveStoredCredentialTo(id, newPreviousCredentialId);
     }
 
     @Override
     public void updateCredentialLabel(String credentialId, String userLabel) {
         invalidateCacheForEntity();
-        subjectCredentialManager.updateCredentialLabel(credentialId, userLabel);
+        super.updateCredentialLabel(credentialId, userLabel);
     }
 
     @Override
     public void disableCredentialType(String credentialType) {
         invalidateCacheForEntity();
-        subjectCredentialManager.disableCredentialType(credentialType);
-    }
-
-    @Override
-    public Stream<String> getDisableableCredentialTypesStream() {
-        return subjectCredentialManager.getDisableableCredentialTypesStream();
-    }
-
-    @Override
-    public boolean isConfiguredFor(String type) {
-        return subjectCredentialManager.isConfiguredFor(type);
-    }
-
-    @Override
-    public boolean isConfiguredLocally(String type) {
-        return subjectCredentialManager.isConfiguredLocally(type);
-    }
-
-    @Override
-    public Stream<String> getConfiguredUserStorageCredentialTypesStream() {
-        return subjectCredentialManager.getConfiguredUserStorageCredentialTypesStream();
+        super.disableCredentialType(credentialType);
     }
 
     @Override
     public CredentialModel createCredentialThroughProvider(CredentialModel model) {
         invalidateCacheForEntity();
-        return subjectCredentialManager.createCredentialThroughProvider(model);
+        return super.createCredentialThroughProvider(model);
     }
 
 }

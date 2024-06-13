@@ -18,8 +18,6 @@ package org.keycloak.testsuite.broker;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.List;
-
 import org.keycloak.authentication.authenticators.broker.IdpAutoLinkAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -129,6 +127,48 @@ final class BrokerRunOnServerUtil {
             idp.setFirstBrokerLoginFlowId(newFlow.getId());
             appRealm.updateIdentityProvider(idp);
         });
+    }
+
+    static RunOnServer configureConfirmOverrideLinkFlow(String idpAlias) {
+        return session -> {
+            RealmModel appRealm = session.getContext().getRealm();
+
+            AuthenticationFlowModel newFlow = new AuthenticationFlowModel();
+            newFlow.setAlias("ConfirmOverrideLinkFlow");
+            newFlow.setDescription("ConfirmOverride");
+            newFlow.setProviderId("basic-flow");
+            newFlow.setBuiltIn(false);
+            newFlow.setTopLevel(true);
+            newFlow = appRealm.addAuthenticationFlow(newFlow);
+
+            AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticatorFlow(false);
+            execution.setAuthenticator("idp-detect-existing-broker-user");
+            execution.setPriority(1);
+            execution.setParentFlow(newFlow.getId());
+            appRealm.addAuthenticatorExecution(execution);
+
+            execution = new AuthenticationExecutionModel();
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticatorFlow(false);
+            execution.setAuthenticator("idp-confirm-override-link");
+            execution.setPriority(2);
+            execution.setParentFlow(newFlow.getId());
+            appRealm.addAuthenticatorExecution(execution);
+
+            execution = new AuthenticationExecutionModel();
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticatorFlow(false);
+            execution.setAuthenticator("idp-auto-link");
+            execution.setPriority(3);
+            execution.setParentFlow(newFlow.getId());
+            appRealm.addAuthenticatorExecution(execution);
+
+            IdentityProviderModel idp = appRealm.getIdentityProviderByAlias(idpAlias);
+            idp.setFirstBrokerLoginFlowId(newFlow.getId());
+            appRealm.updateIdentityProvider(idp);
+        };
     }
 
     static RunOnServer assertHardCodedSessionNote() {

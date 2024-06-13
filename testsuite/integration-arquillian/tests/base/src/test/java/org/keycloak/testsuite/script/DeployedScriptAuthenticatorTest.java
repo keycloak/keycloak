@@ -21,34 +21,40 @@ import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 
-import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.AbstractFlowTest;
@@ -69,7 +75,8 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     public static final String EXECUTION_ID = "scriptAuth";
     private static final String SCRIPT_DEPLOYMENT_NAME = "scripts.jar";
 
-    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = false, testable = false)
+    // Managed to make sure that archive is deployed once in @BeforeClass stage and undeployed once in @AfterClass stage
+    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = true, testable = false)
     @TargetsContainer(AUTH_SERVER_CURRENT)
     public static JavaArchive deploy() throws IOException {
         ScriptProviderDescriptor representation = new ScriptProviderDescriptor();
@@ -92,9 +99,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @ArquillianResource
-    private Deployer deployer;
 
     private AuthenticationFlowRepresentation flow;
 
@@ -122,8 +126,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     }
 
     public void configureFlows() throws Exception {
-        deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
         if (testContext.isInitialized()) {
             return;
         }
@@ -173,12 +175,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         testContext.setInitialized(true);
     }
 
-    @After
-    public void onAfter() throws Exception {
-        deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
-    }
-
     /**
      * KEYCLOAK-3491
      */
@@ -190,7 +186,58 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", "password");
 
-        events.expectLogin().user("user").detail(Details.USERNAME, "user").assertEvent();
+        events.expectLogin().user(okayUser()).detail(Details.USERNAME, "user").assertEvent();
+    }
+
+    // Issue 20005
+    @Test
+    public void testManyScriptAuthenticatorInstances() throws Exception {
+        configureFlows();
+        AuthenticationManagementResource authMgmtResource = adminClient.realm(TEST_REALM_NAME).flows();
+
+        // Endpoint used by admin console
+        Map<String, Object> scriptExecution = new HashMap<>();
+        scriptExecution.put("provider", "script-authenticator-a.js");
+
+        // It should be possible to add another script-authenticator to the flow
+        authMgmtResource.addExecution("scriptBrowser", scriptExecution);
+
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("scriptBrowser");
+        List<AuthenticationExecutionInfoRepresentation> scriptExecutions = executions.stream()
+                .filter(execution -> execution.getDisplayName().equals("My Authenticator"))
+                .collect(Collectors.toList());
+
+        // Both executions refers to same config of deployed script provider
+        Assert.assertEquals(2, scriptExecutions.size());
+        for (AuthenticationExecutionInfoRepresentation execution : scriptExecutions) {
+            Assert.assertEquals(execution.getAuthenticationConfig(), "script-authenticator-a.js");
+        }
+
+        // Assert updating config should fail due it's read-only
+        AuthenticatorConfigRepresentation configRep = authMgmtResource.getAuthenticatorConfig("script-authenticator-a.js");
+        configRep.getConfig().put("scriptCode", "Something");
+        try {
+            authMgmtResource.updateAuthenticatorConfig("script-authenticator-a.js", configRep);
+            Assert.fail("Update of configuration should have failed");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Test copy flow is OK
+        Map<String, Object> newFlow = new HashMap<>();
+        newFlow.put("newName", "Copy of script flow");
+        Response resp = authMgmtResource.copy("scriptBrowser", newFlow);
+        Assert.assertEquals(201, resp.getStatus());
+        resp.close();
+        AuthenticationFlowRepresentation copiedFlow = AbstractAuthenticationTest.findFlowByAlias("Copy of script flow", authMgmtResource.getFlows());
+
+        // Cleanup
+        authMgmtResource.deleteFlow(copiedFlow.getId());
+        authMgmtResource.removeExecution(scriptExecutions.get(1).getId());
+    }
+
+    private UserRepresentation okayUser() {
+        return adminClient.realm(TEST_REALM_NAME).users().search("user", true).get(0);
     }
 
     /**

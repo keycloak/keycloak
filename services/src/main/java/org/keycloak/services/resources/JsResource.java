@@ -17,22 +17,24 @@
 
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.Version;
 import org.keycloak.encoding.ResourceEncodingHelper;
 import org.keycloak.encoding.ResourceEncodingProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
+
 import java.io.InputStream;
 
 /**
@@ -40,14 +42,12 @@ import java.io.InputStream;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/js")
 public class JsResource {
 
     @Context
     private KeycloakSession session;
-
-    @Context
-    private HttpRequest request;
 
     /**
      * Get keycloak.js file for javascript clients
@@ -127,7 +127,7 @@ public class JsResource {
         }
 
         String contentType = "text/javascript";
-        Cors cors = Cors.add(request).allowAllOrigins();
+        Cors cors = Cors.builder().allowAllOrigins();
 
         ResourceEncodingProvider encodingProvider = ResourceEncodingHelper.getResourceEncodingProvider(session, contentType);
 
@@ -143,9 +143,9 @@ public class JsResource {
             if (encodingProvider != null) {
                 rb.encoding(encodingProvider.getEncoding());
             }
-            return cors.builder(rb).build();
+            return cors.add(rb);
         } else {
-            return cors.builder(Response.status(Response.Status.NOT_FOUND)).build();
+            return cors.add(Response.status(Response.Status.NOT_FOUND));
         }
     }
 }

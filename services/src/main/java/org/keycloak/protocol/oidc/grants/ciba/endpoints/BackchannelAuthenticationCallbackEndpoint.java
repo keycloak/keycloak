@@ -17,8 +17,8 @@
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -38,14 +38,13 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.util.Map;
@@ -56,11 +55,11 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
 
     private static final Logger logger = Logger.getLogger(BackchannelAuthenticationCallbackEndpoint.class);
 
-    @Context
-    private HttpRequest httpRequest;
+    private final HttpRequest httpRequest;
 
     public BackchannelAuthenticationCallbackEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
+        this.httpRequest = session.getContext().getHttpRequest();
     }
 
     @Path("/")

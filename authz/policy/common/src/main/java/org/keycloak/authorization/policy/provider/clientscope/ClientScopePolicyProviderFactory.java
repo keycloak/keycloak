@@ -19,6 +19,7 @@ package org.keycloak.authorization.policy.provider.clientscope;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -68,13 +69,12 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                 StoreFactory storeFactory = provider.getStoreFactory();
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 ClientScopeModel removedClientScope = ((ClientScopeRemovedEvent) event).getClientScope();
-                RealmModel realm = ((ClientScopeRemovedEvent) event).getClientScope().getRealm();
 
                 Map<Policy.FilterOption, String[]> filters = new HashMap<>();
 
                 filters.put(Policy.FilterOption.TYPE, new String[] { getId() });
 
-                policyStore.find(realm, null, filters, null, null).forEach(new Consumer<Policy>() {
+                policyStore.find(null, filters, null, null).forEach(new Consumer<Policy>() {
 
                     @Override
                     public void accept(Policy policy) {
@@ -93,7 +93,7 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                         }
 
                         if (clientScopes.isEmpty()) {
-                            policyStore.delete(realm, policy.getId());
+                            policyStore.delete(policy.getId());
                         } else {
                             try {
                                 policy.putConfig("clientScopes", JsonSerialization.writeValueAsString(clientScopes));
@@ -151,9 +151,15 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
         ClientScopePolicyRepresentation representation = new ClientScopePolicyRepresentation();
 
         try {
-            representation
-                .setClientScopes(new HashSet<>(Arrays.asList(JsonSerialization.readValue(policy.getConfig().get("clientScopes"),
-                    ClientScopePolicyRepresentation.ClientScopeDefinition[].class))));
+            String clientScopes = policy.getConfig().get("clientScopes");
+
+            if (clientScopes == null) {
+                representation.setClientScopes(Collections.emptySet());
+            } else {
+                representation
+                        .setClientScopes(new HashSet<>(Arrays.asList(JsonSerialization.readValue(clientScopes,
+                                ClientScopePolicyRepresentation.ClientScopeDefinition[].class))));
+            }
         } catch (IOException e) {
             throw new RuntimeException("Failed to deserialize client scopes", e);
         }

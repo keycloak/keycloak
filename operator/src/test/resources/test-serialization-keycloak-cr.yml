@@ -1,0 +1,79 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: test-serialization-kc
+spec:
+  instances: 3
+  image: my-image
+  additionalOptions:
+    - name: key1
+      value: value1
+    - name: features
+      value: docker
+  db:
+    vendor: vendor
+    usernameSecret:
+      name: usernameSecret
+      key: usernameSecretKey
+    passwordSecret:
+      name: passwordSecret
+      key: passwordSecretKey
+    host: host
+    database: database
+    url: url
+    port: 123
+    schema: schema
+    poolInitialSize: 1
+    poolMinSize: 2
+    poolMaxSize: 3
+  ingress:
+    enabled: false
+    className: nginx
+    annotations:
+      myAnnotation: myValue
+      anotherAnnotation: anotherValue
+  http:
+    httpEnabled: true
+    httpPort: 123
+    httpsPort: 456
+    tlsSecret: my-tls-secret
+  hostname:
+    hostname: my-hostname
+    admin: my-admin-hostname
+    adminUrl: https://www.my-admin-hostname.org:8448/something
+    strict: true
+    strictBackchannel: true
+    backchannelDynamic: true
+  cache:
+    configMapFile:
+      name: my-config-map
+      key: file.xml
+  features:
+    enabled:
+      - docker
+      - authorization
+    disabled:
+      - admin
+      - step-up-authentication
+  transaction:
+    xaEnabled: false
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500M"
+    limits:
+      cpu: "2"
+      memory: "1500M"
+  proxy:
+    headers: forwarded
+  truststores:
+    x:
+      secret:
+        name: my-secret
+  httpManagement:
+    port: 9003
+  unsupported:
+    podTemplate:
+      metadata:
+        labels:
+          my-label: "foo"

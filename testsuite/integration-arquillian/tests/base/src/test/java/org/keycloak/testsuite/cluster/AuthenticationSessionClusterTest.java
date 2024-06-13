@@ -35,10 +35,11 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.OAuthClient;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -94,7 +95,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             driver.navigate().to(testAppLoginNode1URL);
             String authSessionCookie = AuthenticationSessionFailoverClusterTest.getAuthSessionCookieValue(driver);
 
-            Assert.assertThat(authSessionCookie.length(), Matchers.greaterThan(36));
+            assertThat(authSessionCookie.length(), Matchers.greaterThan(36));
             String route = authSessionCookie.substring(37);
             visitedRoutes.add(route);
 
@@ -102,7 +103,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             driver.manage().deleteAllCookies();
         }
 
-        Assert.assertThat(visitedRoutes, Matchers.containsInAnyOrder(Matchers.startsWith("node1"), Matchers.startsWith("node2")));
+        assertThat(visitedRoutes, Matchers.containsInAnyOrder(Matchers.startsWith("node1"), Matchers.startsWith("node2")));
     }
 
 

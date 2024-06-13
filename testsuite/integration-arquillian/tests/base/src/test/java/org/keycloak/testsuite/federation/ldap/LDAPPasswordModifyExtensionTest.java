@@ -19,12 +19,10 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -37,10 +35,9 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -98,22 +95,9 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
         });
     }
 
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-    }
-
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
-        changePasswordPage.open();
-        loginPage.login("johnkeycloak", "Password1");
-        changePasswordPage.changePassword("Password1", "New-password1", "New-password1");
-
-        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-
-        changePasswordPage.logout();
+        Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "New-password1"));
 
         loginPage.open();
         loginPage.login("johnkeycloak", "Bad-password1");
@@ -124,9 +108,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Change password back to previous value
-        changePasswordPage.open();
-        changePasswordPage.changePassword("New-password1", "Password1", "Password1");
-        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "Password1"));
     }
 
     @Test

@@ -3,15 +3,14 @@ package org.keycloak.testsuite.cli.admin;
 import org.junit.Assert;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.client.admin.cli.config.ConfigData;
-import org.keycloak.client.admin.cli.config.FileConfigHandler;
-import org.keycloak.client.admin.cli.config.RealmConfigData;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.cli.AbstractCliTest;
 import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -254,7 +253,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                 " --realm test " + credentials + " " + extraOptions + " -s clientId=test-client -o");
 
         Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-        Assert.assertEquals("login message", loginMessage, exe.stderrLines().get(0));
+        Assert.assertTrue("login message expected. But the messages are: " + exe.stderrLines(), exe.stderrLines().stream().anyMatch(message -> message.equals(loginMessage)));
 
         ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client.getClientId());
@@ -309,7 +308,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2 - linecountOffset);
         String resourceUri = serverUrl + "/admin/realms/test/clients/" + client.getId();
-        Assert.assertEquals("error message", "Resource not found for url: " + resourceUri, exe.stderrLines().get(1 - linecountOffset));
+        Assert.assertEquals("error message", "Resource not found for url: " + resourceUri, exe.stderrLines().get(exe.stderrLines().size() - 1));
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);
@@ -346,12 +345,18 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         realm.getUsers().add(account);
     }
 
-    void loginAsUser(File configFile, String server, String realm, String user, String password) {
-
-        KcAdmExec exe = KcAdmExec.execute("config credentials --server " + server + " --realm " + realm +
-                " --user " + user + " --password " + password + " --config " + configFile.getAbsolutePath());
+    void loginAsUser(File configFile, String server, String realm, String user, String password, boolean envPassword) {
+        KcAdmExec exe = KcAdmExec.newBuilder()
+                .argsLine("config credentials --server " + server + " --realm " + realm +
+                        " --user " + user + (envPassword ? "" : (" --password " + password)) + " --config " + configFile.getAbsolutePath())
+                .env(envPassword ? "KC_CLI_PASSWORD=" + password : null)
+                .execute();
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+    }
+
+    void loginAsUser(File configFile, String server, String realm, String user, String password) {
+        loginAsUser(configFile, server, realm, user, password, false);
     }
 
 }

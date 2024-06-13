@@ -21,7 +21,7 @@ import java.security.MessageDigest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -144,7 +144,7 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
 
         // check whether specified code challenge method is configured one in advance
         if (pkceCodeChallengeMethod != null && !codeChallengeMethod.equals(pkceCodeChallengeMethod)) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code challenge method is not configured one");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code challenge method is not matching the configured one");
         }
 
         // check whether code challenge is specified

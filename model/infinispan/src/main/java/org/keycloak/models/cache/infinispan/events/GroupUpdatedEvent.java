@@ -54,7 +54,7 @@ public class GroupUpdatedEvent extends InvalidationEvent implements RealmCacheIn
 
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
-        // Nothing. ID already invalidated
+        realmCache.groupNameInvalidations(groupId, invalidations);
     }
 
     public static class ExternalizerImpl implements Externalizer<GroupUpdatedEvent> {

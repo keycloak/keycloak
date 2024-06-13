@@ -16,7 +16,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
@@ -27,34 +26,35 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.protocol.docker.installation.DockerComposeYamlInstallationProvider;
+import org.keycloak.rule.CryptoInitRule;
 
 public class DockerComposeYamlInstallationProviderTest {
 
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
+
     DockerComposeYamlInstallationProvider installationProvider;
     static Certificate certificate;
-
-    @BeforeClass
-    public static void setUp_beforeClass() throws NoSuchAlgorithmException {
-        final KeyPairGenerator keyGen;
-        keyGen = KeyPairGenerator.getInstance("RSA");
+    
+    @Before
+    public void setUp() throws Exception {
+        final KeyPairGenerator keyGen = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
         keyGen.initialize(2048, new SecureRandom());
 
         final KeyPair keypair = keyGen.generateKeyPair();
         certificate = CertificateUtils.generateV1SelfSignedCertificate(keypair, "test-realm");
-    }
-
-    @Before
-    public void setUp() {
         installationProvider = new DockerComposeYamlInstallationProvider();
     }
 

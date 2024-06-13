@@ -17,6 +17,7 @@
 
 package org.keycloak.representations.adapters.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -319,5 +320,10 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setConnectionTTL(long connectionTTL) {
         this.connectionTTL = connectionTTL;
+    }
+
+    @JsonIgnore
+    public String getRealmInfoUrl() {
+        return authServerUrl + "/realms/" + realm;
     }
 }

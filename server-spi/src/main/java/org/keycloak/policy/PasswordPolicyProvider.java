@@ -40,5 +40,4 @@ public interface PasswordPolicyProvider extends Provider {
             throw new PasswordPolicyConfigException("Not a valid number");
         }
     }
-
 }

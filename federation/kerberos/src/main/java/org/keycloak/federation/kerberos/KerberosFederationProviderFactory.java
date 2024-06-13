@@ -19,6 +19,7 @@ package org.keycloak.federation.kerberos;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
@@ -29,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -45,7 +47,7 @@ import java.util.List;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class KerberosFederationProviderFactory implements UserStorageProviderFactory<KerberosFederationProvider> {
+public class KerberosFederationProviderFactory implements UserStorageProviderFactory<KerberosFederationProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(KerberosFederationProviderFactory.class);
     public static final String PROVIDER_NAME = "kerberos";
@@ -58,6 +60,11 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
     @Override
     public String getId() {
         return PROVIDER_NAME;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.KERBEROS);
     }
 
     protected static final List<ProviderConfigProperty> configProperties;

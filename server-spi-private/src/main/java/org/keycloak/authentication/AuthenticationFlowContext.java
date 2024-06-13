@@ -90,15 +90,6 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     URI getActionUrl(String code);
 
     /**
-     * Get the action URL for the required action.
-     *
-     * @param code authentication session access code
-     * @param authSessionIdParam will include auth_session query param for clients that don't process cookies
-     * @return
-     */
-    URI getActionUrl(String code, boolean authSessionIdParam);
-
-    /**
      * Get the action URL for the action token executor.
      *
      * @param tokenString String representation (JWT) of action token
@@ -122,7 +113,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     URI getRefreshUrl(boolean authSessionIdParam);
 
     /**
-     * End the flow and redirect browser based on protocol specific respones.  This should only be executed
+     * End the flow and redirect browser based on protocol specific response.  This should only be executed
      * in browser-based flows.
      *
      */

@@ -46,6 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -188,7 +190,7 @@ public class AssertAdminEvents implements TestRule {
 
         public AdminEventRepresentation assertEvent(AdminEventRepresentation actual) {
             Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
-            Assert.assertThat(actual.getResourcePath(), resourcePath);
+            assertThat(actual.getResourcePath(), resourcePath);
             Assert.assertEquals(expected.getResourceType(), actual.getResourceType());
             Assert.assertEquals(expected.getOperationType(), actual.getOperationType());
 

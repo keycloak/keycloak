@@ -20,22 +20,28 @@ package org.keycloak.quarkus.runtime;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import picocli.CommandLine.ExitCode;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -51,24 +57,40 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 public class KeycloakMain implements QuarkusApplication {
 
     public static void main(String[] args) {
-        System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
-        List<String> cliArgs = Picocli.parseArgs(args);
+        ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
+
+        System.setProperty("kc.version", Version.VERSION);
+        List<String> cliArgs = null;
+        try {
+            cliArgs = Picocli.parseArgs(args);
+        } catch (PropertyException e) {
+            handleUsageError(e.getMessage());
+            return;
+        }
 
         if (cliArgs.isEmpty()) {
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
-        } else if (cliArgs.contains(Start.NAME) && cliArgs.size() == 1) {
-            // fast path for starting the server without bootstrapping CLI
-            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-            PrintWriter errStream = new PrintWriter(System.err, true);
+        } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
 
-            if (isDevProfileNotAllowed(Arrays.asList(args))) {
-                errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);
+            if (isDevProfileNotAllowed()) {
+                handleUsageError(Messages.devProfileNotAllowedError(Start.NAME));
                 return;
             }
 
-            start(errorHandler, errStream);
+            try {
+                PropertyMappers.sanitizeDisabledMappers();
+                Picocli.validateConfig(cliArgs, new Start());
+            } catch (PropertyException | ProfileException e) {
+                handleUsageError(e.getMessage(), e.getCause());
+                return;
+            }
+
+            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+            PrintWriter errStream = new PrintWriter(System.err, true);
+
+            start(errorHandler, errStream, args);
 
             return;
         }
@@ -77,12 +99,43 @@ public class KeycloakMain implements QuarkusApplication {
         parseAndRun(cliArgs);
     }
 
-    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
-        ClassLoader originalCl = Thread.currentThread().getContextClassLoader();
+    /**
+     * Verify that the property for the ForkJoinPool factory set by Quarkus matches the actual factory.
+     * If this is not the case, the classloader for those threads is not set correctly, and for example loading configurations
+     * via SmallRye is unreliable. This can happen if a Java Agent or JMX initializes the ForkJoinPool before Java's main method is run.
+     */
+    private static void ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus() {
+        // At this point, the settings from the CLI are no longer visible as they have been overwritten in the QuarkusEntryPoint.
+        // Therefore, the only thing we can do is to check if the thread pool class name is the same as in the configuration.
+        final String FORK_JOIN_POOL_COMMON_THREAD_FACTORY = "java.util.concurrent.ForkJoinPool.common.threadFactory";
+        String sf = System.getProperty(FORK_JOIN_POOL_COMMON_THREAD_FACTORY);
+        //noinspection resource
+        if (!ForkJoinPool.commonPool().getFactory().getClass().getName().equals(sf)) {
+            Logger.getLogger(KeycloakMain.class).errorf("The ForkJoinPool has been initialized with the wrong thread factory. The property '%s' should be set on the Java CLI to ensure Java's ForkJoinPool will always be initialized with '%s' even if there are Java agents which might initialize logging or other capabilities earlier than the main method.",
+                    FORK_JOIN_POOL_COMMON_THREAD_FACTORY,
+                    sf);
+            throw new RuntimeException("The ForkJoinPool has been initialized with the wrong thread factory");
+        }
+    }
 
+    private static void handleUsageError(String message) {
+        handleUsageError(message, null);
+    }
+
+    private static void handleUsageError(String message, Throwable cause) {
+        ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+        PrintWriter errStream = new PrintWriter(System.err, true);
+        errorHandler.error(errStream, message, cause);
+        System.exit(ExitCode.USAGE);
+    }
+
+    private static boolean isFastStart(List<String> cliArgs) {
+        // 'start --optimized' should start the server without parsing CLI
+        return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
+    }
+
+    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
         try {
-            Thread.currentThread().setContextClassLoader(new KeycloakClassLoader());
-
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
@@ -95,13 +148,12 @@ public class KeycloakMain implements QuarkusApplication {
                     // as we are replacing the default exit handler, we need to force exit
                     System.exit(exitCode);
                 }
-            });
+            }, args);
         } catch (Throwable cause) {
             errorHandler.error(errStream,
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                     cause.getCause());
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalCl);
+            System.exit(1);
         }
     }
 
@@ -116,7 +168,7 @@ public class KeycloakMain implements QuarkusApplication {
 
         int exitCode = ApplicationLifecycleManager.getExitCode();
 
-        if (isTestLaunchMode()) {
+        if (isTestLaunchMode() || isImportExportMode()) {
             // in test mode we exit immediately
             // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
             Quarkus.asyncExit(exitCode);
@@ -126,4 +178,5 @@ public class KeycloakMain implements QuarkusApplication {
 
         return exitCode;
     }
+
 }

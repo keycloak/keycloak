@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * Helper for parse action-uri from the HTML login page and do something with it (eg. open in new browser, parse code parameter and use it somewhere else etc)

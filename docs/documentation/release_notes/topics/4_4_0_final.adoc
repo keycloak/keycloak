@@ -1,0 +1,19 @@
+ifeval::[{project_community}==true]
+= Upgrade to WildFly 13
+
+The {project_name} server was upgraded to use WildFly 13 under the covers. This means update of the underlying dependencies and also
+some changes in the configuration. We now also support WildFly 13 adapter and we upgraded the underlying JDG/Infinispan server version for
+the Cross-DC setup. See link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+endif::[]
+
+= Authorization Services support in Node.js
+
+Having authorization services support in Node.js makes it very easy to do fine-grained central authorization
+with the Node.js adapter.
+
+= Minor improvements
+
+* Update design for the welcome page
+* Allow passing current locale to OAuth2 IdPs. Thanks to https://github.com/knutz3n[knutz3n]
+* Support Content-Security-Policy-Report-Only security header. Thanks to https://github.com/knutz3n[knutz3n]
+* Script based ProtocolMapper for SAML. Thanks to https://github.com/AlistairDoswald[AlistairDoswald]

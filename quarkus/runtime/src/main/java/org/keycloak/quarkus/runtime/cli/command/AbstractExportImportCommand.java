@@ -17,26 +17,22 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
-
 import picocli.CommandLine;
-import picocli.CommandLine.Option;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class AbstractExportImportCommand extends AbstractStartCommand implements Runnable {
 
     private final String action;
 
-    @Option(names = "--dir",
-            arity = "1",
-            description = "Set the path to a directory where files will be read from when importing or created with the exported data.",
-            paramLabel = "<path>")
-    String toDir;
+    @CommandLine.Mixin
+    OptimizedMixin optimizedMixin;
 
-    @Option(names = "--file",
-            arity = "1",
-            description = "Set the path to a file that will be read when importing or created with the exported data.",
-            paramLabel = "<path>")
-    String toFile;
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
 
     protected AbstractExportImportCommand(String action) {
         this.action = action;
@@ -46,18 +42,26 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
     public void run() {
         System.setProperty("keycloak.migration.action", action);
 
-        if (toDir != null) {
-            System.setProperty("keycloak.migration.provider", "dir");
-            System.setProperty("keycloak.migration.dir", toDir);
-        } else if (toFile != null) {
-            System.setProperty("keycloak.migration.provider", "singleFile");
-            System.setProperty("keycloak.migration.file", toFile);
-        } else {
-            executionError(spec.commandLine(), "Must specify either --dir or --file options.");
-        }
-
         Environment.setProfile(Environment.IMPORT_EXPORT_MODE);
 
         super.run();
+    }
+
+    @Override
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory ->
+                optionCategory != OptionCategory.HTTP &&
+                        optionCategory != OptionCategory.PROXY &&
+                        optionCategory != OptionCategory.HOSTNAME_V1 &&
+                        optionCategory != OptionCategory.HOSTNAME_V2 &&
+                        optionCategory != OptionCategory.METRICS &&
+                        optionCategory != OptionCategory.SECURITY &&
+                        optionCategory != OptionCategory.CACHE &&
+                        optionCategory != OptionCategory.HEALTH).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean includeRuntime() {
+        return true;
     }
 }

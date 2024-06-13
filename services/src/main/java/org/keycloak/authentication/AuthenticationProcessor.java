@@ -18,7 +18,7 @@
 package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.common.ClientConnection;
@@ -37,10 +37,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
@@ -48,24 +51,30 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -92,6 +101,8 @@ public class AuthenticationProcessor {
     protected HttpRequest request;
     protected String flowId;
     protected String flowPath;
+
+
     protected boolean browserFlow;
     protected BruteForceProtector protector;
     protected Runnable afterResetListener;
@@ -277,11 +288,22 @@ public class AuthenticationProcessor {
         getAuthenticationSession().setAuthenticatedUser(null);
     }
 
+    private String getClientData() {
+        return getClientData(getSession(), getAuthenticationSession());
+    }
+
+    public static String getClientData(KeycloakSession session, AuthenticationSessionModel authSession) {
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, authSession.getProtocol());
+        ClientData clientData = protocol.getClientData(authSession);
+        return clientData.encode();
+    }
+
     public URI getRefreshUrl(boolean authSessionIdParam) {
         UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                 .path(AuthenticationProcessor.this.flowPath)
                 .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                .queryParam(Constants.CLIENT_DATA, getClientData());
         if (authSessionIdParam) {
             uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
         }
@@ -338,6 +360,11 @@ public class AuthenticationProcessor {
         @Override
         public AuthenticationExecutionModel getExecution() {
             return execution;
+        }
+
+        @Override
+        public AuthenticationFlowModel getTopLevelFlow() {
+            return AuthenticatorUtil.getTopParentFlow(realm, execution);
         }
 
         @Override
@@ -498,6 +525,9 @@ public class AuthenticationProcessor {
         @Override
         public void attachUserSession(UserSessionModel userSession) {
             AuthenticationProcessor.this.userSession = userSession;
+            if (isLightweightUser(userSession.getUser())) {
+                AuthenticationProcessor.this.authenticationSession.setAuthenticatedUser(userSession.getUser());
+            }
         }
 
         @Override
@@ -563,7 +593,8 @@ public class AuthenticationProcessor {
                     .queryParam(LoginActionsService.SESSION_CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
             }
@@ -577,23 +608,9 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.KEY, tokenString)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
-            }
-            return uriBuilder
-                    .build(getRealm().getName());
-        }
-
-        @Override
-        public URI getActionUrl(String code, boolean authSessionIdParam) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
-                    .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam(LoginActionsService.SESSION_CODE, code)
-                    .queryParam(Constants.EXECUTION, getExecution().getId())
-                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
-            if (authSessionIdParam) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
             }
             return uriBuilder
@@ -606,7 +623,8 @@ public class AuthenticationProcessor {
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
             }
@@ -807,7 +825,7 @@ public class AuthenticationProcessor {
                         .setSession(session)
                         .setUriInfo(uriInfo)
                         .setRequest(request);
-                CacheControlUtil.noBackButtonCacheControlHeader();
+                CacheControlUtil.noBackButtonCacheControlHeader(session);
                 return processor.authenticate();
 
             } else if (e.getError() == AuthenticationFlowError.DISPLAY_NOT_SUPPORTED) {
@@ -834,7 +852,6 @@ public class AuthenticationProcessor {
                 if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
             }
-
         } else {
             ServicesLogger.LOGGER.failedAuthentication(failure);
             event.error(Errors.INVALID_USER_CREDENTIALS);
@@ -849,16 +866,16 @@ public class AuthenticationProcessor {
             ServicesLogger.LOGGER.failedClientAuthentication(e);
             if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
                 event.error(Errors.CLIENT_NOT_FOUND);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client credentials");
+                return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
             } else if (e.getError() == AuthenticationFlowError.CLIENT_DISABLED) {
                 event.error(Errors.CLIENT_DISABLED);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client credentials");
+                return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
             } else if (e.getError() == AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED) {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client credentials setup required");
             } else {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Invalid client credentials");
+                return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
             }
         } else {
             ServicesLogger.LOGGER.errorAuthenticatingClient(failure);
@@ -935,11 +952,32 @@ public class AuthenticationProcessor {
         authSession.clearUserSessionNotes();
         authSession.clearAuthNotes();
 
+        Set<String> requiredActions = authSession.getRequiredActions();
+        for (String reqAction : requiredActions) {
+            authSession.removeRequiredAction(reqAction);
+        }
+
         authSession.setAction(CommonClientSessionModel.Action.AUTHENTICATE.name());
 
         authSession.setAuthNote(CURRENT_FLOW_PATH, flowPath);
     }
 
+    // Recreate new root auth session and new auth session from the given auth session.
+    public static AuthenticationSessionModel recreate(KeycloakSession session, AuthenticationSessionModel authSession) {
+        AuthenticationSessionManager authenticationSessionManager =  new AuthenticationSessionManager(session);
+        RootAuthenticationSessionModel rootAuthenticationSession = authenticationSessionManager.createAuthenticationSession(authSession.getRealm(), true);
+        AuthenticationSessionModel newAuthSession = rootAuthenticationSession.createAuthenticationSession(authSession.getClient());
+        newAuthSession.setRedirectUri(authSession.getRedirectUri());
+        newAuthSession.setProtocol(authSession.getProtocol());
+
+        for (Map.Entry<String, String> clientNote : authSession.getClientNotes().entrySet()) {
+            newAuthSession.setClientNote(clientNote.getKey(), clientNote.getValue());
+        }
+
+        authenticationSessionManager.removeAuthenticationSession(authSession.getRealm(), authSession, true);
+        RestartLoginCookie.setRestartCookie(session, authSession);
+        return newAuthSession;
+    }
 
     // Clone new authentication session from the given authSession. New authenticationSession will have same parent (rootSession) and will use same client
     public static AuthenticationSessionModel clone(KeycloakSession session, AuthenticationSessionModel authSession) {
@@ -953,6 +991,9 @@ public class AuthenticationProcessor {
         }
 
         clone.setAuthNote(FORKED_FROM, authSession.getTabId());
+        if (authSession.getAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS) != null) {
+            clone.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, authSession.getAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS));
+        }
 
         logger.debugf("Forked authSession %s from authSession %s . Client: %s, Root session: %s",
                 clone.getTabId(), authSession.getTabId(), authSession.getClient().getClientId(), authSession.getParentSession().getId());
@@ -1070,8 +1111,13 @@ public class AuthenticationProcessor {
             if (userSession == null) {
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 
-                userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId, persistenceState);
+
+                if (isLightweightUser(userSession.getUser())) {
+                    LightweightUserAdapter lua = (LightweightUserAdapter) userSession.getUser();
+                    lua.setOwningUserSessionId(userSession.getId());
+                }
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);

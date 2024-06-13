@@ -187,6 +187,8 @@ public class AuthorizationRequest {
         private Boolean includeResourceName;
         private Integer limit;
         private String responseMode;
+        private String permissionResourceFormat;
+        private Boolean permissionResourceMatchingUri;
 
         public Boolean getIncludeResourceName() {
             if (includeResourceName == null) {
@@ -213,6 +215,22 @@ public class AuthorizationRequest {
 
         public String getResponseMode() {
             return responseMode;
+        }
+
+        public String getPermissionResourceFormat() {
+            return permissionResourceFormat;
+        }
+
+        public void setPermissionResourceFormat(String permissionResourceFormat) {
+            this.permissionResourceFormat = permissionResourceFormat;
+        }
+
+        public Boolean getPermissionResourceMatchingUri() {
+            return permissionResourceMatchingUri;
+        }
+
+        public void setPermissionResourceMatchingUri(Boolean permissionResourceMatchingUri) {
+            this.permissionResourceMatchingUri = permissionResourceMatchingUri;
         }
     }
 }

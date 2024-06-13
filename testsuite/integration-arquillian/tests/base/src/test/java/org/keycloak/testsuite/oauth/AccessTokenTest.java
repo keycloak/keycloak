@@ -40,12 +40,15 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.ECDSASignatureProvider;
+import org.keycloak.crypto.ECDSAAlgorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -82,19 +85,20 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -188,12 +192,15 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals(200, response.getStatusCode());
 
-        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
+        assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
 
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
+        String expectedKid = Stream.of(oauth.doCertsRequest("test").getKeys())
+                .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
+                .map(JWK::getKeyId)
+                .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());
@@ -208,14 +215,15 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals("HS256", header.getAlgorithm().name());
+        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
-        assertNotEquals("test-user@localhost", token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // assertNotEquals("test-user@localhost", token.getSubject());
 
         assertEquals(sessionId, token.getSessionState());
 
@@ -227,13 +235,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, sid);
 
         assertNull(token.getNbf());
-        assertEquals(0, token.getNotBefore());
 
         assertNotNull(token.getIat());
-        assertEquals(token.getIat().intValue(), token.getIssuedAt());
 
         assertNotNull(token.getExp());
-        assertEquals(token.getExp().intValue(), token.getExpiration());
 
         assertEquals(1, token.getRealmAccess().getRoles().size());
         assertTrue(token.getRealmAccess().isUserInRole("user"));
@@ -337,7 +342,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals("invalid_grant", response.getError());
         assertEquals("Incorrect redirect_uri", response.getErrorDescription());
 
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code")
+        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error(Errors.INVALID_REDIRECT_URI)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)
@@ -656,7 +661,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(400, response.getStatus());
+            assertEquals(401, response.getStatus());
             response.close();
 
             {
@@ -812,7 +817,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String clientScopeId = ApiUtil.getCreatedId(response);
         response.close();
         ClientScopeResource clientScopeResource = adminClient.proxy(ClientScopeResource.class, scopeUri);
-        ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", true, true);
+        ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", true, true, true);
         ProtocolMapperRepresentation mapper = ModelToRepresentation.toRepresentation(hard);
         response = clientScopeResource.getProtocolMappers().createMapper(mapper);
         assertEquals(201, response.getStatus());
@@ -1265,44 +1270,54 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenRequest_ClientPS384_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS384, Algorithm.RS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS384, Algorithm.RS256);
     }
 
     @Test
     public void accessTokenRequest_ClientPS256_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.PS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientPS512_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS512, Algorithm.PS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientRS384_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.RS384, Algorithm.RS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS384, Algorithm.RS256);
     }
 
     @Test
     public void accessTokenRequest_ClientRS512_RealmRS512() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.RS512, Algorithm.RS512);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS512, Algorithm.RS512);
     }
 
     @Test
     public void accessTokenRequest_ClientES256_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientES384_RealmES384() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES384, Algorithm.ES384);
     }
 
     @Test
     public void accessTokenRequest_ClientES512_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES512, Algorithm.RS256);
     }
 
+    @Test
+    public void accessTokenRequest_ClientEdDSA_RealmES256() throws Exception {
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.ES256);
+    }
+
+    @Test
+    public void accessTokenRequest_ClientEdDSA_RealmEdDSA() throws Exception {
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.EdDSA);
+    }
+    
     @Test
     public void validateECDSASignatures() {
         validateTokenECDSASignature(Algorithm.ES256);
@@ -1311,12 +1326,12 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     private void validateTokenECDSASignature(String expectedAlg) {
-        assertThat(ECDSASignatureProvider.ECDSA.values(), hasItemInArray(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg)));
+        assertThat(ECDSAAlgorithm.values(), hasItemInArray(ECDSAAlgorithm.valueOf(expectedAlg)));
 
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAlg);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAlg);
-            validateTokenSignatureLength(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg).getSignatureLength());
+            validateTokenSignatureLength(ECDSAAlgorithm.getSignatureLength(expectedAlg));
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
@@ -1347,7 +1362,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
-        return;
     }
 
     private void tokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
@@ -1366,24 +1380,25 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals("Bearer", response.getTokenType());
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
-        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedAccessAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getIdToken()).getHeader();
-        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedIdTokenAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedRefreshAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
-        assertNotEquals("test-user@localhost", token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // assertNotEquals("test-user@localhost", token.getSubject());
 
         assertEquals(sessionId, token.getSessionState());
 
@@ -1391,6 +1406,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
+    }
+
+    private void verifySignatureAlgorithm(JWSHeader header, String expectedAlgorithm) {
+        assertEquals(expectedAlgorithm, header.getAlgorithm().name());
     }
 
     // KEYCLOAK-16009

@@ -22,23 +22,19 @@ import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.email.EmailTemplateProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.theme.FreeMarkerUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class FreeMarkerEmailTemplateProviderFactory implements EmailTemplateProviderFactory {
 
-    private FreeMarkerUtil freeMarker;
-
     @Override
     public EmailTemplateProvider create(KeycloakSession session) {
-        return new FreeMarkerEmailTemplateProvider(session, freeMarker);
+        return new FreeMarkerEmailTemplateProvider(session);
     }
 
     @Override
     public void init(Config.Scope config) {
-        freeMarker = new FreeMarkerUtil();
     }
 
     @Override
@@ -47,7 +43,6 @@ public class FreeMarkerEmailTemplateProviderFactory implements EmailTemplateProv
 
     @Override
     public void close() {
-        freeMarker = null;
     }
 
     @Override

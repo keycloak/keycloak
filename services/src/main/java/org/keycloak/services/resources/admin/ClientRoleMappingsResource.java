@@ -16,35 +16,43 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.storage.ReadOnlyException;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -56,6 +64,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientRoleMappingsResource {
     protected static final Logger logger = Logger.getLogger(ClientRoleMappingsResource.class);
 
@@ -92,6 +101,8 @@ public class ClientRoleMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Get client-level role mappings for the user or group, and the app")
     public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
 
@@ -111,7 +122,9 @@ public class ClientRoleMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<RoleRepresentation> getCompositeClientRoleMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Get effective client-level role mappings This recurses any composite roles")
+    public Stream<RoleRepresentation> getCompositeClientRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         Stream<RoleModel> roles = client.getRolesStream();
@@ -121,7 +134,7 @@ public class ClientRoleMappingsResource {
     }
 
     /**
-     * Get available client-level roles that can be mapped to the user
+     * Get available client-level roles that can be mapped to the user or group
      *
      * @return
      */
@@ -129,6 +142,8 @@ public class ClientRoleMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Get available client-level roles that can be mapped to the user or group")
     public Stream<RoleRepresentation> getAvailableClientRoleMappings() {
         viewPermission.require();
 
@@ -139,12 +154,15 @@ public class ClientRoleMappingsResource {
     }
 
     /**
-     * Add client-level roles to the user role mapping
+     * Add client-level roles to the user or group role mapping
      *
      * @param roles
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Add client-level roles to the user or group role mapping")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -157,9 +175,12 @@ public class ClientRoleMappingsResource {
                 auth.roles().requireMapRole(roleModel);
                 user.grantRole(roleModel);
             }
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException | ReadOnlyException me) {
             logger.warn(me.getMessage(), me);
-            throw new ErrorResponseException("invalid_request", "Could not add user role mappings!", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException("invalid_request", "Could not add user role or group mappings!", Response.Status.BAD_REQUEST);
         }
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
@@ -167,12 +188,14 @@ public class ClientRoleMappingsResource {
     }
 
     /**
-         * Delete client-level roles from user role mapping
-         *
-         * @param roles
-         */
+     * Delete client-level roles from user or group role mapping
+     *
+     * @param roles
+     */
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Delete client-level roles from user or group role mapping")
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -194,9 +217,12 @@ public class ClientRoleMappingsResource {
                 auth.roles().requireMapRole(roleModel);
                 try {
                     user.deleteRoleMapping(roleModel);
+                } catch (ModelIllegalStateException e) {
+                    logger.error(e.getMessage(), e);
+                    throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
                 } catch (ModelException | ReadOnlyException me) {
                     logger.warn(me.getMessage(), me);
-                    throw new ErrorResponseException("invalid_request", "Could not remove user role mappings!", Response.Status.BAD_REQUEST);
+                    throw new ErrorResponseException("invalid_request", "Could not remove user or group role mappings!", Response.Status.BAD_REQUEST);
                 }
             }
         }

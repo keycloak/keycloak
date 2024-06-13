@@ -28,6 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
@@ -40,7 +43,7 @@ public class SessionEntityWrapper<S extends SessionEntity> {
 
     private static final Logger log = Logger.getLogger(SessionEntityWrapper.class);
 
-    private UUID version;
+    private final UUID version;
     private final S entity;
     private final Map<String, String> localMetadata;
 
@@ -88,12 +91,18 @@ public class SessionEntityWrapper<S extends SessionEntity> {
         return version;
     }
 
-    public void setVersion(UUID version) {
-        this.version = version;
-    }
-
     public S getEntity() {
         return entity;
+    }
+
+    public ClientModel getClientIfNeeded(RealmModel realm) {
+        if (entity instanceof AuthenticatedClientSessionEntity) {
+            String clientId = ((AuthenticatedClientSessionEntity) entity).getClientId();
+            if (clientId != null) {
+                return realm.getClientById(clientId);
+            }
+        }
+        return null;
     }
 
     public String getLocalMetadataNote(String key) {
@@ -101,13 +110,6 @@ public class SessionEntityWrapper<S extends SessionEntity> {
             throw new IllegalStateException("This entity is only intended for transport");
         }
         return localMetadata.get(key);
-    }
-
-    public void putLocalMetadataNote(String key, String value) {
-        if (isForTransport()) {
-            throw new IllegalStateException("This entity is only intended for transport");
-        }
-        localMetadata.put(key, value);
     }
 
     public Integer getLocalMetadataNoteInt(String key) {
@@ -191,7 +193,7 @@ public class SessionEntityWrapper<S extends SessionEntity> {
                 return res;
             } else {
                 UUID sessionVersion = new UUID(input.readLong(), input.readLong());
-                HashMap<String, String> map = MarshallUtil.unmarshallMap(input, HashMap::new);
+                HashMap<String, String> map = MarshallUtil.<String, String, HashMap<String, String>>unmarshallMap(input, HashMap::new);
                 final SessionEntity entity = (SessionEntity) input.readObject();
                 if (log.isTraceEnabled()) {
                     log.tracef("Found entity locally: entity=%s, version=%s, metadata=%s", entity, sessionVersion, map);

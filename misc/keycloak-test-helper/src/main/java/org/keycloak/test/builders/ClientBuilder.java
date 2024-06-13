@@ -17,6 +17,7 @@
 
 package org.keycloak.test.builders;
 
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.util.Collections;
@@ -88,6 +89,9 @@ public class ClientBuilder {
 
         if (rep.getRedirectUris() == null && rep.getRootUrl() != null)
             rep.setRedirectUris(Collections.singletonList(rep.getRootUrl().concat("/*")));
+        if (OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).getPostLogoutRedirectUris() == null) {
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setPostLogoutRedirectUris(Collections.singletonList("+"));
+        }
         return rep;
     }
 

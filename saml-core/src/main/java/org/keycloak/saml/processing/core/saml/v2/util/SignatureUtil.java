@@ -29,7 +29,7 @@ import org.keycloak.saml.processing.core.constants.PicketLinkFederationConstants
 
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;

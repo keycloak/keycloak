@@ -22,7 +22,7 @@ import com.icegreen.greenmail.util.ServerSetup;
 import org.junit.rules.ExternalResource;
 import org.keycloak.models.RealmModel;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
 import java.util.HashMap;

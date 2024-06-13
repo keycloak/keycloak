@@ -1,30 +1,30 @@
 package org.keycloak.testsuite.broker;
 
-import java.util.Collections;
-import java.util.List;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.LEGACY;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 
 import com.google.common.collect.ImmutableMap;
 
-import static org.keycloak.models.IdentityProviderMapperSyncMode.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
- * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>
+ * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public class ExternalKeycloakRoleToRoleMapperTest extends AbstractRoleMapperTest {
-    private RealmResource realm;
     private boolean deleteRoleFromUser = true;
 
     @Override
@@ -35,67 +35,66 @@ public class ExternalKeycloakRoleToRoleMapperTest extends AbstractRoleMapperTest
     @Before
     public void setupRealm() {
         super.addClients();
-        realm = adminClient.realm(bc.consumerRealmName());
     }
 
     @Test
     public void mapperGrantsRoleOnFirstLogin() {
-        UserRepresentation user = createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(IMPORT);
+        createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(IMPORT);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserDoesNotGrantRoleInLegacyMode() {
-        UserRepresentation user = loginAsUserThenCreateMapperAndLoginAgainWithExternalKeycloakRoleToRoleMapper(LEGACY);
+        loginAsUserThenCreateMapperAndLoginAgainWithExternalKeycloakRoleToRoleMapper(LEGACY);
 
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserGrantsRoleInForceMode() {
-        UserRepresentation user = loginAsUserThenCreateMapperAndLoginAgainWithExternalKeycloakRoleToRoleMapper(FORCE);
+        loginAsUserThenCreateMapperAndLoginAgainWithExternalKeycloakRoleToRoleMapper(FORCE);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserMatchDeletesRoleInForceMode() {
-        UserRepresentation user = createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(FORCE);
+        createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(FORCE);
 
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserMatchDoesNotDeleteRoleInLegacyMode() {
-        UserRepresentation user = createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(LEGACY);
+        createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(LEGACY);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
-    private UserRepresentation createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(IdentityProviderMapperSyncMode syncMode) {
-        return loginAsUserTwiceWithMapper(syncMode, false, ImmutableMap.<String, List<String>>builder().build());
+    private void createMapperThenLoginAsUserTwiceWithExternalKeycloakRoleToRoleMapper(
+            IdentityProviderMapperSyncMode syncMode) {
+        loginAsUserTwiceWithMapper(syncMode, false, Collections.emptyMap());
     }
 
-    private UserRepresentation loginAsUserThenCreateMapperAndLoginAgainWithExternalKeycloakRoleToRoleMapper(IdentityProviderMapperSyncMode syncMode) {
+    private void loginAsUserThenCreateMapperAndLoginAgainWithExternalKeycloakRoleToRoleMapper(
+            IdentityProviderMapperSyncMode syncMode) {
         deleteRoleFromUser = false;
-        return loginAsUserTwiceWithMapper(syncMode, true, ImmutableMap.<String, List<String>>builder().build());
+        loginAsUserTwiceWithMapper(syncMode, true, Collections.emptyMap());
     }
 
     @Override
-    protected void createMapperInIdp(IdentityProviderRepresentation idp, IdentityProviderMapperSyncMode syncMode) {
+    protected void createMapperInIdp(IdentityProviderMapperSyncMode syncMode, String roleValue) {
         IdentityProviderMapperRepresentation externalRoleToRoleMapper = new IdentityProviderMapperRepresentation();
         externalRoleToRoleMapper.setName("external-keycloak-role-mapper");
         externalRoleToRoleMapper.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        externalRoleToRoleMapper.setConfig(ImmutableMap.<String,String>builder()
-            .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-            .put("external.role", ROLE_USER)
-            .put("role", CLIENT_ROLE_MAPPER_REPRESENTATION)
-            .build());
+        externalRoleToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+                .put("external.role", ROLE_USER)
+                .put(ConfigConstants.ROLE, roleValue)
+                .build());
 
-        IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
-        externalRoleToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(externalRoleToRoleMapper).close();
+        persistMapper(externalRoleToRoleMapper);
     }
 
     @Override
@@ -105,5 +104,10 @@ public class ExternalKeycloakRoleToRoleMapperTest extends AbstractRoleMapperTest
             UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
             userResource.roles().realmLevel().remove(Collections.singletonList(role));
         }
+    }
+
+    @Override
+    protected Map<String, List<String>> createUserConfigForRole(String roleValue) {
+        return Collections.emptyMap();
     }
 }

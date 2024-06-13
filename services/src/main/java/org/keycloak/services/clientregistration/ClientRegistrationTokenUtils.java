@@ -27,10 +27,10 @@ import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.TokenManager.TokenRevocationCheck;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -56,8 +56,7 @@ public class ClientRegistrationTokenUtils {
 
             regToken.type(auth.getJwt().getType());
             regToken.id(auth.getJwt().getId());
-            regToken.issuedAt(Time.currentTime());
-            regToken.expiration(0);
+            regToken.issuedNow();
             regToken.issuer(auth.getJwt().getIssuer());
             regToken.audience(auth.getJwt().getIssuer());
 
@@ -94,7 +93,7 @@ public class ClientRegistrationTokenUtils {
         JsonWebToken jwt;
         try {
             TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
-                    .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE);
+                    .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
@@ -117,13 +116,13 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(kid, jwt);
     }
 
-    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, int expiration) {
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration) {
         String issuer = getIssuer(session, realm);
 
         jwt.type(type);
         jwt.id(id);
-        jwt.issuedAt(Time.currentTime());
-        jwt.expiration(expiration);
+        jwt.issuedNow();
+        jwt.exp(expiration);
         jwt.issuer(issuer);
         jwt.audience(issuer);
 

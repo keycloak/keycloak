@@ -242,12 +242,12 @@ class ClosingStream<R> implements Stream<R> {
 
     @Override
     public Iterator<R> iterator() {
-        return delegate.iterator();
+        return new ClosingIterator(delegate.iterator());
     }
 
     @Override
     public Spliterator<R> spliterator() {
-        return delegate.spliterator();
+        return new ClosingSpliterator(delegate.spliterator());
     }
 
     @Override
@@ -280,4 +280,92 @@ class ClosingStream<R> implements Stream<R> {
         delegate.close();
     }
 
+    private class ClosingIterator implements Iterator<R> {
+
+        private final Iterator<R> iterator;
+
+        public ClosingIterator(Iterator<R> iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            final boolean res = iterator.hasNext();
+            if (! res) {
+                close();
+            }
+            return res;
+        }
+
+        @Override
+        public R next() {
+            return iterator.next();
+        }
+
+        @Override
+        public void remove() {
+            iterator.remove();
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super R> action) {
+            iterator.forEachRemaining(action);
+            close();
+        }
+    }
+
+    private class ClosingSpliterator implements Spliterator<R> {
+
+        private final Spliterator<R> spliterator;
+
+        public ClosingSpliterator(Spliterator<R> spliterator) {
+            this.spliterator = spliterator;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super R> action) {
+            final boolean res = spliterator.tryAdvance(action);
+            if (! res) {
+                close();
+            }
+            return res;
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super R> action) {
+            spliterator.forEachRemaining(action);
+            close();
+        }
+
+        @Override
+        public Spliterator<R> trySplit() {
+            return spliterator.trySplit();
+        }
+
+        @Override
+        public long estimateSize() {
+            return spliterator.estimateSize();
+        }
+
+        @Override
+        public long getExactSizeIfKnown() {
+            return spliterator.getExactSizeIfKnown();
+        }
+
+        @Override
+        public int characteristics() {
+            return spliterator.characteristics();
+        }
+
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return spliterator.hasCharacteristics(characteristics);
+        }
+
+        @Override
+        public Comparator<? super R> getComparator() {
+            return spliterator.getComparator();
+        }
+
+    }
 }

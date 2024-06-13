@@ -86,7 +86,7 @@ public abstract class AbstractImportedRsaKeyProviderFactory extends AbstractRsaK
                 Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
                 model.put(Attributes.CERTIFICATE_KEY, PemUtils.encodeCertificate(certificate));
             } catch (Throwable t) {
-                throw new ComponentValidationException("Failed to generate self-signed certificate");
+                throw new ComponentValidationException("Failed to generate self-signed certificate", t);
             }
         }
     }

@@ -29,11 +29,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest {
 
     @Override
@@ -76,10 +73,10 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
         int ssoSessionMaxLifespanOrig = realm.getSsoSessionMaxLifespan();
         UserSessionModel userSessionModel =
             session.sessions().createUserSession(
-                                                 realm,
-                                                 session.users().getUserByUsername(realm, "user1"),
-                                                 "user1", "127.0.0.1", "form", true, null, null
-                                                 );
+                                                null, realm,
+                                                session.users().getUserByUsername(realm, "user1"),
+                                                "user1", "127.0.0.1", "form", true, null, null,
+                                                UserSessionModel.SessionPersistenceState.PERSISTENT);
 
         realm.setSsoSessionIdleTimeout(Integer.MAX_VALUE);
         Assert.assertTrue("Session validataion with large SsoSessionIdleTimeout failed",

@@ -22,10 +22,16 @@ import java.io.File;
 import org.keycloak.Config;
 
 public interface PlatformProvider {
-    
-    void onStartup(Runnable runnable);
 
-    void onShutdown(Runnable runnable);
+    String name();
+    
+    default void onStartup(Runnable runnable) {
+
+    }
+
+    default void onShutdown(Runnable runnable) {
+
+    }
 
     void exit(Throwable cause);
 

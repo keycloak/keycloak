@@ -18,6 +18,7 @@
 package org.keycloak.common.util;
 
 import org.keycloak.common.constants.GenericConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,6 +27,9 @@ import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,12 +38,32 @@ import java.security.PublicKey;
 public class KeystoreUtil {
 
     public enum KeystoreFormat {
-        JKS,
-        PKCS12
+        JKS("jks"),
+        PKCS12("p12", "pfx"),
+        BCFKS("bcfks");
+
+        // Typical file extension for this keystore format
+        private final List<String> fileExtensions;
+        KeystoreFormat(String... extensions) {
+            this.fileExtensions = Arrays.asList(extensions);
+        }
+
+        public List<String> getFileExtensions() {
+            return fileExtensions;
+        }
+
+        public String getPrimaryExtension() {
+            return fileExtensions.get(0);
+        }
     }
 
     public static KeyStore loadKeyStore(String filename, String password) throws Exception {
-        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        return loadKeyStore(filename, password, null);
+    }
+
+    public static KeyStore loadKeyStore(String filename, String password, String preferedType) throws Exception {
+        String keystoreType = getKeystoreType(preferedType, filename, KeyStore.getDefaultType());
+        KeyStore trustStore = KeyStore.getInstance(keystoreType);
         InputStream trustStream = null;
         if (filename.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
             String resourcePath = filename.replace(GenericConstants.PROTOCOL_CLASSPATH, "");
@@ -56,7 +80,7 @@ public class KeystoreUtil {
             trustStream = new FileInputStream(new File(filename));
         }
         try (InputStream is = trustStream) {
-            trustStore.load(is, password.toCharArray());
+            trustStore.load(is, password == null ? null : password.toCharArray());
         }
         return trustStore;
     }
@@ -65,12 +89,7 @@ public class KeystoreUtil {
         InputStream stream = FindFile.findFile(keystoreFile);
 
         try {
-            KeyStore keyStore = null;
-            if (format == KeystoreFormat.JKS) {
-                keyStore = KeyStore.getInstance(format.toString());
-            } else {
-                keyStore = KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
-            }
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(format);
 
             keyStore.load(stream, storePassword.toCharArray());
             PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
@@ -78,9 +97,39 @@ public class KeystoreUtil {
                 throw new RuntimeException("Couldn't load key with alias '" + keyAlias + "' from keystore");
             }
             PublicKey publicKey = keyStore.getCertificate(keyAlias).getPublicKey();
+            if (publicKey == null) {
+                throw new RuntimeException("Couldn't load public key with alias '" + keyAlias + "' from keystore");
+            }
             return new KeyPair(publicKey, privateKey);
         } catch (Exception e) {
             throw new RuntimeException("Failed to load private key: " + e.getMessage(), e);
         }
+    }
+
+
+    /**
+     * Try to return supported keystore type
+     *
+     * @param preferredType The preferred format - usually the one from the configuration. When present, it should be preferred over anything else
+     * @param path Path of the file. We can try to detect keystore type from that (EG. my-keystore.pkcs12 will return "pkcs12") in case that preferredType is not defined
+     * @param defaultType Default format as last fallback when none of the above can be used. Should be non-null
+     * @return format as specified above
+     */
+    public static String getKeystoreType(String preferredType, String path, String defaultType) {
+        // Configured type has precedence
+        if (preferredType != null) return preferredType;
+
+        // Fallback to path
+        int lastDotIndex = path.lastIndexOf('.');
+        if (lastDotIndex > -1) {
+            String ext = path.substring(lastDotIndex + 1).toLowerCase();
+            Optional<KeystoreFormat> detectedType = Arrays.stream(KeystoreUtil.KeystoreFormat.values())
+                    .filter(ksFormat -> ksFormat.getFileExtensions().contains(ext))
+                    .findFirst();
+            if (detectedType.isPresent()) return detectedType.get().toString();
+        }
+
+        // Fallback to default
+        return defaultType;
     }
 }

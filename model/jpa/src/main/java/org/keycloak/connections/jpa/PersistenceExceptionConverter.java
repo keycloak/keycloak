@@ -22,13 +22,19 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 
-import javax.persistence.EntityExistsException;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.OptimisticLockException;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
@@ -75,13 +81,32 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         }
     }
 
+    // For JTA, the database operations are executed during the commit phase of a transaction, and DB exceptions can be propagated differently
     public static ModelException convert(Throwable t) {
-        if (t.getCause() != null && t.getCause() instanceof ConstraintViolationException) {
-            throw new ModelDuplicateException(t);
-        } if (t instanceof EntityExistsException || t instanceof ConstraintViolationException) {
-            throw new ModelDuplicateException(t);
+        final Predicate<Throwable> checkDuplicationMessage = throwable -> {
+            final String message = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
+            return message == null ? false : message.toLowerCase().contains("duplicate");
+        };
+
+        Predicate<Throwable> throwModelDuplicateEx = throwable ->
+                throwable instanceof EntityExistsException
+                || throwable instanceof ConstraintViolationException
+                // SQL state class 23 captures errors like 23505 = UNIQUE VIOLATION et al.
+                // This captures, for example, a BatchUpdateException which is not mapped to the other exception types
+                // https://en.wikipedia.org/wiki/SQLSTATE
+                || (throwable instanceof SQLException bue && bue.getSQLState().startsWith("23"))
+                || throwable instanceof SQLIntegrityConstraintViolationException;
+
+        throwModelDuplicateEx = throwModelDuplicateEx.or(checkDuplicationMessage);
+
+        if (t.getCause() != null && throwModelDuplicateEx.test(t.getCause())) {
+            throw new ModelDuplicateException("Duplicate resource error", t.getCause());
+        } else if (throwModelDuplicateEx.test(t)) {
+            throw new ModelDuplicateException("Duplicate resource error", t);
+        } else if (t instanceof OptimisticLockException) {
+            throw new ModelIllegalStateException("Database operation failed", t);
         } else {
-            throw new ModelException(t);
+            throw new ModelException("Database operation failed", t);
         }
     }
 

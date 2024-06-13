@@ -16,11 +16,11 @@
  */
 package org.keycloak.testsuite.pages;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -65,7 +65,7 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
     }
 
     public List<String> getDisplayedGrants() {
-        List<String> table = new LinkedList<>();
+        List<String> table = new ArrayList<>();
         WebElement divKcOauth = driver.findElement(By.id("kc-oauth"));
         for (WebElement li : divKcOauth.findElements(By.tagName("li"))) {
             WebElement span = li.findElement(By.tagName("span"));

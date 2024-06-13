@@ -19,9 +19,11 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.credential.LegacyUserCredentialManager;
+import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
+import org.keycloak.models.GroupModel.GroupMemberLeaveEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -35,14 +37,14 @@ import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -56,7 +58,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
+public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     protected UserEntity user;
     protected EntityManager em;
@@ -196,14 +198,22 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public void removeAttribute(String name) {
-        List<UserAttributeEntity> toRemove = new ArrayList<>();
+        List<UserAttributeEntity> customAttributesToRemove = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
-                toRemove.add(attr);
+                customAttributesToRemove.add(attr);
             }
         }
 
-        if (toRemove.isEmpty()) {
+        if (customAttributesToRemove.isEmpty()) {
+            // make sure root user attributes are set to null
+            if (UserModel.FIRST_NAME.equals(name)) {
+                setFirstName(null);
+            } else if (UserModel.LAST_NAME.equals(name)) {
+                setLastName(null);
+            } else if (UserModel.EMAIL.equals(name)) {
+                setEmail(null);
+            }
             return;
         }
 
@@ -213,7 +223,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
         query.setParameter("userId", user.getId());
         query.executeUpdate();
         // KEYCLOAK-3494 : Also remove attributes from local user entity
-        user.getAttributes().removeAll(toRemove);
+        user.getAttributes().removeAll(customAttributesToRemove);
     }
 
     @Override
@@ -392,7 +402,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public void joinGroup(GroupModel group) {
-        if (isMemberOf(group)) return;
+        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
         joinGroupImpl(group);
 
     }
@@ -404,6 +414,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
         em.persist(entity);
         em.flush();
         em.detach(entity);
+        GroupMemberJoinEvent.fire(group, session);
 
     }
 
@@ -419,7 +430,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
             em.remove(entity);
         }
         em.flush();
-
+        GroupMemberLeaveEvent.fire(group, session);
     }
 
     @Override
@@ -519,7 +530,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return new LegacyUserCredentialManager(session, realm, this);
+        return new UserCredentialManager(session, realm, this);
     }
 
 
@@ -536,6 +547,4 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
     public int hashCode() {
         return getId().hashCode();
     }
-
-
 }

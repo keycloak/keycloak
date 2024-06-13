@@ -74,7 +74,7 @@ public interface PAMLibrary extends Library {
     class pam_response extends Structure {
         /**
          * This is really a string, but this field needs to be malloc-ed by the conversation
-         * method, and to be freed by the caler, so I bind it to {@link Pointer} here.
+         * method, and to be freed by the caller, so I bind it to {@link Pointer} here.
          * <p>
          * The man page doesn't say that, but see
          * http://www.netbsd.org/docs/guide/en/chap-pam.html#pam-sample-conv
@@ -116,18 +116,18 @@ public interface PAMLibrary extends Library {
              * resp and its member string both needs to be allocated by malloc,
              * to be freed by the caller.
              */
-            int callback(int num_msg, Pointer msg, Pointer resp, Pointer _);
+            int callback(int num_msg, Pointer msg, Pointer resp, Pointer _ptr);
         }
 
         public PamCallback conv;
-        public Pointer _;
+        public Pointer _ptr;
 
         public pam_conv(PamCallback conv) {
             this.conv = conv;
         }
 
         protected List getFieldOrder() {
-            return Arrays.asList("conv", "_");
+            return Arrays.asList("conv", "_ptr");
         }
     }
 

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -55,6 +55,11 @@
             <artifactId>xmlsec</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>${keycloak.crypto.artifactId}</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -70,12 +75,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.ws</groupId>
-            <artifactId>rt</artifactId>
+            <groupId>jakarta.xml.ws</groupId>
+            <artifactId>jakarta.xml.ws-api</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -99,7 +104,7 @@
                         <id>with-security-manager-all-permissions</id>
                         <goals><goal>test</goal></goals>
                         <configuration>
-                            <argLine>-Dmaven.basedir=${basedir} -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/all-permissions.policy</argLine>
+                            <argLine>-Dmaven.basedir=${basedir} -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/all-permissions.policy -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
                             <test>SecurityActionsTest</test>
                             <skip>${skip.security-manager.tests}</skip>
                         </configuration>
@@ -108,7 +113,7 @@
                         <id>with-security-manager-named-permissions</id>
                         <goals><goal>test</goal></goals>
                         <configuration>
-                            <argLine>-Djava.security.debug=access -Dmaven.basedir=${basedir} -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/named-permissions.policy</argLine>
+                            <argLine>-Djava.security.debug=access -Dmaven.basedir=${basedir} -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/named-permissions.policy -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
                             <test>SecurityActionsTest</test>
                             <skip>${skip.security-manager.tests}</skip>
                         </configuration>                        

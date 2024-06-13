@@ -36,8 +36,8 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.servlet.Servlet;
-import javax.servlet.annotation.WebServlet;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.annotation.WebServlet;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -134,7 +134,7 @@ public class UndertowDeployerHelper {
 
                     });
 
-                    return new URLResource(myResourceUrl, myResourceUrl.openConnection(), path);
+                    return new URLResource(myResourceUrl, path);
                 }
             }
 

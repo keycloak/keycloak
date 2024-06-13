@@ -17,9 +17,9 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import javax.ws.rs.Path;
+import jakarta.ws.rs.Path;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
@@ -53,11 +53,7 @@ public class CibaRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory
      */
     @Path("/auth")
     public BackchannelAuthenticationEndpoint authorize() {
-        BackchannelAuthenticationEndpoint endpoint = new BackchannelAuthenticationEndpoint(session, event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-
-        return endpoint;
+        return new BackchannelAuthenticationEndpoint(session, event);
     }
 
     /**
@@ -67,11 +63,7 @@ public class CibaRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory
      */
     @Path("/auth/callback")
     public BackchannelAuthenticationCallbackEndpoint authenticate() {
-        BackchannelAuthenticationCallbackEndpoint endpoint = new BackchannelAuthenticationCallbackEndpoint(session, event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-
-        return endpoint;
+        return new BackchannelAuthenticationCallbackEndpoint(session, event);
     }
 
     @Override
@@ -95,7 +87,7 @@ public class CibaRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CIBA);
     }
 

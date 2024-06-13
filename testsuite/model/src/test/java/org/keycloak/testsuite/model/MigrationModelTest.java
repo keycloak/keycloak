@@ -17,12 +17,11 @@
 package org.keycloak.testsuite.model;
 
 import java.util.List;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.Version;
-import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.ModelVersion;
@@ -44,7 +43,7 @@ public class MigrationModelTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("realm");
+        RealmModel realm = createRealm(s, "realm");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
     }
@@ -58,7 +57,7 @@ public class MigrationModelTest extends KeycloakModelTest {
     public void test() {
         inComittedTransaction(1, (session , i) -> {
 
-            String currentVersion = new ModelVersion(Version.VERSION_KEYCLOAK).toString();
+            String currentVersion = new ModelVersion(Version.VERSION).toString();
 
             JpaConnectionProvider p = session.getProvider(JpaConnectionProvider.class);
             EntityManager em = p.getEntityManager();
@@ -72,12 +71,12 @@ public class MigrationModelTest extends KeycloakModelTest {
             Assert.assertEquals(currentVersion, m.getStoredVersion());
             Assert.assertEquals(m.getResourcesTag(), l.get(0).getId());
 
-            Time.setOffset(-60000);
+            setTimeOffset(-60000);
 
             session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("6.0.0");
             em.flush();
 
-            Time.setOffset(0);
+            setTimeOffset(0);
 
             l = em.createQuery("select m from MigrationModelEntity m ORDER BY m.updatedTime DESC", MigrationModelEntity.class).getResultList();
             Assert.assertEquals(2, l.size());

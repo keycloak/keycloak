@@ -17,18 +17,18 @@
 
 package org.keycloak.authorization.jpa.entities;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -42,9 +42,9 @@ import javax.persistence.UniqueConstraint;
         @NamedQuery(name="findPermissionIdByResource", query="select p.id from PermissionTicketEntity p inner join p.resource r where p.resourceServer.id = :serverId and (r.resourceServer = :serverId and r.id = :resourceId)"),
         @NamedQuery(name="findPermissionIdByScope", query="select p.id from PermissionTicketEntity p inner join p.scope s where p.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id = :scopeId)"),
         @NamedQuery(name="findPermissionTicketIdByServerId", query="select p.id from PermissionTicketEntity p where  p.resourceServer.id = :serverId "),
-        @NamedQuery(name="findGrantedResources", query="select distinct(r.id) from ResourceEntity r inner join PermissionTicketEntity p on r.id = p.resource.id where p.grantedTimestamp is not null and p.requester = :requester order by r.id"),
+        @NamedQuery(name="findGrantedResources", query="select distinct(p.resource.id) from PermissionTicketEntity p where p.requester = :requester and p.grantedTimestamp is not null order by p.resource.id"),
         @NamedQuery(name="findGrantedResourcesByName", query="select distinct(r.id) from ResourceEntity r inner join PermissionTicketEntity p on r.id = p.resource.id where p.grantedTimestamp is not null and p.requester = :requester and lower(r.name) like :resourceName order by r.id"),
-        @NamedQuery(name="findGrantedOwnerResources", query="select distinct(r.id) from ResourceEntity r inner join PermissionTicketEntity p on r.id = p.resource.id where p.grantedTimestamp is not null and p.owner = :owner order by r.id")
+        @NamedQuery(name="findGrantedOwnerResources", query="select distinct(p.resource.id) from PermissionTicketEntity p where p.owner = :owner and p.grantedTimestamp is not null order by p.resource.id")
     }
 )
 public class PermissionTicketEntity {

@@ -253,10 +253,6 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=52, value="Failed processing type")
     void failedProcessingType(@Cause Exception e);
 
-    @LogMessage(level = WARN)
-    @Message(id=53, value="login failure for user %s from ip %s")
-    void loginFailure(String user, String ip);
-
     @LogMessage(level = ERROR)
     @Message(id=54, value="Unknown action: %s")
     void unknownAction(String action);
@@ -405,7 +401,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=90, value="Failed to close ProviderSession")
     void failedToCloseProviderSession(@Cause Throwable t);
 
-    @LogMessage(level = WARN)
+    @LogMessage(level = DEBUG)
     @Message(id=91, value="Request is missing scope 'openid' so it's not treated as OIDC, but just pure OAuth2 request.")
     @Once
     void oidcScopeMissing();
@@ -467,4 +463,12 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=106, value="Created script engine '%s', version '%s' for the mime type '%s'")
     @Once
     void scriptEngineCreated(String engineName, String engineVersion, String mimeType);
+
+    @LogMessage(level = DEBUG)
+    @Message(id=107, value="Skipping create admin user. Admin already exists in realm '%s'.")
+    void addAdminUserFailedAdminExists(String realm);
+
+    @LogMessage(level = WARN)
+    @Message(id=108, value="URI '%s' doesn't match any trustedHost or trustedDomain")
+    void uriDoesntMatch(String uri);
 }

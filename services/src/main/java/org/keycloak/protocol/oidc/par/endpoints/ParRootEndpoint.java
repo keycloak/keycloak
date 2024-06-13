@@ -17,9 +17,9 @@
 
 package org.keycloak.protocol.oidc.par.endpoints;
 
-import javax.ws.rs.Path;
+import jakarta.ws.rs.Path;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
@@ -45,11 +45,7 @@ public class ParRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory,
 
     @Path("/request")
     public ParEndpoint request() {
-        ParEndpoint endpoint = new ParEndpoint(session, event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-
-        return endpoint;
+        return new ParEndpoint(session, event);
     }
 
     @Override
@@ -63,7 +59,7 @@ public class ParRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory,
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.PAR);
     }
 

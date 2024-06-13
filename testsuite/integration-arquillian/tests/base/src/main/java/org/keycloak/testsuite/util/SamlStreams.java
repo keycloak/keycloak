@@ -27,7 +27,7 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType.RTChoiceType;
 import java.util.Objects;
 import java.util.stream.Stream;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *

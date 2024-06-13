@@ -44,7 +44,7 @@ public abstract class AuthzEndpointRequestParser {
      * Max size of additional req param value copied into client session note to prevent DoS attacks - params with longer value are ignored
      *
      */
-    public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 200;
+    public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 2000;
 
     public static final String AUTHZ_REQUEST_OBJECT = "ParsedRequestObject";
     public static final String AUTHZ_REQUEST_OBJECT_ENCRYPTED = "EncryptedRequestObject";
@@ -73,17 +73,28 @@ public abstract class AuthzEndpointRequestParser {
         // https://tools.ietf.org/html/rfc7636#section-6.1
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+
+        // Those are not OAuth/OIDC parameters, but they should never be added to the additionalRequestParameters
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION_TYPE);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_SECRET);
     }
 
     public void parseRequest(AuthorizationEndpointRequest request) {
         String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
-
-        if (request.clientId != null && !request.clientId.equals(clientId)) {
+        if (clientId != null && request.clientId != null && !request.clientId.equals(clientId)) {
             throw new IllegalArgumentException("The client_id parameter doesn't match the one from OIDC 'request' or 'request_uri'");
         }
+        if (clientId != null) {
+            request.clientId = clientId;
+        }
 
-        request.clientId = clientId;
-        request.responseType = replaceIfNotNull(request.responseType, getParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM));
+        String responseType = getParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        validateResponseTypeParameter(responseType, request);
+        if (responseType != null) {
+            request.responseType = responseType;
+        }
+
         request.responseMode = replaceIfNotNull(request.responseMode, getParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
         request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
         request.state = replaceIfNotNull(request.state, getParameter(OIDCLoginProtocol.STATE_PARAM));
@@ -104,6 +115,13 @@ public abstract class AuthzEndpointRequestParser {
         request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
 
         extractAdditionalReqParams(request.additionalReqParams);
+    }
+
+    protected void validateResponseTypeParameter(String responseTypeParameter, AuthorizationEndpointRequest request) {
+        if (responseTypeParameter != null && request.responseType != null && !request.responseType.equals(responseTypeParameter)) {
+            logger.warnf("The response_type parameter doesn't match the one from OIDC 'request' or 'request_uri'");
+            request.setInvalidRequestMessage("Parameter response_type does not match");
+        }
     }
 
     protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {

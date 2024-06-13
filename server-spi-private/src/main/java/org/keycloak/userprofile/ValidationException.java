@@ -19,7 +19,7 @@
 
 package org.keycloak.userprofile;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +38,12 @@ import org.keycloak.validate.ValidationError;
 public final class ValidationException extends RuntimeException implements Consumer<ValidationError> {
 
 	private final Map<String, List<Error>> errors = new HashMap<>();
+
+	public ValidationException() {}
+
+	public ValidationException(ValidationError error) {
+		addError(error);
+	}
 
 	public List<Error> getErrors() {
 		return errors.values().stream().reduce(new ArrayList<>(), (l, r) -> {

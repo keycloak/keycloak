@@ -19,13 +19,11 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.LDAPConstants;
@@ -35,8 +33,6 @@ import org.keycloak.models.ModelException;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -54,7 +50,6 @@ import java.util.List;
 
 import java.util.Objects;
 import org.junit.Assume;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
@@ -112,12 +107,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         DEFAULT_TEST_USERS.put("VALID_USER_PASSWORD", "P@ssw0rd!");
         DEFAULT_TEST_USERS.put("VALID_USER_POSTAL_CODE", "12345");
         DEFAULT_TEST_USERS.put("VALID_USER_STREET", "1th Avenue");
-    }
-
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
     }
 
     @Override
@@ -241,8 +230,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.NONE)
-    @AuthServerContainerExclude(value = REMOTE, details =
-            "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionNone() {
         verifyConnectionUrlProtocolPrefix("ldap://");
         runLDAPLoginTest();
@@ -261,8 +248,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.SSL)
-    @AuthServerContainerExclude(value = REMOTE, details =
-            "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionSSL() {
         verifyConnectionUrlProtocolPrefix("ldaps://");
         runLDAPLoginTest();
@@ -281,8 +266,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
-    @AuthServerContainerExclude(value = REMOTE, details =
-            "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionStartTLS() {
         verifyConnectionUrlProtocolPrefix("ldap://");
         runLDAPLoginTest();
@@ -340,5 +323,32 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     public void loginLDAPUserCredentialVaultAuthenticationNoneEncryptionStartTLS() {
         verifyConnectionUrlProtocolPrefix("ldap://");
         runLDAPLoginTest();
+    }
+
+    // Check that login fails as expected when an LDAP user that has already authenticated is removed from LDAP and attempts to authenticate again.
+    // See https://github.com/keycloak/keycloak/issues/28523
+    @Test
+    @LDAPConnectionParameters(bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.NONE)
+    public void loginLDAPUserAuthenticationSimpleDeleteLDAPUser() {
+        // create another user for this test.
+        getTestingClient().server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPObject jane = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "janedoe", "Jane",
+                            "Doe", "janedoe@keycloak.org", "2nd Avenue", "09283");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), jane, DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
+        });
+        // login with the new user, then logout - user is now cached in Keycloak.
+        this.verifyLoginSucceededAndLogout("janedoe", DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
+
+        // now remove the user directly in LDAP.
+        getTestingClient().server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), appRealm, ctx.getLdapProvider().getLdapIdentityStore().getConfig(), "janedoe");
+        });
+
+        // attempt to login again with the deleted user should fail with the proper message.
+        this.verifyLoginFailed("janedoe", DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
     }
 }

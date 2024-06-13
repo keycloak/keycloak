@@ -1,39 +1,37 @@
-/*
-   D-Bus Java Implementation
-   Copyright (c) 2005-2006 Matthew Johnson
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of either the GNU Lesser General Public License Version 2 or the
-   Academic Free Licence Version 2.1.
-
-   Full licence texts are included in the COPYING file with this program.
-*/
 package org.freedesktop.dbus.exceptions;
 
 /**
  * An exception while running a remote method within DBus.
  */
-@SuppressWarnings("serial")
+@SuppressWarnings("checkstyle:mutableexception")
 public class DBusExecutionException extends RuntimeException {
+    private static final long serialVersionUID = 6327661667731344250L;
+
     private String type;
 
     /**
-     * Create an exception with the specified message
-     */
-    public DBusExecutionException(String message) {
-        super(message);
+    * Create an exception with the specified message
+    * @param _message message
+    */
+    public DBusExecutionException(String _message) {
+        super(_message);
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setType(String _type) {
+        this.type = _type;
     }
 
     /**
-     * Get the DBus type of this exception. Use if this
-     * was an exception we don't have a class file for.
-     */
+    * Get the DBus type of this exception. Use if this
+    * was an exception we don't have a class file for.
+    *
+    * @return string
+    */
     public String getType() {
-        if (null == type) return getClass().getName();
-        else return type;
+        if (null == type) {
+            return getClass().getName();
+        } else {
+            return type;
+        }
     }
 }

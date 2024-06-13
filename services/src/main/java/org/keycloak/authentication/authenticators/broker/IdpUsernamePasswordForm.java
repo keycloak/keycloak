@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -25,13 +26,14 @@ import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 
 import java.util.Optional;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Same like classic username+password form, but for use in IdP linking.
@@ -48,6 +50,20 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         return setupForm(context, formData, getExistingUser(context))
                 .setStatus(Response.Status.OK)
                 .createLoginUsernamePassword();
+    }
+
+    @Override
+    protected Response challenge(AuthenticationFlowContext context, String error, String field) {
+        LoginFormsProvider form = setupForm(context, new MultivaluedHashMap<>(), getExistingUser(context))
+                .setExecution(context.getExecution().getId());
+        if (error != null) {
+            if (field != null) {
+                form.addError(new FormMessage(field, error));
+            } else {
+                form.setError(error);
+            }
+        }
+        return createLoginForm(form);
     }
 
     @Override

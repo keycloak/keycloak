@@ -125,7 +125,6 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
     public void onUpdate(Policy policy, UmaPermissionRepresentation representation, AuthorizationProvider authorization) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
-        RealmModel realm = policy.getResourceServer().getRealm();
 
         for (Policy associatedPolicy : associatedPolicies) {
             AbstractPolicyRepresentation associatedRep = ModelToRepresentation.toRepresentation(associatedPolicy, authorization, false, false);
@@ -144,7 +143,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getRoles().isEmpty()) {
-                    policyStore.delete(realm, associatedPolicy.getId());
+                    policyStore.delete(associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
@@ -155,7 +154,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                     rep.setType(representation.getCondition());
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 } else {
-                    policyStore.delete(realm, associatedPolicy.getId());
+                    policyStore.delete(associatedPolicy.getId());
                 }
             } else if ("group".equals(associatedRep.getType())) {
                 GroupPolicyRepresentation rep = GroupPolicyRepresentation.class.cast(associatedRep);
@@ -171,7 +170,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getGroups().isEmpty()) {
-                    policyStore.delete(realm, associatedPolicy.getId());
+                    policyStore.delete(associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
@@ -189,7 +188,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getClients().isEmpty()) {
-                    policyStore.delete(realm, associatedPolicy.getId());
+                    policyStore.delete(associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
@@ -207,7 +206,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 }
 
                 if (rep.getUsers().isEmpty()) {
-                    policyStore.delete(realm, associatedPolicy.getId());
+                    policyStore.delete(associatedPolicy.getId());
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
@@ -365,10 +364,9 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
     @Override
     public void onRemove(Policy policy, AuthorizationProvider authorization) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-        RealmModel realm = policy.getResourceServer().getRealm();
 
         for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
-            policyStore.delete(realm, associatedPolicy.getId());
+            policyStore.delete(associatedPolicy.getId());
         }
     }
 

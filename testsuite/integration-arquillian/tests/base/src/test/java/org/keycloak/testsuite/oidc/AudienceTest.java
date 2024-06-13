@@ -33,12 +33,10 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,10 +46,9 @@ import java.util.Collections;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AudienceTest extends AbstractOIDCScopeTest {
 
-    private static final String userId = KeycloakModelUtils.generateId();
+    private static String userId;
 
 
     @Override
@@ -77,7 +74,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
 
         // Create sample user
         UserRepresentation user = UserBuilder.create()
-                .id(userId)
+                .id(KeycloakModelUtils.generateId())
                 .username("john")
                 .enabled(true)
                 .email("john@email.cz")
@@ -89,6 +86,12 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .role("service-client", "role1")
                 .build();
         testRealm.getUsers().add(user);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("john", true).get(0).getId();
     }
 
     @Before
@@ -116,7 +119,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
     public void testAudienceProtocolMapperWithClientAudience() throws Exception {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper", "service-client",
-                null, true, false);
+                null, true, false, true);
         ClientScopeResource clientScope = ApiUtil.findClientScopeByName(testRealm(), "audience-scope");
         Response resp = clientScope.getProtocolMappers().createMapper(audienceMapper);
         String mapperId = ApiUtil.getCreatedId(resp);
@@ -128,7 +131,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         EventRepresentation loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email audience-scope", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
         assertAudiences(tokens.accessToken, "service-client");
         assertAudiences(tokens.idToken, "test-app");
@@ -142,14 +145,14 @@ public class AudienceTest extends AbstractOIDCScopeTest {
     public void testAudienceProtocolMapperWithCustomAudience() throws Exception {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper 1", null,
-                "http://host/service/ctx1", true, false);
+                "http://host/service/ctx1", true, false, true);
         ClientScopeResource clientScope = ApiUtil.findClientScopeByName(testRealm(), "audience-scope");
         Response resp = clientScope.getProtocolMappers().createMapper(audienceMapper);
         String mapper1Id = ApiUtil.getCreatedId(resp);
         resp.close();
 
         audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper 2", null,
-                "http://host/service/ctx2", true, true);
+                "http://host/service/ctx2", true, true, true);
         resp = clientScope.getProtocolMappers().createMapper(audienceMapper);
         String mapper2Id = ApiUtil.getCreatedId(resp);
         resp.close();
@@ -160,7 +163,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         EventRepresentation loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email audience-scope", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
         assertAudiences(tokens.accessToken, "http://host/service/ctx1", "http://host/service/ctx2");
         assertAudiences(tokens.idToken, "test-app", "http://host/service/ctx2");

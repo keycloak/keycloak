@@ -18,7 +18,7 @@
 package org.keycloak.social.github;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import jakarta.ws.rs.core.Response;
 import java.util.Iterator;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
@@ -121,13 +121,12 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
 	@Override
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
-		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"), getConfig());
 
 		String username = getJsonProperty(profile, "login");
 		user.setUsername(username);
 		user.setName(getJsonProperty(profile, "name"));
 		user.setEmail(getJsonProperty(profile, "email"));
-		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 
 		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
@@ -137,36 +136,58 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
-		try {
-			JsonNode profile = SimpleHttp.doGet(profileUrl, session).header("Authorization", "Bearer " + accessToken).asJson();
+		try (SimpleHttp.Response response = SimpleHttp.doGet(profileUrl, session)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Accept", "application/json")
+                        .asResponse()) {
 
-			BrokeredIdentityContext user = extractIdentityFromProfile(null, profile);
+                    if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+                        logger.warnf("Profile endpoint returned an error (%d): %s", response.getStatus(), response.asString());
+                        throw new IdentityBrokerException("Profile could not be retrieved from the github endpoint");
+                    }
 
-			if (user.getEmail() == null) {
-				user.setEmail(searchEmail(accessToken));
-			}
+                    JsonNode profile = response.asJson();
+                    logger.tracef("profile retrieved from github: %s", profile);
+                    BrokeredIdentityContext user = extractIdentityFromProfile(null, profile);
 
-			return user;
+                    if (user.getEmail() == null) {
+                        user.setEmail(searchEmail(accessToken));
+                    }
+
+                    return user;
 		} catch (Exception e) {
-			throw new IdentityBrokerException("Could not obtain user profile from github.", e);
+			throw new IdentityBrokerException("Profile could not be retrieved from the github endpoint", e);
 		}
 	}
 
 	private String searchEmail(String accessToken) {
-		try {
-			ArrayNode emails = (ArrayNode) SimpleHttp.doGet(emailUrl, session).header("Authorization", "Bearer " + accessToken).asJson();
+		try (SimpleHttp.Response response = SimpleHttp.doGet(emailUrl, session)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Accept", "application/json")
+                        .asResponse()) {
 
-			Iterator<JsonNode> loop = emails.elements();
-			while (loop.hasNext()) {
-				JsonNode mail = loop.next();
-				if (mail.get("primary").asBoolean()) {
-					return getJsonProperty(mail, "email");
-				}
-			}
+                    if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+                        logger.warnf("Primary email endpoint returned an error (%d): %s", response.getStatus(), response.asString());
+                        throw new IdentityBrokerException("Primary email could not be retrieved from the github endpoint");
+                    }
+
+                    JsonNode emails = response.asJson();
+                    logger.tracef("emails retrieved from github: %s", emails);
+                    if (emails.isArray()) {
+                        Iterator<JsonNode> loop = emails.elements();
+                        while (loop.hasNext()) {
+                            JsonNode mail = loop.next();
+                            JsonNode primary = mail.get("primary");
+                            if (primary != null && primary.asBoolean()) {
+                                return getJsonProperty(mail, "email");
+                            }
+                        }
+                    }
+
+                    throw new IdentityBrokerException("Primary email from github is not found in the user's email list.");
 		} catch (Exception e) {
-			throw new IdentityBrokerException("Could not obtain user email from github.", e);
+			throw new IdentityBrokerException("Primary email could not be retrieved from the github endpoint", e);
 		}
-		throw new IdentityBrokerException("Primary email from github is not found.");
 	}
 
 	@Override

@@ -17,18 +17,16 @@
 
 package org.keycloak.federation.sssd.api;
 
-import cx.ath.matthew.LibraryLoader;
-import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.Variant;
-import org.freedesktop.dbus.exceptions.DBusException;
-import org.freedesktop.sssd.infopipe.InfoPipe;
-import org.jboss.logging.Logger;
-import org.keycloak.models.UserModel;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
+
+import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.types.DBusListType;
+import org.freedesktop.dbus.types.Variant;
+import org.freedesktop.sssd.infopipe.InfoPipe;
+import org.jboss.logging.Logger;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
@@ -36,34 +34,20 @@ import java.util.Vector;
  */
 public class Sssd {
 
-    private static DBusConnection dBusConnection;
-
-    public static void disconnect() {
-        dBusConnection.disconnect();
-    }
-
-    private String username;
+    private final DBusConnection dBusConnection;
+    private final String username;
     private static final Logger logger = Logger.getLogger(Sssd.class);
 
-    private Sssd() {
-    }
-
-    public Sssd(String username) {
+    public Sssd(String username, DBusConnection dbusConnection) throws SSSDException {
         this.username = username;
-        try {
-            if (LibraryLoader.load().succeed())
-                dBusConnection = DBusConnection.getConnection(DBusConnection.SYSTEM);
-        } catch (DBusException e) {
-            e.printStackTrace();
-        }
-
+        this.dBusConnection = dbusConnection;
     }
 
     public static String getRawAttribute(Variant variant) {
-        if (variant != null) {
-            Vector value = (Vector) variant.getValue();
-            if (value.size() >= 1) {
-                return value.get(0).toString();
+        if (variant != null && variant.getType() instanceof DBusListType) {
+            List<?> value = (List) variant.getValue();
+            if (!value.isEmpty()) {
+                return value.iterator().next().toString();
             }
         }
         return null;
@@ -75,41 +59,19 @@ public class Sssd {
             InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
             userGroups = infoPipe.getUserGroups(username);
         } catch (Exception e) {
-            throw new SSSDException("Failed to retrieve user's groups from SSSD. Check if SSSD service is active.");
+            throw new SSSDException("Failed to retrieve user's groups from SSSD. Check if SSSD service is active.", e);
         }
         return userGroups;
     }
 
-    public static boolean isAvailable() {
-        boolean sssdAvailable = false;
-        try {
-            if (LibraryLoader.load().succeed()) {
-                DBusConnection connection = DBusConnection.getConnection(DBusConnection.SYSTEM);
-                InfoPipe infoPipe = connection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
-
-                if (infoPipe.ping("PING") == null || infoPipe.ping("PING").isEmpty()) {
-                    logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
-                } else {
-                    sssdAvailable = true;
-                }
-            } else {
-                logger.debugv("The RPM libunix-dbus-java is not installed. SSSD Federation provider will be disabled.");
-            }
-        } catch (Exception e) {
-            logger.debugv("SSSD is not available in your system. Federation provider will be disabled.", e);
-        }
-        return sssdAvailable;
-    }
-
     public User getUser() {
-
         String[] attr = {"mail", "givenname", "sn", "telephoneNumber"};
         User user = null;
         try {
             InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
             user = new User(infoPipe.getUserAttributes(username, Arrays.asList(attr)));
         } catch (Exception e) {
-            throw new SSSDException("Failed to retrieve user's attributes. Check if SSSD service is active.");
+            logger.debugf(e, "Failed to retrieve attributes for user '%s'. Check if SSSD service is active.", username);
         }
         return user;
     }
@@ -151,12 +113,9 @@ public class Sssd {
                 return false;
             }
             if (email != null) {
-                return email.equals(userModel.getEmail());
+                return email.equalsIgnoreCase(userModel.getEmail());
             }
-            if (email != userModel.getEmail()) {
-                return false;
-            }
-            return true;
+            return userModel.getEmail() == null;
         }
 
         @Override

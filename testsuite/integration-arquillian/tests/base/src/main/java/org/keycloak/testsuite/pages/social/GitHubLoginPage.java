@@ -50,6 +50,8 @@ public class GitHubLoginPage extends AbstractSocialLoginPage {
     public void logout() {
         log.info("performing logout from GitHub");
         URLUtils.navigateToUri("https://github.com/logout");
-        UIUtils.clickLink(logoutButton);
+        if (URLUtils.currentUrlEquals("https://github.com/logout")) {
+            UIUtils.clickLink(logoutButton);
+        }
     }
 }

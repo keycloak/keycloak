@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-services</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-testsuite-providers</artifactId>
@@ -33,6 +33,10 @@
     <properties>
         <js-adapter.version>${project.version}</js-adapter.version>
         <js-adapter.file.path>${project.basedir}/target/classes/javascript</js-adapter.file.path>
+        <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -55,17 +59,38 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller</artifactId>
+        </dependency>
+        <!-- pick up the transitive dependencies for the quarkus logmanager -->
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-testsuite-providers-deployment</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-tasks-api</artifactId>
         </dependency>
     </dependencies>
 
@@ -102,7 +127,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-js-adapter</artifactId>
+                                    <artifactId>keycloak-js-adapter-jar</artifactId>
                                     <version>${js-adapter.version}</version>
                                     <type>jar</type>
                                     <outputDirectory>${js-adapter.file.path}</outputDirectory>

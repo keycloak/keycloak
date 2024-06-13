@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -31,7 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 public abstract class AbstractParEndpoint {
 
@@ -48,7 +48,7 @@ public abstract class AbstractParEndpoint {
     }
 
     protected void checkSsl() {
-        ClientConnection clientConnection = session.getContext().getContextObject(ClientConnection.class);
+        ClientConnection clientConnection = session.getContext().getConnection();
 
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required", Response.Status.FORBIDDEN);
@@ -70,7 +70,7 @@ public abstract class AbstractParEndpoint {
 
             cors.allowedOrigins(session, client);
 
-            if (client == null || client.isPublicClient()) {
+            if (client == null) {
                 throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
             }
         } catch (Exception e) {

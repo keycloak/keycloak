@@ -71,6 +71,11 @@ public class KerberosConstants {
     public static final String SERVER_PRINCIPAL = "serverPrincipal";
     public static final String KEYTAB = "keyTab";
     public static final String DEBUG = "debug";
+    public static final String KERBEROS_PRINCIPAL_ATTRIBUTE = "krbPrincipalAttribute";
+    public static final String KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB5_PRINCIPAL_NAME = "krb5PrincipalName"; // Used for instance in ApacheDS
+    public static final String KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB_PRINCIPAL_NAME = "krbPrincipalName"; // Used for instance in FreeIPA
+    public static final String KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_USER_PRINCIPAL_NAME = "userPrincipalName"; // Used for instance in MSAD
+
     public static final String ALLOW_PASSWORD_AUTHENTICATION = "allowPasswordAuthentication";
     public static final String UPDATE_PROFILE_FIRST_LOGIN = "updateProfileFirstLogin";
     public static final String USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION = "useKerberosForPasswordAuthentication";
@@ -92,4 +97,14 @@ public class KerberosConstants {
      */
     public static final String GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME = "gss delegation credential";
 
+    /**
+     * Attribute attached to the credential, which contains authenticated SPNEGO context. This is used in case that some LDAP/Kerberos provider was able to authenticate user via SPNEGO, but wasn't able
+     * to lookup it in his LDAP tree. In this case, LDAP lookup might be performed by other providers in the chain.
+     */
+    public static final String AUTHENTICATED_SPNEGO_CONTEXT = "authenticatedSpnegoContext";
+
+    /*
+     * User attribute for kerberos principal used for users from Kerberos/LDAP providers
+     */
+    public static final String KERBEROS_PRINCIPAL = "KERBEROS_PRINCIPAL";
 }

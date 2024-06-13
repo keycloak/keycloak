@@ -36,13 +36,19 @@ public class HardcodedAttributeMapperFactory extends AbstractLDAPStorageMapperFa
  protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty attrName = createConfigProperty(HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE, "User Model Attribute Name",
+        ProviderConfigProperty attrName = createConfigProperty(HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE,
+                "User Model Attribute Name",
                 "Name of the model attribute, which will be added when importing user from ldap",
-                ProviderConfigProperty.STRING_TYPE, null);
+                ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE,
+                null,
+                true);
 
-        ProviderConfigProperty attrValue = createConfigProperty(HardcodedAttributeMapper.ATTRIBUTE_VALUE, "Attribute Value",
+        ProviderConfigProperty attrValue = createConfigProperty(HardcodedAttributeMapper.ATTRIBUTE_VALUE,
+                "Attribute Value",
                 "Value of the model attribute, which will be added when importing user from ldap.",
-                ProviderConfigProperty.STRING_TYPE, null);
+                ProviderConfigProperty.STRING_TYPE,
+                null,
+                true);
 
         configProperties.add(attrName);
         configProperties.add(attrValue);

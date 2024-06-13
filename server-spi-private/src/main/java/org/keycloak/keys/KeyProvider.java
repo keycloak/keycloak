@@ -29,18 +29,6 @@ import java.util.stream.Stream;
  */
 public interface KeyProvider extends Provider {
 
-
-    /**
-     * Returns the {@code KeyWrapper} for a {@code KeyProvider}.
-     *
-     * @return Returns the {@code KeyWrapper} for a {@code KeyProvider}.
-     * @deprecated Use {@link #getKeysStream() getKeysStream} instead.
-     */
-    @Deprecated
-    default List<KeyWrapper> getKeys() {
-        return getKeysStream().collect(Collectors.toList());
-    }
-
     /**
      * Returns the {@code KeyWrapper} for a {@code KeyProvider}.
      *

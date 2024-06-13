@@ -22,5 +22,5 @@ import org.keycloak.provider.ProviderFactory;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface PublicKeyStorageProviderFactory extends ProviderFactory<PublicKeyStorageProvider> {
+public interface PublicKeyStorageProviderFactory<T extends PublicKeyStorageProvider> extends ProviderFactory<T> {
 }

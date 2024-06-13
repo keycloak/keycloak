@@ -23,9 +23,8 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.client.registration.HttpErrorException;
-import org.keycloak.events.Errors;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
@@ -34,17 +33,16 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -73,29 +71,8 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void createClient() throws ClientRegistrationException, IOException {
-        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"));
-        ClientRepresentation response = reg.saml().create(entityDescriptor);
-
-        assertThat(response.getRegistrationAccessToken(), notNullValue());
-        assertThat(response.getClientId(), is("loadbalancer-9.siroe.com"));
-        assertThat(response.getRedirectUris(), containsInAnyOrder(
-          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/post",
-          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/soap",
-          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/paos",
-          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/redirect",
-                "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/artifact"
-        ));
-
-        assertThat(response.getAttributes().get("saml_single_logout_service_url_redirect"), is("https://LoadBalancer-9.siroe.com:3443/federation/SPSloRedirect/metaAlias/sp"));
-        assertThat(response.getAttributes().get(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER), is(ArtifactBindingUtils.computeArtifactBindingIdentifierString("loadbalancer-9.siroe.com")));
-
-        Assert.assertNotNull(response.getProtocolMappers());
-        Assert.assertEquals(1,response.getProtocolMappers().size());
-        ProtocolMapperRepresentation mapper = response.getProtocolMappers().get(0);
-        Assert.assertEquals("saml-user-attribute-mapper",mapper.getProtocolMapper());
-        Assert.assertEquals("urn:oid:2.5.4.42",mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAME));
-        Assert.assertEquals("givenName",mapper.getConfig().get(AttributeStatementHelper.FRIENDLY_NAME));
-        Assert.assertEquals(AttributeStatementHelper.URI_REFERENCE,mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT));
+        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
+        assertClientCreation(entityDescriptor);
     }
 
     @Test
@@ -112,20 +89,34 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         String accessToken = oauth.clientId("oidc-client").doClientCredentialsGrantAccessTokenRequest("secret").getAccessToken();
         reg.auth(Auth.token(accessToken));
 
-        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"));
-        assertCreateFail(entityDescriptor, 400, Errors.INVALID_CLIENT);
+        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
+        assertClientCreation(entityDescriptor);
     }
 
-    private void assertCreateFail(String entityDescriptor, int expectedStatusCode, String expectedErrorContains) {
-        try {
-            reg.saml().create(entityDescriptor);
-            Assert.fail("Not expected to successfully register client");
-        } catch (ClientRegistrationException expected) {
-            HttpErrorException httpEx = (HttpErrorException) expected.getCause();
-            Assert.assertEquals(expectedStatusCode, httpEx.getStatusLine().getStatusCode());
-            if (expectedErrorContains != null) {
-                assertTrue("Error response doesn't contain expected text", httpEx.getErrorResponse().contains(expectedErrorContains));
-            }
-        }
+    private void assertClientCreation(String entityDescriptor) throws ClientRegistrationException {
+        ClientRepresentation response = reg.saml().create(entityDescriptor);
+        assertThat(response.getRegistrationAccessToken(), notNullValue());
+        assertThat(response.getClientId(), is("loadbalancer-9.siroe.com"));
+        assertThat(response.getRedirectUris(), containsInAnyOrder(
+                "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/post",
+                "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/soap",
+                "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/paos",
+                "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/redirect",
+                "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/artifact"
+        ));
+
+        assertThat(response.getAttributes().get(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE), is("https://LoadBalancer-9.siroe.com:3443/federation/SPSloRedirect/metaAlias/sp"));
+        assertThat(response.getAttributes().get(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE), is("https://LoadBalancer-9.siroe.com:3443/federation/SPSloSoap/metaAlias/sp"));
+        assertThat(response.getAttributes().get(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER), is(ArtifactBindingUtils.computeArtifactBindingIdentifierString("loadbalancer-9.siroe.com")));
+
+        Assert.assertNotNull(response.getProtocolMappers());
+        Assert.assertEquals(1,response.getProtocolMappers().size());
+        ProtocolMapperRepresentation mapper = response.getProtocolMappers().get(0);
+        Assert.assertEquals("saml-user-attribute-mapper",mapper.getProtocolMapper());
+        Assert.assertEquals("urn:oid:2.5.4.42",mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAME));
+        Assert.assertEquals("givenName",mapper.getConfig().get(AttributeStatementHelper.FRIENDLY_NAME));
+        Assert.assertEquals(AttributeStatementHelper.URI_REFERENCE,mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT));
+
+        adminClient.realm(REALM_NAME).clients().get(response.getId()).remove();
     }
 }

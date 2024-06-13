@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Quarkus Parent</name>
@@ -31,120 +31,12 @@
     <packaging>pom</packaging>
 
     <properties>
-        <!--
-            Override versions based on Quarkus dependencies.
-            Make sure to update these dependencies when Quarkus version changes.
-            See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
-            for reference
-        -->
-        <resteasy.version>4.7.5.Final</resteasy.version>
-        <jackson.version>2.13.3</jackson.version>
-        <jackson.databind.version>2.13.3</jackson.databind.version>
-        <hibernate.core.version>5.6.5.Final</hibernate.core.version>
-        <mysql.driver.version>8.0.28</mysql.driver.version>
-        <postgresql.version>42.3.3</postgresql.version>
-        <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
-        <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <infinispan.version>13.0.9.Final</infinispan.version>
-        <wildfly-elytron.version>1.18.3.Final</wildfly-elytron.version>
-
-        <!--
-            Java EE dependencies. Not available from JDK 11+.
-            The dependencies and their versions are the same used by Wildfly distribution.
-         -->
-        <org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
-        <sun.saaj-impl.version>1.4.1.SP1</sun.saaj-impl.version>
-        <org.jvnet.staxex.version>1.8.3</org.jvnet.staxex.version>
-
-        <!--
-            Quarkiverse dependency versions
-         -->
-        <io.quarkiverse.vault.version>1.1.0</io.quarkiverse.vault.version>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
-        <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus-quickstarts/blob/2.7.6.Final/getting-started-async/pom.xml#L14 -->
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-bom</artifactId>
-                <version>${quarkus.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            
-            <!-- Override the dependencies below to use the versions used by Keycloak -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-commons</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-server-hotrod</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-client-hotrod</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-
-            <!-- Dependencies removed from JDK 11 and in compliance with those used by Wildfly. -->
-            <dependency>
-                <groupId>org.jboss.spec.javax.xml.bind</groupId>
-                <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
-                <version>${org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.messaging.saaj</groupId>
-                <artifactId>saaj-impl</artifactId>
-                <version>${sun.saaj-impl.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.soap</groupId>
-                        <artifactId>saaj-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jvnet.mimepull</groupId>
-                        <artifactId>mimepull</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jvnet.staxex</groupId>
-                        <artifactId>stax-ex</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jvnet.staxex</groupId>
-                <artifactId>stax-ex</artifactId>
-                <version>${org.jvnet.staxex.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.activation</groupId>
-                        <artifactId>activation</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <pluginManagement>
@@ -159,6 +51,7 @@
     </build>
     
     <modules>
+        <module>config-api</module>
         <module>runtime</module>
         <module>deployment</module>
         <module>server</module>

@@ -35,17 +35,17 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.installation.SamlSPDescriptorClientInstallation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.ws.rs.NotFoundException;
-import static org.junit.Assert.assertThat;
+import jakarta.ws.rs.NotFoundException;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -168,7 +168,7 @@ public class InstallationTest extends AbstractClientTest {
 
     private void assertOidcInstallationConfig(String config) {
         assertThat(config, containsString("test"));
-        assertThat(config, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getPublicKey())));
+        assertThat(config, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getPublicKey())));
         assertThat(config, containsString(authServerUrl()));
     }
 
@@ -182,7 +182,7 @@ public class InstallationTest extends AbstractClientTest {
         String xml = samlClient.getInstallationProvider("keycloak-saml");
         assertThat(xml, containsString("<keycloak-saml-adapter>"));
         assertThat(xml, containsString("SPECIFY YOUR entityID!"));
-        assertThat(xml, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getCertificate())));
+        assertThat(xml, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
         assertThat(xml, containsString(samlUrl()));
     }
 
@@ -191,7 +191,7 @@ public class InstallationTest extends AbstractClientTest {
         String cli = samlClient.getInstallationProvider("keycloak-saml-subsystem-cli");
         assertThat(cli, containsString("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/"));
         assertThat(cli, containsString("SPECIFY YOUR entityID!"));
-        assertThat(cli, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getCertificate())));
+        assertThat(cli, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
         assertThat(cli, containsString(samlUrl()));
     }
 
@@ -209,7 +209,7 @@ public class InstallationTest extends AbstractClientTest {
         String xml = samlClient.getInstallationProvider("keycloak-saml-subsystem");
         assertThat(xml, containsString("<secure-deployment"));
         assertThat(xml, containsString("SPECIFY YOUR entityID!"));
-        assertThat(xml, not(containsString(ApiUtil.findActiveSigningKey(testRealmResource()).getCertificate())));
+        assertThat(xml, not(containsString(KeyUtils.findActiveSigningKey(testRealmResource()).getCertificate())));
         assertThat(xml, containsString(samlUrl()));
     }
 
@@ -229,30 +229,30 @@ public class InstallationTest extends AbstractClientTest {
             attrNamesAndValues.clear();
 
             //fallback to adminUrl
-            updater.setAdminUrl("admin-url").update();
+            updater.setAdminUrl("https://admin-url").update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
             doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
-            attrNamesAndValues.put("Location", "admin-url");
+            attrNamesAndValues.put("Location", "https://admin-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
             assertElements(doc, METADATA_NSURI.get(), "AssertionConsumerService", attrNamesAndValues);
             attrNamesAndValues.clear();
 
             //fine grained
-            updater.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "saml-assertion-post-url")
-                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "saml-logout-post-url")
-                   .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "saml-assertion-redirect-url")
-                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "saml-logout-redirect-url")
+            updater.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "https://saml-assertion-post-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "https://saml-logout-post-url")
+                   .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "https://saml-assertion-redirect-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "https://saml-logout-redirect-url")
                    .update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
 
             doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
-            attrNamesAndValues.put("Location", "saml-logout-post-url");
+            attrNamesAndValues.put("Location", "https://saml-logout-post-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
             attrNamesAndValues.clear();
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
-            attrNamesAndValues.put("Location", "saml-assertion-post-url");
+            attrNamesAndValues.put("Location", "https://saml-assertion-post-url");
             assertElements(doc, METADATA_NSURI.get(), "AssertionConsumerService", attrNamesAndValues);
         }
         assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
@@ -277,29 +277,29 @@ public class InstallationTest extends AbstractClientTest {
             attrNamesAndValues.clear();
 
             //fallback to adminUrl
-            updater.setAdminUrl("admin-url").update();
+            updater.setAdminUrl("https://admin-url").update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
             doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
-            attrNamesAndValues.put("Location", "admin-url");
+            attrNamesAndValues.put("Location", "https://admin-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
             assertElements(doc, METADATA_NSURI.get(), "AssertionConsumerService", attrNamesAndValues);
             attrNamesAndValues.clear();
 
             //fine grained
-            updater.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "saml-assertion-post-url")
-                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "saml-logout-post-url")
-                   .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "saml-assertion-redirect-url")
-                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "saml-logout-redirect-url")
+            updater.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "https://saml-assertion-post-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "https://saml-logout-post-url")
+                   .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "https://saml-assertion-redirect-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "https://saml-logout-redirect-url")
                    .update();
             assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
             doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
-            attrNamesAndValues.put("Location", "saml-logout-redirect-url");
+            attrNamesAndValues.put("Location", "https://saml-logout-redirect-url");
             assertElements(doc, METADATA_NSURI.get(), "SingleLogoutService", attrNamesAndValues);
             attrNamesAndValues.clear();
             attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
-            attrNamesAndValues.put("Location", "saml-assertion-redirect-url");
+            attrNamesAndValues.put("Location", "https://saml-assertion-redirect-url");
             assertElements(doc, METADATA_NSURI.get(), "AssertionConsumerService", attrNamesAndValues);
         }
         assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);

@@ -79,6 +79,7 @@ public class ProviderConfigurationBuilder {
         private Object defaultValue;
         private List<String> options;
         private boolean secret;
+        private boolean required;
 
         public ProviderConfigPropertyBuilder name(String name) {
             this.name = name;
@@ -169,6 +170,17 @@ public class ProviderConfigurationBuilder {
         }
 
         /**
+         * If turned on, this property will be marked as required in the admin console
+         *
+         * @param required
+         * @return
+         */
+        public ProviderConfigPropertyBuilder required(boolean required) {
+            this.required = required;
+            return this;
+        }
+
+        /**
          * Add the current property, and start building the next one
          *
          * @return
@@ -182,6 +194,7 @@ public class ProviderConfigurationBuilder {
             property.setDefaultValue(defaultValue);
             property.setOptions(options);
             property.setSecret(secret);
+            property.setRequired(required);
             ProviderConfigurationBuilder.this.properties.add(property);
             return ProviderConfigurationBuilder.this;
         }

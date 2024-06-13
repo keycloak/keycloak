@@ -25,6 +25,7 @@
 	
     <security-constraint>
         <web-resource-collection>
+            <web-resource-name>All Resources</web-resource-name>
             <url-pattern>/*</url-pattern>
         </web-resource-collection>
 <!--        <user-data-constraint>

@@ -22,7 +22,6 @@ import static org.keycloak.OAuth2Constants.INTERVAL;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Version;
 
 /**
  * Representation for <a href="https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.3">Device Authorization Response</a>.

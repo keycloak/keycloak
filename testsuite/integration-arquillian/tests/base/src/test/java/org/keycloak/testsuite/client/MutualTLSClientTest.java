@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.client;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.apache.commons.collections.map.UnmodifiableMap;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -31,8 +31,6 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 
-import com.google.common.base.Charsets;
-
 /**
  * Mutual TLS Client tests.
  */
@@ -43,11 +41,15 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    private static final String CLIENT_ID = "confidential-x509";
    private static final String DISABLED_CLIENT_ID = "confidential-disabled-x509";
    private static final String EXACT_SUBJECT_DN_CLIENT_ID = "confidential-subjectdn-x509";
+
+   private static final String ISSUER_SUBJECT_DN_CLIENT_ID = "confidential-issuer-subjectdn-x509";
    private static final String OBB_SUBJECT_DN_CLIENT_ID = "obb-subjectdn-x509";
    private static final String USER = "keycloak-user@localhost";
    private static final String PASSWORD = "password";
    private static final String REALM = "test";
-   private static final String EXACT_CERTIFICATE_SUBJECT_DN = "EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US";
+
+   // This is DN of the issuer certificate, which signed certificate corresponding to EXACT_CERTIFICATE_SUBJECT_DN. This issuer certificate is present in the client.jks keystore on the 2nd position
+   private static final String ISSUER_CERTIFICATE_SUBJECT_DN = "EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US";
 
    @Override
    public void configureTestRealm(RealmRepresentation testRealm) {
@@ -67,12 +69,25 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       exactSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       exactSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       exactSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-      exactSubjectDNConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, EXACT_CERTIFICATE_SUBJECT_DN));
+      Map<String, String> attrs = new HashMap<>();
+      attrs.put(X509ClientAuthenticator.ATTR_SUBJECT_DN, MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+      attrs.put(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false");
+      exactSubjectDNConfiguration.setAttributes(attrs);
+
+      ClientRepresentation issuerSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, ISSUER_SUBJECT_DN_CLIENT_ID);
+      issuerSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
+      issuerSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
+      issuerSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+      attrs = new HashMap<>();
+      attrs.put(X509ClientAuthenticator.ATTR_SUBJECT_DN, ISSUER_CERTIFICATE_SUBJECT_DN);
+      attrs.put(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false");
+      issuerSubjectDNConfiguration.setAttributes(attrs);
 
       ClientRepresentation obbSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, OBB_SUBJECT_DN_CLIENT_ID);
       obbSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       obbSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       obbSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+      obbSubjectDNConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false"));
       // ATTR_SUBJECT_DN will be set in the individual tests based on the requested Subject DN Format
    }
 
@@ -103,6 +118,18 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
 
       //then
       assertTokenObtained(token);
+   }
+
+   @Test
+   public void testFailedClientInvocationWithIssuerCertificateAndSubjectDN() throws Exception {
+      //given
+      Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore;
+
+      //when (Certificate with the client's expected subjectDN is available in the certificate chain, but not on the 1st position. Hence authentication should not be successful)
+      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(ISSUER_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+
+      //then
+      assertTokenNotObtained(token);
    }
 
    @Test
@@ -193,7 +220,6 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       ClientResource client = ApiUtil.findClientByClientId(testRealm(), OBB_SUBJECT_DN_CLIENT_ID);
       ClientRepresentation clientRep = client.toRepresentation();
       OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
-      config.setAllowRegexPatternComparison(false);
       config.setTlsClientAuthSubjectDn(expectedSubjectDN);
       client.update(clientRep);
 
@@ -237,7 +263,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    private void assertTokenNotObtained(OAuthClient.AccessTokenResponse token) {
-      Assert.assertEquals(400, token.getStatusCode());
+      Assert.assertEquals(401, token.getStatusCode());
       Assert.assertNull(token.getAccessToken());
    }
 
@@ -246,13 +272,12 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
     * It test a scenario, where we do not follow the spec and specify client_id in Query Params (for in a form).
     */
    private OAuthClient.AccessTokenResponse getAccessTokenResponseWithQueryParams(String clientId, CloseableHttpClient client) throws Exception {
-      OAuthClient.AccessTokenResponse token;// This is a very simplified version of
       HttpPost post = new HttpPost(oauth.getAccessTokenUrl() + "?client_id=" + clientId);
       List<NameValuePair> parameters = new LinkedList<>();
       parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
       parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, oauth.getCurrentQuery().get(OAuth2Constants.CODE)));
       parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-      UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+      UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
       post.setEntity(formEntity);
 
       return new OAuthClient.AccessTokenResponse(client.execute(post));

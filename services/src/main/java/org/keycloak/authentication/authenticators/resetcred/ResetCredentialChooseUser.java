@@ -17,7 +17,7 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
-import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.*;
@@ -33,11 +33,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 /**
@@ -71,6 +72,15 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
 
             logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
             context.setUser(existingUser);
+            context.success();
+            return;
+        }
+
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(), context.getRealm(), true);
+        //skip user choice if sso session exists
+        if (authResult != null) {
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, authResult.getUser().getUsername());
+            context.setUser(authResult.getUser());
             context.success();
             return;
         }

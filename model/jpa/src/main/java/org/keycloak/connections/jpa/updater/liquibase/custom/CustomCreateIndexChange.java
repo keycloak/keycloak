@@ -74,7 +74,7 @@ public class CustomCreateIndexChange extends CreateIndexChange {
         }
         try {
             // To check that the table already exists or not on which the index will be created.
-            if (!SnapshotGeneratorFactory.getInstance()
+            if (getTableName() == null || !SnapshotGeneratorFactory.getInstance()
                 .has(new Table().setName(getTableName()).setSchema(new Schema(getCatalogName(), getSchemaName())), database))
                 return super.generateStatements(database);
 

@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Provides one user where everything is stored in user federated storage
@@ -46,7 +47,7 @@ import java.util.stream.Collectors;
  */
 public class PassThroughFederatedUserStorageProvider implements
         UserStorageProvider,
-        UserLookupProvider.Streams,
+        UserLookupProvider,
         CredentialInputValidator,
         CredentialInputUpdater
 {
@@ -121,8 +122,8 @@ public class PassThroughFederatedUserStorageProvider implements
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return CREDENTIAL_TYPES;
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        return CREDENTIAL_TYPES.stream();
     }
 
     @Override

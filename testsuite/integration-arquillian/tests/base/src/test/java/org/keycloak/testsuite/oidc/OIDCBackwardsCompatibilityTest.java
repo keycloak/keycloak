@@ -17,12 +17,18 @@
 
 package org.keycloak.testsuite.oidc;
 
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -31,9 +37,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -41,11 +44,12 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import jakarta.ws.rs.core.UriBuilder;
+
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -56,9 +60,6 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -103,7 +104,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login again and assert session_state not present
         driver.navigate().to(oauth.getLoginFormUrl());
         org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
         authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertNull(authzResponse.getSessionState());
@@ -113,5 +114,64 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         client.update(clientRep);
     }
 
+    @Test
+    public void testExcludeIssuerParameter() {
+        // Open login form and login successfully. Assert iss parameter is present
+        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", authzResponse.getIssuer());
 
+        // Switch "exclude iss" to on
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
+        config.setExcludeIssuerFromAuthResponse(true);
+        client.update(clientRep);
+
+        // Open login again and assert iss parameter is not present
+        driver.navigate().to(oauth.getLoginFormUrl());
+        org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+
+        authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        Assert.assertNull(authzResponse.getIssuer());
+
+        // Revert
+        config.setExcludeIssuerFromAuthResponse(false);
+        client.update(clientRep);
+    }
+
+    @Test
+    public void testExcludeIssuerParameterOnError() throws IOException {
+        // Open login form and login fails. Assert iss parameter is present
+        oauth.responseType("tokenn");
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
+
+        // Switch "exclude iss" to on
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
+        config.setExcludeIssuerFromAuthResponse(true);
+        client.update(clientRep);
+
+        // Open login again and assert iss parameter is not present
+        driver.navigate().to(b.build().toURL());
+
+        errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertNull(errorResponse.getIssuer());
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
+
+    }
 }

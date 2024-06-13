@@ -18,8 +18,8 @@
 package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
@@ -29,15 +29,11 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.utils.StringUtil;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -74,21 +70,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     }
 
     protected Authenticator createAuthenticator(AuthenticatorFactory factory) {
-        String display = processor.getAuthenticationSession().getAuthNote(OAuth2Constants.DISPLAY);
-        if (display == null) return factory.create(processor.getSession());
-
-        if (factory instanceof DisplayTypeAuthenticatorFactory) {
-            Authenticator authenticator = ((DisplayTypeAuthenticatorFactory) factory).createDisplay(processor.getSession(), display);
-            if (authenticator != null) return authenticator;
-        }
-        // todo create a provider for handling lack of display support
-        if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
-            processor.getAuthenticationSession().removeAuthNote(OAuth2Constants.DISPLAY);
-            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED,
-                    ConsoleDisplayMode.browserContinue(processor.getSession(), processor.getRefreshUrl(true).toString()));
-        } else {
-            return factory.create(processor.getSession());
-        }
+        return factory.create(processor.getSession());
     }
 
     @Override
@@ -434,7 +416,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
         if (authenticator.requiresUser()) {
             if (authUser == null) {
-                throw new AuthenticationFlowException("authenticator: " + factory.getId(), AuthenticationFlowError.UNKNOWN_USER);
+                throw new AuthenticationFlowException("authenticator '" + factory.getId() + "' requires user to be set in the authentication context by previous authenticators, but user is not set yet", AuthenticationFlowError.UNKNOWN_USER);
             }
             if (!authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser)) {
                 if (factory.isUserSetupAllowed() && model.isRequired() && authenticator.areRequiredActionsEnabled(processor.getSession(), processor.getRealm())) {
@@ -500,6 +482,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             case SUCCESS:
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+                AuthenticatorUtils.updateCompletedExecutions(processor.getAuthenticationSession(), processor.getUserSession(), execution.getId());
                 return null;
             case FAILED:
                 logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
@@ -603,6 +586,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 .filter(Objects::nonNull)
                 .filter(AuthenticationFlowCallback.class::isInstance)
                 .map(AuthenticationFlowCallback.class::cast)
-                .forEach(AuthenticationFlowCallback::onTopFlowSuccess);
+                .forEach(callback -> callback.onTopFlowSuccess(flow));
     }
 }

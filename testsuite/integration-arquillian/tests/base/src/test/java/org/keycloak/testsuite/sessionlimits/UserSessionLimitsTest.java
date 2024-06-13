@@ -20,6 +20,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.events.Details;
@@ -36,25 +37,24 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.forms.BrowserFlowTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.ERROR_TO_DISPLAY;
 
-@AuthServerContainerExclude(REMOTE)
 public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     private String realmName = "test";
     private String username = "test-user@localhost";
@@ -113,6 +113,9 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
+
+    @Page
+    protected AppPage appPage;
 
     @Test
     public void testClientSessionCountExceededAndNewSessionDeniedBrowserFlow() throws Exception {
@@ -208,23 +211,29 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
-        assertEquals(401, response.getStatusCode());
-        assertEquals(Errors.GENERIC_AUTHENTICATION_ERROR, response.getError());
-        assertEquals(ERROR_TO_DISPLAY, response.getErrorDescription());
+        assertEquals(403, response.getStatusCode());
+        assertEquals(ERROR_TO_DISPLAY, response.getError());
     }
 
     @Test
     public void testClientSessionCountExceededAndOldestSessionRemovedDirectGrantFlow() throws Exception {
         try {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
-            assertEquals(200, response.getStatusCode());
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "2");
+            for (int i = 0; i < 2; ++i) {
+                OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+                assertEquals(200, response.getStatusCode());
+            }
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 2));
 
-            response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
         }
     }
 
@@ -237,9 +246,8 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             assertEquals(200, response.getStatusCode());
 
             response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
-            assertEquals(401, response.getStatusCode());
-            assertEquals(Errors.GENERIC_AUTHENTICATION_ERROR, response.getError());
-            assertEquals(ERROR_TO_DISPLAY, response.getErrorDescription());
+            assertEquals(403, response.getStatusCode());
+            assertEquals(ERROR_TO_DISPLAY, response.getError());
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
@@ -439,6 +447,54 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
         }
+    }
+
+    // Issue 17374
+    @Test
+    public void testSSOLogin() throws Exception {
+        // Setup authentication flow
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session). copyBrowserFlow("browser-session-limits"));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow("browser-session-limits")
+                .clear()
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, CookieAuthenticatorFactory.PROVIDER_ID)
+                        .addSubFlowExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, subFlow -> {
+                            subFlow.addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID);
+                            subFlow.addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UserSessionLimitsAuthenticatorFactory.USER_SESSION_LIMITS,
+                                    config -> {
+                                        config.getConfig().put(UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+                                        config.getConfig().put(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+                                    });
+                        })
+                .defineAsBrowserFlow()
+        );
+
+        // Login in browser1
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        String sessionId1 = loginEvent.getSessionId();
+
+        // SSO login in browser1. Should be still OK (Login won't be denied even if session limit is set to 1 because we are login in same browser for SSO login)
+        oauth.openLoginForm();
+        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        loginEvent = events.expectLogin().removeDetail(Details.USERNAME).client("test-app").assertEvent();
+        String sessionId2 = loginEvent.getSessionId();
+        assertEquals(sessionId1, sessionId2);
+
+        // Delete cookies to emulate login in new browser
+        super.deleteCookies();
+
+        // New login should fail due the sessions limit
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+        errorPage.assertCurrent();
+        assertEquals("There are too many sessions", errorPage.getError()); // Default error message
+
+        // Revert config of authenticators
+        BrowserFlowTest.revertFlows(adminClient.realm("test"), "browser-session-limits");
     }
 
     private void setAuthenticatorConfigItem(String alias, String key, String value) {

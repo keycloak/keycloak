@@ -28,8 +28,6 @@ import org.junit.Assert;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -177,7 +175,7 @@ public class URLAssert {
         public void assertResponse(CloseableHttpResponse response) throws IOException {
             HttpEntity entity = response.getEntity();
             Header contentType = entity.getContentType();
-            Assert.assertEquals("application/json", contentType.getValue());
+            Assert.assertTrue(contentType.getValue().startsWith("application/json"));
 
             char [] buf = new char[8192];
             StringWriter out = new StringWriter();

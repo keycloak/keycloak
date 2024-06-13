@@ -53,6 +53,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
@@ -90,8 +91,6 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {
-        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
-
         ComponentRepresentation dummyProvider = new ComponentRepresentation();
         dummyProvider.setName("dummy");
         dummyProvider.setId(componentId);
@@ -146,64 +145,66 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
 
     @Test
-    public void testUpdateOTP() {
-        // Add requiredAction to the user for update OTP
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user");
-        UserRepresentation userRep = user.toRepresentation();
-        userRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
-        user.update(userRep);
+    public void testUpdateOTP() throws IOException {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
+            // Add requiredAction to the user for update OTP
+            UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user");
+            UserRepresentation userRep = user.toRepresentation();
+            userRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
+            user.update(userRep);
 
-        // Authenticate as the user
-        loginPage.open();
-        loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
-        loginTotpPage.assertCurrent();
-        loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
+            // Authenticate as the user
+            loginPage.open();
+            loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
+            loginTotpPage.assertCurrent();
+            loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
 
-        // User should be required to update OTP
-        loginConfigTotpPage.assertCurrent();
+            // User should be required to update OTP
+            loginConfigTotpPage.assertCurrent();
 
-        // Dummy OTP code won't work when configure new OTP
-        loginConfigTotpPage.configure(DummyUserFederationProvider.HARDCODED_OTP);
-        Assert.assertEquals("Invalid authenticator code.", loginConfigTotpPage.getInputCodeError());
+            // Dummy OTP code won't work when configure new OTP
+            loginConfigTotpPage.configure(DummyUserFederationProvider.HARDCODED_OTP);
+            Assert.assertEquals("Invalid authenticator code.", loginConfigTotpPage.getInputCodeError());
 
-        // This will save the credential to the local DB
-        String totpSecret = loginConfigTotpPage.getTotpSecret();
-        log.infof("Totp Secret: %s", totpSecret);
-        String totpCode = totp.generateTOTP(totpSecret);
-        loginConfigTotpPage.configure(totpCode);
+            // This will save the credential to the local DB
+            String totpSecret = loginConfigTotpPage.getTotpSecret();
+            log.infof("Totp Secret: %s", totpSecret);
+            String totpCode = totp.generateTOTP(totpSecret);
+            loginConfigTotpPage.configure(totpCode);
 
-        appPage.assertCurrent();
+            appPage.assertCurrent();
 
-        // Logout
-        events.expect(EventType.UPDATE_TOTP).user(userRep.getId()).assertEvent(); //remove the UPDATE_TOTP event
-        EventRepresentation loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
-        String idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
-        appPage.logout(idTokenHint);
-        events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            // Logout
+            events.expect(EventType.UPDATE_TOTP).user(userRep.getId()).assertEvent(); //remove the UPDATE_TOTP event
+            EventRepresentation loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            String idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
+            appPage.logout(idTokenHint);
+            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
 
-        // Authenticate as the user again with the dummy OTP should still work
-        loginPage.open();
-        loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
-        loginTotpPage.assertCurrent();
-        loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
+            // Authenticate as the user again with the dummy OTP should still work
+            loginPage.open();
+            loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
+            loginTotpPage.assertCurrent();
+            loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
 
-        appPage.assertCurrent();
-        loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
-        idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
-        appPage.logout(idTokenHint);
-        events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            appPage.assertCurrent();
+            loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
+            appPage.logout(idTokenHint);
+            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
 
-        // Authenticate with the new OTP code should work as well
-        loginPage.open();
-        loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
-        loginTotpPage.assertCurrent();
-        loginTotpPage.login(totp.generateTOTP(totpSecret));
+            // Authenticate with the new OTP code should work as well
+            loginPage.open();
+            loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
+            loginTotpPage.assertCurrent();
+            loginTotpPage.login(totp.generateTOTP(totpSecret));
 
-        appPage.assertCurrent();
-        loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
-        idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
-        appPage.logout(idTokenHint);
-        events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            appPage.assertCurrent();
+            loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
+            appPage.logout(idTokenHint);
+            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+        }
     }
 
     @Test

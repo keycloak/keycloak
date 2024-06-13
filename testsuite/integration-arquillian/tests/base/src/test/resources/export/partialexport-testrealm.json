@@ -732,7 +732,10 @@
         "tls.client.certificate.bound.access.tokens": "false",
         "saml.authnstatement": "false",
         "display.on.consent.screen": "false",
-        "saml.onetimeuse.condition": "false"
+        "saml.onetimeuse.condition": "false",
+        "client.secret.rotated.creation.time": "1680684475",
+        "client.secret.rotated.expiration.time": "1680857275",
+        "client.secret.rotated": "oldPassword"
       },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,

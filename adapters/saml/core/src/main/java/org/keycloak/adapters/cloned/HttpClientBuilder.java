@@ -359,13 +359,11 @@ public class HttpClientBuilder {
                 throw new RuntimeException("Failed to load keystore", e);
             }
         }
-        int size = 10;
-        if (adapterConfig.getConnectionPoolSize() > 0)
-            size = adapterConfig.getConnectionPoolSize();
+
         HttpClientBuilder.HostnameVerificationPolicy policy = HttpClientBuilder.HostnameVerificationPolicy.WILDCARD;
         if (adapterConfig.isAllowAnyHostname())
             policy = HttpClientBuilder.HostnameVerificationPolicy.ANY;
-        connectionPoolSize(size);
+        connectionPoolSize(adapterConfig.getConnectionPoolSize());
         hostnameVerification(policy);
         if (adapterConfig.isDisableTrustManager()) {
             disableTrustManager();

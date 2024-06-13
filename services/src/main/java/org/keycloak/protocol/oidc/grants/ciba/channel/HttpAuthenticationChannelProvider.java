@@ -19,17 +19,17 @@ package org.keycloak.protocol.oidc.grants.ciba.channel;
 import java.io.IOException;
 import java.util.Map;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -103,6 +103,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         bearerToken.id(request.getAuthResultId());
         bearerToken.issuedFor(client.getClientId());
         bearerToken.audience(request.getIssuer());
+        bearerToken.iat(request.getIat());
         bearerToken.exp(request.getExp());
         bearerToken.subject(request.getSubject());
 

@@ -17,6 +17,8 @@
 
 package org.keycloak.exportimport;
 
+import java.io.Closeable;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -39,6 +41,9 @@ public class ExportImportConfig {
     // used for "singleFile" provider
     public static final String FILE = PREFIX + "file";
 
+    // used for replacing placeholders
+    public static final String REPLACE_PLACEHOLDERS = PREFIX + "replace-placeholders";
+
     // How to export users when realm export is requested for "dir" provider
     public static final String USERS_EXPORT_STRATEGY = PREFIX + "usersExportStrategy";
     public static final UsersExportStrategy DEFAULT_USERS_EXPORT_STRATEGY = UsersExportStrategy.DIFFERENT_FILES;
@@ -55,20 +60,13 @@ public class ExportImportConfig {
         return System.getProperty(ACTION);
     }
 
-    public static void setAction(String exportImportAction) {
+    public static Closeable setAction(String exportImportAction) {
         System.setProperty(ACTION, exportImportAction);
-    }
-
-    public static String getProvider() {
-        return System.getProperty(PROVIDER, PROVIDER_DEFAULT);
+        return () -> System.getProperties().remove(ACTION);
     }
 
     public static void setProvider(String exportImportProvider) {
         System.setProperty(PROVIDER, exportImportProvider);
-    }
-
-    public static String getRealmName() {
-        return System.getProperty(REALM_NAME);
     }
 
     public static void setRealmName(String realmName) {
@@ -79,42 +77,19 @@ public class ExportImportConfig {
         }
     }
 
-    public static String getDir() {
-        return System.getProperty(DIR);
-    }
-
-    public static String setDir(String dir) {
-        return System.setProperty(DIR, dir);
-    }
-
-    public static String getFile() {
-        return System.getProperty(FILE);
+    public static void setDir(String dir) {
+        System.setProperty(DIR, dir);
     }
 
     public static void setFile(String file) {
         System.setProperty(FILE, file);
     }
 
-    public static UsersExportStrategy getUsersExportStrategy() {
-        String usersExportStrategy = System.getProperty(USERS_EXPORT_STRATEGY, DEFAULT_USERS_EXPORT_STRATEGY.toString());
-        return Enum.valueOf(UsersExportStrategy.class, usersExportStrategy);
+    public static boolean isReplacePlaceholders() {
+        return Boolean.getBoolean(REPLACE_PLACEHOLDERS);
     }
 
-    public static void setUsersExportStrategy(UsersExportStrategy usersExportStrategy) {
-        System.setProperty(USERS_EXPORT_STRATEGY, usersExportStrategy.toString());
-    }
-
-    public static Integer getUsersPerFile() {
-        String usersPerFile = System.getProperty(USERS_PER_FILE, String.valueOf(DEFAULT_USERS_PER_FILE));
-        return Integer.parseInt(usersPerFile.trim());
-    }
-
-    public static void setUsersPerFile(Integer usersPerFile) {
-        System.setProperty(USERS_PER_FILE, String.valueOf(usersPerFile));
-    }
-
-    public static Strategy getStrategy() {
-        String strategy = System.getProperty(STRATEGY, DEFAULT_STRATEGY.toString());
-        return Enum.valueOf(Strategy.class, strategy);
+    public static void setReplacePlaceholders(boolean replacePlaceholders) {
+        System.setProperty(REPLACE_PLACEHOLDERS, String.valueOf(replacePlaceholders));
     }
 }

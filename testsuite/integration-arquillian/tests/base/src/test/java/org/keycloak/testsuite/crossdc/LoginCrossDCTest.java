@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.crossdc;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Test;
@@ -25,7 +25,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

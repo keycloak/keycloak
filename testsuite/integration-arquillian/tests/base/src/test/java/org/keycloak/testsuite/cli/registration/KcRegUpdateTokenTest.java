@@ -2,25 +2,22 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
-import org.keycloak.client.registration.cli.config.RealmConfigData;
-import org.keycloak.client.registration.cli.util.ConfigUtil;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.RealmConfigData;
+import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcRegUpdateTokenTest extends AbstractRegCliTest {
 
     @Test

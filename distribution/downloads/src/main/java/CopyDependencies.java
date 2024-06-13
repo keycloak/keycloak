@@ -13,37 +13,78 @@ public class CopyDependencies {
 
     public static void main(String[] args) throws IOException {
         String version = args[2];
-
-        Path repository = new File(args[0]).toPath().resolve("org").resolve("keycloak");
         Path targetRoot = new File(args[1]).toPath().resolve(version);
+        Path projectDir = targetRoot.getParent().getParent().getParent().getParent();
+        Path mavenRepository = new File(args[0]).toPath().resolve("org").resolve("keycloak");
 
+        CopyDependencies dependencies = new CopyDependencies(version, projectDir, targetRoot, mavenRepository);
+        dependencies.copyFiles();
+    }
+
+    private final String version;
+    private final Path targetDir;
+    private final Path projectDir;
+    private final Path mavenRepository;
+
+    public CopyDependencies(String version, Path projectDir, Path targetDir, Path mavenRepository) {
+        this.version = version;
+        this.targetDir = targetDir;
+        this.projectDir = projectDir;
+        this.mavenRepository = mavenRepository;
+    }
+
+    public void copyFiles() throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(CopyDependencies.class.getResourceAsStream("files")));
+        targetDir.toFile().mkdirs();
 
-        Path target = targetRoot;
         for (String l = br.readLine(); l != null; l = br.readLine()) {
+            if (l.trim().length() > 0) {
+                l = replaceVariables(l);
 
-            if (l.startsWith("./")) {
-                target = targetRoot.resolve(l.replace("./", "").replace('/', File.separatorChar));
-                if (!target.toFile().isDirectory()) {
-                    target.toFile().mkdirs();
-                }
-            } else if (l.trim().length() > 0) {
                 String[] t = l.trim().split(":");
 
-                String artifactName = t[0];
-                String destName = t.length == 1 ? artifactName : t[1];
+                String type = t[0];
+                String artifactName = t[1];
+                String destinationName = t.length == 2 ? artifactName : t[2];
 
-                File artifactDir = repository.resolve(artifactName).resolve(version).toFile();
-
-                for (File f : artifactDir.listFiles((file, name) -> name.contains(".tar.gz") || name.contains(".zip"))) {
-                    Files.copy(f.toPath(), target.resolve(f.getName().replace(artifactName, destName)), StandardCopyOption.REPLACE_EXISTING);
+                switch (type) {
+                    case "mvn":
+                        copyMaven(artifactName, destinationName);
+                        break;
+                    case "npm":
+                        copyNpm(artifactName, destinationName);
+                        break;
                 }
-
-                System.out.println(artifactName);
             }
         }
 
         br.close();
+    }
+
+    private void copyMaven(String artifactName, String destinationName) throws IOException {
+        File artifactDir = mavenRepository.resolve(artifactName).resolve(version).toFile();
+        if (!artifactDir.isDirectory()) {
+            throw new RuntimeException(artifactName + " (" + artifactDir + ") not found");
+        }
+
+        File[] files = artifactDir.listFiles((file, name) -> name.contains(".tar.gz") || name.contains(".tgz") || name.contains(".zip"));
+
+        for (File f : files) {
+            Files.copy(f.toPath(), targetDir.resolve(f.getName().replace(artifactName, destinationName)), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private void copyNpm(String artifactName, String destinationName) throws IOException {
+        Path artifactPath = projectDir.resolve(artifactName);
+        if (!artifactPath.toFile().isFile()) {
+            throw new RuntimeException(artifactName + " (" + artifactPath + ") not found");
+        }
+
+        Files.copy(projectDir.resolve(artifactName), targetDir.resolve(destinationName));
+    }
+
+    private String replaceVariables(String input) {
+        return input.replaceAll("\\$\\$VERSION\\$\\$", version);
     }
 
 }

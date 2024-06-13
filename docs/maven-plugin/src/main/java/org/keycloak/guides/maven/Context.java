@@ -31,7 +31,7 @@ public class Context {
         for (File f : srcDir.listFiles((dir, f) -> f.endsWith(".adoc") && !f.equals("index.adoc"))) {
             Guide guide = parser.parse(f);
 
-            if (guidePriorities != null) {
+            if (guidePriorities != null && guide != null) {
                 Integer priority = guidePriorities.get(guide.getId());
                 guide.setPriority(priority != null ? priority : Integer.MAX_VALUE);
             }

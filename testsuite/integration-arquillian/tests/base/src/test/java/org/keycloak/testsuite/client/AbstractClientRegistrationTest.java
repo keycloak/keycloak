@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -128,9 +128,13 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
         reg.auth(Auth.token(getToken("no-access", "password")));
     }
 
-    private String getToken(String username, String password) {
+    protected String getToken(String username, String password) {
+        return getToken(Constants.ADMIN_CLI_CLIENT_ID, null, username, password);
+    }
+
+    protected String getToken(String clientId, String clientSecret, String username, String password) {
         try {
-            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, null, clientId, clientSecret).getAccessToken();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

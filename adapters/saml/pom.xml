@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML Client Adapter Modules</name>
@@ -33,24 +33,10 @@
     <modules>
         <module>core-public</module>
         <module>core</module>
+        <module>core-jakarta</module>
         <module>undertow</module>
-        <module>tomcat</module>
         <module>wildfly</module>
-        <module>servlet-filter</module>
         <module>wildfly-elytron</module>
+        <module>wildfly-elytron-jakarta</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>jetty</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -36,12 +36,20 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -50,11 +58,24 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wildfly-adduser</artifactId>
+            <artifactId>keycloak-admin-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-account-ui</artifactId>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -63,7 +84,7 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <artifactId>slf4j-reload4j</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -72,20 +93,16 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.ws.rs</groupId>
-            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <artifactId>resteasy-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -108,6 +125,12 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.undertow</groupId>
+                    <artifactId>undertow-servlet-jakarta</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -131,6 +154,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>${keycloak.crypto.artifactId}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-ldap-federation</artifactId>
         </dependency>
         <dependency>
@@ -138,8 +165,9 @@
             <artifactId>keycloak-kerberos-federation</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter</artifactId>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-servlet</artifactId>
+            <version>${undertow-jakarta.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -154,20 +182,9 @@
             <artifactId>keycloak-authz-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-servlet-filter-adapter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-undertow-adapter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jaxrs-oauth-client</artifactId>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>keycloak-saml-undertow-adapter-jakarta</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <!-- Dependency on services from integration-arquillian -->
         <dependency>
@@ -229,51 +246,42 @@
         </dependency>
 
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql-jdbc.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.driver.version}</version>
+            <version>${postgresql-jdbc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>${oracle-jdbc.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>${mariadb.driver.version}</version>
+            <version>${mariadb-jdbc.version}</version>
         </dependency>
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>${mssql.driver.version}</version>
+            <version>${mssql-jdbc.version}</version>
         </dependency>
-
     </dependencies>
 
 
     <profiles>
-
-        <!-- Nashorn script engine needs to be manually added for the new Java versions as it is not part of the JDK anymore  -->
-        <profile>
-            <id>jdk15</id>
-            <activation>
-                <jdk>[15,)</jdk>
-            </activation>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.openjdk.nashorn</groupId>
-                    <artifactId>nashorn-core</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
 
         <profile>
             <id>keycloak-server</id>
@@ -288,39 +296,6 @@
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${keycloak.additionalClasspathElement}</additionalClasspathElement>
                             </additionalClasspathElements>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>map-storage</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <systemProperties>
-                                <systemProperty><key>keycloak.profile.feature.map_storage</key><value>enabled</value></systemProperty>
-                                <systemProperty><key>keycloak.realm.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.client.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.clientScope.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.group.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.role.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.user.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.deploymentState.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.authSession.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.userSession.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.loginFailure.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.authorization.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.actionToken.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.singleUseObject.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.eventsStore.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.authorizationCache.enabled</key><value>false</value></systemProperty>
-                                <systemProperty><key>keycloak.realmCache.enabled</key><value>false</value></systemProperty>
-                                <systemProperty><key>keycloak.userCache.enabled</key><value>false</value></systemProperty>
-                            </systemProperties>
                         </configuration>
                     </plugin>
                 </plugins>

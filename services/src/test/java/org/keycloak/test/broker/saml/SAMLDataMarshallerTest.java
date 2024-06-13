@@ -29,7 +29,7 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import java.io.InputStream;
 import org.hamcrest.CoreMatchers;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

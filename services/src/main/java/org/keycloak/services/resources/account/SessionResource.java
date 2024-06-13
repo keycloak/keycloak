@@ -16,24 +16,22 @@
  */
 package org.keycloak.services.resources.account;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -56,14 +54,12 @@ public class SessionResource {
     private final Auth auth;
     private final RealmModel realm;
     private final UserModel user;
-    private HttpRequest request;
 
-    public SessionResource(KeycloakSession session, Auth auth, HttpRequest request) {
+    public SessionResource(KeycloakSession session, Auth auth) {
         this.session = session;
         this.auth = auth;
         this.realm = auth.getRealm();
         this.user = auth.getUser();
-        this.request = request;
     }
 
     /**
@@ -162,7 +158,10 @@ public class SessionResource {
         sessionRep.setIpAddress(s.getIpAddress());
         sessionRep.setStarted(s.getStarted());
         sessionRep.setLastAccess(s.getLastSessionRefresh());
-        sessionRep.setExpires(s.getStarted() + realm.getSsoSessionMaxLifespan());
+        int maxLifespan = s.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+        int expires = s.getStarted() + maxLifespan;
+        sessionRep.setExpires(expires);
         sessionRep.setBrowser(device.getBrowser());
 
         if (isCurrentSession(s)) {

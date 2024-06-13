@@ -73,6 +73,9 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     protected String encryptionAlgorithm = "AES";
     protected boolean encrypt;
     protected String canonicalizationMethodType = CanonicalizationMethod.EXCLUSIVE;
+    protected String keyEncryptionAlgorithm;
+    protected String keyEncryptionDigestMethod;
+    protected String keyEncryptionMgfAlgorithm;
 
     public T canonicalizationMethod(String method) {
         this.canonicalizationMethodType = method;
@@ -133,6 +136,21 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     public T encryptionKeySize(int size) {
         this.encryptionKeySize = size;
+        return (T)this;
+    }
+
+    public T keyEncryptionAlgorithm(String keyEncryptionAlgorithm) {
+        this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
+        return (T)this;
+    }
+
+    public T  keyEncryptionDigestMethod(String keyEncryptionDigestMethod) {
+        this.keyEncryptionDigestMethod = keyEncryptionDigestMethod;
+        return (T)this;
+    }
+
+    public T  keyEncryptionMgfAlgorithm(String keyEncryptionMgfAlgorithm) {
+        this.keyEncryptionMgfAlgorithm = keyEncryptionMgfAlgorithm;
         return (T)this;
     }
 
@@ -212,6 +230,28 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         }
     }
 
+    public static class BaseSoapBindingBuilder {
+        protected Document document;
+        protected BaseSAML2BindingBuilder builder;
+
+        public BaseSoapBindingBuilder(BaseSAML2BindingBuilder builder, Document document) throws ProcessingException {
+            this.builder = builder;
+            this.document = document;
+            if (builder.signAssertions) {
+                builder.signAssertion(document);
+            }
+            if (builder.encrypt) builder.encryptDocument(document);
+            if (builder.sign) {
+                builder.signDocument(document);
+            }
+        }
+
+        public Document getDocument() {
+            return document;
+        }
+
+    }
+
     public BaseRedirectBindingBuilder redirectBinding(Document document) throws ProcessingException {
         return new BaseRedirectBindingBuilder(this, document);
 
@@ -222,7 +262,9 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     }
 
-
+    public BaseSoapBindingBuilder soapBinding(Document document) throws ProcessingException {
+        return new BaseSoapBindingBuilder(this, document);
+    }
 
     public String getSAMLNSPrefix(Document samlResponseDocument) {
         Node assertionElement = samlResponseDocument.getDocumentElement()
@@ -247,8 +289,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
             // encrypt the Assertion element and replace it with a EncryptedAssertion element.
             XMLEncryptionUtil.encryptElement(new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
-                            JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), samlDocument, encryptionPublicKey,
-                    secretKey, encryptionKeySize, encryptedAssertionElementQName, true);
+                            JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), samlDocument, encryptionPublicKey, secretKey, encryptionKeySize,
+                            encryptedAssertionElementQName, true, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm);
         } catch (Exception e) {
             throw new ProcessingException("failed to encrypt", e);
         }
@@ -339,7 +381,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
                 .append("</HEAD>")
                 .append("<BODY Onload=\"document.forms[0].submit()\">")
 
-                .append("<FORM METHOD=\"POST\" ACTION=\"").append(actionUrl).append("\">");
+                .append("<FORM METHOD=\"POST\" ACTION=\"").append(escapeAttribute(actionUrl)).append("\">");
 
         builder.append("<p>Redirecting, please wait.</p>");
 

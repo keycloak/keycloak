@@ -31,8 +31,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
@@ -74,7 +74,11 @@ public class IdentityProviderAuthenticator implements Authenticator {
         }
     }
 
-    private void redirect(AuthenticationFlowContext context, String providerId) {
+    protected void redirect(AuthenticationFlowContext context, String providerId) {
+        redirect(context, providerId, null);
+    }
+
+    protected void redirect(AuthenticationFlowContext context, String providerId, String loginHint) {
         Optional<IdentityProviderModel> idp = context.getRealm().getIdentityProvidersStream()
                 .filter(IdentityProviderModel::isEnabled)
                 .filter(identityProvider -> Objects.equals(providerId, identityProvider.getAlias()))
@@ -83,10 +87,8 @@ public class IdentityProviderAuthenticator implements Authenticator {
             String accessCode = new ClientSessionCode<>(context.getSession(), context.getRealm(), context.getAuthenticationSession()).getOrGenerateCode();
             String clientId = context.getAuthenticationSession().getClient().getClientId();
             String tabId = context.getAuthenticationSession().getTabId();
-            URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId);
-            if (context.getAuthenticationSession().getClientNote(OAuth2Constants.DISPLAY) != null) {
-                location = UriBuilder.fromUri(location).queryParam(OAuth2Constants.DISPLAY, context.getAuthenticationSession().getClientNote(OAuth2Constants.DISPLAY)).build();
-            }
+            String clientData = AuthenticationProcessor.getClientData(context.getSession(), context.getAuthenticationSession());
+            URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId, clientData, loginHint);
             Response response = Response.seeOther(location)
                     .build();
             // will forward the request to the IDP with prompt=none if the IDP accepts forwards with prompt=none.

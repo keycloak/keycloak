@@ -18,6 +18,8 @@
 package org.keycloak.protocol.saml;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -28,6 +30,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.CertificateRepresentation;
@@ -55,8 +58,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     private DestinationValidator destinationValidator;
 
     @Override
-    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
-        return new SamlService(realm, event, destinationValidator);
+    public Object createProtocolEndpoint(KeycloakSession session, EventBuilder event) {
+        return new SamlService(session, event, destinationValidator);
     }
 
     @Override
@@ -68,24 +71,6 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     public void init(Config.Scope config) {
         //PicketLinkCoreSTS sts = PicketLinkCoreSTS.instance();
         //sts.installDefaultConfiguration();
-
-        this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
-    }
-
-    @Override
-    public String getId() {
-        return SamlProtocol.LOGIN_PROTOCOL;
-    }
-
-    @Override
-    public Map<String, ProtocolMapperModel> getBuiltinMappers() {
-        return builtins;
-    }
-
-    static Map<String, ProtocolMapperModel> builtins = new HashMap<>();
-    static List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
-
-    static {
         ProtocolMapperModel model;
         model = UserPropertyAttributeStatementMapper.createAttributeMapper("X500 email",
                 "email",
@@ -111,9 +96,26 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         model = RoleListMapper.create("role list", "Role", AttributeStatementHelper.BASIC, null, false);
         builtins.put("role list", model);
         defaultBuiltins.add(model);
-
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            model = OrganizationMembershipMapper.create();
+            builtins.put("organization", model);
+            defaultBuiltins.add(model);
+        }
+        this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
     }
 
+    @Override
+    public String getId() {
+        return SamlProtocol.LOGIN_PROTOCOL;
+    }
+
+    @Override
+    public Map<String, ProtocolMapperModel> getBuiltinMappers() {
+        return builtins;
+    }
+
+    private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
+    private List<ProtocolMapperModel> defaultBuiltins = new ArrayList<>();
 
     @Override
     protected void createDefaultClientScopesImpl(RealmModel newRealm) {
@@ -124,6 +126,14 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         roleListScope.setProtocol(getId());
         roleListScope.addProtocolMapper(builtins.get("role list"));
         newRealm.addDefaultClientScope(roleListScope, true);
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            ClientScopeModel organizationScope = newRealm.addClientScope("saml_organization");
+            organizationScope.setDescription("Organization Membership");
+            organizationScope.setDisplayOnConsentScreen(false);
+            organizationScope.setProtocol(getId());
+            organizationScope.addProtocolMapper(builtins.get("organization"));
+            newRealm.addDefaultClientScope(organizationScope, true);
+        }
     }
 
     @Override

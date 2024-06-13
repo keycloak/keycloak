@@ -28,6 +28,7 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.model.Policy;
@@ -42,6 +43,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class RegexPolicyProvider implements PolicyProvider {
 
+    private static final Logger logger = Logger.getLogger(RegexPolicyProvider.class);
     private final BiFunction<Policy, AuthorizationProvider, RegexPolicyRepresentation> representationFunction;
 
     public RegexPolicyProvider(BiFunction<Policy, AuthorizationProvider, RegexPolicyRepresentation> representationFunction) {
@@ -66,11 +68,14 @@ public class RegexPolicyProvider implements PolicyProvider {
         Matcher matcher = pattern.matcher(value);
         if (matcher.matches()) {
             evaluation.grant();
+            logger.debugv("policy {} evaluated with status {} on identity {} and claim value {}", policy.getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), getClaimValue(evaluation, policy));
         }
     }
 
     private String getClaimValue(Evaluation evaluation, RegexPolicyRepresentation policy) {
-        Attributes attributes = evaluation.getContext().getIdentity().getAttributes();
+        Attributes attributes = policy.isTargetContextAttributes()
+                ? evaluation.getContext().getAttributes()
+                : evaluation.getContext().getIdentity().getAttributes();
         String targetClaim = policy.getTargetClaim();
 
         try {

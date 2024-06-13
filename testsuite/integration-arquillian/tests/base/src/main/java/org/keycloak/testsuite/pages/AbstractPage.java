@@ -23,7 +23,6 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 
 import java.net.URI;
@@ -44,7 +43,6 @@ public abstract class AbstractPage {
     protected OAuthClient oauth;
 
     public void assertCurrent() {
-        WaitUtils.waitForPageToLoad();
         String name = getClass().getSimpleName();
         Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
                 isCurrent());
@@ -60,7 +58,15 @@ public abstract class AbstractPage {
 
     abstract public boolean isCurrent();
 
+    public boolean isCurrent(String expectedTitle) {
+        return PageUtils.getPageTitle(driver).equals(expectedTitle);
+    }
+
     abstract public void open() throws Exception;
+
+    public WebDriver getDriver() {
+        return driver;
+    }
 
     public void setDriver(WebDriver driver) {
         this.driver = driver ;

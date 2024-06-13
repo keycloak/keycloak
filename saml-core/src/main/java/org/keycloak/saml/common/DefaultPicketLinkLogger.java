@@ -35,7 +35,8 @@ import org.w3c.dom.Element;
 import javax.security.auth.login.LoginException;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.stream.Location;
-import javax.xml.ws.WebServiceException;
+
+import jakarta.xml.ws.WebServiceException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
@@ -2365,7 +2366,7 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
 
     @Override
     public RuntimeException maximumNumberOfClientsReachedforPool(String max) {
-        return new RuntimeException("Pool reached miximum number of clients within the pool (" + max + ")");
+        return new RuntimeException("Pool reached maximum number of clients within the pool (" + max + ")");
     }
 
     @Override

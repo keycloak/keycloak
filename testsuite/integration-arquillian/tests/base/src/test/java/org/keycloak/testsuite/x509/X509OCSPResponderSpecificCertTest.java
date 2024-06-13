@@ -27,16 +27,17 @@ import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigMo
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.util.OAuthClient;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.BlockingHandler;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -57,12 +58,12 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
     private Undertow ocspResponder;
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(htmlUnit);
     }
 
     @Test
@@ -81,7 +82,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        Assert.assertThat(response.getErrorDescription(), containsString("Responder's certificate is not authorized to sign OCSP responses"));
+        assertThat(response.getErrorDescription(), containsString("Responder's certificate is not authorized to sign OCSP responses"));
     }
 
     @Test
@@ -120,7 +121,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
 
-        Assert.assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
+        assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
     }
 
     @Before

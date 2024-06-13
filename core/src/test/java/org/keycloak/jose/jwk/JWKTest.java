@@ -19,13 +19,17 @@ package org.keycloak.jose.jwk;
 
 import java.util.Arrays;
 import java.util.List;
+
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.crypto.integration.CryptoIntegration;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 
 import java.nio.charset.StandardCharsets;
@@ -44,16 +48,22 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.keycloak.common.util.CertificateUtils.generateV1SelfSignedCertificate;
 
 /**
+ * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JWKTest {
+public abstract class JWKTest {
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @Test
     public void publicRs256() throws Exception {
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        KeyPair keyPair = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA).generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         X509Certificate certificate = generateV1SelfSignedCertificate(keyPair, "Test");
 
@@ -88,7 +98,7 @@ public class JWKTest {
 
     @Test
     public void publicRs256Chain() throws Exception {
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        KeyPair keyPair = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA).generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         List<X509Certificate> certificates = Arrays.asList(generateV1SelfSignedCertificate(keyPair, "Test"), generateV1SelfSignedCertificate(keyPair, "Intermediate"));
 
@@ -127,15 +137,14 @@ public class JWKTest {
         verify(data, sign, JavaAlgorithm.RS256, publicKeyFromJwk);
     }
 
-    @Test
-    public void publicEs256() throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
-        SecureRandom randomGen = CryptoIntegration.getProvider().getSecureRandom();
-        ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
+    private void testPublicEs256(String algorithm) throws Exception {
+        KeyPairGenerator keyGen = CryptoIntegration.getProvider().getKeyPairGen(KeyType.EC);
+        SecureRandom randomGen = new SecureRandom();
+        ECGenParameterSpec ecSpec = new ECGenParameterSpec(algorithm);
         keyGen.initialize(ecSpec, randomGen);
         KeyPair keyPair = keyGen.generateKeyPair();
 
-        PublicKey publicKey = keyPair.getPublic();
+        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
 
         JWK jwk = JWKBuilder.create().kid(KeyUtils.createKeyId(keyPair.getPublic())).algorithm("ES256").ec(publicKey);
 
@@ -154,26 +163,34 @@ public class JWKTest {
         byte[] xBytes = Base64Url.decode(ecJwk.getX());
         byte[] yBytes = Base64Url.decode(ecJwk.getY());
 
-        assertTrue(publicKey instanceof ECPublicKey);
-        ECPoint ecPoint = ((ECPublicKey) publicKey).getW();
-        assertNotNull(ecPoint);
-
-        int lengthAffineX = JWKUtil.toIntegerBytes(ecPoint.getAffineX()).length;
-        int lengthAffineY = JWKUtil.toIntegerBytes(ecPoint.getAffineY()).length;
-
-        assertEquals(lengthAffineX, xBytes.length);
-        assertEquals(lengthAffineY, yBytes.length);
+        final int expectedSize = (publicKey.getParams().getCurve().getField().getFieldSize() + 7) / 8;
+        assertEquals(expectedSize, xBytes.length);
+        assertEquals(expectedSize, yBytes.length);
 
         String jwkJson = JsonSerialization.writeValueAsString(jwk);
 
         JWKParser parser = JWKParser.create().parse(jwkJson);
-        PublicKey publicKeyFromJwk = parser.toPublicKey();
-
-        assertArrayEquals(publicKey.getEncoded(), publicKeyFromJwk.getEncoded());
+        ECPublicKey publicKeyFromJwk = (ECPublicKey) parser.toPublicKey();
+        assertEquals(publicKey.getW(), publicKeyFromJwk.getW());
 
         byte[] data = "Some test string".getBytes(StandardCharsets.UTF_8);
         byte[] sign = sign(data, JavaAlgorithm.ES256, keyPair.getPrivate());
         verify(data, sign, JavaAlgorithm.ES256, publicKeyFromJwk);
+    }
+
+    @Test
+    public void publicEs256P256() throws Exception {
+        testPublicEs256("secp256r1");
+    }
+
+    @Test
+    public void publicEs256P521() throws Exception {
+        testPublicEs256("secp521r1");
+    }
+
+    @Test
+    public void publicEs256P384() throws Exception {
+        testPublicEs256("secp384r1");
     }
 
     @Test
@@ -190,6 +207,23 @@ public class JWKTest {
         PublicKey key = JWKParser.create().parse(jwkJson).toPublicKey();
         assertEquals("RSA", key.getAlgorithm());
         assertEquals("X.509", key.getFormat());
+    }
+
+    @Test
+    public void emptyEcOverclaim() throws Exception {
+        JWKBuilder builder = JWKBuilder.create();
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+        KeyPair keyPair = generator.generateKeyPair();
+        JWK jwk = builder.ec(keyPair.getPublic(), KeyUse.ENC);
+        JWKParser parser = new JWKParser(jwk);
+
+        try {
+            parser.toPublicKey();
+        } catch (NullPointerException e) {
+            fail("NullPointerException is thrown: " + e.getMessage());
+        } catch (RuntimeException e) {
+            // Other runtime exception is expected.
+        }
     }
 
     private byte[] sign(byte[] data, String javaAlgorithm, PrivateKey key) throws Exception {

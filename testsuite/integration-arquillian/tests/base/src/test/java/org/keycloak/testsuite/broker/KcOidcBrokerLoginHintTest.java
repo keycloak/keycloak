@@ -3,13 +3,13 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
@@ -44,7 +44,8 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
         
         driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL);
 
@@ -100,7 +101,8 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
                         .enabled(true)
                         .build()
             )) {
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
             waitForPageToLoad();
             driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL + "&kc_idp_hint=" + IDP_OIDC_ALIAS);
             waitForPageToLoad();
@@ -114,7 +116,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
             idpConfirmLinkPage.clickLinkAccount();
 
             loginPage.login(bc.getUserPassword());
-            accountPage.isCurrent();
+            assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("AUTH_RESPONSE"));
         }
     }
 }

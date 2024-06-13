@@ -18,22 +18,20 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -61,12 +59,6 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
     @Override
     protected LDAPRule getLDAPRule() {
         return ldapRule;
-    }
-
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
     }
 
     @Override
@@ -115,7 +107,6 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginLdap() {
         loginPage.open();
         loginPage.login("johnkeycloak", "Password1");
@@ -123,10 +114,11 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        profilePage.open();
-        Assert.assertEquals("John", profilePage.getFirstName());
-        Assert.assertEquals("Doe", profilePage.getLastName());
-        Assert.assertEquals("john@email.org", profilePage.getEmail());
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(testRealm(), "johnkeycloak");
+
+        Assert.assertEquals("John", userRepresentation.getFirstName());
+        Assert.assertEquals("Doe", userRepresentation.getLastName());
+        Assert.assertEquals("john@email.org", userRepresentation.getEmail());
     }
 
 

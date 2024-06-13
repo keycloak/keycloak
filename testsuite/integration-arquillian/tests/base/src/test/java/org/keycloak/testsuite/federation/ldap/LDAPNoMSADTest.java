@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test for special scenarios, which don't work on MSAD (eg. renaming user RDN to "sn=john2" )
@@ -157,7 +158,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
 
             // Assert DN was changed
             String rdnAttrName = ldapProvider.getLdapIdentityStore().getConfig().getRdnLdapAttribute();
-            Assert.assertEquals(rdnAttrName + "=johnkeycloak3+sn=Doe3", john2.getDn().getFirstRdn().toString());
+            Assert.assertEquals("sn=Doe3+" + rdnAttrName + "=johnkeycloak3", john2.getDn().getFirstRdn().toString());
         });
 
         // Update some user attributes not mapped to DN. DN won't be changed
@@ -180,7 +181,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
         userRep = user.toRepresentation();
 
         // ApacheDS bug causes that attribute, which was added to DN, is lowercased. Works for other LDAPs (RHDS, OpenLDAP)
-        Assert.assertThat("Doe3Changed", equalToIgnoringCase(userRep.getLastName()));
+        assertThat("Doe3Changed", equalToIgnoringCase(userRep.getLastName()));
         assertFirstRDNEndsWith(userRep, "johnkeycloak3", "Doe3Changed");
 
         // Remove user

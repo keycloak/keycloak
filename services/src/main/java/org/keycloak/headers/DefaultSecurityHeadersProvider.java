@@ -22,11 +22,11 @@ import org.keycloak.models.ContentSecurityPolicyBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Collections;
 import java.util.Map;
 
@@ -106,20 +106,23 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
 
         // TODO This will be refactored as part of introducing a more strict CSP header
         if (options != null) {
-            ContentSecurityPolicyBuilder csp = ContentSecurityPolicyBuilder.create();
-
             if (options.isAllowAnyFrameAncestor()) {
                 headers.remove(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName());
-
-                csp.frameAncestors(null);
             }
 
-            String allowedFrameSrc = options.getAllowedFrameSrc();
-            if (allowedFrameSrc != null) {
-                csp.frameSrc(allowedFrameSrc);
-            }
+            Object cspVal = headers.getFirst(CONTENT_SECURITY_POLICY.getHeaderName());
+            if (cspVal != null) {
+                ContentSecurityPolicyBuilder csp = ContentSecurityPolicyBuilder.create(cspVal.toString());
+                if (options.isAllowAnyFrameAncestor() && csp.isDefaultFrameAncestors()) {
+                    // only remove frame ancestors if defined to default 'self'
+                    csp.frameAncestors(null);
+                }
 
-            if (CONTENT_SECURITY_POLICY.getDefaultValue().equals(headers.getFirst(CONTENT_SECURITY_POLICY.getHeaderName()))) {
+                String allowedFrameSrc = options.getAllowedFrameSrc();
+                if (allowedFrameSrc != null) {
+                    csp.addFrameSrc(allowedFrameSrc);
+                }
+
                 headers.putSingle(CONTENT_SECURITY_POLICY.getHeaderName(), csp.build());
             }
         }

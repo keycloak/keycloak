@@ -57,8 +57,8 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorage implements UserLookupProvider.Streams, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater.Streams,
-        CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserQueryProvider.Streams, ImportedUserValidation {
+public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater,
+        CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserQueryProvider, ImportedUserValidation {
 
     private static final Logger log = Logger.getLogger(UserMapStorage.class);
     
@@ -291,19 +291,6 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
     @Override
     public int getUsersCount(RealmModel realm) {
         return userPasswords.size();
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return userPasswords.keySet().stream()
-          .map(userName -> createUser(realm, userName));
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        Stream<String> userStream = userPasswords.keySet().stream().sorted();
-
-        return paginatedStream(userStream, firstResult, maxResults).map(userName -> createUser(realm, userName));
     }
 
     @Override

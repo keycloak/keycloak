@@ -24,11 +24,18 @@ import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.lockservice.StandardLockService;
+import liquibase.snapshot.DatabaseSnapshot;
+import liquibase.snapshot.InvalidExampleException;
+import liquibase.snapshot.SnapshotControl;
+import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.core.CreateDatabaseChangeLogLockTableStatement;
 import liquibase.statement.core.DropTableStatement;
 import liquibase.statement.core.InitializeDatabaseChangeLogLockTableStatement;
 import liquibase.statement.core.LockDatabaseChangeLogStatement;
 import liquibase.statement.core.RawSqlStatement;
+import liquibase.structure.core.PrimaryKey;
+import liquibase.structure.core.Schema;
+import liquibase.structure.core.Table;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.reflections.Reflections;
@@ -53,10 +60,45 @@ public class CustomLockService extends StandardLockService {
     private static final Logger log = Logger.getLogger(CustomLockService.class);
 
     @Override
+    protected boolean isDatabaseChangeLogLockTableCreated() throws DatabaseException {
+        boolean originalReturnValue = super.isDatabaseChangeLogLockTableCreated();
+        if (originalReturnValue && database.getConnection().getDatabaseProductName().equals("H2")) {
+            /* Liquibase only checks that the table exists. On the H2 database, creation of a table with a primary key is not atomic,
+               and the primary key might not be visible yet. The primary key would be needed to prevent inserting the data into the table
+               a second time. Inserting it a second time might lead to a failure when creating the primary key, which would then roll back
+               the creation of the table. Therefore, at least on the H2 database, checking for the primary key is essential.
+
+               An existing DATABASECHANGELOG might indicate that the insertion of data was completed previously.
+               Still, this isn't working with the DBLockTest which deletes only the DATABASECHANGELOGLOCK table.
+
+               See https://github.com/keycloak/keycloak/issues/15487 for more information.
+             */
+            Table lockTable = (Table) new Table().setName(database.getDatabaseChangeLogLockTableName()).setSchema(
+                    new Schema(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName()));
+            SnapshotGeneratorFactory instance = SnapshotGeneratorFactory.getInstance();
+
+            try {
+                DatabaseSnapshot snapshot = instance.createSnapshot(lockTable.getSchema().toCatalogAndSchema(), database,
+                        new SnapshotControl(database, false, Table.class, PrimaryKey.class).setWarnIfObjectNotFound(false));
+                Table lockTableFromSnapshot = snapshot.get(lockTable);
+                if (lockTableFromSnapshot == null) {
+                    throw new RuntimeException("DATABASECHANGELOGLOCK not found, although Liquibase claims it exists.");
+                } else if (lockTableFromSnapshot.getPrimaryKey() == null) {
+                    log.warn("Primary key not found - table creation not complete yet.");
+                    return false;
+                }
+            } catch (InvalidExampleException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return originalReturnValue;
+    }
+
+    @Override
     public void init() throws DatabaseException {
         Executor executor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database);
 
-        if (!hasDatabaseChangeLogLockTable()) {
+        if (!isDatabaseChangeLogLockTableCreated()) {
 
             try {
                 if (log.isTraceEnabled()) {
@@ -65,7 +107,7 @@ public class CustomLockService extends StandardLockService {
                 executor.execute(new CreateDatabaseChangeLogLockTableStatement());
                 database.commit();
             } catch (DatabaseException de) {
-                log.warn("Failed to create lock table. Maybe other transaction created in the meantime. Retrying...");
+                log.warn("Failed to create lock table. Maybe other transaction created in the meantime. Retrying...", de);
                 if (log.isTraceEnabled()) {
                     log.trace(de.getMessage(), de); //Log details at trace level
                 }
@@ -97,7 +139,7 @@ public class CustomLockService extends StandardLockService {
             }
 
         } catch (DatabaseException de) {
-            log.warn("Failed to insert first record to the lock table. Maybe other transaction inserted in the meantime. Retrying...");
+            log.warn("Failed to insert first record to the lock table. Maybe other transaction inserted in the meantime. Retrying...", de);
             if (log.isTraceEnabled()) {
                 log.trace(de.getMessage(), de); // Log details at trace level
             }
@@ -212,7 +254,7 @@ public class CustomLockService extends StandardLockService {
             return true;
 
         } catch (DatabaseException de) {
-            log.warn("Lock didn't yet acquired. Will possibly retry to acquire lock. Details: " + de.getMessage());
+            log.warn("Lock didn't yet acquired. Will possibly retry to acquire lock. Details: " + de.getMessage(), de);
             if (log.isTraceEnabled()) {
                 log.debug(de.getMessage(), de);
             }

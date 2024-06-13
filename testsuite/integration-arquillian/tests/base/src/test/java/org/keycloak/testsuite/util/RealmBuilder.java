@@ -59,6 +59,11 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder displayName(String displayName) {
+        rep.setDisplayName(displayName);
+        return this;
+    }
+
     public RealmBuilder publicKey(String publicKey) {
         rep.setPublicKey(publicKey);
         return this;
@@ -319,6 +324,11 @@ public class RealmBuilder {
 
     public RealmBuilder defaultLocale(String defaultLocale) {
         rep.setDefaultLocale(defaultLocale);
+        return this;
+    }
+
+    public RealmBuilder organizationEnabled(boolean enabled) {
+        rep.setOrganizationsEnabled(enabled);
         return this;
     }
 }

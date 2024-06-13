@@ -17,31 +17,51 @@
 
 package org.keycloak.jose;
 
+import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
+import org.keycloak.rule.CryptoInitRule;
 
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
+
 import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class HmacTest {
+public abstract class HmacTest {
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @Test
-    public void testHmacSignatures() throws Exception {
-        SecretKey secret = new SecretKeySpec(UUID.randomUUID().toString().getBytes(), "HmacSHA256");
-        String encoded = new JWSBuilder().content("12345678901234567890".getBytes())
-                .hmac256(secret);
-        System.out.println("length: " + encoded.length());
-        JWSInput input = new JWSInput(encoded);
-        Assert.assertTrue(HMACProvider.verify(input, secret));
+    public void testHmacSignaturesWithRandomSecretKey() throws Exception {
+        SecretKey secretKey = new SecretKeySpec(UUID.randomUUID().toString().getBytes(), "HmacSHA256");
+        testHMACSignAndVerify(secretKey, "testHmacSignaturesWithRandomSecretKey");
     }
 
+    @Test
+    public void testHmacSignaturesWithShortSecretKey() throws Exception {
+        SecretKey secretKey = new SecretKeySpec("secret".getBytes(), "HmacSHA256");
+        testHMACSignAndVerify(secretKey, "testHmacSignaturesWithShortSecretKey");
+    }
+
+    protected void testHMACSignAndVerify(SecretKey secretKey, String test) throws Exception {
+        String encoded = new JWSBuilder().content("12345678901234567890".getBytes())
+                .hmac256(secretKey);
+        logger.infof("%s: Length of encoded content: %d, Length of secret key: %d", test, encoded.length(), secretKey.getEncoded().length);
+        JWSInput input = new JWSInput(encoded);
+        Assert.assertTrue(HMACProvider.verify(input, secretKey));
+    }
 
 }

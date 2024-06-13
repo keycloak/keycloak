@@ -24,25 +24,9 @@ import java.nio.charset.StandardCharsets;
  */
 public enum EscapeStrategy {
 
-
-    // LDAP special characters like * ( ) \ are not escaped. Only non-ASCII characters like é are escaped
-    NON_ASCII_CHARS_ONLY {
-
-        @Override
-        public String escape(String input) {
-            StringBuilder output = new StringBuilder();
-
-            for (byte b : input.getBytes(StandardCharsets.UTF_8)) {
-                appendByte(b, output);
-            }
-
-            return output.toString();
-        }
-
-    },
-
-
-    // Escaping of LDAP special characters including non-ASCII characters like é
+    /**
+     * Escaping of LDAP special characters including non-ASCII characters like é.
+     */
     DEFAULT {
 
 

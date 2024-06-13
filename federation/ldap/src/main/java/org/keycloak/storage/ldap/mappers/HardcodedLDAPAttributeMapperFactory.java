@@ -38,14 +38,20 @@ public class HardcodedLDAPAttributeMapperFactory extends AbstractLDAPStorageMapp
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty attrName = createConfigProperty(HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, "LDAP Attribute Name",
+        ProviderConfigProperty attrName = createConfigProperty(HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME,
+                "LDAP Attribute Name",
                 "Name of the LDAP attribute, which will be added to the new user during registration",
-                ProviderConfigProperty.STRING_TYPE, null);
+                ProviderConfigProperty.STRING_TYPE,
+                null,
+                true);
 
-        ProviderConfigProperty attrValue = createConfigProperty(HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, "LDAP Attribute Value",
+        ProviderConfigProperty attrValue = createConfigProperty(HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE,
+                "LDAP Attribute Value",
                 "Value of the LDAP attribute, which will be added to the new user during registration. You can either hardcode any value like 'foo' but you can also use some special tokens. "
-                + "Only supported token right now is '${RANDOM}' , which will be replaced with some randomly generated String.",
-                ProviderConfigProperty.STRING_TYPE, null);
+                        + "Only supported token right now is '${RANDOM}' , which will be replaced with some randomly generated String.",
+                ProviderConfigProperty.STRING_TYPE,
+                null,
+                true);
 
         configProperties.add(attrName);
         configProperties.add(attrValue);

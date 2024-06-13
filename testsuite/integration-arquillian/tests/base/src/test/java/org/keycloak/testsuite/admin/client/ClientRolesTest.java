@@ -31,18 +31,18 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.ws.rs.ClientErrorException;
+import jakarta.ws.rs.ClientErrorException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -107,6 +107,12 @@ public class ClientRolesTest extends AbstractClientTest {
     public void createRoleWithSameName() {
         RoleRepresentation role = RoleBuilder.create().name("role-a").build();
         rolesRsc.create(role);
+        rolesRsc.create(role);
+    }
+
+    @Test
+    public void createRoleWithNamePattern() {
+        RoleRepresentation role = RoleBuilder.create().name("role-a-{pattern}").build();
         rolesRsc.create(role);
     }
 
@@ -216,38 +222,40 @@ public class ClientRolesTest extends AbstractClientTest {
         List<RoleRepresentation> roleToAdd = Collections.singletonList(rolesRsc.get(roleName).toRepresentation());
 
         //create users and assign test role
-        Set<UserRepresentation> users = new HashSet<>();
-        for (int i = 0; i < 10; i++) {
-            String userName = "user" + i;
+        List<String> usernames = createUsernames(0, 10);
+        usernames.forEach(username -> {
             UserRepresentation user = new UserRepresentation();
-            user.setUsername(userName);
+            user.setUsername(username);
             testRealmResource().users().create(user);
-            user = getFullUserRep(userName);
+            user = getFullUserRep(username);
             testRealmResource().users().get(user.getId()).roles().clientLevel(clientID).add(roleToAdd);
-            users.add(user);
-        }
+        });
 
         // check if users have test role assigned
         RoleResource roleResource = rolesRsc.get(roleName);
-        Set<UserRepresentation> usersInRole = roleResource.getRoleUserMembers();
-        assertEquals(users.size(), usersInRole.size());
-        for (UserRepresentation user : users) {
-            Optional<UserRepresentation> result = usersInRole.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
-            assertTrue(result.isPresent());
-        }
+        List<UserRepresentation> usersInRole = roleResource.getUserMembers();
+        assertEquals(usernames, extractUsernames(usersInRole));
 
         // pagination
-        Set<UserRepresentation> usersInRole1 = roleResource.getRoleUserMembers(0, 5);
-        assertEquals(5, usersInRole1.size());
-        Set<UserRepresentation> usersInRole2 = roleResource.getRoleUserMembers(5, 10);
-        assertEquals(5, usersInRole2.size());
-        for (UserRepresentation user : users) {
-            Optional<UserRepresentation> result1 = usersInRole1.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
-            Optional<UserRepresentation> result2 = usersInRole2.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
-            assertTrue((result1.isPresent() || result2.isPresent()) && !(result1.isPresent() && result2.isPresent()));
-        }
+        List<UserRepresentation> usersInRole1 = roleResource.getUserMembers(0, 5);
+        assertEquals(createUsernames(0, 5), extractUsernames(usersInRole1));
+        List<UserRepresentation> usersInRole2 = roleResource.getUserMembers(5, 10);
+        assertEquals(createUsernames(5, 10), extractUsernames(usersInRole2));
     }
-    
+
+    private static List<String> createUsernames(int startIndex, int endIndex) {
+        List<String> usernames = new ArrayList<>();
+        for (int i = startIndex; i < endIndex; i++) {
+            String userName = "user" + i;
+            usernames.add(userName);
+        }
+        return usernames;
+    }
+
+    private static List<String> extractUsernames(Collection<UserRepresentation> users) {
+        return users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+    }
+
     @Test
     public void testSearchForRoles() {
         

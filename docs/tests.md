@@ -16,7 +16,7 @@ To run the tests with Firefox add `-Dbrowser=firefox` or for Chrome add `-Dbrows
 Database
 --------
 
-By default the testsuite uses an embedded H2 database to test with other databases see (Database Testing)[tests-db.md].
+By default the testsuite uses an embedded H2 database to test with other databases see [Database Testing](tests-db.md).
 
 Test utils
 ==========
@@ -46,6 +46,25 @@ and https port, optionally setting the truststore.
         -Djavax.net.ssl.keyStore=/path/to/keystore.jks \
         -Djavax.net.ssl.keyStorePassword=CHANGEME \
         -Dkeycloak.port.https=8443
+
+### Configuration
+
+KeycloakServer can be configured with system properties, or through the file `~/.keycloak-server.properties`. Using the 
+file allows persisting the settings and can also be more convenient when running from an IDE.
+
+Available options include:
+
+|Key| Description                                                                        |
+|---|------------------------------------------------------------------------------------|
+|keycloak.port| Set the HTTP port for the server                                         |
+|keycloak.port.https| Set the HTTPS port for the server                                  |
+|keycloak.bind.address| Set the bind address for the server                              |
+|resources| Loads theme resources directly from the workspace and disables caching       |
+|keycloak.theme.dir| Specifies an alternative location to load custom themes from        |
+|keycloak.theme.cacheTemplates| Disables theme template caching                          |
+|keycloak.theme.cacheThemes| Disables theme caching                                      |
+|keycloak.theme.staticMaxAge| Sets the client-side caching max-age for theme resources   |
+|import| Imports a realm from json at startup                                            |
 
 ### Default admin account
 

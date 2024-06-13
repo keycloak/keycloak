@@ -26,13 +26,13 @@
 
     <files>
         <file>
-            <source>../client-registration-cli/src/main/bin/kcreg.sh</source>
+            <source>../admin-cli/src/main/bin/kcreg.sh</source>
             <outputDirectory>keycloak-client-tools/bin</outputDirectory>
             <fileMode>0755</fileMode>
             <filtered>true</filtered>
         </file>
         <file>
-            <source>../client-registration-cli/src/main/bin/kcreg.bat</source>
+            <source>../admin-cli/src/main/bin/kcreg.bat</source>
             <outputDirectory>keycloak-client-tools/bin</outputDirectory>
             <filtered>true</filtered>
         </file>
@@ -51,10 +51,17 @@
     <dependencySets>
         <dependencySet>
             <includes>
-                <include>org.keycloak:keycloak-client-registration-cli</include>
                 <include>org.keycloak:keycloak-admin-cli</include>
             </includes>
             <outputDirectory>keycloak-client-tools/bin/client</outputDirectory>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>org.keycloak:keycloak-crypto-default</include>
+                <include>org.keycloak:keycloak-crypto-fips1402</include>
+                <include>org.bouncycastle:bcprov-jdk18on</include>
+            </includes>
+            <outputDirectory>keycloak-client-tools/bin/client/lib</outputDirectory>
         </dependencySet>
     </dependencySets>
 

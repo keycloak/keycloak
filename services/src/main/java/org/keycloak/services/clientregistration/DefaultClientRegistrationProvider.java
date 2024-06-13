@@ -19,18 +19,20 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 
 /**
@@ -68,7 +70,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
+        ResourceServerRepresentation authorizationSettings = client.getAuthorizationSettings();
         client = update(clientId, context);
+        updateAuthorizationSettings(client, authorizationSettings);
         validateClient(client, false);
         return Response.ok(client).build();
     }
@@ -77,5 +81,11 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Path("{clientId}")
     public void deleteDefault(@PathParam("clientId") String clientId) {
         delete(clientId);
+    }
+
+    private void updateAuthorizationSettings(ClientRepresentation rep, ResourceServerRepresentation authorizationSettings) {
+        rep.setAuthorizationSettings(authorizationSettings);
+        ClientModel client = session.getContext().getRealm().getClientByClientId(rep.getClientId());
+        RepresentationToModel.importAuthorizationSettings(rep, client, session);
     }
 }

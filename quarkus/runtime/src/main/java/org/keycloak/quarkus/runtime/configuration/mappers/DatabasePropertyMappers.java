@@ -5,29 +5,28 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.database.Database;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Optional;
-import java.util.function.BiFunction;
 
-import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
+import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 final class DatabasePropertyMappers {
 
     private DatabasePropertyMappers(){}
 
-    public static PropertyMapper[] getDatabasePropertyMappers() {
+    public static PropertyMapper<?>[] getDatabasePropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom("db")
-                        .to("quarkus.hibernate-orm.dialect")
                         .transformer(DatabasePropertyMappers::transformDialect)
                         .build(),
                 fromOption(DatabaseOptions.DB_DRIVER)
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer(DatabasePropertyMappers.getXaOrNonXaDriver())
+                        .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
+                        .paramLabel("driver")
                         .build(),
                 fromOption(DatabaseOptions.DB)
                         .to("quarkus.datasource.db-kind")
@@ -37,7 +36,7 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_URL)
                         .to("quarkus.datasource.jdbc.url")
                         .mapFrom("db")
-                        .transformer(DatabasePropertyMappers.getDatabaseUrl())
+                        .transformer(DatabasePropertyMappers::getDatabaseUrl)
                         .paramLabel("jdbc-url")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
@@ -58,19 +57,16 @@ final class DatabasePropertyMappers {
                         .build(),
                 fromOption(DatabaseOptions.DB_USERNAME)
                         .to("quarkus.datasource.username")
-                        .mapFrom("db")
                         .transformer(DatabasePropertyMappers::resolveUsername)
                         .paramLabel("username")
                         .build(),
                 fromOption(DatabaseOptions.DB_PASSWORD)
                         .to("quarkus.datasource.password")
-                        .mapFrom("db")
                         .transformer(DatabasePropertyMappers::resolvePassword)
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
                 fromOption(DatabaseOptions.DB_SCHEMA)
-                        .to("quarkus.hibernate-orm.database.default-schema")
                         .paramLabel("schema")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_INITIAL_SIZE)
@@ -88,60 +84,68 @@ final class DatabasePropertyMappers {
         };
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> getDatabaseUrl() {
-        return (s, c) -> Database.getDefaultUrl(s).orElse(s);
-    }
+    private static Optional<String> getDatabaseUrl(Optional<String> value, ConfigSourceInterceptorContext c) {
+        Optional<String> url = Database.getDefaultUrl(value.get());
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> getXaOrNonXaDriver() {
-        return (String db, ConfigSourceInterceptorContext context) -> {
-            ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-
-            boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
-
-            return Database.getDriver(db, isXaEnabled).orElse(db);
-        };
-    }
-
-    private static String toDatabaseKind(String db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db);
-
-        if (databaseKind.isPresent()) {
-            return databaseKind.get();
+        if (url.isPresent()) {
+            return url;
         }
 
-        addInitializationException(invalidDatabaseVendor(db, Database.getAliases()));
-
-        return "h2";
+        return value;
     }
 
-    private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {
+    private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
+        ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
+        boolean isXaEnabled = xaEnabledConfigValue != null && Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+
+        Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
+
+        if (driver.isPresent()) {
+            return driver;
+        }
+
+        return value;
+    }
+
+    private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
+        return Database.getDatabaseKind(db.get());
+    }
+
+    private static Optional<String> resolveUsername(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (isDevModeDatabase(context)) {
-            return "sa";
+            return of("sa");
         }
 
-        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+        return value;
     }
 
-    private static String resolvePassword(String value, ConfigSourceInterceptorContext context) {
+    private static Optional<String> resolvePassword(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (isDevModeDatabase(context)) {
-            return "password";
+            return of("password");
         }
 
-        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+        return value;
     }
 
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
-        String db = context.proceed("kc.db").getValue();
+        String db = Configuration.getConfig().getConfigValue("kc.db").getValue();
         return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
     }
 
-    private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db);
+    private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
+        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
         if (databaseKind.isEmpty()) {
             return db;
         }
 
-        return Database.getDialect(db).orElse(Database.getDialect("dev-file").get());
+        Optional<String> dialect = Database.getDialect(db.get());
+
+        if (dialect.isPresent()) {
+            return dialect;
+        }
+
+        return Database.getDialect("dev-file");
     }
+
 }

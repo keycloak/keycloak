@@ -17,12 +17,16 @@
 
 package org.keycloak.services.resources.admin.info;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentFactory;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -44,6 +48,8 @@ import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.representations.info.ClientInstallationRepresentation;
+import org.keycloak.representations.info.CryptoInfoRepresentation;
+import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.MemoryInfoRepresentation;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
@@ -51,13 +57,13 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.theme.Theme;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,12 +79,16 @@ import java.util.stream.Stream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN , value = "")
 public class ServerInfoAdminResource {
 
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
+
+    public ServerInfoAdminResource(KeycloakSession session) {
+        this.session = session;
+    }
 
     /**
      * Get themes, social providers, auth providers, and event listeners available on this server
@@ -88,11 +98,31 @@ public class ServerInfoAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROOT)
+    @Operation( summary = "Get themes, social providers, auth providers, and event listeners available on this server")
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
         info.setProfileInfo(ProfileInfoRepresentation.create());
+        info.setFeatures(FeatureRepresentation.create());
+
+        // True - asymmetric algorithms, false - symmetric algorithms
+        Map<Boolean, List<String>> algorithms = session.getAllProviders(ClientSignatureVerifierProvider.class).stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ClientSignatureVerifierProvider::isAsymmetricAlgorithm,
+                                        clientSignatureVerifier -> Collections.singletonList(clientSignatureVerifier.getAlgorithm()),
+                                        (l1, l2) -> {
+                                            List<String> result = listCombiner(l1, l2);
+                                            return result.stream()
+                                                    .sorted()
+                                                    .collect(Collectors.toList());
+                                        },
+                                        HashMap::new
+                                )
+                        );
+        info.setCryptoInfo(CryptoInfoRepresentation.create(algorithms.get(false), algorithms.get(true)));
 
         setSocialProviders(info);
         setIdentityProviders(info);
@@ -176,15 +206,18 @@ public class ServerInfoAdminResource {
             for (String name : themeNames) {
                 try {
                     Theme theme = session.theme().getTheme(name, type);
-                    ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
-                    ti.setName(name);
+                    // Different name means the theme itself was not found and fallback to default theme was needed
+                    if (theme != null && name.equals(theme.getName())) {
+                        ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
+                        ti.setName(name);
 
-                    String locales = theme.getProperties().getProperty("locales");
-                    if (locales != null) {
-                        ti.setLocales(locales.replaceAll(" ", "").split(","));
+                        String locales = theme.getProperties().getProperty("locales");
+                        if (locales != null) {
+                            ti.setLocales(locales.replaceAll(" ", "").split(","));
+                        }
+
+                        themes.add(ti);
                     }
-
-                    themes.add(ti);
                 } catch (IOException e) {
                     throw new WebApplicationException("Failed to load themes", e);
                 }
@@ -194,15 +227,21 @@ public class ServerInfoAdminResource {
     
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
         LinkedList<String> filteredNames = new LinkedList<>(themeNames);
-        
-        boolean filterAccountV2 = (type == Theme.Type.ACCOUNT) && 
-                !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
         boolean filterAdminV2 = (type == Theme.Type.ADMIN) && 
                 !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
-        
-        if (filterAccountV2 || filterAdminV2) {
+        boolean filterLoginV2 = (type == Theme.Type.LOGIN) &&
+                !Profile.isFeatureEnabled(Profile.Feature.LOGIN2);
+
+        if (filterAdminV2 || filterLoginV2) {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
+        }
+
+        boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) && 
+            !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3);
+
+        if (filterAccountV3) {
+            filteredNames.remove("keycloak.v3");
         }
         
         return filteredNames;

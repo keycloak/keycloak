@@ -24,7 +24,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +40,7 @@ public class RegistrationFlowTest extends AbstractAuthenticationTest {
         createFlow(flowRep);
 
         // add registration execution form flow
-        Map<String, String> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("alias", "registrationForm2");
         data.put("type", "form-flow");
         data.put("description", "registrationForm2 flow");
@@ -49,11 +49,11 @@ public class RegistrationFlowTest extends AbstractAuthenticationTest {
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("registration2"), data, ResourceType.AUTH_EXECUTION_FLOW);
 
         // Should fail to add execution under top level flow
-        Map<String, String> data2 = new HashMap<>();
-        data2.put("provider", "registration-profile-action");
+        Map<String, Object> data2 = new HashMap<>();
+        data2.put("provider", "registration-password-action");
         try {
             authMgmtResource.addExecution("registration2", data2);
-            Assert.fail("Not expected to add execution of type 'registration-profile-action' under top flow");
+            Assert.fail("Not expected to add execution of type 'registration-password-action' under top flow");
         } catch (BadRequestException bre) {
         }
 

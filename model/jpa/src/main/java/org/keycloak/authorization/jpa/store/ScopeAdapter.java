@@ -20,11 +20,10 @@ import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -89,7 +88,7 @@ public class ScopeAdapter extends AbstractAuthorizationModel implements Scope, J
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
     }
 
     public static ScopeEntity toEntity(EntityManager em, Scope scope) {

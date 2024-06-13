@@ -20,7 +20,7 @@ package org.keycloak.authentication;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.provider.Provider;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * This class is responsible for rendering a form.  The way it works is that each FormAction that is a child of this

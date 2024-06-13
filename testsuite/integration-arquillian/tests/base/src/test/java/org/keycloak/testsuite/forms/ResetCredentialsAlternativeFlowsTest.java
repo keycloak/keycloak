@@ -18,14 +18,12 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -34,12 +32,9 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -51,24 +46,13 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.UserBuilder;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
+import org.keycloak.testsuite.util.*;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * Test for the various alternatives of reset-credentials flow or browser flow (non-default setup of the  flows)
@@ -76,8 +60,7 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:jlieskov@redhat.com">Jan Lieskovsky</a>
  */
-@AuthServerContainerExclude(REMOTE)
-public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycloakTest {
+public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedActionTest {
 
     private String userId;
 
@@ -101,9 +84,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
-
-    @Page
-    protected AccountTotpPage accountTotpPage;
 
     @Page
     protected LoginConfigTotpPage totpPage;
@@ -137,6 +117,11 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
         userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
         getCleanup().addUserId(userId);
+    }
+
+    @Override
+    public String getAiaAction() {
+        return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }
 
 
@@ -239,7 +224,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             loginUsernameOnlyPage.open();
             loginUsernameOnlyPage.login("login-test");
 
-            Assert.assertTrue(passwordPage.isCurrent());
+            passwordPage.assertCurrent();
 
             // Click "Forget password"
             passwordPage.clickResetPassword();
@@ -275,7 +260,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
         loginUsernameOnlyPage.open();
         loginUsernameOnlyPage.login(username);
 
-        Assert.assertTrue(passwordPage.isCurrent());
+        passwordPage.assertCurrent();
 
         // Click "Forget password"
         passwordPage.clickResetPassword();
@@ -347,7 +332,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetCredentialsVerifyCustomOtpLabelSetProperly() {
         try {
             // Make a copy of the default Reset Credentials flow, but:
@@ -361,14 +345,17 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
             // Login & set up the initial OTP code for the user
             loginPage.open();
-            loginPage.login("login@test.com", "password");
+            loginPage.login("login-test", "password");
             String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
             OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
-            accountTotpPage.open();
-            Assert.assertTrue(accountTotpPage.isCurrent());
             String customOtpLabel = "my-original-otp-label";
-            accountTotpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), customOtpLabel);
+
+            // Setup OTP
+            doAIA();
+            totpPage.assertCurrent();
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), customOtpLabel);
+            assertKcActionStatus(SUCCESS);
 
             // Logout
             oauth.idTokenHint(response.getIdToken()).openLogout();
@@ -378,26 +365,18 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             loginPage.resetPassword();
 
             // Should be on reset password page now. Provide email of the user & click Submit button
-            Assert.assertTrue(resetPasswordPage.isCurrent());
-            resetPasswordPage.changePassword("login@test.com");
-
-            // Since 'Send Reset Email' & 'Reset Password' authenticators got removed above,
-            // the next action should be 'Reset OTP' -- verify that
-            Assert.assertTrue(totpPage.isCurrent());
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword("login-test");
 
             // Provide updated form of the OTP label, to be used within 'Reset OTP' (next) step
             customOtpLabel = "my-reset-otp-label";
 
             // Reset OTP label to a custom value as part of Reset Credentials flow
-            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), customOtpLabel);
+            AccountHelper.updateTotpUserLabel(testRealm(), "login-test", customOtpLabel);
 
             // Open OTP Authenticator account page
-            accountTotpPage.open();
-            Assert.assertTrue(accountTotpPage.isCurrent());
-
-            // Verify OTP authenticator with requested label was created
-            String pageSource = driver.getPageSource();
-            Assert.assertTrue(pageSource.contains(customOtpLabel));
+            // Check if OTP credential is present
+            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "login-test", customOtpLabel));
 
         // Undo setup changes performed within the test
         } finally {
@@ -409,7 +388,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
     // KEYCLOAK-12168 Verify the 'Device Name' label is optional for the first OTP credential created
     // (either via Account page or by registering new user), but required for each next created OTP credential
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void deviceNameOptionalForFirstOTPCredentialButRequiredForEachNextOne() {
         // Enable 'Default Action' on 'Configure OTP' RA for the 'test' realm
         RequiredActionProviderRepresentation otpRequiredAction = testRealm().flows().getRequiredAction("CONFIGURE_TOTP");
@@ -431,29 +409,17 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             // Login & set up the initial OTP code for the user
             loginPage.open();
             loginPage.login("login@test.com", "password");
-            accountTotpPage.open();
-            Assert.assertTrue(accountTotpPage.isCurrent());
-
-            String pageSource = driver.getPageSource();
-            // Check the One-time code label is followed by asterisk character (since always required)
-            final String oneTimeCodeLabelFollowedByAsterisk = "(?s)<label for=\"totp\"((?!</span>).)+((?=<span class=\"required\">\\*).)*";
-            Assert.assertTrue(Pattern.compile(oneTimeCodeLabelFollowedByAsterisk).matcher(pageSource).find());
-
-            // Check the Device Name label is not followed by asterisk character (since optional if no OTP credential defined yet)
-            final String asteriskPrecededByDeviceNameLabel = "(?s)((?<=<label for=\"userLabel\").)+.*<span class=\"required\">\\s+\\*";
-            Assert.assertFalse(Pattern.compile(asteriskPrecededByDeviceNameLabel).matcher(pageSource).find());
 
             // Create OTP credential with empty label
             final String emptyOtpLabel = "";
-            accountTotpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), emptyOtpLabel);
 
-            // Get the updated Account TOTP page source post OTP credential creation
-            pageSource = driver.getPageSource();
+            // Setup OTP
+            doAIA();
+            totpPage.assertCurrent();
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), emptyOtpLabel);
+            assertKcActionStatus(SUCCESS);
 
-            // Check if OTP credential with empty label was created successfully
-            assertThat(driver.findElements(By.className("provider")).stream()
-                    .map(WebElement::getText).collect(Collectors.toList()), Matchers.hasItem(""));
-            accountTotpPage.removeTotp();
+            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "login-test"));
 
             // Logout
             driver.navigate().to(oauth.getLogoutUrl().build());
@@ -468,32 +434,20 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             registerPage.assertCurrent();
 
             registerPage.register("Bruce", "Wilson", "bwilson@keycloak.org", "bwilson", "password", "password");
-            Assert.assertTrue(totpPage.isCurrent());
-            pageSource = driver.getPageSource();
-
-            // Check the One-time code label is required
-            Assert.assertTrue(Pattern.compile(oneTimeCodeLabelFollowedByAsterisk).matcher(pageSource).find());
-            // Check the Device Name label is optional
-            Assert.assertFalse(Pattern.compile(asteriskPrecededByDeviceNameLabel).matcher(pageSource).find());
+            totpPage.assertCurrent();
 
             // Create OTP credential with empty label
-            totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), emptyOtpLabel);
 
-            Assert.assertNull(totpPage.getAlertError());
-            Assert.assertNull(totpPage.getInputCodeError());
-            Assert.assertNull(totpPage.getInputLabelError());
+            // Setup OTP
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
 
             // Assert user authenticated
             appPage.assertCurrent();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-            accountTotpPage.open();
-            Assert.assertTrue(accountTotpPage.isCurrent());
-
-            // Check if OTP credential with empty label was created successfully
-            assertThat(driver.findElements(By.className("provider")).stream()
-                    .map(WebElement::getText).collect(Collectors.toList()), Matchers.hasItem(""));;
+            Assert.assertTrue(AccountHelper.isTotpPresent(testRealm(), "bwilson"));
+            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", ""));
 
             // Logout
             driver.navigate().to(oauth.getLogoutUrl().build());
@@ -507,49 +461,28 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             loginPage.resetPassword();
 
             // Should be on reset password page now. Provide email of previously registered user & click Submit button
-            Assert.assertTrue(resetPasswordPage.isCurrent());
+            resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword("bwilson@keycloak.org");
-
-            pageSource = driver.getPageSource();
-
-            // Check the One-time code label is required
-            Assert.assertTrue(Pattern.compile(oneTimeCodeLabelFollowedByAsterisk).matcher(pageSource).find());
-
-            // Check the Device Name label is required (since one OTP credential already defined)
-            final String deviceNameLabelFollowedByAsterisk = "(?s)<label for=\"userLabel\"((?!</span>).)+((?=<span class=\"required\">\\*).)*";
-            Assert.assertTrue(Pattern.compile(deviceNameLabelFollowedByAsterisk).matcher(pageSource).find());
 
             // Try to create another OTP credential with empty label again. This
             // should fail with error since OTP label is required in this case already
-            final String deviceNameLabelRequiredErrorMessage = "Please specify device name.";
-            totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), emptyOtpLabel);
-            Assert.assertTrue(totpPage.getInputLabelError().equals(deviceNameLabelRequiredErrorMessage));
-
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
+            Assert.assertTrue(AccountHelper.totpCountEquals(testRealm(), "bwilson", 1));
             // Create 2nd OTP credential with valid (non-empty) Device Name label. This should pass
             final String secondOtpLabel = "My 2nd OTP device";
-            totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), secondOtpLabel);
-
-            Assert.assertNull(totpPage.getAlertError());
-            Assert.assertNull(totpPage.getInputCodeError());
-            Assert.assertNull(totpPage.getInputLabelError());
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), secondOtpLabel);
 
             // Assert user authenticated
             appPage.assertCurrent();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-            accountTotpPage.open();
-            Assert.assertTrue(accountTotpPage.isCurrent());
-
-            // Get the updated Account TOTP page source after both the OTP credentials were created
-            pageSource = driver.getPageSource();
-
             // Verify 2nd OTP credential was successfully created too
-            Assert.assertTrue(pageSource.contains(secondOtpLabel));
+            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", secondOtpLabel));
 
             // Remove both OTP credentials
-            accountTotpPage.removeTotp();
-            accountTotpPage.removeTotp();
+            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
+            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
 
             // Logout
             driver.navigate().to(oauth.getLogoutUrl().build());

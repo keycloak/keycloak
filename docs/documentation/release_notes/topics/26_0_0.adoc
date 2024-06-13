@@ -1,0 +1,11 @@
+= Support for multiple instances of a social broker in a realm
+
+It is now possible to have multiple instances of the same social broker in a realm.
+
+Most of the time a realm does not need multiple instances of the same social broker. But due to the introduction
+of the `organization` feature, it should be possible to link different instances of the same social broker
+to different organizations.
+
+When creating a social broker, you should now provide an `Alias` and optionally a `Display name` just like any other
+broker.
+

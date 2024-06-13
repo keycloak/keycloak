@@ -68,9 +68,6 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
     protected LoginPage loginPage;
 
     @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
     protected OAuthGrantPage grantPage;
 
     @Page
@@ -104,7 +101,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
 
     @Test
     public void testAuthorizationEncryptionAlgRSA1_5EncA192GCM() {
-        testAuthorizationTokenSignatureAndEncryption(Algorithm.RS512, JWEConstants.RSA1_5, JWEConstants.A192GCM);
+        testAuthorizationTokenSignatureAndEncryption(Algorithm.EdDSA, JWEConstants.RSA1_5, JWEConstants.A192GCM);
     }
 
     @Test
@@ -126,7 +123,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
 
     @Test
     public void testAuthorizationEncryptionAlgRSA_OAEPEncA256CBC_HS512() {
-        testAuthorizationTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256CBC_HS512);
+        testAuthorizationTokenSignatureAndEncryption(Algorithm.EdDSA, JWEConstants.RSA_OAEP, JWEConstants.A256CBC_HS512);
     }
 
     @Test
@@ -230,12 +227,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
     }
 
     private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
-        JWEAlgorithmProvider jweAlgorithmProvider = null;
-        if (JWEConstants.RSA1_5.equals(algAlgorithm) || JWEConstants.RSA_OAEP.equals(algAlgorithm) ||
-                JWEConstants.RSA_OAEP_256.equals(algAlgorithm)) {
-            jweAlgorithmProvider = new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
-        }
-        return jweAlgorithmProvider;
+        return new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
     }
     private JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
         JWEEncryptionProvider jweEncryptionProvider = null;

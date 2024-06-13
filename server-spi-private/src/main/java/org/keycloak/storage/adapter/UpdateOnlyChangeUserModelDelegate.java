@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 
 import static org.keycloak.common.util.ObjectUtil.isEqualOrBothNull;
@@ -170,7 +171,7 @@ public class UpdateOnlyChangeUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void joinGroup(GroupModel group) {
-        if (!isMemberOf(group)) {
+        if (!RoleUtils.isDirectMember(getGroupsStream(),group)) {
             delegate.joinGroup(group);
         }
 
@@ -178,7 +179,7 @@ public class UpdateOnlyChangeUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void leaveGroup(GroupModel group) {
-        if (isMemberOf(group)) {
+        if (RoleUtils.isDirectMember(getGroupsStream(),group)) {
             delegate.leaveGroup(group);
         }
     }

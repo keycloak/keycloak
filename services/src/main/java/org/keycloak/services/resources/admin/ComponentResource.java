@@ -16,9 +16,12 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import org.jboss.resteasy.reactive.NoCache;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
@@ -38,22 +41,22 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
@@ -67,33 +70,36 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ComponentResource {
     protected static final Logger logger = Logger.getLogger(ComponentResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    private AdminPermissionEvaluator auth;
+    private final AdminPermissionEvaluator auth;
 
-    private AdminEventBuilder adminEvent;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    public ComponentResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public ComponentResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
         this.adminEvent = adminEvent.resource(ResourceType.COMPONENT);
+        this.clientConnection = session.getContext().getConnection();
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public Stream<ComponentRepresentation> getComponents(@QueryParam("parent") String parent,
                                                        @QueryParam("type") String type,
                                                        @QueryParam("name") String name) {
@@ -116,7 +122,7 @@ public class ComponentResource {
                     try {
                         return ModelToRepresentation.toRepresentation(session, component, false);
                     } catch (Exception e) {
-                        logger.error("Failed to get component list for component model" + component.getName() + "of realm " + realm.getName());
+                        logger.error("Failed to get component list for component model " + component.getName() + " of realm " + realm.getName());
                         return ModelToRepresentation.toRepresentationWithoutConfig(component);
                     }
                 });
@@ -124,6 +130,8 @@ public class ComponentResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public Response create(ComponentRepresentation rep) {
         auth.realm().requireManageRealm();
         try {
@@ -132,12 +140,12 @@ public class ComponentResource {
 
             model = realm.addComponentModel(model);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(StripSecretsUtils.strip(session, rep)).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException(e);
+            throw new BadRequestException("Invalid provider type or no such provider", e);
         }
     }
 
@@ -145,6 +153,8 @@ public class ComponentResource {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
         auth.realm().requireViewRealm();
         ComponentModel model = realm.getComponent(id);
@@ -158,6 +168,8 @@ public class ComponentResource {
     @PUT
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public Response updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
         auth.realm().requireManageRealm();
         try {
@@ -166,17 +178,19 @@ public class ComponentResource {
                 throw new NotFoundException("Could not find component");
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(StripSecretsUtils.strip(session, rep)).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             realm.updateComponent(model);
             return Response.noContent().build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException();
+            throw new BadRequestException("Invalid provider type or no such provider", e);
         }
     }
     @DELETE
     @Path("{id}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public void removeComponent(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
         ComponentModel model = realm.getComponent(id);
@@ -185,7 +199,6 @@ public class ComponentResource {
         }
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
         realm.removeComponent(model);
-
     }
 
     private Response localizedErrorResponse(ComponentValidationException cve) {
@@ -203,7 +216,7 @@ public class ComponentResource {
         }).toArray();
 
         String message = MessageFormat.format(messages.getProperty(cve.getMessage(), cve.getMessage()), localizedParameters);
-        return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
+        throw ErrorResponse.error(message, Response.Status.BAD_REQUEST);
     }
 
     /**
@@ -217,6 +230,8 @@ public class ComponentResource {
     @Path("{id}/sub-component-types")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation( summary = "List of subcomponent types that are available to configure for a particular parent component.")
     public Stream<ComponentTypeRepresentation> getSubcomponentConfig(@PathParam("id") String parentId, @QueryParam("type") String subtype) {
         auth.realm().requireViewRealm();
         ComponentModel parent = realm.getComponent(parentId);

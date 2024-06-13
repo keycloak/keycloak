@@ -17,16 +17,15 @@
 
 package org.keycloak.testsuite.federation.storage;
 
-import org.keycloak.common.Profile.Feature;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -38,15 +37,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedRoleStorageProviderFactory;
-import org.junit.BeforeClass;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
 
     private String providerId;
@@ -61,11 +55,6 @@ public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
             getCleanup().addComponentId(id);
             return id;
         }
-    }
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @Before

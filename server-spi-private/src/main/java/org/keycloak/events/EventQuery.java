@@ -91,12 +91,18 @@ public interface EventQuery {
     EventQuery maxResults(int max);
 
     /**
-     * @deprecated Use {@link #getResultStream() getResultStream} instead.
+     * Order the result by descending time
+     *
+     * @return <code>this</code> for method chaining
      */
-    @Deprecated
-    default List<Event> getResultList() {
-        return getResultStream().collect(Collectors.toList());
-    }
+    EventQuery orderByDescTime();
+
+    /**
+     * Order the result by ascending time
+     *
+     * @return <code>this</code> for method chaining
+     */
+    EventQuery orderByAscTime();
 
     /**
      * Returns requested results that match given criteria as a stream.

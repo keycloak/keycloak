@@ -110,7 +110,7 @@ public class RegistryCreator {
     private void addAppServerContainers(List<ContainerDef> containerDefs, List<GroupDef> groupDefs) {
         Node parent = ((NodeDescriptor)containerDefs.get(0)).getRootNode();
 
-        String appServerName = System.getProperty("app.server", "undertow");
+        String appServerName = System.getProperty("app.server", "wildfly");
 
         List<Node> containers = AppServerContainerService.getInstance().getContainers(appServerName);
         if (containers == null) {

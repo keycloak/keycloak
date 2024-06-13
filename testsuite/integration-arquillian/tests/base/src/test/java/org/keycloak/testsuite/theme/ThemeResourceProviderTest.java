@@ -11,8 +11,6 @@ import org.keycloak.common.Version;
 import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.theme.Theme;
 
 import java.io.File;
@@ -28,7 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Override
@@ -42,6 +39,20 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
             try {
                 Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
                 Assert.assertNotNull(theme.getTemplate("test.ftl"));
+            } catch (IOException e) {
+                Assert.fail(e.getMessage());
+            }
+        });
+    }
+
+    @Test
+    public void testThemeFallback() {
+        testingClient.server().run(session -> {
+            try {
+                // Fallback to default theme when requested theme don't exists
+                Theme theme = session.theme().getTheme("address", Theme.Type.ADMIN);
+                Assert.assertNotNull(theme);
+                Assert.assertEquals("keycloak.v2", theme.getName());
             } catch (IOException e) {
                 Assert.fail(e.getMessage());
             }
@@ -107,7 +118,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
             return deleted;
         }, Boolean.class);
 
-        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", "body {");
+        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", ".pf-v5-c-background-image");
         assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/js/keycloak.js", "function Keycloak (config)");
 
         // Check no files exists inside "/tmp" directory. We need to skip this test in the rare case when there are thombstone files created by different user

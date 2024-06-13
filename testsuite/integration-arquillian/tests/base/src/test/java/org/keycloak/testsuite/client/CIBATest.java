@@ -17,12 +17,13 @@
 package org.keycloak.testsuite.client;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.containsString;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -37,7 +38,6 @@ import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChann
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.UNAUTHORIZED;
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
@@ -105,7 +105,6 @@ import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFa
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
@@ -126,6 +125,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -135,7 +135,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@AuthServerContainerExclude({REMOTE})
 public class CIBATest extends AbstractClientPoliciesTest {
 
     private static final String TEST_USER_NAME = "test-user@localhost";
@@ -1107,6 +1106,52 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testVerifyHolderOfAuthenticationRequestRef() throws Exception {
+        ClientResource firstClientResource = null;
+        ClientResource secondClientResource = null;
+        ClientRepresentation firstClientRep = null;
+        ClientRepresentation secondClientRep = null;
+        try {
+            final String username = "nutzername-gelb";
+            final String firstClientName = "test-app-scope"; // see testrealm.json
+            final String secondClientName = TEST_CLIENT_NAME;
+            final String firstClientPassword = "password";
+            final String secondClientPassword = TEST_CLIENT_PASSWORD;
+            String firstClientAuthReqId = null;
+
+            firstClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
+            assertThat(firstClientResource, notNullValue());
+
+            firstClientRep = firstClientResource.toRepresentation();
+            prepareCIBASettings(firstClientResource, firstClientRep);
+
+            secondClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), secondClientName);
+            assertThat(secondClientResource, notNullValue());
+
+            secondClientRep = secondClientResource.toRepresentation();
+            prepareCIBASettings(secondClientResource, secondClientRep);
+
+            // first client Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(firstClientName, firstClientPassword, username, "asdfghjkl");
+            firstClientAuthReqId = response.getAuthReqId();
+
+            // first client Authentication Channel Request
+            TestAuthenticationChannelRequest firstClientAuthenticationChannelReq = doAuthenticationChannelRequest("asdfghjkl");
+
+            // first client Authentication Channel completed
+            doAuthenticationChannelCallback(firstClientAuthenticationChannelReq);
+
+            // second client Token Request
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, firstClientAuthReqId);
+            assertEquals(400, tokenRes.getStatusCode());
+            assertEquals("unauthorized client", tokenRes.getErrorDescription());
+        } finally {
+            revertCIBASettings(firstClientResource, firstClientRep);
+            revertCIBASettings(secondClientResource, secondClientRep);
+        }
+    }
+
+    @Test
     public void testRequestTokenBeforeAuthenticationNotCompleted() throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
@@ -1353,7 +1398,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             //clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             Assert.assertNull(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.RS256));
+            assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.RS256));
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "gilwekDe3", "acr2");
@@ -1372,8 +1417,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
             clientRep = clientResource.toRepresentation();
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.TRUE.toString()));
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.ES256));
+            assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.TRUE.toString()));
+            assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.ES256));
 
             // user Backchannel Authentication Request
             response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "Fkb4T3s");
@@ -1395,8 +1440,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
             clientRep = clientResource.toRepresentation();
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.FALSE.toString()));
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is("none"));
+            assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.FALSE.toString()));
+            assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is("none"));
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, response.getAuthReqId());
@@ -1423,7 +1468,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         rep = getClientDynamically(clientId);
         Assert.assertTrue(rep.getGrantTypes().contains(OAuth2Constants.CIBA_GRANT_TYPE));
-        Assert.assertThat(rep.getBackchannelAuthenticationRequestSigningAlg(), is(Algorithm.PS256));
+        assertThat(rep.getBackchannelAuthenticationRequestSigningAlg(), is(Algorithm.PS256));
     }
 
     @Test
@@ -1434,6 +1479,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
     @Test
     public void testBackchannelAuthenticationFlowWithSignedAuthenticationRequestUriParam() throws Exception {
         testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(true, Algorithm.ES256);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithSignedAuthenticationRequestEd25519Param() throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(false, Algorithm.EdDSA, Algorithm.Ed25519);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithSignedAuthenticationRequestEd448UriParam() throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(true, Algorithm.EdDSA, Algorithm.Ed448);
     }
 
     @Test
@@ -1878,6 +1933,61 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testExtendedClientPolicyInterfacesForBackchannelTokenResponse() throws Exception {
+        String clientId = generateSuffixedName("confidential-app");
+        String clientSecret = "app-secret";
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
+            attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            clientRep.setAttributes(attributes);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        final String bindingMessage = "BASTION";
+        Map<String, String> additionalParameters = new HashMap<>();
+        additionalParameters.put("user_device", "mobile");
+
+        // user Backchannel Authentication Request
+        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, TEST_USER_NAME, bindingMessage, null, null, additionalParameters);
+        assertThat(response.getStatusCode(), is(equalTo(200)));
+        Assert.assertNotNull(response.getAuthReqId());
+
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        TestAuthenticationChannelRequest authenticationChannelReq = oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
+        int statusCode = oauth.doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
+        assertThat(statusCode, is(equalTo(200)));
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_RESPONSE)))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "A Primeira Politica", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, response.getAuthReqId());
+        assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+        assertThat(tokenRes.getError(), is(ClientPolicyEvent.BACKCHANNEL_TOKEN_RESPONSE.toString()));
+        assertThat(tokenRes.getErrorDescription(), is("Exception thrown intentionally"));
+    }
+
+    @Test
     public void testSecureCibaAuthenticationRequestSigningAlgorithmEnforceExecutor() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -1989,7 +2099,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         String cAppDynamicClientId = createClientDynamically(generateSuffixedName("App-in-Dynamic"), (OIDCClientRepresentation clientRep) -> {
                 clientRep.setBackchannelAuthenticationRequestSigningAlg(org.keycloak.crypto.Algorithm.ES256);
             });
-        events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicClientId).user(org.hamcrest.Matchers.isEmptyOrNullString()).assertEvent();
+        events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicClientId).user(is(emptyOrNullString())).assertEvent();
 
         // update dynamically - fail
         try {
@@ -2099,7 +2209,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 accessTokenResponse = doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, response.getAuthReqId(), client);
                 AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken(), AccessToken.class);
                 assertThat(accessTokenResponse.getStatusCode(), is(equalTo(200)));
-                assertThat(accessToken.getCertConf().getCertThumbprint(), notNullValue());
+                assertThat(accessToken.getConfirmation().getCertThumbprint(), notNullValue());
             }
 
             // Check logout.
@@ -2355,13 +2465,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
             sharedAuthenticationRequest.setLoginHint(username);
             sharedAuthenticationRequest.setBindingMessage(bindingMessage);
-            registerSharedAuthenticationRequest(sharedAuthenticationRequest, clientId, requestedSigAlg, sigAlg, useRequestUri, clientSecret);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, clientId, requestedSigAlg, sigAlg, useRequestUri, clientSecret, null);
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, null, null, null);
-            Assert.assertThat(response.getStatusCode(), is(equalTo(statusCode)));
-            Assert.assertThat(response.getError(), is(error));
-            Assert.assertThat(response.getErrorDescription(), is(errorDescription));
+            assertThat(response.getStatusCode(), is(equalTo(statusCode)));
+            assertThat(response.getError(), is(error));
+            assertThat(response.getErrorDescription(), is(errorDescription));
         } finally {
             revertCIBASettings(clientResource, clientRep);
         }
@@ -2398,6 +2508,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private void testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(boolean useRequestUri, String sigAlg) throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(useRequestUri, sigAlg, null);
+    }
+
+    private void testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(boolean useRequestUri, String sigAlg, String curve) throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
@@ -2412,7 +2526,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
             sharedAuthenticationRequest.setLoginHint(username);
             sharedAuthenticationRequest.setBindingMessage(bindingMessage);
-            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, sigAlg, useRequestUri, null, curve);
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, null, null);
@@ -2420,8 +2534,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // user Authentication Channel Request
             TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
             AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
-            Assert.assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
-            Assert.assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
+            assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
+            assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
 
             // user Authentication Channel completed
             EventRepresentation loginEvent = doAuthenticationChannelCallback(testRequest);
@@ -2467,7 +2581,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri, String clientSecret) throws URISyntaxException, IOException {
-        registerSharedAuthenticationRequest(requestObject, clientId, sigAlg, sigAlg, isUseRequestUri, clientSecret);
+        registerSharedAuthenticationRequest(requestObject, clientId, sigAlg, sigAlg, isUseRequestUri, clientSecret, null);
     }
 
     private boolean isSymmetricSigAlg(String sigAlg) {
@@ -2477,7 +2591,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         return false;
     }
 
-    protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String requestedSigAlg, String sigAlg, boolean isUseRequestUri, String clientSecret) throws URISyntaxException, IOException {
+    protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId,
+            String requestedSigAlg, String sigAlg, boolean isUseRequestUri, String clientSecret, String curve) throws URISyntaxException, IOException {
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Set required signature for request_uri
@@ -2503,7 +2618,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             oidcClientEndpointsResource.registerOIDCRequestSymmetricSig(encodedRequestObject, sigAlg, clientSecret);
         } else {
             // generate and register client keypair
-            if (!"none".equals(sigAlg)) oidcClientEndpointsResource.generateKeys(sigAlg);
+            if (!"none".equals(sigAlg)) oidcClientEndpointsResource.generateKeys(sigAlg, curve);
 
             oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
         }
@@ -2651,10 +2766,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
     private void verifyBackchannelAuthenticationTokenRequest(OAuthClient.AccessTokenResponse tokenRes, String clientId, String username) {
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
-        EventRepresentation event = events.expectAuthReqIdToToken(null, null).clearDetails().user(AssertEvents.isUUID()).client(clientId).assertEvent();
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         assertThat(accessToken.getIssuedFor(), is(equalTo(clientId)));
+
+        EventRepresentation event = events.expectAuthReqIdToToken(null, null).clearDetails().user(accessToken.getSubject()).client(clientId).assertEvent();
 
         RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
         assertThat(refreshToken.getIssuedFor(), is(equalTo(clientId)));
@@ -2667,6 +2783,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private String doIntrospectAccessTokenWithClientCredential(OAuthClient.AccessTokenResponse tokenRes, String username) throws IOException {
+        AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getAccessToken());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
@@ -2677,7 +2794,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
         tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getRefreshToken());
         jsonNode = objectMapper.readTree(tokenResponse);
@@ -2688,7 +2805,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuer())));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
         tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getIdToken());
         jsonNode = objectMapper.readTree(tokenResponse);
@@ -2701,7 +2818,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getPreferredUsername(), is(equalTo(username)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuedFor())));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
         return tokenResponse;
     }
@@ -2725,7 +2842,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
         checkTokenExpiration(idToken, tokenRes.getExpiresIn());
 
-        events.expectRefresh(tokenRes.getRefreshToken(), sessionId).session(CoreMatchers.notNullValue(String.class)).user(AssertEvents.isUUID()).clearDetails().assertEvent();
+        events.expectRefresh(tokenRes.getRefreshToken(), sessionId).session(CoreMatchers.notNullValue(String.class)).user(accessToken.getSubject()).clearDetails().assertEvent();
 
         return tokenRes;
     }
@@ -2755,7 +2872,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
-        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(AssertEvents.isUUID()).session(AssertEvents.isUUID()).clearDetails().assertEvent();
+        RefreshToken rt = oauth.parseRefreshToken(refreshToken);
+        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(rt.getSubject()).session(AssertEvents.isUUID()).clearDetails().assertEvent();
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
@@ -2770,7 +2888,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
-        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(AssertEvents.isUUID()).assertEvent();
+        RefreshToken rt = oauth.parseRefreshToken(refreshToken);
+        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(rt.getSubject()).assertEvent();
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess) throws Exception {

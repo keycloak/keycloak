@@ -22,11 +22,12 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 /**
@@ -35,11 +36,18 @@ import java.net.URI;
 public class UserInfoClientUtil {
 
     public static Response executeUserInfoRequest_getMethod(Client client, String accessToken) {
+        return executeUserInfoRequest_getMethod(client, accessToken, null);
+    }
+
+    public static Response executeUserInfoRequest_getMethod(Client client, String accessToken, String acceptHeader) {
         WebTarget userInfoTarget = getUserInfoWebTarget(client);
 
-        return userInfoTarget.request()
-                .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
-                .get();
+        Invocation.Builder builder = userInfoTarget.request()
+                .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken);
+        if (acceptHeader != null) {
+            builder.header(HttpHeaders.ACCEPT, acceptHeader);
+        }
+        return builder.get();
     }
 
     public static WebTarget getUserInfoWebTarget(Client client) {

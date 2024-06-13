@@ -3,7 +3,6 @@
     {
       "name": "address",
       "types": [
-        "admin",
         "account",
         "login"
       ]
@@ -12,6 +11,12 @@
       "name": "environment-agnostic",
       "types": [
         "login"
+      ]
+    },
+    {
+      "name": "custom-account-provider",
+      "types": [
+        "account"
       ]
     }
   ]

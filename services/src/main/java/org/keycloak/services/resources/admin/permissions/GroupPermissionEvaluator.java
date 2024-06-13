@@ -53,7 +53,9 @@ public interface GroupPermissionEvaluator {
     boolean canManageMembers(GroupModel group);
 
     boolean canManageMembership(GroupModel group);
-
+    
+    boolean canViewMembers(GroupModel group);
+    
     void requireManageMembership(GroupModel group);
 
     void requireManageMembers(GroupModel group);

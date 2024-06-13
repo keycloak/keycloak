@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,27 +35,29 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class HttpMethod<R> {
 
+    private static final Logger logger = Logger.getLogger(HttpMethod.class.getName());
+
     private final HttpClient httpClient;
-    private final ClientAuthenticator authenticator;
-    protected final RequestBuilder builder;
-    protected final Configuration configuration;
-    protected final Map<String, String> headers;
-    protected final Map<String, List<String>> params;
+    final RequestBuilder builder;
+    final Configuration configuration;
+    final Map<String, String> headers;
+    final Map<String, List<String>> params;
+    private final ClientCredentialsProvider authenticator;
     private HttpMethodResponse<R> response;
 
-    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder) {
+    public HttpMethod(Configuration configuration, ClientCredentialsProvider authenticator, RequestBuilder builder) {
         this(configuration, authenticator, builder, new HashMap<String, List<String>>(), new HashMap<String, String>());
     }
 
-    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder, Map<String, List<String>> params, Map<String, String> headers) {
+    public HttpMethod(Configuration configuration, ClientCredentialsProvider authenticator, RequestBuilder builder, Map<String, List<String>> params, Map<String, String> headers) {
         this.configuration = configuration;
         this.httpClient = configuration.getHttpClient();
         this.authenticator = authenticator;
@@ -90,6 +94,10 @@ public class HttpMethod<R> {
 
             StatusLine statusLine = response.getStatusLine();
             int statusCode = statusLine.getStatusCode();
+
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine( "Response from server: " + statusCode + " / " + statusLine.getReasonPhrase() +  " / Body : " + new String(bytes != null? bytes: new byte[0]));
+            }
 
             if (statusCode < 200 || statusCode >= 300) {
                 throw new HttpResponseException("Unexpected response from server: " + statusCode + " / " + statusLine.getReasonPhrase(), statusCode, statusLine.getReasonPhrase(), bytes);

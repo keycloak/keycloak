@@ -3,24 +3,23 @@ package org.keycloak.testsuite.broker;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.LEGACY;
 
-import java.util.List;
-
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.mappers.ClaimToRoleMapper;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.List;
+import java.util.Map;
+
 /**
- * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>
+ * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public class OidcClaimToRoleMapperTest extends AbstractRoleMapperTest {
 
@@ -36,89 +35,79 @@ public class OidcClaimToRoleMapperTest extends AbstractRoleMapperTest {
     @Test
     public void allClaimValuesMatch() {
         createClaimToRoleMapper(CLAIM_VALUE);
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(CLAIM, ImmutableList.<String>builder().add(CLAIM_VALUE).build())
-                .build());
+        createUserInProviderRealm(createUserConfig());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void claimValuesMismatch() {
         createClaimToRoleMapper("other value");
-        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
-                .put(CLAIM, ImmutableList.<String>builder().add(CLAIM_VALUE).build())
-                .build());
+        createUserInProviderRealm(createUserConfig());
 
         logInAsUserInIDPForFirstTime();
 
-        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserMismatchDeletesRoleInForceMode() {
-        UserRepresentation user = loginWithClaimThenChangeClaimToValue("value mismatch", FORCE, false);
+        loginWithClaimThenChangeClaimToValue("value mismatch", FORCE, false);
 
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserMismatchDeletesRoleInLegacyMode() {
-        UserRepresentation user = createMapperThenLoginWithStandardClaimThenChangeClaimToValue("value mismatch", LEGACY);
+        createMapperThenLoginWithStandardClaimThenChangeClaimToValue("value mismatch", LEGACY);
 
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserNewMatchGrantsRoleAfterFirstLoginInForceMode() {
-        UserRepresentation user = loginWithStandardClaimThenAddMapperAndLoginAgain(FORCE);
+        loginWithStandardClaimThenAddMapperAndLoginAgain(FORCE);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserNewMatchDoesNotGrantRoleAfterFirstLoginInLegacyMode() {
-        UserRepresentation user = loginWithStandardClaimThenAddMapperAndLoginAgain(LEGACY);
+        loginWithStandardClaimThenAddMapperAndLoginAgain(LEGACY);
 
-        assertThatRoleHasNotBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasNotBeenAssignedInConsumerRealm();
     }
 
     @Test
     public void updateBrokeredUserDoesNotDeleteRoleIfClaimStillMatches() {
-        UserRepresentation user = createMapperThenLoginWithStandardClaimThenChangeClaimToValue(CLAIM_VALUE, FORCE);
+        createMapperThenLoginWithStandardClaimThenChangeClaimToValue(CLAIM_VALUE, FORCE);
 
-        assertThatRoleHasBeenAssignedInConsumerRealmTo(user);
+        assertThatRoleHasBeenAssignedInConsumerRealm();
     }
 
-    private UserRepresentation loginWithStandardClaimThenAddMapperAndLoginAgain(IdentityProviderMapperSyncMode syncMode) {
-        return loginWithClaimThenChangeClaimToValue(OidcClaimToRoleMapperTest.CLAIM_VALUE, syncMode, true);
+    private void loginWithStandardClaimThenAddMapperAndLoginAgain(IdentityProviderMapperSyncMode syncMode) {
+        loginWithClaimThenChangeClaimToValue(OidcClaimToRoleMapperTest.CLAIM_VALUE, syncMode, true);
     }
 
-    private UserRepresentation createMapperThenLoginWithStandardClaimThenChangeClaimToValue(String claimOnSecondLogin, IdentityProviderMapperSyncMode syncMode) {
-        return loginWithClaimThenChangeClaimToValue(claimOnSecondLogin, syncMode, false);
+    private void createMapperThenLoginWithStandardClaimThenChangeClaimToValue(String claimOnSecondLogin, IdentityProviderMapperSyncMode syncMode) {
+        loginWithClaimThenChangeClaimToValue(claimOnSecondLogin, syncMode, false);
     }
 
-    @NotNull
-    private UserRepresentation loginWithClaimThenChangeClaimToValue(String claimOnSecondLogin, IdentityProviderMapperSyncMode syncMode, boolean createAfterFirstLogin) {
+    private void loginWithClaimThenChangeClaimToValue(String claimOnSecondLogin, IdentityProviderMapperSyncMode syncMode, boolean createAfterFirstLogin) {
         this.claimOnSecondLogin = claimOnSecondLogin;
-        return loginAsUserTwiceWithMapper(syncMode, createAfterFirstLogin,
-            ImmutableMap.<String, List<String>>builder()
-            .put(CLAIM, ImmutableList.<String>builder().add(CLAIM_VALUE).build())
-            .build());
+        loginAsUserTwiceWithMapper(syncMode, createAfterFirstLogin, createUserConfig());
     }
 
     private void createClaimToRoleMapper(String claimValue) {
-        IdentityProviderRepresentation idp = setupIdentityProvider();
-        createClaimToRoleMapper(idp, claimValue, IdentityProviderMapperSyncMode.IMPORT);
+        setupIdentityProvider();
+        createClaimToRoleMapper(claimValue, IdentityProviderMapperSyncMode.IMPORT, CLIENT_ROLE_MAPPER_REPRESENTATION);
     }
 
     @Override
-    protected void createMapperInIdp(IdentityProviderRepresentation idp, IdentityProviderMapperSyncMode syncMode) {
-        createClaimToRoleMapper(idp, CLAIM_VALUE, syncMode);
+    protected void createMapperInIdp(IdentityProviderMapperSyncMode syncMode, String roleValue) {
+        createClaimToRoleMapper(CLAIM_VALUE, syncMode, roleValue);
     }
 
     @Override
@@ -131,19 +120,29 @@ public class OidcClaimToRoleMapperTest extends AbstractRoleMapperTest {
         adminClient.realm(bc.providerRealmName()).users().get(user.getId()).update(user);
     }
 
-    protected void createClaimToRoleMapper(IdentityProviderRepresentation idp, String claimValue, IdentityProviderMapperSyncMode syncMode) {
+    protected void createClaimToRoleMapper(String claimValue, IdentityProviderMapperSyncMode syncMode,
+            String roleValue) {
         IdentityProviderMapperRepresentation claimToRoleMapper = new IdentityProviderMapperRepresentation();
         claimToRoleMapper.setName("claim-to-role-mapper");
         claimToRoleMapper.setIdentityProviderMapper(ClaimToRoleMapper.PROVIDER_ID);
-        claimToRoleMapper.setConfig(ImmutableMap.<String, String>builder()
-            .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-            .put(ClaimToRoleMapper.CLAIM, OidcClaimToRoleMapperTest.CLAIM)
-            .put(ClaimToRoleMapper.CLAIM_VALUE, claimValue)
-            .put(ConfigConstants.ROLE, CLIENT_ROLE_MAPPER_REPRESENTATION)
-            .build());
+        claimToRoleMapper.setConfig(ImmutableMap.<String, String> builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+                .put(ClaimToRoleMapper.CLAIM, OidcClaimToRoleMapperTest.CLAIM)
+                .put(ClaimToRoleMapper.CLAIM_VALUE, claimValue)
+                .put(ConfigConstants.ROLE, roleValue)
+                .build());
 
-        IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
-        claimToRoleMapper.setIdentityProviderAlias(bc.getIDPAlias());
-        idpResource.addMapper(claimToRoleMapper).close();
+        persistMapper(claimToRoleMapper);
+    }
+
+    @Override
+    protected Map<String, List<String>> createUserConfigForRole(String roleValue) {
+        return createUserConfig();
+    }
+
+    private static ImmutableMap<String, List<String>> createUserConfig() {
+        return ImmutableMap.<String, List<String>>builder()
+                .put(CLAIM, ImmutableList.<String>builder().add(CLAIM_VALUE).build())
+                .build();
     }
 }

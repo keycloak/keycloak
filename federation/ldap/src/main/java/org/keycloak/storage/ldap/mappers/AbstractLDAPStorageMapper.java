@@ -29,6 +29,7 @@ import org.keycloak.storage.user.SynchronizationResult;
 import javax.naming.AuthenticationException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.keycloak.models.RoleModel;
 
 /**
@@ -73,6 +74,15 @@ public abstract class AbstractLDAPStorageMapper implements LDAPStorageMapper {
         return false;
     }
 
+    @Override
+    public Set<String> mandatoryAttributeNames() {
+        return null;
+    }
+
+    @Override
+    public Set<String> getUserAttributes() {
+        return Collections.emptySet();
+    }
 
     public static boolean parseBooleanParameter(ComponentModel mapperModel, String paramName) {
         String paramm = mapperModel.getConfig().getFirst(paramName);

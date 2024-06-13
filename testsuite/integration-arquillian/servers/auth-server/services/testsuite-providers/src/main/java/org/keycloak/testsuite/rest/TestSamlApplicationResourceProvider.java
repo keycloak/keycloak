@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -28,15 +28,15 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -127,7 +127,7 @@ public class TestSamlApplicationResourceProvider implements RealmResourceProvide
         sb.append("<html><head><title>" + title + "</title></head><body>");
 
         sb.append("<b>Form parameters: </b><br>");
-        HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
+        HttpRequest request = session.getContext().getHttpRequest();
         MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         for (String paramName : formParams.keySet()) {
             sb.append(paramName).append(": ").append("<span id=\"").append(paramName).append("\">").append(formParams.getFirst(paramName)).append("</span><br>");

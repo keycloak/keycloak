@@ -38,7 +38,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -97,13 +97,21 @@ public class KeycloakIdentity implements Identity {
                         values.add(valueIterator.next().asText());
                     }
                 } else {
-                    String value = fieldValue.asText();
+                    // If the claim is key value pair then just take it as is to attributes.
+                    if(!fieldValue.isObject()) {
+                        String value = fieldValue.asText();
 
-                    if (StringUtil.isNullOrEmpty(value)) {
-                        continue;
+                        if (StringUtil.isNullOrEmpty(value)) {
+                            continue;
+                        }
+                        values.add(value);
                     }
-
-                    values.add(value);
+                    // otherwise, the claim is a JSON object, turn it into json String, so it'll be able to evaluate it later
+                    // in the regex policy evaluator
+                    else
+                    {
+                        values.add(fieldValue.toString());
+                    }
                 }
 
                 if (!values.isEmpty()) {
@@ -129,7 +137,7 @@ public class KeycloakIdentity implements Identity {
             }
 
             ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-            AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessions().get(client.getId());
+            AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
             ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel, keycloakSession);
             this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx);
@@ -232,6 +240,9 @@ public class KeycloakIdentity implements Identity {
             }
 
             UserModel userSession = getUserFromToken();
+            if (userSession == null) {
+                throw new IllegalArgumentException("User from token not found");
+            }
 
             this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
 

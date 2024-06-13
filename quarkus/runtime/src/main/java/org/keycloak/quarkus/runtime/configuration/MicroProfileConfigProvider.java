@@ -54,6 +54,11 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
     }
 
     @Override
+    public String getDefaultProvider(String spi) {
+        return scope(spi).get("provider.default");
+    }
+
+    @Override
     public Config.Scope scope(String... scope) {
         return new MicroProfileScope(scope);
     }
@@ -63,9 +68,13 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         private final String[] scope;
         private final String prefix;
 
-        public MicroProfileScope(String... scope) {
-            this.scope = scope;
-            this.prefix = NS_KEYCLOAK_PREFIX + String.join(OPTION_PART_SEPARATOR, ArrayUtils.insert(0, scope, "spi"));
+        public MicroProfileScope(String... scopes) {
+            this.scope = scopes;
+            StringBuilder prefix = new StringBuilder(NS_KEYCLOAK_PREFIX).append("spi");
+            for (String scope : scopes) {
+                prefix.append(OPTION_PART_SEPARATOR).append(scope);
+            }
+            this.prefix = prefix.toString();
         }
 
         @Override
@@ -131,7 +140,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
-            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key)), clazz).orElse(defaultValue);
+            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key.replace('.', '-'))), clazz).orElse(defaultValue);
         }
     }
 

@@ -51,6 +51,11 @@ public class ProviderConfigProperty {
     public static final String MULTIVALUED_LIST_TYPE="MultivaluedList";
 
     public static final String CLIENT_LIST_TYPE="ClientList";
+
+    /**
+     * Possibility to select from user attributes defined in the user-profile, but also still have an option to configure custom value
+     */
+    public static final String USER_PROFILE_ATTRIBUTE_LIST_TYPE="UserProfileAttributeList";
     public static final String PASSWORD="Password";
 
     /**
@@ -63,6 +68,11 @@ public class ProviderConfigProperty {
      */
     public static final String MAP_TYPE ="Map";
 
+    /**
+     * URL field
+     */
+    public static final String URL_TYPE ="Url";
+
     protected String name;
     protected String label;
     protected String helpText;
@@ -70,6 +80,7 @@ public class ProviderConfigProperty {
     protected Object defaultValue;
     protected List<String> options;
     protected boolean secret;
+    protected boolean required;
     private boolean readOnly;
 
     public ProviderConfigProperty() {
@@ -95,6 +106,11 @@ public class ProviderConfigProperty {
     public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, boolean secret) {
         this(name, label, helpText, type, defaultValue);
         this.secret = secret;
+    }
+
+    public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, boolean secret, boolean required) {
+        this(name, label, helpText, type, defaultValue, secret);
+        this.required = required;
     }
 
     /**
@@ -188,6 +204,17 @@ public class ProviderConfigProperty {
 
     public void setSecret(boolean secret) {
         this.secret = secret;
+    }
+
+    /**
+     * If true, the configuration property must be specified
+     */
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
     }
 
     public void setReadOnly(boolean readOnly) {

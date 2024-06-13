@@ -43,27 +43,6 @@ public class RoleUtils {
      * @param groups
      * @param targetGroup
      * @return true if targetGroup is in groups (directly or indirectly via parent child relationship)
-     * @deprecated Use {@link #isMember(Stream, GroupModel)} isMember(Stream, GroupModel)} instead.
-     */
-    public static boolean isMember(Set<GroupModel> groups, GroupModel targetGroup) {
-        // collecting to set to keep "Breadth First Search" like functionality
-        if (groups.contains(targetGroup)) return true;
-
-        for (GroupModel mapping : groups) {
-            GroupModel child = mapping;
-            while (child.getParent() != null) {
-                if (child.getParent().equals(targetGroup)) return true;
-                child = child.getParent();
-            }
-        }
-        return false;
-    }
-
-    /**
-     *
-     * @param groups
-     * @param targetGroup
-     * @return true if targetGroup is in groups (directly or indirectly via parent child relationship)
      */
     public static boolean isMember(Stream<GroupModel> groups, GroupModel targetGroup) {
         // collecting to set to keep "Breadth First Search" like functionality
@@ -78,6 +57,16 @@ public class RoleUtils {
             }
             return false;
         });
+    }
+
+    /**
+     *
+     * @param groups
+     * @param targetGroup
+     * @return true if targetGroup is in groups directly
+     */
+    public static boolean isDirectMember(Stream<GroupModel> groups, GroupModel targetGroup) {
+        return groups.anyMatch(g -> targetGroup.getId().equals(g.getId()));
     }
 
     /**
@@ -121,24 +110,6 @@ public class RoleUtils {
         }
 
         return false;
-    }
-
-    /**
-     * Checks whether the {@code targetRole} is contained in any of the {@code groups} or their parents
-     * (if requested)
-     * @param groups
-     * @param targetRole
-     * @param checkParentGroup When {@code true}, also parent group is recursively checked for role
-     * @return true if targetRole is in roles (directly or indirectly via composite role)
-     * @deprecated Use {@link #hasRoleFromGroup(Stream, RoleModel, boolean)} hasRoleFromGroup(Stream, RoleModel, boolean)} instead.
-     */
-    public static boolean hasRoleFromGroup(Iterable<GroupModel> groups, RoleModel targetRole, boolean checkParentGroup) {
-        if (groups == null) {
-            return false;
-        }
-
-        return StreamSupport.stream(groups.spliterator(), false)
-                .anyMatch(group -> hasRoleFromGroup(group, targetRole, checkParentGroup));
     }
 
     /**

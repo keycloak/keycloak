@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *
@@ -387,7 +387,8 @@ public class CrossDCTestEnricher {
         if (! containerInfo.isStarted()) {
             log.infof("--DC: Starting backend auth-server node: %s", containerInfo.getQualifier());
             containerController.get().start(containerInfo.getQualifier());
-            AuthServerTestEnricher.initializeTLS(containerInfo);
+            // Cross-DC are not working with Quarkus
+            //AuthServerTestEnricher.initializeTLS(containerInfo);
             createRESTClientsForNode(containerInfo);
         }
     }

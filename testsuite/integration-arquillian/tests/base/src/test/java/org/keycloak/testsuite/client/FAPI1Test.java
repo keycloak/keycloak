@@ -18,23 +18,11 @@
 
 package org.keycloak.testsuite.client;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
@@ -45,51 +33,35 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.crypto.HashUtils;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.ServerURLs;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
@@ -104,53 +76,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateC
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
-public class FAPI1Test extends AbstractClientPoliciesTest {
-
-    @Page
-    protected ErrorPage errorPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected OAuthGrantPage grantPage;
-
-    @Page
-    protected AppPage appPage;
-
-    @BeforeClass
-    public static void verifySSL() {
-        // FAPI requires SSL and does not makes sense to test it with disabled SSL
-        Assume.assumeTrue("The FAPI test requires SSL to be enabled.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-
-        List<UserRepresentation> users = realm.getUsers();
-
-        LinkedList<CredentialRepresentation> credentials = new LinkedList<>();
-        CredentialRepresentation password = new CredentialRepresentation();
-        password.setType(CredentialRepresentation.PASSWORD);
-        password.setValue("password");
-        credentials.add(password);
-
-        UserRepresentation user = new UserRepresentation();
-        user.setEnabled(true);
-        user.setUsername("john");
-        user.setEmail("john@keycloak.org");
-        user.setFirstName("Johny");
-        user.setCredentials(credentials);
-        user.setClientRoles(Collections.singletonMap(Constants.REALM_MANAGEMENT_CLIENT_ID, Arrays.asList(AdminRoles.CREATE_CLIENT, AdminRoles.MANAGE_CLIENTS)));
-        users.add(user);
-
-        realm.setUsers(users);
-
-        testRealms.add(realm);
-    }
-
+public class FAPI1Test extends AbstractFAPITest {
 
     @Test
     public void testFAPIBaselineClientAuthenticator() throws Exception {
@@ -317,7 +243,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         // Register client (default authenticator)
         String clientUUID = createClientByAdmin("foo", (ClientRepresentation clientRep) -> {
             clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-            clientRep.setSecret("secret");
+            clientRep.setSecret("atleast-14chars-password");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertFalse(client.isPublicClient());
@@ -336,8 +262,8 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         checkRedirectUriForCurrentClientDuringLogin();
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
-        successfulLoginAndLogout("foo", false, (String code) -> {
-            String signedJwt = getClientSecretSignedJWT("secret", Algorithm.HS256);
+        successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
+            String signedJwt = getClientSecretSignedJWT("atleast-14chars-password", Algorithm.HS256);
             return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, DefaultHttpClient::new);
         });
     }
@@ -366,7 +292,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         checkRedirectUriForCurrentClientDuringLogin();
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
-        successfulLoginAndLogout("foo", false, (String code) -> {
+        successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
             oauth.codeVerifier(codeVerifier);
             return oauth.doAccessTokenRequest(code, null);
         });
@@ -458,7 +384,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
-        successfulLoginAndLogout("foo", false, (String code) -> {
+        successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
             oauth.codeVerifier(codeVerifier);
             return oauth.doAccessTokenRequest(code, null);
         });
@@ -600,10 +526,10 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
+        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
-        logoutUserAndRevokeConsent("foo");
+        logoutUserAndRevokeConsent("foo", TEST_USERNAME);
     }
 
     @Test
@@ -617,7 +543,8 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
             clientRep.setImplicitFlowEnabled(true);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setAllowRegexPatternComparison(false);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
         ClientRepresentation client = clientResource.toRepresentation();
@@ -653,13 +580,11 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
+        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
-        logoutUserAndRevokeConsent("foo");
+        logoutUserAndRevokeConsent("foo", TEST_USERNAME);
     }
-
-
 
     private void checkPKCEWithS256RequiredDuringLogin(String clientId) {
         // Check PKCE required - login without PKCE should fail
@@ -671,7 +596,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         oauth.codeChallenge("234567890_234567890123");
         oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
         oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Invalid parameter: code challenge method is not configured one");
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Invalid parameter: code challenge method is not matching the configured one");
     }
 
     // Assumption is that clientId is already set in "oauth" client when this method is called. Also assumption is that PKCE parameters are properly set (in case PKCE required for the client)
@@ -697,8 +622,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         oauth.openid(true);
         oauth.redirectUri(null);
         oauth.openLoginForm();
-        errorPage.assertCurrent();
-        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+        assertBrowserWithError("Invalid parameter: redirect_uri");
 
         // Revert redirectUri
         oauth.redirectUri(origRedirectUri);
@@ -742,7 +666,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
     }
 
     // codeToTokenExchanger is supposed to exchange "code" for the accessTokenResponse. It is supposed to send the tokenRequest including proper client authentication
-    private void successfulLoginAndLogout(String clientId, boolean fragmentResponseModeExpected, Function<String, OAuthClient.AccessTokenResponse> codeToTokenExchanger) throws Exception {
+    private void successfulLoginAndLogout(String clientId, String username, boolean fragmentResponseModeExpected, Function<String, OAuthClient.AccessTokenResponse> codeToTokenExchanger) throws Exception {
         String code = loginUserAndGetCode(clientId, fragmentResponseModeExpected);
 
         OAuthClient.AccessTokenResponse tokenResponse = codeToTokenExchanger.apply(code);
@@ -750,38 +674,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         assertSuccessfulTokenResponse(tokenResponse);
 
         // Logout and remove consent of the user for next logins
-        logoutUserAndRevokeConsent(clientId);
-    }
-
-    private String loginUserAndGetCode(String clientId, boolean fragmentResponseModeExpected) {
-        oauth.clientId(clientId);
-        oauth.doLogin("john", "password");
-
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.accept();
-        String code = getParameterFromUrl(OAuth2Constants.CODE, fragmentResponseModeExpected);
-        Assert.assertNotNull(code);
-        return code;
-    }
-
-    private void assertSuccessfulTokenResponse(OAuthClient.AccessTokenResponse tokenResponse) {
-        assertEquals(200, tokenResponse.getStatusCode());
-        Assert.assertThat(tokenResponse.getIdToken(), Matchers.notNullValue());
-        Assert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
-
-        // Scope parameter must be present per FAPI
-        Assert.assertNotNull(tokenResponse.getScope());
-        assertScopes("openid profile email", tokenResponse.getScope());
-
-        // ID Token contains all the claims
-        IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
-        Assert.assertNotNull(idToken.getId());
-        Assert.assertEquals("foo", idToken.getIssuedFor());
-        Assert.assertEquals("john", idToken.getPreferredUsername());
-        Assert.assertEquals("john@keycloak.org", idToken.getEmail());
-        Assert.assertEquals("Johny", idToken.getGivenName());
-        Assert.assertEquals(idToken.getNonce(), "123456");
+        logoutUserAndRevokeConsent(clientId, username);
     }
 
     private void assertIDTokenAsDetachedSignature(String idTokenParam, String code) {
@@ -795,10 +688,9 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         Assert.assertNull(idToken.getAccessTokenHash());
         Assert.assertEquals(idToken.getNonce(), "123456");
         String state = getParameterFromUrl(OAuth2Constants.STATE, true);
-        Assert.assertEquals(idToken.getStateHash(), HashUtils.oidcHash(Algorithm.PS256, state));
-        Assert.assertEquals(idToken.getCodeHash(), HashUtils.oidcHash(Algorithm.PS256, code));
+        Assert.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(Algorithm.PS256, state));
+        Assert.assertEquals(idToken.getCodeHash(), HashUtils.accessTokenHash(Algorithm.PS256, code));
     }
-
 
     private String getClientSecretSignedJWT(String secret, String algorithm) {
         JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
@@ -809,60 +701,5 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
     private String getRealmInfoUrl() {
         String authServerBaseUrl = UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth";
         return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build("test").toString();
-    }
-
-    private OAuthClient.AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, String codeVerifier, Supplier<CloseableHttpClient> httpClientSupplier) {
-        try {
-            List<NameValuePair> parameters = new LinkedList<>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
-
-            CloseableHttpResponse response = sendRequest(oauth.getAccessTokenUrl(), parameters, httpClientSupplier);
-            return new OAuthClient.AccessTokenResponse(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {
-        CloseableHttpClient client = httpClientSupplier.get();
-        try {
-            HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            post.setEntity(formEntity);
-            return client.execute(post);
-        } finally {
-            oauth.closeClient(client);
-        }
-    }
-
-    public static void assertScopes(String expectedScope, String receivedScope) {
-        Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
-        Collection<String> receivedScopes = Arrays.asList(receivedScope.split(" "));
-        Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
-                expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
-    }
-
-
-    private void assertRedirectedToClientWithError(String expectedError, boolean fragmentExpected, String expectedErrorDescription) {
-        appPage.assertCurrent();
-        assertEquals(expectedError, getParameterFromUrl(OAuth2Constants.ERROR, fragmentExpected));
-        assertEquals(expectedErrorDescription, getParameterFromUrl(OAuth2Constants.ERROR_DESCRIPTION, fragmentExpected));
-    }
-
-    private String getParameterFromUrl(String paramName, boolean fragmentExpected) {
-        return fragmentExpected ? oauth.getCurrentFragment().get(paramName) : oauth.getCurrentQuery().get(paramName);
-    }
-
-    private void logoutUserAndRevokeConsent(String clientId) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), "john");
-        user.logout();
-        List<Map<String, Object>> consents = user.getConsents();
-        org.junit.Assert.assertEquals(1, consents.size());
-        user.revokeConsent(clientId);
     }
 }

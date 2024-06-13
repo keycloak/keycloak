@@ -21,12 +21,12 @@ public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
             @Override
             public List<ClientRepresentation> createConsumerClients() {
                 List<ClientRepresentation> clients = new ArrayList<>(super.createConsumerClients());
-                
+
                 clients.add(ClientBuilder.create().clientId("consumer-client")
                         .publicClient()
                         .redirectUris(getConsumerRoot() + "/auth/realms/master/app/auth/*")
                         .publicClient().build());
-                
+
                 return clients;
             }
 
@@ -36,14 +36,14 @@ public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
                 List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
 
                 ProtocolMapperRepresentation hardcodedClaim = createHardcodedClaim("sub-override", "sub", "overriden",
-                        "String", false, false);
-                
+                        "String", false, false, false);
+
                 hardcodedClaim.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, Boolean.TRUE.toString());
-                
+
                 mappers.add(hardcodedClaim);
-                
+
                 clients.get(0).setProtocolMappers(mappers);
-                
+
                 return clients;
             }
         };
@@ -51,7 +51,8 @@ public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
 
     @Override
     public void testLogInAsUserInIDP() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         oauth.realm(bc.consumerRealmName());
         oauth.clientId("consumer-client");

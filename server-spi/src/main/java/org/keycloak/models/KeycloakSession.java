@@ -22,9 +22,9 @@ import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.VaultTranscriber;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -32,7 +32,7 @@ import java.util.function.Function;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSession {
+public interface KeycloakSession extends AutoCloseable {
 
     KeycloakContext getContext();
 
@@ -94,6 +94,7 @@ public interface KeycloakSession {
      * @return
      * @deprecated Deprecated in favor of {@link #getComponentProvider)
      */
+    @Deprecated
     <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
 
     /**
@@ -123,6 +124,8 @@ public interface KeycloakSession {
 
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);
+
+    Map<String, Object> getAttributes();
 
     /**
      * Invalidates intermediate states of the given objects, both immediately and at the end of this session.
@@ -199,17 +202,10 @@ public interface KeycloakSession {
 
     AuthenticationSessionProvider authenticationSessions();
 
+    SingleUseObjectProvider singleUseObjects();
 
-
+    @Override
     void close();
-
-    /**
-     * The user cache
-     *
-     * @return may be null if cache is disabled
-     */
-    @Deprecated
-    UserProvider userCache();
 
     /**
      * A cached view of all users in system including  users loaded by UserStorageProviders
@@ -217,98 +213,6 @@ public interface KeycloakSession {
      * @return UserProvider instance
      */
     UserProvider users();
-
-    /**
-     * @return ClientStorageManager instance
-     */
-    @Deprecated
-    ClientProvider clientStorageManager();
-
-    /**
-     * @return ClientScopeStorageManager instance
-     * @deprecated Use {@link #clientScopes()} instead
-     */
-    @Deprecated
-    ClientScopeProvider clientScopeStorageManager();
-
-    /**
-     * @return RoleStorageManager instance
-     */
-    @Deprecated
-    RoleProvider roleStorageManager();
-
-    /**
-     * @return GroupStorageManager instance
-     */
-    @Deprecated
-    GroupProvider groupStorageManager();
-
-    /**
-     * Un-cached view of all users in system including users loaded by UserStorageProviders
-     *
-     * @return
-     */
-    @Deprecated
-    UserProvider userStorageManager();
-
-    /**
-     * Service that allows you to valid and update credentials for a user
-     * @deprecated Use {@link UserModel#credentialManager()} instead.
-     * @return
-     */
-    @Deprecated
-    UserCredentialManager userCredentialManager();
-
-    /**
-     * Keycloak specific local storage for users.  No cache in front, this api talks directly to database configured for Keycloak
-     */
-    @Deprecated
-    UserProvider userLocalStorage();
-
-    @Deprecated
-    RealmProvider realmLocalStorage();
-
-    /**
-     * Keycloak specific local storage for clients.  No cache in front, this api talks directly to database configured for Keycloak
-     *
-     * @return
-     */
-    @Deprecated
-    ClientProvider clientLocalStorage();
-
-    /**
-     * Keycloak specific local storage for client scopes.  No cache in front, this api talks directly to database configured for Keycloak
-     *
-     * @deprecated Use {@link #clientScopes()} instead
-     * @return
-     */
-    @Deprecated
-    ClientScopeProvider clientScopeLocalStorage();
-
-    /**
-     * Keycloak specific local storage for groups.  No cache in front, this api talks directly to storage configured for Keycloak
-     *
-     * @return
-     */
-    @Deprecated
-    GroupProvider groupLocalStorage();
-
-    /**
-     * Keycloak specific local storage for roles.  No cache in front, this api talks directly to storage configured for Keycloak
-     *
-     * @return
-     */
-    @Deprecated
-    RoleProvider roleLocalStorage();
-
-    /**
-     * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
-     * No cache in front.
-     *
-     * @return
-     */
-    @Deprecated
-    UserFederatedStorageProvider userFederatedStorage();
 
     /**
      * Key manager
@@ -340,5 +244,7 @@ public interface KeycloakSession {
      * Client Policy Manager
      */
     ClientPolicyManager clientPolicy();
+
+    boolean isClosed();
 
 }

@@ -18,17 +18,21 @@
 package org.keycloak.testsuite.federation.ldap.noimport;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
+import java.util.Map;
 
 import org.junit.Assert;
-import org.junit.Assume;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.ComponentResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -49,6 +53,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 
@@ -62,6 +67,12 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     @Override
     protected boolean isImportEnabled() {
         return false;
+    }
+
+    @Before
+    public void enableUserProfileUnmanagedAttributes() {
+        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
     }
 
 
@@ -96,22 +107,37 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username2", "John2", "Doel2", "user2@email.org", null, "122");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username3", "John3", "Doel3", "user3@email.org", null, "123");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username8", "John8", "Doel8", "user8@email.org", null, "124");
 
             // search by username
-            UserModel user = session.users().searchForUserStream(appRealm, "username1").findFirst().get();
+            List<UserModel> users = session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "username1")).collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            UserModel user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email
-            user = session.users().searchForUserStream(appRealm, "user2@email.org").findFirst().get();
+            users = session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "user2@email.org")).collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName
-            user = session.users().searchForUserStream(appRealm, "Doel3").findFirst().get();
+            users = session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "Doel3")).collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName
-            user = session.users().searchForUserStream(appRealm, "John4 Doel4").findFirst().get();
+            users = session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "John4 Doel4")).collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
             LDAPTestAsserts.assertLoaded(user, "username4", "John4", "Doel4", "user4@email.org", "124");
+
+            // search by a string that matches multiple fields. Should still return the one entity it matches
+            users = session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "*8*")).collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            user = users.get(0);
+            LDAPTestAsserts.assertLoaded(user, "username8", "John8", "Doel8", "user8@email.org", "124");
         });
     }
 
@@ -145,14 +171,14 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username7", "John7", "Doel7", "user7@email.org", null, "127");
 
             // search by email
-            UserModel user = session.users().searchForUserStream(appRealm, "user5@email.org").findFirst().get();
+            UserModel user = session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "user5@email.org")).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username5", "John5", "Doel5", "user5@email.org", "125");
 
-            user = session.users().searchForUserStream(appRealm, "John6 Doel6").findFirst().get();
+            user = session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "John6 Doel6")).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username6", "John6", "Doel6", "user6@email.org", "126");
 
-            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "user7@email.org").count());
-            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "John7 Doel7").count());
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "user7@email.org")).count());
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH, "John7 Doel7")).count());
 
             // Remove custom filter
             ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
@@ -194,9 +220,6 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
     @Test
     public void testFullNameMapperWriteOnly() {
-        Assume.assumeTrue("User cache disabled. UserModel behaves differently when it's cached adapter and when not. See https://github.com/keycloak/keycloak/discussions/10004", 
-                isUserCacheEnabled());
-
         ComponentRepresentation firstNameMapperRep = testingClient.server().fetch(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();

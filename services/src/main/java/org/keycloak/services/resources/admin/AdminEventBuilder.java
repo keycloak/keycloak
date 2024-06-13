@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -29,10 +31,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,33 +46,64 @@ import java.util.function.Predicate;
 public class AdminEventBuilder {
 
     protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
+    private final AdminAuth auth;
+    private final String ipAddress;
+    private final RealmModel realm;
+    private final AdminEvent adminEvent;
+    private final Map<String, EventListenerProvider> listeners;
+    private final KeycloakSession session;
 
     private EventStoreProvider store;
-    private Map<String, EventListenerProvider> listeners;
-    private RealmModel realm;
-    private AdminEvent adminEvent;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
-        this.realm = realm;
-        adminEvent = new AdminEvent();
+        this(realm, auth, session, clientConnection.getRemoteAddr(), null);
+    }
 
+    private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
+        this.realm = realm;
         this.listeners = new HashMap<>();
         updateStore(session);
         addListeners(session);
+        this.auth = auth;
+        this.ipAddress = ipAddress;
+        if (adminEvent != null) {
+            this.adminEvent = new AdminEvent(adminEvent);
+        } else {
+            this.adminEvent = new AdminEvent();
+            // Assumption: the following methods write information to the adminEvent only
+            realm(realm);
+            authRealm(auth.getRealm());
+            authClient(auth.getClient());
+            authUser(auth.getUser());
+            authIpAddress(ipAddress);
+        }
+        this.session = session;
+    }
 
-        authRealm(auth.getRealm());
-        authClient(auth.getClient());
-        authUser(auth.getUser());
-        authIpAddress(clientConnection.getRemoteAddr());
+    /**
+     * Create a new instance of the {@link AdminEventBuilder} that is bound to a new session.
+     * Use this when starting, for example, a nested transaction.
+     * @param session new session where the {@link AdminEventBuilder} should be bound to.
+     * @return a new instance of {@link AdminEventBuilder}
+     */
+    public AdminEventBuilder clone(KeycloakSession session) {
+        RealmModel newEventRealm = session.realms().getRealm(realm.getId());
+        RealmModel newAuthRealm = session.realms().getRealm(this.auth.getRealm().getId());
+        UserModel newAuthUser = session.users().getUserById(newAuthRealm, this.auth.getUser().getId());
+        ClientModel newAuthClient = session.clients().getClientById(newAuthRealm, this.auth.getClient().getId());
+
+        return new AdminEventBuilder(
+                newEventRealm,
+                new AdminAuth(newAuthRealm, this.auth.getToken(), newAuthUser, newAuthClient),
+                session,
+                ipAddress,
+                adminEvent
+        );
     }
 
     public AdminEventBuilder realm(RealmModel realm) {
         adminEvent.setRealmId(realm.getId());
-        return this;
-    }
-
-    public AdminEventBuilder realm(String realmId) {
-        adminEvent.setRealmId(realmId);
+        adminEvent.setRealmName(realm.getName());
         return this;
     }
 
@@ -134,6 +169,7 @@ public class AdminEventBuilder {
         } else {
             authDetails.setRealmId(realm.getId());
         }
+        authDetails.setRealmName(realm.getName());
         adminEvent.setAuthDetails(authDetails);
         return this;
     }
@@ -217,6 +253,9 @@ public class AdminEventBuilder {
         if (value == null || value.equals("")) {
             return this;
         }
+
+        stripSecrets(session, value);
+
         try {
             adminEvent.setRepresentation(JsonSerialization.writeValueAsString(value));
         } catch (IOException e) {

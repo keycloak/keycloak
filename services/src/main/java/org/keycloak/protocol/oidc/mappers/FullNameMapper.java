@@ -37,7 +37,7 @@ import java.util.Optional;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FullNameMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class FullNameMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -83,7 +83,7 @@ public class FullNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         }
     }
 
-    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean userInfo) {
+    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean userInfo, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -92,6 +92,7 @@ public class FullNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         if (userInfo) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;
     }

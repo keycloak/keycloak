@@ -1,3 +1,0 @@
-embed-host-controller --domain-config=domain.xml
-
-/profile=auth-server-clustered/subsystem=*/:read-resource(recursive=true)

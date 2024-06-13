@@ -29,6 +29,7 @@ import org.keycloak.authorization.client.util.Throwables;
 import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.util.JsonSerialization;
+import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 /**
  * An entry point for managing resources using the Protection API.
@@ -86,7 +87,7 @@ public class ProtectedResource {
         Callable callable = new Callable() {
             @Override
             public Object call() throws Exception {
-                http.<ResourceRepresentation>put(serverConfiguration.getResourceRegistrationEndpoint() + "/" + resource.getId())
+                http.<ResourceRepresentation>put(serverConfiguration.getResourceRegistrationEndpoint() + "/" + encodePathAsIs(resource.getId()))
                         .authorizationBearer(pat.call())
                         .json(JsonSerialization.writeValueAsBytes(resource)).execute();
                 return null;
@@ -109,7 +110,7 @@ public class ProtectedResource {
         Callable<ResourceRepresentation> callable = new Callable<ResourceRepresentation>() {
             @Override
             public ResourceRepresentation call() throws Exception {
-                return http.<ResourceRepresentation>get(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
+                return http.<ResourceRepresentation>get(serverConfiguration.getResourceRegistrationEndpoint() + "/" + encodePathAsIs(id))
                         .authorizationBearer(pat.call())
                         .response().json(ResourceRepresentation.class).execute();
             }
@@ -258,7 +259,7 @@ public class ProtectedResource {
         Callable callable = new Callable() {
             @Override
             public Object call() throws Exception {
-                http.delete(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
+                http.delete(serverConfiguration.getResourceRegistrationEndpoint() + "/" + encodePathAsIs(id))
                         .authorizationBearer(pat.call())
                         .execute();
                 return null;

@@ -19,7 +19,7 @@ package org.keycloak.testsuite.client.resources;
 
 import org.keycloak.testsuite.util.OAuthClient;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,6 +55,13 @@ public class TestApplicationResourceUrls {
     public static String cibaClientNotificationEndpointUri() {
         UriBuilder builder = oidcClientEndpoints()
                 .path(TestOIDCEndpointsApplicationResource.class, "cibaClientNotificationEndpoint");
+
+        return builder.build().toString();
+    }
+
+    public static String checkIntentClientBoundUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "checkIntentClientBound");
 
         return builder.build().toString();
     }

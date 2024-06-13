@@ -27,10 +27,10 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilderException;
-import javax.ws.rs.core.UriInfo;
-import org.jboss.resteasy.spi.HttpRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**
@@ -46,7 +46,7 @@ public class ActionTokenContext<T extends JsonWebToken> {
 
     @FunctionalInterface
     public interface ProcessBrokerFlow {
-        Response brokerLoginFlow(String authSessionId, String code, String execution, String clientId, String tabId, String flowPath);
+        Response brokerLoginFlow(String authSessionId, String code, String execution, String clientId, String tabId, String clientData, String flowPath);
     };
 
     private final KeycloakSession session;
@@ -59,12 +59,13 @@ public class ActionTokenContext<T extends JsonWebToken> {
     private AuthenticationSessionModel authenticationSession;
     private boolean authenticationSessionFresh;
     private String executionId;
+    private String clientData;
     private final ProcessAuthenticateFlow processAuthenticateFlow;
     private final ProcessBrokerFlow processBrokerFlow;
 
     public ActionTokenContext(KeycloakSession session, RealmModel realm, UriInfo uriInfo,
       ClientConnection clientConnection, HttpRequest request,
-      EventBuilder event, ActionTokenHandler<T> handler, String executionId,
+      EventBuilder event, ActionTokenHandler<T> handler, String executionId, String clientData,
       ProcessAuthenticateFlow processFlow, ProcessBrokerFlow processBrokerFlow) {
         this.session = session;
         this.realm = realm;
@@ -74,6 +75,7 @@ public class ActionTokenContext<T extends JsonWebToken> {
         this.event = event;
         this.handler = handler;
         this.executionId = executionId;
+        this.clientData = clientData;
         this.processAuthenticateFlow = processFlow;
         this.processBrokerFlow = processBrokerFlow;
     }
@@ -162,6 +164,6 @@ public class ActionTokenContext<T extends JsonWebToken> {
 
     public Response brokerFlow(String authSessionId, String code, String flowPath) {
         ClientModel client = authenticationSession.getClient();
-        return processBrokerFlow.brokerLoginFlow(authSessionId, code, getExecutionId(), client.getClientId(), authenticationSession.getTabId(), flowPath);
+        return processBrokerFlow.brokerLoginFlow(authSessionId, code, getExecutionId(), client.getClientId(), authenticationSession.getTabId(), clientData, flowPath);
     }
 }

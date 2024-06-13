@@ -1,0 +1,19 @@
+
+== Managing user sessions
+
+When users log into realms, {project_name} maintains a user session for each user and remembers each client visited by the user within the session. Realm administrators can perform multiple actions on each user session:
+
+* View login statistics for the realm.
+* View active users and where they logged in.
+* Log a user out of their session.
+* Revoke tokens.
+* Set up token timeouts.
+* Set up session timeouts.
+
+ifeval::[{project_community}==true]
+By default, online user and online client sessions are only kept in memory, and will be lost if all {project_name} nodes are shut down for maintenance or during upgrades.
+
+If the feature `persistent-user-sessions` is enabled, {project_name} online user and online client sessions are saved to the database to persist them across restarts and upgrades.
+See https://www.keycloak.org/server/caching[Configuring distributed caches] on how to configure this.
+
+endif::[]

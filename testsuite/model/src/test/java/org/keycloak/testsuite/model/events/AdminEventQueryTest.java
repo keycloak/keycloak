@@ -16,32 +16,34 @@
  */
 package org.keycloak.testsuite.model.events;
 
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Time;
-import org.keycloak.events.Event;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.testsuite.model.KeycloakModelTest;
-import org.keycloak.testsuite.model.RequireProvider;
-import org.keycloak.models.RealmModel;
-
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
-/**
- *
- * @author hmlnarik
- */
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Test;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.delegate.ClientModelLazyDelegate;
+import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @RequireProvider(EventStoreProvider.class)
 public class AdminEventQueryTest extends KeycloakModelTest {
 
@@ -49,135 +51,105 @@ public class AdminEventQueryTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("realm");
+        RealmModel realm = createRealm(s, "realm");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
     }
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        EventStoreProvider eventStore = s.getProvider(EventStoreProvider.class);
+        eventStore.clearAdmin(s.realms().getRealm(realmId));
         s.realms().removeRealm(realmId);
-    }
-
-    @Test
-    public void testClear() {
-        inRolledBackTransaction(null, (session, t) -> {
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            eventStore.clear();
-        });
-    }
-
-    private Event createAuthEventForUser(RealmModel realm, String user) {
-        return new EventBuilder(realm, null, DummyClientConnection.DUMMY_CONNECTION)
-                .event(EventType.LOGIN)
-                .user(user)
-                .getEvent();
     }
 
     @Test
     public void testQuery() {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            eventStore.onEvent(createAuthEventForUser(realm,"u1"));
-            eventStore.onEvent(createAuthEventForUser(realm,"u2"));
-            eventStore.onEvent(createAuthEventForUser(realm,"u3"));
-            eventStore.onEvent(createAuthEventForUser(realm,"u4"));
-
-            return realm.getId();
+            eventStore.onEvent(createClientEvent(realm, OperationType.CREATE), false);
+            eventStore.onEvent(createClientEvent(realm, OperationType.UPDATE), false);
+            eventStore.onEvent(createClientEvent(realm, OperationType.DELETE), false);
+            eventStore.onEvent(createClientEvent(realm, OperationType.CREATE), false);
+        return null;
         });
 
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery()
-                            .firstResult(2)
-                            .getResultStream()
-                            .collect(Collectors.counting()),
-                    is(2L)
-            );
-
+            assertThat(eventStore.createAdminQuery()
+                    .realm(realmId)
+                    .firstResult(2)
+                    .getResultStream()
+                    .collect(Collectors.counting()),
+                    is(2L));
             return null;
         });
     }
 
     @Test
-    @RequireProvider(value = EventStoreProvider.class, only = "map")
-    public void testEventExpiration() {
+    public void testQueryOrder() {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+            AdminEvent firstEvent = createClientEvent(realm, OperationType.CREATE);
+            firstEvent.setTime(1L);
+            AdminEvent secondEvent = createClientEvent(realm, OperationType.DELETE);
+            secondEvent.setTime(2L);
+            eventStore.onEvent(firstEvent, false);
+            eventStore.onEvent(secondEvent, false);
+            List<AdminEvent> adminEventsAsc = eventStore.createAdminQuery()
+                    .realm(realmId)
+                    .orderByAscTime()
+                    .getResultStream()
+                    .collect(Collectors.toList());
+            assertThat(adminEventsAsc.size(), is(2));
+            assertThat(adminEventsAsc.get(0).getOperationType(), is(OperationType.CREATE));
+            assertThat(adminEventsAsc.get(1).getOperationType(), is(OperationType.DELETE));
 
-            // Set expiration so no event is valid
-            realm.setEventsExpiration(5);
-            Event e = createAuthEventForUser(realm, "u1");
-            eventStore.onEvent(e);
+            List<AdminEvent> adminEventsDesc = eventStore.createAdminQuery()
+                    .realm(realmId)
+                    .orderByDescTime()
+                    .getResultStream()
+                    .collect(Collectors.toList());
+            assertThat(adminEventsDesc.size(), is(2));
+            assertThat(adminEventsDesc.get(0).getOperationType(), is(OperationType.DELETE));
+            assertThat(adminEventsDesc.get(1).getOperationType(), is(OperationType.CREATE));
+            return null;
+        });
+    }
 
-            // Set expiration to 1000 seconds
-            realm.setEventsExpiration(1000);
-            e = createAuthEventForUser(realm, "u2");
-            eventStore.onEvent(e);
+        @Test
+    public void testAdminEventRepresentationLongValue() {
+        String longValue = RandomStringUtils.random(30000, true, true);
+
+        withRealm(realmId, (session, realm) -> {
+            
+            AdminEvent event = createClientEvent(realm, OperationType.CREATE);
+            event.setRepresentation(longValue);
+
+            session.getProvider(EventStoreProvider.class).onEvent(event, true);
 
             return null;
         });
 
-        Time.setOffset(10);
+        withRealm(realmId, (session, realm) -> {
+            List<AdminEvent> events = session.getProvider(EventStoreProvider.class).createAdminQuery().realm(realmId).getResultStream().collect(Collectors.toList());
+            assertThat(events, hasSize(1));
 
-        try {
-            withRealm(realmId, (session, realm) -> {
-                EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+            assertThat(events.get(0).getRepresentation(), equalTo(longValue));
 
-                Set<Event> events = eventStore.createQuery()
-                        .getResultStream().collect(Collectors.toSet());
-
-                assertThat(events, hasSize(1));
-                assertThat(events.iterator().next().getUserId(), equalTo("u2"));
-                return null;
-            });
-        } finally {
-            Time.setOffset(0);
-        }
-
-
+            return null;
+        });
     }
 
-    @Test
-    @RequireProvider(value = EventStoreProvider.class, only = "map")
-    public void testEventsClearedOnRealmRemoval() {
-        // Create another realm
-        String newRealmId = inComittedTransaction(null, (session, t) -> {
-            RealmModel realm = session.realms().createRealm("events-realm");
-            realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
-
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            Event e = createAuthEventForUser(realm, "u1");
-            eventStore.onEvent(e);
-
-            AdminEvent ae = new AdminEvent();
-            ae.setRealmId(realm.getId());
-            eventStore.onEvent(ae, false);
-
-            return realm.getId();
-        });
-
-        // Check if events were created
-        inComittedTransaction(session -> {
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().getResultStream().count(), is(1L));
-            assertThat(eventStore.createAdminQuery().getResultStream().count(), is(1L));
-        });
-
-        // Remove realm
-        inComittedTransaction((Consumer<KeycloakSession>) session -> session.realms().removeRealm(newRealmId));
-
-        // Check events were removed
-        inComittedTransaction(session -> {
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().getResultStream().count(), is(0L));
-            assertThat(eventStore.createAdminQuery().getResultStream().count(), is(0L));
-        });
+    private AdminEvent createClientEvent(RealmModel realm, OperationType operation) {
+        return new AdminEventBuilder(realm, new DummyAuth(realm), null, DummyClientConnection.DUMMY_CONNECTION)
+                .resource(ResourceType.CLIENT).operation(operation).getEvent();
     }
 
     private static class DummyClientConnection implements ClientConnection {
 
-        private static DummyClientConnection DUMMY_CONNECTION = new DummyClientConnection();
+        private static final AdminEventQueryTest.DummyClientConnection DUMMY_CONNECTION =
+                new AdminEventQueryTest.DummyClientConnection();
 
         @Override
         public String getRemoteAddr() {
@@ -202,6 +174,36 @@ public class AdminEventQueryTest extends KeycloakModelTest {
         @Override
         public int getLocalPort() {
             return -2;
+        }
+    }
+
+    private static class DummyAuth extends AdminAuth {
+
+        private final RealmModel realm;
+
+        public DummyAuth(RealmModel realm) {
+            super(realm, null, null, null);
+            this.realm = realm;
+        }
+
+        @Override
+        public RealmModel getRealm() {
+            return realm;
+        }
+
+        @Override
+        public ClientModel getClient() {
+            return new ClientModelLazyDelegate.WithId("dummy-client", null);
+        }
+
+        @Override
+        public UserModel getUser() {
+            return new UserModelDelegate(null) {
+                @Override
+                public String getId() {
+                    return "dummy-user";
+                }
+            };
         }
     }
 

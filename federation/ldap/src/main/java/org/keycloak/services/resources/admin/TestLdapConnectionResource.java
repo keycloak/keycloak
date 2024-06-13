@@ -16,9 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.common.ClientConnection;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -27,13 +25,11 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @resource User Storage Provider
@@ -41,16 +37,16 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class TestLdapConnectionResource {
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    protected AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator auth;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public TestLdapConnectionResource(RealmModel realm, AdminPermissionEvaluator auth) {
+    public TestLdapConnectionResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
     }
 
     /**
@@ -74,8 +70,13 @@ public class TestLdapConnectionResource {
 
         TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
         config.setComponentId(componentId);
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        try {
+            LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
+            return Response.noContent().build();
+        } catch(Exception e) {
+            String errorMsg = LDAPServerCapabilitiesManager.getErrorCode(e);
+            throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+        }
     }
 
     /**
@@ -86,8 +87,14 @@ public class TestLdapConnectionResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        auth.realm().requireManageRealm();
+        try {
+            LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
+            return Response.noContent().build();
+        } catch(Exception e) {
+            String errorMsg = LDAPServerCapabilitiesManager.getErrorCode(e);
+            throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+        }
     }
 
 }

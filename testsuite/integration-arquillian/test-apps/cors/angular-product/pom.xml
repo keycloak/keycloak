@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-test-apps-cors-parent</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -64,7 +64,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-js-adapter</artifactId>
+                                    <artifactId>keycloak-js-adapter-jar</artifactId>
                                     <version>${js-adapter.version}</version>
                                     <type>jar</type>
                                     <outputDirectory>${pom.basedir}/target/angular-cors-product/js</outputDirectory>

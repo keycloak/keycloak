@@ -16,9 +16,14 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import org.jboss.resteasy.reactive.NoCache;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -30,22 +35,22 @@ import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -56,19 +61,19 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    private AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
-    public RoleByIdResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        super(realm);
-
-        this.realm = realm;
+    public RoleByIdResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        super(session.getContext().getRealm());
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.adminEvent = adminEvent;
     }
@@ -83,7 +88,9 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public RoleRepresentation getRole(final @PathParam("role-id") String id) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Get a specific role's representation")
+    public RoleRepresentation getRole(final @Parameter(description = "id of role") @PathParam("role-id") String id) {
 
         RoleModel roleModel = getRoleModel(id);
         auth.roles().requireView(roleModel);
@@ -106,12 +113,14 @@ public class RoleByIdResource extends RoleResource {
     @Path("{role-id}")
     @DELETE
     @NoCache
-    public void deleteRole(final @PathParam("role-id") String id) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Delete the role")
+    public void deleteRole(final @Parameter(description = "id of role") @PathParam("role-id") String id) {
         if (realm.getDefaultRole() == null) {
             logger.warnf("Default role for realm with id '%s' doesn't exist.", realm.getId());
         } else if (realm.getDefaultRole().getId().equals(id)) {
-            throw new ErrorResponseException(ErrorResponse.error(realm.getDefaultRole().getName() + " is default role of the realm and cannot be removed.", 
-                    Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(realm.getDefaultRole().getName() + " is default role of the realm and cannot be removed.",
+                    Response.Status.BAD_REQUEST);
         }
 
         RoleModel role = getRoleModel(id);
@@ -136,10 +145,12 @@ public class RoleByIdResource extends RoleResource {
     @Path("{role-id}")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateRole(final @PathParam("role-id") String id, final RoleRepresentation rep) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Update the role")
+    public void updateRole(final @Parameter(description = "id of role") @PathParam("role-id") String id, final RoleRepresentation rep) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
-        updateRole(rep, role);
+        updateRole(rep, role, realm, session);
 
         if (role.isClientRole()) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
@@ -159,6 +170,9 @@ public class RoleByIdResource extends RoleResource {
     @Path("{role-id}/composites")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Make the role a composite role by associating some child roles")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
@@ -177,6 +191,8 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Get role's children Returns a set of role's children provided the role is a composite.")
     public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id,
                                                         final @QueryParam("search") String search,
                                                         final @QueryParam("first") Integer first,
@@ -204,6 +220,8 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Get realm-level roles that are in the role's composite")
     public Stream<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
@@ -221,6 +239,8 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Get client-level roles for the client that are in the role's composite")
     public Stream<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
                                                                 final @PathParam("clientUuid") String clientUuid) {
 
@@ -242,14 +262,17 @@ public class RoleByIdResource extends RoleResource {
     @Path("{role-id}/composites")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
-    public void deleteComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Remove a set of roles from the role's composite")
+    public void deleteComposites(final @Parameter(description = "Role id") @PathParam("role-id") String id,
+                                 @Parameter(description = "A set of roles to be removed") List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
         deleteComposites(adminEvent, session.getContext().getUri(), roles, role);
     }
 
     /**
-     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     * Return object stating whether role Authorization permissions have been initialized or not and a reference
      *
      *
      * @param id
@@ -259,6 +282,8 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
@@ -279,7 +304,7 @@ public class RoleByIdResource extends RoleResource {
     }
 
     /**
-     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     * Return object stating whether role Authorization permissions have been initialized or not and a reference
      *
      *
      * @param id
@@ -290,6 +315,8 @@ public class RoleByIdResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(final @PathParam("role-id") String id, ManagementPermissionReference ref) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);

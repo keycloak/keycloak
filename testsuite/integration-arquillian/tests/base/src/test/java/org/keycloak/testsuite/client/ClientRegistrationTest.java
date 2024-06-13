@@ -32,23 +32,31 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.HashSet;
 import java.util.Set;
@@ -61,11 +69,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_CLIENT_METADATA;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_REDIRECT_URI;
 import static org.keycloak.utils.MediaType.APPLICATION_JSON;
@@ -73,7 +81,6 @@ import static org.keycloak.utils.MediaType.APPLICATION_JSON;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String CLIENT_ID = "test-client";
@@ -175,6 +182,41 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void registerClientUsingRevokedToken() throws Exception {
+        reg.auth(Auth.token(getToken("manage-clients", "password")));
+
+        ClientRepresentation myclient = new ClientRepresentation();
+
+        myclient.setClientId("myclient");
+        myclient.setServiceAccountsEnabled(true);
+        myclient.setSecret("password");
+        myclient.setDirectAccessGrantsEnabled(true);
+
+        reg.create(myclient);
+
+        oauth.clientId("myclient");
+        String bearerToken = getToken("myclient", "password", "manage-clients", "password");
+        try (CloseableHttpResponse response = oauth.doTokenRevoke(bearerToken, "access_token", "password")) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusLine().getStatusCode());
+        }
+
+        try {
+            reg.auth(Auth.token(bearerToken));
+
+            ClientRepresentation clientRep = buildClient();
+            clientRep.setServiceAccountsEnabled(true);
+
+            registerClient(clientRep);
+        } catch (ClientRegistrationException cre) {
+            HttpErrorException cause = (HttpErrorException) cre.getCause();
+            assertEquals(401, cause.getStatusLine().getStatusCode());
+            OAuth2ErrorRepresentation error = cause.toErrorRepresentation();
+            assertEquals(Errors.INVALID_TOKEN, error.getError());
+            assertEquals("Failed decode token", error.getErrorDescription());
+        }
+    }
+
+    @Test
     public void registerClientWithNonAsciiChars() throws ClientRegistrationException {
     	authCreateClients();
     	ClientRepresentation client = buildClient();
@@ -201,6 +243,35 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         client.setDefaultRoles(new String[]{"test-default-role1","test-default-role2"});
         ClientRepresentation updatedClient = reg.update(client);
         assertThat(updatedClient.getDefaultRoles(), Matchers.arrayContainingInAnyOrder("test-default-role1","test-default-role2"));
+    }
+
+    @Test
+    public void updateClientScopes() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = buildClient();
+        ArrayList<String> optionalClientScopes = new ArrayList<>(List.of("address"));
+        client.setOptionalClientScopes(optionalClientScopes);
+
+        ClientRepresentation createdClient = registerClient(client);
+        Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
+        Set<String> registeredClientScopes = new HashSet<>(createdClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(createdClient.getDefaultClientScopes().isEmpty());
+
+        authManageClients();
+        ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
+        registeredClientScopes = new HashSet<>(obtainedClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(obtainedClient.getDefaultClientScopes().isEmpty());
+
+
+        optionalClientScopes = new ArrayList<>(List.of("address", "phone"));
+        client.setOptionalClientScopes(optionalClientScopes);
+        ClientRepresentation updatedClient = reg.update(client);
+        requestedClientScopes = new HashSet<>(optionalClientScopes);
+        registeredClientScopes = new HashSet<>(updatedClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(updatedClient.getDefaultClientScopes().isEmpty());
     }
 
     @Test
@@ -232,6 +303,82 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
                 "Redirect URIs must not contain an URI fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testSamlSpecificUrls() throws ClientRegistrationException {
+        testSamlSpecificUrls(true, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+        testSamlSpecificUrls(false, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+    }
+
+    private void testSamlSpecificUrls(boolean register, String... testUrls) throws ClientRegistrationException {
+        ClientRepresentation rep = buildClient();
+        rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        if (register) {
+            authCreateClients();
+        } else {
+            authManageClients();
+            registerClient(rep);
+            rep = reg.get(CLIENT_ID);
+        }
+        rep.setAttributes(new HashMap<>());
+
+        Map<String, String> attrs = Map.of(
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
+                    SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service");
+
+        for (String testUrl : testUrls) {
+            // admin url
+            rep.setAdminUrl(testUrl);
+            registerOrUpdateClientExpectingValidationErrors(rep, register, false, "Master SAML Processing URL uses an illegal scheme");
+            rep.setAdminUrl(null);
+            // attributes
+            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                rep.getAttributes().put(entry.getKey(), testUrl);
+                registerOrUpdateClientExpectingValidationErrors(rep, register, false, entry.getValue() + " uses an illegal scheme");
+                rep.getAttributes().remove(entry.getKey());
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateAuthorizationSettings() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation clientRep = buildClient();
+        clientRep.setAuthorizationServicesEnabled(true);
+
+        ClientRepresentation rep = registerClient(clientRep);
+        rep = adminClient.realm("test").clients().get(rep.getId()).toRepresentation();
+
+        assertTrue(rep.getAuthorizationServicesEnabled());
+
+        ResourceServerRepresentation authzSettings = new ResourceServerRepresentation();
+
+        authzSettings.setAllowRemoteResourceManagement(false);
+        authzSettings.setResources(List.of(new ResourceRepresentation("foo", "scope-a", "scope-b")));
+
+        PolicyRepresentation permission = new PolicyRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setType("resource");
+        permission.setResources(Collections.singleton("foo"));
+
+        authzSettings.setPolicies(List.of(permission));
+
+        rep.setAuthorizationSettings(authzSettings);
+
+        reg.update(rep);
+        authzSettings = adminClient.realm("test").clients().get(rep.getId()).authorization().exportSettings();
+
+        assertFalse(authzSettings.getResources().isEmpty());
+        assertFalse(authzSettings.getScopes().isEmpty());
+        assertFalse(authzSettings.getPolicies().isEmpty());
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {

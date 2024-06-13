@@ -36,8 +36,8 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
 /**
@@ -107,7 +107,7 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 
 	private BrokeredIdentityContext gitlabExtractFromProfile(JsonNode profile) {
 		String id = getJsonProperty(profile, "id");
-		BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
+		BrokeredIdentityContext identity = new BrokeredIdentityContext(id, getConfig());
 
 		String name = getJsonProperty(profile, "name");
 		String preferredUsername = getJsonProperty(profile, "username");

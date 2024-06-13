@@ -21,7 +21,7 @@
 	<parent>
 		<artifactId>keycloak-dependencies-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>999-SNAPSHOT</version>
+		<version>999.0.0-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
@@ -42,35 +42,19 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map</artifactId>
+            <artifactId>keycloak-model-storage</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map-jpa</artifactId>
+            <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map-ldap</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-private</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-infinispan</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map-hot-rod</artifactId>
         </dependency>
         <!-- identity providers -->
         <dependency>
@@ -95,12 +79,6 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Dependencies for RHEL IdM -->
@@ -113,11 +91,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-policy-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.openshift</groupId>
-            <artifactId>openshift-restclient-java</artifactId>
         </dependency>
     </dependencies>
 

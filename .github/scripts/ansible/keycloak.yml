@@ -1,0 +1,2 @@
+- hosts: keycloak
+  roles: [keycloak_ec2_installer]

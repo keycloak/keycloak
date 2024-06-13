@@ -101,9 +101,12 @@ public class AccessToken extends IDToken {
 
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
-    public static class CertConf {
+    public static class Confirmation {
         @JsonProperty("x5t#S256")
         protected String certThumbprint;
+
+        @JsonProperty("jkt")
+        protected String keyThumbprint;
 
         public String getCertThumbprint() {
             return certThumbprint;
@@ -111,6 +114,14 @@ public class AccessToken extends IDToken {
 
         public void setCertThumbprint(String certThumbprint) {
             this.certThumbprint = certThumbprint;
+        }
+
+        public String getKeyThumbprint() {
+            return keyThumbprint;
+    }
+
+    public void setKeyThumbprint(String keyThumbprint) {
+            this.keyThumbprint = keyThumbprint;
         }
     }
 
@@ -130,7 +141,7 @@ public class AccessToken extends IDToken {
     protected Authorization authorization;
 
     @JsonProperty("cnf")
-    protected CertConf certConf;
+    protected Confirmation confirmation;
 
     @JsonProperty("scope")
     protected String scope;
@@ -195,22 +206,6 @@ public class AccessToken extends IDToken {
     }
 
     @Override
-    public AccessToken expiration(int expiration) {
-        return (AccessToken) super.expiration(expiration);
-    }
-
-    @Override
-    public AccessToken notBefore(int notBefore) {
-        return (AccessToken) super.notBefore(notBefore);
-    }
-
-
-    @Override
-    public AccessToken issuedAt(int issuedAt) {
-        return (AccessToken) super.issuedAt(issuedAt);
-    }
-
-    @Override
     public AccessToken issuer(String issuer) {
         return (AccessToken) super.issuer(issuer);
     }
@@ -261,13 +256,13 @@ public class AccessToken extends IDToken {
     public void setAuthorization(Authorization authorization) {
         this.authorization = authorization;
     }
-    
-    public CertConf getCertConf() {
-        return certConf;
+
+    public Confirmation getConfirmation() {
+        return confirmation;
     }
 
-    public void setCertConf(CertConf certConf) {
-        this.certConf = certConf;
+    public void setConfirmation(Confirmation confirmation) {
+        this.confirmation = confirmation;
     }
 
     public String getScope() {

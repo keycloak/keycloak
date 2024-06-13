@@ -21,10 +21,10 @@ import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
 import org.jboss.logging.Logger;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMessage.RecipientType;
-import javax.mail.internet.MimeMultipart;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage.RecipientType;
+import jakarta.mail.internet.MimeMultipart;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
@@ -63,7 +63,7 @@ public class MailServer {
                     log.info("-------------------------------------------------------");
                 }
             }
-        } catch (IOException | InterruptedException | MessagingException ex) {
+        } catch (IOException | MessagingException ex) {
             throw new RuntimeException(ex);
         }
     }

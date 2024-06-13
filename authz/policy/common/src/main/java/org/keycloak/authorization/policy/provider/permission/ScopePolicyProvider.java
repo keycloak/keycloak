@@ -16,9 +16,9 @@
  */
 package org.keycloak.authorization.policy.provider.permission;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -31,8 +31,11 @@ import java.util.Map;
  */
 public class ScopePolicyProvider extends AbstractPermissionProvider {
 
+    private static final Logger logger = Logger.getLogger(ScopePolicyProvider.class);
+
     @Override
     public void evaluate(Evaluation evaluation) {
+        logger.debugv("Scope policy {} evaluating using parent class", evaluation.getPolicy().getName());
         DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
         Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
         Policy policy = defaultEvaluation.getParentPolicy();

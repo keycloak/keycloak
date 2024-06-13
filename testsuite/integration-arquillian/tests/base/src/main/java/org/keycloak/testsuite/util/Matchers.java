@@ -21,14 +21,13 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
-import org.keycloak.testsuite.util.matchers.SamlResponseTypeMatcher;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.util.matchers.*;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpResponse;
 import org.hamcrest.Matcher;
 import static org.hamcrest.Matchers.*;

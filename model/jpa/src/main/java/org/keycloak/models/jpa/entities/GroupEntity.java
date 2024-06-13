@@ -19,7 +19,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.hibernate.annotations.Nationalized;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -28,15 +28,17 @@ import java.util.LinkedList;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.parentId = :parent"),
+        @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByParentAndName", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and u.name = :search order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByParentAndNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
         @NamedQuery(name="getGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm = :realm  order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.name like concat('%',:search,'%') order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
         @NamedQuery(name="getGroupIdsByNameContainingFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByName", query="select u.id from GroupEntity u where u.realm = :realm and u.name = :search order by u.name ASC"),
         @NamedQuery(name="getGroupIdsFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and u.id in :ids order by u.name ASC"),
         @NamedQuery(name="getGroupCountByNameContainingFromIdList", query="select count(u) from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids"),
-        @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parentId = :parent and u.realm = :realm order by u.name ASC"),
         @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
-        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm and u.parentId = :parent")
+        @NamedQuery(name="getGroupCountByParent", query="select count(u) from GroupEntity u where u.realm = :realm and u.parentId = :parent")
 })
 @Entity
 @Table(name="KEYCLOAK_GROUP",
@@ -67,7 +69,7 @@ public class GroupEntity {
     @OneToMany(
             cascade = CascadeType.REMOVE,
             orphanRemoval = true, mappedBy="group")
-    protected Collection<GroupAttributeEntity> attributes;
+    protected Collection<GroupAttributeEntity> attributes = new LinkedList<>();
 
     public String getId() {
         return id;

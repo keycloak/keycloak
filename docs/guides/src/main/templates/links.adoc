@@ -1,3 +1,0 @@
-<#macro server id>
-link:{links_server_${id}_url}[{links_server_${id}_name}]
-</#macro>

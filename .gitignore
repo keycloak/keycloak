@@ -6,6 +6,7 @@
 ###################
 .idea
 *.iml
+!.idea/icon.png
 
 # Eclipse #
 ###########
@@ -28,6 +29,7 @@ nbproject
 # VS Code #
 ###########
 *.code-workspace
+*.vscode
 
 # Compiled source #
 ###################
@@ -63,6 +65,7 @@ nbproject
 # Maven #
 #########
 target
+bin
 
 # Maven shade
 #############
@@ -78,6 +81,34 @@ quarkus/data/*.db
 
 # Jakarta transformed sources #
 ###############################
-
-/integration/admin-client-jakarta/src/
+/integration/admin-client/src/
+/adapters/saml/jakarta-servlet-filter/src/
+/adapters/oidc/jakarta-servlet-filter/src/
+/adapters/saml/wildfly-elytron-jakarta/src/
+/adapters/saml/core-jakarta/src/
+/adapters/saml/wildfly/wildfly-jakarta-subsystem/src/
 /.metadata/
+
+# Git ephemeral files
+*.versionsBackup
+
+# frontend-maven-plugin
+node
+
+# Wireit
+.wireit
+
+# Vite
+dist
+
+# ESLint
+.eslintcache
+
+# NPM
+node_modules
+
+# SDKMAM environment file
+.sdkmanrc
+
+# JENV
+.java-version

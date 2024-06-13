@@ -21,6 +21,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -98,15 +99,15 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
                 ModelToRepresentation::buildGroupPath : GroupModel::getName;
         List<String> membership = userSession.getUser().getGroupsStream().map(toGroupRepresentation).collect(Collectors.toList());
 
-        String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-
-        token.getOtherClaims().put(protocolClaim, membership);
+        // force multivalued as the attribute is not defined for this mapper
+        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, membership);
     }
 
     public static ProtocolMapperModel create(String name,
-                                      String tokenClaimName,
-                                      boolean consentRequired, String consentText,
-                                      boolean accessToken, boolean idToken) {
+                                             String tokenClaimName,
+                                             boolean consentRequired, String consentText,
+                                             boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -115,8 +116,9 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, tokenClaimName);
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
-        
+
         return mapper;
     }
 

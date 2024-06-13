@@ -15,11 +15,11 @@ import org.infinispan.server.hotrod.configuration.HotRodServerConfigurationBuild
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.models.map.storage.hotRod.common.HotRodUtils;
 
 import java.io.IOException;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -74,37 +74,14 @@ public class HotRodServerRule extends ExternalResource {
 
         // create remote keycloak caches
         createKeycloakCaches(async, USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME,
-                OFFLINE_CLIENT_SESSION_CACHE_NAME, LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE);
+                OFFLINE_CLIENT_SESSION_CACHE_NAME, LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
 
         getCaches(USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME,
-                LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE);
+                LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
 
         // Use Keycloak time service in remote caches
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager);
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager2);
-    }
-
-    public void createHotRodMapStoreServer() {
-        hotRodCacheManager = configureHotRodCacheManager("hotrod/infinispan.xml");
-        hotRodServer = new HotRodServer();
-
-        HotRodUtils.createHotRodMapStoreServer(hotRodServer, hotRodCacheManager, 11444);
-
-        org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteBuilder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
-        org.infinispan.client.hotrod.configuration.Configuration cfg = remoteBuilder
-                .addServers(hotRodServer.getHost() + ":" + hotRodServer.getPort()).build();
-        remoteCacheManager = new RemoteCacheManager(cfg);
-    }
-
-    private DefaultCacheManager configureHotRodCacheManager(String configPath) {
-        DefaultCacheManager manager = null;
-        try {
-            manager = new DefaultCacheManager(configPath);
-        } catch (IOException e) {
-            new RuntimeException(e);
-        }
-
-        return manager;
     }
 
     private void getCaches(String... cache) {
@@ -122,10 +99,10 @@ public class HotRodServerRule extends ExternalResource {
 
         sessionConfigBuilder1.sites().addBackup()
                 .site("site-2").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
-                .replicationTimeout(15000).enabled(true);
+                .replicationTimeout(15000);
         sessionConfigBuilder2.sites().addBackup()
                 .site("site-1").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
-                .replicationTimeout(15000).enabled(true);
+                .replicationTimeout(15000);
 
         Configuration sessionCacheConfiguration1 = sessionConfigBuilder1.build();
         Configuration sessionCacheConfiguration2 = sessionConfigBuilder2.build();

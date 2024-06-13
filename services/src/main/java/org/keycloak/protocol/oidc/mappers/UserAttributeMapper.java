@@ -32,12 +32,12 @@ import java.util.List;
 /**
  * Mappings UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,
  * i.e. "address.country".  This will create a nested
- * json object within the toke claim.
+ * json object within the token claim.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -47,7 +47,7 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
-        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
         OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserAttributeMapper.class);
 
@@ -106,19 +106,19 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken, boolean multivalued) {
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multivalued) {
         return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
-                accessToken, idToken, multivalued, false);
+                accessToken, idToken, introspectionEndpoint, multivalued, false);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken,
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint,
                                                         boolean multivalued, boolean aggregateAttrs) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
-                accessToken, idToken,
+                accessToken, idToken, introspectionEndpoint,
                 PROVIDER_ID);
 
         if (multivalued) {
@@ -131,5 +131,11 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         return mapper;
     }
 
-
+    public static ProtocolMapperModel createClaimMapper(String name,
+                                                        String userAttribute,
+                                                        String tokenClaimName, String claimType,
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+        return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
+                accessToken, idToken, introspectionEndpoint, false, false);
+    }
 }

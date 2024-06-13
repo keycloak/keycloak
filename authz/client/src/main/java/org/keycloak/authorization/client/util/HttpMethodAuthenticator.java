@@ -18,11 +18,16 @@
 package org.keycloak.authorization.client.util;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.http.Header;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authorization.client.ClientAuthenticator;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.Permission;
@@ -34,16 +39,16 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 public class HttpMethodAuthenticator<R> {
 
     private final HttpMethod<R> method;
-    private final ClientAuthenticator authenticator;
+    private ClientCredentialsProvider clientCredentialProvider;
 
-    public HttpMethodAuthenticator(HttpMethod<R> method, ClientAuthenticator authenticator) {
+    public HttpMethodAuthenticator(HttpMethod<R> method, ClientCredentialsProvider clientCredentialsProvider) {
         this.method = method;
-        this.authenticator = authenticator;
+        this.clientCredentialProvider = clientCredentialsProvider;
     }
 
     public HttpMethod<R> client() {
         this.method.params.put(OAuth2Constants.GRANT_TYPE, Arrays.asList(OAuth2Constants.CLIENT_CREDENTIALS));
-        authenticator.configureClientCredentials(this.method.params, this.method.headers);
+        configureClientCredentials(this.method.params, this.method.headers);
         return this.method;
     }
 
@@ -125,8 +130,28 @@ public class HttpMethodAuthenticator<R> {
             if (metadata.getLimit() != null) {
                 method.param("response_permissions_limit", metadata.getLimit().toString());
             }
+
+            if (metadata.getResponseMode() != null) {
+                method.param("response_mode", metadata.getResponseMode());
+            }
+
+            if (metadata.getPermissionResourceFormat() != null) {
+                method.param("permission_resource_format", metadata.getPermissionResourceFormat().toString());
+            }
+
+            if (metadata.getPermissionResourceMatchingUri() != null) {
+                method.param("permission_resource_matching_uri", metadata.getPermissionResourceMatchingUri().toString());
+            }
         }
 
         return method;
+    }
+
+    private void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
+        Map<String, String> formparams = new HashMap<>();
+        ClientCredentialsProviderUtils.setClientCredentials(method.configuration, clientCredentialProvider, requestHeaders, formparams);
+        for (Entry<String, String> param : formparams.entrySet()) {
+            requestParams.put(param.getKey(), Arrays.asList(param.getValue()));
+        }
     }
 }

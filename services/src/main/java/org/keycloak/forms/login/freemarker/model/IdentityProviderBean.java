@@ -26,11 +26,11 @@ import org.keycloak.theme.Theme;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -39,11 +39,16 @@ import java.util.Optional;
 public class IdentityProviderBean {
 
     public static OrderedModel.OrderedModelComparator<IdentityProvider> IDP_COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
+    private static final String ICON_THEME_PREFIX = "kcLogoIdP-";
 
     private boolean displaySocial;
     private List<IdentityProvider> providers;
     private RealmModel realm;
     private final KeycloakSession session;
+
+    public IdentityProviderBean() {
+        this.session = null;
+    }
 
     public IdentityProviderBean(RealmModel realm, KeycloakSession session, List<IdentityProviderModel> identityProviders, URI baseURI) {
         this.realm = realm;
@@ -73,18 +78,19 @@ public class IdentityProviderBean {
         if (!hideOnLoginPage) {
             orderedSet.add(new IdentityProvider(identityProvider.getAlias(),
                     displayName, identityProvider.getProviderId(), loginUrl,
-                    config != null ? config.get("guiOrder") : null, getLoginIconClasses(identityProvider.getAlias())));
+                    config != null ? config.get("guiOrder") : null, getLoginIconClasses(identityProvider)));
         }
     }
 
     // Get icon classes defined in properties of current theme with key 'kcLogoIdP-{alias}'
+    // OR from IdentityProviderModel.getDisplayIconClasses if not defined in theme (for third-party IDPs like Sign-In-With-Apple)
     // f.e. kcLogoIdP-github = fa fa-github
-    private String getLoginIconClasses(String alias) {
-        final String ICON_THEME_PREFIX = "kcLogoIdP-";
-
+    private String getLoginIconClasses(IdentityProviderModel identityProvider) {
         try {
             Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
-            return Optional.ofNullable(theme.getProperties().getProperty(ICON_THEME_PREFIX + alias)).orElse("");
+            Optional<String> classesFromTheme = Optional.ofNullable(getLogoIconClass(identityProvider, theme.getProperties()));
+            Optional<String> classesFromModel = Optional.ofNullable(identityProvider.getDisplayIconClasses());
+            return classesFromTheme.orElse(classesFromModel.orElse(""));
         } catch (IOException e) {
             //NOP
         }
@@ -96,13 +102,13 @@ public class IdentityProviderBean {
     }
 
     public boolean isDisplayInfo() {
-        return  realm.isRegistrationAllowed() || displaySocial;
+        return realm.isRegistrationAllowed() || displaySocial;
     }
 
     public static class IdentityProvider implements OrderedModel {
 
         private final String alias;
-        private final String providerId; // This refer to providerType (facebook, google, etc.)
+        private final String providerId; // This refers to providerType (facebook, google, etc.)
         private final String loginUrl;
         private final String guiOrder;
         private final String displayName;
@@ -147,4 +153,13 @@ public class IdentityProviderBean {
         }
     }
 
+    private String getLogoIconClass(IdentityProviderModel identityProvider, Properties themeProperties) throws IOException {
+        String iconClass = themeProperties.getProperty(ICON_THEME_PREFIX + identityProvider.getAlias());
+
+        if (iconClass == null) {
+            return themeProperties.getProperty(ICON_THEME_PREFIX + identityProvider.getProviderId());
+        }
+
+        return iconClass;
+    }
 }

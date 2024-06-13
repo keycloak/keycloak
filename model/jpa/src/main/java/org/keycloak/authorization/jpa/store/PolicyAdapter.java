@@ -24,13 +24,12 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -154,7 +153,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
     }
 
     @Override
@@ -171,7 +170,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
         Set<Resource> set = new HashSet<>();
         ResourceServer resourceServer = getResourceServer();
         for (ResourceEntity res : entity.getResources()) {
-            set.add(storeFactory.getResourceStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, res.getId()));
+            set.add(storeFactory.getResourceStore().findById(resourceServer, res.getId()));
         }
         return Collections.unmodifiableSet(set);
     }
@@ -181,7 +180,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
         Set<Scope> set = new HashSet<>();
         ResourceServer resourceServer = getResourceServer();
         for (ScopeEntity res : entity.getScopes()) {
-            set.add(storeFactory.getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, res.getId()));
+            set.add(storeFactory.getScopeStore().findById(resourceServer, res.getId()));
         }
         return Collections.unmodifiableSet(set);
     }

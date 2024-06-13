@@ -1,10 +1,9 @@
 package org.keycloak.testsuite.broker;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.List;
 
@@ -16,6 +15,7 @@ import org.keycloak.testsuite.Assert;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.keycloak.testsuite.util.AccountHelper;
 
 /**
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
@@ -63,7 +63,8 @@ public abstract class AbstractUsernameTemplateMapperTest extends AbstractIdentit
         String mappedUserName = String.format(getMapperTemplate(), userName);
         findUser(bc.consumerRealmName(), mappedUserName, bc.getUserEmail());
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), mappedUserName);
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         updateUser(updatedUserName);
 

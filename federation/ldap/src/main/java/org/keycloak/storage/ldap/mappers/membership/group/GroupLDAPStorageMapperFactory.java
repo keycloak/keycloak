@@ -96,6 +96,7 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                 .label("LDAP Groups DN")
                 .helpText("LDAP DN where are groups of this tree saved. For example 'ou=groups,dc=example,dc=org' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
+                .required(true)
                 .add()
                 .property().name(GroupMapperConfig.GROUP_NAME_LDAP_ATTRIBUTE)
                 .label("Group Name LDAP Attribute")
@@ -304,7 +305,7 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
         LDAPUtils.validateCustomLdapFilter(config.getConfig().getFirst(GroupMapperConfig.GROUPS_LDAP_FILTER));
 
         String group = new GroupMapperConfig(config).getGroupsPath();
-        if (!GroupMapperConfig.DEFAULT_LDAP_GROUPS_PATH.equals(group) && KeycloakModelUtils.findGroupByPath(realm, group) == null) {
+        if (!GroupMapperConfig.DEFAULT_LDAP_GROUPS_PATH.equals(group) && KeycloakModelUtils.findGroupByPath(session, realm, group) == null) {
             throw new ComponentValidationException("ldapErrorMissingGroupsPathGroup");
         }
     }

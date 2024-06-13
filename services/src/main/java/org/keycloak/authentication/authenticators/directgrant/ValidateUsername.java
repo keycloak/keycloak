@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.directgrant;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -32,8 +33,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -71,6 +72,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
 
         if (user == null) {
+            AuthenticatorUtils.dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -79,6 +81,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
         String bruteForceError = getDisabledByBruteForceEventError(context, user);
         if (bruteForceError != null) {
+            AuthenticatorUtils.dummyHash(context);
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");

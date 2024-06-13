@@ -17,9 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config.Scope;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
@@ -34,6 +32,7 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
 import java.security.KeyPair;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +45,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class TestApplicationResourceProviderFactory implements RealmResourceProviderFactory {
 
     private BlockingQueue<LogoutAction> adminLogoutActions = new LinkedBlockingDeque<>();
-    private BlockingQueue<LogoutToken> backChannelLogoutTokens = new LinkedBlockingDeque<>();
+    private BlockingQueue<String> backChannelLogoutTokens = new LinkedBlockingDeque<>();
     private BlockingQueue<LogoutToken> frontChannelLogoutTokens = new LinkedBlockingDeque<>();
     private BlockingQueue<PushNotBeforeAction> pushNotBeforeActions = new LinkedBlockingDeque<>();
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();
@@ -54,15 +53,12 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     private final OIDCClientData oidcClientData = new OIDCClientData();
     private ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests = new ConcurrentHashMap<>();
     private ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, String> intentClientBindings = new ConcurrentHashMap<>();
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        TestApplicationResourceProvider provider = new TestApplicationResourceProvider(session, adminLogoutActions,
-                backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications);
-
-        ResteasyProviderFactory.getInstance().injectProperties(provider);
-
-        return provider;
+        return new TestApplicationResourceProvider(session, adminLogoutActions,
+                backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings);
     }
 
     @Override
@@ -85,19 +81,24 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
     public static class OIDCClientData {
 
-        private KeyPair keyPair;
+        private List<OIDCKeyData> keys = new ArrayList<>();
+
         private String oidcRequest;
         private List<String> sectorIdentifierRedirectUris;
-        private String keyType = KeyType.RSA;
-        private String keyAlgorithm;
-        private KeyUse keyUse = KeyUse.SIG;
 
-        public KeyPair getSigningKeyPair() {
-            return keyPair;
+        public List<OIDCKeyData> getKeys() {
+            return keys;
         }
 
-        public void setSigningKeyPair(KeyPair signingKeyPair) {
-            this.keyPair = signingKeyPair;
+        public OIDCKeyData getFirstKey() {
+            return keys.isEmpty() ? null : keys.get(0);
+        }
+
+        public void addKey(OIDCKeyData key, boolean keepExistingKeys) {
+            if (!keepExistingKeys) {
+                this.keys = new ArrayList<>();
+            }
+            this.keys.add(0, key);
         }
 
         public String getOidcRequest() {
@@ -114,6 +115,28 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setSectorIdentifierRedirectUris(List<String> sectorIdentifierRedirectUris) {
             this.sectorIdentifierRedirectUris = sectorIdentifierRedirectUris;
+        }
+
+    }
+
+    public static class OIDCKeyData {
+
+        private KeyPair keyPair;
+
+        private String keyType = KeyType.RSA;
+        private String keyAlgorithm;
+        private KeyUse keyUse = KeyUse.SIG;
+        private String curve;
+
+        // Kid will be randomly generated (based on the key hash) if not provided here
+        private String kid;
+
+        public KeyPair getSigningKeyPair() {
+            return keyPair;
+        }
+
+        public void setSigningKeyPair(KeyPair signingKeyPair) {
+            this.keyPair = signingKeyPair;
         }
 
         public String getSigningKeyType() {
@@ -162,6 +185,22 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setKeyUse(KeyUse keyUse) {
             this.keyUse = keyUse;
+        }
+
+        public String getKid() {
+            return kid;
+        }
+
+        public void setKid(String kid) {
+            this.kid = kid;
+        }
+
+        public String getCurve() {
+            return curve;
+        }
+
+        public void setCurve(String curve) {
+            this.curve = curve;
         }
     }
 }

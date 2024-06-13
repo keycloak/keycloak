@@ -1,0 +1,45 @@
+name: Setup integration test
+description: Download Maven caches needed for integration tests
+
+inputs:
+  jdk-dist:
+    description: JDK distribution
+    required: false
+    default: temurin
+  jdk-version:
+    description: JDK version
+    required: false
+    default: "21"
+
+runs:
+  using: composite
+  steps:
+    - id: setup-java
+      name: Setup Java
+      uses: ./.github/actions/java-setup
+      with:
+        distribution: ${{ inputs.jdk-dist }}
+        java-version: ${{ inputs.jdk-version }}
+
+    - id: maven-cache
+      name: Maven cache
+      uses: ./.github/actions/maven-cache
+
+    - id: frontend-plugin-cache
+      name: Frontend Plugin Cache
+      uses: ./.github/actions/frontend-plugin-cache
+
+    - id: download-keycloak
+      name: Download Keycloak Maven artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: m2-keycloak.tzts
+
+    - id: extract-maven-artifacts
+      name: Extract Keycloak Maven artifacts
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          choco install zstandard
+        fi
+        tar -C ~/ --use-compress-program="zstd -d" -xf m2-keycloak.tzts

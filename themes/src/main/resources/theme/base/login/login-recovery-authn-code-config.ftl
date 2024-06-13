@@ -1,11 +1,12 @@
 <#import "template.ftl" as layout>
+<#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout; section>
 
 <#if section = "header">
     ${msg("recovery-code-config-header")}
 <#elseif section = "form">
     <!-- warning -->
-    <div class="pf-c-alert pf-m-warning pf-m-inline ${properties.kcRecoveryCodesWarning}" aria-label="Warning alert">
+    <div class="pf-c-alert pf-m-warning pf-m-inline ${properties.kcRecoveryCodesWarning!}" aria-label="Warning alert">
         <div class="pf-c-alert__icon">
             <i class="pficon-warning-triangle-o" aria-hidden="true"></i>
         </div>
@@ -25,7 +26,7 @@
     </ol>
 
     <!-- actions -->
-    <div class="${properties.kcRecoveryCodesActions}">
+    <div class="${properties.kcRecoveryCodesActions!}">
         <button id="printRecoveryCodes" class="pf-c-button pf-m-link" type="button">
             <i class="pficon-print"></i> ${msg("recovery-codes-print")}
         </button>
@@ -38,17 +39,18 @@
     </div>
 
     <!-- confirmation checkbox -->
-    <div class="${properties.kcCheckClass} ${properties.kcRecoveryCodesConfirmation}">
-        <input class="${properties.kcCheckInputClass}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck" 
+    <div class="${properties.kcFormOptionsClass!}">
+        <input class="${properties.kcCheckInputClass!}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck"
         onchange="document.getElementById('saveRecoveryAuthnCodesBtn').disabled = !this.checked;"
         />
-        <label class="${properties.kcCheckLabelClass}" for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>
+        <label for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>
     </div>
 
-    <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-recovery-codes-settings-form" method="post">
+    <form action="${url.loginAction}" class="${properties.kcFormGroupClass!}" id="kc-recovery-codes-settings-form" method="post">
         <input type="hidden" name="generatedRecoveryAuthnCodes" value="${recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesAsString}" />
         <input type="hidden" name="generatedAt" value="${recoveryAuthnCodesConfigBean.generatedAt?c}" />
         <input type="hidden" id="userLabel" name="userLabel" value="${msg("recovery-codes-label-default")}" />
+        <@passwordCommons.logoutOtherSessions/>
 
         <#if isAppInitiatedAction??>
             <input type="submit"
@@ -158,7 +160,7 @@
                 `@page { size: auto;  margin-top: 0; }
                 body { width: 480px; }
                 div { list-style-type: none; font-family: monospace }
-                p:first-of-type { margin-top: 48px }`
+                p:first-of-type { margin-top: 48px }`;
 
             return printFileContent =
                 "<html><style>" + styles + "</style><body>" +

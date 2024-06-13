@@ -1,10 +1,8 @@
 package org.keycloak.testsuite.cli.admin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.admin.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.TempFileResource;
 
@@ -13,17 +11,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import static org.hamcrest.Matchers.equalTo;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@AuthServerContainerExclude({AuthServer.REMOTE})
 public class KcAdmSessionTest extends AbstractAdmCliTest {
 
     static TypeReference<List<ObjectNode>> LIST_OF_JSON = new TypeReference<List<ObjectNode>>() {};
@@ -31,24 +32,35 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
     @Test
     public void test() throws IOException {
 
-        FileConfigHandler handler = initCustomConfigFile();
+        initCustomConfigFile();
 
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
-            // login as admin
-            loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin");
+            // login as admin using command option and env password
+            loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin", false);
+            loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin", true);
 
             // create realm
             KcAdmExec exe = execute("create realms --config '" + configFile.getName() + "' -s realm=demorealm -s enabled=true");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertTrue(exe.stderrLines().get(0).startsWith("Created "));
+            Assert.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
 
             // create user
-            exe = execute("create users --config '" + configFile.getName() + "' -r demorealm -s username=testuser -s enabled=true -i");
+            exe = execute("create users --config '" + configFile.getName() + "' -r demorealm -s username=testuser -s firstName=testuser -s lastName=testuser -s email=testuser@keycloak.org -s enabled=true -i");
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 0);
             String userId = exe.stdoutLines().get(0);
+
+            exe = execute("get users --config '" + configFile.getName() + "' -r demorealm -q q=username:testuser");
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+            String result = exe.stdoutString();
+            assertTrue(result.contains(userId));
+
+            exe = execute("get users --config '" + configFile.getName() + "' -r demorealm -q q=username:non-existent");
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+            String emptyResult = exe.stdoutString();
+            assertFalse(emptyResult.contains(userId));
 
             // add realm admin capabilities to user
             exe = execute("add-roles --config '" + configFile.getName() + "' -r demorealm --uusername testuser --cclientid realm-management --rolename realm-admin");
@@ -70,7 +82,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             List<ObjectNode> roles = loadJson(exe.stdout(), LIST_OF_JSON);
-            Assert.assertThat("expected three realm roles available", roles.size(), equalTo(3));
+            assertThat("expected three realm roles available", roles.size(), equalTo(3));
 
             // create realm role
             exe = execute("create roles --config '" + configFile.getName() + "' -s name=testrole -s 'description=Test role' -o");
@@ -85,7 +97,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             roles = loadJson(exe.stdout(), LIST_OF_JSON);
-            Assert.assertThat("expected four realm roles available", roles.size(), equalTo(4));
+            assertThat("expected four realm roles available", roles.size(), equalTo(4));
 
             // create client
             exe = execute("create clients --config '" + configFile.getName() + "' -s clientId=testclient -i");
@@ -98,14 +110,14 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("create clients/" + idOfClient + "/roles --config '" + configFile.getName() + "' -s name=clientrole  -s 'description=Test client role'");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertTrue(exe.stderrLines().get(0).startsWith("Created "));
+            Assert.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
 
             // make sure client role has been created
             exe = execute("get-roles --config '" + configFile.getName() + "' --cclientid testclient");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             roles = loadJson(exe.stdout(), LIST_OF_JSON);
-            Assert.assertThat("expected one role", roles.size(), equalTo(1));
+            assertThat("expected one role", roles.size(), equalTo(1));
             Assert.assertEquals("clientrole", roles.get(0).get("name").asText());
 
             // add created role to user - we are realm admin so we can add role to ourself
@@ -198,8 +210,8 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
     @Test
     public void testCompositeRoleCreationWithHigherVolumeOfRoles() throws Exception {
 
-        FileConfigHandler handler = initCustomConfigFile();
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        initCustomConfigFile();
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
             // login as admin
             loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin");

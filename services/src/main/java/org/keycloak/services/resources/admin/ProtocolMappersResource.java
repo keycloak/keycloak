@@ -18,9 +18,14 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import org.jboss.resteasy.reactive.NoCache;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -35,19 +40,19 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
@@ -61,27 +66,28 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ProtocolMappersResource {
     protected static final Logger logger = Logger.getLogger(ProtocolMappersResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    protected ProtocolMapperContainerModel client;
+    protected final ProtocolMapperContainerModel client;
 
-    protected AdminPermissionEvaluator auth;
-    protected AdminPermissionEvaluator.RequirePermissionCheck managePermission;
-    protected AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
+    protected final AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck managePermission;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
 
-    protected AdminEventBuilder adminEvent;
+    protected final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public ProtocolMappersResource(RealmModel realm, ProtocolMapperContainerModel client, AdminPermissionEvaluator auth,
+    public ProtocolMappersResource(KeycloakSession session, ProtocolMapperContainerModel client, AdminPermissionEvaluator auth,
                                    AdminEventBuilder adminEvent,
                                    AdminPermissionEvaluator.RequirePermissionCheck managePermission,
                                    AdminPermissionEvaluator.RequirePermissionCheck viewPermission) {
-        this.realm = realm;
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.client = client;
         this.adminEvent = adminEvent.resource(ResourceType.PROTOCOL_MAPPER);
@@ -100,12 +106,14 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("protocol/{protocol}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
+    @Operation(summary = "Get mappers by name for a specific protocol")
     public Stream<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         viewPermission.require();
 
         return client.getProtocolMappersStream()
                 .filter(mapper -> isEnabled(session, mapper) && Objects.equals(mapper.getProtocol(), protocol))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(this::toEffectiveProtocolMapperRep);
     }
 
     /**
@@ -117,6 +125,8 @@ public class ProtocolMappersResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
+    @Operation(summary = "Create a mapper")
     public Response createMapper(ProtocolMapperRepresentation rep) {
         managePermission.require();
 
@@ -128,7 +138,7 @@ public class ProtocolMappersResource {
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
 
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Protocol mapper exists with same name");
+            throw ErrorResponse.exists("Protocol mapper exists with same name");
         }
 
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
@@ -141,6 +151,9 @@ public class ProtocolMappersResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
+    @Operation(summary = "Create multiple mappers")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         managePermission.require();
 
@@ -162,12 +175,14 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("models")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
+    @Operation(summary = "Get mappers")
     public Stream<ProtocolMapperRepresentation> getMappers() {
         viewPermission.require();
 
         return client.getProtocolMappersStream()
                 .filter(mapper -> isEnabled(session, mapper))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(this::toEffectiveProtocolMapperRep);
     }
 
     /**
@@ -180,11 +195,24 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("models/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ProtocolMapperRepresentation getMapperById(@PathParam("id") String id) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
+    @Operation(summary = "Get mapper by id")
+    public ProtocolMapperRepresentation getMapperById(@Parameter(description = "Mapper id") @PathParam("id") String id) {
         viewPermission.require();
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+        return toEffectiveProtocolMapperRep(model);
+    }
+
+    private ProtocolMapperRepresentation toEffectiveProtocolMapperRep(ProtocolMapperModel model) {
+        ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
+        if (mapper == null) {
+            logger.warnf("Protocol mapper provider '%s' not found. Configured on mapper with ID '%s'", model.getProtocolMapper(), model.getId());
+            throw new NotFoundException("Protocol mapper provider not found");
+        }
+
+        model = mapper.getEffectiveModel(session, realm, model);
         return ModelToRepresentation.toRepresentation(model);
     }
 
@@ -198,7 +226,9 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("models/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(@PathParam("id") String id, ProtocolMapperRepresentation rep) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
+    @Operation(summary = "Update the mapper")
+    public void update(@Parameter(description = "Mapper id") @PathParam("id") String id, ProtocolMapperRepresentation rep) {
         managePermission.require();
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
@@ -219,7 +249,9 @@ public class ProtocolMappersResource {
     @DELETE
     @NoCache
     @Path("models/{id}")
-    public void delete(@PathParam("id") String id) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
+    @Operation(summary = "Delete the mapper")
+    public void delete(@Parameter(description = "Mapper id") @PathParam("id") String id) {
         managePermission.require();
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);

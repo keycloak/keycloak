@@ -20,6 +20,7 @@ package org.keycloak.federation.kerberos.impl;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.KerberosJdkProvider;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.federation.kerberos.KerberosPrincipal;
 import org.keycloak.models.ModelException;
 
 import javax.security.auth.Subject;
@@ -70,6 +71,7 @@ public class KerberosUsernamePasswordAuthenticator {
             logger.debugf("Message from kerberos: %s", message);
 
             checkKerberosServerAvailable(le);
+            checkKerberosUsername(le);
 
             // Bit cumbersome, but seems to work with tested kerberos servers
             boolean exists = (!message.contains("Client not found"));
@@ -92,6 +94,7 @@ public class KerberosUsernamePasswordAuthenticator {
             return true;
         } catch (LoginException le) {
             checkKerberosServerAvailable(le);
+            checkKerberosUsername(le);
 
             logger.debug("Failed to authenticate user " + username, le);
             return false;
@@ -104,8 +107,16 @@ public class KerberosUsernamePasswordAuthenticator {
             message.contains("CANNOT LOCATE") ||
             message.contains("CANNOT CONTACT") ||
             message.contains("CANNOT FIND") ||
-            message.contains("UNKNOWN ERROR")) {
+            message.contains("UNKNOWN ERROR") ||
+            message.contains("RECEIVE TIMED OUT")) {
             throw new ModelException("Kerberos unreachable", le);
+        }
+    }
+
+    protected void checkKerberosUsername(LoginException le) {
+        String message = le.getMessage();
+        if (message.contains("IllegalArgumentException")) {
+            throw new ModelException("Kerberos illegal username", le);
         }
     }
 
@@ -126,7 +137,7 @@ public class KerberosUsernamePasswordAuthenticator {
                 createJaasConfiguration());
 
         loginContext.login();
-        logger.debug("Principal " + principal + " authenticated succesfully");
+        logger.debug("Principal " + principal + " authenticated successfully");
         return loginContext.getSubject();
     }
 
@@ -142,20 +153,12 @@ public class KerberosUsernamePasswordAuthenticator {
     }
 
 
-    protected String getKerberosPrincipal(String username) throws LoginException {
+    public String getKerberosPrincipal(String username) throws LoginException {
         if (username.contains("@")) {
-            String[] tokens = username.split("@");
-
-            String kerberosRealm = tokens[1];
-            if (!kerberosRealm.toUpperCase().equals(config.getKerberosRealm())) {
-                logger.warn("Invalid kerberos realm. Expected realm: " + config.getKerberosRealm() + ", username: " + username);
-                throw new LoginException("Client not found");
-            }
-
-            username = tokens[0];
+            return new KerberosPrincipal(username).toString();
+        } else {
+            return username + "@" + config.getKerberosRealm();
         }
-
-        return username + "@" + config.getKerberosRealm();
     }
 
 

@@ -17,7 +17,13 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.jboss.resteasy.spi.HttpResponse;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -25,38 +31,43 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
  * @resource Client Initial Access
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientInitialAccessResource {
 
     private final AdminPermissionEvaluator auth;
     private final RealmModel realm;
     private final AdminEventBuilder adminEvent;
 
-    @Context
     protected KeycloakSession session;
 
-    public ClientInitialAccessResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public ClientInitialAccessResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
     }
@@ -70,11 +81,22 @@ public class ClientInitialAccessResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config, @Context final HttpResponse response) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
+    @Operation( summary = "Create a new initial access token.")
+    @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = ClientInitialAccessCreatePresentation.class)))
+    public Object create(ClientInitialAccessCreatePresentation config) {
         auth.clients().requireManage();
 
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
         int count = config.getCount() != null ? config.getCount() : 1;
+        if (expiration < 0) {
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation("Invalid value for expiration", "The expiration time interval cannot be less than 0");
+            return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+        }
+        if (count < 0) {
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation("Invalid value for count", "The count cannot be less than 0");
+            return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+        }
 
         ClientInitialAccessModel clientInitialAccessModel = session.realms().createClientInitialAccessModel(realm, expiration, count);
 
@@ -85,14 +107,18 @@ public class ClientInitialAccessResource {
         String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, clientInitialAccessModel);
         rep.setToken(token);
 
+        HttpResponse response = session.getContext().getHttpResponse();
+
         response.setStatus(Response.Status.CREATED.getStatusCode());
-        response.getOutputHeaders().add(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());
+        response.addHeader(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());
 
         return rep;
     }
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
+    @Operation()
     public Stream<ClientInitialAccessPresentation> list() {
         auth.clients().requireView();
 
@@ -101,6 +127,8 @@ public class ClientInitialAccessResource {
 
     @DELETE
     @Path("{id}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
+    @Operation()
     public void delete(final @PathParam("id") String id) {
         auth.clients().requireManage();
 

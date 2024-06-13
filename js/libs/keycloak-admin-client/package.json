@@ -1,0 +1,66 @@
+{
+  "name": "@keycloak/keycloak-admin-client",
+  "version": "999.0.0-SNAPSHOT",
+  "description": "A client to interact with Keycloak's Administration API",
+  "type": "module",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "types": "lib/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "wireit",
+    "lint": "wireit",
+    "test": "wireit",
+    "prepublishOnly": "pnpm build"
+  },
+  "wireit": {
+    "build": {
+      "command": "tsc --pretty",
+      "files": [
+        "src/**",
+        "package.json",
+        "tsconfig.json"
+      ],
+      "output": [
+        "lib/**"
+      ]
+    },
+    "lint": {
+      "command": "eslint ."
+    },
+    "test": {
+      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000"
+    }
+  },
+  "dependencies": {
+    "camelize-ts": "^3.0.0",
+    "url-join": "^5.0.0",
+    "url-template": "^3.1.1"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@types/chai": "^4.3.16",
+    "@types/lodash-es": "^4.17.12",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.14.2",
+    "chai": "^5.1.1",
+    "lodash-es": "^4.17.21",
+    "mocha": "^10.4.0",
+    "ts-node": "^10.9.2"
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/libs/keycloak-admin-client"
+  },
+  "homepage": "https://www.keycloak.org/"
+}

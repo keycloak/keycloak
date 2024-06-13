@@ -11,7 +11,6 @@ import org.apache.http.util.EntityUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;
@@ -26,7 +25,7 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -196,8 +195,8 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
 
         if (beforeStepChecker != null && beforeStepChecker instanceof SessionStateChecker) {
             SessionStateChecker sessionStateChecker = (SessionStateChecker) beforeStepChecker;
-            sessionStateChecker.setUserSessionProvider(session -> session.getProvider(SingleUseObjectProvider.class).get(artifact).get(SamlProtocol.USER_SESSION_ID));
-            sessionStateChecker.setClientSessionProvider(session -> session.getProvider(SingleUseObjectProvider.class).get(artifact).get(SamlProtocol.CLIENT_SESSION_ID));
+            sessionStateChecker.setUserSessionProvider(session -> session.singleUseObjects().get(artifact).get(SamlProtocol.USER_SESSION_ID));
+            sessionStateChecker.setClientSessionProvider(session -> session.singleUseObjects().get(artifact).get(SamlProtocol.CLIENT_SESSION_ID));
         }
 
         HttpPost post =  Soap.createMessage().addToBody(DocumentUtil.getDocument(transformed)).buildHttpPost(authServerSamlUrl);

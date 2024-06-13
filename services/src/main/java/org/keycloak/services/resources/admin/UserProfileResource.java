@@ -16,58 +16,99 @@
  */
 package org.keycloak.services.resources.admin;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
+
+import java.util.Collections;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.representations.userprofile.config.UPConfig;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class UserProfileResource {
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
+    protected final AdminEventBuilder adminEvent;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
 
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
-
-    public UserProfileResource(RealmModel realm, AdminPermissionEvaluator auth) {
-        this.realm = realm;
+    public UserProfileResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.USER_PROFILE);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public String getConfiguration() {
-        auth.realm().requireViewRealm();
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(description = "Get the configuration for the user profile")
+    public UPConfig getConfiguration() {
+        auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
+    }
+
+    @GET
+    @Path("/metadata")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(description = "Get the UserProfileMetadata from the configuration")
+    public UserProfileMetadata getMetadata() {
+        auth.requireAnyAdminRole();
+        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
+        return createUserProfileMetadata(session, profile);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response update(String text) {
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(description = "Set the configuration for the user profile")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
+    public Response update(UPConfig config) {
         auth.realm().requireManageRealm();
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);
 
         try {
-            t.setConfiguration(text);
+            t.setConfiguration(config);
         } catch (ComponentValidationException e) {
             //show validation result containing details about error
-            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(session.getContext().getUri())
+                .representation(config)
+                .success();
 
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
     }
-
 }

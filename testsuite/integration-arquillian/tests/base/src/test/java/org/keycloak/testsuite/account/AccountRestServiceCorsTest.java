@@ -32,17 +32,13 @@ import org.openqa.selenium.JavascriptExecutor;
 
 import java.io.IOException;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountRestServiceCorsTest extends AbstractTestRealmKeycloakTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180/auth";

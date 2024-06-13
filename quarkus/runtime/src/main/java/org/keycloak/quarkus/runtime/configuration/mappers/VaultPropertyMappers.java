@@ -9,7 +9,7 @@ final class VaultPropertyMappers {
     private VaultPropertyMappers() {
     }
 
-    public static PropertyMapper[] getVaultPropertyMappers() {
+    public static PropertyMapper<?>[] getVaultPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(VaultOptions.VAULT)
                         .paramLabel("provider")
@@ -18,16 +18,17 @@ final class VaultPropertyMappers {
                         .to("kc.spi-vault-file-dir")
                         .paramLabel("dir")
                         .build(),
-                fromOption(VaultOptions.VAULT_UNMAPPED)
-                        .to("quarkus.vault.")
+                fromOption(VaultOptions.VAULT_FILE)
+                        .to("kc.spi-vault-keystore-file")
+                        .paramLabel("file")
                         .build(),
-                fromOption(VaultOptions.VAULT_URL)
-                        .to("quarkus.vault.url")
-                        .paramLabel("paths")
+                fromOption(VaultOptions.VAULT_PASS)
+                        .to("kc.spi-vault-keystore-pass")
+                        .paramLabel("pass")
                         .build(),
-                fromOption(VaultOptions.VAULT_KV_PATHS)
-                        .to("kc.spi-vault-hashicorp-paths")
-                        .paramLabel("paths")
+                fromOption(VaultOptions.VAULT_TYPE)
+                        .to("kc.spi-vault-keystore-type")
+                        .paramLabel("type")
                         .build()
         };
     }

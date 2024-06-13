@@ -1,0 +1,38 @@
+name: Install Chrome browser and driver for Testing
+description: Download and install the latest available Chrome for Testing and Chromedriver
+
+runs:
+  using: composite
+  steps:
+    - id: cache-chrome-browser
+      name: Chrome browser cache
+      uses: actions/cache@v4
+      with:
+        path: ./chrome
+        key: chrome
+
+    - id: cache-chromedriver
+      name: Chrome driver cache
+      uses: actions/cache@v4
+      with:
+        path: ./chromedriver
+        key: chromedriver
+
+    - id: install-chrome
+      name: Install Chrome
+      shell: bash
+      run: |
+        sudo apt-get remove google-chrome-stable
+        npx @puppeteer/browsers install chrome
+        npx @puppeteer/browsers install chromedriver
+        # In case there's more than one version of each package, let's use only the latest
+        LATEST_CHROME=$(ls -td $PWD/chrome/*/ | head -1)
+        LATEST_CHROMEDRIVER=$(ls -td $PWD/chromedriver/*/ | head -1)
+        sudo ln -s -f "${LATEST_CHROME}chrome-linux64/chrome" /usr/bin/google-chrome-stable
+        sudo cp -u "${LATEST_CHROMEDRIVER}chromedriver-linux64/chromedriver" $CHROMEWEBDRIVER/
+        # Remove any older version of browser or driver so we don't keep it in the cache
+        cd chrome
+        rm -R $(ls -lt | grep '^d' | tail -1  | tr " " "\n" | tail -1)
+        cd ../chromedriver
+        rm -R $(ls -lt | grep '^d' | tail -1  | tr " " "\n" | tail -1)
+        cd ..

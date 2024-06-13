@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Map;
 
 
-import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
+import jakarta.servlet.Servlet;
 
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ErrorPage;

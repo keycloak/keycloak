@@ -31,8 +31,6 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
-import org.jgroups.JChannel;
 import org.junit.Ignore;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -77,8 +75,7 @@ public class DistributedCacheConcurrentWritesTest {
 
     private static SessionEntityWrapper<UserSessionEntity> createEntityInstance(String id) {
         // Create initial item
-        UserSessionEntity session = new UserSessionEntity();
-        session.setId(id);
+        UserSessionEntity session = new UserSessionEntity(id);
         session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);
@@ -120,9 +117,6 @@ public class DistributedCacheConcurrentWritesTest {
         long took = System.currentTimeMillis() - start;
 
         System.out.println("Test finished. Took: " + took + " ms. Cache size: " + cache1.size());
-
-        // JGroups statistics
-        printStats(cache1);
     }
 
 
@@ -232,18 +226,4 @@ public class DistributedCacheConcurrentWritesTest {
         }
     }
 
-
-    private static void printStats(BasicCache cache) {
-        if (cache instanceof Cache) {
-            Cache cache1 = (Cache) cache;
-
-            JChannel channel = ((JGroupsTransport)cache1.getAdvancedCache().getRpcManager().getTransport()).getChannel();
-
-            System.out.println("Sent MB: " + channel.getSentBytes() / 1000000 + ", sent messages: " + channel.getSentMessages() + ", received MB: " + channel.getReceivedBytes() / 1000000 +
-                    ", received messages: " + channel.getReceivedMessages());
-        } else {
-            Map<String, String> stats = ((RemoteCache) cache).stats().getStatsMap();
-            System.out.println("Stats: " + stats);
-        }
-    }
 }

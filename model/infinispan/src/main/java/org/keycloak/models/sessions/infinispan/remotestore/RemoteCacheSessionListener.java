@@ -17,8 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.VersionedValue;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
@@ -29,21 +35,17 @@ import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
 import org.infinispan.client.hotrod.event.ClientEvent;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.connections.infinispan.InfinispanUtil;
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
-
-import org.infinispan.client.hotrod.VersionedValue;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
@@ -60,8 +62,8 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     private RemoteCache<K, SessionEntityWrapper<V>> remoteCache;
     private TopologyInfo topologyInfo;
     private ClientListenerExecutorDecorator<K> executor;
-    private BiFunction<RealmModel, V, Long> lifespanMsLoader;
-    private BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader;
+    private SessionFunction<V> lifespanMsLoader;
+    private SessionFunction<V> maxIdleTimeMsLoader;
     private KeycloakSessionFactory sessionFactory;
 
 
@@ -70,7 +72,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
 
     protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
-                        BiFunction<RealmModel, V, Long> lifespanMsLoader, BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader) {
+                        SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
         this.cache = cache;
         this.remoteCache = remoteCache;
 
@@ -95,7 +97,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
                 // Doesn't work due https://issues.jboss.org/browse/ISPN-9323. Needs to explicitly retrieve and create it
                 //cache.get(key);
 
-                createRemoteEntityInCache(key, event.getVersion());
+                createRemoteEntityInCache(key);
 
             });
         }
@@ -117,7 +119,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     }
 
 
-    protected void createRemoteEntityInCache(K key, long eventVersion) {
+    protected void createRemoteEntityInCache(K key) {
         VersionedValue<SessionEntityWrapper<V>> remoteSessionVersioned = remoteCache.getWithMetadata(key);
 
         // Maybe can happen under some circumstances that remoteCache doesn't yet contain the value sent in the event (maybe just theoretically...)
@@ -135,14 +137,20 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, (session -> {
 
             RealmModel realm = session.realms().getRealm(newWrapper.getEntity().getRealmId());
-            long lifespanMs = lifespanMsLoader.apply(realm, newWrapper.getEntity());
-            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, newWrapper.getEntity());
+            ClientModel client = newWrapper.getClientIfNeeded(realm);
+            long lifespanMs = lifespanMsLoader.apply(realm, client, newWrapper.getEntity());
+            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, client, newWrapper.getEntity());
 
-            logger.tracef("Calling putIfAbsent for entity '%s' in the cache '%s' . lifespan: %d ms, maxIdleTime: %d ms", key, remoteCache.getName(), lifespanMs, maxIdleTimeMs);
+            // It is possible the session may be expired by the time this has replicated, double check before inserting
+            if (maxIdleTimeMs != SessionTimeouts.ENTRY_EXPIRED_FLAG && lifespanMs != SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+                logger.tracef("Calling putIfAbsent for entity '%s' in the cache '%s' . lifespan: %d ms, maxIdleTime: %d ms", key, remoteCache.getName(), lifespanMs, maxIdleTimeMs);
+                // Using putIfAbsent. Theoretic possibility that entity was already put to cache by someone else
+                cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
+                      .putIfAbsent(key, newWrapper, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+            } else {
+                logger.tracef("Not calling putIfAbsent for entity '%s' in the cache '%s' as entry is already expired", key, remoteCache.getName());
+            }
 
-            // Using putIfAbsent. Theoretic possibility that entity was already put to cache by someone else
-            cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
-                    .putIfAbsent(key, newWrapper, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
         }));
     }
@@ -187,8 +195,9 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, (session -> {
 
                 RealmModel realm = session.realms().getRealm(sessionWrapper.getEntity().getRealmId());
-                long lifespanMs = lifespanMsLoader.apply(realm, sessionWrapper.getEntity());
-                long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, sessionWrapper.getEntity());
+                ClientModel client = sessionWrapper.getClientIfNeeded(realm);
+                long lifespanMs = lifespanMsLoader.apply(realm, client, sessionWrapper.getEntity());
+                long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, client, sessionWrapper.getEntity());
 
                 // We received event from remoteCache, so we won't update it back
                 replaced.set(cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
@@ -240,20 +249,8 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         return result;
     }
 
-
-
-    @ClientListener(includeCurrentState = true)
-    public static class FetchInitialStateCacheListener extends RemoteCacheSessionListener {
-    }
-
-
-    @ClientListener(includeCurrentState = false)
-    public static class DontFetchInitialStateCacheListener extends RemoteCacheSessionListener {
-    }
-
-
     public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
-                                                                                         BiFunction<RealmModel, V, Long> lifespanMsLoader, BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader) {
+                                                                                         SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
         /*boolean isCoordinator = InfinispanUtil.isCoordinator(cache);
 
         // Just cluster coordinator will fetch userSessions from remote cache.

@@ -1,12 +1,12 @@
 package org.keycloak.protocol.saml;
 
-import com.google.common.base.Strings;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.utils.StringUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class DefaultSamlArtifactResolver implements ArtifactResolver {
 
         logger.tracef("Artifact response for artifact %s, is %s", artifact, artifactResponseString);
 
-        if (Strings.isNullOrEmpty(artifactResponseString)) {
+        if (StringUtil.isNullOrEmpty(artifactResponseString)) {
             throw new ArtifactResolverProcessingException("Artifact not present in ClientSession.");
         }
 

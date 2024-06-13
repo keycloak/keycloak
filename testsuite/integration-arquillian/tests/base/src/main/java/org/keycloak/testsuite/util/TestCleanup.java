@@ -19,7 +19,7 @@ package org.keycloak.testsuite.util;
 
 import java.util.List;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -52,7 +52,7 @@ public class TestCleanup {
     private final String realmName;
     private final ConcurrentLinkedDeque<Runnable> genericCleanups = new ConcurrentLinkedDeque<>();
 
-    // Key is kind of entity (eg. "client", "role", "user" etc), Values are all kind of entities of given type to cleanup
+    // Key is kind of entity (eg. "client", "role", "user" etc), Values are all IDs of entities of given type to cleanup
     private final ConcurrentMultivaluedHashMap<String, String> entities = new ConcurrentMultivaluedHashMap<>();
 
 
@@ -61,11 +61,6 @@ public class TestCleanup {
         this.realmName = realmName;
     }
 
-
-    public TestCleanup addCleanup(Runnable r) {
-        genericCleanups.add(r);
-        return this;
-    }
 
     public TestCleanup addCleanup(AutoCloseable c) {
         genericCleanups.add(() -> {

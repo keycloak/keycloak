@@ -4,8 +4,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME;
 
 import java.util.List;
@@ -23,6 +22,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.keycloak.testsuite.util.AccountHelper;
 
 /**
  *
@@ -109,7 +109,8 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
 
         assertUserAttributes(initialUserAttributes, userRep);
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         // update user in provider realm
         UserRepresentation userRepProvider = findUser(bc.providerRealmName(), bc.getUserLogin(), email);

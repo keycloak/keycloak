@@ -51,7 +51,7 @@ public class TestLdapConnectionRealmAdminProvider implements AdminRealmResourceP
 
     @Override
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new TestLdapConnectionResource(realm, auth);
+        return new TestLdapConnectionResource(session, auth);
     }
 
 }

@@ -67,25 +67,18 @@ As an example, to run tests using a MySQL docker container on Undertow auth-serv
 
 If you want to run tests using a pre-configured Keycloak distribution (instead of Undertow):
 
-    mvn -f testsuite/integration-arquillian clean verify -Pdb-mysql,jpa,auth-server-wildfly
+    mvn -f testsuite/integration-arquillian clean verify -Pdb-mysql,jpa,auth-server-quarkus
 
-Note that you must always activate the `jpa` profile when using auth-server-wildfly.
+Note that you must always activate the `jpa` profile when using auth-server-quarkus.
 
 If the mvn command fails for any reason, it may also fail to remove the container which
 must be then removed manually.
 
-For Oracle databases, neither JDBC driver nor the image are publicly available
-due to licensing restrictions and require preparation of the environment. You
-first need to download the JDBC driver and install it to your local maven repo
-(feel free to specify GAV and file according to the one you would download):
+For Oracle databases, the images are not publicly available due to licensing restrictions. 
 
-    mvn install:install-file -DgroupId=com.oracle -DartifactId=ojdbc7 -Dversion=12.1.0 -Dpackaging=jar -Dfile=ojdbc7.jar -DgeneratePom=true
-
-Then build the Docker image per instructions at
-https://github.com/oracle/docker-images/tree/main/OracleDatabase. The last
-step is running which might require updating the `jdbc.mvn.groupId`,
-`jdbc.mvn.artifactId`, and `jdbc.mvn.version` according to the parameters you
-used in the command above, and `docker.database.image` if you used a different
+Build the Docker image per instructions at
+https://github.com/oracle/docker-images/tree/main/OracleDatabase.
+Update the property `docker.database.image` if you used a different
 name or tag for the image.
 
 Note that Docker containers may occupy some space even after termination, and
@@ -102,11 +95,11 @@ the allocation and deallocation need to happen when building the `integration-ar
 it happens in other cases).
 
 In order to use the DB Allocator Service, you must use the `jpa` profile with one of the `db-allocator-*`. Here's a full example to
-run JPA with Auth Server Wildfly and MSSQL 2016:
+run JPA with Auth Server Quarkus and MSSQL 2016:
 
 ```
 mvn -f testsuite/integration-arquillian/pom.xml clean verify \
-    -Pjpa,auth-server-wildfly,db-allocator-db-mssql2016 \
+    -Pjpa,auth-server-quarkus,db-allocator-db-mssql2016 \
     -Ddballocator.uri=<<db-allocator-servlet-url>> \
     -Ddballocator.user=<<db-allocator-user>> \
     -Dmaven.test.failure.ignore=true

@@ -16,9 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 import static org.keycloak.util.JsonSerialization.readValue;
 
+import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,33 +30,38 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.DefaultValue;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.StreamingOutput;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
@@ -70,17 +75,16 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
-import org.keycloak.exportimport.util.ExportOptions;
-import org.keycloak.exportimport.util.ExportUtils;
-import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.exportimport.ExportAdapter;
+import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -88,9 +92,9 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.partialimport.PartialImportManager;
-import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.partialimport.ErrorResponseException;
+import org.keycloak.partialimport.PartialImportResult;
+import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -100,18 +104,20 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.storage.LegacyStoreSyncEvent;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.ExportImportManager;
+import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
@@ -122,27 +128,26 @@ import org.keycloak.utils.ReservedCharValidator;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class RealmAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
-    protected AdminPermissionEvaluator auth;
-    protected RealmModel realm;
-    private TokenManager tokenManager;
-    private AdminEventBuilder adminEvent;
+    protected final AdminPermissionEvaluator auth;
+    protected final RealmModel realm;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected ClientConnection connection;
+    protected final ClientConnection connection;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    public RealmAdminResource(AdminPermissionEvaluator auth, RealmModel realm, TokenManager tokenManager, AdminEventBuilder adminEvent) {
+    public RealmAdminResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
-        this.tokenManager = tokenManager;
-        this.adminEvent = adminEvent.realm(realm).resource(ResourceType.REALM);
+        this.realm = session.getContext().getRealm();
+        this.connection = session.getContext().getConnection();
+        this.adminEvent = adminEvent.resource(ResourceType.REALM);
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     /**
@@ -154,6 +159,8 @@ public class RealmAdminResource {
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Base path for importing clients under this realm.")
     public ClientRepresentation convertClientDescription(String description) {
         auth.clients().requireManage();
 
@@ -176,9 +183,7 @@ public class RealmAdminResource {
      */
     @Path("attack-detection")
     public AttackDetectionResource getAttackDetection() {
-        AttackDetectionResource resource = new AttackDetectionResource(auth, realm, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new AttackDetectionResource(session, auth, adminEvent);
     }
 
     /**
@@ -188,9 +193,7 @@ public class RealmAdminResource {
      */
     @Path("clients")
     public ClientsResource getClients() {
-        ClientsResource clientsResource = new ClientsResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
-        return clientsResource;
+        return new ClientsResource(session, auth, adminEvent);
     }
 
     /**
@@ -211,9 +214,7 @@ public class RealmAdminResource {
      */
     @Path("client-scopes")
     public ClientScopesResource getClientScopes() {
-        ClientScopesResource clientScopesResource = new ClientScopesResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientScopesResource);
-        return clientScopesResource;
+        return new ClientScopesResource(session, auth, adminEvent);
     }
 
     /**
@@ -221,9 +222,7 @@ public class RealmAdminResource {
      */
     @Path("localization")
     public RealmLocalizationResource getLocalization() {
-        RealmLocalizationResource resource = new RealmLocalizationResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new RealmLocalizationResource(session, auth);
     }
 
     /**
@@ -235,6 +234,8 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-default-client-scopes")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get realm default client scopes.  Only name and ids are returned.")
     public Stream<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
         return getDefaultClientScopes(true);
     }
@@ -255,6 +256,8 @@ public class RealmAdminResource {
     @PUT
     @NoCache
     @Path("default-default-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void addDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
         addDefaultClientScope(clientScopeId,true);
     }
@@ -275,6 +278,8 @@ public class RealmAdminResource {
     @DELETE
     @NoCache
     @Path("default-default-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void removeDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
         auth.clients().requireManageClientScopes();
 
@@ -297,6 +302,8 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-optional-client-scopes")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get realm optional client scopes.  Only name and ids are returned.")
     public Stream<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
         return getDefaultClientScopes(false);
     }
@@ -304,6 +311,8 @@ public class RealmAdminResource {
     @PUT
     @NoCache
     @Path("default-optional-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void addDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
         addDefaultClientScope(clientScopeId, false);
     }
@@ -311,6 +320,8 @@ public class RealmAdminResource {
     @DELETE
     @NoCache
     @Path("default-optional-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void removeDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
         removeDefaultDefaultClientScope(clientScopeId);
     }
@@ -322,16 +333,12 @@ public class RealmAdminResource {
      */
     @Path("clients-initial-access")
     public ClientInitialAccessResource getClientInitialAccess() {
-        ClientInitialAccessResource resource = new ClientInitialAccessResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientInitialAccessResource(session, auth, adminEvent);
     }
 
     @Path("client-registration-policy")
     public ClientRegistrationPolicyResource getClientRegistrationPolicy() {
-        ClientRegistrationPolicyResource resource = new ClientRegistrationPolicyResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientRegistrationPolicyResource(session, auth, adminEvent);
     }
 
     /**
@@ -341,9 +348,7 @@ public class RealmAdminResource {
      */
     @Path("components")
     public ComponentResource getComponents() {
-        ComponentResource resource = new ComponentResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ComponentResource(session, auth, adminEvent);
     }
 
     /**
@@ -366,6 +371,8 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get the top-level representation of the realm It will not include nested information like User and Client representations.")
     public RealmRepresentation getRealm() {
         if (auth.realm().canViewRealm()) {
             return ModelToRepresentation.toRepresentation(session, realm, false);
@@ -374,6 +381,14 @@ public class RealmAdminResource {
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
+            rep.setDefaultLocale(realm.getDefaultLocale());
+            rep.setDisplayName(realm.getDisplayName());
+            rep.setDisplayNameHtml(realm.getDisplayNameHtml());
+            rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
+
+            if (auth.users().canView()) {
+                rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
+            }
 
             if (auth.realm().canViewIdentityProviders()) {
                 RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
@@ -396,15 +411,18 @@ public class RealmAdminResource {
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Update the top-level information of the realm Any user, roles or client information in the representation will be ignored.",
+            description = "This will only update top-level attributes of the realm.")
     public Response updateRealm(final RealmRepresentation rep) {
         auth.realm().requireManageRealm();
 
         logger.debug("updating realm: " + realm.getName());
 
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
-            return ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
-        
+
         ReservedCharValidator.validate(rep.getRealm());
         ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
@@ -413,7 +431,7 @@ public class RealmAdminResource {
                 try {
                     KeyPairVerifier.verify(rep.getPrivateKey(), rep.getPublicKey());
                 } catch (VerificationException e) {
-                    return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+                    throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
                 }
             }
 
@@ -421,10 +439,10 @@ public class RealmAdminResource {
                 try {
                     X509Certificate cert = PemUtils.decodeCertificate(rep.getCertificate());
                     if (cert == null) {
-                        return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
+                        throw ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                     }
                 } catch (Exception e)  {
-                    return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
+                    throw ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                 }
             }
 
@@ -432,25 +450,28 @@ public class RealmAdminResource {
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
-            LegacyStoreSyncEvent.fire(session, realm, false);
+            StoreSyncEvent.fire(session, realm, false);
 
             // This populates the map in DefaultKeycloakContext to be used when treating the event
             session.getContext().getUri();
 
-            adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
-            
+            adminEvent.operation(OperationType.UPDATE).representation(rep).success();
+
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
                 session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
             }
-            
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Realm with same name exists");
+            throw ErrorResponse.exists("Realm with same name exists");
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
-            return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -459,12 +480,24 @@ public class RealmAdminResource {
      *
      */
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Delete the realm")
     public void deleteRealm() {
         auth.realm().requireManageRealm();
+
+        if (Config.getAdminRealm().equals(realm.getName())) {
+            throw ErrorResponse.error("Can't remove master realm", Status.BAD_REQUEST);
+        }
 
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         }
+
+        // The delete event is associated with the realm of the user executing the operation,
+        // instead of the realm being deleted.
+        AdminEventBuilder deleteAdminEvent = new AdminEventBuilder(auth.adminAuth().getRealm(), auth.adminAuth(), session, connection);
+        deleteAdminEvent.operation(OperationType.DELETE).resource(ResourceType.REALM)
+                .realm(auth.adminAuth().getRealm()).resourcePath(realm.getName()).success();
     }
 
     /**
@@ -474,16 +507,15 @@ public class RealmAdminResource {
      */
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(users);
-        //resourceContext.initResource(users);
-        return users;
+        return new UsersResource(session, auth, adminEvent);
     }
 
     @NoCache
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("users-management-permissions")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public ManagementPermissionReference getUserMgmtPermissions() {
         auth.realm().requireViewRealm();
 
@@ -501,6 +533,8 @@ public class RealmAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Path("users-management-permissions")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public ManagementPermissionReference setUsersManagementPermissionsEnabled(ManagementPermissionReference ref) {
         auth.realm().requireManageRealm();
 
@@ -530,7 +564,6 @@ public class RealmAdminResource {
         if (provider != null) {
             Object resource = provider.getResource(session, realm, auth, adminEvent);
             if (resource != null) {
-                ResteasyProviderFactory.getInstance().injectProperties(resource);
                 return resource;
             }
         }
@@ -540,10 +573,7 @@ public class RealmAdminResource {
 
     @Path("authentication")
     public AuthenticationManagementResource flows() {
-        AuthenticationManagementResource resource = new AuthenticationManagementResource(realm, session, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        //resourceContext.initResource(resource);
-        return resource;
+        return new AuthenticationManagementResource(session, auth, adminEvent);
 
     }
 
@@ -554,10 +584,7 @@ public class RealmAdminResource {
      */
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
-         RoleByIdResource resource = new RoleByIdResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        //resourceContext.initResource(resource);
-        return resource;
+         return new RoleByIdResource(session, auth, adminEvent);
     }
 
     /**
@@ -565,7 +592,10 @@ public class RealmAdminResource {
      *
      */
     @Path("push-revocation")
+    @Produces(MediaType.APPLICATION_JSON)
     @POST
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Push the realm's revocation policy to any client that has an admin url associated with it.")
     public GlobalRequestResult pushRevocation() {
         auth.realm().requireManageRealm();
 
@@ -582,6 +612,8 @@ public class RealmAdminResource {
     @Path("logout-all")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Removes all user sessions.", description = "Any client that has an admin url will also be told to invalidate any sessions they have.")
     public GlobalRequestResult logoutAll() {
         auth.users().requireManage();
 
@@ -599,14 +631,21 @@ public class RealmAdminResource {
      */
     @Path("sessions/{session}")
     @DELETE
-    public void deleteSession(@PathParam("session") String sessionId) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Remove a specific user session.", description = "Any client that has an admin url will also be told to invalidate this particular session.")
+    public void deleteSession(@PathParam("session") String sessionId, @DefaultValue("false") @QueryParam("isOffline") boolean offline) {
         auth.users().requireManage();
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-        if (userSession == null) throw new NotFoundException("Sesssion not found");
-        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
+        UserSessionModel userSession = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
+        if (userSession == null) {
+            throw new NotFoundException("Sesssion not found");
+        }
 
+        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
+
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("offline", offline);
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
     }
 
     /**
@@ -621,6 +660,9 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get client session stats Returns a JSON map.",
+        description = "The key is the client id, the value is the number of sessions that currently are active with that client. Only clients that actually have a session associated with them will be in this map.")
     public Stream<Map<String, String>> getClientSessionStats() {
         auth.realm().requireViewRealm();
 
@@ -671,6 +713,8 @@ public class RealmAdminResource {
     @NoCache
     @Path("events/config")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get the events provider configuration Returns JSON object with events provider configuration")
     public RealmEventsConfigRepresentation getRealmEventsConfig() {
         auth.realm().requireViewEvents();
 
@@ -695,12 +739,14 @@ public class RealmAdminResource {
     @PUT
     @Path("events/config")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( description = "Update the events provider Change the events provider and/or its configuration")
     public void updateRealmEventsConfig(final RealmEventsConfigRepresentation rep) {
         auth.realm().requireManageEvents();
 
         logger.debug("updating realm events config: " + realm.getName());
         new RealmManager(session).updateRealmEventsConfig(rep, realm);
-        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM).realm(realm)
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM)
                 .resourcePath(session.getContext().getUri()).representation(rep)
                 // refresh the builder to consider old and new config
                 .refreshRealmEventsConfig(session)
@@ -726,10 +772,16 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
-                                               @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-                                               @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get events Returns all events, or filters them based on URL query parameters listed here")
+    public Stream<EventRepresentation> getEvents(@Parameter(description = "The types of events to return") @QueryParam("type") List<String> types,
+                                                 @Parameter(description = "App or oauth client name") @QueryParam("client") String client,
+                                                 @Parameter(description = "User id") @QueryParam("user") String user,
+                                                 @Parameter(description = "From date") @QueryParam("dateFrom") String dateFrom,
+                                                 @Parameter(description = "To date") @QueryParam("dateTo") String dateTo,
+                                                 @Parameter(description = "IP Address") @QueryParam("ipAddress") String ipAddress,
+                                                 @Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult,
+                                                 @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         auth.realm().requireViewEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -809,11 +861,13 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get admin events Returns all admin events, or filters events based on URL query parameters listed here")
     public Stream<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-                                                    @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                                    @Parameter(description = "user id") @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
                                                     @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
                                                     @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-                                                    @QueryParam("max") Integer maxResults,
+                                                    @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
                                                     @QueryParam("resourceTypes") List<String> resourceTypes) {
         auth.realm().requireViewEvents();
 
@@ -898,6 +952,8 @@ public class RealmAdminResource {
      */
     @Path("events")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Delete all events")
     public void clearEvents() {
         auth.realm().requireManageEvents();
 
@@ -911,6 +967,8 @@ public class RealmAdminResource {
      */
     @Path("admin-events")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Delete all admin events")
     public void clearAdminEvents() {
         auth.realm().requireManageEvents();
 
@@ -930,7 +988,9 @@ public class RealmAdminResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Deprecated
-    public Response testSMTPConnection(final @FormParam("config") String config) throws Exception {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Test SMTP connection with current logged in user")
+    public Response testSMTPConnection(final @Parameter(description = "SMTP server configuration") @FormParam("config") String config) throws Exception {
         Map<String, String> settings = readValue(config, new TypeReference<Map<String, String>>() {
         });
         return testSMTPConnection(settings);
@@ -940,11 +1000,13 @@ public class RealmAdminResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public Response testSMTPConnection(Map<String, String> settings) throws Exception {
         try {
             UserModel user = auth.adminAuth().getUser();
             if (user.getEmail() == null) {
-                return ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
+                throw ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
             }
             if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))) {
                 settings.put("password", realm.getSmtpConfig().get("password"));
@@ -953,7 +1015,7 @@ public class RealmAdminResource {
         } catch (Exception e) {
             e.printStackTrace();
             logger.errorf("Failed to send email \n %s", e.getCause());
-            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return Response.noContent().build();
@@ -973,6 +1035,8 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get group hierarchy.  Only name and ids are returned.")
     public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
@@ -981,6 +1045,8 @@ public class RealmAdminResource {
     @PUT
     @NoCache
     @Path("default-groups/{groupId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void addDefaultGroup(@PathParam("groupId") String groupId) {
         auth.realm().requireManageRealm();
 
@@ -988,6 +1054,7 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.addDefaultGroup(group);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -996,6 +1063,8 @@ public class RealmAdminResource {
     @DELETE
     @NoCache
     @Path("default-groups/{groupId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void removeDefaultGroup(@PathParam("groupId") String groupId) {
         auth.realm().requireManageRealm();
 
@@ -1003,6 +1072,7 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.removeDefaultGroup(group);
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -1011,9 +1081,7 @@ public class RealmAdminResource {
 
     @Path("groups")
     public GroupsResource getGroups() {
-        GroupsResource resource =  new GroupsResource(realm, session, this.auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return   new GroupsResource(realm, session, this.auth, adminEvent);
     }
 
 
@@ -1021,30 +1089,72 @@ public class RealmAdminResource {
     @Path("group-by-path/{path: .*}")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
-        GroupModel found = KeycloakModelUtils.findGroupByPath(realm, path);
+        GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
 
         }
         auth.groups().requireView(found);
-        return ModelToRepresentation.toGroupHierarchy(found, true);
+        return ModelToRepresentation.toRepresentation(found, true);
     }
 
     /**
      * Partial import from a JSON file to an existing realm.
      *
-     * @param rep
-     * @return
      */
     @Path("partialImport")
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response partialImport(PartialImportRepresentation rep) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Partial import from a JSON file to an existing realm.")
+    public Response partialImport(InputStream requestBody) {
         auth.realm().requireManageRealm();
+        try {
+            return Response.ok(
+                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), kcSession -> {
+                        RealmModel realmClone = kcSession.realms().getRealm(realm.getId());
+                        AdminEventBuilder adminEventClone = adminEvent.clone(kcSession);
+                        // calling a static method to avoid using the wrong instances
+                        return getPartialImportResults(requestBody, kcSession, realmClone, adminEventClone);
+                    })
+            ).build();
+        } catch (ModelDuplicateException e) {
+            throw ErrorResponse.exists(e.getLocalizedMessage());
+        } catch (ErrorResponseException error) {
+            return error.getResponse();
+        } catch (Exception e) {
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
-        return partialImport.saveResources();
+    private static PartialImportResults getPartialImportResults(InputStream requestBody, KeycloakSession kcSession, RealmModel kcRealm, AdminEventBuilder adminEventClone) {
+        ExportImportManager exportProvider = kcSession.getProvider(DatastoreProvider.class).getExportImportManager();
+        PartialImportResults results = exportProvider.partialImportRealm(kcRealm, requestBody);
+        for (PartialImportResult result : results.getResults()) {
+            switch (result.getAction()) {
+                case ADDED : fireCreatedEvent(result, adminEventClone); break;
+                case OVERWRITTEN: fireUpdateEvent(result, adminEventClone); break;
+            }
+        }
+        return results;
+    }
+
+    private static void fireCreatedEvent(PartialImportResult result, AdminEventBuilder adminEvent) {
+        adminEvent.operation(OperationType.CREATE)
+                .resourcePath(result.getResourceType().getPath(), result.getId())
+                .representation(result.getRepresentation())
+                .success();
+    };
+
+    private static void fireUpdateEvent(PartialImportResult result, AdminEventBuilder adminEvent) {
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(result.getResourceType().getPath(), result.getId())
+                .representation(result.getRepresentation())
+                .success();
     }
 
     /**
@@ -1055,11 +1165,13 @@ public class RealmAdminResource {
      * @return
      */
     @Path("partial-export")
-    @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
+    @POST
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Partial export of existing realm into a JSON file.")
+    public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
                                                      @QueryParam("exportClients") Boolean exportClients) {
-        auth.realm().requireViewRealm();
+        auth.realm().requireManageRealm();
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
         boolean clientsExported = exportClients != null && exportClients;
@@ -1074,39 +1186,36 @@ public class RealmAdminResource {
         // service accounts are exported if the clients are exported
         // this means that if clients is true but groups/roles is false the service account is exported without roles
         // the other option is just include service accounts if clientsExported && groupsAndRolesExported
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
-        RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
-        return stripForExport(session, rep);
-    }
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported, true);
 
-    /**
-     * Clear cache of external public keys (Public keys of clients or Identity providers)
-     *
-     */
-    @Path("clear-keys-cache")
-    @POST
-    public void clearKeysCache() {
-        auth.realm().requireManageRealm();
+        ExportImportManager exportProvider = session.getProvider(DatastoreProvider.class).getExportImportManager();
 
-        PublicKeyStorageProvider cache = session.getProvider(PublicKeyStorageProvider.class);
-        if (cache != null) {
-            cache.clearCache();
-        }
+        Response.ResponseBuilder response = Response.ok();
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        exportProvider.exportRealm(realm, options, new ExportAdapter() {
+            @Override
+            public void setType(String mediaType) {
+                response.type(mediaType);
+            }
+            @Override
+            public void writeToOutputStream(ConsumerOfOutputStream consumer) {
+                response.entity((StreamingOutput) consumer::accept);
+            }
+        });
+        return response.build();
     }
 
     @Path("keys")
     public KeyResource keys() {
-        KeyResource resource =  new KeyResource(realm, session, this.auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new KeyResource(realm, session, this.auth);
     }
 
     @GET
     @Path("credential-registrators")
     @NoCache
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public Stream<String> getCredentialRegistrators(){
         auth.realm().requireViewRealm();
         return session.getContext().getRealm().getRequiredActionProvidersStream()
@@ -1118,16 +1227,19 @@ public class RealmAdminResource {
     @Path("client-policies/policies")
     public ClientPoliciesResource getClientPoliciesResource() {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
-        ClientPoliciesResource resource = new ClientPoliciesResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientPoliciesResource(session, auth);
     }
 
     @Path("client-policies/profiles")
     public ClientProfilesResource getClientProfilesResource() {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
-        ClientProfilesResource resource = new ClientProfilesResource(realm, auth);
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-        return resource;
+        return new ClientProfilesResource(session, auth);
     }
+
+    @Path("client-types")
+    public ClientTypesResource getClientTypesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_TYPES);
+        return new ClientTypesResource(session.getProvider(ClientTypeManager.class), realm, auth);
+    }
+
 }

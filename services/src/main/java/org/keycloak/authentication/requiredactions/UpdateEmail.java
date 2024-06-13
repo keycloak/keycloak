@@ -20,11 +20,13 @@ package org.keycloak.authentication.requiredactions;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -97,16 +99,20 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             return;
         }
 
+        final boolean logoutSessions = "on".equals(formData.getFirst("logout-sessions"));
         if (!realm.isVerifyEmail() || Validation.isBlank(newEmail)
                 || Objects.equals(user.getEmail(), newEmail) && user.isEmailVerified()) {
+            if (logoutSessions) {
+                AuthenticatorUtil.logoutOtherSessions(context);
+            }
             updateEmailWithoutConfirmation(context, emailUpdateValidationResult);
             return;
         }
 
-        sendEmailUpdateConfirmation(context);
+        sendEmailUpdateConfirmation(context, logoutSessions);
     }
 
-    private void sendEmailUpdateConfirmation(RequiredActionContext context) {
+    private void sendEmailUpdateConfirmation(RequiredActionContext context, boolean logoutSessions) {
         UserModel user = context.getUser();
         String oldEmail = user.getEmail();
         String newEmail = context.getHttpRequest().getDecodedFormParameters().getFirst(UserModel.EMAIL);
@@ -119,11 +125,11 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         UpdateEmailActionToken actionToken = new UpdateEmailActionToken(user.getId(), Time.currentTime() + validityInSecs,
-                oldEmail, newEmail);
+                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions, authenticationSession.getRedirectUri());
 
         String link = Urls
                 .actionTokenBuilder(uriInfo.getBaseUri(), actionToken.serialize(session, realm, uriInfo),
-                        authenticationSession.getClient().getClientId(), authenticationSession.getTabId())
+                        authenticationSession.getClient().getClientId(), authenticationSession.getTabId(), AuthenticationProcessor.getClientData(session, authenticationSession))
 
                 .build(realm.getName()).toString();
 
@@ -152,6 +158,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     public static UserProfile validateEmailUpdate(KeycloakSession session, UserModel user, String newEmail) {
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
+        formData.putSingle(UserModel.USERNAME, user.getUsername());
         formData.putSingle(UserModel.EMAIL, newEmail);
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_EMAIL, formData, user);
@@ -162,7 +169,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     public static void updateEmailNow(EventBuilder event, UserModel user, UserProfile emailUpdateValidationResult) {
 
         String oldEmail = user.getEmail();
-        String newEmail = emailUpdateValidationResult.getAttributes().getFirstValue(UserModel.EMAIL);
+        String newEmail = emailUpdateValidationResult.getAttributes().getFirst(UserModel.EMAIL);
         event.event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail);
         emailUpdateValidationResult.update(false, new EventAuditingAttributeChangeListener(emailUpdateValidationResult, event));
     }
@@ -193,7 +200,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
     }
 }

@@ -35,7 +35,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -69,10 +69,10 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
     public static final String PROVIDER_ID = "oidc-address-mapper";
 
     public static ProtocolMapperModel createAddressMapper() {
-        return createAddressMapper(true, true, true);
+        return createAddressMapper(true, true, true, true);
     }
 
-    public static ProtocolMapperModel createAddressMapper(boolean idToken, boolean accessToken, boolean userInfo) {
+    public static ProtocolMapperModel createAddressMapper(boolean idToken, boolean accessToken, boolean userInfo, boolean introspectionEndpoint) {
         Map<String, String> config;
         ProtocolMapperModel address = new ProtocolMapperModel();
         address.setName("address");
@@ -82,6 +82,7 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.toString(accessToken));
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.toString(idToken));
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, Boolean.toString(userInfo));
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, Boolean.toString(introspectionEndpoint));
 
         config.put(getModelPropertyName(STREET), STREET);
         config.put(getModelPropertyName(AddressClaimSet.LOCALITY), AddressClaimSet.LOCALITY);

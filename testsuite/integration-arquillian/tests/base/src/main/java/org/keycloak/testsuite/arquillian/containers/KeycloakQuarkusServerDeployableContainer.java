@@ -1,76 +1,56 @@
 package org.keycloak.testsuite.arquillian.containers;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
-import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.descriptor.api.Descriptor;
-import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.model.StoreProvider;
+import org.keycloak.testsuite.util.WaitUtils;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author mhajas
  */
-public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
+public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDeployableContainer implements RemoteContainer {
+
+    private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
 
-    private KeycloakQuarkusConfiguration configuration;
     private Process container;
-    private static AtomicBoolean restart = new AtomicBoolean();
-
-    @Inject
-    private Instance<SuiteContext> suiteContext;
-
-    private List<String> additionalBuildArgs = Collections.emptyList();
-
-    @Override
-    public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
-        return KeycloakQuarkusConfiguration.class;
-    }
-
-    @Override
-    public void setup(KeycloakQuarkusConfiguration configuration) {
-        this.configuration = configuration;
-    }
+    private Thread stdoutForwarderThread;
+    private LogProcessor logProcessor;
 
     @Override
     public void start() throws LifecycleException {
         try {
+            importRealm();
             container = startContainer();
+            logProcessor = new LogProcessor(new BufferedReader(new InputStreamReader(container.getInputStream())));
+            stdoutForwarderThread = new Thread(logProcessor);
+            stdoutForwarderThread.start();
             waitForReadiness();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -79,58 +59,90 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     @Override
     public void stop() throws LifecycleException {
-        container.destroy();
+        if (container.isAlive()) {
+            try {
+                destroyDescendantsOnWindows(container, false);
+                container.destroy();
+                container.waitFor(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                destroyDescendantsOnWindows(container, true);
+                container.destroyForcibly();
+            }
+        }
+    }
+
+    private void executeCommand(File wrkDir, String command, String... args) throws IOException {
+        final List<String> commands = new ArrayList<>();
+        commands.add(getCommand());
+        commands.add("-v");
+        commands.add(command);
+        addFeaturesOption(commands);
+        if (args != null) {
+            commands.addAll(Arrays.asList(args));
+        }
+        ProcessBuilder pb = new ProcessBuilder(commands);
+        Process p = pb.directory(wrkDir).inheritIO().start();
         try {
-            container.waitFor(10, TimeUnit.SECONDS);
+            if (!p.waitFor(60, TimeUnit.SECONDS)) {
+                throw new IOException("Command " + command + " did not finished in 60 seconds");
+            }
+            if (p.exitValue() != 0) {
+                throw new IOException("Command " + command + " was executed with exit status " + p.exitValue());
+            }
         } catch (InterruptedException e) {
-            container.destroyForcibly();
+            throw new IOException(e);
         }
     }
 
-    @Override
-    public ProtocolDescription getDefaultProtocol() {
-        return null;
-    }
+    private void importRealm() throws IOException, URISyntaxException {
+        if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
+            final String importFileName = configuration.getImportFile();
 
-    @Override
-    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        log.infof("Trying to deploy: " + archive.getName());
+            log.infof("Importing realm from file '%s'", importFileName);
 
-        try {
-            deployArchiveToServer(archive);
-            restartServer();
-        } catch (Exception e) {
-            throw new DeploymentException(e.getMessage(),e);
+            final URL url = getClass().getResource("/migration-test/" + importFileName);
+            if (url == null) throw new IllegalArgumentException("Cannot find migration import file");
+
+            final Path path = Paths.get(url.toURI());
+            final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
+
+            Path keycloakConf = Paths.get(wrkDir.toURI()).getParent().resolve("conf").resolve("keycloak.conf");
+
+            // there are several issues with import in initial quarkus versions, so better use the keycloak.conf file
+            StoreProvider storeProvider = StoreProvider.getCurrentProvider();
+            List<String> storageOptions = storeProvider.getStoreOptionsToKeycloakConfImport();
+            Path keycloakConfBkp = null;
+            try {
+                if (!storageOptions.isEmpty()) {
+                    keycloakConfBkp = keycloakConf.getParent().resolve("keycloak.conf.bkp");
+                    Files.copy(keycloakConf, keycloakConfBkp);
+                    // write the options to the file
+                    try ( BufferedWriter w = new BufferedWriter(new FileWriter(keycloakConf.toFile(), true))) {
+                        for (String s : storageOptions) {
+                            w.write(System.lineSeparator());
+                            w.write(s);
+                        }
+                    }
+
+                    // execute build command to set the storage options if needed
+                    executeCommand(wrkDir, "build");
+                }
+
+                // execute the import
+                executeCommand(wrkDir, "import", "--file=" + wrkDir.toPath().relativize(path));
+            } finally {
+                // restore initial keycloak.conf if modified for import
+                if (keycloakConfBkp != null && Files.exists(keycloakConfBkp)) {
+                    Files.move(keycloakConfBkp, keycloakConf, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
         }
-
-        return new ProtocolMetaData();
-    }
-
-    @Override
-    public void undeploy(Archive<?> archive) throws DeploymentException {
-        File wrkDir = configuration.getProvidersPath().resolve("providers").toFile();
-        try {
-            Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
-            restartServer();
-        } catch (Exception e) {
-            throw new DeploymentException(e.getMessage(),e);
-        }
-    }
-
-    @Override
-    public void deploy(Descriptor descriptor) throws DeploymentException {
-
-    }
-
-    @Override
-    public void undeploy(Descriptor descriptor) throws DeploymentException {
-
     }
 
     private Process startContainer() throws IOException {
-        ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
+        ProcessBuilder pb = getProcessBuilder();
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
-        ProcessBuilder builder = pb.directory(wrkDir).inheritIO().redirectErrorStream(true);
+        ProcessBuilder builder = pb.directory(wrkDir).redirectErrorStream(true);
 
         String javaOpts = configuration.getJavaOpts();
 
@@ -138,177 +150,149 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             builder.environment().put("JAVA_OPTS", javaOpts);
         }
 
-        builder.environment().put("KEYCLOAK_ADMIN", "admin");
-        builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        if (!StoreProvider.JPA.equals(StoreProvider.getCurrentProvider())) {
+            builder.environment().put("KEYCLOAK_ADMIN", "admin");
+            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        }
 
         if (restart.compareAndSet(false, true)) {
-            FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
+            deleteDirectory(configuration.getProvidersPath().resolve("data"));
         }
 
         return builder.start();
     }
 
-    private String[] getProcessCommands() {
-        List<String> commands = new ArrayList<>();
-        commands.add(getCommand());
-        commands.add("-v");
-        commands.add("start");
-        commands.add("--http-enabled=true");
+    @Override
+    protected List<String> configureArgs(List<String> args) {
+        List<String> commands = new ArrayList<>(args);
 
-        if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
-            commands.add("--debug");
-            if (configuration.getDebugPort() > 0) {
-                commands.add(Integer.toString(configuration.getDebugPort()));
-            } else {
-                commands.add(System.getProperty("auth.server.debug.port", "5005"));
-            }
-        }
+        commands.add(0, getCommand());
+        commands.add("--optimized");
 
-        commands.add("--http-port=" + configuration.getBindHttpPort());
-        commands.add("--https-port=" + configuration.getBindHttpsPort());
+        log.debugf("Quarkus parameters: %s", commands);
 
-        if (configuration.getRoute() != null) {
-            commands.add("-Djboss.node.name=" + configuration.getRoute());
-        }
-
-        // only run auto-build during restarts or when running cluster tests
-        if (restart.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
-            commands.add("--auto-build");
-            commands.add("--http-relative-path=/auth");
-
-            String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
-
-            if ("local".equals(cacheMode)) {
-                commands.add("--cache=local");
-            } else {
-                commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
-            }
-        }
-
-        commands.addAll(getAdditionalBuildArgs());
-
-        return commands.toArray(new String[0]);
+        return commands;
     }
 
-    private void waitForReadiness() throws MalformedURLException, LifecycleException {
-        SuiteContext suiteContext = this.suiteContext.get();
-        //TODO: not sure if the best endpoint but it makes sure that everything is properly initialized. Once we have
-        // support for MP Health this should change
-        URL contextRoot = new URL(getBaseUrl(suiteContext) + "/auth/realms/master/");
-        HttpURLConnection connection;
-        long startTime = System.currentTimeMillis();
+    private ProcessBuilder getProcessBuilder() {
+        Map<String, String> env = new HashMap<>();
+        String[] processCommands = getArgs(env).toArray(new String[0]);
+        ProcessBuilder pb = new ProcessBuilder(processCommands);
+        pb.environment().putAll(env);
 
-        while (true) {
-            if (System.currentTimeMillis() - startTime > getStartTimeout()) {
-                stop();
-                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
-            }
-
-            try {
-                // wait before checking for opening a new connection
-                Thread.sleep(1000);
-                if ("https".equals(contextRoot.getProtocol())) {
-                    HttpsURLConnection httpsConnection = (HttpsURLConnection) (connection = (HttpURLConnection) contextRoot.openConnection());
-                    httpsConnection.setSSLSocketFactory(createInsecureSslSocketFactory());
-                    httpsConnection.setHostnameVerifier(createInsecureHostnameVerifier());
-                } else {
-                    connection = (HttpURLConnection) contextRoot.openConnection();
-                }
-
-                connection.setReadTimeout((int) getStartTimeout());
-                connection.setConnectTimeout((int) getStartTimeout());
-                connection.connect();
-
-                if (connection.getResponseCode() == 200) {
-                    break;
-                }
-
-                connection.disconnect();
-            } catch (Exception ignore) {
-            }
-        }
-        
-        log.infof("Keycloak is ready at %s", contextRoot);
+        return pb;
     }
 
-    private URL getBaseUrl(SuiteContext suiteContext) throws MalformedURLException {
-        URL baseUrl = suiteContext.getAuthServerInfo().getContextRoot();
-
-        // might be running behind a load balancer
-        if ("https".equals(baseUrl.getProtocol())) {
-            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpsPort())));
-        } else {
-            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpPort())));
-        }
-        return baseUrl;
-    }
-
-    private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
-    }
-
-    private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
-        TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
-            public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
-            }
-
-            public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
-            }
-
-            public X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-        }};
-
-        SSLContext sslContext;
-        SSLSocketFactory socketFactory;
-
-        try {
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-            socketFactory = sslContext.getSocketFactory();
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new IOException("Can't create unsecure trust manager");
-        }
-        return socketFactory;
-    }
-
-    private long getStartTimeout() {
-        return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
-    }
-
-    public void resetConfiguration() {
-        additionalBuildArgs = Collections.emptyList();
-    }
-
-    private void deployArchiveToServer(Archive<?> archive) throws IOException {
-        File providersDir = configuration.getProvidersPath().resolve("providers").toFile();
-        InputStream zipStream = archive.as(ZipExporter.class).exportAsInputStream();
-        Files.copy(zipStream, providersDir.toPath().resolve(archive.getName()), StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    public void restartServer() throws Exception {
-        stop();
-        start();
-    }
-
-    private static String getCommand() {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            return "kc.bat";
+    private String getCommand() {
+        if (isWindows()) {
+            return configuration.getProvidersPath().resolve("bin").resolve("kc.bat").toString();
         }
         return "./kc.sh";
     }
 
-    public List<String> getAdditionalBuildArgs() {
-        return additionalBuildArgs;
+    private void destroyDescendantsOnWindows(Process parent, boolean force) {
+        if (!isWindows()) {
+            return;
+        }
+
+        // Wait some time before killing the windows processes. Otherwise there is a risk that some already commited H2 transactions
+        // won't be written to disk in time and hence those transactions may be lost, which could result in test failures in the next step after server restart.
+        // See http://repository.transtep.com/repository/thirdparty/H2/1.0.63/docs/html/advanced.html#durability_problems for the details
+        WaitUtils.pause(2000);
+
+        CompletableFuture allProcesses = CompletableFuture.completedFuture(null);
+
+        for (ProcessHandle process : parent.descendants().collect(Collectors.toList())) {
+            if (force) {
+                process.destroyForcibly();
+            } else {
+                process.destroy();
+            }
+
+            allProcesses = CompletableFuture.allOf(allProcesses, process.onExit());
+        }
+
+        try {
+            allProcesses.get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to terminate descendants processes", cause);
+        }
+
+        try {
+            // TODO: remove this. do not ask why, but on Windows we are here even though the process was previously terminated
+            // without this pause, tests re-installing dist before tests should fail
+            // looks like pausing the current thread let windows to cleanup processes?
+            // more likely it is env dependent
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+        }
     }
 
-    public void setAdditionalBuildArgs(List<String> newArgs) {
-        additionalBuildArgs = newArgs;
+    public static void deleteDirectory(final Path directory) throws IOException {
+        if (Files.isDirectory(directory, new LinkOption[0])) {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    try {
+                        Files.delete(file);
+                    } catch (IOException var4) {
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    try {
+                        Files.delete(dir);
+                    } catch (IOException var4) {
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void checkLiveness() {
+        if (!container.isAlive()) {
+            throw new IllegalStateException("Keycloak unexpectedly died :(");
+        }
+    }
+
+    @Override
+    public String getRemoteLog() {
+        return logProcessor.getBufferedLog();
+    }
+
+    private static class LogProcessor implements Runnable {
+        public static final int MAX_LOGGED_LINES = 512;
+        private List<String> loggedLines = new ArrayList<>();
+        private BufferedReader inputReader;
+
+        public LogProcessor(BufferedReader inputReader) {
+            this.inputReader = inputReader;
+        }
+
+        @Override
+        public void run() {
+            String line;
+            try {
+                while ((line = inputReader.readLine()) != null) {
+                    System.out.println(line);
+
+                    loggedLines.add(line);
+                    if (loggedLines.size() > MAX_LOGGED_LINES) {
+                        loggedLines.remove(0);
+                    }
+                }
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public String getBufferedLog() {
+            return String.join("\n", loggedLines);
+        }
     }
 }

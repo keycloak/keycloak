@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import java.util.Collections;
 import java.util.Set;
+import javax.naming.ldap.LdapContext;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -31,6 +32,8 @@ import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupTreeResolver;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,6 +45,21 @@ public class LDAPServerCapabilitiesManager {
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
     public static final String QUERY_SERVER_CAPABILITIES = "queryServerCapabilities";
+    public static final int DEFAULT_TEST_TIMEOUT = 30000; // 30s default test timeout
+
+    private static int parseConnectionTimeout(String connectionTimeout) {
+        if (StringUtil.isNotBlank(connectionTimeout)) {
+            try {
+                int timeout = Integer.parseInt(connectionTimeout);
+                if (timeout > 0) {
+                    return timeout;
+                }
+            } catch (NumberFormatException e) {
+                // just use default timeout
+            }
+        }
+        return DEFAULT_TEST_TIMEOUT;
+    }
 
     public static LDAPConfig buildLDAPConfig(TestLdapConnectionRepresentation config, RealmModel realm) {
         String bindCredential = config.getBindCredential();
@@ -54,7 +72,11 @@ public class LDAPServerCapabilitiesManager {
         configMap.putSingle(LDAPConstants.BIND_CREDENTIAL, bindCredential);
         configMap.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
         configMap.add(LDAPConstants.USE_TRUSTSTORE_SPI, config.getUseTruststoreSpi());
-        configMap.putSingle(LDAPConstants.CONNECTION_TIMEOUT, config.getConnectionTimeout());
+        // set a forced timeout even when the timeout is infinite for testing
+        // this is needed to not wait forever in the test and force connection creation in ldap
+        String timeoutStr = Integer.toString(parseConnectionTimeout(config.getConnectionTimeout()));
+        configMap.putSingle(LDAPConstants.CONNECTION_TIMEOUT, timeoutStr);
+        configMap.putSingle(LDAPConstants.READ_TIMEOUT, timeoutStr);
         configMap.add(LDAPConstants.START_TLS, config.getStartTls());
         return new LDAPConfig(configMap);
     }
@@ -71,20 +93,65 @@ public class LDAPServerCapabilitiesManager {
         return new LDAPIdentityStore(session, ldapConfig).queryServerCapabilities();
     }
 
-    public static boolean testLDAP(TestLdapConnectionRepresentation config, KeycloakSession session, RealmModel realm) {
+    public static class InvalidBindDNException extends javax.naming.NamingException {
+        public InvalidBindDNException(String s) {
+            super(s);
+        }
+    }
+
+    public static String getErrorCode(Throwable throwable) {
+        String errorMsg = "UnknownError";
+        if (throwable instanceof javax.naming.NamingException)
+             errorMsg = "NamingError";
+        if (throwable instanceof javax.naming.AuthenticationException)
+             errorMsg = "AuthenticationFailure";
+        if (throwable instanceof javax.naming.CommunicationException)
+             errorMsg = "CommunicationError";
+        if (throwable instanceof javax.naming.ServiceUnavailableException)
+             errorMsg = "ServiceUnavailable";
+        if (throwable instanceof javax.naming.InvalidNameException)
+             errorMsg = "InvalidName";
+        if (throwable instanceof javax.naming.ServiceUnavailableException)
+             errorMsg = "ServiceUnavailable";
+        if (throwable instanceof InvalidBindDNException)
+             errorMsg = "InvalidBindDN";
+        if (throwable instanceof javax.naming.NameNotFoundException)
+             errorMsg = "NameNotFound";
+        if (throwable instanceof GroupTreeResolver.GroupTreeResolveException) {
+             errorMsg = "GroupsMultipleParents";
+        }
+
+        if (throwable instanceof javax.naming.NamingException) {
+            Throwable rootCause = ((javax.naming.NamingException)throwable).getRootCause();
+            if (rootCause instanceof java.net.MalformedURLException)
+                 errorMsg = "MalformedURL";
+            if (rootCause instanceof java.net.NoRouteToHostException)
+                 errorMsg = "NoRouteToHost";
+            if (rootCause instanceof java.net.ConnectException)
+                 errorMsg = "ConnectionFailed";
+            if (rootCause instanceof java.net.UnknownHostException)
+                 errorMsg = "UnknownHost";
+            if (rootCause instanceof javax.net.ssl.SSLHandshakeException)
+                 errorMsg = "SSLHandshakeFailed";
+            if (rootCause instanceof java.net.SocketException)
+                 errorMsg = "SocketReset";
+        }
+        return errorMsg;
+    }
+
+    public static void testLDAP(TestLdapConnectionRepresentation config, KeycloakSession session, RealmModel realm) throws javax.naming.NamingException {
 
         if (!TEST_CONNECTION.equals(config.getAction()) && !TEST_AUTHENTICATION.equals(config.getAction())) {
             ServicesLogger.LOGGER.unknownAction(config.getAction());
-            return false;
+            throw new javax.naming.NamingException("testLDAP unknown action");
         }
 
         if (TEST_AUTHENTICATION.equals(config.getAction())) {
             // If AUTHENTICATION action is executed add also dn and credentials to configuration
             // LDAPContextManager is responsible for correct order of addition of credentials to context in case
             // tls is true
-            if (config.getBindDn() == null || config.getBindDn().isEmpty()) {
-                logger.error("Unknown bind DN");
-                return false;
+            if ((config.getBindDn() == null || config.getBindDn().isEmpty()) && LDAPConstants.AUTH_TYPE_SIMPLE.equals(config.getAuthType())) {
+                throw new InvalidBindDNException("Unknown bind DN");
             }
         } else {
             // only test the connection.
@@ -96,15 +163,16 @@ public class LDAPServerCapabilitiesManager {
         // Create ldapContextManager in try-with-resource so that ldapContext/tlsResponse/VaultSecret is closed/removed when it
         // is not needed anymore
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, ldapConfig)) {
-            ldapContextManager.getLdapContext();
-
-            // Connection was successful, no exception was raised returning true
-            return true;
+            LdapContext ldapContext = ldapContextManager.getLdapContext();
+            if (TEST_AUTHENTICATION.equals(config.getAction()) && LDAPConstants.AUTH_TYPE_NONE.equals(config.getAuthType())) {
+                // reconnect to force an anonymous bind operation
+                ldapContext.reconnect(null);
+            }
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(config.getAction())) ? "Error when authenticating to LDAP: "
                 : "Error when connecting to LDAP: ";
             ServicesLogger.LOGGER.errorAuthenticating(ne, errorMessage + ne.getMessage());
-            return false;
+            throw ne;
         }
     }
 }

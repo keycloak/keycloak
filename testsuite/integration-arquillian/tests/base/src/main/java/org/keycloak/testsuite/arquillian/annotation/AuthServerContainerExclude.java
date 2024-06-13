@@ -26,8 +26,8 @@ import java.lang.annotation.Target;
 /**
  * Serves for excluding test classes or methods from running in some specific auth server container
  *
- * for example annotation @AuthServerContainerExclude(AuthServer.REMOTE) on a test class makes tests
- * in the class NOT running when -Pauth-server-remote is used
+ * for example annotation @AuthServerContainerExclude(AuthServer.QUARKUS) on a test class makes tests
+ * in the class NOT running when -Pauth-server-quarkus is used
  *
  * The annotation has @Inherited property this means that annotation parent class will exclude all child class
  *
@@ -41,8 +41,8 @@ public @interface AuthServerContainerExclude {
     AuthServer[] value();
     String details() default "";
 
-    public enum AuthServer {
-        REMOTE,
+    enum AuthServer {
+        UNDERTOW,
         QUARKUS
     }
 }

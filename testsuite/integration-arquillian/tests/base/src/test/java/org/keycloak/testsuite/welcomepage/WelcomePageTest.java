@@ -24,7 +24,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -33,9 +32,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 import java.net.InetAddress;
@@ -56,25 +54,20 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 public class WelcomePageTest extends AbstractKeycloakTest {
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Page
-    @PhantomJSBrowser
+    @HtmlUnitBrowser
     protected OIDCLogin loginPage;
 
     @Page
-    @PhantomJSBrowser
+    @HtmlUnitBrowser
     protected WelcomePage welcomePage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         // no operation
-    }
-
-    @BeforeClass
-    public static void enabled() {
-        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     /*
@@ -87,7 +80,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
         Assume.assumeThat("Test skipped",
                 suiteContext.getAuthServerInfo().isJBossBased(),
                 Matchers.is(true));
-        DroneUtils.replaceDefaultWebDriver(this, phantomJS);
+        DroneUtils.replaceDefaultWebDriver(this, htmlUnit);
         setDefaultPageUriParameters();
     }
 
@@ -155,10 +148,9 @@ public class WelcomePageTest extends AbstractKeycloakTest {
 
     @Test
     public void test_5_AccessCreatedAdminAccount() throws Exception {
+        welcomePage.navigateTo();
         welcomePage.navigateToAdminConsole();
-        loginPage.form().login("admin", "admin");
-        Assert.assertFalse("Login with 'admin:admin' failed", 
-                driver.getPageSource().contains("Invalid username or password."));
+        Assert.assertEquals("Keycloak Administration Console", htmlUnit.getTitle());
     }
 
     @Test

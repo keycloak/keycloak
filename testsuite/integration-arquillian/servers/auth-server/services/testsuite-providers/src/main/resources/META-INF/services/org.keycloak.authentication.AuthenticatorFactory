@@ -24,3 +24,8 @@ org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory
 org.keycloak.testsuite.forms.UsernameOnlyAuthenticator
 org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory
 org.keycloak.testsuite.authentication.CustomAuthenticationFlowCallbackFactory
+org.keycloak.examples.providersoverride.CustomValidateUsername
+org.keycloak.examples.providersoverride.CustomValidatePassword1
+org.keycloak.examples.providersoverride.CustomValidatePassword2
+org.keycloak.examples.providersoverride.CustomValidatePassword3
+org.keycloak.examples.providersoverride.CustomValidateOTP

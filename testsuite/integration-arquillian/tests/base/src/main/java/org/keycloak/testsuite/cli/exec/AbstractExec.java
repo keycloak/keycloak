@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.cli.exec;
 
-import org.keycloak.client.admin.cli.util.OsUtil;
+import org.keycloak.client.cli.util.OsUtil;
 import org.keycloak.testsuite.cli.OsArch;
 import org.keycloak.testsuite.cli.OsUtils;
 

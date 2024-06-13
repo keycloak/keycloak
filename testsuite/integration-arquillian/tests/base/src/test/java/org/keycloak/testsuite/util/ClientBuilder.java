@@ -63,6 +63,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder type(String type) {
+        rep.setType(type);
+        return this;
+    }
+
     public ClientBuilder consentRequired(boolean consentRequired) {
         rep.setConsentRequired(consentRequired);
         return this;

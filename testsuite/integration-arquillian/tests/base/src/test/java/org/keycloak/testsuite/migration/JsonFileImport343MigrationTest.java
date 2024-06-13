@@ -20,7 +20,6 @@ import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -29,15 +28,12 @@ import java.util.List;
 import java.util.Map;
 import org.keycloak.testsuite.ProfileAssume;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(value = {AuthServer.REMOTE})
 public class JsonFileImport343MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override
@@ -67,6 +63,12 @@ public class JsonFileImport343MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo9_x();
         testMigrationTo12_x(true);
         testMigrationTo18_x();
+        testMigrationTo20_x();
+        testMigrationTo21_x();
+        testMigrationTo22_x();
+        testMigrationTo23_x(false);
+        testMigrationTo24_x(false);
+        testMigrationTo25_0_0();
     }
 
 }

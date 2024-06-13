@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
+import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -27,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.services.ServicesLogger;
 
 import java.util.List;
@@ -46,11 +46,9 @@ public class UserSessionManager {
     private static final Logger logger = Logger.getLogger(UserSessionManager.class);
 
     private final KeycloakSession kcSession;
-    private final UserSessionPersisterProvider persister;
 
     public UserSessionManager(KeycloakSession session) {
         this.kcSession = session;
-        this.persister = session.getProvider(UserSessionPersisterProvider.class);
     }
 
     public void createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
@@ -162,5 +160,24 @@ public class UserSessionManager {
             logger.tracef("Removing offline userSession for user %s as it doesn't have any client sessions attached. UserSessionID: %s", user.getUsername(), userSession.getId());
         }
         kcSession.sessions().removeOfflineUserSession(realm, userSession);
+    }
+
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress,
+                                              String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
+    }
+
+    public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
+                                              String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId,
+                                              UserSessionModel.SessionPersistenceState persistenceState) {
+        // Create user session in store
+        UserSessionModel userSession = kcSession.sessions().createUserSession(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId, persistenceState);
+
+        // Attach device info into user session notes
+        if (userSession != null) {
+            DeviceActivityManager.attachDevice(userSession, kcSession);
+        }
+
+        return userSession;
     }
 }

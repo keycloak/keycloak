@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -35,6 +35,10 @@
 
     <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
+
+    <properties>
+        <app.server>undertow</app.server>
+    </properties>
 
     <build>
         <pluginManagement>
@@ -121,18 +125,6 @@
             </modules>
         </profile>
         <profile>
-            <id>clean-start</id>
-            <modules>
-                <module>clean-start</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>console-ui-tests</id>
-            <modules>
-                <module>console</module>
-            </modules>
-        </profile>
-        <profile>
             <id>mod_auth_mellon</id>
             <modules>
                 <module>mod_auth_mellon</module>
@@ -145,35 +137,9 @@
             </modules>
         </profile>
         <profile>
-            <id>server-config-migration</id>
-            <modules>
-                <module>server-config-migration</module>
-            </modules>
-        </profile>
-        <profile>
             <id>sssd</id>
             <modules>
                 <module>sssd</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>base-ui</id>
-            <modules>
-                <module>base-ui</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>springboot</id>
-            <modules>
-                <module>springboot-tests</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>webauthn</id>
-            <modules>
-                <module>console</module>
-                <module>base-ui</module>
-                <module>webauthn</module>
             </modules>
         </profile>
     </profiles>

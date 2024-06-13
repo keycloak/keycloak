@@ -17,24 +17,24 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.services.resources.account.AccountFormService;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.services.Urls;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * Resource class for public realm information
@@ -45,19 +45,19 @@ import javax.ws.rs.core.UriInfo;
 public class PublicRealmResource {
     protected static final Logger logger = Logger.getLogger(PublicRealmResource.class);
 
-    @Context
-    protected HttpRequest request;
+    protected final HttpRequest request;
 
-    @Context
-    protected HttpResponse response;
+    protected final HttpResponse response;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    public PublicRealmResource(RealmModel realm) {
-        this.realm = realm;
+    public PublicRealmResource(KeycloakSession session) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     /**
@@ -68,7 +68,7 @@ public class PublicRealmResource {
     @Path("/")
     @OPTIONS
     public Response accountPreflight() {
-        return Cors.add(request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     /**
@@ -80,7 +80,7 @@ public class PublicRealmResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public PublishedRealmRepresentation getRealm() {
-        Cors.add(request).allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().build(response);
+        Cors.builder().allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().add();
         return realmRep(session, realm, session.getContext().getUri());
     }
 
@@ -88,7 +88,7 @@ public class PublicRealmResource {
         PublishedRealmRepresentation rep = new PublishedRealmRepresentation();
         rep.setRealm(realm.getName());
         rep.setTokenServiceUrl(OIDCLoginProtocolService.tokenServiceBaseUrl(uriInfo).build(realm.getName()).toString());
-        rep.setAccountServiceUrl(AccountFormService.accountServiceBaseUrl(uriInfo).build(realm.getName()).toString());
+        rep.setAccountServiceUrl(Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()).toString());
         rep.setPublicKeyPem(PemUtils.encodeKey(session.keys().getActiveRsaKey(realm).getPublicKey()));
         rep.setNotBefore(realm.getNotBefore());
         return rep;

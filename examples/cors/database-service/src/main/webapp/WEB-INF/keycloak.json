@@ -1,8 +1,0 @@
-{
-  "realm" : "cors",
-  "resource" : "cors-database-service",
-  "auth-server-url": "http://localhost-auth:8080/auth",
-  "bearer-only" : true,
-  "ssl-required": "external",
-  "enable-cors": true
-}

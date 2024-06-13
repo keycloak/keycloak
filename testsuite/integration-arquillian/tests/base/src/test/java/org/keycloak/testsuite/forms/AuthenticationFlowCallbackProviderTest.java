@@ -28,7 +28,6 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuth
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.authentication.CustomAuthenticationFlowCallback;
 import org.keycloak.testsuite.authentication.CustomAuthenticationFlowCallbackFactory;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -37,12 +36,10 @@ import org.keycloak.testsuite.util.FlowUtil;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@AuthServerContainerExclude(REMOTE)
 public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKeycloakTest {
 
     protected static final String DEFAULT_FLOW = "newCallbackFlow";

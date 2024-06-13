@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-api-docs-dist</artifactId>
@@ -30,8 +30,45 @@
     <description/>
 
     <properties>
-        <javadoc.branding>${product.name.full} ${product.version}</javadoc.branding>
+        <javadoc.branding>Keycloak ${project.version}</javadoc.branding>
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-dependencies-server-all</artifactId>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus.resteasy.reactive</groupId>
+            <artifactId>resteasy-reactive</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Include all classes that are marked "provided" and therefore not included in the dependencies above.
+        This avoids warnings when generating the JavaDoc -->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+        </dependency>
+        <!-- This is here because BloomFilter is used in the Javadoc within BlacklistPasswordPolicyProviderFactory -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <finalName>keycloak-api-docs-${project.version}</finalName>
@@ -46,13 +83,20 @@
                     <includeDependencySources>true</includeDependencySources>
                     <source>${maven.compiler.source}</source>
                     <failOnError>true</failOnError>
+                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                    <dependencySourceIncludes>
+                        <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
+                    </dependencySourceIncludes>
+                    <dependencySourceExcludes>
+                        <dependencySourceInclude>org.keycloak:keycloak-operator</dependencySourceInclude>
+                    </dependencySourceExcludes>
                 </configuration>
                 <executions>
                     <execution>
                         <id>aggregate-javadoc</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>javadoc</goal>
+                            <goal>aggregate</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -75,170 +119,13 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-dependencies-server-all</artifactId>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-authz-client</artifactId>
-                </dependency>
-                <!-- Include all classes that are marked "provided" and therefore not included in the dependencies above.
-                This avoids warnings when generating the JavaDoc -->
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-model-build-processor</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.logging</groupId>
-                    <artifactId>jboss-logging-annotations</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>net.java.dev.jna</groupId>
-                    <artifactId>jna</artifactId>
-                </dependency>
-                <dependency>
-                    <!-- Included here as it provides Nonnull from com.google.code.findbugs:jsr305.
-                    That is used in annotations in FilesPlainTextVaultProvider -->
-                    <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
-                    <artifactId>owasp-java-html-sanitizer</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.infinispan.protostream</groupId>
-                    <artifactId>protostream-processor</artifactId>
-                    <version>${infinispan.protostream.processor.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-component-annotations</artifactId>
-                    <version>${infinispan.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>aggregate-javadoc</id>
-                                <configuration>
-                                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                                    <dependencySourceIncludes>
-                                        <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
-                                    </dependencySourceIncludes>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <!-- Make sure to keep this list in sync with <dependencySourceIncludes> -->
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-server-spi</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-common</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-core</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-saml-core-public</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-adapter-spi</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-adapter-core</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-saml-adapter-api-public</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-authz-client</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>aggregate-javadoc</id>
-                                <configuration>
-                                    <windowtitle>${javadoc.branding} public API</windowtitle>
-                                    <doctitle>${javadoc.branding} public API</doctitle>
-                                    <header>${javadoc.branding}</header>
-                                    <footer>${javadoc.branding}</footer>
-                                    <includeTransitiveDependencySources>false</includeTransitiveDependencySources>
-                                    <!-- Make sure to keep this list in sync with <dependencies> -->
-                                    <dependencySourceIncludes>
-                                        <include>org.keycloak:keycloak-server-spi</include>
-                                        <include>org.keycloak:keycloak-common</include>
-                                        <include>org.keycloak:keycloak-core</include>
-                                        <include>org.keycloak:keycloak-saml-core-public</include>
-                                        <include>org.keycloak:keycloak-adapter-spi</include>
-                                        <include>org.keycloak:keycloak-adapter-core</include>
-                                        <include>org.keycloak:keycloak-saml-adapter-api-public</include>
-                                        <include>org.keycloak:keycloak-admin-client</include>
-                                        <include>org.keycloak:keycloak-authz-client</include>
-                                    </dependencySourceIncludes>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>

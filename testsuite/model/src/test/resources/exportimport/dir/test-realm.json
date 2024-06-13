@@ -1,0 +1,682 @@
+{
+  "id": "4b390336-f32b-4b49-b0a5-e7c865637496",
+  "realm": "test",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed" : true,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "offlineSessionMaxLifespan": 5184000,
+  "requiredCredentials": [ "password" ],
+  "defaultRoles": [ "user" ],
+  "smtpServer": {
+    "from": "auto@keycloak.org",
+    "host": "localhost",
+    "port":"3025",
+    "fromDisplayName": "Keycloak SSO",
+    "replyTo":"reply-to@keycloak.org",
+    "replyToDisplayName": "Keycloak no-reply",
+    "envelopeFrom": "auto+bounces@keycloak.org"
+  },
+  "users" : [
+    {
+      "username" : "test-user@localhost",
+      "enabled": true,
+      "email" : "test-user@localhost",
+      "firstName": "Tom",
+      "lastName": "Brady",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user", "offline_access"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "john-doh@localhost",
+      "enabled": true,
+      "email" : "john-doh@localhost",
+      "firstName": "John",
+      "lastName": "Doh",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "keycloak-user@localhost",
+      "enabled": true,
+      "email" : "keycloak-user@localhost",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "topGroupUser",
+      "enabled": true,
+      "email" : "top@redhat.com",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "groups": [
+        "/topGroup"
+      ]
+    },
+    {
+      "username" : "level2GroupUser",
+      "enabled": true,
+      "email" : "level2@redhat.com",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "groups": [
+        "/topGroup/level2group"
+      ]
+    },
+    {
+      "username" : "roleRichUser",
+      "enabled": true,
+      "email" : "rich.roles@redhat.com",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "groups": [
+        "/roleRichGroup/level2group"
+      ],
+      "clientRoles": {
+        "test-app-scope": [ "test-app-allowed-by-scope", "test-app-disallowed-by-scope" ]
+      }
+    },
+    {
+      "username" : "non-duplicate-email-user",
+      "enabled": true,
+      "email" : "non-duplicate-email-user@localhost",
+      "firstName": "Brian",
+      "lastName": "Cohen",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user", "offline_access"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "user-with-one-configured-otp",
+      "enabled": true,
+      "email" : "otp1@redhat.com",
+      "credentials" : [
+        {
+          "type" : "password",
+          "value" : "password"
+        },
+        {
+          "id" : "unique",
+          "type" : "otp",
+          "secretData" : "{\"value\":\"DJmQfC73VGFhw7D4QJ8A\"}",
+          "credentialData" : "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\",\"subType\":\"totp\"}"
+        }
+      ]
+    },
+    {
+      "username" : "user-with-two-configured-otp",
+      "enabled": true,
+      "email" : "otp2@redhat.com",
+      "realmRoles": ["user"],
+      "credentials" : [
+        {
+          "id" : "first",
+          "userLabel" : "first",
+          "type" : "otp",
+          "secretData" : "{\"value\":\"DJmQfC73VGFhw7D4QJ8A\"}",
+          "credentialData" : "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\",\"subType\":\"totp\"}"
+        },
+        {
+          "type" : "password",
+          "value" : "password"
+        },
+        {
+          "id" : "second",
+          "type" : "otp",
+          "secretData" : "{\"value\":\"ABCQfC73VGFhw7D4QJ8A\"}",
+          "credentialData" : "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\",\"subType\":\"totp\"}"
+        }
+      ]
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "third-party",
+      "roles": ["user"]
+    },
+    {
+      "client": "test-app",
+      "roles": ["user"]
+    },
+    {
+      "client": "test-app-scope",
+      "roles": ["user", "admin"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "test-app",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app/auth/*",
+        "https://localhost:8543/auth/realms/master/app/auth/*",
+        "http://localhost:8180/auth/realms/test/app/auth/*",
+        "https://localhost:8543/auth/realms/test/app/auth/*"
+      ],
+      "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
+      "secret": "password"
+    },
+    {
+      "clientId": "root-url-client",
+      "enabled": true,
+      "rootUrl": "http://localhost:8180/foo/bar",
+      "adminUrl": "http://localhost:8180/foo/bar",
+      "baseUrl": "/baz",
+      "redirectUris": [
+        "http://localhost:8180/foo/bar/*",
+        "https://localhost:8543/foo/bar/*"
+      ],
+      "directAccessGrantsEnabled": true,
+      "secret": "password"
+    },
+    {
+      "clientId" : "test-app-scope",
+      "enabled": true,
+
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app/*",
+        "https://localhost:8543/auth/realms/master/app/*"
+      ],
+      "secret": "password",
+      "fullScopeAllowed": "false"
+    },
+    {
+      "clientId" : "third-party",
+      "description" : "A third party application",
+      "enabled": true,
+      "consentRequired": true,
+
+      "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app/*",
+        "https://localhost:8543/auth/realms/master/app/*"
+      ],
+      "secret": "password"
+    },
+    {
+      "clientId": "test-app-authz",
+      "enabled": true,
+      "baseUrl": "/test-app-authz",
+      "adminUrl": "/test-app-authz",
+      "bearerOnly": false,
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "policyEnforcementMode": "ENFORCING",
+        "resources": [
+          {
+            "name": "Admin Resource",
+            "uri": "/protected/admin/*",
+            "type": "http://test-app-authz/protected/admin",
+            "scopes": [
+              {
+                "name": "admin-access"
+              }
+            ]
+          },
+          {
+            "name": "Protected Resource",
+            "uri": "/*",
+            "type": "http://test-app-authz/protected/resource",
+            "scopes": [
+              {
+                "name": "resource-access"
+              }
+            ]
+          },
+          {
+            "name": "Premium Resource",
+            "uri": "/protected/premium/*",
+            "type": "urn:test-app-authz:protected:resource",
+            "scopes": [
+              {
+                "name": "premium-access"
+              }
+            ]
+          },
+          {
+            "name": "Main Page",
+            "type": "urn:test-app-authz:protected:resource",
+            "scopes": [
+              {
+                "name": "urn:test-app-authz:page:main:actionForAdmin"
+              },
+              {
+                "name": "urn:test-app-authz:page:main:actionForUser"
+              },
+              {
+                "name": "urn:test-app-authz:page:main:actionForPremiumUser"
+              }
+            ]
+          }
+        ],
+        "policies": [
+          {
+            "name": "Any Admin Policy",
+            "description": "Defines that adminsitrators can do something",
+            "type": "role",
+            "config": {
+              "roles": "[{\"id\":\"admin\"}]"
+            }
+          },
+          {
+            "name": "Any User Policy",
+            "description": "Defines that any user can do something",
+            "type": "role",
+            "config": {
+              "roles": "[{\"id\":\"user\"}]"
+            }
+          },
+          {
+            "name": "Only Premium User Policy",
+            "description": "Defines that only premium users can do something",
+            "type": "role",
+            "logic": "POSITIVE",
+            "config": {
+              "roles": "[{\"id\":\"customer-user-premium\"}]"
+            }
+          },
+          {
+            "name": "All Users Policy",
+            "description": "Defines that all users can do something",
+            "type": "aggregate",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "applyPolicies": "[\"Any User Policy\",\"Any Admin Policy\",\"Only Premium User Policy\"]"
+            }
+          },
+          {
+            "name": "Premium Resource Permission",
+            "description": "A policy that defines access to premium resources",
+            "type": "resource",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"Premium Resource\"]",
+              "applyPolicies": "[\"Only Premium User Policy\"]"
+            }
+          },
+          {
+            "name": "Administrative Resource Permission",
+            "description": "A policy that defines access to administrative resources",
+            "type": "resource",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"Admin Resource\"]",
+              "applyPolicies": "[\"Any Admin Policy\"]"
+            }
+          },
+          {
+            "name": "Protected Resource Permission",
+            "description": "A policy that defines access to any protected resource",
+            "type": "resource",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "resources": "[\"Protected Resource\"]",
+              "applyPolicies": "[\"All Users Policy\"]"
+            }
+          },
+          {
+            "name": "Action 1 on Main Page Resource Permission",
+            "description": "A policy that defines access to action 1 on the main page",
+            "type": "scope",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "scopes": "[\"urn:test-app-authz:page:main:actionForAdmin\"]",
+              "applyPolicies": "[\"Any Admin Policy\"]"
+            }
+          },
+          {
+            "name": "Action 2 on Main Page Resource Permission",
+            "description": "A policy that defines access to action 2 on the main page",
+            "type": "scope",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "scopes": "[\"urn:test-app-authz:page:main:actionForUser\"]",
+              "applyPolicies": "[\"Any User Policy\"]"
+            }
+          },
+          {
+            "name": "Action 3 on Main Page Resource Permission",
+            "description": "A policy that defines access to action 3 on the main page",
+            "type": "scope",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "scopes": "[\"urn:test-app-authz:page:main:actionForPremiumUser\"]",
+              "applyPolicies": "[\"Only Premium User Policy\"]"
+            }
+          }
+        ]
+      },
+      "redirectUris": [
+        "/test-app-authz/*"
+      ],
+      "secret": "secret"
+    },
+    {
+      "clientId": "named-test-app",
+      "name": "My Named Test App",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/namedapp/base",
+      "redirectUris": [
+        "http://localhost:8180/namedapp/base/*",
+        "https://localhost:8543/namedapp/base/*"
+      ],
+      "adminUrl": "http://localhost:8180/namedapp/base/admin",
+      "secret": "password"
+    },
+    {
+      "clientId": "var-named-test-app",
+      "name": "Test App Named - ${client_account}",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/varnamedapp/base",
+      "redirectUris": [
+        "http://localhost:8180/varnamedapp/base/*",
+        "https://localhost:8543/varnamedapp/base/*"
+      ],
+      "adminUrl": "http://localhost:8180/varnamedapp/base/admin",
+      "secret": "password"
+    },
+    {
+      "clientId": "direct-grant",
+      "enabled": true,
+      "directAccessGrantsEnabled": true,
+      "secret": "password",
+      "webOrigins": [ "http://localtest.me:8180" ],
+      "protocolMappers": [
+        {
+          "name": "aud-account",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "account",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "aud-admin",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "security-admin-console",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+
+    {
+      "clientId": "custom-audience",
+      "enabled": true,
+      "directAccessGrantsEnabled": true,
+      "secret": "password",
+      "protocolMappers": [
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "included.custom.audience": "foo-bar"
+          }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "config": {
+            "user.attribute": "foo",
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "user.attribute": "foo",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "email"
+      ]
+    }
+  ],
+  "roles" : {
+    "realm" : [
+      {
+        "name": "user",
+        "description": "Have User privileges"
+      },
+      {
+        "name": "admin",
+        "description": "Have Administrator privileges"
+      },
+      {
+        "name": "customer-user-premium",
+        "description": "Have User Premium privileges"
+      },
+      {
+        "name": "sample-realm-role",
+        "description": "Sample realm role"
+      },
+      {
+        "name": "attribute-role",
+        "description": "has attributes assigned",
+        "attributes": {
+          "hello": [
+            "world",
+            "keycloak"
+          ]
+        }
+      },
+      {
+        "name": "realm-composite-role",
+        "description": "Realm composite role containing client role",
+        "composite" : true,
+        "composites" : {
+          "realm" : [ "sample-realm-role" ],
+          "client" : {
+            "test-app" : [ "sample-client-role" ],
+            "account" : [ "view-profile" ]
+          }
+        }
+      }
+    ],
+    "client" : {
+      "test-app" : [
+        {
+          "name": "manage-account",
+          "description": "Allows application-initiated actions."
+        },
+        {
+          "name": "customer-user",
+          "description": "Have Customer User privileges"
+        },
+        {
+          "name": "customer-admin",
+          "description": "Have Customer Admin privileges"
+        },
+        {
+          "name": "sample-client-role",
+          "description": "Sample client role",
+          "attributes": {
+            "sample-client-role-attribute": [
+              "sample-client-role-attribute-value"
+            ]
+          }
+        },
+        {
+          "name": "customer-admin-composite-role",
+          "description": "Have Customer Admin privileges via composite role",
+          "composite" : true,
+          "composites" : {
+            "realm" : [ "customer-user-premium" ],
+            "client" : {
+              "test-app" : [ "customer-admin" ]
+            }
+          }
+        }
+      ],
+      "test-app-scope" : [
+        {
+          "name": "test-app-allowed-by-scope",
+          "description": "Role allowed by scope in test-app-scope"
+        },
+        {
+          "name": "test-app-disallowed-by-scope",
+          "description": "Role disallowed by scope in test-app-scope"
+        }
+      ]
+    }
+
+  },
+  "groups" : [
+    {
+      "name": "topGroup",
+      "attributes": {
+        "topAttribute": ["true"]
+
+      },
+      "realmRoles": ["user"],
+
+      "subGroups": [
+        {
+          "name": "level2group",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        },
+        {
+          "name": "level2group2",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        }
+      ]
+    },
+    {
+      "name": "roleRichGroup",
+      "attributes": {
+        "topAttribute": ["true"]
+
+      },
+      "realmRoles": ["user", "realm-composite-role"],
+      "clientRoles": {
+        "account": ["manage-account"]
+      },
+
+      "subGroups": [
+        {
+          "name": "level2group",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user", "customer-admin-composite-role"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        },
+        {
+          "name": "level2group2",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        }
+      ]
+    },
+    {
+      "name": "sample-realm-group"
+    }
+  ],
+
+
+  "clientScopeMappings": {
+    "test-app": [
+      {
+        "client": "third-party",
+        "roles": ["customer-user"]
+      },
+      {
+        "client": "test-app-scope",
+        "roles": ["customer-admin-composite-role"]
+      }
+    ],
+    "test-app-scope": [
+      {
+        "client": "test-app-scope",
+        "roles": ["test-app-allowed-by-scope"]
+      }
+    ]
+  },
+
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "de"],
+  "defaultLocale": "en",
+  "eventsListeners": ["jboss-logging", "event-queue"]
+}

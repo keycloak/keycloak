@@ -16,6 +16,7 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -25,7 +26,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.TotpUtils;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
  */
 public class TotpBean {
 
+    private KeycloakSession session;
     private final RealmModel realm;
     private final String totpSecret;
     private final String totpSecretEncoded;
@@ -44,9 +46,17 @@ public class TotpBean {
     private final boolean enabled;
     private UriBuilder uriBuilder;
     private final List<CredentialModel> otpCredentials;
+    private final List<String> supportedApplications;
+    private final UserModel user;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
+        this(session, realm, user, uriBuilder, null);
+    }
+
+    public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder, String secret) {
+        this.session = session;
         this.realm = realm;
+        this.user = user;
         this.uriBuilder = uriBuilder;
         this.enabled = user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE);
         if (enabled) {
@@ -55,9 +65,19 @@ public class TotpBean {
         } else {
             otpCredentials = Collections.EMPTY_LIST;
         }
-        this.totpSecret = HmacOTP.generateSecret(20);
+        if (secret == null) {
+            this.totpSecret = HmacOTP.generateSecret(20);
+        } else {
+            this.totpSecret = secret;
+        }
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
+
+        OTPPolicy otpPolicy = realm.getOTPPolicy();
+        this.supportedApplications = session.getAllProviders(OTPApplicationProvider.class).stream()
+                .filter(p -> p.supports(otpPolicy))
+                .map(OTPApplicationProvider::getName)
+                .collect(Collectors.toList());
     }
 
     public boolean isEnabled() {
@@ -89,8 +109,16 @@ public class TotpBean {
         return realm.getOTPPolicy();
     }
 
+    public List<String> getSupportedApplications() {
+        return supportedApplications;
+    }
+
     public List<CredentialModel> getOtpCredentials() {
         return otpCredentials;
+    }
+
+    public String getUsername() {
+        return user.getUsername();
     }
 
 }

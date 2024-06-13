@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -43,21 +44,22 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.vault.VaultStringSecret;
+import twitter4j.AccessToken;
+import twitter4j.OAuthAuthorization;
+import twitter4j.RequestToken;
 import twitter4j.Twitter;
-import twitter4j.TwitterFactory;
-import twitter4j.auth.AccessToken;
-import twitter4j.auth.RequestToken;
-import twitter4j.conf.ConfigurationBuilder;
+import twitter4j.v1.User;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 
 /**
@@ -68,34 +70,34 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     String TWITTER_TOKEN_TYPE="twitter";
 
-
     protected static final Logger logger = Logger.getLogger(TwitterIdentityProvider.class);
 
     private static final String TWITTER_TOKEN = "twitter_token";
-    private static final String TWITTER_TOKENSECRET = "twitter_tokenSecret";
+
+    private final OAuthAuthorization oAuthAuthorization;
 
     public TwitterIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
         super(session, config);
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+            oAuthAuthorization = OAuthAuthorization.newBuilder()
+                    .oAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()))
+                    .build();
+        }
     }
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new Endpoint(realm, callback, event);
+        return new Endpoint(session, callback, event, this);
     }
 
     @Override
     public Response performLogin(AuthenticationRequest request) {
-        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            Twitter twitter = new TwitterFactory().getInstance();
-            twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
-
+        try {
             URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncoded());
-
-            RequestToken requestToken = twitter.getOAuthRequestToken(uri.toString());
+            RequestToken requestToken = oAuthAuthorization.getOAuthRequestToken(uri.toString());
             AuthenticationSessionModel authSession = request.getAuthenticationSession();
 
-            authSession.setAuthNote(TWITTER_TOKEN, requestToken.getToken());
-            authSession.setAuthNote(TWITTER_TOKENSECRET, requestToken.getTokenSecret());
+            authSession.setAuthNote(TWITTER_TOKEN, Base64.encodeObject(requestToken));
 
             URI authenticationUrl = URI.create(requestToken.getAuthenticationURL());
 
@@ -161,31 +163,33 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
 
-    protected class Endpoint {
-        protected RealmModel realm;
-        protected AuthenticationCallback callback;
-        protected EventBuilder event;
+    protected static class Endpoint {
+        protected final RealmModel realm;
+        protected final AuthenticationCallback callback;
+        protected final EventBuilder event;
+        private final TwitterIdentityProvider provider;
 
-        @Context
-        protected KeycloakSession session;
+        protected final KeycloakSession session;
 
-        @Context
-        protected ClientConnection clientConnection;
+        protected final ClientConnection clientConnection;
 
-        @Context
-        protected HttpHeaders headers;
+        protected final HttpHeaders headers;
 
-        public Endpoint(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-            this.realm = realm;
+        public Endpoint(KeycloakSession session, AuthenticationCallback callback, EventBuilder event, TwitterIdentityProvider provider) {
+            this.session = session;
+            this.realm = session.getContext().getRealm();
+            this.clientConnection = session.getContext().getConnection();
             this.callback = callback;
             this.event = event;
+            this.provider = provider;
+            this.headers = session.getContext().getRequestHeaders();
         }
 
         @GET
         public Response authResponse(@QueryParam("state") String state,
                                      @QueryParam("denied") String denied,
                                      @QueryParam("oauth_verifier") String verifier) {
-            IdentityBrokerState idpState = IdentityBrokerState.encoded(state);
+            IdentityBrokerState idpState = IdentityBrokerState.encoded(state, realm);
             String clientId = idpState.getClientId();
             String tabId = idpState.getTabId();
             if (clientId == null || tabId == null) {
@@ -198,23 +202,28 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, tabId, session, realm, client, event, AuthenticationSessionModel.class);
 
             if (denied != null) {
-                return callback.cancelled();
+                return callback.cancelled(provider.getConfig());
             }
 
-            try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-                Twitter twitter = new TwitterFactory(new ConfigurationBuilder().setIncludeEmailEnabled(true).build()).getInstance();
-                twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+            OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
 
+            try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(providerConfig.getClientSecret())) {
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
-                String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
+                RequestToken requestToken;
+                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(twitterToken)))) {
+                    requestToken = (RequestToken) in.readObject();
+                }
 
-                RequestToken requestToken = new RequestToken(twitterToken, twitterSecret);
+                AccessToken oAuthAccessToken = provider.oAuthAuthorization.getOAuthAccessToken(requestToken, verifier);
 
-                AccessToken oAuthAccessToken = twitter.getOAuthAccessToken(requestToken, verifier);
-                twitter4j.User twitterUser = twitter.verifyCredentials();
+                Twitter twitter = Twitter.newBuilder()
+                        .oAuthConsumer(providerConfig.getClientId(), vaultStringSecret.get().orElse(providerConfig.getClientSecret()))
+                        .oAuthAccessToken(oAuthAccessToken)
+                        .build();
+                User twitterUser = twitter.v1().users().verifyCredentials();
 
-                BrokeredIdentityContext identity = new BrokeredIdentityContext(Long.toString(twitterUser.getId()));
-                identity.setIdp(TwitterIdentityProvider.this);
+                BrokeredIdentityContext identity = new BrokeredIdentityContext(Long.toString(twitterUser.getId()), providerConfig);
+                identity.setIdp(provider);
 
                 identity.setUsername(twitterUser.getScreenName());
                 identity.setEmail(twitterUser.getEmail());
@@ -230,12 +239,11 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 tokenBuilder.append("\"user_id\":").append("\"").append(oAuthAccessToken.getUserId()).append("\"");
                 tokenBuilder.append("}");
                 String token = tokenBuilder.toString();
-                if (getConfig().isStoreToken()) {
+                if (providerConfig.isStoreToken()) {
                     identity.setToken(token);
                 }
                 identity.getContextData().put(IdentityProvider.FEDERATED_ACCESS_TOKEN, token);
 
-                identity.setIdpConfig(getConfig());
                 identity.setAuthenticationSession(authSession);
 
                 return callback.authenticated(identity);

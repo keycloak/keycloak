@@ -47,7 +47,7 @@ import static org.jvnet.libpam.impl.PAMLibrary.libpam;
  * PAM authenticator.
  * <p>
  * <p>
- * Instances are thread unsafe and non reentrant. An instace cannot be reused
+ * Instances are thread unsafe and non reentrant. An instance cannot be reused
  * to authenticate multiple users.
  * <p>
  * <p>
@@ -78,7 +78,7 @@ public class PAM {
      */
     public PAM(String serviceName) throws PAMException {
         pam_conv conv = new pam_conv(new PamCallback() {
-            public int callback(int num_msg, Pointer msg, Pointer resp, Pointer _) {
+            public int callback(int num_msg, Pointer msg, Pointer resp, Pointer _ptr) {
                 LOGGER.debug("pam_conv num_msg=" + num_msg);
                 if (factors == null)
                     return PAM_CONV_ERR;

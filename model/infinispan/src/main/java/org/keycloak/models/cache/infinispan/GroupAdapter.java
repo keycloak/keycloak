@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
 import java.util.HashSet;
@@ -36,7 +37,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel.Streams {
+public class GroupAdapter implements GroupModel {
 
     protected final CachedGroup cached;
     protected final RealmCacheSession cacheSession;
@@ -138,6 +139,7 @@ public class GroupAdapter implements GroupModel.Streams {
 
     @Override
     public Stream<String> getAttributeStream(String name) {
+        if (isUpdated()) return updated.getAttributeStream(name);
         List<String> values = cached.getAttributes(modelSupplier).get(name);
         if (values == null) return Stream.empty();
         return values.stream();
@@ -145,6 +147,7 @@ public class GroupAdapter implements GroupModel.Streams {
 
     @Override
     public Map<String, List<String>> getAttributes() {
+        if (isUpdated()) return updated.getAttributes();
         return cached.getAttributes(modelSupplier);
     }
 
@@ -232,10 +235,32 @@ public class GroupAdapter implements GroupModel.Streams {
             }
             subGroups.add(subGroup);
         }
-        return subGroups.stream();
+        return subGroups.stream().sorted(GroupModel.COMPARE_BY_NAME);
     }
 
+    @Override
+    public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+        if (isUpdated()) return updated.getSubGroupsStream(search, firstResult, maxResults);
+        return modelSupplier.get().getSubGroupsStream(search, firstResult, maxResults);
+    }
 
+    @Override
+    public Stream<GroupModel> getSubGroupsStream(Integer firstResult, Integer maxResults) {
+        if (isUpdated()) return updated.getSubGroupsStream(firstResult, maxResults);
+        return modelSupplier.get().getSubGroupsStream(firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        if (isUpdated()) return updated.getSubGroupsStream(search, exact, firstResult, maxResults);
+        return modelSupplier.get().getSubGroupsStream(search, exact, firstResult, maxResults);
+    }
+
+    @Override
+    public Long getSubGroupsCount() {
+        if (isUpdated()) return updated.getSubGroupsCount();
+        return cached.getSubGroupsCount(modelSupplier);
+    }
 
     @Override
     public void setParent(GroupModel group) {
@@ -259,5 +284,10 @@ public class GroupAdapter implements GroupModel.Streams {
 
     private GroupModel getGroupModel() {
         return cacheSession.getGroupDelegate().getGroupById(realm, cached.getId());
+    }
+
+    @Override
+    public boolean escapeSlashesInGroupPath() {
+        return KeycloakModelUtils.escapeSlashesInGroupPath(keycloakSession);
     }
 }

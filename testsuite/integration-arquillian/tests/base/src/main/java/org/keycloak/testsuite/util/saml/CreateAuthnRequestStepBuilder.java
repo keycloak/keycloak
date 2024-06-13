@@ -37,7 +37,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.HttpHeaders;
 
 
 public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<AuthnRequestType, CreateAuthnRequestStepBuilder> {

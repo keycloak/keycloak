@@ -2,7 +2,7 @@ package org.keycloak.forms.login.freemarker.model;
 
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;

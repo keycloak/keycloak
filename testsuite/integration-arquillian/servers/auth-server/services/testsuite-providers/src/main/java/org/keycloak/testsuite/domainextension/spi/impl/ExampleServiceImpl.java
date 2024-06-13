@@ -25,7 +25,7 @@ import org.keycloak.testsuite.domainextension.CompanyRepresentation;
 import org.keycloak.testsuite.domainextension.jpa.Company;
 import org.keycloak.testsuite.domainextension.spi.ExampleService;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.LinkedList;
 import java.util.List;
 

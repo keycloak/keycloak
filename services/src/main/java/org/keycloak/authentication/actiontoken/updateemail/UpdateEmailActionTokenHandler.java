@@ -19,8 +19,9 @@ package org.keycloak.authentication.actiontoken.updateemail;
 
 import java.util.List;
 import java.util.Objects;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
@@ -31,6 +32,9 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -74,6 +78,10 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
 
         UpdateEmail.updateEmailNow(tokenContext.getEvent(), user, emailUpdateValidationResult);
 
+        if (Boolean.TRUE.equals(token.getLogoutSessions())) {
+            AuthenticatorUtil.logoutOtherSessions(token, tokenContext);
+        }
+
         tokenContext.getEvent().success();
 
         // verify user email as we know it is valid as this entry point would never have gotten here.
@@ -83,7 +91,12 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
         user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
         tokenContext.getAuthenticationSession().removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
 
-        return forms.setAttribute("messageHeader", forms.getMessage("emailUpdatedTitle")).setSuccess("emailUpdated", newEmail)
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
+
+        return forms.setAttribute("messageHeader", forms.getMessage("emailUpdatedTitle"))
+                .setAttribute("pageRedirectUri", redirectUri)
+                .setSuccess("emailUpdated", newEmail)
                 .createInfoPage();
     }
 

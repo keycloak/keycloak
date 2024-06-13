@@ -22,7 +22,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -32,15 +31,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
-import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
+import org.keycloak.testsuite.pages.IdpConfirmOverrideLinkPage;
 import org.keycloak.testsuite.pages.IdpLinkEmailPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -53,14 +47,15 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.MailServer;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.TimeoutException;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -68,7 +63,6 @@ import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
@@ -82,14 +76,9 @@ import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 /**
  * No test methods there. Just some useful common functionality
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected static final String ATTRIBUTE_VALUE = "attribute.value";
-
-    @Page
-    protected AccountUpdateProfilePage accountUpdateProfilePage;
 
     @Page
     protected LoginPage loginPage;
@@ -98,13 +87,13 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     protected UpdateAccountInformationPage updateAccountInformationPage;
 
     @Page
-    protected AccountPasswordPage accountPasswordPage;
-
-    @Page
     protected ErrorPage errorPage;
 
     @Page
     protected IdpConfirmLinkPage idpConfirmLinkPage;
+
+    @Page
+    protected IdpConfirmOverrideLinkPage idpConfirmOverrideLinkPage;
 
     @Page
     protected ProceedPage proceedPage;
@@ -134,13 +123,10 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     protected VerifyEmailPage verifyEmailPage;
 
     @Page
-    protected AccountFederatedIdentityPage accountFederatedIdentityPage;
-
-    @Page
-    protected AccountApplicationsPage accountApplicationsPage;
-
-    @Page
     protected OAuthGrantPage grantPage;
+
+    @Page
+    protected AppPage appPage;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -159,7 +145,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     }
 
-
     protected void configureSMTPServer() {
         MailServer.start();
         MailServer.createEmailAccount(USER_EMAIL, "password");
@@ -168,7 +153,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         master.setSmtpServer(suiteContext.getSmtpServer());
         realm.update(master);
     }
-
 
     protected void removeSMTPConfiguration(RealmResource consumerRealm) {
         RealmRepresentation master = consumerRealm.toRepresentation();
@@ -200,8 +184,13 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeBrokerTest() {
-        importRealm(bc.createConsumerRealm());
-        importRealm(bc.createProviderRealm());
+        RealmRepresentation consumerRealm = bc.createConsumerRealm();
+        RealmRepresentation providerRealm = bc.createProviderRealm();
+        importRealm(consumerRealm);
+        importRealm(providerRealm);
+
+        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(consumerRealm.getRealm()).users().userProfile());
+        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(providerRealm.getRealm()).users().userProfile());
     }
 
     @After
@@ -211,14 +200,12 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         MailServer.stop();
     }
 
-
     protected String createUser(String username, String email) {
         UserRepresentation newUser = UserBuilder.create().username(username).email(email).enabled(true).build();
         String userId = createUserWithAdminClient(adminClient.realm(bc.consumerRealmName()), newUser);
         resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
         return userId;
     }
-
 
     protected String createUser(String username) {
         return createUser(username, USER_EMAIL);
@@ -230,13 +217,15 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void logInAsUserInIDP() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
     }
 
     // We are re-authenticating to the IDP. Hence it is assumed that "username" field is not visible on the login form on the IDP side
     protected void logInAsUserInIDPWithReAuthenticate() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -268,6 +257,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         updateAccountInformation();
     }
 
+    protected void logInAsUserInIDPForFirstTimeAndAssertSuccess() {
+        logInAsUserInIDPForFirstTime();
+        appPage.assertCurrent();
+    }
+
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
@@ -284,15 +278,10 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         return contextRoot + "/auth/realms/" + realmName + "/account";
     }
 
-
-    protected String getAccountPasswordUrl(String contextRoot, String realmName) {
-        return contextRoot + "/auth/realms/" + realmName + "/account/password";
-    }
-
     /**
      * Get the login page for an existing client in provided realm
      *
-     * @param contextRoot
+     * @param contextRoot server base url without /auth
      * @param realmName Name of the realm
      * @param clientId ClientId of a client. Client has to exists in the realm.
      * @return Login URL
@@ -303,6 +292,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         assertThat(clients, Matchers.is(Matchers.not(Matchers.empty())));
 
         String redirectURI = clients.get(0).getBaseUrl();
+        if (redirectURI.startsWith("/")) {
+            redirectURI = contextRoot + "/auth" + redirectURI;
+        }
 
         return contextRoot + "/auth/realms/" + realmName + "/protocol/openid-connect/auth?client_id=" +
                 clientId + "&redirect_uri=" + redirectURI + "&response_type=code&scope=openid";
@@ -327,7 +319,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     // Completely logout from realm and confirm logout if present
     protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String idTokenHint, String clientId, String redirectUri) {
         final String defaultRedirectUri = redirectUri != null ? redirectUri : getAccountUrl(contextRoot, realm);
-        final String defaultClientId = (idTokenHint == null && clientId == null) ? ACCOUNT_MANAGEMENT_CLIENT_ID : clientId;
+        final String defaultClientId = (idTokenHint == null && clientId == null) ? "test-app" : clientId;
 
         executeLogoutFromRealm(contextRoot, realm, initiatingIdp, idTokenHint, defaultClientId, defaultRedirectUri);
         checkLogoutConfirmation(realm, idTokenHint, defaultClientId);
@@ -350,7 +342,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
                     .clientId(clientId)
                     .initiatingIdp(initiatingIdp);
 
-            if (clientId != null || idTokenHint != null) {
+            if (redirectUri != null && (clientId != null || idTokenHint != null)) {
                 builder.postLogoutRedirectUri(encodeUrl(redirectUri));
             }
 
@@ -399,20 +391,8 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         }
     }
 
-
-    protected void assertLoggedInAccountManagement() {
-        assertLoggedInAccountManagement(bc.getUserLogin(), bc.getUserEmail());
-    }
-
-    protected void assertLoggedInAccountManagement(String username, String email) {
-        waitForAccountManagementTitle();
-        Assert.assertTrue(accountUpdateProfilePage.isCurrent());
-        Assert.assertEquals(accountUpdateProfilePage.getUsername(), username);
-        Assert.assertEquals(accountUpdateProfilePage.getEmail(), email);
-    }
-
     protected void waitForAccountManagementTitle() {
-        final String title = getProjectName().toLowerCase() + " account management";
+        final String title = "Keycloak account management";
         waitForPage(driver, title, true);
     }
 

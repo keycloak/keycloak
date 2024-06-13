@@ -2,25 +2,22 @@ package org.keycloak.testsuite.util;
 
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
-import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
+import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 import org.keycloak.utils.StringUtil;
-import org.wildfly.extras.creaper.core.online.CliException;
-import org.wildfly.extras.creaper.core.online.ModelNodeResult;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 
-import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class SpiProvidersSwitchingUtils {
 
-    private static final String SUBSYSTEM_KEYCLOAK_SERVER_SPI = "/subsystem=keycloak-server/spi=";
     private static final String KEYCLOAKX_ARG_SPI_PREFIX = "--spi-";
     private static final Map<String, String> originalSettingsBackup = new ConcurrentHashMap<>();
     protected static final Logger log = Logger.getLogger(SpiProvidersSwitchingUtils.class);
@@ -34,67 +31,58 @@ public class SpiProvidersSwitchingUtils {
             }
 
             @Override
-            public void setDefaultProvider(Container container, String spiName, String providerId) {
+            public void setDefaultProvider(Container container, String spiName, String providerId, String... config) {
                 System.setProperty(getProviderPropertyName(spiName), providerId);
+                if (config != null) {
+                    String optionName = null;
+                    for (String c : config) {
+                        if (optionName == null) {
+                            optionName = c;
+                        } else {
+                            System.setProperty(getProviderPropertyNameConfig(spiName, providerId, optionName), c);
+                            optionName = null;
+                        }
+                    }
+                }
             }
 
             @Override
             public void removeProviderConfig(Container container, String spiName) {
-                System.clearProperty(getProviderPropertyName(spiName));
+                List<String> toRemove = System.getProperties().stringPropertyNames().stream()
+                        .filter(p -> p.startsWith(getProviderPropertyNamePrefix(spiName)))
+                        .collect(Collectors.toList());
+                toRemove.forEach(p -> System.clearProperty(p));
+            }
+
+            private String getProviderPropertyNamePrefix(String spiName) {
+                return  "keycloak." + spiName + ".";
             }
 
             private String getProviderPropertyName(String spiName) {
-                return "keycloak." + spiName + ".provider";
-            }
-        },
-        WILDFLY {
-            
-            @Override
-            public Optional<String> getCurrentDefaultProvider(Container container, String spiName,
-                    SetDefaultProvider annotation) {
-                String cliCmd = SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + ":read-attribute(name=default-provider)";
-                return runInCli(cliCmd).filter(ModelNodeResult::isSuccess)
-                        .map(n -> n.get("result").asString());
+                return getProviderPropertyNamePrefix(spiName) + "provider";
             }
 
-            @Override
-            public void setDefaultProvider(Container container, String spiName, String providerId) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + "/:add(default-provider=\"" + providerId + "\")");
-            }
-
-            @Override
-            public void updateDefaultProvider(Container container, String spiName, String providerId) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + ":write-attribute(name=default-provider, value="
-                        + providerId + ")");
-            }
-
-            @Override
-            public void unsetDefaultProvider(Container container, String spiName) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + ":/:undefine-attribute(name=default-provider)");
-            }
-
-            @Override
-            public void removeProviderConfig(Container container, String spiName) {
-                runInCli(SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + "/:remove");
-            }
-
-            public Optional<ModelNodeResult> runInCli(String cliCmd) {
-                try (
-                        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
-                ) {
-                    return Optional.ofNullable(client.execute(cliCmd));
-                } catch (CliException | IOException e) {
-                    // return empty optional, see below
-                }
-                return Optional.empty();
+            private String getProviderPropertyNameConfig(String spiName, String providerId, String configName) {
+                return getProviderPropertyNamePrefix(spiName) + providerId + "." + configName;
             }
         },
         QUARKUS {
-
             @Override
-            public void setDefaultProvider(Container container, String spiName, String providerId) {
-                getQuarkusContainer(container).setAdditionalBuildArgs(Collections
-                        .singletonList(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "-provider=" + providerId));
+            public void setDefaultProvider(Container container, String spiName, String providerId, String... config) {
+                List<String> args = new LinkedList<>();
+                args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "-provider=" + providerId);
+                if (config != null) {
+                    String optionName = null;
+                    for (String c : config) {
+                        if (optionName == null) {
+                            optionName = c;
+                        } else {
+                            args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "-" + providerId + "-" + optionName + "=" + c);
+                            optionName = null;
+                        }
+                    }
+                }
+                getQuarkusContainer(container).setAdditionalBuildArgs(args);
             }
 
             @Override
@@ -102,8 +90,8 @@ public class SpiProvidersSwitchingUtils {
                 getQuarkusContainer(container).setAdditionalBuildArgs(Collections.emptyList());
             }
 
-            private KeycloakQuarkusServerDeployableContainer getQuarkusContainer(Container container) {
-                return (KeycloakQuarkusServerDeployableContainer) container.getDeployableContainer();
+            private AbstractQuarkusDeployableContainer getQuarkusContainer(Container container) {
+                return (AbstractQuarkusDeployableContainer) container.getDeployableContainer();
             }
 
             /**
@@ -141,10 +129,10 @@ public class SpiProvidersSwitchingUtils {
             return Optional.empty();
         }
 
-        public abstract void setDefaultProvider(Container container, String spiName, String providerId);
+        public abstract void setDefaultProvider(Container container, String spiName, String providerId, String... config);
 
-        public void updateDefaultProvider(Container container, String spiName, String providerId) {
-            setDefaultProvider(container, spiName, providerId);
+        public void updateDefaultProvider(Container container, String spiName, String providerId, String... config) {
+            setDefaultProvider(container, spiName, providerId, config);
         }
 
         public void unsetDefaultProvider(Container container, String spiName) {
@@ -156,10 +144,8 @@ public class SpiProvidersSwitchingUtils {
         public static SpiSwitcher getSpiSwitcherFor(ContainerInfo containerInfo) {
             if (containerInfo.isUndertow()) {
                 return SpiSwitcher.UNDERTOW;
-            } else if (containerInfo.isQuarkus()) {
-                return SpiSwitcher.QUARKUS;
             }
-            return SpiSwitcher.WILDFLY;
+            return SpiSwitcher.QUARKUS;
         }
     }
 
@@ -176,9 +162,9 @@ public class SpiProvidersSwitchingUtils {
 
         if (annotation.onlyUpdateDefault()) {
             spiSwitcher.getCurrentDefaultProvider(container, spi, annotation).ifPresent(v -> originalSettingsBackup.put(spi, v));
-            spiSwitcher.updateDefaultProvider(container, spi, annotation.providerId());
+            spiSwitcher.updateDefaultProvider(container, spi, annotation.providerId(), annotation.config());
         } else {
-            spiSwitcher.setDefaultProvider(container, spi, annotation.providerId());
+            spiSwitcher.setDefaultProvider(container, spi, annotation.providerId(), annotation.config());
         }
     }
 

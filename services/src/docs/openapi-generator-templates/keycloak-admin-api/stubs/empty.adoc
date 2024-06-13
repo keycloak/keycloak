@@ -1,0 +1,1 @@
+// openapi generator built documentation, see https://github.com/OpenAPITools/openapi-generator

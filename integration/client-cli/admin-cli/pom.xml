@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-client-cli-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -31,8 +31,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.jboss.aesh</groupId>
-            <artifactId>aesh</artifactId>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -42,7 +42,15 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>commons-logging-jboss-logging</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -54,7 +62,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <!--version>2.4.3</version-->
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -67,9 +74,9 @@
                                     <artifact>org.keycloak:keycloak-core</artifact>
                                     <includes>
                                         <include>org/keycloak/util/**</include>
+                                        <include>org/keycloak/crypto/**</include>
                                         <include>org/keycloak/json/**</include>
-                                        <include>org/keycloak/jose/jws/**</include>
-                                        <include>org/keycloak/jose/jwk/**</include>
+                                        <include>org/keycloak/jose/**</include>
                                         <include>org/keycloak/representations/adapters/config/**</include>
                                         <include>org/keycloak/representations/adapters/action/**</include>
                                         <include>org/keycloak/representations/AccessTokenResponse.class</include>
@@ -86,6 +93,7 @@
                                         <include>org/keycloak/representations/idm/IdentityProviderRepresentation.class</include>
                                         <include>org/keycloak/representations/idm/authorization/**</include>
                                         -->
+                                        <include>org/keycloak/representations/oidc/OIDCClientRepresentation.class</include>
                                         <include>org/keycloak/representations/idm/**</include>
                                         <include>org/keycloak/representations/JsonWebToken.class</include>
                                         <include>org/keycloak/Token.class</include>
@@ -96,19 +104,8 @@
                                     <artifact>org.keycloak:keycloak-common</artifact>
                                     <includes>
                                         <include>org/keycloak/common/util/**</include>
+                                        <include>org/keycloak/common/crypto/**</include>
                                     </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.bouncycastle:bcprov-jdk15on</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.bouncycastle:bcpkix-jdk15on</artifact>
-                                    <excludes>
-                                        <exclude>**/**</exclude>
-                                    </excludes>
                                 </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
@@ -129,25 +126,7 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-client</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-jaxrs</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-jackson2-provider</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec</artifact>
+                                    <artifact>jakarta.ws.rs:jakarta.ws.rs-api</artifact>
                                     <includes>
                                         <include>**/**</include>
                                     </includes>

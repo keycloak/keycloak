@@ -29,8 +29,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -52,13 +50,7 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
     protected LoginPage loginPage;
 
     @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
     protected OAuthGrantPage grantPage;
-
-    @Page
-    protected AccountApplicationsPage accountAppsPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -100,7 +92,6 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
         Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
                 expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
     }
-
 
     static class Tokens {
         final IDToken idToken;

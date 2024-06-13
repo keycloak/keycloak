@@ -19,6 +19,8 @@ package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import liquibase.Liquibase;
 import liquibase.Scope;
+import liquibase.ScopeManager;
+import liquibase.ThreadLocalScopeManager;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
@@ -72,6 +74,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+            Scope.setScopeManager(new ThreadLocalScopeManager());
             Scope.getCurrentScope();
         } finally {
             Thread.currentThread().setContextClassLoader(currentClassLoader);

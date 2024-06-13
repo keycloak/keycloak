@@ -17,9 +17,8 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.HttpRequest;
-import javax.ws.rs.NotAuthorizedException;
+import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.NotAuthorizedException;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -33,19 +32,18 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.services.ForbiddenException;
 
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.ext.Providers;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,28 +52,25 @@ public class ClientsManagementService {
 
     private static final Logger logger = Logger.getLogger(ClientsManagementService.class);
 
-    private RealmModel realm;
+    private final RealmModel realm;
 
-    private EventBuilder event;
+    private final EventBuilder event;
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
-    @Context
-    protected Providers providers;
+    protected final KeycloakSession session;
 
-    @Context
-    protected KeycloakSession session;
-
-    public ClientsManagementService(RealmModel realm, EventBuilder event) {
-        this.realm = realm;
+    public ClientsManagementService(KeycloakSession session, EventBuilder event) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getHttpRequest();
+        this.headers = session.getContext().getRequestHeaders();
     }
 
     public static UriBuilder clientsManagementBaseUrl(UriBuilder baseUriBuilder) {
@@ -174,7 +169,7 @@ public class ClientsManagementService {
         if (client.isPublicClient()) {
             OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_CLIENT, "Public clients not allowed");
             event.error(Errors.INVALID_CLIENT);
-            throw new BadRequestException("Public clients not allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build());
+            throw new BadRequestException("Public clients not allowed", jakarta.ws.rs.core.Response.status(jakarta.ws.rs.core.Response.Status.BAD_REQUEST).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
         return client;
@@ -185,7 +180,7 @@ public class ClientsManagementService {
         if (clientClusterHost == null || clientClusterHost.length() == 0) {
             OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation( OAuthErrorException.INVALID_REQUEST, "Client cluster host not specified");
             event.error(Errors.INVALID_CODE);
-            throw new BadRequestException("Cluster host not specified", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build());
+            throw new BadRequestException("Cluster host not specified", jakarta.ws.rs.core.Response.status(jakarta.ws.rs.core.Response.Status.BAD_REQUEST).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
         return clientClusterHost;

@@ -37,10 +37,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
@@ -55,13 +54,13 @@ import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
 public class OIDCDynamicScopeTest extends OIDCScopeTest {
 
-    private static String userId = KeycloakModelUtils.generateId();
+    private static String userId;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);
         UserRepresentation user = UserBuilder.create()
-                .id(userId)
+                .id(KeycloakModelUtils.generateId())
                 .username("johnDynamic")
                 .enabled(true)
                 .email("johnDynamic@scopes.xyz")
@@ -84,6 +83,12 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         RoleRepresentation dynamicScopeRole = new RoleRepresentation();
         dynamicScopeRole.setName("dynamic-scope-role");
         testRealm.getRoles().getRealm().add(dynamicScopeRole);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("john", true).get(0).getId();
     }
 
     @Before

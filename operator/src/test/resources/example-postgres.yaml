@@ -1,0 +1,50 @@
+# PostgreSQL StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-db
+spec:
+  serviceName: postgresql-db-service
+  selector:
+    matchLabels:
+      app: postgresql-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgresql-db
+    spec:
+      containers:
+        - name: postgresql-db
+          image: quay.io/sclorg/postgresql-15-c9s:latest
+          volumeMounts:
+            - mountPath: /var/lib/pgsql/data
+              name: cache-volume
+          env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: keycloak-db-secret
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: keycloak-db-secret
+            - name: POSTGRESQL_DATABASE
+              value: keycloak
+      volumes:
+        - name: cache-volume
+          emptyDir: {}
+---
+# PostgreSQL StatefulSet Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+spec:
+  selector:
+    app: postgresql-db
+  ports:
+  - port: 5432
+    targetPort: 5432

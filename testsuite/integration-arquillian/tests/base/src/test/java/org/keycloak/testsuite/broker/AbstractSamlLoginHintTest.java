@@ -7,7 +7,6 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -21,7 +20,9 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         String username = "all-info-set@localhost.com";
         createUser(bc.providerRealmName(), username, "password");
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         log.debug("Clicking social " + bc.getIDPAlias());
         addLoginHintOnSocialButton(username);
         loginPage.clickSocial(bc.getIDPAlias());
@@ -43,7 +44,9 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         String username = "all-info-set@localhost.com";
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         log.debug("Clicking social " + bc.getIDPAlias());
         addLoginHintOnSocialButton("");
         loginPage.clickSocial(bc.getIDPAlias());

@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -16,7 +17,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
  * Tests first-broker-login flow with new authenticators.
@@ -80,6 +80,8 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         // Create user and link him with TOTP
         String consumerRealmUserId = createUser("consumer");
         String totpSecret = addTOTPToUser("consumer");
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginWithBrokerAndConfirmLinkAccount();
 
@@ -164,6 +166,8 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         String consumerRealmUserId = createUser("consumer");
         String totpSecret = addTOTPToUser("consumer");
 
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert that user can see credentials combobox. Password and OTP are available credentials. Password should be selected.
@@ -195,7 +199,9 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         user.update(userRep);
 
         // Login. TOTP will be required at login time.
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         loginPage.login(username, "password");
 
         totpPage.assertCurrent();
@@ -211,7 +217,8 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
     // Login with broker and click "Link account"
     private void loginWithBrokerAndConfirmLinkAccount() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
 
@@ -223,8 +230,6 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
 
     private void assertUserAuthenticatedInConsumer(String consumerRealmUserId) {
-        waitForAccountManagementTitle();
-        accountUpdateProfilePage.assertCurrent();
         assertNumFederatedIdentities(consumerRealmUserId, 1);
     }
 

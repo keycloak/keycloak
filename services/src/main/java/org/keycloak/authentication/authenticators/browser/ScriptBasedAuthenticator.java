@@ -49,12 +49,12 @@ import java.util.Map;
  * <li>{@code user} the current {@link UserModel}</li>
  * <li>{@code session} the active {@link KeycloakSession}</li>
  * <li>{@code authenticationSession} the current {@link org.keycloak.sessions.AuthenticationSessionModel}</li>
- * <li>{@code httpRequest} the current {@link org.jboss.resteasy.spi.HttpRequest}</li>
- * <li>{@code LOG} a {@link org.jboss.logging.Logger} scoped to {@link ScriptBasedAuthenticator}/li>
+ * <li>{@code httpRequest} the current {@link org.keycloak.http.HttpRequest}</li>
+ * <li>{@code LOG} a {@link org.jboss.logging.Logger} scoped to {@link ScriptBasedAuthenticator}</li>
  * </ol>
  * </p>
  * <p>
- * Note that the {@code user} variable is only defined when the user was identified by a preceeding
+ * Note that the {@code user} variable is only defined when the user was identified by a preceding
  * authentication step, e.g. by the {@link UsernamePasswordForm} authenticator.
  * </p>
  * <p>

@@ -1,0 +1,113 @@
+
+=== Configuration techniques
+
+Our `PropertyFileUserStorageProvider` example is a bit contrived. It is hardcoded to a property file that is embedded in the jar of the provider, which is not terribly useful. We might want to make the location of this file configurable per instance of the provider. In other words, we might want to reuse this provider multiple times in multiple different realms and point to completely different user property files. We'll also want to perform this configuration within the Admin Console UI.
+
+The `UserStorageProviderFactory` has additional methods you can implement that handle provider configuration. You describe the variables you want to configure per provider and the Admin Console automatically renders a generic input page to gather this configuration. When implemented, callback methods also validate the configuration before it is saved, when a provider is created for the first time, and when it is updated. `UserStorageProviderFactory` inherits these methods from the `org.keycloak.component.ComponentFactory` interface.
+
+[source,java]
+----
+    List<ProviderConfigProperty> getConfigProperties();
+
+    default
+    void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model)
+            throws ComponentValidationException
+    {
+
+    }
+
+    default
+    void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+
+    }
+
+    default
+    void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+
+    }
+----
+
+The `ComponentFactory.getConfigProperties()` method returns a list of `org.keycloak.provider.ProviderConfigProperty` instances. These instances declare metadata that is needed to render and store each configuration variable of the provider.
+
+==== Configuration example
+
+Let's expand our `PropertyFileUserStorageProviderFactory` example to allow you to point a provider instance to a specific file on disk.
+
+.PropertyFileUserStorageProviderFactory
+[source,java]
+----
+public class PropertyFileUserStorageProviderFactory
+                  implements UserStorageProviderFactory<PropertyFileUserStorageProvider> {
+
+    protected static final List<ProviderConfigProperty> configMetadata;
+
+    static {
+        configMetadata = ProviderConfigurationBuilder.create()
+                .property().name("path")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .label("Path")
+                .defaultValue("${jboss.server.config.dir}/example-users.properties")
+                .helpText("File path to properties file")
+                .add().build();
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configMetadata;
+    }
+----
+
+The `ProviderConfigurationBuilder` class is a great helper class to create a list of configuration properties. Here we specify a variable named `path` that is a String type. On the Admin Console configuration page for this provider, this configuration variable is labeled as `Path` and has a default value of `${jboss.server.config.dir}/example-users.properties`. When you hover over the tooltip of this configuration option, it displays the help text, `File path to properties file`.
+
+The next thing we want to do is to verify that this file exists on disk. We do not want to enable an instance of this provider in the realm unless it points to a valid user property file. To do this, we implement the `validateConfiguration()` method.
+
+[source,java]
+----
+    @Override
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config)
+                   throws ComponentValidationException {
+        String fp = config.getConfig().getFirst("path");
+        if (fp == null) throw new ComponentValidationException("user property file does not exist");
+        fp = EnvUtil.replace(fp);
+        File file = new File(fp);
+        if (!file.exists()) {
+            throw new ComponentValidationException("user property file does not exist");
+        }
+    }
+----
+
+The `validateConfiguration()` method provides the configuration variable from the `ComponentModel` to verify if that file exists on disk.
+Notice that the use of the `org.keycloak.common.util.EnvUtil.replace()` method. With this method any string that includes `${}` will replace that value with a system property value.
+The `${jboss.server.config.dir}` string corresponds to the `conf/` directory of our server and is really useful for this example.
+
+Next thing we have to do is remove the old `init()` method. We do this because user property files are going to be unique per provider instance. We move this logic to the `create()` method.
+
+[source,java]
+----
+    @Override
+    public PropertyFileUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        String path = model.getConfig().getFirst("path");
+
+        Properties props = new Properties();
+        try {
+            InputStream is = new FileInputStream(path);
+            props.load(is);
+            is.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return new PropertyFileUserStorageProvider(session, model, props);
+    }
+----
+
+This logic is, of course, inefficient as every transaction reads the entire user property file from disk, but hopefully this illustrates, in a simple way, how to hook in configuration variables.
+
+==== Configuring the provider in the Admin Console
+
+Now that the configuration is enabled, you can set the `path` variable when you configure the provider in the Admin Console.
+
+ifeval::[{project_community}==true]
+.Configured Provider
+image:images/readonly-user-storage-provider-with-config.png[]
+endif::[]

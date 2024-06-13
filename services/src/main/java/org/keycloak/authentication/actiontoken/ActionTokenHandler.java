@@ -24,7 +24,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  *  Handler of the action token.

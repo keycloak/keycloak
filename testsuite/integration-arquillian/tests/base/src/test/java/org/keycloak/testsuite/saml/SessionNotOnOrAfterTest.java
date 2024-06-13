@@ -8,7 +8,6 @@ import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
@@ -20,7 +19,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import org.junit.Assert;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
@@ -30,7 +29,6 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 /**
  * @author mhajas
  */
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class SessionNotOnOrAfterTest extends AbstractSamlTest {
 
     private static final int SSO_MAX_LIFESPAN = 3602;
@@ -44,7 +42,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
 
         Assert.assertNotNull(resp);
         Assert.assertNotNull(resp.getAssertions());
-        Assert.assertThat(resp.getAssertions().size(), greaterThan(0));
+        assertThat(resp.getAssertions().size(), greaterThan(0));
         Assert.assertNotNull(resp.getAssertions().get(0));
         Assert.assertNotNull(resp.getAssertions().get(0).getAssertion());
 

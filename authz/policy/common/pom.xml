@@ -25,14 +25,14 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-authz-provider-parent</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>keycloak-authz-policy-common</artifactId>
     <packaging>jar</packaging>
 
-    <name>KeyCloak AuthZ: Common Policy Providers</name>
+    <name>Keycloak AuthZ: Common Policy Providers</name>
     <description>KeyCloak AuthZ: Common Policy Providers</description>
 
     <dependencies>
@@ -49,6 +49,11 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

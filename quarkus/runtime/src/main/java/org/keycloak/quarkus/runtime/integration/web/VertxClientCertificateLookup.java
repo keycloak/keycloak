@@ -19,16 +19,9 @@ package org.keycloak.quarkus.runtime.integration.web;
 
 import java.security.cert.X509Certificate;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
-
-import io.vertx.ext.web.RoutingContext;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -47,32 +40,14 @@ public class VertxClientCertificateLookup implements X509ClientCertificateLookup
 
     @Override
     public X509Certificate[] getCertificateChain(HttpRequest httpRequest) {
-        Instance<RoutingContext> instances = CDI.current().select(RoutingContext.class);
+        X509Certificate[] certificates = httpRequest.getClientCertificateChain();
 
-        if (instances.isResolvable()) {
-            RoutingContext context = instances.get();
-
-            try {
-                SSLSession sslSession = context.request().sslSession();
-                
-                if (sslSession == null) {
-                    return null;
-                }
-                
-                X509Certificate[] certificates = (X509Certificate[]) sslSession.getPeerCertificates();
-
-                if (logger.isTraceEnabled() && certificates != null) {
-                    for (X509Certificate cert : certificates) {
-                        logger.tracef("Certificate's SubjectDN => \"%s\"", cert.getSubjectDN().getName());
-                    }
-                }
-
-                return certificates;
-            } catch (SSLPeerUnverifiedException ignore) {
-                // client not authenticated
+        if (logger.isTraceEnabled() && certificates != null) {
+            for (X509Certificate cert : certificates) {
+                logger.tracef("Certificate's SubjectDN => \"%s\"", cert.getSubjectX500Principal().getName());
             }
         }
 
-        return null;
+        return certificates;
     }
 }

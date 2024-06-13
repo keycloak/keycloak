@@ -18,4 +18,14 @@ public class ECDSAClientSignatureVerifierProvider implements ClientSignatureVeri
     public SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException {
         return new ClientECDSASignatureVerifierContext(session, client, input);
     }
+
+    @Override
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    @Override
+    public boolean isAsymmetricAlgorithm() {
+        return true;
+    }
 }

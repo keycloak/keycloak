@@ -26,7 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ServicesLogger;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -107,7 +107,8 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             processor.getEvent().error(Errors.INVALID_CLIENT);
             return alternativeChallenge;
         }
-        throw new AuthenticationFlowException("Invalid client credentials", AuthenticationFlowError.INVALID_CREDENTIALS);
+        
+        throw new AuthenticationFlowException("Invalid client or Invalid client credentials", AuthenticationFlowError.CLIENT_NOT_FOUND);
     }
 
     protected List<AuthenticationExecutionModel> findExecutionsToRun() {

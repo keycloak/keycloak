@@ -59,15 +59,15 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.util.UUID;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
 import static org.keycloak.testsuite.federation.ldap.AbstractLDAPTest.TEST_REALM_NAME;
 import static org.keycloak.testsuite.federation.ldap.AbstractLDAPTest.ldapModelId;
@@ -144,9 +144,6 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
 
     @Before
     public void setupIdentityProvider() {
-        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         // Configure autolink flow
         AuthenticationFlowRepresentation newFlow = new AuthenticationFlowRepresentation();
         newFlow.setAlias(FLOW_AUTO_LINK);

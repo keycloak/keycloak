@@ -1,0 +1,179 @@
+[[_enforcer_claim_information_point]]
+= Claim Information Point
+
+A Claim Information Point (CIP) is responsible for resolving claims and pushing these claims to the {project_name} server
+in order to provide more information about the access context to policies. They can be defined as a configuration option
+to the policy-enforcer in order to resolve claims from different sources, such as:
+
+* HTTP Request (parameters, headers, body, etc)
+* External HTTP Service
+* Static values defined in configuration
+* Any other source by implementing the Claim Information Provider SPI
+
+When pushing claims to the {project_name} server, policies can base decisions not only on who a user is but also by taking
+context and contents into account, based on who, what, why, when, where, and which for a given transaction. It is all about
+Contextual-based Authorization and how to use runtime information in order to support fine-grained authorization decisions.
+
+== Obtaining information from the HTTP request
+
+Here are several examples showing how you can extract claims from an HTTP request:
+
+.keycloak.json
+[source,json]
+----
+{
+  "paths": [
+    {
+      "path": "/protected/resource",
+      "claim-information-point": {
+        "claims": {
+          "claim-from-request-parameter": "{request.parameter['a']}",
+          "claim-from-header": "{request.header['b']}",
+          "claim-from-cookie": "{request.cookie['c']}",
+          "claim-from-remoteAddr": "{request.remoteAddr}",
+          "claim-from-method": "{request.method}",
+          "claim-from-uri": "{request.uri}",
+          "claim-from-relativePath": "{request.relativePath}",
+          "claim-from-secure": "{request.secure}",
+          "claim-from-json-body-object": "{request.body['/a/b/c']}",
+          "claim-from-json-body-array": "{request.body['/d/1']}",
+          "claim-from-body": "{request.body}",
+          "claim-from-static-value": "static value",
+          "claim-from-multiple-static-value": ["static", "value"],
+          "param-replace-multiple-placeholder": "Test {keycloak.access_token['/custom_claim/0']} and {request.parameter['a']}"
+        }
+      }
+    }
+  ]
+}
+----
+
+== Obtaining information from an external HTTP service
+
+Here are several examples showing how you can extract claims from an external HTTP Service:
+
+.keycloak.json
+[source,json]
+----
+{
+  "paths": [
+    {
+      "path": "/protected/resource",
+      "claim-information-point": {
+        "http": {
+          "claims": {
+            "claim-a": "/a",
+            "claim-d": "/d",
+            "claim-d0": "/d/0",
+            "claim-d-all": [
+              "/d/0",
+              "/d/1"
+            ]
+          },
+          "url": "http://mycompany/claim-provider",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "header-b": [
+              "header-b-value1",
+              "header-b-value2"
+            ],
+            "Authorization": "Bearer {keycloak.access_token}"
+          },
+          "parameters": {
+            "param-a": [
+              "param-a-value1",
+              "param-a-value2"
+            ],
+            "param-subject": "{keycloak.access_token['/sub']}",
+            "param-user-name": "{keycloak.access_token['/preferred_username']}",
+            "param-other-claims": "{keycloak.access_token['/custom_claim']}"
+          }
+        }
+      }
+    }
+  ]
+}
+----
+
+== Static claims
+
+.keycloak.json
+[source,json]
+----
+{
+  "paths": [
+    {
+      "path": "/protected/resource",
+      "claim-information-point": {
+        "claims": {
+          "claim-from-static-value": "static value",
+          "claim-from-multiple-static-value": ["static", "value"]
+        }
+      }
+    }
+  ]
+}
+----
+
+== Claim information provider SPI
+
+The Claim Information Provider SPI can be used by developers to support different claim information points in case none of the
+built-ins providers are enough to address their requirements.
+
+For example, to implement a new CIP provider you need to implement `org.keycloak.adapters.authorization.ClaimInformationPointProviderFactory`
+and `ClaimInformationPointProvider` and also provide the file `META-INF/services/org.keycloak.adapters.authorization.ClaimInformationPointProviderFactory`
+in your application`s classpath.
+
+Example of `org.keycloak.adapters.authorization.ClaimInformationPointProviderFactory`:
+
+[source,java]
+----
+public class MyClaimInformationPointProviderFactory implements ClaimInformationPointProviderFactory<MyClaimInformationPointProvider> {
+
+    @Override
+    public String getName() {
+        return "my-claims";
+    }
+
+    @Override
+    public void init(PolicyEnforcer policyEnforcer) {
+
+    }
+
+    @Override
+    public MyClaimInformationPointProvider create(Map<String, Object> config) {
+        return new MyClaimInformationPointProvider(config);
+    }
+}
+----
+
+Every CIP provider must be associated with a name, as defined above in the `MyClaimInformationPointProviderFactory.getName` method. The name
+will be used to map the configuration from the `claim-information-point` section in the `policy-enforcer` configuration to the implementation.
+
+When processing requests, the policy enforcer will call the MyClaimInformationPointProviderFactory.create method in order to obtain an
+instance of MyClaimInformationPointProvider. When called, any configuration defined for this particular CIP provider
+(via claim-information-point) is passed as a map.
+
+Example of `ClaimInformationPointProvider`:
+
+[source,java]
+----
+public class MyClaimInformationPointProvider implements ClaimInformationPointProvider {
+
+    private final Map<String, Object> config;
+
+    public MyClaimInformationPointProvider(Map<String, Object> config) {
+        this.config = config;
+    }
+
+    @Override
+    public Map<String, List<String>> resolve(HttpFacade httpFacade) {
+        Map<String, List<String>> claims = new HashMap<>();
+
+        // put whatever claim you want into the map
+
+        return claims;
+    }
+}
+----

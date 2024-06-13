@@ -1,0 +1,102 @@
+name: Keycloak Documentation
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+      - quarkus-next
+  pull_request:
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: documentation-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  conditional:
+    name: Check conditional workflows and jobs
+    runs-on: ubuntu-latest
+    outputs:
+      documentation: ${{ steps.conditional.outputs.documentation }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build
+    if: ${{ needs.conditional.outputs.documentation == 'true' }}
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: setup-java
+        name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - id: maven-cache
+        name: Maven cache
+        uses: ./.github/actions/maven-cache
+
+      - id: build-test-documentation
+        name: Build and verify Keycloak documentation
+        shell: bash
+        run: |
+          ./mvnw install -Dtest=!ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -e -Pdocumentation
+
+      - id: upload-keycloak-documentation
+        name: Upload Keycloak documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: keycloak-documentation
+          path: docs/documentation/dist/target/*.zip
+          retention-days: 1
+
+  external-links:
+    name: External links check
+    if: ${{ needs.conditional.outputs.documentation == 'true' }}
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: setup-java
+        name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - id: maven-cache
+        name: Maven cache
+        uses: ./.github/actions/maven-cache
+
+      - id: build-test-documentation
+        name: Build and verify Keycloak documentation
+        shell: bash
+        run: |
+          ./mvnw install -Dtest=ExternalLinksTest -am -pl docs/documentation/tests -e -Pdocumentation 
+
+  check:
+    name: Status Check - Keycloak Documentation
+    if: always()
+    needs:
+      - conditional
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/status-check
+        with:
+          jobs: ${{ toJSON(needs) }}

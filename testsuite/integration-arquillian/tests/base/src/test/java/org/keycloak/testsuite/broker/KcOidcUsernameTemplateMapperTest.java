@@ -30,7 +30,7 @@ public class KcOidcUsernameTemplateMapperTest extends AbstractUsernameTemplateMa
 
     @Override
     protected String getMapperTemplate() {
-        return "kc-oidc-idp-[%s]";
+        return "kc-oidc-idp-%s";
     }
 
     @Override

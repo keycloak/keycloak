@@ -14,6 +14,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -59,17 +60,37 @@ public class BrokerTestTools {
         return identityProviderRepresentation;
     }
 
-    public static void waitForPage(WebDriver driver, final String title, final boolean isHtmlTitle) {
+    public static void waitForPage(final WebDriver driver, final String title, final boolean isHtmlTitle) {
         waitForPageToLoad();
 
-        WebDriverWait wait = new WebDriverWait(driver, 5);
-        ExpectedCondition<Boolean> condition = (WebDriver input) -> isHtmlTitle ? input.getTitle().toLowerCase().contains(title) : PageUtils.getPageTitle(input).toLowerCase().contains(title);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
+            private String actualTitle = null;
+
+            public Boolean apply(final WebDriver input) {
+                if (input == null) {
+                    return false;
+                }
+
+                actualTitle = isHtmlTitle ? input.getTitle() : PageUtils.getPageTitle(input);
+                if (actualTitle == null) {
+                    return false;
+                }
+
+                return actualTitle.toLowerCase().contains(title.toLowerCase());
+            }
+
+            public String toString() {
+                return String.format("value to contain (ignoring case) \"%s\". Current value: \"%s\"", title,
+                        this.actualTitle);
+            }
+        };
 
         wait.until(condition);
     }
 
     public static void waitForElementEnabled(WebDriver driver, final String elementName) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
 
         ExpectedCondition<Boolean> condition = (WebDriver input) -> {
             List<WebElement> elements = input.findElements(By.name(elementName));

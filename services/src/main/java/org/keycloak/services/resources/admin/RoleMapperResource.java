@@ -16,16 +16,22 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
@@ -34,23 +40,24 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.storage.ReadOnlyException;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,41 +76,42 @@ import java.util.stream.Stream;
  * @author <a href="mailto:mpaulosnunes@gmail.com">Miguel P. Nunes</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class RoleMapperResource {
 
     protected static final Logger logger = Logger.getLogger(RoleMapperResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    private RoleMapperModel roleMapper;
+    private final RoleMapperModel roleMapper;
 
-    private AdminEventBuilder adminEvent;
+    private final AdminEventBuilder adminEvent;
 
-    protected AdminPermissionEvaluator.RequirePermissionCheck managePermission;
-    protected AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
-    private AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck managePermission;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
+    private final AdminPermissionEvaluator auth;
 
-    @Context
-    protected ClientConnection clientConnection;
+    protected final ClientConnection clientConnection;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    @Context
-    protected HttpHeaders headers;
+    protected final HttpHeaders headers;
 
-    public RoleMapperResource(RealmModel realm,
+    public RoleMapperResource(KeycloakSession session,
                               AdminPermissionEvaluator auth,
                               RoleMapperModel roleMapper,
                               AdminEventBuilder adminEvent,
                               AdminPermissionEvaluator.RequirePermissionCheck manageCheck,
                               AdminPermissionEvaluator.RequirePermissionCheck viewCheck) {
+        this.session = session;
         this.auth = auth;
-        this.realm = realm;
+        this.realm = session.getContext().getRealm();
+        this.clientConnection = session.getContext().getConnection();
         this.adminEvent = adminEvent.resource(ResourceType.REALM_ROLE_MAPPING);
         this.roleMapper = roleMapper;
         this.managePermission = manageCheck;
         this.viewPermission = viewCheck;
+        this.headers = session.getContext().getRequestHeaders();
 
     }
 
@@ -115,6 +123,8 @@ public class RoleMapperResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation( summary = "Get role mappings")
     public MappingsRepresentation getRoleMappings() {
         viewPermission.require();
 
@@ -157,6 +167,8 @@ public class RoleMapperResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation( summary = "Get realm-level role mappings")
     public Stream<RoleRepresentation> getRealmRoleMappings() {
         viewPermission.require();
 
@@ -176,7 +188,9 @@ public class RoleMapperResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<RoleRepresentation> getCompositeRealmRoleMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation( summary = "Get effective realm-level role mappings This will recurse all composite roles to get the result.")
+    public Stream<RoleRepresentation> getCompositeRealmRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
@@ -195,6 +209,8 @@ public class RoleMapperResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation( summary = "Get realm-level roles that can be mapped")
     public Stream<RoleRepresentation> getAvailableRealmRoleMappings() {
         viewPermission.require();
 
@@ -212,7 +228,10 @@ public class RoleMapperResource {
     @Path("realm")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void addRealmRoleMappings(List<RoleRepresentation> roles) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation( summary = "Add realm-level role mappings to the user")
+    @APIResponse(responseCode = "204", description = "No Content")
+    public void addRealmRoleMappings(@Parameter(description = "Roles to add") List<RoleRepresentation> roles) {
         managePermission.require();
 
         logger.debugv("** addRealmRoleMappings: {0}", roles);
@@ -226,6 +245,9 @@ public class RoleMapperResource {
                 auth.roles().requireMapRole(roleModel);
                 roleMapper.grantRole(roleModel);
             }
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException | ReadOnlyException me) {
             logger.warn(me.getMessage(), me);
             throw new ErrorResponseException("invalid_request", "Could not add user role mappings!", Response.Status.BAD_REQUEST);
@@ -242,6 +264,8 @@ public class RoleMapperResource {
     @Path("realm")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation( summary = "Delete realm-level role mappings")
     public void deleteRealmRoleMappings(List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -264,6 +288,9 @@ public class RoleMapperResource {
                 auth.roles().requireMapRole(roleModel);
                 try {
                     roleMapper.deleteRoleMapping(roleModel);
+                } catch (ModelIllegalStateException e) {
+                    logger.error(e.getMessage(), e);
+                    throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
                 } catch (ModelException | ReadOnlyException me) {
                     logger.warn(me.getMessage(), me);
                     throw new ErrorResponseException("invalid_request", "Could not remove user role mappings!", Response.Status.BAD_REQUEST);
@@ -280,8 +307,8 @@ public class RoleMapperResource {
         return auth.roles().canMapRole(roleModel);
     }
 
-    @Path("clients/{client}")
-    public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client") String client) {
+    @Path("clients/{client-id}")
+    public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client-id") @Parameter(description = "client id (not clientId!)") String client) {
         ClientModel clientModel = realm.getClientById(client);
         if (clientModel == null) {
             throw new NotFoundException("Client not found");

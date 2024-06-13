@@ -3,8 +3,8 @@ package org.keycloak.protocol.oidc;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -67,7 +67,6 @@ public class FrontChannelLogoutHandler {
             allowFrameSrc.append(client.frontChannelLogoutUrl.getAuthority()).append(' ');
         }
 
-        session.getProvider(SecurityHeadersProvider.class).options().allowAnyFrameAncestor();
         session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(allowFrameSrc.toString());
     }
 

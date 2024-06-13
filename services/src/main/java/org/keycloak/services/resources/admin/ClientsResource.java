@@ -16,10 +16,15 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -34,28 +39,28 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.validation.ValidationUtil;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -69,17 +74,18 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    private AdminEventBuilder adminEvent;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public ClientsResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        this.realm = realm;
+    public ClientsResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
 
@@ -101,12 +107,15 @@ public class ClientsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<ClientRepresentation> getClients(@QueryParam("clientId") String clientId,
-                                                 @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
-                                                 @QueryParam("search") @DefaultValue("false") boolean search,
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get clients belonging to the realm.",
+        description = "If a client can’t be retrieved from the storage due to a problem with the underlying storage, it is silently removed from the returned list. This ensures that concurrent modifications to the list don’t prevent callers from retrieving this list.")
+    public Stream<ClientRepresentation> getClients(@Parameter(description = "filter by clientId") @QueryParam("clientId") String clientId,
+                                                 @Parameter(description = "filter clients that cannot be viewed in full by admin") @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
+                                                 @Parameter(description = "whether this is a search query or a getClientById query") @QueryParam("search") @DefaultValue("false") boolean search,
                                                  @QueryParam("q") String searchQuery,
-                                                 @QueryParam("first") Integer firstResult,
-                                                 @QueryParam("max") Integer maxResults) {
+                                                 @Parameter(description = "the first result") @QueryParam("first") Integer firstResult,
+                                                 @Parameter(description = "the max results to return") @QueryParam("max") Integer maxResults) {
         auth.clients().requireList();
 
         boolean canView = auth.clients().canView();
@@ -169,6 +178,9 @@ public class ClientsResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Create a new client Client’s client_id must be unique!")
+    @APIResponse(responseCode = "201", description = "Created")
     public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
@@ -195,7 +207,7 @@ public class ClientsResource {
                 ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
                 if (authorizationSettings != null) {
-                    authorizationService.resourceServer().importSettings(authorizationSettings);
+                    authorizationService.getResourceServerService().importSettings(authorizationSettings);
                 }
             }
 
@@ -212,9 +224,12 @@ public class ClientsResource {
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+            throw ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+        catch (ClientTypeException cte) {
+            throw ErrorResponse.error(cte.getMessage(), cte.getParameters(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -224,8 +239,8 @@ public class ClientsResource {
      * @param id id of client (not client-id)
      * @return
      */
-    @Path("{id}")
-    public ClientResource getClient(final @PathParam("id") String id) {
+    @Path("{client-uuid}")
+    public ClientResource getClient(final @PathParam("client-uuid") @Parameter(description = "id of client (not client-id!)") String id) {
 
         ClientModel clientModel = realm.getClientById(id);
         if (clientModel == null) {
@@ -236,9 +251,7 @@ public class ClientsResource {
 
         session.getContext().setClient(clientModel);
 
-        ClientResource clientResource = new ClientResource(realm, auth, clientModel, session, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(clientResource);
-        return clientResource;
+        return new ClientResource(realm, auth, clientModel, session, adminEvent);
     }
 
 }

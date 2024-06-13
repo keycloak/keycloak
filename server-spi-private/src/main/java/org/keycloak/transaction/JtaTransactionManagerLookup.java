@@ -20,7 +20,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
-import javax.transaction.TransactionManager;
+import jakarta.transaction.TransactionManager;
 
 /**
  * JTA TransactionManager lookup

@@ -16,16 +16,16 @@
  */
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.client.admin.cli.util.ConfigUtil;
+import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -53,7 +53,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.ClientPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionManagement;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -61,9 +60,9 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,11 +70,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.oneOf;
 import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -87,11 +86,6 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
-
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -251,7 +245,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // group management
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
 
-        GroupModel group =  KeycloakModelUtils.findGroupByPath(realm, "top");
+        GroupModel group =  KeycloakModelUtils.findGroupByPath(session, realm, "top");
         UserModel groupMember = session.users().addUser(realm, "groupMember");
         groupMember.joinGroup(group);
         groupMember.setEnabled(true);
@@ -427,7 +421,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRestEvaluation() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupPolices);
         testingClient.server().run(FineGrainAdminUnitTest::setupUsers);
@@ -635,7 +628,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 // Should only return the list of users that belong to "top" group
                 List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
                 Assert.assertEquals(queryUsers.size(), 1);
-                Assert.assertEquals("groupmember", queryUsers.get(0).getUsername());
+                MatcherAssert.assertThat("groupmember", Matchers.equalTo(queryUsers.get(0).getUsername()));
                 for (UserRepresentation user : queryUsers) {
                     System.out.println(user.getUsername());
                 }
@@ -704,7 +697,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testMasterRealm() throws Exception {
         // test that master realm can still perform operations when policies are in place
         //
@@ -783,7 +775,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     // KEYCLOAK-5152
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRealmWithComposites() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setup5152);
 
@@ -831,7 +822,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         ClientModel client = realm.getClientByClientId("removedClient");
         RoleModel removedClientRole = client.getRole("removedClientRole");
         client.removeRole(removedClientRole);
-        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "removedGroup");
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, "removedGroup");
         realm.removeGroup(group);
         byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(2, byResourceServer.size());
@@ -846,7 +837,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRemoveCleanup() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupDeleteTest);
         testingClient.server().run(FineGrainAdminUnitTest::invokeDelete);
@@ -944,7 +934,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     @Test
     @UncaughtServerErrorExpected
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+
     public void testTokenExchangeDisabled() throws Exception {
         checkTokenExchange(false);
     }
@@ -956,7 +946,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
      */
     @Test
     @UncaughtServerErrorExpected
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+
     @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void testWithTokenExchange() throws Exception {
         String exchanged = checkTokenExchange(true);
@@ -968,7 +958,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserPagination() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -1023,7 +1012,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
             result = client.realm("test").users().search(null, "test", null, null, 20, 40);
 
@@ -1036,12 +1025,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
 
             client.realm("test").users().search(null, null, null, null, -1, -1);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
         }
 
         try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
@@ -1050,12 +1039,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<UserRepresentation> result = client.realm("test").users().search(null, null, null, null, -1, 20);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
             result = client.realm("test").users().search("test", -1, 20, false);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
             result = client.realm("test").users().search("a", -1, 20, false);
 
@@ -1064,7 +1053,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testClientsSearch() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -1156,10 +1144,10 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll(null, true, false, 0, 1);
 
             Assert.assertEquals(1, result.size());
-            Assert.assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", Matchers.is("client-search-09"))));
+            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", is("client-search-09"))));
 
             result = client.realm("test").clients().findAll(null, true, false, 1, 1);
-            Assert.assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", Matchers.is("client-search-10"))));
+            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", is("client-search-10"))));
 
             Assert.assertEquals(1, result.size());
 
@@ -1210,7 +1198,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll("client-search-", true, true, 0, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList("client-search-09",
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList("client-search-09",
                     "client-search-10",
                     "client-search-11",
                     "client-search-12",
@@ -1224,7 +1212,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 10, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList("client-search-19",
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList("client-search-19",
                     "client-search-20",
                     "client-search-21",
                     "client-search-22",
@@ -1238,13 +1226,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 20, 10);
             clients.addAll(result);
             Assert.assertEquals(1, result.size());
-            Assert.assertThat(result, Matchers.hasItems(
-                    Matchers.hasProperty("clientId", Matchers.isOneOf("client-search-29"))));
+            assertThat(result, Matchers.hasItems(
+                    Matchers.hasProperty("clientId", is(oneOf("client-search-29")))));
         }
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testClientsSearchAfterFirstPage() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -1294,7 +1281,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll("client-search-", true, true, 0, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList(
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList(
                     "client-search-15",
                     "client-search-16",
                     "client-search-17",
@@ -1309,7 +1296,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 10, 10);
             clients.addAll(result);
             Assert.assertEquals(5, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList(
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList(
                     "client-search-25",
                     "client-search-26",
                     "client-search-27",

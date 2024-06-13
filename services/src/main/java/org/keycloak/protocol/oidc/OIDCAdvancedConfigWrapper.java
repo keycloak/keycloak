@@ -22,9 +22,13 @@ import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,7 +46,6 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public static OIDCAdvancedConfigWrapper fromClientRepresentation(ClientRepresentation clientRep) {
         return new OIDCAdvancedConfigWrapper(null, clientRep);
     }
-
 
     public String getUserInfoSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
@@ -160,6 +163,26 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public void setExcludeSessionStateFromAuthResponse(boolean excludeSessionStateFromAuthResponse) {
         String val = String.valueOf(excludeSessionStateFromAuthResponse);
         setAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
+    }
+
+    public boolean isExcludeIssuerFromAuthResponse() {
+        String excludeIssuerFromAuthResponse = getAttribute(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE);
+        return Boolean.parseBoolean(excludeIssuerFromAuthResponse);
+    }
+
+    public void setExcludeIssuerFromAuthResponse(boolean excludeIssuerFromAuthResponse) {
+        String val = String.valueOf(excludeIssuerFromAuthResponse);
+        setAttribute(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE, val);
+    }
+
+    public boolean isUseDPoP() {
+        String mode = getAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS);
+        return Boolean.parseBoolean(mode);
+    }
+
+    public void setUseDPoP(boolean useDPoP) {
+        String val = String.valueOf(useDPoP);
+        setAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, val);
     }
 
     // KEYCLOAK-6771 Certificate Bound Token
@@ -353,6 +376,41 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setTosUri(String tosUri) {
         setAttribute(ClientModel.TOS_URI, tosUri);
+    }
+
+    public List<String> getPostLogoutRedirectUris() {
+        List<String> postLogoutRedirectUris = getAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        if(postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
+            if(clientModel != null) {
+                return new ArrayList(clientModel.getRedirectUris());
+            }
+            else if(clientRep != null) {
+                return clientRep.getRedirectUris();
+            }
+            return null;
+        }
+        else if(postLogoutRedirectUris.get(0).equals("-")) {
+            return new ArrayList<String>();
+        }
+        else if (postLogoutRedirectUris.contains("+")) {
+            Set<String> returnedPostLogoutRedirectUris = postLogoutRedirectUris.stream()
+                    .filter(uri -> !"+".equals(uri)).collect(Collectors.toSet());
+
+            if(clientModel != null) {
+                returnedPostLogoutRedirectUris.addAll(clientModel.getRedirectUris());
+            }
+            else if(clientRep != null) {
+                returnedPostLogoutRedirectUris.addAll(clientRep.getRedirectUris());
+            }
+            return new ArrayList<>(returnedPostLogoutRedirectUris);
+        }
+        else {
+            return postLogoutRedirectUris;
+        }
+    }
+
+    public void setPostLogoutRedirectUris(List<String> postLogoutRedirectUris) {
+        setAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUris);
     }
 
 }

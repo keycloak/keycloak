@@ -1,7 +1,7 @@
 package org.keycloak.protocol.docker;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.ResponseBuilderImpl;
+import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.events.Errors;
@@ -13,9 +13,9 @@ import org.keycloak.representations.docker.DockerAccess;
 import org.keycloak.representations.docker.DockerError;
 import org.keycloak.representations.docker.DockerErrorResponseToken;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;

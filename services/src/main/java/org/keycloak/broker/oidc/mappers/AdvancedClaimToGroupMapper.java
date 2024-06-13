@@ -26,11 +26,8 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
 
@@ -103,15 +100,16 @@ public class AdvancedClaimToGroupMapper extends AbstractClaimToGroupMapper {
 
     @Override
     protected boolean applies(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        Map<String, String> claims = mapperModel.getConfigMap(CLAIM_PROPERTY_NAME);
+        Map<String, List<String>> claims = mapperModel.getConfigMap(CLAIM_PROPERTY_NAME);
         boolean areClaimValuesRegex = Boolean.parseBoolean(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
 
-        for (Map.Entry<String, String> claim : claims.entrySet()) {
-            Object value = getClaimValue(context, claim.getKey());
-
-            boolean claimValuesMismatch = !(areClaimValuesRegex ? valueMatchesRegex(claim.getValue(), value) : valueEquals(claim.getValue(), value));
-            if (claimValuesMismatch) {
-                return false;
+        for (Map.Entry<String, List<String>> claim : claims.entrySet()) {
+            Object claimValue = getClaimValue(context, claim.getKey());
+            for (String value : claim.getValue()) {
+                boolean claimValuesMismatch = !(areClaimValuesRegex ? valueMatchesRegex(value, claimValue) : valueEquals(value, claimValue));
+                if (claimValuesMismatch) {
+                    return false;
+                }
             }
         }
 

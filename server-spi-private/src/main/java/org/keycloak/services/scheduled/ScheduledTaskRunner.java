@@ -22,58 +22,60 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.timer.ScheduledTask;
+import org.keycloak.timer.TaskRunner;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ScheduledTaskRunner implements Runnable {
+public class ScheduledTaskRunner implements TaskRunner {
 
     private static final Logger logger = Logger.getLogger(ScheduledTaskRunner.class);
 
     protected final KeycloakSessionFactory sessionFactory;
+
     protected final ScheduledTask task;
-    private int transactionLimit;
+
+    protected final int transactionLimit;
 
     public ScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task) {
-        this.sessionFactory = sessionFactory;
-        this.task = task;
+        this(sessionFactory, task, 0);
     }
 
     public ScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task, int transactionLimit) {
-        this(sessionFactory, task);
+        this.sessionFactory = sessionFactory;
+        this.task = task;
         this.transactionLimit = transactionLimit;
     }
 
     @Override
     public void run() {
-        KeycloakSession session = sessionFactory.create();
         try {
-            if (transactionLimit != 0) {
-                KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
-            }
-            runTask(session);
-        } catch (Throwable t) {
-            logger.errorf(t, "Failed to run scheduled task %s", task.getClass().getSimpleName());
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                try {
+                    if (transactionLimit != 0) {
+                        KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
+                    }
 
-            session.getTransactionManager().rollback();
-        } finally {
-            if (transactionLimit != 0) {
-                KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
-            }
-            try {
-                session.close();
-            } catch (Throwable t) {
-                logger.errorf(t, "Failed to close ProviderSession");
-            }
+                    runTask(session);
+                } finally {
+                    if (transactionLimit != 0) {
+                        KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
+                    }
+                }
+            });
+        } catch (Throwable t) {
+            logger.errorf(t, "Failed to run scheduled task %s", task.getTaskName());
         }
     }
 
     protected void runTask(KeycloakSession session) {
-        session.getTransactionManager().begin();
         task.run(session);
-        session.getTransactionManager().commit();
 
-        logger.debug("Executed scheduled task " + task.getClass().getSimpleName());
+        logger.debugf("Executed scheduled task %s", task.getTaskName());
     }
 
+    @Override
+    public ScheduledTask getTask() {
+        return task;
+    }
 }

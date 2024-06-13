@@ -9,9 +9,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
@@ -23,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertTrue;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -32,7 +29,6 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
  *
  * @author tkyjovsk
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractClusterTest extends AbstractKeycloakTest {
 
     // Keep the following constants in sync with arquillian
@@ -120,8 +116,6 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
             assertTrue(controller.isStarted(node.getQualifier()));
         }
         log.info("Backend node " + node + " is started");
-
-        AuthServerTestEnricher.initializeTLS(node);
 
         if (!backendAdminClients.containsKey(node)) {
             backendAdminClients.put(node, createAdminClientFor(node));

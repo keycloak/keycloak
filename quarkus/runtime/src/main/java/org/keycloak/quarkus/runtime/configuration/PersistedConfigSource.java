@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -43,6 +45,14 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     public static final String PERSISTED_PROPERTIES = "META-INF/keycloak-persisted.properties";
     private static final PersistedConfigSource INSTANCE = new PersistedConfigSource();
 
+    /**
+     * MicroProfile Config does not allow removing a config source when resolving properties. In order to be able
+     * to resolve the current (not the persisted value) value for a property, even if not explicitly set at runtime, we need
+     * to ignore this config source. Otherwise, default values are not resolved at runtime because the property will be
+     * resolved from this config source, if persisted.
+     */
+    private static final ThreadLocal<Boolean> ENABLED = ThreadLocal.withInitial(() -> true);
+
     private PersistedConfigSource() {
         super(readProperties(), "", 200);
     }
@@ -58,13 +68,26 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
 
     @Override
     public String getValue(String propertyName) {
-        String value = super.getValue(propertyName);
+        if (isEnabled()) {
+            String value = super.getValue(propertyName);
 
-        if (value != null) {
-            return value;
+            if (value != null) {
+                return value;
+            }
+
+            return super.getValue(propertyName.replace(Configuration.OPTION_PART_SEPARATOR_CHAR, '.'));
         }
 
-        return super.getValue(propertyName.replace(Configuration.OPTION_PART_SEPARATOR_CHAR, '.'));
+        return null;
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        if (isEnabled()) {
+            return super.getPropertyNames();
+        }
+
+        return Set.of();
     }
 
     private static Map<String, String> readProperties() {
@@ -121,5 +144,26 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
         }
 
         return null;
+    }
+
+    public void enable() {
+        ENABLED.set(true);
+    }
+
+    public void disable() {
+        ENABLED.set(false);
+    }
+
+    private boolean isEnabled() {
+        return Boolean.TRUE.equals(ENABLED.get());
+    }
+
+    public <T> T runWithDisabled(Supplier<T> execution) {
+        try {
+            disable();
+            return execution.get();
+        } finally {
+            enable();
+        }
     }
 }

@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.util;
 
-import javax.mail.Address;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.Address;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

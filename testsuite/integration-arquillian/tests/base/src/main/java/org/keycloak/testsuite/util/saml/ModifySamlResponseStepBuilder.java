@@ -28,12 +28,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -55,7 +56,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 
@@ -168,7 +169,7 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
             String location = currentResponse.getFirstHeader("Location").getValue();
             URI locationUri = URI.create(location);
 
-            params = URLEncodedUtils.parse(locationUri, "UTF-8");
+            params = URLEncodedUtils.parse(locationUri, StandardCharsets.UTF_8);
             for (Iterator<NameValuePair> it = params.iterator(); it.hasNext();) {
                 NameValuePair param = it.next();
                 if ("SAMLResponse".equals(param.getName()) || "SAMLRequest".equals(param.getName())) {

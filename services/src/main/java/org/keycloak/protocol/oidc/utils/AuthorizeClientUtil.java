@@ -18,8 +18,6 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -32,10 +30,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import java.util.Map;
 
 /**
@@ -52,8 +50,7 @@ public class AuthorizeClientUtil {
         if (response != null) {
             if (cors != null) {
                 cors.allowAllOrigins();
-                HttpResponse httpResponse = session.getContext().getContextObject(HttpResponse.class);
-                cors.build(httpResponse);
+                cors.add();
             }
             throw new WebApplicationException(response);
         }
@@ -61,6 +58,11 @@ public class AuthorizeClientUtil {
         ClientModel client = processor.getClient();
         if (client == null) {
             throwErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST, cors.allowAllOrigins());
+        }
+        
+        if(!client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Invalid client or Invalid client credentials", Response.Status.UNAUTHORIZED, cors.allowAllOrigins());
         }
 
         if (cors != null) {
@@ -96,7 +98,7 @@ public class AuthorizeClientUtil {
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(session.getContext().getUri())
-                .setRequest(session.getContext().getContextObject(HttpRequest.class));
+                .setRequest(session.getContext().getHttpRequest());
 
         return processor;
     }

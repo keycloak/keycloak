@@ -12,9 +12,9 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
 import javax.security.auth.x500.X500Principal;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -41,15 +40,18 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
     // These are not recognized by default in RFC1779 or RFC2253 and hence not read in the java by default
     private static final Map<String, String> CUSTOM_OIDS = new HashMap<>();
     private static final Map<String, String> CUSTOM_OIDS_REVERSED = new HashMap<>();
+
     static {
         CUSTOM_OIDS.put("2.5.4.5", "serialNumber".toUpperCase());
         CUSTOM_OIDS.put("2.5.4.15", "businessCategory".toUpperCase());
         CUSTOM_OIDS.put("1.3.6.1.4.1.311.60.2.1.3", "jurisdictionCountryName".toUpperCase());
+        CUSTOM_OIDS.put("1.2.840.113549.1.9.1", "emailAddress".toUpperCase());
 
         // Reverse map
         for (Map.Entry<String, String> entry : CUSTOM_OIDS.entrySet()) {
             CUSTOM_OIDS_REVERSED.put(entry.getValue(), entry.getKey());
         }
+        CUSTOM_OIDS_REVERSED.put("E", "1.2.840.113549.1.9.1"); // Another synonym for "EMAILADDRESS"
     }
 
     protected static ServicesLogger logger = ServicesLogger.LOGGER;
@@ -128,42 +130,38 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             return;
         }
 
-        Optional<String> matchedCertificate;
+        // Testing only 1st certificate in the chain to match with configured subject
+        X509Certificate certificate = certs[0];
+        boolean matchedCertificate = false;
 
         if (clientCfg.getAllowRegexPatternComparison()) {
             Pattern subjectDNPattern = Pattern.compile(subjectDNRegexp);
 
-            matchedCertificate = Arrays.stream(certs)
-                    .map(certificate -> certificate.getSubjectDN().getName())
-                    .filter(subjectdn -> subjectDNPattern.matcher(subjectdn).matches())
-                    .findFirst();
+            String subjectdn = certificate.getSubjectDN().getName();
+            matchedCertificate = subjectDNPattern.matcher(subjectdn).matches();
         } else {
             // OIDC/OAuth2 does not use regex comparison as it expects exact DN given in the format according to RFC4514. See RFC8705 for the details.
             // We allow custom OIDs attributes to be "expanded" or not expanded in the given Subject DN
             X500Principal expectedDNPrincipal = new X500Principal(subjectDNRegexp, CUSTOM_OIDS_REVERSED);
 
-            matchedCertificate = Arrays.stream(certs)
-                    .filter(certificate -> expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS).equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS)))
-                    .map(certificate -> certificate.getSubjectDN().getName())
-                    .findFirst();
+            matchedCertificate = (expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS).equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS)));
         }
 
-        if (!matchedCertificate.isPresent()) {
+        if (!matchedCertificate) {
             // We do quite expensive operation here, so better check the logging level beforehand.
             if (logger.isDebugEnabled()) {
                 logger.debug("[X509ClientCertificateAuthenticator:authenticate] Couldn't match any certificate for expected Subject DN '" + subjectDNRegexp + "' with allow regex pattern '" + clientCfg.getAllowRegexPatternComparison() + "'.");
-                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Available SubjectDNs: " +
+                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Checked Subject DN: " + certificate.getSubjectDN().getName());
+                logger.debug("[X509ClientCertificateAuthenticator:authenticate] All SubjectDNs from the certificate chain: " +
                         Arrays.stream(certs)
                                 .map(cert -> cert.getSubjectDN().getName())
                                 .collect(Collectors.toList()));
             }
             context.attempted();
-            return;
         } else {
-            logger.debug("[X509ClientCertificateAuthenticator:authenticate] Matched " + matchedCertificate.get() + " certificate.");
+            logger.debug("[X509ClientCertificateAuthenticator:authenticate] Matched " + certificate.getSubjectDN().getName() + " certificate.");
+            context.success();
         }
-
-        context.success();
     }
 
     public String getDisplayType() {

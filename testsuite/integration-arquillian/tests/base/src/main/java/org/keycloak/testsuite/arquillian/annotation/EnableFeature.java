@@ -28,11 +28,6 @@ public @interface EnableFeature {
     boolean skipRestart() default false;
 
     /**
-     * The feature will be enabled only if the `product` profile is activated
-     */
-    boolean onlyForProduct() default false;
-
-    /**
      * Feature enable should be the last action in @Before context.
      * If the test halted, the feature is returned to the previous state.
      * If it's false, feature will be enabled before @Before method.

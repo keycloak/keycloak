@@ -21,7 +21,8 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ForbiddenException;
+
+import jakarta.ws.rs.ForbiddenException;
 
 /**
  * Manages default policies for all users.
@@ -77,7 +78,7 @@ class RealmPermissions implements RealmPermissionEvaluator {
 
     @Override
     public boolean canListRealms() {
-        return canViewRealm() || root.hasOneAdminRole(AdminRoles.ALL_QUERY_ROLES);
+        return root.isAdmin();
     }
 
     @Override

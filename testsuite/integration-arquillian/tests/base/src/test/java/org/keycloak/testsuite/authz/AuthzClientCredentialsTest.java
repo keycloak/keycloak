@@ -25,18 +25,12 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -44,8 +38,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.ClientAuthenticator;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Time;
@@ -64,8 +56,6 @@ import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -75,7 +65,6 @@ import org.keycloak.testsuite.util.UserBuilder;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
     @Override
@@ -357,18 +346,9 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient(String adapterConfig) {
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getConfigurationStream(adapterConfig));
+        PolicyEnforcer policyEnforcer = PolicyEnforcer.builder().enforcerConfig(getConfigurationStream(adapterConfig)).build();
 
-        return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()), new ClientAuthenticator() {
-            @Override
-            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
-                Map<String, String> formparams = new HashMap<>();
-                ClientCredentialsProviderUtils.setClientCredentials(deployment, requestHeaders, formparams);
-                for (Entry<String, String> param : formparams.entrySet()) {
-                    requestParams.put(param.getKey(), Arrays.asList(param.getValue()));
-                }
-            }
-        });
+        return policyEnforcer.getAuthzClient();
     }
 
     private InputStream getConfigurationStream(String adapterConfig) {

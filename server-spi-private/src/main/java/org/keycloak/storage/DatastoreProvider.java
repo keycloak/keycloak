@@ -22,11 +22,16 @@ import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.provider.Provider;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 
 
 public interface DatastoreProvider extends Provider {
+    AuthenticationSessionProvider authSessions();
 
     ClientScopeProvider clientScopes();
 
@@ -34,14 +39,17 @@ public interface DatastoreProvider extends Provider {
 
     GroupProvider groups();
 
+    UserLoginFailureProvider loginFailures();
+
     RealmProvider realms();
 
     RoleProvider roles();
+
+    SingleUseObjectProvider singleUseObjects();
     
     UserProvider users();
 
+    UserSessionProvider userSessions();
+
     ExportImportManager getExportImportManager();
-
-    MigrationManager getMigrationManager();
-
 }

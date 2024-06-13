@@ -68,6 +68,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setName(String name) {
+        this.rep.setName(name);
+        return this;
+    }
+
     public ClientAttributeUpdater setAttribute(String name, String value) {
         this.rep.getAttributes().put(name, value);
         if (value != null && !this.origRep.getAttributes().containsKey(name)) {
@@ -106,6 +111,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setImplicitFlowEnabled(Boolean implicitFlowEnabled) {
+        rep.setImplicitFlowEnabled(implicitFlowEnabled);
+        return this;
+    }
+
     public ClientAttributeUpdater setDefaultClientScopes(List<String> defaultClientScopes) {
         rep.setDefaultClientScopes(defaultClientScopes);
         return this;
@@ -140,6 +150,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater setDirectAccessGrantsEnabled(Boolean directAccessGranted) {
         rep.setDirectAccessGrantsEnabled(directAccessGranted);
+        return this;
+    }
+
+    public ClientAttributeUpdater setEnabled(Boolean enabled){
+        rep.setEnabled(enabled);
         return this;
     }
 }

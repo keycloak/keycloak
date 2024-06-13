@@ -1,26 +1,30 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.reflections.Types;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -39,22 +43,25 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.userprofile.DefaultAttributes;
+import org.openqa.selenium.Cookie;
 
-import javax.mail.internet.MimeMessage;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -64,6 +71,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -73,11 +81,14 @@ import java.util.stream.Stream;
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
@@ -87,18 +98,14 @@ import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
-import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getEmailLink;
 
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  *
  * @author tkyjovsk
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class UserStorageTest extends AbstractAuthTest {
 
     private String memProviderId;
@@ -112,6 +119,9 @@ public class UserStorageTest extends AbstractAuthTest {
     protected LoginPage loginPage;
 
     @Page
+    protected AppPage appPage;
+
+    @Page
     protected RegisterPage registerPage;
 
     @Page
@@ -121,8 +131,6 @@ public class UserStorageTest extends AbstractAuthTest {
 
     @Before
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("memory");
         memProvider.setProviderId(UserMapStorageFactory.PROVIDER_ID);
@@ -157,6 +165,10 @@ public class UserStorageTest extends AbstractAuthTest {
 
         propProviderRWId = addComponent(newPropProviderRW());
 
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
+
+        UserProfileResource userProfileRes = testRealmResource().users().userProfile();
+        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
     }
 
     @After
@@ -205,16 +217,16 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     private void loginSuccessAndLogout(String username, String password) {
-        testRealmAccountPage.navigateTo();
+        loginPage.open();
         testRealmLoginPage.form().login(username, password);
-        assertCurrentUrlStartsWith(testRealmAccountPage);
-        testRealmAccountPage.logOut();
+        appPage.assertCurrent();
+        AccountHelper.logout(testRealmResource(), username);
     }
 
     public void loginBadPassword(String username) {
-        testRealmAccountPage.navigateTo();
+        loginPage.open();
         testRealmLoginPage.form().login(username, "badpassword");
-        assertCurrentUrlDoesntStartWith(testRealmAccountPage);
+        assertCurrentUrlDoesntStartWith(oauth.APP_AUTH_ROOT);
     }
 
 //    @Test
@@ -243,6 +255,27 @@ public class UserStorageTest extends AbstractAuthTest {
         loginSuccessAndLogout("tbrady", "goat");
         loginSuccessAndLogout("thor", "hammer");
         loginBadPassword("tbrady");
+    }
+
+    @Test
+    public void testLoginSuccessWithSpecialCharacter() {
+        loginPage.open();
+        testRealmLoginPage.form().login("spécial", "pw");
+        appPage.assertCurrent();
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + testRealmResource().toRepresentation().getRealm() + "/login-actions/authenticate/" );
+
+        Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getName());
+        Cookie legacySessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getSameSiteLegacyName());
+
+        String cookieValue = sameSiteSessionCookie.getValue();
+        assertThat(cookieValue.contains("spécial"), is(false));
+        assertThat(cookieValue.contains("sp%C3%A9cial"), is(true));
+
+        String legacyCookieValue = legacySessionCookie.getValue();
+        assertThat(legacyCookieValue.contains("spécial"), is(false));
+        assertThat(legacyCookieValue.contains("sp%C3%A9cial"), is(true));
+
+        AccountHelper.logout(testRealmResource(), "spécial");
     }
 
     @Test
@@ -323,7 +356,8 @@ public class UserStorageTest extends AbstractAuthTest {
         Assert.assertNull(thor.getFirstName());
         Assert.assertNull(thor.getLastName());
         Assert.assertNull(thor.getEmail());
-        Assert.assertNull(thor.getAttributes());
+        // user after logout has set this attribute: fedNotBefore
+        Assert.assertTrue(thor.getAttributes().size() == 1);
         Assert.assertFalse(thor.isEmailVerified());
 
         foundGroup = false;
@@ -345,7 +379,6 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRegisterWithRequiredEmail() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(testRealmResource())
           .updateWith(r -> {
@@ -359,7 +392,7 @@ public class UserStorageTest extends AbstractAuthTest {
           })
           .update()) {
 
-            testRealmAccountPage.navigateTo();
+            loginPage.open();
             loginPage.clickRegister();
             registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
 
@@ -369,11 +402,11 @@ public class UserStorageTest extends AbstractAuthTest {
 
             MimeMessage message = greenMail.getReceivedMessages()[0];
 
-            String verificationUrl = getPasswordResetEmailLink(message);
+            String verificationUrl = getEmailLink(message);
 
             driver.navigate().to(verificationUrl.trim());
 
-            testRealmAccountPage.assertCurrent();
+            appPage.assertCurrent();
         }
     }
 
@@ -423,11 +456,12 @@ public class UserStorageTest extends AbstractAuthTest {
             usernames.add(user.getUsername());
             log.info(user.getUsername());
         }
-        Assert.assertEquals(8, queried.size());
+        Assert.assertEquals(9, queried.size());
         Assert.assertTrue(usernames.contains("thor"));
         Assert.assertTrue(usernames.contains("zeus"));
         Assert.assertTrue(usernames.contains("apollo"));
         Assert.assertTrue(usernames.contains("perseus"));
+        Assert.assertTrue(usernames.contains("spécial"));
         Assert.assertTrue(usernames.contains("tbrady"));
         Assert.assertTrue(usernames.contains("rob"));
         Assert.assertTrue(usernames.contains("jules"));
@@ -487,10 +521,44 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     @Test
+    public void storeAndReadUserWithLongAttributeValue() {
+        testingClient.server().run(session -> {
+            String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel userModel = session.users().getUserByUsername(realm, "thor");
+            userModel.setSingleAttribute("weapon", longValue);
+
+            List<UserModel> userModels = session.users().searchForUserStream(realm, Map.of(UserModel.USERNAME, "thor"))
+                    .collect(Collectors.toList());
+            assertThat(userModels, hasSize(1));
+            assertThat(userModels.get(0).getAttributes().get("weapon").get(0), equalTo(longValue));
+        });
+    }
+
+    @Test
+    public void searchByLongAttributeValue() {
+        testingClient.server().run(session -> {
+            // random string with suffix that makes it case-sensitive
+            String longValue = RandomStringUtils.random(2999, true, true) + "v";
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel userModel = session.users().getUserByUsername(realm, "thor");
+            userModel.setSingleAttribute("weapon", longValue);
+
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()), 
+                    containsInAnyOrder("thor"));
+
+            // searching here is always case sensitive
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue.toUpperCase(Locale.ENGLISH)).map(UserModel::getUsername).collect(Collectors.toList()),
+                    empty());
+
+        });
+    }
+
+    @Test
     public void testQueryExactMatch() {
-        Assert.assertThat(testRealmResource().users().search("a", true), hasSize(0));
-        Assert.assertThat(testRealmResource().users().search("apollo", true), hasSize(1));
-        Assert.assertThat(testRealmResource().users().search("tbrady", true), hasSize(1));
+        assertThat(testRealmResource().users().search("a", true), hasSize(0));
+        assertThat(testRealmResource().users().search("apollo", true), hasSize(1));
+        assertThat(testRealmResource().users().search("tbrady", true), hasSize(1));
     }
 
     private void setDailyEvictionTime(int hour, int minutes) {
@@ -839,7 +907,41 @@ public class UserStorageTest extends AbstractAuthTest {
 
         // Re-create realm
         RealmRepresentation repOrig = testContext.getTestRealmReps().get(0);
-        adminClient.realms().create(repOrig);
+        importRealm(repOrig);
+    }
+
+    @Test
+    public void testRoleMembership() {
+        RoleRepresentation role1 = new RoleRepresentation();
+        role1.setName("role1");
+        RoleRepresentation role2 = new RoleRepresentation();
+        role2.setName("role2");
+        testRealmResource().roles().create(role1);
+        testRealmResource().roles().create(role2);
+
+        UserRepresentation thor = ApiUtil.findUserByUsername(testRealmResource(), "thor");
+        ApiUtil.assignRealmRoles(testRealmResource(), thor.getId(), "role1", "role2");
+
+        UserRepresentation zeus = ApiUtil.findUserByUsername(testRealmResource(), "zeus");
+        ApiUtil.assignRealmRoles(testRealmResource(), zeus.getId(), "role1");
+
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            RoleModel roleModel1 = session.roles().getRealmRole(realm, "role1");
+            RoleModel roleModel2 = session.roles().getRealmRole(realm, "role2");
+
+            List<String> users = session.users().getRoleMembersStream(realm, roleModel1).map(UserModel::getUsername).collect(Collectors.toList());
+            Assert.assertEquals(2, users.size());
+            MatcherAssert.assertThat(users, Matchers.containsInAnyOrder("thor", "zeus"));
+
+            users = session.users().getRoleMembersStream(realm, roleModel2).map(UserModel::getUsername).collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            MatcherAssert.assertThat(users, Matchers.containsInAnyOrder("thor"));
+        });
+
+        testRealmResource().roles().get("role1").remove();
+        testRealmResource().roles().get("role2").remove();
     }
 
     @Test
@@ -887,7 +989,7 @@ public class UserStorageTest extends AbstractAuthTest {
             RealmModel realm = currentSession.realms().getRealmByName("test");
 
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
-            Assert.assertFalse(StorageId.isLocalStorage(user));
+            Assert.assertFalse(StorageId.isLocalStorage(user.getId()));
 
             Stream<CredentialModel> credentials = user.credentialManager().getStoredCredentialsStream();
             org.keycloak.testsuite.Assert.assertEquals(0, credentials.count());
@@ -996,7 +1098,7 @@ public class UserStorageTest extends AbstractAuthTest {
             RealmModel realm = session.realms().getRealmByName("test");
 
             UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertFalse(StorageId.isLocalStorage(user));
+            Assert.assertFalse(StorageId.isLocalStorage(user.getId()));
 
             CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
             user.credentialManager().createStoredCredential(otp1);
@@ -1038,6 +1140,22 @@ public class UserStorageTest extends AbstractAuthTest {
                 .get();
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
+    }
+
+    @Test
+    public void testGrantRoleTwice() {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("role");
+        testRealmResource().roles().create(role);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+
+            RoleModel roleModel = session.roles().getRealmRole(realm, "role");
+            user.grantRole(roleModel);
+            user.grantRole(roleModel);
+        });
     }
 
 

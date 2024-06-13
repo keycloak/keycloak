@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.broker;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -21,38 +23,46 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.Urls;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.keycloak.models.utils.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
@@ -63,10 +73,18 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
  */
 public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
+    private final static String USER_ATTRIBUTE_NAME = "user-attribute";
+    private final static String USER_ATTRIBUTE_VALUE = "attribute-value";
+    private final static String CLAIM_FILTER_REGEXP = ".*-value";
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
-        return KcOidcBrokerConfiguration.INSTANCE;
+        return BROKER_CONFIG_INSTANCE;
+    }
+
+    @Before
+    public void setUpTotp() {
+        totp = new TimeBasedOTP();
     }
 
     @Override
@@ -74,7 +92,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
         attrMapper1.setName("manager-role-mapper");
         attrMapper1.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        attrMapper1.setConfig(ImmutableMap.<String,String>builder()
+        attrMapper1.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_MANAGER)
                 .put("role", ROLE_MANAGER)
@@ -83,7 +101,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         IdentityProviderMapperRepresentation attrMapper2 = new IdentityProviderMapperRepresentation();
         attrMapper2.setName("user-role-mapper");
         attrMapper2.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        attrMapper2.setConfig(ImmutableMap.<String,String>builder()
+        attrMapper2.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_USER)
                 .put("role", ROLE_USER)
@@ -97,7 +115,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         IdentityProviderMapperRepresentation friendlyManagerMapper = new IdentityProviderMapperRepresentation();
         friendlyManagerMapper.setName("friendly-manager-role-mapper");
         friendlyManagerMapper.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        friendlyManagerMapper.setConfig(ImmutableMap.<String,String>builder()
+        friendlyManagerMapper.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_FRIENDLY_MANAGER)
                 .put("role", ROLE_FRIENDLY_MANAGER)
@@ -121,6 +139,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
         userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
 
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
         logInAsUserInIDPForFirstTime();
 
         UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
@@ -132,10 +152,13 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER)));
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
 
@@ -151,6 +174,10 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
     @Test
     public void loginFetchingUserFromUserEndpoint() {
+        loginFetchingUserFromUserEndpoint(false);
+    }
+
+    private void loginFetchingUserFromUserEndpoint(boolean loginIsDenied) {
         RealmResource realm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = realm.clients();
         ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
@@ -166,10 +193,16 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             brokerApp.getAttributes().put("validateSignature", Boolean.TRUE.toString());
             clients.get(brokerApp.getId()).update(brokerApp);
 
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
             logInWithBroker(bc);
 
-            waitForPage(driver, "update account information", false);
+            waitForPage(driver, loginIsDenied ? "We are sorry..." : "update account information", false);
+            if (loginIsDenied) {
+                return;
+            }
+
             updateAccountInformationPage.assertCurrent();
             Assert.assertTrue("We must be on correct realm right now",
                     driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
@@ -211,7 +244,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
         IdentityProviderResource identityProviderResource = getIdentityProviderResource();
 
-        clients.get(brokerApp.getId()).getProtocolMappers().createMapper(createHardcodedClaim("hard-coded", "hard-coded", "hard-coded", "String", true, true)).close();
+        clients.get(brokerApp.getId()).getProtocolMappers().createMapper(createHardcodedClaim("hard-coded", "hard-coded", "hard-coded", "String", true, true, true)).close();
 
         IdentityProviderMapperRepresentation hardCodedSessionNoteMapper = new IdentityProviderMapperRepresentation();
 
@@ -225,6 +258,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
                 .build());
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         loginFetchingUserFromUserEndpoint();
 
@@ -249,14 +285,23 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
             logInWithBroker(samlBrokerConfig);
 
             totpPage.assertCurrent();
             String totpSecret = totpPage.getTotpSecret();
             totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+            setOtpTimeOffset(DEFAULT_INTERVAL_SECONDS, totp);
+
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
 
@@ -291,11 +336,18 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
             logInWithBroker(samlBrokerConfig);
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
+
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
             logInWithBroker(bc);
 
             waitForPage(driver, "account already exists", false);
@@ -320,56 +372,72 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
      */
     @Test
     public void testReauthenticationBothBrokersWithOTPRequired() throws Exception {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        final RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        final RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
 
-        try {
-            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
+        try (RealmAttributeUpdater rauConsumer = new RealmAttributeUpdater(consumerRealm).setOtpPolicyCodeReusable(true).update();
+             RealmAttributeUpdater rauProvider = new RealmAttributeUpdater(providerRealm).setOtpPolicyCodeReusable(true).update()) {
 
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
-            logInWithBroker(samlBrokerConfig);
-            totpPage.assertCurrent();
-            String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
+            ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+            IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
 
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-            logInWithBroker(bc);
+            try {
+                updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+                providerRealm.clients().create(samlClient);
+                consumerRealm.identityProviders().create(samlBroker);
 
-            waitForPage(driver, "account already exists", false);
-            idpConfirmLinkPage.assertCurrent();
-            idpConfirmLinkPage.clickLinkAccount();
-            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
+                oauth.clientId("broker-app");
+                loginPage.open(bc.consumerRealmName());
 
-            loginTotpPage.assertCurrent();
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
+                logInWithBroker(samlBrokerConfig);
+                totpPage.assertCurrent();
+                String totpSecret = totpPage.getTotpSecret();
+                totpPage.configure(totp.generateTOTP(totpSecret));
+                AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+                AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-            logInWithBroker(bc);
+                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
+                oauth.clientId("broker-app");
+                loginPage.open(bc.consumerRealmName());
 
-            loginTotpPage.assertCurrent();
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-            waitForAccountManagementTitle();
-            accountUpdateProfilePage.assertCurrent();
+                logInWithBroker(bc);
 
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
+                waitForPage(driver, "account already exists", false);
+                idpConfirmLinkPage.assertCurrent();
+                idpConfirmLinkPage.clickLinkAccount();
+                loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
+
+                loginTotpPage.assertCurrent();
+                loginTotpPage.login(totp.generateTOTP(totpSecret));
+                AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+                AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+                oauth.clientId("broker-app");
+                loginPage.open(bc.consumerRealmName());
+
+                logInWithBroker(bc);
+
+                loginTotpPage.assertCurrent();
+                loginTotpPage.login(totp.generateTOTP(totpSecret));
+
+                assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
+            } finally {
+                updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+                removeUserByUsername(consumerRealm, "consumer");
+            }
         }
     }
 
     @Test
     public void testInvalidIssuedFor() {
         loginUser();
-        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -378,7 +446,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         RealmResource realm = adminClient.realm(bc.providerRealmName());
         ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
         ClientResource clientResource = realm.clients().get(rep.getId());
-        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "azp", "invalid-azp", ProviderConfigProperty.STRING_TYPE, true, true);
+        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "azp", "invalid-azp", ProviderConfigProperty.STRING_TYPE, true, true, true);
         clientResource.getProtocolMappers().createMapper(hardCodedAzp);
 
         log.debug("Logging in");
@@ -389,8 +457,11 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testInvalidAudience() {
         loginUser();
-        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -399,7 +470,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         RealmResource realm = adminClient.realm(bc.providerRealmName());
         ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
         ClientResource clientResource = realm.clients().get(rep.getId());
-        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "aud", "invalid-aud", ProviderConfigProperty.LIST_TYPE, true, true);
+        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "aud", "invalid-aud", ProviderConfigProperty.LIST_TYPE, true, true, true);
         clientResource.getProtocolMappers().createMapper(hardCodedAzp);
 
         log.debug("Logging in");
@@ -410,7 +481,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testIdPNotFound() {
         final String notExistingIdP = "not-exists";
-        final String realmName = Optional.ofNullable(realmsResouce().realm(bc.providerRealmName()).toRepresentation().getRealm()).orElse(null);
+        final String realmName = realmsResouce().realm(bc.providerRealmName()).toRepresentation().getRealm();
         assertThat(realmName, notNullValue());
         final String LINK = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + realmName + "/broker/" + notExistingIdP + "/endpoint";
 
@@ -420,7 +491,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(errorPage.getError(), is("Page not found"));
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response simple = SimpleHttp.doGet(LINK, client).asResponse();
+            SimpleHttp.Response simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
             assertThat(simple, notNullValue());
             assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 
@@ -434,17 +505,110 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
     @Test
     public void testIdPForceSyncUserAttributes() {
-        checkUpdatedUserAttributesIdP(true);
+        checkUpdatedUserAttributesIdP(true, false);
+    }
+
+    @Test
+    public void testIdPForceSyncTrustEmailUserAttributes() {
+        checkUpdatedUserAttributesIdP(true, true);
     }
 
     @Test
     public void testIdPNotForceSyncUserAttributes() {
-        checkUpdatedUserAttributesIdP(false);
+        checkUpdatedUserAttributesIdP(false, false);
     }
 
-    private void checkUpdatedUserAttributesIdP(boolean isForceSync) {
+    @Test
+    public void testIdPNotForceSyncTrustEmailUserAttributes() {
+        checkUpdatedUserAttributesIdP(false, true);
+    }
+
+    @Test
+    public void loginWithClaimFilter() {
+        IdentityProviderResource identityProviderResource = getIdentityProviderResource();
+
+        IdentityProviderRepresentation identityProvider = identityProviderResource.toRepresentation();
+        updateIdPClaimFilter(identityProvider, identityProviderResource, true, USER_ATTRIBUTE_NAME, USER_ATTRIBUTE_VALUE);
+
+        WaitUtils.waitForPageToLoad();
+
+        loginFetchingUserFromUserEndpoint();
+
+        UserRepresentation user = getFederatedIdentity();
+
+        Assert.assertNotNull(user);
+    }
+
+    @Test
+    public void loginWithClaimRegexpFilter() {
+        IdentityProviderResource identityProviderResource = getIdentityProviderResource();
+
+        IdentityProviderRepresentation identityProvider = identityProviderResource.toRepresentation();
+        updateIdPClaimFilter(identityProvider, identityProviderResource, true, USER_ATTRIBUTE_NAME, CLAIM_FILTER_REGEXP);
+
+        WaitUtils.waitForPageToLoad();
+
+        loginFetchingUserFromUserEndpoint();
+
+        UserRepresentation user = getFederatedIdentity();
+
+        Assert.assertNotNull(user);
+    }
+
+    @Test
+    public void denyLoginWithClaimFilter() {
+        IdentityProviderResource identityProviderResource = getIdentityProviderResource();
+
+        IdentityProviderRepresentation identityProvider = identityProviderResource.toRepresentation();
+        updateIdPClaimFilter(identityProvider, identityProviderResource, true, "hardcoded-missing-claim", "hardcoded-missing-claim-value");
+        WaitUtils.waitForPageToLoad();
+
+        loginFetchingUserFromUserEndpoint(true);
+        Assert.assertEquals("The ID token issued by the identity provider does not match the configured essential claim. Please contact your administrator.",
+                loginPage.getInstruction());
+
+
+        List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(bc.getUserLogin());
+        assertThat(users, Matchers.empty());
+    }
+
+    protected void postInitializeUser(UserRepresentation user) {
+        user.setAttributes(ImmutableMap.<String, List<String>>builder()
+                .put(USER_ATTRIBUTE_NAME, ImmutableList.<String>builder().add(USER_ATTRIBUTE_VALUE).build())
+                .build());
+    }
+
+
+    private void updateIdPClaimFilter(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource, boolean filteredByClaim, String claimFilterName, String claimFilterValue) {
+        assertThat(idProvider, Matchers.notNullValue());
+        assertThat(idProviderResource, Matchers.notNullValue());
+        assertThat(claimFilterName, Matchers.notNullValue());
+        assertThat(claimFilterValue, Matchers.notNullValue());
+
+        if (idProvider.getConfig().getOrDefault(IdentityProviderModel.FILTERED_BY_CLAIMS, "false").equals(Boolean.toString(filteredByClaim)) &&
+                idProvider.getConfig().getOrDefault(IdentityProviderModel.CLAIM_FILTER_NAME, "").equals(claimFilterName) &&
+                idProvider.getConfig().getOrDefault(IdentityProviderModel.CLAIM_FILTER_VALUE, "").equals(claimFilterValue)
+        ) {
+            return;
+        }
+
+        idProvider.getConfig().put(IdentityProviderModel.FILTERED_BY_CLAIMS, Boolean.toString(filteredByClaim));
+        idProvider.getConfig().put(IdentityProviderModel.CLAIM_FILTER_NAME, claimFilterName);
+        idProvider.getConfig().put(IdentityProviderModel.CLAIM_FILTER_VALUE, claimFilterValue);
+        idProviderResource.update(idProvider);
+
+        idProvider = idProviderResource.toRepresentation();
+        assertThat("Cannot get Identity Provider", idProvider, Matchers.notNullValue());
+        assertThat("Filtered by claim didn't change", idProvider.getConfig().get(IdentityProviderModel.FILTERED_BY_CLAIMS), Matchers.equalTo(Boolean.toString(filteredByClaim)));
+        assertThat("Claim name didn't change", idProvider.getConfig().get(IdentityProviderModel.CLAIM_FILTER_NAME), Matchers.equalTo(claimFilterName));
+        assertThat("Claim value didn't change", idProvider.getConfig().get(IdentityProviderModel.CLAIM_FILTER_VALUE), Matchers.equalTo(claimFilterValue));
+    }
+
+    private void checkUpdatedUserAttributesIdP(boolean isForceSync, boolean isTrustEmail) {
         final String IDP_NAME = getBrokerConfiguration().getIDPAlias();
-        final String USERNAME = "demoUser";
+        final String USERNAME = "demo-user";
+        final String PASSWORD = "demo-pwd";
+        final String NEW_USERNAME = "demo-user-new";
 
         final String FIRST_NAME = "John";
         final String LAST_NAME = "Doe";
@@ -454,78 +618,129 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         final String NEW_LAST_NAME = "Doee";
         final String NEW_EMAIL = "mail123@example.com";
 
-        UsersResource providerUserResource = Optional.ofNullable(realmsResouce().realm(bc.providerRealmName()).users()).orElse(null);
-        assertThat("Cannot get User Resource from Provider realm", providerUserResource, Matchers.notNullValue());
+        RealmResource providerRealmResource = realmsResouce().realm(bc.providerRealmName());
+        allowUserEdit(providerRealmResource);
 
-        String userID = createUser(bc.providerRealmName(), USERNAME, USERNAME, FIRST_NAME, LAST_NAME, EMAIL);
-        assertThat("Cannot create user : " + USERNAME, userID, Matchers.notNullValue());
+        UsersResource providerUsersResource = providerRealmResource.users();
+
+        String providerUserID = createUser(bc.providerRealmName(), USERNAME, PASSWORD, FIRST_NAME, LAST_NAME, EMAIL,
+                user -> user.setEmailVerified(true));
+        UserResource providerUserResource = providerUsersResource.get(providerUserID);
 
         try {
-            UserRepresentation user = Optional.ofNullable(providerUserResource.get(userID).toRepresentation()).orElse(null);
-            assertThat("Cannot get user from provider", user, Matchers.notNullValue());
+            IdentityProviderResource consumerIdentityResource = getIdentityProviderResource();
+            IdentityProviderRepresentation idProvider = consumerIdentityResource.toRepresentation();
 
-            IdentityProviderResource consumerIdentityResource = Optional.ofNullable(getIdentityProviderResource()).orElse(null);
-            assertThat("Cannot get Identity Provider resource", consumerIdentityResource, Matchers.notNullValue());
+            updateIdPSyncMode(idProvider, consumerIdentityResource,
+                    isForceSync ? IdentityProviderSyncMode.FORCE : IdentityProviderSyncMode.IMPORT, isTrustEmail);
 
-            IdentityProviderRepresentation idProvider = Optional.ofNullable(consumerIdentityResource.toRepresentation()).orElse(null);
-            assertThat("Cannot get Identity Provider", idProvider, Matchers.notNullValue());
+            // login to create the user in the consumer realm
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
 
-            updateIdPSyncMode(idProvider, consumerIdentityResource, isForceSync ? IdentityProviderSyncMode.FORCE : IdentityProviderSyncMode.IMPORT);
-
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             WaitUtils.waitForPageToLoad();
 
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
-            logInWithIdp(IDP_NAME, USERNAME, USERNAME);
-            accountUpdateProfilePage.assertCurrent();
+            logInWithIdp(IDP_NAME, USERNAME, PASSWORD);
 
-            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.providerRealmName()), USERNAME);
 
-            driver.navigate().to(getAccountUrl(getProviderRoot(), bc.providerRealmName()));
-            WaitUtils.waitForPageToLoad();
+            assertThat(userRepresentation.getUsername(), Matchers.equalTo(USERNAME));
+            assertThat(userRepresentation.getEmail(), Matchers.equalTo(EMAIL));
+            assertThat(userRepresentation.getFirstName(), Matchers.equalTo(FIRST_NAME));
+            assertThat(userRepresentation.getLastName(), Matchers.equalTo(LAST_NAME));
 
-            assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.providerRealmName()));
+            RealmResource consumerRealmResource = realmsResouce().realm(bc.consumerRealmName());
+            List<UserRepresentation> foundUsers = consumerRealmResource.users().searchByUsername(USERNAME, true);
+            assertThat(foundUsers, Matchers.hasSize(1));
+            UserRepresentation consumerUser = foundUsers.get(0);
+            assertThat(consumerUser, Matchers.notNullValue());
+            String consumerUserID = consumerUser.getId();
+            UserResource consumerUserResource = consumerRealmResource.users().get(consumerUserID);
 
-            loginPage.login(USERNAME, USERNAME);
-            WaitUtils.waitForPageToLoad();
+            checkFederatedIdentityLink(consumerUserResource, providerUserID, USERNAME);
+            assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.equalTo(isTrustEmail));
 
-            accountUpdateProfilePage.assertCurrent();
-            accountUpdateProfilePage.updateProfile(NEW_FIRST_NAME, NEW_LAST_NAME, NEW_EMAIL);
-            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), USERNAME);
+            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), USERNAME);
 
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+            // set email verified to true on the consumer resource
+            consumerUser = consumerUserResource.toRepresentation();
+            consumerUser.setEmailVerified(true);
+            consumerUserResource.update(consumerUser);
+            consumerUserResource = consumerRealmResource.users().get(consumerUserID);
+            assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.is(true));
+
+            // modify provider user with the new values
+            UserRepresentation providerUser = providerUserResource.toRepresentation();
+            providerUser.setUsername(NEW_USERNAME);
+            providerUser.setFirstName(NEW_FIRST_NAME);
+            providerUser.setLastName(NEW_LAST_NAME);
+            providerUser.setEmail(NEW_EMAIL);
+            providerUser.setEmailVerified(true);
+            providerUserResource.update(providerUser);
+
+            // login again to force sync if force mode
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
             WaitUtils.waitForPageToLoad();
 
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
-            logInWithIdp(IDP_NAME, USERNAME, USERNAME);
+            logInWithIdp(IDP_NAME, NEW_USERNAME, PASSWORD);
 
-            accountUpdateProfilePage.assertCurrent();
+            userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.consumerRealmName()), USERNAME);
 
-            assertThat(accountUpdateProfilePage.getEmail(), Matchers.equalTo(isForceSync ? NEW_EMAIL : EMAIL));
-            assertThat(accountUpdateProfilePage.getFirstName(), Matchers.equalTo(isForceSync ? NEW_FIRST_NAME : FIRST_NAME));
-            assertThat(accountUpdateProfilePage.getLastName(), Matchers.equalTo(isForceSync ? NEW_LAST_NAME : LAST_NAME));
+            // consumer username stays the same, even when sync mode is force
+            assertThat(userRepresentation.getUsername(), Matchers.equalTo(USERNAME));
+            // other consumer attributes are updated, when sync mode is force
+            assertThat(userRepresentation.getEmail(), Matchers.equalTo(isForceSync ? NEW_EMAIL : EMAIL));
+            assertThat(userRepresentation.getFirstName(), Matchers.equalTo(isForceSync ? NEW_FIRST_NAME : FIRST_NAME));
+            assertThat(userRepresentation.getLastName(), Matchers.equalTo(isForceSync ? NEW_LAST_NAME : LAST_NAME));
+
+            consumerUserResource = consumerRealmResource.users().get(consumerUserID);
+            checkFederatedIdentityLink(consumerUserResource, providerUserID, isForceSync ? NEW_USERNAME : USERNAME);
+            // the email verified should be reverted to false if force-sync and not trust-email
+            assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.equalTo(!isForceSync || isTrustEmail));
         } finally {
-            providerUserResource.delete(userID);
-            assertThat("User wasn't deleted", providerUserResource.search(USERNAME).size(), Matchers.is(0));
+            providerUsersResource.delete(providerUserID);
         }
     }
 
-    private void updateIdPSyncMode(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource, IdentityProviderSyncMode syncMode) {
+    private void allowUserEdit(RealmResource realmResource) {
+        RealmRepresentation realm = realmResource.toRepresentation();
+        realm.setEditUsernameAllowed(true);
+        realmResource.update(realm);
+    }
+
+    private void checkFederatedIdentityLink(UserResource userResource, String userID, String username) {
+        List<FederatedIdentityRepresentation> federatedIdentities = userResource.getFederatedIdentity();
+        assertThat(federatedIdentities, Matchers.hasSize(1));
+        FederatedIdentityRepresentation federatedIdentity = federatedIdentities.get(0);
+        assertThat(federatedIdentity.getIdentityProvider(), Matchers.equalTo(IDP_OIDC_ALIAS));
+        assertThat(federatedIdentity.getUserId(), Matchers.equalTo(userID));
+        assertThat(federatedIdentity.getUserName(), Matchers.equalTo(username));
+    }
+
+    private void updateIdPSyncMode(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource,
+                                   IdentityProviderSyncMode syncMode, boolean trustEmail) {
         assertThat(idProvider, Matchers.notNullValue());
         assertThat(idProviderResource, Matchers.notNullValue());
         assertThat(syncMode, Matchers.notNullValue());
 
-        if (idProvider.getConfig().get(IdentityProviderModel.SYNC_MODE).equals(syncMode.name())) {
+        if (idProvider.getConfig().get(IdentityProviderModel.SYNC_MODE).equals(syncMode.name())
+                && idProvider.isTrustEmail() == trustEmail) {
             return;
         }
 
         idProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, syncMode.name());
+        idProvider.setTrustEmail(trustEmail);
         idProviderResource.update(idProvider);
 
-        idProvider = Optional.ofNullable(idProviderResource.toRepresentation()).orElse(null);
+        idProvider = idProviderResource.toRepresentation();
         assertThat("Cannot get Identity Provider", idProvider, Matchers.notNullValue());
         assertThat("Sync mode didn't change", idProvider.getConfig().get(IdentityProviderModel.SYNC_MODE), Matchers.equalTo(syncMode.name()));
+        assertThat("TrustEmail didn't change", idProvider.isTrustEmail(), Matchers.equalTo(trustEmail));
     }
 
     private UserRepresentation getFederatedIdentity() {
@@ -538,5 +753,36 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
     private IdentityProviderResource getIdentityProviderResource() {
         return realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+    }
+
+    private static final CustomKcOidcBrokerConfiguration BROKER_CONFIG_INSTANCE = new CustomKcOidcBrokerConfiguration();
+
+    static class CustomKcOidcBrokerConfiguration extends KcOidcBrokerConfiguration {
+
+        @Override
+        public List<ClientRepresentation> createProviderClients() {
+            List<ClientRepresentation> clients = super.createProviderClients();
+
+            ClientRepresentation client = clients.get(0);
+            ProtocolMapperRepresentation userAttrMapper = new ProtocolMapperRepresentation();
+            userAttrMapper.setName(USER_ATTRIBUTE_NAME);
+            userAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            userAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+
+            Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
+            userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, USER_ATTRIBUTE_NAME);
+            userAttrMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, USER_ATTRIBUTE_NAME);
+            userAttrMapperConfig.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
+            userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+            userAttrMapperConfig.put(ProtocolMapperUtils.MULTIVALUED, "false");
+            userAttrMapperConfig.put(ProtocolMapperUtils.AGGREGATE_ATTRS, "false");
+            List<ProtocolMapperRepresentation> mappers = new ArrayList<>(client.getProtocolMappers());
+            mappers.add(userAttrMapper);
+            client.setProtocolMappers(mappers);
+
+            return clients;
+        }
     }
 }

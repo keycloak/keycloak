@@ -32,4 +32,5 @@
 # limitations under the License.
 #
 
+org.keycloak.testsuite.events.TestEventsListenerContextDetailsProviderFactory
 org.keycloak.testsuite.events.TestEventsListenerProviderFactory

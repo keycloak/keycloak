@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.testsuite.account.AccountRestServiceTest.assertUserProfileAttributeMetadata;
+import static org.keycloak.testsuite.account.AccountRestServiceTest.getUserProfileAttributeMetadata;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_ONLY;
@@ -29,44 +31,38 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.representations.account.UserProfileAttributeMetadata;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.userprofile.UserProfileContext;
 
 /**
- * 
+ * Test account rest service with custom user profile configurations
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
-public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTest {
+public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTest {
     
     @Override
     @Before
     public void before() {
         super.before();
-        enableDynamicUserProfile();
         setUserProfileConfiguration(null);
     }
 
-    @Override
-    protected boolean isDeclarativeUserProfile() {
-        return true;
-    }
-
-    private static String UP_CONFIG_FOR_METADATA = "{\"attributes\": ["
+    private final static String UP_CONFIG_FOR_METADATA = "{\"attributes\": ["
             + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {\"scopes\":[\"profile\"]}, \"displayName\": \"${profile.firstName}\", \"validations\": {\"length\": { \"max\": 255 }}},"
             + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}, \"displayName\": \"Last name\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
             + "{\"name\": \"attr_with_scope_selector\"," + PERMISSIONS_ALL + ", \"selector\": {\"scopes\": [\"profile\"]}},"
@@ -78,25 +74,29 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
             + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
             + "]}";
 
-    private static String UP_CONFIG_NO_ACCESS_TO_NAME_FIELDS = "{\"attributes\": ["
+    private final static String UP_CONFIG_NO_ACCESS_TO_NAME_FIELDS = "{\"attributes\": ["
             + "{\"name\": \"firstName\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\": {}, \"displayName\": \"${profile.firstName}\", \"validations\": {\"length\": { \"max\": 255 }}},"
             + "{\"name\": \"lastName\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\": {}, \"displayName\": \"Last name\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
             + "{\"name\": \"attr_readonly\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
             + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
             + "]}";
 
-    private static String UP_CONFIG_RO_ACCESS_TO_NAME_FIELDS = "{\"attributes\": ["
+    private final static String UP_CONFIG_RO_ACCESS_TO_NAME_FIELDS = "{\"attributes\": ["
             + "{\"name\": \"firstName\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {}, \"displayName\": \"${profile.firstName}\", \"validations\": {\"length\": { \"max\": 255 }}},"
             + "{\"name\": \"lastName\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {}, \"displayName\": \"Last name\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
             + "{\"name\": \"attr_readonly\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
             + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
             + "]}";
 
+    private final static String UP_CONFIG_RO_USERNAME_AND_EMAIL = "{\"attributes\": ["
+            + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {}, \"displayName\": \"${email}\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
+            + "{\"name\": \"attr_readonly\"," + PERMISSIONS_ADMIN_EDITABLE + "},"
+            + "{\"name\": \"attr_no_permission\"," + PERMISSIONS_ADMIN_ONLY + "}"
+            + "]}";
+
 
     @Test
-    @Override
-    public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
-
+    public void testEditUsernameAllowed() throws IOException {
         setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
         
         UserRepresentation user = getUser();
@@ -187,10 +187,34 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         }
     }
 
+    @Test
+    public void testGetUserProfileMetadata_RoAccessToUsernameAndEmail() throws IOException {
+
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(false);
+            adminClient.realm("test").update(realmRep);
+
+            setUserProfileConfiguration(UP_CONFIG_RO_USERNAME_AND_EMAIL);
+
+            UserRepresentation user = getUser();
+            assertNotNull(user.getUserProfileMetadata());
+
+            assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+            assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+
+            assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
+            assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
+        } finally {
+            RealmRepresentation realmRep = testRealm().toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            testRealm().update(realmRep);
+        }
+    }
+
 
     @Test
-    @Override
-    public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {
+    public void testEditUsernameDisallowed() throws IOException {
         
         try {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -230,6 +254,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         } finally {
             RealmRepresentation realmRep = testRealm().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
+            realmRep.setRegistrationEmailAsUsername(false);
             testRealm().update(realmRep);
         }
     }
@@ -260,6 +285,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
         String originalEmail = user.getEmail();
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
         Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
 
         try {
@@ -271,13 +297,13 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
             user.setEmail("bobby@localhost");
             user.setFirstName("Homer");
             user.setLastName("Simpsons");
-            user.getAttributes().put("attr1", Collections.singletonList("val1"));
-            user.getAttributes().put("attr2", Collections.singletonList("val2"));
+            user.getAttributes().put("attr1", Collections.singletonList("val11"));
+            user.getAttributes().put("attr2", Collections.singletonList("val22"));
 
+            events.clear();
             user = updateAndGet(user);
 
             //skip login to the REST API event
-            events.poll();
             events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
                 .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
                 .detail(Details.PREVIOUS_EMAIL, originalEmail)
@@ -286,7 +312,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
                 .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
                 .detail(Details.UPDATED_FIRST_NAME, "Homer")
                 .detail(Details.UPDATED_LAST_NAME, "Simpsons")
-                .detail(Details.PREF_UPDATED+"attr2", "val2")
+                .detail(Details.PREF_UPDATED+"attr2", "val22")
                 .assertEvent();
             events.assertEmpty();
             
@@ -300,55 +326,73 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
             user.setAttributes(originalAttributes);
-            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
         }
     }
-    
+
     @Test
-    public void testUpdateProfileEvent() throws IOException {
-        setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
-                + "]}");
-        super.testUpdateProfileEvent();
+    public void testManageUserLocaleAttribute() throws IOException {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
+        realmRep.setInternationalizationEnabled(false);
+        testRealm().update(realmRep);
+        UserRepresentation user = getUser();
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
+
+        try {
+            user.getAttributes().put(UserModel.LOCALE, List.of("pt_BR"));
+            user = updateAndGet(user);
+            assertNull(user.getAttributes());
+
+            realmRep.setInternationalizationEnabled(true);
+            testRealm().update(realmRep);
+
+            user.singleAttribute(UserModel.LOCALE, "pt_BR");
+            user = updateAndGet(user);
+            assertEquals("pt_BR", user.getAttributes().get(UserModel.LOCALE).get(0));
+
+            user.getAttributes().remove(UserModel.LOCALE);
+            user = updateAndGet(user);
+            assertNull(user.getAttributes());
+
+            UserProfileMetadata metadata = user.getUserProfileMetadata();
+
+            assertTrue(metadata.getAttributes().stream()
+                    .map(UserProfileAttributeMetadata::getName)
+                    .filter(UserModel.LOCALE::equals).findAny()
+                    .isPresent()
+            );
+        } finally {
+            realmRep.setInternationalizationEnabled(internationalizationEnabled);
+            testRealm().update(realmRep);
+            updateAndGet(user);
+        }
     }
-    
-    @Test
-    @Override
-    public void testUpdateProfile() throws IOException {
-        setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
-                + "]}");
-        super.testUpdateProfile();
-    }
-    
-    @Test
-    @Override
-    public void testUpdateSingleField() throws IOException {
-        setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}}"
-                + "]}");
-         super.testUpdateSingleField();
-    }
-    
+
     protected void setUserProfileConfiguration(String configuration) {
         VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
     }
-   
-    protected void enableDynamicUserProfile() {
-        RealmRepresentation testRealm = testRealm().toRepresentation();
-        
-        VerifyProfileTest.enableDynamicUserProfile(testRealm);
 
-        testRealm().update(testRealm);
+    protected UserRepresentation getUser() throws IOException {
+        return getUser(true);
+    }
+
+    protected UserRepresentation getUser(boolean fetchMetadata) throws IOException {
+        String accountUrl = getAccountUrl(null) + "?userProfileMetadata=" + fetchMetadata;
+        return AccountRestServiceTest.getUser(accountUrl, httpClient, tokenUtil);
+    }
+
+    protected UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
+        SimpleHttp a = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user);
+        try {
+            assertEquals(204, a.asStatus());
+        } catch (AssertionError e) {
+            System.err.println("Error during user update: " + a.asString());
+            throw e;
+        }
+        return getUser();
     }
 
 }

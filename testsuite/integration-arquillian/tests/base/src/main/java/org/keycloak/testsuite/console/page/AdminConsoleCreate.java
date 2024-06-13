@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.console.page;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.console.page.AdminConsoleRealm.CONSOLE_REALM;

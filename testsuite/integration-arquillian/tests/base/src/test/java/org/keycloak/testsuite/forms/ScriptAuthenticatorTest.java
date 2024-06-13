@@ -16,15 +16,12 @@
  */
 package org.keycloak.testsuite.forms;
 
-import com.google.common.collect.ImmutableMap;
-import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
@@ -33,7 +30,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -45,9 +41,8 @@ import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.Map;
+import jakarta.ws.rs.core.Response;
+
 import java.util.UUID;
 
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
@@ -67,8 +62,8 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     public AssertEvents events = new AssertEvents(this);
 
     private AuthenticationFlowRepresentation flow;
-    private final static String userId = UUID.randomUUID().toString();
-    private final static String failId = UUID.randomUUID().toString();
+    private static String userId;
+    private static String failId;
 
     public static final String EXECUTION_ID = "scriptAuth";
 
@@ -81,7 +76,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
 
         UserRepresentation failUser = UserBuilder.create()
-                .id(failId)
+                .id(UUID.randomUUID().toString())
                 .username("fail")
                 .email("fail@test.com")
                 .enabled(true)
@@ -89,7 +84,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         UserRepresentation okayUser = UserBuilder.create()
-                .id(userId)
+                .id(UUID.randomUUID().toString())
                 .username("user")
                 .email("user@test.com")
                 .enabled(true)
@@ -99,6 +94,13 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
         RealmBuilder.edit(testRealm)
                 .user(failUser)
                 .user(okayUser);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("user", true).get(0).getId();
+        failId = adminClient.realm("test").users().search("fail", true).get(0).getId();
     }
 
     @Before

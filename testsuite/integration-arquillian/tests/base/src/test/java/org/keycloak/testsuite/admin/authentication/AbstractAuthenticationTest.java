@@ -35,7 +35,7 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -84,6 +84,25 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         return null;
     }
 
+    /**
+     * Searches for an execution located before the provided execution on the same level of
+     * an authentication flow.
+     *
+     * @param execution execution to find a neighbor for
+     * @param executions list of executions to search in
+     * @return execution, or null if not found
+     */
+    public static AuthenticationExecutionInfoRepresentation findPreviousExecution(AuthenticationExecutionInfoRepresentation execution, List<AuthenticationExecutionInfoRepresentation> executions) {
+        for (AuthenticationExecutionInfoRepresentation exec : executions) {
+            if (exec.getLevel() != execution.getLevel()) {
+                continue;
+            }
+            if (exec.getIndex() == execution.getIndex() - 1) {
+                return exec;
+            }
+        }
+        return null;
+    }
 
     public static AuthenticationFlowRepresentation findFlowByAlias(String alias, List<AuthenticationFlowRepresentation> flows) {
         for (AuthenticationFlowRepresentation flow : flows) {
@@ -101,6 +120,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         Assert.assertEquals("Execution provider id - " + actual.getProviderId(), expected.getProviderId(), actual.getProviderId());
         Assert.assertEquals("Execution level - " + actual.getProviderId(), expected.getLevel(), actual.getLevel());
         Assert.assertEquals("Execution index - " + actual.getProviderId(), expected.getIndex(), actual.getIndex());
+        Assert.assertEquals("Execution priority - " + actual.getProviderId(), expected.getPriority(), actual.getPriority());
         Assert.assertEquals("Execution authentication flow - " + actual.getProviderId(), expected.getAuthenticationFlow(), actual.getAuthenticationFlow());
         Assert.assertEquals("Execution requirement choices - " + actual.getProviderId(), expected.getRequirementChoices(), actual.getRequirementChoices());
     }
@@ -110,7 +130,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         Assert.assertEquals("Execution authenticator - " + actual.getAuthenticator(), expected.getAuthenticator(), actual.getAuthenticator());
         Assert.assertEquals("Execution userSetupAllowed - " + actual.getAuthenticator(), expected.isUserSetupAllowed(), actual.isUserSetupAllowed());
         Assert.assertEquals("Execution authenticatorFlow - " + actual.getAuthenticator(), expected.isAuthenticatorFlow(), actual.isAuthenticatorFlow());
-        Assert.assertEquals("Execution authenticatorConfig - " + actual.getAuthenticator(), expected.getAuthenticatorConfig(), actual.getAuthenticatorConfig());
+        Assert.assertEquals("Execution authenticatorConfig - " + actual.getAuthenticatorConfig(), expected.getAuthenticatorConfig(), actual.getAuthenticatorConfig());
         Assert.assertEquals("Execution priority - " + actual.getAuthenticator(), expected.getPriority(), actual.getPriority());
         Assert.assertEquals("Execution requirement - " + actual.getAuthenticator(), expected.getRequirement(), actual.getRequirement());
     }
@@ -153,7 +173,8 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
     }
 
     AuthenticationExecutionInfoRepresentation newExecInfo(String displayName, String providerId, Boolean configurable,
-                                                          int level, int index, String requirement, Boolean authFlow, String[] choices) {
+                                                          int level, int index, String requirement, Boolean authFlow, String[] choices,
+                                                          int priority) {
 
         AuthenticationExecutionInfoRepresentation execution = new AuthenticationExecutionInfoRepresentation();
         execution.setRequirement(requirement);
@@ -163,6 +184,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         execution.setLevel(level);
         execution.setIndex(index);
         execution.setAuthenticationFlow(authFlow);
+        execution.setPriority(priority);
         if (choices != null) {
             execution.setRequirementChoices(Arrays.asList(choices));
         }
@@ -170,9 +192,9 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
     }
 
     void addExecInfo(List<AuthenticationExecutionInfoRepresentation> target, String displayName, String providerId, Boolean configurable,
-                 int level, int index, String requirement, Boolean authFlow, String[] choices) {
+                 int level, int index, String requirement, Boolean authFlow, String[] choices, int priority) {
 
-        AuthenticationExecutionInfoRepresentation exec = newExecInfo(displayName, providerId, configurable, level, index, requirement, authFlow, choices);
+        AuthenticationExecutionInfoRepresentation exec = newExecInfo(displayName, providerId, configurable, level, index, requirement, authFlow, choices, priority);
         target.add(exec);
     }
 

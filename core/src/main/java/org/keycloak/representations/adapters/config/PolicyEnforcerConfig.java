@@ -23,12 +23,14 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -39,30 +41,41 @@ public class PolicyEnforcerConfig {
     private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
 
     @JsonProperty("paths")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonInclude(Include.NON_EMPTY)
     private List<PathConfig> paths = new ArrayList<>();
 
     @JsonProperty("path-cache")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonInclude(Include.NON_EMPTY)
     private PathCacheConfig pathCacheConfig;
 
     @JsonProperty("lazy-load-paths")
     private Boolean lazyLoadPaths = Boolean.FALSE;
 
     @JsonProperty("on-deny-redirect-to")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(Include.NON_NULL)
     private String onDenyRedirectTo;
 
     @JsonProperty("user-managed-access")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(Include.NON_NULL)
     private UserManagedAccessConfig userManagedAccess;
 
     @JsonProperty("claim-information-point")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(Include.NON_NULL)
     private Map<String, Map<String, Object>> claimInformationPointConfig;
 
     @JsonProperty("http-method-as-scope")
     private Boolean httpMethodAsScope;
+
+    private String realm;
+
+    @JsonProperty("auth-server-url")
+    private String authServerUrl;
+
+    @JsonProperty("credentials")
+    protected Map<String, Object> credentials = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+    @JsonProperty("resource")
+    private String resource;
 
     public List<PathConfig> getPaths() {
         return this.paths;
@@ -126,6 +139,38 @@ public class PolicyEnforcerConfig {
 
     public void setHttpMethodAsScope(Boolean httpMethodAsScope) {
         this.httpMethodAsScope = httpMethodAsScope;
+    }
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public void setRealm(String realm) {
+        this.realm = realm;
+    }
+
+    public String getAuthServerUrl() {
+        return authServerUrl;
+    }
+
+    public void setAuthServerUrl(String authServerUrl) {
+        this.authServerUrl = authServerUrl;
+    }
+
+    public Map<String, Object> getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(Map<String, Object> credentials) {
+        this.credentials = credentials;
+    }
+
+    public String getResource() {
+        return resource;
+    }
+
+    public void setResource(String resource) {
+        this.resource = resource;
     }
 
     public static class PathConfig {

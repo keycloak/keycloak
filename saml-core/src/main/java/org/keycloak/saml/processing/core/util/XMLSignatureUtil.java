@@ -41,7 +41,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
@@ -88,10 +88,9 @@ import javax.xml.crypto.KeySelector;
 import javax.xml.crypto.KeySelectorException;
 import javax.xml.crypto.KeySelectorResult;
 import javax.xml.crypto.XMLCryptoContext;
-import javax.xml.crypto.dsig.keyinfo.KeyName;
+import javax.xml.crypto.dom.DOMStructure;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.util.SecurityActions;
-import org.keycloak.saml.processing.api.util.KeyInfoTools;
 
 /**
  * Utility for XML Signature <b>Note:</b> You can change the canonicalization method type by using the system property
@@ -107,7 +106,6 @@ public class XMLSignatureUtil {
 
     // Set some system properties and Santuario providers. Run this block before any other class initialization.
     static {
-        ProvidersUtil.ensure();
         SystemPropertiesUtil.ensure();
         String keyInfoProp = SecurityActions.getSystemProperty("picketlink.xmlsig.includeKeyInfo", null);
         if (StringUtil.isNotNull(keyInfoProp)) {
@@ -139,9 +137,7 @@ public class XMLSignatureUtil {
         @Override
         public KeySelectorResult select(KeyInfo keyInfo, KeySelector.Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) throws KeySelectorException {
             try {
-                KeyName keyNameEl = KeyInfoTools.getKeyName(keyInfo);
-                this.keyName = keyNameEl == null ? null : keyNameEl.getName();
-                final Key key = locator.getKey(keyName);
+                final Key key = locator.getKey(keyInfo);
                 this.keyLocated = key != null;
                 return new KeySelectorResult() {
                     @Override public Key getKey() {
@@ -156,24 +152,6 @@ public class XMLSignatureUtil {
 
         private boolean wasKeyLocated() {
             return this.keyLocated;
-        }
-    }
-
-    private static class KeySelectorPresetKey extends KeySelector {
-
-        private final Key key;
-
-        public KeySelectorPresetKey(Key key) {
-            this.key = key;
-        }
-
-        @Override
-        public KeySelectorResult select(KeyInfo keyInfo, KeySelector.Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) {
-            return new KeySelectorResult() {
-                @Override public Key getKey() {
-                    return key;
-                }
-            };
         }
     }
 
@@ -495,20 +473,16 @@ public class XMLSignatureUtil {
 
         logger.trace("Could not validate signature using ds:KeyInfo/ds:KeyName hint.");
 
-        if (locator instanceof Iterable) {
-            Iterable<Key> availableKeys = (Iterable<Key>) locator;
+        logger.trace("Trying hard to validate XML signature using all available keys.");
 
-            logger.trace("Trying hard to validate XML signature using all available keys.");
-
-            for (Key key : availableKeys) {
-                try {
-                    if (validateUsingKeySelector(signatureNode, new KeySelectorPresetKey(key))) {
-                        return true;
-                    }
-                } catch (XMLSignatureException ex) { // pass through MarshalException
-                    logger.debug("Verification failed: " + ex);
-                    logger.trace(ex);
+        for (Key key : locator) {
+            try {
+                if (validateUsingKeySelector(signatureNode, KeySelector.singletonKeySelector(key))) {
+                    return true;
                 }
+            } catch (XMLSignatureException ex) { // pass through MarshalException
+                logger.debug("Verification failed: " + ex);
+                logger.trace(ex);
             }
         }
 
@@ -739,7 +713,7 @@ public class XMLSignatureUtil {
         signature.sign(dsc);
     }
 
-    private static KeyInfo createKeyInfo(String keyName, PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
+    public static KeyInfo createKeyInfo(String keyName, PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
         KeyInfoFactory keyInfoFactory = fac.getKeyInfoFactory();
 
         List<XMLStructure> items = new LinkedList<>();
@@ -750,12 +724,15 @@ public class XMLSignatureUtil {
 
         if (x509Certificate != null) {
             items.add(keyInfoFactory.newX509Data(Collections.singletonList(x509Certificate)));
-        }
-
-        if (publicKey != null) {
+        } else if (publicKey != null) {
             items.add(keyInfoFactory.newKeyValue(publicKey));
         }
 
         return keyInfoFactory.newKeyInfo(items);
+    }
+
+    public static KeyInfo createKeyInfo(Element keyInfo) throws MarshalException {
+        KeyInfoFactory keyInfoFactory = fac.getKeyInfoFactory();
+        return keyInfoFactory.unmarshalKeyInfo(new DOMStructure(keyInfo));
     }
 }

@@ -16,6 +16,7 @@
  */
 package org.keycloak.utils;
 
+import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
 import java.util.OptionalDouble;
 import java.util.PrimitiveIterator;
@@ -250,16 +251,110 @@ class ClosingDoubleStream implements DoubleStream {
 
     @Override
     public PrimitiveIterator.OfDouble iterator() {
-        return delegate.iterator();
+        return new ClosingIterator(delegate.iterator());
     }
 
     @Override
     public Spliterator.OfDouble spliterator() {
-        return delegate.spliterator();
+        return new ClosingSpliterator(delegate.spliterator());
     }
 
     @Override
     public boolean isParallel() {
         return delegate.isParallel();
+    }
+
+    private class ClosingIterator implements PrimitiveIterator.OfDouble {
+
+        private final PrimitiveIterator.OfDouble iterator;
+
+        public ClosingIterator(PrimitiveIterator.OfDouble iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            final boolean res = iterator.hasNext();
+            if (! res) {
+                close();
+            }
+            return res;
+        }
+
+        @Override
+        public Double next() {
+            return iterator.next();
+        }
+
+        @Override
+        public void remove() {
+            iterator.remove();
+        }
+
+        @Override
+        public void forEachRemaining(DoubleConsumer action) {
+            iterator.forEachRemaining(action);
+            close();
+        }
+
+        @Override
+        public double nextDouble() {
+            return iterator.nextDouble();
+        }
+    }
+
+    private class ClosingSpliterator implements Spliterator.OfDouble {
+
+        private final Spliterator.OfDouble spliterator;
+
+        public ClosingSpliterator(Spliterator.OfDouble spliterator) {
+            this.spliterator = spliterator;
+        }
+
+        @Override
+        public boolean tryAdvance(DoubleConsumer action) {
+            final boolean res = spliterator.tryAdvance(action);
+            if (! res) {
+                close();
+            }
+            return res;
+        }
+
+        @Override
+        public void forEachRemaining(DoubleConsumer action) {
+            spliterator.forEachRemaining(action);
+            close();
+        }
+
+        @Override
+        public Spliterator.OfDouble trySplit() {
+            return spliterator.trySplit();
+        }
+
+        @Override
+        public long estimateSize() {
+            return spliterator.estimateSize();
+        }
+
+        @Override
+        public long getExactSizeIfKnown() {
+            return spliterator.getExactSizeIfKnown();
+        }
+
+        @Override
+        public int characteristics() {
+            return spliterator.characteristics();
+        }
+
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return spliterator.hasCharacteristics(characteristics);
+        }
+
+        @Override
+        public Comparator<? super Double> getComparator() {
+            return spliterator.getComparator();
+        }
+
     }
 }

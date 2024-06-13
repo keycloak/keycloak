@@ -33,9 +33,9 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.TokenManager;
-import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
@@ -45,15 +45,14 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
-import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -68,9 +67,8 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultKeycloakSession implements KeycloakSession {
+public abstract class DefaultKeycloakSession implements KeycloakSession {
 
-    private final static Logger log = Logger.getLogger(DefaultKeycloakSession.class);
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<>();
@@ -78,23 +76,19 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<String, Object> attributes = new HashMap<>();
     private final Map<InvalidableObjectType, Set<Object>> invalidationMap = new HashMap<>();
     private DatastoreProvider datastoreProvider;
-    @Deprecated
-    private UserCredentialManager userCredentialStorageManager;
-    private UserSessionProvider sessionProvider;
-    private UserLoginFailureProvider userLoginFailureProvider;
-    private AuthenticationSessionProvider authenticationSessionProvider;
-    private UserFederatedStorageProvider userFederatedStorageProvider;
     private final KeycloakContext context;
     private KeyManager keyManager;
     private ThemeManager themeManager;
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
+    private boolean closed = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager(this);
-        context = new DefaultKeycloakContext(this);
+        context = createKeycloakContext(this);
+        LOG.tracef("Created %s%s", this, StackUtil.getShortStackTrace());
     }
 
     @Override
@@ -110,16 +104,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    @Deprecated
-    public UserProvider userCache() {
-        LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
-        if (provider == null) {
-            throw new IllegalStateException("legacy support for userCache is not enabled");
-        }
-        return provider.userCache();
-    }
-
-    @Override
     public void invalidate(InvalidableObjectType type, Object... ids) {
         factory.invalidate(this, type, ids);
         if (type == ObjectType.PROVIDER_FACTORY) {
@@ -129,6 +113,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public void enlistForClose(Provider provider) {
+        for (Provider p : closable) {
+            if (p == provider) {    // Do not add the same provider twice
+                return;
+            }
+        }
         closable.add(provider);
     }
 
@@ -155,6 +144,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public Map<String, Object> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
+    }
+
+    @Override
     public KeycloakTransactionManager getTransactionManager() {
         return transactionManager;
     }
@@ -165,110 +159,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    @Deprecated
-    public UserFederatedStorageProvider userFederatedStorage() {
-        if (userFederatedStorageProvider == null) {
-            userFederatedStorageProvider = getProvider(UserFederatedStorageProvider.class);
-        }
-        return userFederatedStorageProvider;
-    }
-
-    @Override
-    @Deprecated
-    public UserProvider userLocalStorage() {
-        log.warnf("The semantics of this method have changed: Please see the migration guide on how to migrate.%s", StackUtil.getShortStackTrace());
-        return users();
-    }
-
-    @Override
-    @Deprecated
-    public RealmProvider realmLocalStorage() {
-        return realms();
-    }
-
-    @Override
-    @Deprecated
-    public ClientProvider clientLocalStorage() {
-        return clients();
-    }
-
-    @Override
-    @Deprecated
-    public ClientScopeProvider clientScopeLocalStorage() {
-        return clientScopes();
-    }
-
-    @Override
-    @Deprecated
-    public GroupProvider groupLocalStorage() {
-        return groups();
-    }
-
-    @Override
-    @Deprecated
-    public ClientProvider clientStorageManager() {
-        return clients();
-    }
-
-    @Override
-    @Deprecated
-    public ClientScopeProvider clientScopeStorageManager() {
-        return clientScopes();
-    }
-
-    @Override
-    @Deprecated
-    public RoleProvider roleLocalStorage() {
-        return roles();
-    }
-
-    @Override
-    @Deprecated
-    public RoleProvider roleStorageManager() {
-        return roles();
-    }
-
-    @Override
-    @Deprecated
-    public GroupProvider groupStorageManager() {
-        return groups();
-    }
-
-    private final ThreadLocal<Boolean> recursionPreventionUserStorageManager = new ThreadLocal<>();
-
-    @Override
-    @Deprecated
-    public UserProvider userStorageManager() {
-        if(recursionPreventionUserStorageManager.get() != null) {
-            throw new IllegalStateException("userStorageManager() is being called recursively. Please adjust your code according to the Keycloak 19 migration guide.");
-        }
-        try {
-            recursionPreventionUserStorageManager.set(Boolean.TRUE);
-            return users();
-        } finally {
-            recursionPreventionUserStorageManager.remove();
-        }
-    }
-
-    @Override
     public UserProvider users() {
         return getDatastoreProvider().users();
     }
 
-    @Override
-    @Deprecated
-    public UserCredentialManager userCredentialManager() {
-        if (userCredentialStorageManager == null) {
-            LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
-            if (provider == null) {
-                throw new IllegalStateException("legacy support for a UserCredentialManager is not enabled");
-            }
-            userCredentialStorageManager = provider.userCredentialManager();
-        }
-        return userCredentialStorageManager;
-    }
-
     @SuppressWarnings("unchecked")
+    @Override
     public <T extends Provider> T getProvider(Class<T> clazz) {
         Integer hash = clazz.hashCode();
         T provider = (T) providers.get(hash);
@@ -286,6 +182,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
         Integer hash = clazz.hashCode() + id.hashCode();
         T provider = (T) providers.get(hash);
@@ -356,6 +253,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return provider;
     }
 
+    @Override
     public <T extends Provider> Set<String> listProviderIds(Class<T> clazz) {
         return factory.getAllProviderIds(clazz);
     }
@@ -400,26 +298,22 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public UserSessionProvider sessions() {
-        if (sessionProvider == null) {
-            sessionProvider = getProvider(UserSessionProvider.class);
-        }
-        return sessionProvider;
+        return getDatastoreProvider().userSessions();
     }
 
     @Override
     public UserLoginFailureProvider loginFailures() {
-        if (userLoginFailureProvider == null) {
-            userLoginFailureProvider = getProvider(UserLoginFailureProvider.class);
-        }
-        return userLoginFailureProvider;
+        return getDatastoreProvider().loginFailures();
     }
 
     @Override
     public AuthenticationSessionProvider authenticationSessions() {
-        if (authenticationSessionProvider == null) {
-            authenticationSessionProvider = getProvider(AuthenticationSessionProvider.class);
-        }
-        return authenticationSessionProvider;
+        return getDatastoreProvider().authSessions();
+    }
+
+    @Override
+    public SingleUseObjectProvider singleUseObjects() {
+        return getDatastoreProvider().singleUseObjects();
     }
 
     @Override
@@ -462,19 +356,72 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return clientPolicyManager;
     }
 
+    private static final Logger LOG = Logger.getLogger(DefaultKeycloakSession.class);
+
+    @Override
     public void close() {
-        Consumer<? super Provider> safeClose = p -> {
-            try {
-                p.close();
-            } catch (Exception e) {
-                // Ignore exception
+        if (LOG.isTraceEnabled()) {
+            LOG.tracef("Closing %s%s%s", this,
+              getTransactionManager().isActive() ? " (transaction active" + (getTransactionManager().getRollbackOnly() ? ", ROLLBACK-ONLY" : "") + ")" : "",
+              StackUtil.getShortStackTrace());
+        }
+
+        if (closed) {
+            throw new IllegalStateException("Illegal call to #close() on already closed " + this);
+        }
+
+        RuntimeException re = closeTransactionManager();
+
+        try {
+            Consumer<? super Provider> safeClose = p -> {
+                try {
+                    if (p != null) {
+                        p.close();
+                    }
+                } catch (Exception e) {
+                    LOG.warnf(e, "Unable to close provider %s", p.getClass().getName());
+                }
+            };
+            providers.values().forEach(safeClose);
+            closable.forEach(safeClose);
+            for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
+                factory.invalidate(this, me.getKey(), me.getValue().toArray());
             }
-        };
-        providers.values().forEach(safeClose);
-        closable.forEach(safeClose);
-        for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
-            factory.invalidate(this, me.getKey(), me.getValue().toArray());
+        } finally {
+            this.closed = true;
+        }
+
+        if (re != null) {
+            throw re;
         }
     }
 
+    protected RuntimeException closeTransactionManager() {
+        if (! this.transactionManager.isActive()) {
+            return null;
+        }
+
+        try {
+            if (this.transactionManager.getRollbackOnly()) {
+                this.transactionManager.rollback();
+            } else {
+                this.transactionManager.commit();
+            }
+        } catch (RuntimeException re) {
+            return re;
+        }
+
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("session @ %08x", System.identityHashCode(this));
+    }
+
+    protected abstract DefaultKeycloakContext createKeycloakContext(KeycloakSession session);
+
+    public boolean isClosed() {
+        return closed;
+    }
 }

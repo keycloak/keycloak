@@ -47,7 +47,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPermissionTicket;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPolicy;
@@ -100,7 +99,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     protected Set<String> invalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
 
-    protected boolean clearAll;
     protected final long startupRevision;
     protected StoreFactory delegate;
     protected KeycloakSession session;
@@ -251,16 +249,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         cache.sendInvalidationEvents(session, invalidationEvents, InfinispanCacheStoreFactoryProviderFactory.AUTHORIZATION_INVALIDATION_EVENTS);
     }
 
-
-
-    public long getStartupRevision() {
-        return startupRevision;
-    }
-
-    public boolean isInvalid(String id) {
-        return invalidations.contains(id);
-    }
-
     public void registerResourceServerInvalidation(String id) {
         cache.resourceServerUpdated(id, invalidations);
         ResourceServerAdapter adapter = managedResourceServers.get(id);
@@ -310,9 +298,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             return Collections.emptySet();
         }
 
-        ResourceServer resourceServer = getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, serverId);
+        ResourceServer resourceServer = getResourceServerStore().findById(serverId);
         return resources.stream().map(resourceId -> {
-            Resource resource = getResourceStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resourceId);
+            Resource resource = getResourceStore().findById(resourceServer, resourceId);
             String type = resource.getType();
 
             if (type != null) {
@@ -451,7 +439,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         public void delete(ClientModel client) {
             String id = client.getId();
             if (id == null) return;
-            ResourceServer server = findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, id);
+            ResourceServer server = findById(id);
             if (server == null) return;
 
             cache.invalidateObject(id);
@@ -462,7 +450,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public ResourceServer findById(RealmModel realm, String id) {
+        public ResourceServer findById(String id) {
             if (id == null) return null;
             CachedResourceServer cached = cache.get(id, CachedResourceServer.class);
             if (cached != null) {
@@ -472,7 +460,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
-                ResourceServer model = getResourceServerStoreDelegate().findById(realm, id);
+                ResourceServer model = getResourceServerStoreDelegate().findById(id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -481,18 +469,18 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedResourceServer(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getResourceServerStoreDelegate().findById(realm, id);
+                return getResourceServerStoreDelegate().findById(id);
             } else if (managedResourceServers.containsKey(id)) {
                 return managedResourceServers.get(id);
             }
-            ResourceServerAdapter adapter = new ResourceServerAdapter(realm, cached, StoreFactoryCacheSession.this);
-             managedResourceServers.put(id, adapter);
+            ResourceServerAdapter adapter = new ResourceServerAdapter(cached, StoreFactoryCacheSession.this);
+            managedResourceServers.put(id, adapter);
             return adapter;
         }
 
         @Override
         public ResourceServer findByClient(ClientModel client) {
-            return findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, client.getId());
+            return findById(client.getId());
         }
     }
 
@@ -510,19 +498,19 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public void delete(RealmModel realm, String id) {
+        public void delete(String id) {
             if (id == null) return;
-            Scope scope = findById(realm, null, id);
+            Scope scope = findById(null, id);
             if (scope == null) return;
 
             cache.invalidateObject(id);
             invalidationEvents.add(ScopeRemovedEvent.create(id, scope.getName(), scope.getResourceServer().getId()));
             cache.scopeRemoval(id, scope.getName(), scope.getResourceServer().getId(), invalidations);
-            getScopeStoreDelegate().delete(realm, id);
+            getScopeStoreDelegate().delete(id);
         }
 
         @Override
-        public Scope findById(RealmModel realm, ResourceServer resourceServer, String id) {
+        public Scope findById(ResourceServer resourceServer, String id) {
             if (id == null) return null;
             CachedScope cached = cache.get(id, CachedScope.class);
             if (cached != null) {
@@ -531,7 +519,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
-                Scope model = getScopeStoreDelegate().findById(realm, resourceServer, id);
+                Scope model = getScopeStoreDelegate().findById(resourceServer, id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -540,7 +528,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedScope(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getScopeStoreDelegate().findById(realm, resourceServer, id);
+                return getScopeStoreDelegate().findById(resourceServer, id);
             } else if (managedScopes.containsKey(id)) {
                 return managedScopes.get(id);
             }
@@ -573,7 +561,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 if (invalidations.contains(id)) {
                     return getScopeStoreDelegate().findByName(resourceServer, name);
                 }
-                return findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, id);
+                return findById(resourceServer, id);
             }
         }
 
@@ -593,29 +581,29 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Resource create(ResourceServer resourceServer, String id, String name, String owner) {
             Resource resource = getResourceStoreDelegate().create(resourceServer, id, name, owner);
-            Resource cached = findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resource.getId());
+            Resource cached = findById(resourceServer, resource.getId());
             registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUris(), resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
             if (cached == null) {
-                cached = findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resource.getId());
+                cached = findById(resourceServer, resource.getId());
             }
             return cached;
         }
 
         @Override
-        public void delete(RealmModel realm, String id) {
+        public void delete(String id) {
             if (id == null) return;
-            Resource resource = findById(realm, null, id);
+            Resource resource = findById(null, id);
             if (resource == null) return;
 
             cache.invalidateObject(id);
             invalidationEvents.add(ResourceRemovedEvent.create(id, resource.getName(), resource.getType(), resource.getUris(), resource.getOwner(), resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), resource.getResourceServer().getId()));
             cache.resourceRemoval(id, resource.getName(), resource.getType(), resource.getUris(), resource.getOwner(), resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), resource.getResourceServer().getId(), invalidations);
-            getResourceStoreDelegate().delete(realm, id);
+            getResourceStoreDelegate().delete(id);
 
         }
 
         @Override
-        public Resource findById(RealmModel realm, ResourceServer resourceServer, String id) {
+        public Resource findById(ResourceServer resourceServer, String id) {
             if (id == null) return null;
             CachedResource cached = cache.get(id, CachedResource.class);
             if (cached != null) {
@@ -624,7 +612,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
-                Resource model = getResourceStoreDelegate().findById(realm, resourceServer, id);
+                Resource model = getResourceStoreDelegate().findById(resourceServer, id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -633,7 +621,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedResource(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getResourceStoreDelegate().findById(realm, resourceServer, id);
+                return getResourceStoreDelegate().findById(resourceServer, id);
             } else if (managedResources.containsKey(id)) {
                 return managedResources.get(id);
             }
@@ -666,20 +654,20 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId) {
+        public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId) {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
             String cacheKey = getResourceByOwnerCacheKey(ownerId, resourceServerId);
-            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByOwner(realm, resourceServer, ownerId),
+            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByOwner(resourceServer, ownerId),
                     (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(Resource::getId).collect(Collectors.toSet()), resourceServerId), resourceServer);
         }
 
         @Override
-        public void findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer) {
+        public void findByOwner(ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer) {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
             String cacheKey = getResourceByOwnerCacheKey(ownerId, resourceServerId);
             cacheQuery(cacheKey, ResourceListQuery.class, () -> {
                         List<Resource> resources = new ArrayList<>();
-                        getResourceStoreDelegate().findByOwner(realm, resourceServer, ownerId, new Consumer<Resource>() {
+                        getResourceStoreDelegate().findByOwner(resourceServer, ownerId, new Consumer<Resource>() {
                             @Override
                             public void accept(Resource resource) {
                                 consumer.andThen(resources::add)
@@ -698,8 +686,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> find(RealmModel realm, ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
-            return getResourceStoreDelegate().find(realm, resourceServer, attributes, firstResult, maxResults);
+        public List<Resource> find(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+            return getResourceStoreDelegate().find(resourceServer, attributes, firstResult, maxResults);
         }
 
         @Override
@@ -837,9 +825,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 Set<String> resources = query.getResources();
 
                 if (consumer != null) {
-                    resources.stream().map(resourceId -> (R) findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resourceId)).forEach(consumer);
+                    resources.stream().map(resourceId -> (R) findById(resourceServer, resourceId)).forEach(consumer);
                 } else {
-                    model = resources.stream().map(resourceId -> (R) findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resourceId)).collect(Collectors.toList());
+                    model = resources.stream().map(resourceId -> (R) findById(resourceServer, resourceId)).collect(Collectors.toList());
                 }
             }
             
@@ -855,18 +843,18 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Policy create(ResourceServer resourceServer, AbstractPolicyRepresentation representation) {
             Policy policy = getPolicyStoreDelegate().create(resourceServer, representation);
-            Policy cached = findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, policy.getId());
+            Policy cached = findById(resourceServer, policy.getId());
             registerPolicyInvalidation(policy.getId(), representation.getName(), representation.getResources(), representation.getScopes(), null, resourceServer.getId());
             if (cached == null) {
-                cached = findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, policy.getId());
+                cached = findById(resourceServer, policy.getId());
             }
             return cached;
         }
 
         @Override
-        public void delete(RealmModel realm, String id) {
+        public void delete(String id) {
             if (id == null) return;
-            Policy policy = findById(realm, null, id);
+            Policy policy = findById(null, id);
             if (policy == null) return;
 
             cache.invalidateObject(id);
@@ -880,12 +868,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             Set<String> scopes = policy.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
             invalidationEvents.add(PolicyRemovedEvent.create(id, policy.getName(), resources, resourceTypes, scopes, resourceServer.getId()));
             cache.policyRemoval(id, policy.getName(), resources, resourceTypes, scopes, resourceServer.getId(), invalidations);
-            getPolicyStoreDelegate().delete(realm, id);
+            getPolicyStoreDelegate().delete(id);
 
         }
 
         @Override
-        public Policy findById(RealmModel realm, ResourceServer resourceServer, String id) {
+        public Policy findById(ResourceServer resourceServer, String id) {
             if (id == null) return null;
 
             CachedPolicy cached = cache.get(id, CachedPolicy.class);
@@ -894,7 +882,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             }
             if (cached == null) {
                 if (! modelMightExist(id)) return null;
-                Policy model = getPolicyStoreDelegate().findById(realm, resourceServer, id);
+                Policy model = getPolicyStoreDelegate().findById(resourceServer, id);
                 Long loaded = cache.getCurrentRevision(id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
@@ -904,7 +892,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedPolicy(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getPolicyStoreDelegate().findById(realm, resourceServer, id);
+                return getPolicyStoreDelegate().findById(resourceServer, id);
             } else if (managedPolicies.containsKey(id)) {
                 return managedPolicies.get(id);
             }
@@ -941,8 +929,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Policy> find(RealmModel realm, ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
-            return getPolicyStoreDelegate().find(realm, resourceServer, attributes, firstResult, maxResults);
+        public List<Policy> find(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+            return getPolicyStoreDelegate().find(resourceServer, attributes, firstResult, maxResults);
         }
 
         @Override
@@ -1086,10 +1074,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
                 if (consumer != null) {
                     for (String id : policies) {
-                        consumer.accept((R) findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, id));
+                        consumer.accept((R) findById(resourceServer, id));
                     }
                 } else {
-                    model = policies.stream().map(resourceId -> (R) findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resourceId))
+                    model = policies.stream().map(resourceId -> (R) findById(resourceServer, resourceId))
                             .filter(Objects::nonNull).collect(Collectors.toList());
                 }
             }
@@ -1114,9 +1102,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public void delete(RealmModel realm, String id) {
+        public void delete(String id) {
             if (id == null) return;
-            PermissionTicket permission = findById(realm, null, id);
+            PermissionTicket permission = findById(null, id);
             if (permission == null) return;
 
             cache.invalidateObject(id);
@@ -1126,13 +1114,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             }
             invalidationEvents.add(PermissionTicketRemovedEvent.create(id, permission.getOwner(), permission.getRequester(), permission.getResource().getId(), permission.getResource().getName(), scopeId, permission.getResourceServer().getId()));
             cache.permissionTicketRemoval(id, permission.getOwner(), permission.getRequester(), permission.getResource().getId(), permission.getResource().getName(),scopeId, permission.getResourceServer().getId(), invalidations);
-            getPermissionTicketStoreDelegate().delete(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, id);
+            getPermissionTicketStoreDelegate().delete(id);
             UserManagedPermissionUtil.removePolicy(permission, StoreFactoryCacheSession.this);
 
         }
 
         @Override
-        public PermissionTicket findById(RealmModel realm, ResourceServer resourceServer, String id) {
+        public PermissionTicket findById(ResourceServer resourceServer, String id) {
             if (id == null) return null;
 
             CachedPermissionTicket cached = cache.get(id, CachedPermissionTicket.class);
@@ -1142,7 +1130,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
-                PermissionTicket model = getPermissionTicketStoreDelegate().findById(realm, resourceServer, id);
+                PermissionTicket model = getPermissionTicketStoreDelegate().findById(resourceServer, id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -1151,7 +1139,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedPermissionTicket(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getPermissionTicketStoreDelegate().findById(realm, resourceServer, id);
+                return getPermissionTicketStoreDelegate().findById(resourceServer, id);
             } else if (managedPermissionTickets.containsKey(id)) {
                 return managedPermissionTickets.get(id);
             }
@@ -1177,8 +1165,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<PermissionTicket> find(RealmModel realm, ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResult) {
-            return getPermissionTicketStoreDelegate().find(realm, resourceServer, attributes, firstResult, maxResult);
+        public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResult) {
+            return getPermissionTicketStoreDelegate().find(resourceServer, attributes, firstResult, maxResult);
         }
 
         @Override
@@ -1198,13 +1186,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findGrantedResources(RealmModel realm, String requester, String name, Integer first, Integer max) {
-            return getPermissionTicketStoreDelegate().findGrantedResources(realm, requester, name, first, max);
+        public List<Resource> findGrantedResources(String requester, String name, Integer first, Integer max) {
+            return getPermissionTicketStoreDelegate().findGrantedResources(requester, name, first, max);
         }
 
         @Override
-        public List<Resource> findGrantedOwnerResources(RealmModel realm, String owner, Integer firstResult, Integer maxResults) {
-            return getPermissionTicketStoreDelegate().findGrantedOwnerResources(realm, owner, firstResult, maxResults);
+        public List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults) {
+            return getPermissionTicketStoreDelegate().findGrantedOwnerResources(owner, firstResult, maxResults);
         }
 
         private <R, Q extends PermissionTicketQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, ResourceServer resourceServer) {
@@ -1223,7 +1211,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (query.isInvalid(invalidations)) {
                 return resultSupplier.get();
             } else {
-                return query.getPermissions().stream().map(resourceId -> (R) findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resourceId)).collect(Collectors.toList());
+                return query.getPermissions().stream().map(resourceId -> (R) findById(resourceServer, resourceId)).collect(Collectors.toList());
             }
         }
     }

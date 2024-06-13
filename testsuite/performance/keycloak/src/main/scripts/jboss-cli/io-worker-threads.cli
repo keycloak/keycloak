@@ -1,7 +1,0 @@
-embed-server --server-config=standalone.xml
-run-batch --file=io-worker-threads-batch.cli
-
-stop-embedded-server
-
-embed-server --server-config=standalone-ha.xml
-run-batch --file=io-worker-threads-batch.cli

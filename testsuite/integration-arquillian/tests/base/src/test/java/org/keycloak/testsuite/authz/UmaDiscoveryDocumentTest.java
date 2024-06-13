@@ -22,10 +22,10 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;
@@ -36,12 +36,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
     @ArquillianResource
@@ -89,7 +86,9 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
             test.setAttributes(new HashMap<>());
         }
 
-        test.getAttributes().put("frontendUrl", "https://mykeycloak/auth");
+        final String frontendUrl = "https://mykeycloak/auth";
+
+        test.getAttributes().put("frontendUrl", frontendUrl);
 
         realmsResouce().realm("test").update(test);
 
@@ -104,12 +103,13 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
             UmaConfiguration configuration = response.readEntity(UmaConfiguration.class);
 
             String baseBackendUri = UriBuilder
-                    .fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                    .fromUri(frontendUrl)
                     .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
             String baseFrontendUri = UriBuilder
-                    .fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                    .fromUri(frontendUrl)
                     .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").scheme("https").host("mykeycloak").port(-1).build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
 
+            // we're not setting hostname-backchannel-dynamic=true which implies frontend URL is used for backend as well
             assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
             assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
             assertEquals(baseFrontendUri + "/protocol/openid-connect/auth", configuration.getAuthorizationEndpoint());

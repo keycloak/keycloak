@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.saml;
 
-import com.google.common.base.Charsets;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.Matchers;
@@ -31,7 +30,6 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
@@ -44,12 +42,13 @@ import org.keycloak.testsuite.util.saml.SessionStateChecker;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -61,10 +60,10 @@ import java.util.regex.Pattern;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -160,7 +159,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(loginResponse.getAssertions().get(0).getEncryptedAssertion(), not(nullValue()));
 
         SamlDeployment deployment = SamlUtils.getSamlDeploymentForClient("sales-post-enc");
-        AssertionUtil.decryptAssertion(response, loginResponse, deployment.getDecryptionKey());
+        AssertionUtil.decryptAssertion(loginResponse, deployment.getDecryptionKey());
 
         assertThat(loginResponse.getAssertions().get(0).getAssertion(), not(nullValue()));
         assertThat(loginResponse.getAssertions().get(0).getEncryptedAssertion(), nullValue());
@@ -181,7 +180,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(m.find(), is(true));
 
         String artifactB64 = m.group(1);
-        assertThat(artifactB64,not(isEmptyOrNullString()));
+        assertThat(artifactB64,not(is(emptyOrNullString())));
 
         byte[] artifact = Base64.getDecoder().decode(artifactB64);
         assertThat(artifact.length, is(44));
@@ -191,7 +190,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(artifact[3], is((byte)0));
 
         MessageDigest sha1Digester = MessageDigest.getInstance("SHA-1");
-        byte[] source = sha1Digester.digest(getAuthServerRealmBase(REALM_NAME).toString().getBytes(Charsets.UTF_8));
+        byte[] source = sha1Digester.digest(getAuthServerRealmBase(REALM_NAME).toString().getBytes(StandardCharsets.UTF_8));
         for (int i = 0; i < 20; i++) {
             assertThat(source[i], is(artifact[i+4]));
         }
@@ -211,7 +210,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(artifactResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(artifactResponse.getSignature(), nullValue());
         assertThat(artifactResponse.getAny(), instanceOf(ResponseType.class));
-        assertThat(artifactResponse.getInResponseTo(), not(isEmptyOrNullString()));
+        assertThat(artifactResponse.getInResponseTo(), not(is(emptyOrNullString())));
         ResponseType samlResponse = (ResponseType)artifactResponse.getAny();
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
@@ -366,7 +365,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(artifactResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(artifactResponse.getSignature(), notNullValue());
         assertThat(artifactResponse.getAny(), instanceOf(ResponseType.class));
-        assertThat(artifactResponse.getInResponseTo(), not(isEmptyOrNullString()));
+        assertThat(artifactResponse.getInResponseTo(), not(is(emptyOrNullString())));
         ResponseType samlResponse = (ResponseType)artifactResponse.getAny();
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
 
@@ -389,7 +388,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         ArtifactResponseType artifactResponse = (ArtifactResponseType)response.getSamlObject();
         assertThat(artifactResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(artifactResponse.getAny(), instanceOf(ResponseType.class));
-        assertThat(artifactResponse.getInResponseTo(), not(isEmptyOrNullString()));
+        assertThat(artifactResponse.getInResponseTo(), not(is(emptyOrNullString())));
         ResponseType samlResponse = (ResponseType)artifactResponse.getAny();
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
@@ -441,7 +440,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(true, is(m.find()));
 
         String artifactB64 = m.group(1);
-        assertThat(artifactB64, not(isEmptyOrNullString()));
+        assertThat(artifactB64, not(is(emptyOrNullString())));
 
         byte[] artifact = Base64.getDecoder().decode(artifactB64);
         assertThat(artifact.length, is(44));
@@ -451,7 +450,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(artifact[3], is((byte)0));
 
         MessageDigest sha1Digester = MessageDigest.getInstance("SHA-1");
-        byte[] source = sha1Digester.digest(getAuthServerRealmBase(REALM_NAME).toString().getBytes(Charsets.UTF_8));
+        byte[] source = sha1Digester.digest(getAuthServerRealmBase(REALM_NAME).toString().getBytes(StandardCharsets.UTF_8));
         for (int i = 0; i < 20; i++) {
             assertThat(source[i], is(artifact[i+4]));
         }
@@ -677,7 +676,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
                 .execute(r -> assertThat(r, bodyHC(containsString(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get()))));
     }
 
-    @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE) // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
+     // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
     @Test
     public void testSessionStateDuringArtifactBindingLogoutWithOneClient() {
         ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
@@ -731,7 +730,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
-    @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE) // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
+     // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
     @Test
     public void testSessionStateDuringArtifactBindingLogoutWithMoreFrontChannelClients() {
         getCleanup()

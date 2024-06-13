@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.keycloak.common.Profile.Feature;
-import java.util.List;
 import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -28,27 +26,17 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.LDAPRule;
-import org.junit.BeforeClass;
-
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
-
-    static final String TEST_REALM_NAME = "test";
 
     protected static String ldapModelId;
 
@@ -63,12 +51,6 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected RegisterPage registerPage;
-
-    @Page
-    protected AccountPasswordPage changePasswordPage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -92,12 +74,6 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
         afterImportTestRealm();
     }
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
-    }
-
 
     protected void createLDAPProvider() {
         Map<String, String> cfg = getLDAPRule().getConfig();

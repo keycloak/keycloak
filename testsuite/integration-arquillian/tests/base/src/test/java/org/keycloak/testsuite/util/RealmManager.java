@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
@@ -169,6 +169,20 @@ public class RealmManager {
     public RealmManager ssoSessionIdleTimeout(int ssoSessionIdleTimeout) {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setSsoSessionIdleTimeout(ssoSessionIdleTimeout);
+        realm.update(rep);
+        return this;
+    }
+
+    public RealmManager clientSessionMaxLifespan(int clientSessionLaxLifespan) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setClientSessionMaxLifespan(clientSessionLaxLifespan);
+        realm.update(rep);
+        return this;
+    }
+
+    public RealmManager clientSessionIdleTimeout(int clientSessionIdleTimeout) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
         realm.update(rep);
         return this;
     }

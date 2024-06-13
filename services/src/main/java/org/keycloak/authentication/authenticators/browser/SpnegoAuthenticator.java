@@ -18,9 +18,10 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Errors;
@@ -32,9 +33,9 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Map;
 
@@ -43,7 +44,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator{
-    public static final String KERBEROS_DISABLED = "kerberos_disabled";
     private static final Logger logger = Logger.getLogger(SpnegoAuthenticator.class);
 
     @Override
@@ -62,6 +62,11 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         HttpRequest request = context.getHttpRequest();
         String authHeader = request.getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {
+            if (context.getAuthenticationSession().getAuthNote(AuthenticationProcessor.FORKED_FROM) != null) {
+                // skip spnego authentication if it was forked (reset-credentials)
+                context.attempted();
+                return;
+            }
             Response challenge = challengeNegotiation(context, null);
             context.forceChallenge(challenge);
             return;

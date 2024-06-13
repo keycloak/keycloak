@@ -1,0 +1,25 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="con-user-impersonation_{context}"]
+= Impersonating a user
+
+An administrator with the appropriate permissions can impersonate a user. For example, if a user experiences a bug in an application, an administrator can impersonate the user to investigate or duplicate the issue. 
+
+Any user with the `impersonation` role in the realm can impersonate a user. 
+
+.Procedure
+. Click *Users* in the menu.
+. Click a user to impersonate.
+. From the *Actions* list, select *Impersonate*.
++
+image:images/user-impersonate-action.png[]
+
+* If the administrator and the user are in the same realm, then the administrator will be logged out and automatically logged in as the user being impersonated.
+* If the administrator and user are in different realms, the administrator will remain logged in, and additionally will be logged in as the user in that user's realm.
+
+In both instances, the *Account Console* of the impersonated user is displayed.
+
+.Additional resources
+* For more information on assigning administration permissions, see the <<_admin_permissions,Admin Console Access Control>> chapter.

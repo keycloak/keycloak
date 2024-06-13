@@ -19,29 +19,28 @@
 
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class DeviceEndpointFactory implements RealmResourceProviderFactory {
+public class DeviceEndpointFactory implements RealmResourceProviderFactory, EnvironmentDependentProviderFactory {
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
         EventBuilder event = new EventBuilder(realm, session, context.getConnection());
-        DeviceEndpoint provider = new DeviceEndpoint(realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(provider);
-        return provider;
+        return new DeviceEndpoint(session, event);
     }
 
     @Override
@@ -62,5 +61,10 @@ public class DeviceEndpointFactory implements RealmResourceProviderFactory {
     @Override
     public String getId() {
         return "device";
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW);
     }
 }

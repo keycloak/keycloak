@@ -1,3 +1,0 @@
-embed-host-controller --domain-config=domain.xml
-
-/extension=*/:read-resource(recursive=true)

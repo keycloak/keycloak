@@ -20,18 +20,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 
-import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -50,7 +47,6 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authz.AbstractAuthzTest;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -68,7 +64,8 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
 
     private static final String SCRIPT_DEPLOYMENT_NAME = "scripts.jar";
 
-    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = false, testable = false)
+    // Managed to make sure that archive is deployed once in @BeforeClass stage and undeployed once in @AfterClass stage
+    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = true, testable = false)
     @TargetsContainer(AUTH_SERVER_CURRENT)
     public static JavaArchive deploy() throws IOException {
         ScriptProviderDescriptor representation = new ScriptProviderDescriptor();
@@ -88,9 +85,6 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
         ContainerAssume.assumeNotAuthServerUndertow();
     }
 
-    @ArquillianResource
-    private Deployer deployer;
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
@@ -108,16 +102,8 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
 
     @Before
     public void onBefore() throws Exception {
-        deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
         AuthorizationResource authorization = getAuthorizationResource();
         authorization.resources().create(new ResourceRepresentation("Default Resource"));
-    }
-
-    @After
-    public void onAfter() throws Exception {
-        deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
     }
 
     @Test

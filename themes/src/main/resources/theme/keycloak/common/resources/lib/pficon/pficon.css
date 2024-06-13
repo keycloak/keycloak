@@ -5,7 +5,8 @@
 
 @font-face {
   font-family: "pficon-tmp";
-  src: url("./pficon.woff2") format("woff2"), url("./pficon.woff") format("woff"); }
+  src: url("./pficon.woff2") format("woff2");
+}
 
 .pf-icon-openshift:before {
   font-family: "pficon-tmp";

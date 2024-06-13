@@ -72,9 +72,12 @@ public class HttpPostRedirect {
         builder.append("</HEAD>")
                 .append("<BODY Onload=\"document.forms[0].submit()\">")
 
-                .append("<FORM METHOD=\"POST\" ACTION=\"").append(actionUrl).append("\">");
+                .append("<FORM METHOD=\"POST\" ACTION=\"")
+                .append(HtmlUtils.escapeAttribute(actionUrl))
+                .append("\">");
         for (Map.Entry<String, String> param : params.entrySet()) {
-            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"").append(param.getKey()).append("\"").append(" VALUE=\"").append(param.getValue()).append("\"/>");
+            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"").append(param.getKey()).append("\"").append(" VALUE=\"")
+                    .append(HtmlUtils.escapeAttribute(param.getValue())).append("\"/>");
         }
 
 

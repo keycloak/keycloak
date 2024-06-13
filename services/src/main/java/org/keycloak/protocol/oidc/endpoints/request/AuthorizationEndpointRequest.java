@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
+import org.keycloak.protocol.ClientData;
 import org.keycloak.rar.AuthorizationRequestContext;
 
 import java.util.HashMap;
@@ -64,6 +65,14 @@ public class AuthorizationEndpointRequest {
 
     public String getRedirectUriParam() {
         return redirectUriParam;
+    }
+
+    public static AuthorizationEndpointRequest fromClientData(ClientData cData) {
+        AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
+        request.responseType = cData.getResponseType();
+        request.responseMode = cData.getResponseMode();
+        request.redirectUriParam = cData.getRedirectUri();
+        return request;
     }
 
     public String getResponseType() {
@@ -132,11 +141,19 @@ public class AuthorizationEndpointRequest {
         return invalidRequestMessage;
     }
 
+    public void setInvalidRequestMessage(String invalidRequestMessage) {
+        this.invalidRequestMessage = invalidRequestMessage;
+    }
+
     public String getUiLocales() {
         return uiLocales;
     }
 
     public AuthorizationRequestContext getAuthorizationRequestContext() {
         return authorizationRequestContext;
+    }
+
+    public void setAuthorizationRequestContext(AuthorizationRequestContext authorizationRequestContext) {
+        this.authorizationRequestContext = authorizationRequestContext;
     }
 }

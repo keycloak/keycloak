@@ -17,32 +17,36 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
+import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resource.AccountResourceProvider;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.theme.Theme;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.List;
 
@@ -51,19 +55,19 @@ import java.util.List;
  */
 public class AccountLoader {
 
-    private KeycloakSession session;
-    private EventBuilder event;
+    private final KeycloakSession session;
+    private final EventBuilder event;
 
-    @Context
-    private HttpRequest request;
-    @Context
-    private HttpResponse response;
+    private final HttpRequest request;
+    private final HttpResponse response;
 
     private static final Logger logger = Logger.getLogger(AccountLoader.class);
 
     public AccountLoader(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.event = event;
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     @Path("/")
@@ -71,31 +75,24 @@ public class AccountLoader {
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = getAccountManagementClient(realm);
 
-        HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
+        HttpRequest request = session.getContext().getHttpRequest();
         HttpHeaders headers = session.getContext().getRequestHeaders();
         MediaType content = headers.getMediaType();
         List<MediaType> accepts = headers.getAcceptableMediaTypes();
 
         Theme theme = getTheme(session);
-        boolean deprecatedAccount = isDeprecatedFormsAccountConsole(theme);
         UriInfo uriInfo = session.getContext().getUri();
 
+        AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
+        
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService(request);
+            return new CorsPreflightService();
         } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
             return getAccountRestService(client, null);
+        } else if (accountResourceProvider != null) {
+            return accountResourceProvider.getResource();
         } else {
-            if (deprecatedAccount) {
-                AccountFormService accountFormService = new AccountFormService(realm, client, event);
-                ResteasyProviderFactory.getInstance().injectProperties(accountFormService);
-                accountFormService.init();
-                return accountFormService;
-            } else {
-                AccountConsole console = new AccountConsole(realm, client, theme);
-                ResteasyProviderFactory.getInstance().injectProperties(console);
-                console.init();
-                return console;
-            }
+            throw new NotFoundException();
         }
     }
 
@@ -103,7 +100,7 @@ public class AccountLoader {
     @Produces(MediaType.APPLICATION_JSON)
     public Object getVersionedAccountRestService(final @PathParam("version") String version) {
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService(request);
+            return new CorsPreflightService();
         }
         return getAccountRestService(getAccountManagementClient(session.getContext().getRealm()), version);
     }
@@ -116,25 +113,31 @@ public class AccountLoader {
         }
     }
 
-    private boolean isDeprecatedFormsAccountConsole(Theme theme) {
-        try {
-            return Boolean.parseBoolean(theme.getProperties().getProperty("deprecatedMode", "true"));
-        } catch (IOException e) {
-            throw new InternalServerErrorException(e);
-        }
-    }
-
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
-                .setAudience(client.getClientId())
                 .authenticate();
-
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer token required");
         }
-        Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
 
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+        AccessToken accessToken = authResult.getToken();
+
+        UserSessionUtil.checkTokenIssuedAt(client.getRealm(), accessToken, authResult.getSession(), event, authResult.getClient());
+
+        if (accessToken.getAudience() == null || accessToken.getResourceAccess(client.getClientId()) == null) {
+            // transform for introspection to get the required claims
+            AccessTokenIntrospectionProvider provider = (AccessTokenIntrospectionProvider) session.getProvider(TokenIntrospectionProvider.class,
+                    AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
+            accessToken = provider.transformAccessToken(accessToken, authResult.getSession());
+        }
+
+        if (!accessToken.hasAudience(client.getClientId())) {
+            throw new NotAuthorizedException("Invalid audience for client " + client.getClientId());
+        }
+
+        Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.getUser(), client, authResult.getSession(), false);
+
+        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         if (authResult.getUser().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");
@@ -151,10 +154,7 @@ public class AccountLoader {
             }
         }
 
-        AccountRestService accountRestService = new AccountRestService(session, auth, client, event, version);
-        ResteasyProviderFactory.getInstance().injectProperties(accountRestService);
-        accountRestService.init();
-        return accountRestService;
+        return new AccountRestService(session, auth, event, version);
     }
 
     private ClientModel getAccountManagementClient(RealmModel realm) {
@@ -166,4 +166,12 @@ public class AccountLoader {
         return client;
     }
 
+    private AccountResourceProvider getAccountResourceProvider(Theme theme) {
+      try {
+        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+        }
+      } catch (IOException ignore) {}
+      return session.getProvider(AccountResourceProvider.class);
+    }
 }

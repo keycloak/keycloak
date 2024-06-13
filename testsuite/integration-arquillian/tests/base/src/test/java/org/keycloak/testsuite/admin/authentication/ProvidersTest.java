@@ -19,12 +19,16 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.authentication.forms.RegistrationRecaptcha;
+import org.keycloak.authentication.forms.RegistrationRecaptchaEnterprise;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.util.KerberosUtils;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,11 +36,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -57,43 +59,42 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testFormActionProviders() {
         List<Map<String, Object>> result = authMgmtResource.getFormActionProviders();
 
         List<Map<String, Object>> expected = new LinkedList<>();
-        addProviderInfo(expected, "registration-profile-action", "Profile Validation",
-                "Validates email, first name, and last name attributes and stores them in user data.");
-        addProviderInfo(expected, "registration-recaptcha-action", "Recaptcha",
-                "Adds Google Recaptcha button.  Recaptchas verify that the entity that is registering is a human.  " +
-                        "This can only be used on the internet and must be configured after you add it.");
+        addProviderInfo(expected, RegistrationRecaptcha.PROVIDER_ID, "reCAPTCHA", "Adds Google reCAPTCHA to the form.");
+        addProviderInfo(expected, RegistrationRecaptchaEnterprise.PROVIDER_ID, "reCAPTCHA Enterprise", "Adds Google reCAPTCHA Enterprise to the form.");
         addProviderInfo(expected, "registration-password-action", "Password Validation",
                 "Validates that password matches password confirmation field.  It also will store password in user's credential store.");
-        addProviderInfo(expected, "registration-user-creation", "Registration User Creation",
-                "This action must always be first! Validates the username of the user in validation phase.  " +
-                        "In success phase, this will create the user in the database.");
+        addProviderInfo(expected, "registration-user-creation", "Registration User Profile Creation",
+                "This action must always be first! Validates the username and user profile of the user in validation phase.  " +
+                        "In success phase, this will create the user in the database including his user profile.");
+        addProviderInfo(expected, "registration-terms-and-conditions", "Terms and conditions",
+                "Asks the user to accept terms and conditions before submitting its registration form.");
 
         compareProviders(expected, result);
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testClientAuthenticatorProviders() {
         List<Map<String, Object>> result = authMgmtResource.getClientAuthenticatorProviders();
 
         List<Map<String, Object>> expected = new LinkedList<>();
-        addProviderInfo(expected, "client-jwt", "Signed Jwt",
-                "Validates client based on signed JWT issued by client and signed with the Client private key");
-        addProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
-                "'client_secret' sent either in request parameters or in 'Authorization: Basic' header");
-        addProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
-                "which automatically authenticates hardcoded client (like 'test-app' )");
-        addProviderInfo(expected, "testsuite-client-dummy", "Testsuite ClientId Dummy",
-                "Dummy client authenticator, which authenticates the client with clientId only");
-        addProviderInfo(expected, "client-x509", "X509 Certificate",
-                "Validates client based on a X509 Certificate");
-        addProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
-                "Validates client based on signed JWT issued by client and signed with the Client Secret");
+        addClientAuthenticatorProviderInfo(expected, "client-jwt", "Signed Jwt",
+                "Validates client based on signed JWT issued by client and signed with the Client private key", false);
+        addClientAuthenticatorProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
+                "'client_secret' sent either in request parameters or in 'Authorization: Basic' header", true);
+        addClientAuthenticatorProviderInfo(expected, "testsuite-client-id-required", "Signed Jwt", "Validates client based on signed JWT issued by client " +
+                "and signed with the Client private key", false);
+        addClientAuthenticatorProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
+                "which automatically authenticates hardcoded client (like 'test-app' )", false);
+        addClientAuthenticatorProviderInfo(expected, "testsuite-client-dummy", "Testsuite ClientId Dummy",
+                "Dummy client authenticator, which authenticates the client with clientId only", false);
+        addClientAuthenticatorProviderInfo(expected, "client-x509", "X509 Certificate",
+                "Validates client based on a X509 Certificate", false);
+        addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
+                "Validates client based on signed JWT issued by client and signed with the Client Secret", true);
 
         compareProviders(expected, result);
     }
@@ -146,18 +147,17 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a OTP on a separate OTP form. Only shown if required based on the configured conditions.");
         addProviderInfo(result, "auth-cookie", "Cookie", "Validates the SSO cookie set by the auth server.");
         addProviderInfo(result, "auth-otp-form", "OTP Form", "Validates a OTP on a separate OTP form.");
-        if (Profile.isFeatureEnabled(Profile.Feature.SCRIPTS)) {
+        if (ProfileAssume.isFeatureEnabled(Profile.Feature.SCRIPTS)) {
             addProviderInfo(result, "auth-script-based", "Script", "Script based authentication. Allows to define custom authentication logic via JavaScript.");
         }
-        addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
+        String kerberosHelpMessage = (KerberosUtils.isKerberosSupportExpected())
+                ? "Initiates the SPNEGO protocol.  Most often used with Kerberos."
+                : "DISABLED. Please enable Kerberos feature and make sure Kerberos available in your platform. Initiates the SPNEGO protocol. Most often used with Kerberos.";
+        addProviderInfo(result, "auth-spnego", "Kerberos", kerberosHelpMessage);
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
         addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
-        addProviderInfo(result, "basic-auth", "Basic Auth Challenge", "Challenge-response authentication using HTTP BASIC scheme.");
-        addProviderInfo(result, "basic-auth-otp", "Basic Auth Password+OTP", "Challenge-response authentication using HTTP BASIC scheme.  Password param should contain a combination of password + otp. Realm's OTP policy is used to determine how to parse this. This SHOULD NOT BE USED in conjection with regular basic auth provider.");
-        addProviderInfo(result, "console-username-password", "Username Password Challenge",
-                "Proprietary challenge protocol for CLI clients that queries for username password");
         addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "direct-grant-validate-otp", "OTP", "Validates the one time password supplied as a 'totp' form parameter in direct grant request");
@@ -173,6 +173,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "idp-auto-link", "Automatically set existing user", "Automatically set existing user to authentication context without any verification");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
                 "to link identity provider with existing account or rather edit user profile data retrieved from identity provider to avoid conflict");
+        addProviderInfo(result, "idp-confirm-override-link", "Confirm override existing link", "Confirm override the link if there is an existing broker user linked to the account.");
         addProviderInfo(result, "idp-create-user-if-unique", "Create User If Unique", "Detect if there is existing Keycloak account " +
                 "with same email like identity provider. If no, create new user");
         addProviderInfo(result, "idp-email-verification", "Verify existing account by Email", "Email verification of existing Keycloak " +
@@ -181,12 +182,11 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "User reviews and updates profile data retrieved from Identity Provider in the displayed form");
         addProviderInfo(result, "idp-username-password-form", "Username Password Form for identity provider reauthentication",
                 "Validates a password from login form. Username may be already known from identity provider authentication");
-        addProviderInfo(result, "no-cookie-redirect", "Browser Redirect for Cookie free authentication", "Perform a 302 redirect to get user agent's current URI on authenticate path with an auth_session_id query parameter.  This is for client's that do not support cookies.");
         addProviderInfo(result, "push-button-authenticator", "TEST: Button Login",
                 "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
-        addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action.");
+        addProviderInfo(result, "reset-otp", "Reset OTP", "Removes existing OTP configurations (if chosen) and sets the 'Configure OTP' required action.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
         addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
@@ -242,7 +242,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     private void compareProviders(List<Map<String, Object>> expected, List<Map<String, Object>> actual) {
         Assert.assertEquals("Providers count", expected.size(), actual.size());
         // compare ignoring list and map impl types
-        Assert.assertThat(normalizeResults(actual), is(normalizeResults(expected)));
+        assertThat(normalizeResults(actual), is(normalizeResults(expected)));
     }
 
     private List<Map<String, Object>> normalizeResults(List<Map<String, Object>> list) {
@@ -261,12 +261,20 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         list.add(item);
     }
 
+    private void addClientAuthenticatorProviderInfo(List<Map<String, Object>> list, String id, String displayName, String description, boolean supportsSecret) {
+        HashMap<String, Object> item = new HashMap<>();
+        item.put("id", id);
+        item.put("displayName", displayName);
+        item.put("description", description);
+        item.put("supportsSecret", supportsSecret);
+        list.add(item);
+    }
+
     private static class ProviderComparator implements Comparator<Map<String, Object>> {
         @Override
         public int compare(Map<String, Object> o1, Map<String, Object> o2) {
             return String.valueOf(o1.get("id")).compareTo(String.valueOf(o2.get("id")));
         }
+
     }
-
-
 }

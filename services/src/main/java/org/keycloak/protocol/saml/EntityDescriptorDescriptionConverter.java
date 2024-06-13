@@ -194,6 +194,8 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         if (logoutPost != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, logoutPost);
         String logoutRedirect = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
         if (logoutRedirect != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, logoutRedirect);
+        String logoutSoap = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_SOAP_BINDING.get());
+        if (logoutSoap != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, logoutSoap);
 
         String assertionConsumerServicePostBinding = getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
         if (assertionConsumerServicePostBinding != null) {

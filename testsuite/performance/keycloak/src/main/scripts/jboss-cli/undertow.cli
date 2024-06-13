@@ -1,9 +1,0 @@
-embed-server --server-config=standalone.xml
-run-batch --file=undertow-batch.cli
-
-stop-embedded-server
-
-embed-server --server-config=standalone-ha.xml
-run-batch --file=undertow-batch.cli
-
-/subsystem=undertow/server=default-server/ajp-listener=ajp:write-attribute(name=max-connections,value=${env.AJP_MAX_CONNECTIONS:50000})

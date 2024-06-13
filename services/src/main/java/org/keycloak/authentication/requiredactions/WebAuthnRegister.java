@@ -17,6 +17,7 @@
 package org.keycloak.authentication.requiredactions;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -25,15 +26,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import com.webauthn4j.WebAuthnRegistrationManager;
 import com.webauthn4j.data.AuthenticatorTransport;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.WebAuthnConstants;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
@@ -51,6 +53,9 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
@@ -72,8 +77,6 @@ import com.webauthn4j.validator.attestation.statement.tpm.TPMAttestationStatemen
 import com.webauthn4j.validator.attestation.statement.u2f.FIDOU2FAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.WebAuthnConstants.REG_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.REG_ERR_LABEL;
@@ -117,7 +120,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         // mandatory
         WebAuthnPolicy policy = getWebAuthnPolicy(context);
         List<String> signatureAlgorithmsList = policy.getSignatureAlgorithm();
-        String signatureAlgorithms = stringifySignatureAlgorithms(signatureAlgorithmsList);
+        // Convert human-readable algorithms to their COSE identifier form
+        List<Long> signatureAlgorithms = convertSignatureAlgorithms(signatureAlgorithmsList);
         String rpEntityName = policy.getRpEntityName();
 
         // optional
@@ -165,6 +169,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
     protected WebAuthnPolicy getWebAuthnPolicy(RequiredActionContext context) {
         return context.getRealm().getWebAuthnPolicy();
+    }
+
+    @Override
+    public String getCredentialType(KeycloakSession session, AuthenticationSessionModel authenticationSession) {
+        return getCredentialType();
     }
 
     protected String getCredentialType() {
@@ -222,6 +231,10 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         }
 
         RegistrationParameters registrationParameters = new RegistrationParameters(serverProperty, isUserVerificationRequired);
+
+        if ("on".equals(params.getFirst("logout-sessions"))) {
+            AuthenticatorUtil.logoutOtherSessions(context);
+        }
 
         WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager();
         try {
@@ -284,38 +297,48 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 );
     }
 
-    private String stringifySignatureAlgorithms(List<String> signatureAlgorithmsList) {
-        if (signatureAlgorithmsList == null || signatureAlgorithmsList.isEmpty()) return "";
-        StringBuilder sb = new StringBuilder();
+    /**
+     * Converts a list of human-readable webauthn signature methods (ES256, RS256, etc) into
+     * their <a href="https://www.iana.org/assignments/cose/cose.xhtml#algorithms"> COSE identifier</a> form.
+     *
+     * Returns the list of converted algorithm identifiers.
+    **/
+    private List<Long> convertSignatureAlgorithms(List<String> signatureAlgorithmsList) {
+        List<Long> algs = new ArrayList();
+        if (signatureAlgorithmsList == null || signatureAlgorithmsList.isEmpty()) return algs;
+
         for (String s : signatureAlgorithmsList) {
             switch (s) {
             case Algorithm.ES256 :
-                sb.append(COSEAlgorithmIdentifier.ES256.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.ES256.getValue());
                 break;
             case Algorithm.RS256 :
-                sb.append(COSEAlgorithmIdentifier.RS256.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS256.getValue());
                 break;
             case Algorithm.ES384 :
-                sb.append(COSEAlgorithmIdentifier.ES384.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.ES384.getValue());
                 break;
             case Algorithm.RS384 :
-                sb.append(COSEAlgorithmIdentifier.RS384.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS384.getValue());
                 break;
             case Algorithm.ES512 :
-                sb.append(COSEAlgorithmIdentifier.ES512.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.ES512.getValue());
                 break;
             case Algorithm.RS512 :
-                sb.append(COSEAlgorithmIdentifier.RS512.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS512.getValue());
+                break;
+            case Algorithm.Ed25519:
+                algs.add(COSEAlgorithmIdentifier.EdDSA.getValue());
                 break;
             case "RS1" :
-                sb.append(COSEAlgorithmIdentifier.RS1.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS1.getValue());
                 break;
             default:
                 // NOP
             }
         }
-        if (sb.lastIndexOf(",") > -1) sb.deleteCharAt(sb.lastIndexOf(","));
-        return sb.toString();
+
+        return algs;
     }
 
     private void showInfoAfterWebAuthnApiCreate(RegistrationData response) {

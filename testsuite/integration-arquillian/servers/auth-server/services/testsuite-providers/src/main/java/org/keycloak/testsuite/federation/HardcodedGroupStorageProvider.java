@@ -53,22 +53,46 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     }
 
     @Override
-    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        if (this.groupName.equals(name)) return new HardcodedGroupAdapter(realm);
+        return null;
+    }
+
+    @Override
+    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
         if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
             Thread.sleep(5000l);
         } catch (InterruptedException ex) {
             Logger.getLogger(HardcodedGroupStorageProvider.class).warn(ex.getCause());
             return Stream.empty();
         }
-        if (search != null && this.groupName.toLowerCase().contains(search.toLowerCase())) {
-            return Stream.of(new HardcodedGroupAdapter(realm));
+        if(exact != null && exact){
+            if (search != null && this.groupName.equals(search)) {
+                return Stream.of(new HardcodedGroupAdapter(realm));
+            }
+        }else {
+            if (search != null && this.groupName.toLowerCase().contains(search.toLowerCase())) {
+                return Stream.of(new HardcodedGroupAdapter(realm));
+            }
+        }
+
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
+            Thread.sleep(5000l);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(HardcodedGroupStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
         }
 
         return Stream.empty();
     }
 
 
-    public class HardcodedGroupAdapter implements GroupModel.Streams {
+    public class HardcodedGroupAdapter implements GroupModel {
 
         private final RealmModel realm;
         private StorageId storageId;

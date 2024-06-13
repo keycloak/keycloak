@@ -17,20 +17,21 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.Map;
@@ -48,8 +49,27 @@ public interface TestOIDCEndpointsApplicationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/generate-keys")
+    Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm, @QueryParam("crv") String curve);
+
+    /**
+     * Generate single private/public keyPair
+     *
+     * @param jwaAlgorithm
+     * @param curve The crv for EdDSA
+     * @param advertiseJWKAlgorithm whether algorithm should be adwertised in JWKS or not (Once the keys are returned by JWKS)
+     * @param keepExistingKeys Should be existing keys kept replaced with newly generated keyPair. If it is not kept, then resulting JWK will contain single key. It is false by default.
+     *                         The value 'true' is useful if we want to test with multiple client keys (For example mulitple keys set in the JWKS and test if correct key is picked)
+     * @param kid Explicitly set specified "kid" for newly generated keypair. If not specified, the kid will be generated
+     * @return
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/generate-keys")
     Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm,
-            @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm);
+                                     @QueryParam("crv") String curve,
+                                     @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm,
+                                     @QueryParam("keepExistingKeys") Boolean keepExistingKeys,
+                                     @QueryParam("kid") String kid);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -145,4 +165,16 @@ public interface TestOIDCEndpointsApplicationResource {
     @NoCache
     ClientNotificationEndpointRequest getPushedCibaClientNotification(@QueryParam("clientNotificationToken") String clientNotificationToken);
 
+    @GET
+    @Path("/bind-intent-with-client")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    Response bindIntentWithClient(@QueryParam("intentId") String intentId, @QueryParam("clientId") String clientId);
+
+    @POST
+    @Path("/check-intent-client-bound")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    IntentClientBindCheckExecutor.IntentBindCheckResponse checkIntentClientBound(IntentClientBindCheckExecutor.IntentBindCheckRequest request);
 }

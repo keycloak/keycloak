@@ -19,19 +19,20 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 
 import picocli.CommandLine;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
-
-    public static final String AUTO_BUILD_OPTION_LONG = "--auto-build";
-    public static final String AUTO_BUILD_OPTION_SHORT = "-b";
+    public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
     @Override
     public void run() {
         doBeforeRun();
         CommandLine cmd = spec.commandLine();
-        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr());
+        HttpPropertyMappers.validateConfig();
+        validateConfig();
+        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
     }
 
     protected void doBeforeRun() {

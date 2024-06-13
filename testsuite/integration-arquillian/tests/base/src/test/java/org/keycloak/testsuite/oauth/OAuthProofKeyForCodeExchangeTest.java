@@ -8,10 +8,13 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
@@ -21,24 +24,24 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 //https://tools.ietf.org/html/rfc7636
 
@@ -85,7 +88,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void accessTokenRequestWithoutPKCE() throws Exception {
     	// test case : success : A-1-1
         oauth.doLogin("test-user@localhost", "password");
@@ -145,13 +148,13 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
-        assertEquals("PKCE verification failed", response.getErrorDescription());
+        assertEquals("PKCE verification failed: Code mismatch", response.getErrorDescription());
         
         events.expectCodeToToken(codeId, sessionId).error(Errors.PKCE_VERIFICATION_FAILED).clearDetails().assertEvent();
     }
     
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void accessTokenRequestInPKCEValidPlainCodeChallengeMethod() throws Exception {
     	// test case : success : A-1-3
     	oauth.codeChallenge(".234567890-234567890~234567890_234567890123");
@@ -192,13 +195,13 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
-        assertEquals("PKCE verification failed", response.getErrorDescription());
+        assertEquals("PKCE verification failed: Code mismatch", response.getErrorDescription());
         
         events.expectCodeToToken(codeId, sessionId).error(Errors.PKCE_VERIFICATION_FAILED).clearDetails().assertEvent();
     }
     
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    
     public void accessTokenRequestInPKCEValidDefaultCodeChallengeMethod() throws Exception {
     	// test case : success : A-1-4
     	oauth.codeChallenge("1234567890123456789012345678901234567890123");
@@ -295,7 +298,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
-        assertEquals("PKCE invalid code verifier", response.getErrorDescription());
+        assertEquals("PKCE verification failed: Invalid code verifier", response.getErrorDescription());
         
         events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
     }
@@ -323,7 +326,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
-        assertEquals("PKCE invalid code verifier", response.getErrorDescription());
+        assertEquals("PKCE verification failed: Invalid code verifier", response.getErrorDescription());
         
         events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
     }
@@ -398,8 +401,34 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
-        assertEquals("PKCE invalid code verifier", response.getErrorDescription());
+        assertEquals("PKCE verification failed: Invalid code verifier", response.getErrorDescription());
         
+        events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
+    }
+
+    @Test
+    public void accessTokenRequestInPKCECodeVerifierWithNoCodeChallenge() throws Exception {
+        String codeVerifier = "12345678e01234567890g2345678h012a4567j90123"; // 43
+
+        // send oauth request without code_challenge because intercepted
+        oauth.codeChallenge(null);
+        oauth.codeChallengeMethod(null);
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        // get the code and add codeVerifier
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        oauth.codeVerifier(codeVerifier);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        // assert invalid code because no challenge in authorization
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("PKCE code verifier specified but challenge not present in authorization", response.getErrorDescription());
+
         events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
     }
     
@@ -415,11 +444,14 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         assertEquals(200, response.getStatusCode());
-        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
+        assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
+        String expectedKid = Stream.of(oauth.doCertsRequest("test").getKeys())
+                .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
+                .map(JWK::getKeyId)
+                .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());
@@ -434,14 +466,15 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals("HS256", header.getAlgorithm().name());
+        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
-        Assert.assertNotEquals("test-user@localhost", token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals("test-user@localhost", token.getSubject());
         assertEquals(sessionId, token.getSessionState());
         assertEquals(2, token.getRealmAccess().getRoles().size());
         assertTrue(token.getRealmAccess().isUserInRole("user"));
@@ -460,9 +493,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
         Assert.assertNotNull(refreshTokenString);
-        Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
-        int actual = refreshToken.getExpiration() - getCurrentTime();
-        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(token.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(200L), lessThanOrEqualTo(350L)));
+        long actual = refreshToken.getExp() - getCurrentTime();
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799L - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
         setTimeOffset(2);
@@ -476,11 +509,11 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(sessionId, refreshedToken.getSessionState());
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
-        Assert.assertThat(refreshResponse.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(refreshResponse.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(refreshedToken.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(250L - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300L + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
 
-        Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
-        Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
+        assertThat(refreshedToken.getExp() - token.getExp(), allOf(greaterThanOrEqualTo(1L), lessThanOrEqualTo(10L)));
+        assertThat(refreshedRefreshToken.getExp() - refreshToken.getExp(), allOf(greaterThanOrEqualTo(1L), lessThanOrEqualTo(10L)));
 
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
@@ -488,7 +521,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals("Bearer", refreshResponse.getTokenType());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
-        Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
 
         assertEquals(2, refreshedToken.getRealmAccess().getRoles().size());
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
@@ -539,7 +573,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE) // unstable
+     // unstable
     //accessTokenRequestValidPlainCodeChallengeMethodPkceEnforced:561->expectSuccessfulResponseFromTokenEndpoint:465
     //  Expected: (a value equal to or greater than <1799> and a value less than or equal to <1800>)
     //  but: a value equal to or greater than <1799> <1798> was less than <1799>
@@ -585,7 +619,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             Assert.assertTrue(errorResponse.isRedirected());
             Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-            Assert.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code challenge method is not configured one");
+            Assert.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code challenge method is not matching the configured one");
 
             events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {

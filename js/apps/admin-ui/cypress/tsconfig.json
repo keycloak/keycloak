@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["**/*", "../src/i18next.d.ts"],
+  "compilerOptions": {
+    "types": [
+      "node",
+      "cypress",
+      "@testing-library/cypress",
+      "@4tw/cypress-drag-drop",
+      "cypress-axe"
+    ],
+    "module": "ES2015",
+    "target": "ES2015",
+    "useDefineForClassFields": false
+  }
+}

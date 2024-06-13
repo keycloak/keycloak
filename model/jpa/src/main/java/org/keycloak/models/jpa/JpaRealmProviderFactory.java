@@ -23,7 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmProviderFactory;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -62,12 +62,14 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
     @Override
     public JpaRealmProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em, null);
+        return new JpaRealmProvider(session, em, null, null);
     }
 
     @Override
     public void close() {
-        onClose.run();
+        if (onClose != null) {
+            onClose.run();
+        }
     }
 
     @Override

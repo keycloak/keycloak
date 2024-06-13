@@ -17,6 +17,8 @@
 
 package org.keycloak.theme.beans;
 
+import static java.util.Optional.ofNullable;
+
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
@@ -26,6 +28,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -40,13 +44,22 @@ public class MessageFormatterMethod implements TemplateMethodModelEx {
         this.messages = messages;
     }
 
+    public MessageFormatterMethod(Locale locale, Map<Object, Object> messages) {
+        this.locale = locale;
+        this.messages = new Properties();
+        this.messages.putAll(ofNullable(messages).orElse(Map.of()));
+    }
+
     @Override
     public Object exec(List list) throws TemplateModelException {
         if (list.size() >= 1) {
             // resolve any remaining ${} expressions
             List<Object> resolved = resolve(list.subList(1, list.size()));
             String key = list.get(0).toString();
-            return new MessageFormat(messages.getProperty(key,key),locale).format(resolved.toArray());
+            String value = messages.getOrDefault(key, key).toString();
+            // try to also resolve placeholders if present in the message bundle
+            value = (String) resolve(List.of(value)).get(0);
+            return new MessageFormat(value, locale).format(resolved.toArray());
         } else {
             return null;
         }

@@ -22,12 +22,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -38,10 +39,13 @@ import java.util.UUID;
  *
  * @author hmlnarik
  */
-public class DefaultActionToken extends DefaultActionTokenKey implements ActionTokenValueModel {
+public class DefaultActionToken extends DefaultActionTokenKey implements SingleUseObjectValueModel {
 
     public static final String JSON_FIELD_AUTHENTICATION_SESSION_ID = "asid";
     public static final String JSON_FIELD_EMAIL = "eml";
+
+    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
+    private String compoundAuthenticationSessionId;
 
     @JsonProperty(value = JSON_FIELD_EMAIL)
     private String email;
@@ -84,14 +88,12 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
         setCompoundAuthenticationSessionId(compoundAuthenticationSessionId);
     }
 
-    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
     public String getCompoundAuthenticationSessionId() {
-        return (String) getOtherClaims().get(JSON_FIELD_AUTHENTICATION_SESSION_ID);
+        return compoundAuthenticationSessionId;
     }
 
-    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
-    public final void setCompoundAuthenticationSessionId(String authenticationSessionId) {
-        setOtherClaims(JSON_FIELD_AUTHENTICATION_SESSION_ID, authenticationSessionId);
+    public void setCompoundAuthenticationSessionId(String compoundAuthenticationSessionId) {
+        this.compoundAuthenticationSessionId = compoundAuthenticationSessionId;
     }
 
     @JsonIgnore
@@ -156,7 +158,7 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
         String issuerUri = getIssuer(realm, uri);
 
         this
-          .issuedAt(Time.currentTime())
+          .issuedNow()
           .id(getActionVerificationNonce().toString())
           .issuer(issuerUri)
           .audience(issuerUri);

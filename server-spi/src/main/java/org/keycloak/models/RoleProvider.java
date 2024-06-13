@@ -51,18 +51,6 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
     RoleModel addRealmRole(RealmModel realm, String id, String name);
 
     /**
-     * Returns all the realm roles of the given realm.
-     * Effectively the same as the call {@code getRealmRoles(realm, null, null)}.
-     * @param realm Realm.
-     * @return List of the roles. Never returns {@code null}.
-     * @deprecated use the stream variant instead
-     */
-    @Deprecated
-    default Set<RoleModel> getRealmRoles(RealmModel realm) {
-        return getRealmRolesStream(realm, null, null).collect(Collectors.toSet());
-    }
-
-    /**
      * Returns all the realm roles of the given realm as a stream.
      * Effectively the same as the call {@code getRealmRolesStream(realm, null, null)}.
      * @param realm Realm.

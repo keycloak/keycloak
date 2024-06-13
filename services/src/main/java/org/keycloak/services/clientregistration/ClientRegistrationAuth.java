@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.jboss.resteasy.spi.Failure;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -46,8 +45,9 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyM
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 
@@ -134,7 +134,6 @@ public class ClientRegistrationAuth {
         RegistrationAuth registrationAuth = RegistrationAuth.ANONYMOUS;
 
         if (isBearerToken()) {
-            checkClientProtocol();
 
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
                 registrationAuth = RegistrationAuth.AUTHENTICATED;
@@ -381,21 +380,21 @@ public class ClientRegistrationAuth {
         return true;
     }
 
-    private Failure unauthorized(String errorDescription) {
+    private WebApplicationException unauthorized(String errorDescription) {
         event.detail(Details.REASON, errorDescription).error(Errors.INVALID_TOKEN);
         throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, errorDescription, Response.Status.UNAUTHORIZED);
     }
 
-    private Failure forbidden() {
+    private WebApplicationException forbidden() {
         return forbidden("Forbidden");
     }
 
-    private Failure forbidden(String errorDescription) {
+    private WebApplicationException forbidden(String errorDescription) {
         event.error(Errors.NOT_ALLOWED);
         throw new ErrorResponseException(OAuthErrorException.INSUFFICIENT_SCOPE, errorDescription, Response.Status.FORBIDDEN);
     }
 
-    private Failure notFound() {
+    private WebApplicationException notFound() {
         event.error(Errors.CLIENT_NOT_FOUND);
         throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.NOT_FOUND);
     }

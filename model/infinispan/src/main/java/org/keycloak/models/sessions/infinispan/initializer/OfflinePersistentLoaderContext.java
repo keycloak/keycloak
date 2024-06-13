@@ -41,15 +41,6 @@ public class OfflinePersistentLoaderContext extends SessionLoader.LoaderContext 
     }
 
 
-    public int getSessionsTotal() {
-        return sessionsTotal;
-    }
-
-    public int getSessionsPerSegment() {
-        return sessionsPerSegment;
-    }
-
-
     @Override
     public String toString() {
         return new StringBuilder("OfflinePersistentLoaderContext [ ")

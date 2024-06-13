@@ -1,8 +1,8 @@
 package org.keycloak.testsuite.util;
 
-import org.apache.http.entity.ContentType;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
@@ -16,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public class LogoutTokenUtil {
             String issuer, String clientId, String userId, String sessionId, boolean revokeOfflineSessions)
             throws IOException {
         JWSHeader jwsHeader =
-                new JWSHeader(Algorithm.RS256, OAuth2Constants.JWT, ContentType.APPLICATION_JSON.toString(), keyId);
+                new JWSHeader(Algorithm.RS256, OAuth2Constants.JWT, keyId, null);
         String logoutTokenHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
 
         LogoutToken logoutToken = new LogoutToken();
@@ -36,6 +37,7 @@ public class LogoutTokenUtil {
         logoutToken.issuer(issuer);
         logoutToken.id(UUID.randomUUID().toString());
         logoutToken.issuedNow();
+        logoutToken.exp(Time.currentTime() + Duration.ofMinutes(2).getSeconds());
         logoutToken.audience(clientId);
 
         String logoutTokenPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(logoutToken));

@@ -95,7 +95,7 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
         ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
         {
             ProtocolMapperRepresentation mapper = createScriptMapper("test-script-mapper1", "computed-via-script",
-                    "computed-via-script", "String", true, true, "'hello_' + user.username", false);
+                    "computed-via-script", "String", true, true, true, "'hello_' + user.username", false);
 
             mapper.setProtocolMapper("script-mapper-a.js");
 

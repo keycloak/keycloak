@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 
 public class RealmLocalizationResourceTest extends AbstractAdminTest {
@@ -64,7 +64,7 @@ public class RealmLocalizationResourceTest extends AbstractAdminTest {
 
     @Test
     public void getRealmLocalizationTexts() {
-        Map<String, String> localizations = resource.getRealmLocalizationTexts("en", false);
+        Map<String, String> localizations = resource.getRealmLocalizationTexts("en");
         assertNotNull(localizations);
         assertEquals(2, localizations.size());
 
@@ -84,7 +84,7 @@ public class RealmLocalizationResourceTest extends AbstractAdminTest {
 
     @Test
     public void getRealmLocalizationsNotExists() {
-        Map<String, String> localizations = resource.getRealmLocalizationTexts("zz", false);
+        Map<String, String> localizations = resource.getRealmLocalizationTexts("zz");
         assertNotNull(localizations);
         assertEquals(0, localizations.size());
     }
@@ -125,7 +125,7 @@ public class RealmLocalizationResourceTest extends AbstractAdminTest {
     public void deleteRealmLocalizationText() {
         resource.deleteRealmLocalizationText("en", "key-a");
 
-        Map<String, String> localizations = resource.getRealmLocalizationTexts("en", false);
+        Map<String, String> localizations = resource.getRealmLocalizationTexts("en");
         assertEquals(1, localizations.size());
         assertEquals("text-b_en", localizations.get("key-b"));
     }
@@ -153,7 +153,7 @@ public class RealmLocalizationResourceTest extends AbstractAdminTest {
 
         resource.createOrUpdateRealmLocalizationTexts("es", newLocalizationTexts);
 
-        final Map<String, String> persistedLocalizationTexts = resource.getRealmLocalizationTexts("es", false);
+        final Map<String, String> persistedLocalizationTexts = resource.getRealmLocalizationTexts("es");
         assertEquals(newLocalizationTexts, persistedLocalizationTexts);
     }
 
@@ -168,7 +168,7 @@ public class RealmLocalizationResourceTest extends AbstractAdminTest {
         final Map<String, String> expectedLocalizationTexts = new HashMap<>();
         expectedLocalizationTexts.put("key-a", "text-a_en");
         expectedLocalizationTexts.putAll(newLocalizationTexts);
-        final Map<String, String> persistedLocalizationTexts = resource.getRealmLocalizationTexts("en", false);
+        final Map<String, String> persistedLocalizationTexts = resource.getRealmLocalizationTexts("en");
         assertEquals(expectedLocalizationTexts, persistedLocalizationTexts);
     }
 }

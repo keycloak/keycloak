@@ -1,33 +1,26 @@
 package org.keycloak.credential.hash;
 
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * PBKDF2 Password Hash provider with HMAC using SHA256
  *
  * @author <a href"mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
-public class Pbkdf2Sha256PasswordHashProviderFactory implements PasswordHashProviderFactory {
+public class Pbkdf2Sha256PasswordHashProviderFactory extends AbstractPbkdf2PasswordHashProviderFactory implements PasswordHashProviderFactory {
 
     public static final String ID = "pbkdf2-sha256";
 
     public static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256";
 
-    public static final int DEFAULT_ITERATIONS = 27500;
+    /**
+     * Hash iterations for PBKDF2-HMAC-SHA256 according to the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2">Password Storage Cheat Sheet</a>.
+     */
+    public static final int DEFAULT_ITERATIONS = 600_000;
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
-        return new Pbkdf2PasswordHashProvider(ID, PBKDF2_ALGORITHM, DEFAULT_ITERATIONS);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
+        return new Pbkdf2PasswordHashProvider(ID, PBKDF2_ALGORITHM, DEFAULT_ITERATIONS, getMaxPaddingLength(), 256);
     }
 
     @Override
@@ -36,6 +29,7 @@ public class Pbkdf2Sha256PasswordHashProviderFactory implements PasswordHashProv
     }
 
     @Override
-    public void close() {
+    public int order() {
+        return 100;
     }
 }

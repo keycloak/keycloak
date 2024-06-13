@@ -13,11 +13,10 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.Closeable;
 
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.AC_PASSWORD_PROTECTED_TRANSPORT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
@@ -55,7 +54,7 @@ public final class KcSamlRequestedAuthnContextBrokerTest extends AbstractBrokerT
 
                         // Find the RequestedAuthnContext element
                         Element requestedAuthnContextElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), PROTOCOL_NSURI.get(), "RequestedAuthnContext");
-                        Assert.assertThat("RequestedAuthnContext element found in request document, but was not necessary as ClassRef/DeclRefs were not specified", requestedAuthnContextElement, Matchers.nullValue());
+                        assertThat("RequestedAuthnContext element found in request document, but was not necessary as ClassRef/DeclRefs were not specified", requestedAuthnContextElement, Matchers.nullValue());
                     }
                     catch (Exception ex)
                     {
@@ -90,7 +89,7 @@ public final class KcSamlRequestedAuthnContextBrokerTest extends AbstractBrokerT
 
                         // Find the RequestedAuthnContext element
                         Element requestedAuthnContextElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), PROTOCOL_NSURI.get(), "RequestedAuthnContext");
-                        Assert.assertThat("RequestedAuthnContext element found in request document, but was not necessary as ClassRef/DeclRefs were not specified", requestedAuthnContextElement, Matchers.nullValue());
+                        assertThat("RequestedAuthnContext element found in request document, but was not necessary as ClassRef/DeclRefs were not specified", requestedAuthnContextElement, Matchers.nullValue());
                     }
                     catch (Exception ex)
                     {
@@ -126,17 +125,17 @@ public final class KcSamlRequestedAuthnContextBrokerTest extends AbstractBrokerT
 
                         // Find the RequestedAuthnContext element
                         Element requestedAuthnContextElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), PROTOCOL_NSURI.get(), "RequestedAuthnContext");
-                        Assert.assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement, Matchers.notNullValue());
+                        assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement, Matchers.notNullValue());
 
                         // Verify the ComparisonType attribute
-                        Assert.assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement.getAttribute("Comparison"), Matchers.is(AuthnContextComparisonType.EXACT.value()));
+                        assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement.getAttribute("Comparison"), Matchers.is(AuthnContextComparisonType.EXACT.value()));
 
                         // Find the RequestedAuthnContext/ClassRef element
                         Element requestedAuthnContextClassRefElement = DocumentUtil.getDirectChildElement(requestedAuthnContextElement, ASSERTION_NSURI.get(), "AuthnContextClassRef");
-                        Assert.assertThat("RequestedAuthnContext/AuthnContextClassRef element not found in request document", requestedAuthnContextClassRefElement, Matchers.notNullValue());
+                        assertThat("RequestedAuthnContext/AuthnContextClassRef element not found in request document", requestedAuthnContextClassRefElement, Matchers.notNullValue());
 
                         // Make sure the RequestedAuthnContext/ClassRef element has the requested value
-                        Assert.assertThat("RequestedAuthnContext/AuthnContextClassRef element does not have the expected value", requestedAuthnContextClassRefElement.getTextContent(), Matchers.is(AC_PASSWORD_PROTECTED_TRANSPORT.get()));
+                        assertThat("RequestedAuthnContext/AuthnContextClassRef element does not have the expected value", requestedAuthnContextClassRefElement.getTextContent(), Matchers.is(AC_PASSWORD_PROTECTED_TRANSPORT.get()));
                     }
                     catch (Exception ex)
                     {
@@ -172,17 +171,17 @@ public final class KcSamlRequestedAuthnContextBrokerTest extends AbstractBrokerT
 
                         // Find the RequestedAuthnContext element
                         Element requestedAuthnContextElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), PROTOCOL_NSURI.get(), "RequestedAuthnContext");
-                        Assert.assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement, Matchers.notNullValue());
+                        assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement, Matchers.notNullValue());
 
                         // Verify the ComparisonType attribute
-                        Assert.assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement.getAttribute("Comparison"), Matchers.is(AuthnContextComparisonType.MINIMUM.value()));
+                        assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement.getAttribute("Comparison"), Matchers.is(AuthnContextComparisonType.MINIMUM.value()));
 
                         // Find the RequestedAuthnContext/DeclRef element
                         Element requestedAuthnContextDeclRefElement = DocumentUtil.getDirectChildElement(requestedAuthnContextElement, ASSERTION_NSURI.get(), "AuthnContextDeclRef");
-                        Assert.assertThat("RequestedAuthnContext/AuthnContextDeclRef element not found in request document", requestedAuthnContextDeclRefElement, Matchers.notNullValue());
+                        assertThat("RequestedAuthnContext/AuthnContextDeclRef element not found in request document", requestedAuthnContextDeclRefElement, Matchers.notNullValue());
 
                         // Make sure the RequestedAuthnContext/DeclRef element has the requested value
-                        Assert.assertThat("RequestedAuthnContext/AuthnContextDeclRef element does not have the expected value", requestedAuthnContextDeclRefElement.getTextContent(), Matchers.is("secure/name/password/icmaolr/uri"));
+                        assertThat("RequestedAuthnContext/AuthnContextDeclRef element does not have the expected value", requestedAuthnContextDeclRefElement.getTextContent(), Matchers.is("secure/name/password/icmaolr/uri"));
                     }
                     catch (Exception ex)
                     {
@@ -217,17 +216,17 @@ public final class KcSamlRequestedAuthnContextBrokerTest extends AbstractBrokerT
 
                         // Find the RequestedAuthnContext element
                         Element requestedAuthnContextElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), PROTOCOL_NSURI.get(), "RequestedAuthnContext");
-                        Assert.assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement, Matchers.notNullValue());
+                        assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement, Matchers.notNullValue());
 
                         // Verify the ComparisonType attribute
-                        Assert.assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement.getAttribute("Comparison"), Matchers.is(AuthnContextComparisonType.EXACT.value()));
+                        assertThat("RequestedAuthnContext element not found in request document", requestedAuthnContextElement.getAttribute("Comparison"), Matchers.is(AuthnContextComparisonType.EXACT.value()));
 
                         // Find the RequestedAuthnContext/ClassRef element
                         Element requestedAuthnContextClassRefElement = DocumentUtil.getDirectChildElement(requestedAuthnContextElement, ASSERTION_NSURI.get(), "AuthnContextClassRef");
-                        Assert.assertThat("RequestedAuthnContext/AuthnContextClassRef element not found in request document", requestedAuthnContextClassRefElement, Matchers.notNullValue());
+                        assertThat("RequestedAuthnContext/AuthnContextClassRef element not found in request document", requestedAuthnContextClassRefElement, Matchers.notNullValue());
 
                         // Make sure the RequestedAuthnContext/ClassRef element has the requested value
-                        Assert.assertThat("RequestedAuthnContext/AuthnContextClassRef element does not have the expected value", requestedAuthnContextClassRefElement.getTextContent(), Matchers.is(AC_PASSWORD_PROTECTED_TRANSPORT.get()));
+                        assertThat("RequestedAuthnContext/AuthnContextClassRef element does not have the expected value", requestedAuthnContextClassRefElement.getTextContent(), Matchers.is(AC_PASSWORD_PROTECTED_TRANSPORT.get()));
                     }
                     catch (Exception ex)
                     {

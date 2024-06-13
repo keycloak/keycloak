@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -268,18 +268,6 @@
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>hello-world-authz-service</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>photoz-html5-client</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>photoz-restful-api</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>

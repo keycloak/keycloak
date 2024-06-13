@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -63,7 +63,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
@@ -76,13 +76,9 @@ import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_SIGNING_CERTIFI
  *
  * @author hmlnarik
  */
-@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class SamlSignatureTest extends AbstractAdapterTest {
 
     private static final String REQUIRED_ROLE_NAME = "manager";
