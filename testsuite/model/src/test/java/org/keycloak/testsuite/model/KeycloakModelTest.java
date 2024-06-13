@@ -392,7 +392,7 @@ public abstract class KeycloakModelTest {
             CountDownLatch start = new CountDownLatch(numThreads);
             CountDownLatch stop = new CountDownLatch(numThreads);
             Callable<?> independentTask = () -> inIndependentFactory(() -> {
-
+                LOG.infof("Started Keycloak server in thread: %s", Thread.currentThread().getName());
                 // use the latch to ensure that all caches are online while the transaction below runs to avoid a RemoteException
                 start.countDown();
                 start.await();
@@ -486,11 +486,11 @@ public abstract class KeycloakModelTest {
             throw new IllegalStateException("USE_DEFAULT_FACTORY must be false to use an independent factory");
         }
         KeycloakSessionFactory original = getFactory();
-        KeycloakSessionFactory factory = createKeycloakSessionFactory();
         try {
-            setFactory(factory);
+            setFactory(createKeycloakSessionFactory());
             return task.call();
         } catch (Exception ex) {
+            LOG.errorf(ex, "Exception caught while starting Keycloak server in thread %s", Thread.currentThread().getName());
             throw new RuntimeException(ex);
         } finally {
             closeKeycloakSessionFactory();

@@ -20,47 +20,48 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Objects;
 import java.util.Set;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(GroupRemovedEvent.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.GROUP_REMOVED_EVENT)
 public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
 
-    private String groupId;
-    private String parentId;
-    private String realmId;
+    @ProtoField(2)
+    final String realmId;
+    @ProtoField(3)
+    final String parentId;
 
-    public static GroupRemovedEvent create(GroupModel group, String realmId) {
-        GroupRemovedEvent event = new GroupRemovedEvent();
-        event.realmId = realmId;
-        event.groupId = group.getId();
-        event.parentId = group.getParentId();
-        return event;
+    public GroupRemovedEvent(String groupId, String realmId, String parentId) {
+        super(groupId);
+        this.realmId = Objects.requireNonNull(realmId);
+        this.parentId = parentId;
     }
 
-    @Override
-    public String getId() {
-        return groupId;
+    @ProtoFactory
+    static GroupRemovedEvent protoFactory(String id, String realmId, String parentId) {
+        return new GroupRemovedEvent(id, realmId, Marshalling.emptyStringToNull(parentId));
+    }
+
+    public static GroupRemovedEvent create(GroupModel group, String realmId) {
+        return new GroupRemovedEvent(group.getId(), realmId, group.getParentId());
     }
 
     @Override
     public String toString() {
-        return String.format("GroupRemovedEvent [ realmId=%s, groupId=%s, parentId=%s ]", realmId, groupId, parentId);
+        return String.format("GroupRemovedEvent [ realmId=%s, groupId=%s, parentId=%s ]", realmId, getId(), parentId);
     }
 
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         realmCache.groupQueriesInvalidations(realmId, invalidations);
-        realmCache.groupNameInvalidations(groupId, invalidations);
+        realmCache.groupNameInvalidations(getId(), invalidations);
         if (parentId != null) {
             invalidations.add(parentId);
         }
@@ -71,45 +72,16 @@ public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheIn
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
+
         GroupRemovedEvent that = (GroupRemovedEvent) o;
-        return Objects.equals(groupId, that.groupId) && Objects.equals(parentId, that.parentId) && Objects.equals(realmId, that.realmId);
+        return realmId.equals(that.realmId) && Objects.equals(parentId, that.parentId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), groupId, parentId, realmId);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<GroupRemovedEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, GroupRemovedEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.realmId, output);
-            MarshallUtil.marshallString(obj.groupId, output);
-            MarshallUtil.marshallString(obj.parentId, output);
-        }
-
-        @Override
-        public GroupRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public GroupRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            GroupRemovedEvent res = new GroupRemovedEvent();
-            res.realmId = MarshallUtil.unmarshallString(input);
-            res.groupId = MarshallUtil.unmarshallString(input);
-            res.parentId = MarshallUtil.unmarshallString(input);
-
-            return res;
-        }
+        int result = super.hashCode();
+        result = 31 * result + realmId.hashCode();
+        result = 31 * result + Objects.hashCode(parentId);
+        return result;
     }
 }

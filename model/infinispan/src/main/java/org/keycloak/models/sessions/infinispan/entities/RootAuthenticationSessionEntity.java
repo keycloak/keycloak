@@ -17,20 +17,19 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
+
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(RootAuthenticationSessionEntity.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.ROOT_AUTHENTICATION_SESSION_ENTITY)
 public class RootAuthenticationSessionEntity extends SessionEntity {
 
     private final String id;
@@ -48,10 +47,17 @@ public class RootAuthenticationSessionEntity extends SessionEntity {
         this.authenticationSessions = authenticationSessions;
     }
 
+    @ProtoFactory
+    static RootAuthenticationSessionEntity protoFactory(String realmId, String id, int timestamp, Map<String, AuthenticationSessionEntity> authenticationSessions) {
+        return new RootAuthenticationSessionEntity(realmId, id, timestamp, authenticationSessions);
+    }
+
+    @ProtoField(2)
     public String getId() {
         return id;
     }
 
+    @ProtoField(3)
     public int getTimestamp() {
         return timestamp;
     }
@@ -60,6 +66,7 @@ public class RootAuthenticationSessionEntity extends SessionEntity {
         this.timestamp = timestamp;
     }
 
+    @ProtoField(value = 4, mapImplementation = ConcurrentHashMap.class)
     public Map<String, AuthenticationSessionEntity> getAuthenticationSessions() {
         return authenticationSessions;
     }
@@ -70,14 +77,12 @@ public class RootAuthenticationSessionEntity extends SessionEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof RootAuthenticationSessionEntity)) return false;
+        if (this == o) {
+            return true;
+        }
+        return o instanceof RootAuthenticationSessionEntity that &&
+                Objects.equals(id, that.id);
 
-        RootAuthenticationSessionEntity that = (RootAuthenticationSessionEntity) o;
-
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
-
-        return true;
     }
 
     @Override
@@ -90,41 +95,4 @@ public class RootAuthenticationSessionEntity extends SessionEntity {
         return String.format("RootAuthenticationSessionEntity [ id=%s, realm=%s ]", getId(), getRealmId());
     }
 
-    public static class ExternalizerImpl implements Externalizer<RootAuthenticationSessionEntity> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, RootAuthenticationSessionEntity value) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(value.getRealmId(), output);
-
-            MarshallUtil.marshallString(value.id, output);
-            output.writeInt(value.timestamp);
-
-            KeycloakMarshallUtil.writeMap(value.authenticationSessions, KeycloakMarshallUtil.STRING_EXT, AuthenticationSessionEntity.ExternalizerImpl.INSTANCE, output);
-        }
-
-        @Override
-        public RootAuthenticationSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public RootAuthenticationSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            return new RootAuthenticationSessionEntity(
-              MarshallUtil.unmarshallString(input),     // realmId
-
-              MarshallUtil.unmarshallString(input),     // id
-              input.readInt(),                          // timestamp
-
-              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, AuthenticationSessionEntity.ExternalizerImpl.INSTANCE, size -> new ConcurrentHashMap<>(size)) // authenticationSessions
-            );
-        }
-    }
 }

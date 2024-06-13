@@ -66,8 +66,8 @@ public class CacheExpirationTest extends KeycloakModelTest {
               .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
               .forEach((c, me) -> c.remove(me.getKey()));
 
-            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", "r1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
-            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", "r2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
         });
         Instant expiryInstant = Instant.now().plusSeconds(30);
 

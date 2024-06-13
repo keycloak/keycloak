@@ -17,26 +17,72 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.jboss.logging.Logger;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientScopeProvider;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleProvider;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CachedRealmModel;
-import org.keycloak.models.cache.infinispan.entities.*;
-import org.keycloak.models.cache.infinispan.events.*;
+import org.keycloak.models.cache.infinispan.entities.CachedClient;
+import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
+import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
+import org.keycloak.models.cache.infinispan.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.ClientListQuery;
+import org.keycloak.models.cache.infinispan.entities.ClientScopeListQuery;
+import org.keycloak.models.cache.infinispan.entities.GroupListQuery;
+import org.keycloak.models.cache.infinispan.entities.GroupNameQuery;
+import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
+import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
+import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
+import org.keycloak.models.cache.infinispan.events.ClientRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.ClientScopeAddedEvent;
+import org.keycloak.models.cache.infinispan.events.ClientScopeRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.ClientUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupAddedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupMovedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.RoleAddedEvent;
+import org.keycloak.models.cache.infinispan.events.RoleRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.RoleUpdatedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.client.ClientStorageProviderModel;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 /**
@@ -221,7 +267,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     public void registerClientScopeInvalidation(String id, String realmId) {
         invalidateClientScope(id);
         cache.clientScopeUpdated(realmId, invalidations);
-        invalidationEvents.add(ClientTemplateEvent.create(id));
     }
 
     private void invalidateClientScope(String id) {
@@ -561,7 +606,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         // this is needed so that a client that hasn't been committed isn't cached in a query
         listInvalidations.add(realm.getId());
 
-        invalidationEvents.add(ClientAddedEvent.create(client.getId(), client.getClientId(), realm.getId()));
+        invalidationEvents.add(ClientAddedEvent.create(client.getId(), realm.getId()));
         cache.clientAdded(realm.getId(), invalidations);
         return client;
     }

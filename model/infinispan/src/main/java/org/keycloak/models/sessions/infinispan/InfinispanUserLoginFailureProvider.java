@@ -35,7 +35,7 @@ import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailures
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
-import org.keycloak.models.sessions.infinispan.stream.UserLoginFailurePredicate;
+import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
@@ -125,7 +125,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
         localCacheStoreIgnore
                 .entrySet()
                 .stream()
-                .filter(UserLoginFailurePredicate.create(realmId))
+                .filter(SessionWrapperPredicate.create(realmId))
                 .map(Mappers.loginFailureId())
                 .forEach(loginFailureKey -> {
                     // Remove loginFailure from remoteCache too. Use removeAsync for better perf

@@ -66,8 +66,8 @@ public class CrossDCLastSessionRefreshListener implements ClusterListener {
 
         lastSessionRefreshes.entrySet().stream().forEach((entry) -> {
             String sessionId = entry.getKey();
-            String realmId = entry.getValue().getRealmId();
-            int lastSessionRefresh = entry.getValue().getLastSessionRefresh();
+            String realmId = entry.getValue().realmId();
+            int lastSessionRefresh = entry.getValue().lastSessionRefresh();
 
             // All nodes will receive the message. So ensure that each node updates just lastSessionRefreshes owned by him.
             if (shouldUpdateLocalCache(sessionId)) {

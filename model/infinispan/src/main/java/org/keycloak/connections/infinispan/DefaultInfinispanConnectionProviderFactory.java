@@ -180,11 +180,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
                     if (providers.hasNext()) {
                         ManagedCacheManagerProvider provider = providers.next();
-                        
+
                         if (providers.hasNext()) {
                             throw new RuntimeException("Multiple " + org.keycloak.cluster.ManagedCacheManagerProvider.class + " providers found.");
                         }
-                        
+
                         managedCacheManager = provider.getEmbeddedCacheManager(config);
                     }
 
@@ -238,7 +238,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         if (clustered) {
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
-            configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr,
+            String jgroupsBindAddr = config.get("jgroupsBindAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_BIND_ADDR));
+            configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr, jgroupsBindAddr,
                     "default-configs/default-keycloak-jgroups-udp.xml");
             gcb.jmx()
               .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName()).enable();

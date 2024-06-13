@@ -18,6 +18,8 @@
 package org.keycloak.connections.infinispan;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.provider.Provider;
@@ -57,7 +59,8 @@ public interface InfinispanConnectionProvider extends Provider {
 
     // System property used on Wildfly to identify distributedCache address and sticky session route
     String JBOSS_NODE_NAME = "jboss.node.name";
-    String JGROUPS_UDP_MCAST_ADDR = "jgroups.udp.mcast_addr";
+    String JGROUPS_UDP_MCAST_ADDR = "jgroups.mcast_addr";
+    String JGROUPS_BIND_ADDR = "jgroups.bind.address";
 
     // TODO This property is not in Wildfly. Check if corresponding property in Wildfly exists
     String JBOSS_SITE_NAME = "jboss.site.name";
@@ -126,5 +129,12 @@ public interface InfinispanConnectionProvider extends Provider {
      * @return Information about cluster topology
      */
     TopologyInfo getTopologyInfo();
+
+    /**
+     * Migrates the JBoss Marshalling encoding to Infinispan Protostream
+     *
+     * @return A {@link CompletionStage} to signal when the operator is completed.
+     */
+    CompletionStage<Void> migrateToProtostream();
 
 }

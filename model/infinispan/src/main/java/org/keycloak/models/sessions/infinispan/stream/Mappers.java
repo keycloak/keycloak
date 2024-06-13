@@ -52,14 +52,14 @@ public class Mappers {
 
     }
 
-    private static class LoginFailureIdMapper implements Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey>, Serializable {
+    private static class LoginFailureIdMapper implements Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey> {
         @Override
         public LoginFailureKey apply(Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> entry) {
             return entry.getKey();
         }
     }
 
-    private static class AuthClientSessionSetMapper implements Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, Set<String>>, Serializable {
+    private static class AuthClientSessionSetMapper implements Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, Set<String>> {
 
         @Override
         public Set<String> apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {

@@ -17,134 +17,124 @@
 
 package org.keycloak.cluster.infinispan;
 
-import org.keycloak.cluster.ClusterEvent;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.Objects;
 
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.protostream.WrappedMessage;
+import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(WrapperClusterEvent.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.WRAPPED_CLUSTER_EVENT)
 public class WrapperClusterEvent implements ClusterEvent {
 
-    private String eventKey;
-    private String sender;
-    private String senderSite;
-    private boolean ignoreSender;
-    private boolean ignoreSenderSite;
-    private ClusterEvent delegateEvent;
+    @ProtoField(1)
+    final String eventKey;
+    @ProtoField(2)
+    final String senderAddress; // null means invoke everywhere
+    @ProtoField(3)
+    final String senderSite; // can be null
+    @ProtoField(4)
+    final SiteFilter siteFilter;
+    final ClusterEvent delegateEvent;
+
+    private WrapperClusterEvent(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, ClusterEvent delegateEvent) {
+        this.eventKey = Objects.requireNonNull(eventKey);
+        this.senderAddress = senderAddress;
+        this.senderSite = senderSite;
+        this.siteFilter = Objects.requireNonNull(siteFilter);
+        this.delegateEvent = Objects.requireNonNull(delegateEvent);
+    }
+
+    @ProtoFactory
+    static WrapperClusterEvent protoFactory(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, WrappedMessage eventPS) {
+        return new WrapperClusterEvent(eventKey, Marshalling.emptyStringToNull(senderAddress), Marshalling.emptyStringToNull(senderSite), siteFilter, (ClusterEvent) eventPS.getValue());
+    }
+
+    public static WrapperClusterEvent wrap(String eventKey, ClusterEvent event, String senderAddress, String senderSite, ClusterProvider.DCNotify dcNotify, boolean ignoreSender) {
+        senderAddress = ignoreSender ? Objects.requireNonNull(senderAddress) : null;
+        senderSite = dcNotify == ClusterProvider.DCNotify.ALL_DCS ? null : senderSite;
+        var siteNotification = switch (dcNotify) {
+            case ALL_DCS -> SiteFilter.ALL;
+            case LOCAL_DC_ONLY -> SiteFilter.LOCAL;
+            case ALL_BUT_LOCAL_DC -> SiteFilter.REMOTE;
+        };
+        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteNotification, event);
+    }
+
+    @ProtoField(5)
+    WrappedMessage getEventPS() {
+        return new WrappedMessage(delegateEvent);
+    }
 
     public String getEventKey() {
         return eventKey;
-    }
-
-    public void setEventKey(String eventKey) {
-        this.eventKey = eventKey;
-    }
-
-    public String getSender() {
-        return sender;
-    }
-
-    public void setSender(String sender) {
-        this.sender = sender;
-    }
-
-    public String getSenderSite() {
-        return senderSite;
-    }
-
-    public void setSenderSite(String senderSite) {
-        this.senderSite = senderSite;
-    }
-
-    public boolean isIgnoreSender() {
-        return ignoreSender;
-    }
-
-    public void setIgnoreSender(boolean ignoreSender) {
-        this.ignoreSender = ignoreSender;
-    }
-
-    public boolean isIgnoreSenderSite() {
-        return ignoreSenderSite;
-    }
-
-    public void setIgnoreSenderSite(boolean ignoreSenderSite) {
-        this.ignoreSenderSite = ignoreSenderSite;
     }
 
     public ClusterEvent getDelegateEvent() {
         return delegateEvent;
     }
 
-    public void setDelegateEvent(ClusterEvent delegateEvent) {
-        this.delegateEvent = delegateEvent;
+    public boolean rejectEvent(String mySiteAddress, String mySiteName) {
+        return (senderAddress != null && senderAddress.equals(mySiteAddress)) ||
+                (senderSite != null  && siteFilter.reject(senderSite, mySiteName));
+
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         WrapperClusterEvent that = (WrapperClusterEvent) o;
-        return ignoreSender == that.ignoreSender && ignoreSenderSite == that.ignoreSenderSite && Objects.equals(eventKey, that.eventKey) && Objects.equals(sender, that.sender) && Objects.equals(senderSite, that.senderSite) && Objects.equals(delegateEvent, that.delegateEvent);
+        return eventKey.equals(that.eventKey) &&
+                Objects.equals(senderAddress, that.senderAddress) &&
+                Objects.equals(senderSite, that.senderSite) &&
+                siteFilter == that.siteFilter &&
+                delegateEvent.equals(that.delegateEvent);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventKey, sender, senderSite, ignoreSender, ignoreSenderSite, delegateEvent);
+        int result = eventKey.hashCode();
+        result = 31 * result + Objects.hashCode(senderAddress);
+        result = 31 * result + Objects.hashCode(senderSite);
+        result = 31 * result + siteFilter.hashCode();
+        result = 31 * result + delegateEvent.hashCode();
+        return result;
     }
 
     @Override
     public String toString() {
-        return String.format("WrapperClusterEvent [ eventKey=%s, sender=%s, senderSite=%s, delegateEvent=%s ]", eventKey, sender, senderSite, delegateEvent.toString());
+        return String.format("WrapperClusterEvent [ eventKey=%s, sender=%s, senderSite=%s, delegateEvent=%s ]", eventKey, senderAddress, senderSite, delegateEvent);
     }
 
-    public static class ExternalizerImpl implements Externalizer<WrapperClusterEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, WrapperClusterEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.eventKey, output);
-            MarshallUtil.marshallString(obj.sender, output);
-            MarshallUtil.marshallString(obj.senderSite, output);
-            output.writeBoolean(obj.ignoreSender);
-            output.writeBoolean(obj.ignoreSenderSite);
-
-            output.writeObject(obj.delegateEvent);
-        }
-
-        @Override
-        public WrapperClusterEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
+    @Proto
+    @ProtoTypeId(Marshalling.WRAPPED_CLUSTER_EVENT_SITE_FILTER)
+    public enum SiteFilter {
+        ALL {
+            @Override
+            boolean reject(String senderSite, String mySite) {
+                return false;
             }
-        }
+        }, LOCAL {
+            @Override
+            boolean reject(String senderSite, String mySite) {
+                return !Objects.equals(senderSite, mySite);
+            }
+        }, REMOTE {
+            @Override
+            boolean reject(String senderSite, String mySite) {
+                return Objects.equals(senderSite, mySite);
+            }
+        };
 
-        public WrapperClusterEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            WrapperClusterEvent res = new WrapperClusterEvent();
-
-            res.eventKey = MarshallUtil.unmarshallString(input);
-            res.sender = MarshallUtil.unmarshallString(input);
-            res.senderSite = MarshallUtil.unmarshallString(input);
-            res.ignoreSender = input.readBoolean();
-            res.ignoreSenderSite = input.readBoolean();
-
-            res.delegateEvent = (ClusterEvent) input.readObject();
-
-            return res;
-        }
+        abstract boolean reject(String senderSite, String mySite);
     }
 }

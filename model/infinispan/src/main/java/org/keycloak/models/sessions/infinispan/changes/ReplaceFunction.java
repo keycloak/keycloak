@@ -10,6 +10,9 @@ import java.util.function.BiFunction;
 
 import org.infinispan.commons.marshall.AdvancedExternalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
@@ -19,13 +22,13 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
  * @param <K> The Infinispan key type.
  * @param <T> The Infinispan value type (Keycloak entity)
  */
+@ProtoTypeId(Marshalling.REPLACE_FUNCTION)
 public class ReplaceFunction<K, T extends SessionEntity> implements BiFunction<K, SessionEntityWrapper<T>, SessionEntityWrapper<T>> {
 
-    @SuppressWarnings({"removal", "rawtypes"})
-    public static final AdvancedExternalizer<ReplaceFunction> INSTANCE = new Externalizer();
     private final UUID expectedVersion;
     private final SessionEntityWrapper<T> newValue;
 
+    @ProtoFactory
     public ReplaceFunction(UUID expectedVersion, SessionEntityWrapper<T> newValue) {
         this.expectedVersion = Objects.requireNonNull(expectedVersion);
         this.newValue = Objects.requireNonNull(newValue);
@@ -37,37 +40,13 @@ public class ReplaceFunction<K, T extends SessionEntity> implements BiFunction<K
         return expectedVersion.equals(currentValue.getVersion()) ? newValue : currentValue;
     }
 
-    @SuppressWarnings({"removal", "rawtypes"})
-    private static class Externalizer implements AdvancedExternalizer<ReplaceFunction> {
+    @ProtoField(1)
+    UUID getExpectedVersion() {
+        return expectedVersion;
+    }
 
-        private static final SessionEntityWrapper.ExternalizerImpl EXTERNALIZER = new SessionEntityWrapper.ExternalizerImpl();
-        private static final byte VERSION_1 = 1;
-
-        @Override
-        public Set<Class<? extends ReplaceFunction>> getTypeClasses() {
-            return Set.of(ReplaceFunction.class);
-        }
-
-        @Override
-        public Integer getId() {
-            return Marshalling.REPLACE_FUNCTION_ID;
-        }
-
-        @Override
-        public void writeObject(ObjectOutput output, ReplaceFunction object) throws IOException {
-            output.writeByte(VERSION_1);
-            MarshallUtil.marshallUUID(object.expectedVersion, output, false);
-            EXTERNALIZER.writeObject(output, object.newValue);
-        }
-
-        @Override
-        public ReplaceFunction<?,?> readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            var version = input.readByte();
-            if (version != VERSION_1) {
-                throw new IOException("Invalid version: " + version);
-            }
-            //noinspection unchecked
-            return new ReplaceFunction<Object, SessionEntity>(MarshallUtil.unmarshallUUID(input, false), EXTERNALIZER.readObject(input));
-        }
+    @ProtoField(2)
+    SessionEntityWrapper<T> getNewValue() {
+        return newValue;
     }
 }

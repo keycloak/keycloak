@@ -24,7 +24,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -45,7 +44,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
     // Effectively no timeout
     private final int stalledTimeoutInSeconds;
 
-    public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int maxErrors, int stalledTimeoutInSeconds) {
+    public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, InitializerState> workCache, SessionLoader sessionLoader, String stateKeySuffix, int maxErrors, int stalledTimeoutInSeconds) {
         super(sessionFactory, workCache, sessionLoader, stateKeySuffix);
         this.maxErrors = maxErrors;
         this.stalledTimeoutInSeconds = stalledTimeoutInSeconds;

@@ -17,7 +17,6 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.io.Serializable;
 import java.util.Set;
 
 import org.infinispan.Cache;
@@ -35,10 +34,10 @@ abstract class CrossDCAwareCacheFactory {
     protected static final Logger logger = Logger.getLogger(CrossDCAwareCacheFactory.class);
 
 
-    abstract BasicCache<String, Serializable> getCache();
+    abstract BasicCache<String, Object> getCache();
 
 
-    static CrossDCAwareCacheFactory getFactory(Cache<String, Serializable> workCache, Set<RemoteStore> remoteStores) {
+    static CrossDCAwareCacheFactory getFactory(Cache<String, Object> workCache, Set<RemoteStore> remoteStores) {
         if (remoteStores.isEmpty()) {
             logger.debugf("No configured remoteStore available. Cross-DC scenario is not used");
             return new InfinispanCacheWrapperFactory(workCache);
@@ -66,14 +65,14 @@ abstract class CrossDCAwareCacheFactory {
     // We don't have external JDG configured. No cross-DC.
     private static class InfinispanCacheWrapperFactory extends CrossDCAwareCacheFactory {
 
-        private final Cache<String, Serializable> workCache;
+        private final Cache<String, Object> workCache;
 
-        InfinispanCacheWrapperFactory(Cache<String, Serializable> workCache) {
+        InfinispanCacheWrapperFactory(Cache<String, Object> workCache) {
             this.workCache = workCache;
         }
 
         @Override
-        BasicCache<String, Serializable> getCache() {
+        BasicCache<String, Object> getCache() {
             return workCache;
         }
 
@@ -83,14 +82,14 @@ abstract class CrossDCAwareCacheFactory {
     // We have external JDG configured. Cross-DC should be enabled
     private static class RemoteCacheWrapperFactory extends CrossDCAwareCacheFactory {
 
-        private final RemoteCache<String, Serializable> remoteCache;
+        private final RemoteCache<String, Object> remoteCache;
 
-        RemoteCacheWrapperFactory(RemoteCache<String, Serializable> remoteCache) {
+        RemoteCacheWrapperFactory(RemoteCache<String, Object> remoteCache) {
             this.remoteCache = remoteCache;
         }
 
         @Override
-        BasicCache<String, Serializable> getCache() {
+        BasicCache<String, Object> getCache() {
             // Flags are per-invocation!
             return remoteCache.withFlags(Flag.FORCE_RETURN_VALUE);
         }
