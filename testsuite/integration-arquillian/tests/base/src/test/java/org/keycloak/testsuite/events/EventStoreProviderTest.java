@@ -21,12 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -35,11 +33,14 @@ import org.keycloak.testsuite.AssertEvents;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -120,26 +121,19 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         String d08 = "2015-03-08";
         String d10 = "2015-03-10";
 
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        Date date04 = null, date05 = null, date06 = null, date07 = null;
+        Calendar date04 = this.createFromDate(d04);
+        Calendar date05 = this.createFromDate(d05);
+        Calendar date06 = this.createFromDate(d06);
+        Calendar date07 = this.createFromDate(d07);
 
-        try {
-            date04 = formatter.parse(d04);
-            date05 = formatter.parse(d05);
-            date06 = formatter.parse(d06);
-            date07 = formatter.parse(d07);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        testing().onEvent(create(date04, EventType.LOGIN, realmId, "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date04, EventType.LOGIN, realmId, "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date05, EventType.REGISTER, realmId, "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date05, EventType.REGISTER, realmId, "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date06, EventType.CODE_TO_TOKEN, realmId, "clientId", "userId2", "127.0.0.1", "error"));
-        testing().onEvent(create(date06, EventType.LOGOUT, realmId, "clientId", "userId2", "127.0.0.1", "error"));
-        testing().onEvent(create(date07, EventType.UPDATE_PROFILE, realmId2, "clientId2", "userId2", "127.0.0.1", "error"));
-        testing().onEvent(create(date07, EventType.UPDATE_EMAIL, realmId2, "clientId2", "userId2", "127.0.0.1", "error"));
+        testing().onEvent(create(date04, EventType.LOGIN, realmId, "clientId", "userId", "error"));
+        testing().onEvent(create(date04, EventType.LOGIN, realmId, "clientId", "userId", "error"));
+        testing().onEvent(create(date05, EventType.REGISTER, realmId, "clientId", "userId", "error"));
+        testing().onEvent(create(date05, EventType.REGISTER, realmId, "clientId", "userId", "error"));
+        testing().onEvent(create(date06, EventType.CODE_TO_TOKEN, realmId, "clientId", "userId2", "error"));
+        testing().onEvent(create(date06, EventType.LOGOUT, realmId, "clientId", "userId2", "error"));
+        testing().onEvent(create(date07, EventType.UPDATE_PROFILE, realmId2, "clientId2", "userId2", "error"));
+        testing().onEvent(create(date07, EventType.UPDATE_EMAIL, realmId2, "clientId2", "userId2", "error"));
 
         Assert.assertEquals(6, testing().queryEvents(realmId, null, "clientId", null, null, null, null, null, null).size());
         Assert.assertEquals(2, testing().queryEvents(realmId2, null, "clientId2", null, null, null, null, null, null).size());
@@ -168,6 +162,7 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         Assert.assertEquals(0, testing().queryEvents(realmId2, null, null, null, d08, null, null, null, null).size());
         Assert.assertEquals(0, testing().queryEvents(realmId2, null, null, null, null, d03, null, null, null).size());
 
+        Assert.assertEquals(2, testing().queryEvents(realmId, null, null, null, d04, d04, null, null, null).size());
         Assert.assertEquals(6, testing().queryEvents(realmId, null, null, null, d04, d07, null, null, null).size());
         Assert.assertEquals(2, testing().queryEvents(realmId2, null, null, null, d04, d07, null, null, null).size());
         Assert.assertEquals(4, testing().queryEvents(realmId, null, null, null, d05, d07, null, null, null).size());
@@ -304,8 +299,8 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         return create(System.currentTimeMillis(), event, realmId, clientId, userId, ipAddress, error);
     }
 
-    private EventRepresentation create(Date date, EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
-        return create(date.getTime(), event, realmId, clientId, userId, ipAddress, error);
+    private EventRepresentation create(Calendar date, EventType event, String realmId, String clientId, String userId, String error) {
+        return create(date.getTimeInMillis(), event, realmId, clientId, userId, "127.0.0.1", error);
     }
 
     private EventRepresentation create(long time, EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
@@ -326,5 +321,32 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
         return e;
     }
+
+    /**
+     * Creates a {@link Calendar} from the specified date string, which must be in the {@code yyyy-MM-dd} format. Once
+     * the date is parsed, this method creates a {@link Calendar} instance and sets a random time within that date.
+     *
+     * @param dateString a string representing a date in the format {@code yyyy-MM-dd}
+     * @return the {@link Calendar} representing the date with a random time set to it, or {@code null} if the specified
+     * date string is not in the expected format.
+     */
+    private Calendar createFromDate(String dateString) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        Random random = new Random();
+        Calendar result = null;
+        try {
+            Date date = formatter.parse(dateString);
+            result = new GregorianCalendar();
+            result.setTime(date);
+            result.set(Calendar.HOUR_OF_DAY, random.nextInt(0, 24));
+            result.set(Calendar.MINUTE, random.nextInt(0, 60));
+            result.set(Calendar.SECOND, random.nextInt(0, 60));
+            result.set(Calendar.MILLISECOND, random.nextInt(0, 1000));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
 
 }
