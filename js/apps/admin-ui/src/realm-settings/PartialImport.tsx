@@ -332,8 +332,9 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                     toggleId="realm-selector"
                     isOpen={isRealmSelectOpen}
                     typeAheadAriaLabel={t("realmSelector")}
-                    aria-label={"realmSelector"}
+                    aria-label={t("realmSelector")}
                     onToggle={() => setIsRealmSelectOpen(!isRealmSelectOpen)}
+                    selections={targetRealm.id}
                     onSelect={(value) => handleRealmSelect(value)}
                     placeholderText={targetRealm.realm || targetRealm.id}
                   >
@@ -369,6 +370,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                   onToggle={() => {
                     setIsCollisionSelectOpen(!isCollisionSelectOpen);
                   }}
+                  selections={collisionOption}
                   onSelect={handleCollisionSelect}
                   placeholderText={t(collisionOption)}
                 >
