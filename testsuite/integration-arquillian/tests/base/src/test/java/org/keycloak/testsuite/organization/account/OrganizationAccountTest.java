@@ -69,7 +69,7 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         assertBrokerRegistration(organization, bc.getUserEmail());
         // reset password to obtain a token and access the account api
-        UserRepresentation user = ApiUtil.findUserByUsername(realmsResouce().realm(bc.consumerRealmName()), bc.getUserLogin());
+        UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
         ApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), bc.getUserPassword(), false);
 
         LinkedAccountRepresentation link = findLinkedAccount(bc.getIDPAlias());
