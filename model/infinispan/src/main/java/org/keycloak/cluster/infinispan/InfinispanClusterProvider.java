@@ -17,6 +17,8 @@
 
 package org.keycloak.cluster.infinispan;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -123,10 +125,14 @@ public class InfinispanClusterProvider implements ClusterProvider {
         this.notificationsManager.registerListener(taskKey, task);
     }
 
-
     @Override
     public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        this.notificationsManager.notify(taskKey, event, ignoreSender, dcNotify);
+        notificationsManager.notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
+    }
+
+    @Override
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+        notificationsManager.notify(taskKey, events, ignoreSender, dcNotify);
     }
 
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {

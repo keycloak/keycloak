@@ -8,3 +8,15 @@ WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with ea
 Consequently, all caches are cleared when upgrading to this version.
 
 To prevent losing user sessions upgrade to Keycloak 25 first and enable the persistent sessions feature as outlined in the migration guide for {project_name} 25.
+
+= New method in `ClusterProvider` API
+
+The following method was added to `org.keycloak.cluster.ClusterProvider`:
+
+* `void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify)`
+
+When multiple events are sent to the same `taskKey`, this method batches events and just perform a single network call.
+This is an optimization to reduce traffic and network related resources.
+
+In {project_name} 26, the new method has a default implementation to keep backward compatibility with custom implementation.
+The default implementation performs a single network call per an event, and it will be removed in a future version of {project_name}.
