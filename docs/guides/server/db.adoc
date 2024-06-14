@@ -32,9 +32,22 @@ only exists for development use-cases. The `dev-file` database is not suitable f
 
 == Installing a database driver
 
-Database drivers are shipped as part of {project_name} except for the Oracle Database<@profile.ifProduct> and Microsoft SQL Server drivers</@profile.ifProduct>.
+Database drivers are shipped as part of {project_name} except for the
+<@profile.ifProduct>
+Oracle Database and Microsoft SQL Server drivers.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+Oracle Database driver.
+</@profile.ifCommunity>
 
-Install the necessary missing driver manually if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
+Install the necessary missing driver manually if you want to connect to
+<@profile.ifProduct>
+one of these databases
+</@profile.ifProduct>
+<@profile.ifCommunity>
+this database
+</@profile.ifCommunity>
+or skip this section if you want to connect to a different database for which the database driver is already included.
 
 === Installing the Oracle Database driver
 
@@ -268,7 +281,7 @@ The maximum timeout for this lock is 900 seconds. If a node waits on this lock f
 <@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
 
 == Using Database Vendors with XA transaction support
-{project_name} uses non-XA transactions and the appropriate database drivers by default. 
+{project_name} uses non-XA transactions and the appropriate database drivers by default.
 
 If you wish to use the XA transaction support offered by your driver, enter the following command:
 
@@ -278,7 +291,7 @@ If you wish to use the XA transaction support offered by your driver, enter the 
 
 NOTE: Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism.
 
-XA recovery defaults to enabled and will use the file system location `KEYCLOAK_HOME/data/transaction-logs` to store transaction logs. 
+XA recovery defaults to enabled and will use the file system location `KEYCLOAK_HOME/data/transaction-logs` to store transaction logs.
 
 NOTE: Enabling XA transactions in a containerized environment does not fully support XA recovery unless stable storage is available at that path.
 
