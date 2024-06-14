@@ -143,8 +143,8 @@ public final class Marshalling {
     public static final int SINGLE_USE_OBJECT_VALUE_ENTITY = 65601;
     public static final int USER_SESSION_ENTITY = 65602;
 
-
     public static final int CACHE_KEY_INVALIDATION_EVENT = 65603;
+    public static final int CLEAR_CACHE_EVENT = 65604;
 
     public static void configure(GlobalConfigurationBuilder builder) {
         builder.serialization()

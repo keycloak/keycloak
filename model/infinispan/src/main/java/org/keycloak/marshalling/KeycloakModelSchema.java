@@ -27,6 +27,7 @@ import org.keycloak.cluster.infinispan.WrapperClusterEvent;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.keys.infinispan.PublicKeyStorageInvalidationEvent;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyRemovedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyUpdatedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.ResourceRemovedEvent;
@@ -113,6 +114,9 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
 
                 // keys.infinispan package
                 PublicKeyStorageInvalidationEvent.class,
+
+                // models.cache.infinispan
+                ClearCacheEvent.class,
 
                 //models.cache.infinispan.authorization.events package
                 PolicyUpdatedEvent.class,
