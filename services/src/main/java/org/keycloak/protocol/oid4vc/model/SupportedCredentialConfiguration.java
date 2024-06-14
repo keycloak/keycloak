@@ -49,6 +49,10 @@ public class SupportedCredentialConfiguration {
     private static final String CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY = "credential_signing_alg_values_supported";
     @JsonIgnore
     private static final String DISPLAY_KEY = "display";
+    @JsonIgnore
+    private static final String PROOF_TYPES_SUPPORTED = "proof_types_supported";
+    @JsonIgnore
+    private static final String CLAIMS_KEY = "claims";
     private String id;
 
     @JsonProperty(FORMAT_KEY)
@@ -68,6 +72,12 @@ public class SupportedCredentialConfiguration {
 
     @JsonProperty(DISPLAY_KEY)
     private DisplayObject display;
+
+    @JsonProperty(PROOF_TYPES_SUPPORTED)
+    private List<String> proofTypesSupported;
+
+    @JsonProperty(CLAIMS_KEY)
+    private Claims claims;
 
     public Format getFormat() {
         return format;
@@ -135,6 +145,15 @@ public class SupportedCredentialConfiguration {
         return this;
     }
 
+    public Claims getClaims() {
+        return claims;
+    }
+
+    public SupportedCredentialConfiguration setClaims(Claims claims) {
+        this.claims = claims;
+        return this;
+    }
+
     public Map<String, String> toDotNotation() {
         Map<String, String> dotNotation = new HashMap<>();
         Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPARATOR + FORMAT_KEY, format.toString()));
@@ -145,6 +164,7 @@ public class SupportedCredentialConfiguration {
                 dotNotation.put(id + DOT_SEPARATOR + CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY, String.join(",", cryptographicSuitesSupported)));
         Optional.ofNullable(cryptographicSuitesSupported).ifPresent(types ->
                 dotNotation.put(id + DOT_SEPARATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY, String.join(",", credentialSigningAlgValuesSupported)));
+        Optional.ofNullable(claims).ifPresent(c -> dotNotation.put(id + DOT_SEPARATOR + CLAIMS_KEY, c.toJsonString()));
 
         Map<String, String> dotNotatedDisplay = Optional.ofNullable(display)
                 .map(DisplayObject::toDotNotation)
@@ -172,6 +192,10 @@ public class SupportedCredentialConfiguration {
                 .map(css -> css.split(","))
                 .map(Arrays::asList)
                 .ifPresent(supportedCredentialConfiguration::setCredentialSigningAlgValuesSupported);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CLAIMS_KEY))
+                .map(Claims::fromJsonString)
+                .ifPresent(supportedCredentialConfiguration::setClaims);
+
         Map<String, String> displayMap = new HashMap<>();
         dotNotated.entrySet().forEach(entry -> {
             String key = entry.getKey();
