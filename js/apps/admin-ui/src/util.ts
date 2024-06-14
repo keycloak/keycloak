@@ -5,11 +5,10 @@ import { saveAs } from "file-saver";
 import { flatten } from "flat";
 import { cloneDeep } from "lodash-es";
 import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
-
 import {
+  KeyValueType,
   arrayToKeyValue,
   keyValueToArray,
-  KeyValueType,
 } from "./components/key-value-form/key-value-convert";
 import { ReplaceString } from "./utils/types";
 
