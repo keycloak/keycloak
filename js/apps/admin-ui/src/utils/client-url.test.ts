@@ -16,10 +16,10 @@ describe("convertClientToUrl", () => {
   it("when root url constrains ${authAdminUrl}", () => {
     //given
     const rootUrl = "${authAdminUrl}";
-    const baseUrl = "/else";
+    const adminUrl = "/else";
 
     //when
-    const result = convertClientToUrl({ rootUrl, baseUrl }, "/admin");
+    const result = convertClientToUrl({ rootUrl, adminUrl }, "/admin");
 
     //then
     expect(result).toBe("/admin/else");

@@ -2,7 +2,7 @@ import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clien
 import { joinPath } from "./joinPath";
 
 export const convertClientToUrl = (
-  { rootUrl, baseUrl }: ClientRepresentation,
+  { rootUrl, baseUrl, adminUrl }: ClientRepresentation,
   adminClientBaseUrl: string,
 ) => {
   // absolute base url configured, use base url is
@@ -10,12 +10,16 @@ export const convertClientToUrl = (
     return baseUrl;
   }
 
-  if (
-    (rootUrl === "${authBaseUrl}" || rootUrl === "${authAdminUrl}") &&
-    baseUrl
-  ) {
+  if (rootUrl === "${authAdminUrl}" && adminUrl) {
     return rootUrl.replace(
-      /\$\{(authAdminUrl|authBaseUrl)\}/,
+      /\$\{(authAdminUrl)\}/,
+      joinPath(adminClientBaseUrl, adminUrl),
+    );
+  }
+
+  if (rootUrl === "${authBaseUrl}" && baseUrl) {
+    return rootUrl.replace(
+      /\$\{(authBaseUrl)\}/,
       joinPath(adminClientBaseUrl, baseUrl),
     );
   }
