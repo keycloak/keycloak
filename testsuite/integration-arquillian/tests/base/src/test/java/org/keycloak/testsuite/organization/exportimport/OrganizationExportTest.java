@@ -21,7 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,7 +44,6 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
@@ -93,14 +91,8 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
                 expectedManagedMembers.computeIfAbsent(orgRep.getName(), s -> new ArrayList<>()).add(email);
 
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-                log.debug("Logging in");
-                loginPage.loginUsername(email);
-                // user automatically redirected to the organization identity provider
-                waitForPage(driver, "sign in to", true);
-                Assert.assertTrue("Driver should be on the provider realm page right now",
-                        driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+                openIdentityFirstLoginPage(email, true, null, false, false);
+
                 // login to the organization identity provider and run the configured first broker login flow
                 loginPage.login(email, bc.getUserPassword());
                 assertIsMember(email, organization);
@@ -144,15 +136,8 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         }
 
         // make sure a managed user can authenticate through the broker associated with an org
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
         String email = expectedManagedMembers.values().stream().findAny().get().get(0);
-        loginPage.loginUsername(email);
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        openIdentityFirstLoginPage(email, true, null, false, false);
         // login to the organization identity provider and run the configured first broker login flow
         loginPage.login(email, bc.getUserPassword());
         assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
