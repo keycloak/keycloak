@@ -12,7 +12,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -75,13 +74,7 @@ public final class UIUtils {
 
         waitUntilElement(element).is().clickable();
 
-        if (driver instanceof SafariDriver && !element.isDisplayed()) { // Safari sometimes thinks an element is not visible
-                                                                        // even though it is. In this case we just move the cursor and click.
-            performOperationWithPageReload(() -> new Actions(driver).click(element).perform());
-        }
-        else {
-            performOperationWithPageReload(element::click);
-        }
+        performOperationWithPageReload(element::click);
     }
 
     /**
@@ -158,15 +151,6 @@ public final class UIUtils {
      */
     public static String getTextFromElement(WebElement element) {
         String text = element.getText();
-        if (getCurrentDriver() instanceof SafariDriver) {
-            try {
-                // Safari on macOS doesn't comply with WebDriver specs yet again - getText() retrieves hidden text by CSS.
-                text = element.findElement(By.xpath("./span[not(contains(@class,'ng-hide'))]")).getText();
-            } catch (NoSuchElementException e) {
-                // no op
-            }
-            return text.trim(); // Safari on macOS sometimes for no obvious reason surrounds the text with spaces
-        }
         return text;
     }
 
