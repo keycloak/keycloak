@@ -13,8 +13,8 @@ import {
   findClientByClientId,
   inRealm,
 } from "../admin-client";
+import { SERVER_URL } from "../constants";
 import groupsIdPClient from "../realms/groups-idp.json" assert { type: "json" };
-import { getKeycloakServerUrl } from "../utils";
 
 const realm = "groups";
 
@@ -32,7 +32,6 @@ test.describe("Account linking", () => {
     groupIdPClientId = await createClient(
       groupsIdPClient as ClientRepresentation,
     );
-    const baseUrl = getKeycloakServerUrl();
     const idp: IdentityProviderRepresentation = {
       alias: "master-idp",
       providerId: "oidc",
@@ -41,12 +40,12 @@ test.describe("Account linking", () => {
         clientId: "groups-idp",
         clientSecret: "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
         validateSignature: "false",
-        tokenUrl: `${baseUrl}/realms/master/protocol/openid-connect/token`,
-        jwksUrl: `${baseUrl}/realms/master/protocol/openid-connect/certs`,
-        issuer: `${baseUrl}/realms/master`,
-        authorizationUrl: `${baseUrl}/realms/master/protocol/openid-connect/auth`,
-        logoutUrl: `${baseUrl}/realms/master/protocol/openid-connect/logout`,
-        userInfoUrl: `${baseUrl}/realms/master/protocol/openid-connect/userinfo`,
+        tokenUrl: `${SERVER_URL}/realms/master/protocol/openid-connect/token`,
+        jwksUrl: `${SERVER_URL}/realms/master/protocol/openid-connect/certs`,
+        issuer: `${SERVER_URL}/realms/master`,
+        authorizationUrl: `${SERVER_URL}/realms/master/protocol/openid-connect/auth`,
+        logoutUrl: `${SERVER_URL}/realms/master/protocol/openid-connect/logout`,
+        userInfoUrl: `${SERVER_URL}/realms/master/protocol/openid-connect/userinfo`,
       },
     };
 

@@ -38,7 +38,6 @@ import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -59,7 +58,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
     // Infinispan cache
-    private volatile Cache<String, Serializable> workCache;
+    private volatile Cache<String, Object> workCache;
 
     // Ensure that atomic operations (like putIfAbsent) must work correctly in any of: non-clustered, clustered or cross-Data-Center (cross-DC) setups
     private CrossDCAwareCacheFactory crossDCAwareCacheFactory;
@@ -134,7 +133,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
     // Will retry few times for the case when backup site not available in cross-dc environment.
     // The site might be taken offline automatically if "take-offline" properly configured
-    static <V extends Serializable> V putIfAbsentWithRetries(CrossDCAwareCacheFactory crossDCAwareCacheFactory, String key, V value, int taskTimeoutInSeconds) {
+    static <V> V putIfAbsentWithRetries(CrossDCAwareCacheFactory crossDCAwareCacheFactory, String key, V value, int taskTimeoutInSeconds) {
         AtomicReference<V> resultRef = new AtomicReference<>();
 
         Retry.executeWithBackoff(iteration -> {

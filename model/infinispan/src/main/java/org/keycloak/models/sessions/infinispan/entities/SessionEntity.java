@@ -17,8 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import java.io.Serializable;
-
+import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.common.Profile;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 
@@ -30,7 +29,7 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class SessionEntity implements Serializable {
+public abstract class SessionEntity {
 
     private String realmId;
     private boolean isOffline;
@@ -39,6 +38,7 @@ public abstract class SessionEntity implements Serializable {
      * Returns realmId ID.
      * @return
      */
+    @ProtoField(1)
     public String getRealmId() {
         return realmId;
     }
@@ -60,7 +60,7 @@ public abstract class SessionEntity implements Serializable {
         } else {
             return new SessionEntityWrapper<>(localEntityWrapper.getLocalMetadata(), this);
         }
-    };
+    }
 
     @Override
     public abstract boolean equals(Object obj);

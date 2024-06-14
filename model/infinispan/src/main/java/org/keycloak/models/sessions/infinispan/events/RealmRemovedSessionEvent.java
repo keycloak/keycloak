@@ -17,45 +17,13 @@
 
 package org.keycloak.models.sessions.infinispan.events;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(RealmRemovedSessionEvent.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.REALM_REMOVED_SESSION_EVENT)
 public class RealmRemovedSessionEvent extends SessionClusterEvent {
-
-    public static class ExternalizerImpl implements Externalizer<RealmRemovedSessionEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, RealmRemovedSessionEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            obj.marshallTo(output);
-        }
-
-        @Override
-        public RealmRemovedSessionEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public RealmRemovedSessionEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            RealmRemovedSessionEvent res = new RealmRemovedSessionEvent();
-            res.unmarshallFrom(input);
-
-            return res;
-        }
-    }
 
 }

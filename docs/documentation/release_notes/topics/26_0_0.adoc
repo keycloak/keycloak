@@ -9,3 +9,12 @@ to different organizations.
 When creating a social broker, you should now provide an `Alias` and optionally a `Display name` just like any other
 broker.
 
+= Infinispan marshalling changes to Infinispan Protostream
+
+Marshalling is the process of converting Java objects into bytes to send them across the network between {project_name} servers.
+With {project_name} 26, we changed the marshalling format from JBoss Marshalling to Infinispan Protostream.
+
+WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with each other and incorrect usage may lead to data loss.
+Consequently, all caches are cleared when upgrading to this version.
+
+Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto3/[Protocol Buffers] (proto 3), which has the advantage of backwards/forwards compatibility.

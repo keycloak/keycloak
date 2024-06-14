@@ -1,12 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { getRootPath } from "../src/utils/getRootPath";
 import { login } from "./login";
-import { getAccountUrl, getAdminUrl } from "./utils";
+import { getAccountUrl, getAdminUrl, getRootPath } from "./utils";
 
 test.describe("Applications test", () => {
   test.beforeEach(async ({ page }) => {
     // Sign out all devices before each test
-    await login(page, "admin", "admin");
+    await login(page);
     await page.getByTestId("accountSecurity").click();
     await page.getByTestId("account-security/device-activity").click();
 
@@ -21,13 +20,13 @@ test.describe("Applications test", () => {
   });
 
   test("Single application", async ({ page }) => {
-    await login(page, "admin", "admin");
+    await login(page);
 
     await page.getByTestId("applications").click();
 
     await expect(page.getByTestId("applications-list-item")).toHaveCount(1);
     await expect(page.getByTestId("applications-list-item")).toContainText(
-      process.env.CI ? "Account Console" : "security-admin-console-v2",
+      "Account Console",
     );
   });
 
@@ -41,17 +40,15 @@ test.describe("Applications test", () => {
       const page1 = await context1.newPage();
       const page2 = await context2.newPage();
 
-      await login(page1, "admin", "admin");
-      await login(page2, "admin", "admin");
+      await login(page1);
+      await login(page2);
 
       await page1.getByTestId("applications").click();
 
       await expect(page1.getByTestId("applications-list-item")).toHaveCount(1);
       await expect(
         page1.getByTestId("applications-list-item").nth(0),
-      ).toContainText(
-        process.env.CI ? "Account Console" : "security-admin-console-v2",
-      );
+      ).toContainText("Account Console");
     } finally {
       await context1.close();
       await context2.close();
@@ -59,12 +56,7 @@ test.describe("Applications test", () => {
   });
 
   test("Two applications", async ({ page }) => {
-    test.skip(
-      !process.env.CI,
-      "Skip this test if not running with regular Keycloak",
-    );
-
-    await login(page, "admin", "admin");
+    await login(page);
 
     // go to admin console
     await page.goto("/");

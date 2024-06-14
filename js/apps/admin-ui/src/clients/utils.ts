@@ -15,6 +15,8 @@ export const getProtocolName = (t: TFunction<"clients">, protocol: string) => {
       return t("protocolTypes.openid-connect");
     case "saml":
       return t("protocolTypes.saml");
+    case "oid4vc":
+      return t("protocolTypes.oid4vc");
     default:
       return protocol;
   }

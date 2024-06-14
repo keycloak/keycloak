@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -34,7 +33,7 @@ import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNote
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionPredicate;
+import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -120,7 +119,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         Iterator<Map.Entry<String, RootAuthenticationSessionEntity>> itr = CacheDecorators.localCache(cache)
                 .entrySet()
                 .stream()
-                .filter(RootAuthenticationSessionPredicate.create(realmId))
+                .filter(SessionPredicate.create(realmId))
                 .iterator();
 
         while (itr.hasNext()) {
@@ -149,7 +148,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.notify(
           InfinispanAuthenticationSessionProviderFactory.AUTHENTICATION_SESSION_EVENTS,
-          AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), compoundId.getClientUUID(), authNotesFragment),
+          AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), authNotesFragment),
           true,
           ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
         );

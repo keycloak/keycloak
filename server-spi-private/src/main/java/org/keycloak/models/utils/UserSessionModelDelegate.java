@@ -43,10 +43,12 @@ public class UserSessionModelDelegate implements UserSessionModel {
         return delegate.getRealm();
     }
 
+    @Override
     public String getBrokerSessionId() {
         return delegate.getBrokerSessionId();
     }
 
+    @Override
     public String getBrokerUserId() {
         return delegate.getBrokerUserId();
     }
@@ -55,78 +57,97 @@ public class UserSessionModelDelegate implements UserSessionModel {
         return delegate.getUser();
     }
 
+    @Override
     public String getLoginUsername() {
         return delegate.getLoginUsername();
     }
 
+    @Override
     public String getIpAddress() {
         return delegate.getIpAddress();
     }
 
+    @Override
     public String getAuthMethod() {
         return delegate.getAuthMethod();
     }
 
+    @Override
     public boolean isRememberMe() {
         return delegate.isRememberMe();
     }
 
+    @Override
     public int getStarted() {
         return delegate.getStarted();
     }
 
+    @Override
     public int getLastSessionRefresh() {
         return delegate.getLastSessionRefresh();
     }
 
+    @Override
     public void setLastSessionRefresh(int seconds) {
         delegate.setLastSessionRefresh(seconds);
     }
 
+    @Override
     public boolean isOffline() {
         return delegate.isOffline();
     }
 
+    @Override
     public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
         return delegate.getAuthenticatedClientSessions();
     }
 
+    @Override
     public AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
         return delegate.getAuthenticatedClientSessionByClient(clientUUID);
     }
 
+    @Override
     public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
         delegate.removeAuthenticatedClientSessions(removedClientUUIDS);
     }
 
+    @Override
     public String getNote(String name) {
         return delegate.getNote(name);
     }
 
+    @Override
     public void setNote(String name, String value) {
         delegate.setNote(name, value);
     }
 
+    @Override
     public void removeNote(String name) {
         delegate.removeNote(name);
     }
 
+    @Override
     public Map<String, String> getNotes() {
         return delegate.getNotes();
     }
 
+    @Override
     public UserSessionModel.State getState() {
         return delegate.getState();
     }
 
+    @Override
     public void setState(UserSessionModel.State state) {
         delegate.setState(state);
     }
 
+    @Override
     public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         delegate.restartSession(realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
     }
 
+    @Override
     public UserSessionModel.SessionPersistenceState getPersistenceState() {
         return delegate.getPersistenceState();
     }

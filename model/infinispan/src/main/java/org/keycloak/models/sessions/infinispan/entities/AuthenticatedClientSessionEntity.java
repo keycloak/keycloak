@@ -17,26 +17,24 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(AuthenticatedClientSessionEntity.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.AUTHENTICATED_CLIENT_SESSION_ENTITY)
 public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     public static final Logger logger = Logger.getLogger(AuthenticatedClientSessionEntity.class);
@@ -60,6 +58,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.id = id;
     }
 
+    @ProtoField(2)
     public String getAuthMethod() {
         return authMethod;
     }
@@ -68,6 +67,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.authMethod = authMethod;
     }
 
+    @ProtoField(3)
     public String getRedirectUri() {
         return redirectUri;
     }
@@ -76,6 +76,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.redirectUri = redirectUri;
     }
 
+    @ProtoField(4)
     public int getTimestamp() {
         return timestamp;
     }
@@ -106,6 +107,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         getNotes().put(CLIENT_ID_NOTE, clientId);
     }
 
+    @ProtoField(value = 5)
     public String getAction() {
         return action;
     }
@@ -114,6 +116,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.action = action;
     }
 
+    @ProtoField(value = 6, mapImplementation = ConcurrentHashMap.class)
     public Map<String, String> getNotes() {
         return notes;
     }
@@ -122,6 +125,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
+    @ProtoField(7)
     public UUID getId() {
         return id;
     }
@@ -133,14 +137,26 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AuthenticatedClientSessionEntity)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AuthenticatedClientSessionEntity that)) {
+            return false;
+        }
 
-        AuthenticatedClientSessionEntity that = (AuthenticatedClientSessionEntity) o;
+        return Objects.equals(id, that.id);
+    }
 
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
-
-        return true;
+    // factory method required because of final fields
+    @ProtoFactory
+    AuthenticatedClientSessionEntity(String realmId, String authMethod, String redirectUri, int timestamp, String action, Map<String, String> notes, UUID id) {
+        super(realmId);
+        this.authMethod = authMethod;
+        this.redirectUri = redirectUri;
+        this.timestamp = timestamp;
+        this.action = action;
+        this.notes = notes;
+        this.id = id;
     }
 
     @Override
@@ -180,42 +196,4 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
     public void setUserSessionId(String userSessionId) {
         this.userSessionId = userSessionId;
     }
-
-    public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionEntity> {
-
-        @Override
-        public void writeObject(ObjectOutput output, AuthenticatedClientSessionEntity session) throws IOException {
-            MarshallUtil.marshallUUID(session.id, output, false);
-            MarshallUtil.marshallString(session.getRealmId(), output);
-            MarshallUtil.marshallString(session.getAuthMethod(), output);
-            MarshallUtil.marshallString(session.getRedirectUri(), output);
-            KeycloakMarshallUtil.marshall(session.getTimestamp(), output);
-            MarshallUtil.marshallString(session.getAction(), output);
-
-            Map<String, String> notes = session.getNotes();
-            KeycloakMarshallUtil.writeMap(notes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
-
-        }
-
-
-        @Override
-        public AuthenticatedClientSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            AuthenticatedClientSessionEntity sessionEntity = new AuthenticatedClientSessionEntity(MarshallUtil.unmarshallUUID(input, false));
-
-            sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));
-
-            sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
-            sessionEntity.setRedirectUri(MarshallUtil.unmarshallString(input));
-            sessionEntity.setTimestamp(KeycloakMarshallUtil.unmarshallInteger(input));
-            sessionEntity.setAction(MarshallUtil.unmarshallString(input));
-
-            Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
-                    new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());
-            sessionEntity.setNotes(notes);
-
-            return sessionEntity;
-        }
-
-    }
-
 }

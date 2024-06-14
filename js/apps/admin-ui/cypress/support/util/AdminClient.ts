@@ -9,10 +9,11 @@ import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth";
 import { merge } from "lodash-es";
+import { SERVER_URL } from "../constants";
 
 class AdminClient {
   readonly #client = new KeycloakAdminClient({
-    baseUrl: Cypress.env("KEYCLOAK_SERVER"),
+    baseUrl: SERVER_URL,
     realmName: "master",
   });
 
