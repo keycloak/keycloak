@@ -16,12 +16,15 @@
  */
 package org.keycloak.services.managers;
 
+import java.net.URI;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import javax.naming.ldap.LdapContext;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -30,6 +33,7 @@ import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.utils.StringUtil;
@@ -62,8 +66,17 @@ public class LDAPServerCapabilitiesManager {
 
     public static LDAPConfig buildLDAPConfig(TestLdapConnectionRepresentation config, RealmModel realm) {
         String bindCredential = config.getBindCredential();
-        if (config.getComponentId() != null && ComponentRepresentation.SECRET_VALUE.equals(bindCredential)) {
-            bindCredential = realm.getComponent(config.getComponentId()).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
+        if (config.getComponentId() != null && !LDAPConstants.AUTH_TYPE.equals(LDAPConstants.AUTH_TYPE_NONE)
+                && ComponentRepresentation.SECRET_VALUE.equals(bindCredential)) {
+            // check the connection URL and the bind DN are the same to allow using the same configured password
+            ComponentModel component = realm.getComponent(config.getComponentId());
+            if (component != null) {
+                LDAPConfig ldapConfig = new LDAPConfig(component.getConfig());
+                if (Objects.equals(URI.create(config.getConnectionUrl()), URI.create(ldapConfig.getConnectionUrl()))
+                        && Objects.equals(LDAPDn.fromString(config.getBindDn()), LDAPDn.fromString(ldapConfig.getBindDN()))) {
+                    bindCredential = ldapConfig.getBindCredential();
+                }
+            }
         }
         MultivaluedHashMap<String, String> configMap = new MultivaluedHashMap<>();
         configMap.putSingle(LDAPConstants.AUTH_TYPE, config.getAuthType());
