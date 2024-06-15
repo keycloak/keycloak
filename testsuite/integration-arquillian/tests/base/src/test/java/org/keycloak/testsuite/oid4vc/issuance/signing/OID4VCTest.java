@@ -183,7 +183,12 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 "vc.test-credential.expiry_in_s", "100",
                 "vc.test-credential.format", Format.JWT_VC.toString(),
                 "vc.test-credential.scope", "VerifiableCredential",
-                "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }"
+                "vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }",
+                "vc.test-credential.vct", "VerifiableCredential",
+                "vc.test-credential.cryptographic_binding_methods_supported", "jwk",
+                "vc.test-credential.credential_signing_alg_values_supported", "ES256,ES384",
+                "vc.test-credential.display.0","{\n  \"name\": \"Test Credential\"\n}",
+                "vc.test-credential.proof_types_supported","{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"
         ));
         clientRepresentation.setProtocolMappers(
                 List.of(

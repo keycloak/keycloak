@@ -58,6 +58,12 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCTest {
                     assertNotNull("The test-credential claim firstName is present.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName"));
                     assertFalse("The test-credential claim firstName is not mandatory.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getMandatory());
                     assertEquals("The test-credential claim firstName shall be displayed as First Name", "First Name", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getDisplay().get(0).getName());
+                    assertEquals("The test-credential should offer vct VerifiableCredential", "VerifiableCredential", credentialIssuer.getCredentialsSupported().get("test-credential").getVct());
+                    assertTrue("The test-credential should contain a cryptographic binding method supported named jwk", credentialIssuer.getCredentialsSupported().get("test-credential").getCryptographicBindingMethodsSupported().contains("jwk"));
+                    assertTrue("The test-credential should contain a credential signing algorithm named ES256", credentialIssuer.getCredentialsSupported().get("test-credential").getCredentialSigningAlgValuesSupported().contains("ES256"));
+                    assertTrue("The test-credential should contain a credential signing algorithm named ES384", credentialIssuer.getCredentialsSupported().get("test-credential").getCredentialSigningAlgValuesSupported().contains("ES384"));
+                    assertEquals("The test-credential should display as Test Credential", "Test Credential", credentialIssuer.getCredentialsSupported().get("test-credential").getDisplay().get(0).getName());
+                    assertTrue("The test-credential should support a proof of type jwt with signing algorithm ES256", credentialIssuer.getCredentialsSupported().get("test-credential").getProofTypesSupported().getJwt().getProofSigningAlgValuesSupported().contains("ES256"));
                 }));
     }
 
