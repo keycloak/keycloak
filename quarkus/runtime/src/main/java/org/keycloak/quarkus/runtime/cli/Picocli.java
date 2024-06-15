@@ -67,6 +67,7 @@ import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
+import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -193,6 +194,14 @@ public final class Picocli {
     }
 
     private static boolean requiresReAugmentation(CommandLine cmdCommand) {
+        if (ConfigArgsConfigSource.getAllCliArgs().contains(Start.NAME)
+            // run time dev mode is not set
+            && !org.keycloak.common.util.Environment.isDevMode()
+            // build time dev mode was set
+            && org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null))) {
+            return true;
+        }
+
         if (hasConfigChanges(cmdCommand)) {
             if (!ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME) && "dev".equals(getConfig().getOptionalValue("kc.profile", String.class).orElse(null))) {
                 return false;
