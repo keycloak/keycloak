@@ -183,7 +183,7 @@
         <assertj-core.version>3.22.0</assertj-core.version>
         
         <!-- Maven Plugins -->
-        <maven.version>3.9.6</maven.version>
+        <maven.version>3.9.8</maven.version>
         <maven.plugins.version>3.11.0</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
