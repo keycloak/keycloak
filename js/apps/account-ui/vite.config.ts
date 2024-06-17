@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
       port: 5173,
     },
     build: {
+      outDir: "target/classes/theme/keycloak.v3/account/resources",
       ...lib,
       sourcemap: true,
       target: "esnext",
