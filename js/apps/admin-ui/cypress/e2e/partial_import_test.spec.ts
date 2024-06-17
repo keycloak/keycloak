@@ -21,18 +21,10 @@ describe("Partial import test", () => {
     realmSettings.clickActionMenu();
   });
 
-  before(() =>
-    Promise.all([
-      adminClient.createRealm(TEST_REALM),
-      adminClient.createRealm(TEST_REALM_2),
-    ]),
-  );
+  before(() => Promise.all([adminClient.createRealm(TEST_REALM), adminClient.createRealm(TEST_REALM_2)]));
 
   after(async () => {
-    await Promise.all([
-      adminClient.deleteRealm(TEST_REALM),
-      adminClient.deleteRealm(TEST_REALM_2),
-    ]);
+    await Promise.all([adminClient.deleteRealm(TEST_REALM), adminClient.deleteRealm(TEST_REALM_2)]);
   });
 
   it("Opens and closes partial import dialog", () => {
@@ -119,8 +111,9 @@ describe("Partial import test", () => {
 
     //clear button should be disabled if there is nothing in the dialog
     modal.clearButton().should("be.disabled");
-    modal.textArea().type("test", { force: true });
-    modal.textArea().get(".view-lines").should("have.text", "test");
+    modal.textArea().get(".view-lines").should("have.text", "");
+    modal.textArea().type("{}", { force: true });
+    modal.textArea().get(".view-lines").should("have.text", "{}");
     modal.clearButton().should("not.be.disabled");
     modal.clearButton().click();
     modal.clickClearConfirmButton();
