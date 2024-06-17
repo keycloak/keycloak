@@ -232,6 +232,11 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
         query.addWhereCondition(fullNameCondition);
     }
 
+    @Override
+    public Set<String> getUserAttributes() {
+        return new HashSet<>(List.of(UserModel.FIRST_NAME, UserModel.LAST_NAME));
+    }
+
     protected String getLdapFullNameAttrName() {
         String ldapFullNameAttrName = mapperModel.getConfig().getFirst(LDAP_FULL_NAME_ATTRIBUTE);
         return ldapFullNameAttrName == null ? LDAPConstants.CN : ldapFullNameAttrName;
