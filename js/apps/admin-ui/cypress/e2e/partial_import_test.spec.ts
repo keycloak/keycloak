@@ -21,10 +21,18 @@ describe("Partial import test", () => {
     realmSettings.clickActionMenu();
   });
 
-  before(() => Promise.all([adminClient.createRealm(TEST_REALM), adminClient.createRealm(TEST_REALM_2)]));
+  before(() =>
+    Promise.all([
+      adminClient.createRealm(TEST_REALM),
+      adminClient.createRealm(TEST_REALM_2),
+    ]),
+  );
 
   after(async () => {
-    await Promise.all([adminClient.deleteRealm(TEST_REALM), adminClient.deleteRealm(TEST_REALM_2)]);
+    await Promise.all([
+      adminClient.deleteRealm(TEST_REALM),
+      adminClient.deleteRealm(TEST_REALM_2),
+    ]);
   });
 
   it("Opens and closes partial import dialog", () => {
