@@ -152,9 +152,9 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
     AuthenticatedClientSessionEntity(String realmId, String authMethod, String redirectUri, int timestamp, String action, Map<String, String> notes, UUID id) {
         super(realmId);
         this.authMethod = authMethod;
-        this.redirectUri = redirectUri;
+        this.redirectUri = Marshalling.emptyStringToNull(redirectUri);
         this.timestamp = timestamp;
-        this.action = action;
+        this.action = Marshalling.emptyStringToNull(action);
         this.notes = notes;
         this.id = id;
     }
