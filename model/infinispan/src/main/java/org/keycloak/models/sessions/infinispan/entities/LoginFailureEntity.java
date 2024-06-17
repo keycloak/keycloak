@@ -17,11 +17,12 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import java.util.Objects;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
-
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -29,7 +30,7 @@ import java.util.Objects;
 @ProtoTypeId(Marshalling.LOGIN_FAILURE_ENTITY)
 public class LoginFailureEntity extends SessionEntity {
 
-    private String userId;
+    private final String userId;
     private int failedLoginNotBefore;
     private int numFailures;
 
@@ -37,26 +38,25 @@ public class LoginFailureEntity extends SessionEntity {
     private long lastFailure;
     private String lastIPFailure;
 
-    public LoginFailureEntity() {
+    public LoginFailureEntity(String realmId, String userId) {
+        super(Objects.requireNonNull(realmId));
+        this.userId = Objects.requireNonNull(userId);
     }
 
-    private LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, int numTemporaryLockouts, long lastFailure, String lastIPFailure) {
+    @ProtoFactory
+    LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, int numTemporaryLockouts, long lastFailure, String lastIPFailure) {
         super(realmId);
         this.userId = userId;
         this.failedLoginNotBefore = failedLoginNotBefore;
         this.numFailures = numFailures;
         this.numTemporaryLockouts = numTemporaryLockouts;
         this.lastFailure = lastFailure;
-        this.lastIPFailure = lastIPFailure;
+        this.lastIPFailure = Marshalling.emptyStringToNull(lastIPFailure);
     }
 
     @ProtoField(2)
     public String getUserId() {
         return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
     }
 
     @ProtoField(3)
@@ -118,17 +118,10 @@ public class LoginFailureEntity extends SessionEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof LoginFailureEntity that)) {
-            return false;
-        }
-
-        if (!Objects.equals(userId, that.userId)) {
-            return false;
-        }
-        return getRealmId() != null ? getRealmId().equals(that.getRealmId()) : that.getRealmId() == null;
+        if (this == o) return true;
+        if (!(o instanceof LoginFailureEntity that)) return false;
+        return Objects.equals(userId, that.userId) &&
+                Objects.equals(getRealmId(), that.getRealmId());
     }
 
     @Override

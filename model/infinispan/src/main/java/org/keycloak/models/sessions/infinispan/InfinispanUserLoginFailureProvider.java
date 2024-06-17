@@ -86,9 +86,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
         log.tracef("addUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
         LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
-        LoginFailureEntity entity = new LoginFailureEntity();
-        entity.setRealmId(realm.getId());
-        entity.setUserId(userId);
+        LoginFailureEntity entity = new LoginFailureEntity(realm.getId(), userId);
 
         SessionUpdateTask<LoginFailureEntity> createLoginFailureTask = Tasks.addIfAbsentSync();
         loginFailuresTx.addTask(key, createLoginFailureTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
@@ -129,7 +127,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
                 .map(Mappers.loginFailureId())
                 .forEach(loginFailureKey -> {
                     // Remove loginFailure from remoteCache too. Use removeAsync for better perf
-                    Future future = localCache.removeAsync(loginFailureKey);
+                    Future<?> future = localCache.removeAsync(loginFailureKey);
                     futures.addTask(future);
                 });
 
