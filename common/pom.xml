@@ -36,12 +36,6 @@
         <maven.compiler.release>11</maven.compiler.release>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
-        <keycloak.osgi.export>
-            org.keycloak.common.*
-        </keycloak.osgi.export>
-        <keycloak.osgi.import>
-            *;resolution:=optional
-        </keycloak.osgi.import>
     </properties>
     <dependencies>
         
@@ -72,40 +66,6 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
-        <plugins>
-            <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <instructions>
-                        <Bundle-ClassPath>.</Bundle-ClassPath>
-                        <Bundle-Name>${project.name}</Bundle-Name>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Import-Package>${keycloak.osgi.import}</Import-Package>
-                        <Export-Package>${keycloak.osgi.export}</Export-Package>
-                    </instructions>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
 
 </project>

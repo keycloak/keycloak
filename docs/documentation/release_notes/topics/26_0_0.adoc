@@ -9,6 +9,10 @@ to different organizations.
 When creating a social broker, you should now provide an `Alias` and optionally a `Display name` just like any other
 broker.
 
+= Removal of OSGi metadata
+
+Since all of the Java adapters that used OSGi metadata have been removed we have stopped generating OSGi metadata for our jars.
+
 = Infinispan marshalling changes to Infinispan Protostream
 
 Marshalling is the process of converting Java objects into bytes to send them across the network between {project_name} servers.
