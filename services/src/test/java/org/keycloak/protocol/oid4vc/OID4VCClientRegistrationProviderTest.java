@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.protocol.oid4vc;
 
 import org.junit.Test;
@@ -23,6 +22,8 @@ import org.junit.runners.Parameterized;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
+import org.keycloak.protocol.oid4vc.model.ProofTypeJWT;
+import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 
 import java.util.Arrays;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class OID4VCClientRegistrationProviderTest {
@@ -68,13 +68,12 @@ public class OID4VCClientRegistrationProviderTest {
                         Map.of(
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
                                 "vc.credential-id.scope", "AnotherCredential",
-                                "vc.credential-id.display.name", "Another",
-                                "vc.credential-id.display.locale", "en"),
+                                "vc.credential-id.display.0", "{\"name\":\"Another\",\"locale\":\"en\"}"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredentialConfiguration()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
-                                        .setDisplay(new DisplayObject().setLocale("en").setName("Another"))
+                                        .setDisplay(Arrays.asList(new DisplayObject().setLocale("en").setName("Another")))
                                         .setScope("AnotherCredential")),
                                 null, null)
                 },
@@ -83,23 +82,23 @@ public class OID4VCClientRegistrationProviderTest {
                         Map.of(
                                 "vc.first-id.format", Format.JWT_VC.toString(),
                                 "vc.first-id.scope", "AnotherCredential",
-                                "vc.first-id.display.name", "First",
-                                "vc.first-id.display.locale", "en",
+                                "vc.first-id.display.0", "{\"name\":\"First\",\"locale\":\"en\"}",
                                 "vc.second-id.format", Format.SD_JWT_VC.toString(),
                                 "vc.second-id.scope", "MyType",
-                                "vc.second-id.display.name", "Second Credential",
-                                "vc.second-id.display.locale", "de"),
+                                "vc.second-id.display.0", "{\"name\":\"Second Credential\",\"locale\":\"de\"}",
+                                "vc.second-id.proof_types_supported","{\"jwt\":{\"proof_signing_alg_values_supported\":[\"ES256\"]}}"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredentialConfiguration()
                                                 .setId("first-id")
                                                 .setFormat(Format.JWT_VC)
-                                                .setDisplay(new DisplayObject().setLocale("en").setName("First"))
+                                                .setDisplay(Arrays.asList(new DisplayObject().setLocale("en").setName("First")))
                                                 .setScope("AnotherCredential"),
                                         new SupportedCredentialConfiguration()
                                                 .setId("second-id")
                                                 .setFormat(Format.SD_JWT_VC)
-                                                .setDisplay(new DisplayObject().setLocale("de").setName("Second Credential"))
-                                                .setScope("MyType")),
+                                                .setDisplay(Arrays.asList(new DisplayObject().setLocale("de").setName("Second Credential")))
+                                                .setScope("MyType")
+                                                .setProofTypesSupported(new ProofTypesSupported().setJwt(new ProofTypeJWT().setProofSigningAlgValuesSupported(Arrays.asList("ES256"))))),
                                 null, null)
                 }
         });
