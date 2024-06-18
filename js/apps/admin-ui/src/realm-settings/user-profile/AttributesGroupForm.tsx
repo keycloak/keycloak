@@ -40,6 +40,7 @@ import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./attribute/AddTranslationsDialog";
+import { i18n } from "../../i18n/i18n";
 
 function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
   return Object.entries(input).reduce((p, [key, value]) => {
@@ -346,6 +347,7 @@ export default function AttributesGroupForm() {
 
     if (success) {
       await saveTranslations();
+      i18n.reloadResources();
       navigate(toUserProfile({ realm: realmName, tab: "attributes-group" }));
     }
   };
