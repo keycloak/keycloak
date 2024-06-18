@@ -2138,7 +2138,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     /**
      * This just exists for testing purposes
-     * 
+     *
      */
     public static final String COMPONENT_PROVIDER_EXISTS_DISABLED = "component.provider.exists.disabled";
 
@@ -2376,7 +2376,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public ClientInitialAccessModel getClientInitialAccessModel(String id) {
-        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) return null;
         if (!entity.getRealm().getId().equals(realm.getId())) return null;
         return entityToModel(entity);
