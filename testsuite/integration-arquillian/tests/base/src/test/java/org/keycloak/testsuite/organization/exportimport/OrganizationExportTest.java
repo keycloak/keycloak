@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -109,25 +110,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             }
         }
 
-        // export
-        TestingExportImportResource exportImport = testingClient.testing().exportImport();
-        exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
-        exportImport.setRealmName(testRealm().toRepresentation().getRealm());
-        String targetFilePath = exportImport.getExportImportTestDirectory() + File.separator + "org-export.json";
-        exportImport.setFile(targetFilePath);
-        exportImport.runExport();
-
-        // remove the realm and import it back
-        testRealm().remove();
-        exportImport = testingClient.testing().exportImport();
-        exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
-        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
-        exportImport.setFile(targetFilePath);
-        exportImport.runImport();
-        getCleanup().addCleanup(() -> testRealm().remove());
-
-        RealmRepresentation importedRealm = testRealm().toRepresentation();
+        RealmRepresentation importedRealm = exportRemoveImportRealm();
 
         assertTrue(importedRealm.isOrganizationsEnabled());
 
@@ -156,6 +139,47 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         // login to the organization identity provider and run the configured first broker login flow
         loginPage.login(email, bc.getUserPassword());
         assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+    }
+
+    @Test
+    public void testExportImportEmptyOrg() {
+        OrganizationRepresentation orgRep = createRepresentation("acme", "acme.com");
+
+        try (Response response = testRealm().organizations().create(orgRep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        List<OrganizationRepresentation> orgs = testRealm().organizations().getAll();
+        assertEquals(1, orgs.size());
+
+        RealmRepresentation importedRealm = exportRemoveImportRealm();
+
+        assertTrue(importedRealm.isOrganizationsEnabled());
+
+        orgs = testRealm().organizations().getAll();
+        assertEquals(1, orgs.size());
+        assertEquals("acme", orgs.get(0).getName());
+    }
+
+    private RealmRepresentation exportRemoveImportRealm() {
+        //export
+        TestingExportImportResource exportImport = testingClient.testing().exportImport();
+        exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
+        exportImport.setRealmName(testRealm().toRepresentation().getRealm());
+        String targetFilePath = exportImport.getExportImportTestDirectory() + File.separator + "org-export.json";
+        exportImport.setFile(targetFilePath);
+        exportImport.runExport();
+
+        // remove the realm and import it back
+        testRealm().remove();
+        exportImport = testingClient.testing().exportImport();
+        exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
+        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
+        exportImport.setFile(targetFilePath);
+        exportImport.runImport();
+        getCleanup().addCleanup(() -> testRealm().remove());
+
+        return testRealm().toRepresentation();
     }
 
     @Test

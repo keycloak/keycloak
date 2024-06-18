@@ -1592,12 +1592,12 @@ public class DefaultExportImportManager implements ExportImportManager {
                 OrganizationModel org = provider.create(orgRep.getName());
                 org.setDomains(orgRep.getDomains().stream().map(r -> new OrganizationDomainModel(r.getName(), r.isVerified())).collect(Collectors.toSet()));
 
-                for (IdentityProviderRepresentation identityProvider : orgRep.getIdentityProviders()) {
+                for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
                     IdentityProviderModel idp = newRealm.getIdentityProviderByAlias(identityProvider.getAlias());
                     provider.addIdentityProvider(org, idp);
                 }
 
-                for (UserRepresentation member : orgRep.getMembers()) {
+                for (UserRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
                     UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
                     provider.addMember(org, m);
                 }
