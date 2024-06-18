@@ -686,7 +686,7 @@ jobs:
       matrix:
         browser:
           - chrome
-          # - firefox  disabled until https://github.com/keycloak/keycloak/issues/20777 is resolved
+          - firefox
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
