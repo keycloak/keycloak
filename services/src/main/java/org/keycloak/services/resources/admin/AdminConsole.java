@@ -313,47 +313,39 @@ public class AdminConsole {
     }
 
     /**
-     * Main page of this realm's admin console
-     *
-     * @return
-     * @throws URISyntaxException
+     * Main page of this realm's admin console.
      */
     @GET
     @NoCache
     public Response getMainPage() throws IOException, FreeMarkerException {
-        if (!session.getContext().getUri(UrlType.ADMIN).getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(session.getContext().getUri(UrlType.ADMIN).getRequestUriBuilder().path("/").build()).build();
+        final var baseUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        final var adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
+
+        // Redirect to a URL with a trailing slash if the current URL doesn't have one.
+        if (!adminUriInfo.getRequestUri().getPath().endsWith("/")) {
+            return Response.status(302).location(adminUriInfo.getRequestUriBuilder().path("/").build()).build();
         } else {
-            Theme theme = AdminRoot.getTheme(session, realm);
+            // Get the base URLs of the server and admin console.
+            final var serverBaseUri = baseUriInfo.getBaseUri();
+            final var adminBaseUri = adminUriInfo.getBaseUri();
 
-            Map<String, Object> map = new HashMap<>();
+            // Strip any trailing slashes from the URLs.
+            final var serverBaseUrl = serverBaseUri.toString().replaceFirst("/+$", "");
+            final var adminBaseUrl = adminBaseUri.toString().replaceFirst("/+$", "");
 
-            URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
-            String adminBaseUrl = adminBaseUri.toString();
-            if (adminBaseUrl.endsWith("/")) {
-                adminBaseUrl = adminBaseUrl.substring(0, adminBaseUrl.length() - 1);
-            }
+            final var map = new HashMap<String, Object>();
+            final var theme = AdminRoot.getTheme(session, realm);
 
-            String kcJsRelativeBasePath = adminBaseUri.getPath();
-
-            if(!kcJsRelativeBasePath.endsWith("/")) {
-                kcJsRelativeBasePath = kcJsRelativeBasePath + "/";
-            }
-
-            URI authServerBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
-
-            String authServerBaseUrl = authServerBaseUri.toString();
-            if (authServerBaseUrl.endsWith("/")) {
-                authServerBaseUrl = authServerBaseUrl.substring(0, authServerBaseUrl.length() - 1);
-            }
-
-            map.put("authServerUrl", authServerBaseUrl);
-            // TODO: The 'authUrl' variable is deprecated and only exists to provide backwards compatibility for older themes, it should be removed in a future version.
-            map.put("authUrl", adminBaseUrl);
+            map.put("serverBaseUrl", serverBaseUrl);
+            map.put("adminBaseUrl", adminBaseUrl);
+            // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
+            // Note that these should be removed from the template of the Administration Console as well.
+            map.put("authServerUrl", serverBaseUrl); // Superseded by 'serverBaseUrl', remove in the future.
+            map.put("authUrl", adminBaseUrl); // Superseded by 'adminBaseUrl', remove in the future.
             map.put("consoleBaseUrl", Urls.adminConsoleRoot(adminBaseUri, realm.getName()).getPath());
             map.put("resourceUrl", Urls.themeRoot(adminBaseUri).getPath() + "/admin/" + theme.getName());
             map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
-            map.put("keycloakJsUrl", kcJsRelativeBasePath + "js/keycloak.js?version=" + Version.RESOURCES_VERSION);
+            map.put("keycloakJsUrl", adminBaseUrl + "/js/keycloak.js?version=" + Version.RESOURCES_VERSION);
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("loginRealm", realm.getName());
@@ -380,13 +372,13 @@ public class AdminConsole {
                 map.put("entryImports", entryImports);
             }
 
-            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
-            String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
-            Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
+            final var freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
+            final var result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
+            final var builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
 
-            // Replace CSP if admin is hosted on different URL
-            if (!adminBaseUri.equals(authServerBaseUri)) {
-                session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(UriUtils.getOrigin(authServerBaseUri));
+            // Allow iframes to be embedded from the server if the admin console is running on a different URL.
+            if (!adminBaseUri.equals(serverBaseUri)) {
+                session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(UriUtils.getOrigin(serverBaseUri));
             }
 
             return builder.build();
