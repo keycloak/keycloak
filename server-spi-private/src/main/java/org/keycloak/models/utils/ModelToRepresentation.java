@@ -21,6 +21,7 @@ import static java.util.Optional.ofNullable;
 import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
@@ -737,12 +738,7 @@ public class ModelToRepresentation {
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
 
-        String clientId = clientModel.getClientId();
-        final String realmClientSuffix = "-realm";
-        //check if client is realm client
-        if(clientId != null && clientId.endsWith(realmClientSuffix) && session.realms().getRealmByName(clientId.substring(0, clientId.length() - realmClientSuffix.length())) != null) {
-            rep.getAttributes().put(Constants.REALM_CLIENT, String.valueOf(true));
-        }
+        rep.getAttributes().put(Constants.REALM_CLIENT, String.valueOf(isRealmClient(clientModel.getClientId(), clientModel.getRealm(), session)));
 
         // adding the secret if non public or bearer only
         if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
@@ -783,6 +779,23 @@ public class ModelToRepresentation {
         }
 
         return rep;
+    }
+
+    private static boolean isRealmClient(String clientId, RealmModel realm, KeycloakSession session) {
+        final String realmClientSuffix = "-realm";
+
+        if (clientId == null) {
+            return false;
+        }
+        if (Constants.BROKER_SERVICE_CLIENT_ID.equals(clientId)) {
+            return true;
+        }
+        if (Config.getAdminRealm().equals(realm.getName())) {
+            return clientId.endsWith(realmClientSuffix) && session.realms().getRealmByName(clientId.substring(0, clientId.length() - realmClientSuffix.length())) != null;
+        }
+        else {
+            return Constants.REALM_MANAGEMENT_CLIENT_ID.equals(clientId);
+        }
     }
 
     public static IdentityProviderRepresentation toBriefRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {

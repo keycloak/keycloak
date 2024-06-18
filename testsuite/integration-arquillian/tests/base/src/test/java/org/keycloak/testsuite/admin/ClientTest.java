@@ -98,7 +98,9 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getRealmClients() {
-        assertTrue(realm.clients().findAll().stream().filter(client->client.getAttributes().get(Constants.REALM_CLIENT) != null).allMatch(clientRepresentation -> clientRepresentation.getClientId().endsWith("-realm")));
+        assertTrue(realm.clients().findAll().stream().filter(client-> client.getAttributes().get(Constants.REALM_CLIENT).equals("true"))
+                .map(ClientRepresentation::getClientId)
+                .allMatch(clientId -> clientId.equals(Constants.REALM_MANAGEMENT_CLIENT_ID) || clientId.equals(Constants.BROKER_SERVICE_CLIENT_ID) || clientId.endsWith("-realm")));
     }
 
     private ClientRepresentation createClient() {
