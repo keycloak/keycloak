@@ -223,12 +223,7 @@ public class CacheManagerFactory {
             var builders = builder.getNamedConfigurationBuilders();
             // remove all distributed caches
             logger.debug("Removing all distributed caches.");
-            // TODO [pruivo] remove all distributed caches after all of them are converted
-            //DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(builders::remove);
-            builders.remove(WORK_CACHE_NAME);
-            builders.remove(AUTHENTICATION_SESSIONS_CACHE_NAME);
-            builders.remove(ACTION_TOKEN_CACHE);
-            builders.remove(LOGIN_FAILURE_CACHE_NAME);
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(builders::remove);
         }
 
         var start = isStartEagerly();
@@ -291,12 +286,6 @@ public class CacheManagerFactory {
             transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
             Logger.getLogger(CacheManagerFactory.class).info("MTLS enabled for communications for embedded caches");
         }
-
-        //TODO [pruivo] disable JGroups after all distributed caches are converted
-//        if (isCrossSiteEnabled() && isRemoteCacheEnabled()) {
-//            logger.debug("Disabling JGroups between Keycloak nodes");
-//            builder.getGlobalConfigurationBuilder().nonClusteredDefault();
-//        }
     }
 
     private void validateTlsAvailable(GlobalConfiguration config) {

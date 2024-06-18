@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -396,7 +397,10 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             RealmModel realm = session.realms().getRealm(realmId);
 
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            Assert.assertEquals(1, persister.getUserSessionsCount(true));
+            if (InfinispanUtils.isEmbeddedInfinispan()) {
+                // when configured with external Infinispan only, the sessions are not persisted into the database.
+                Assert.assertEquals(1, persister.getUserSessionsCount(true));
+            }
 
             List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
             UserSessionModel persistedSession = loadedSessions.get(0);

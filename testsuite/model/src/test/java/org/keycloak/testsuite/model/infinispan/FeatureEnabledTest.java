@@ -66,19 +66,7 @@ public class FeatureEnabledTest extends KeycloakModelTest {
         assertFalse(InfinispanUtils.isEmbeddedInfinispan());
         inComittedTransaction(session -> {
             var clusterProvider = session.getProvider(InfinispanConnectionProvider.class);
-            assertEmbeddedCacheDoesNotExists(clusterProvider, WORK_CACHE_NAME);
-            assertEmbeddedCacheDoesNotExists(clusterProvider, AUTHENTICATION_SESSIONS_CACHE_NAME);
-            assertEmbeddedCacheDoesNotExists(clusterProvider, ACTION_TOKEN_CACHE);
-            assertEmbeddedCacheDoesNotExists(clusterProvider, LOGIN_FAILURE_CACHE_NAME);
-
-            // TODO [pruivo] all caches eventually won't exists in embedded
-            Arrays.stream(CLUSTERED_CACHE_NAMES)
-                    .filter(Predicate.not(Predicate.isEqual(WORK_CACHE_NAME)))
-                    .filter(Predicate.not(Predicate.isEqual(AUTHENTICATION_SESSIONS_CACHE_NAME)))
-                    .filter(Predicate.not(Predicate.isEqual(ACTION_TOKEN_CACHE)))
-                    .filter(Predicate.not(Predicate.isEqual(LOGIN_FAILURE_CACHE_NAME)))
-                    .forEach(s -> assertEmbeddedCacheExists(clusterProvider, s));
-
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertEmbeddedCacheDoesNotExists(clusterProvider, s));
             Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertRemoteCacheExists(clusterProvider, s));
 
         });

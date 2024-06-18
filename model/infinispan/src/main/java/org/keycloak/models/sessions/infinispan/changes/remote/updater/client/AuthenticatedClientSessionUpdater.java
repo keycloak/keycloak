@@ -1,0 +1,254 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.models.sessions.infinispan.changes.remote.updater.client;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+import org.infinispan.client.hotrod.MetadataValue;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.helper.MapUpdater;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+
+/**
+ * An {@link Updater} implementation that keeps track of {@link AuthenticatedClientSessionModel} changes.
+ */
+public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, AuthenticatedClientSessionEntity> implements AuthenticatedClientSessionModel {
+
+    private static final Factory ONLINE = new Factory(false);
+    private static final Factory OFFLINE = new Factory(true);
+
+    private final MapUpdater<String, String> notesUpdater;
+    private final List<Consumer<AuthenticatedClientSessionEntity>> changes;
+    private final boolean offline;
+    private UserSessionModel userSession;
+    private ClientModel client;
+    private RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction;
+
+    private AuthenticatedClientSessionUpdater(UUID cacheKey, AuthenticatedClientSessionEntity cacheValue, long version, boolean offline, UpdaterState initialState) {
+        super(cacheKey, cacheValue, version, initialState);
+        this.offline = offline;
+        if (cacheValue == null) {
+            assert initialState == UpdaterState.DELETED; // cannot be undone
+            notesUpdater = null;
+            changes = List.of();
+            return;
+        }
+        initNotes(cacheValue);
+        notesUpdater = new MapUpdater<>(cacheValue.getNotes());
+        changes = new ArrayList<>(4);
+    }
+
+    /**
+     * @param offline If {@code true}, it creates offline {@link AuthenticatedClientSessionModel}.
+     * @return The {@link UpdaterFactory} implementation to create instances of
+     * {@link AuthenticatedClientSessionUpdater}.
+     */
+    public static UpdaterFactory<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> factory(boolean offline) {
+        return offline ? OFFLINE : ONLINE;
+    }
+
+    @Override
+    public AuthenticatedClientSessionEntity apply(UUID uuid, AuthenticatedClientSessionEntity entity) {
+        initNotes(entity);
+        notesUpdater.applyChanges(entity.getNotes());
+        changes.forEach(change -> change.accept(entity));
+        return entity;
+    }
+
+    @Override
+    public Expiration computeExpiration() {
+        long maxIdle;
+        long lifespan;
+        if (offline) {
+            maxIdle = SessionTimeouts.getOfflineClientSessionMaxIdleMs(userSession.getRealm(), client, getValue());
+            lifespan = SessionTimeouts.getOfflineClientSessionLifespanMs(userSession.getRealm(), client, getValue());
+        } else {
+            maxIdle = SessionTimeouts.getClientSessionMaxIdleMs(userSession.getRealm(), client, getValue());
+            lifespan = SessionTimeouts.getClientSessionLifespanMs(userSession.getRealm(), client, getValue());
+        }
+        return new Expiration(maxIdle, lifespan);
+    }
+
+    @Override
+    public String getId() {
+        return getValue().getId().toString();
+    }
+
+    @Override
+    public int getTimestamp() {
+        return getValue().getTimestamp();
+    }
+
+    @Override
+    public void setTimestamp(int timestamp) {
+        addAndApplyChange(entity -> entity.setTimestamp(timestamp));
+    }
+
+    @Override
+    public void detachFromUserSession() {
+        clientTransaction.remove(getKey());
+    }
+
+    @Override
+    public UserSessionModel getUserSession() {
+        return userSession;
+    }
+
+    @Override
+    public String getNote(String name) {
+        return notesUpdater.get(name);
+    }
+
+    @Override
+    public void setNote(String name, String value) {
+        notesUpdater.put(name, value);
+    }
+
+    @Override
+    public void removeNote(String name) {
+        notesUpdater.remove(name);
+    }
+
+    @Override
+    public Map<String, String> getNotes() {
+        return notesUpdater;
+    }
+
+    @Override
+    public String getRedirectUri() {
+        return getValue().getRedirectUri();
+    }
+
+    @Override
+    public void setRedirectUri(String uri) {
+        addAndApplyChange(entity -> entity.setRedirectUri(uri));
+    }
+
+    @Override
+    public RealmModel getRealm() {
+        return userSession.getRealm();
+    }
+
+    @Override
+    public ClientModel getClient() {
+        return client;
+    }
+
+    @Override
+    public String getAction() {
+        return getValue().getAction();
+    }
+
+    @Override
+    public void setAction(String action) {
+        addAndApplyChange(entity -> entity.setAction(action));
+    }
+
+    @Override
+    public String getProtocol() {
+        return getValue().getAuthMethod();
+    }
+
+    @Override
+    public void setProtocol(String method) {
+        addAndApplyChange(entity -> entity.setAuthMethod(method));
+    }
+
+    @Override
+    public boolean isTransient() {
+        return !isDeleted() && userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT;
+    }
+
+    @Override
+    protected boolean isUnchanged() {
+        return changes.isEmpty() && notesUpdater.isUnchanged();
+    }
+
+    /**
+     * Initializes this class with references to other models classes.
+     *
+     * @param userSession       The {@link UserSessionModel} associated with this client session.
+     * @param client            The {@link ClientModel} associated with this client session.
+     * @param clientTransaction The {@link RemoteChangeLogTransaction} to perform the changes in this class into the
+     *                          {@link RemoteCache}.
+     */
+    public synchronized void initialize(UserSessionModel userSession, ClientModel client, RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction) {
+        this.userSession = Objects.requireNonNull(userSession);
+        this.client = Objects.requireNonNull(client);
+        this.clientTransaction = Objects.requireNonNull(clientTransaction);
+    }
+
+    /**
+     * @return {@code true} if it is already initialized.
+     */
+    public synchronized boolean isInitialized() {
+        return userSession != null;
+    }
+
+    /**
+     * Keeps track of a model changes and applies it to the entity.
+     */
+    private void addAndApplyChange(Consumer<AuthenticatedClientSessionEntity> change) {
+        changes.add(change);
+        change.accept(getValue());
+    }
+
+    private static void initNotes(AuthenticatedClientSessionEntity entity) {
+        var notes = entity.getNotes();
+        if (notes == null) {
+            entity.setNotes(new HashMap<>());
+        }
+    }
+
+    private record Factory(
+            boolean offline) implements UpdaterFactory<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> {
+
+        @Override
+        public AuthenticatedClientSessionUpdater create(UUID key, AuthenticatedClientSessionEntity entity) {
+            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity), -1, offline, UpdaterState.CREATED);
+        }
+
+        @Override
+        public AuthenticatedClientSessionUpdater wrapFromCache(UUID key, MetadataValue<AuthenticatedClientSessionEntity> entity) {
+            assert entity != null;
+            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity.getValue()), entity.getVersion(), offline, UpdaterState.READ);
+        }
+
+        @Override
+        public AuthenticatedClientSessionUpdater deleted(UUID key) {
+            return new AuthenticatedClientSessionUpdater(key, null, -1, offline, UpdaterState.DELETED);
+        }
+    }
+
+}
