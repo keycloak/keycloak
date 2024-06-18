@@ -162,7 +162,9 @@ export function UserDataTableAttributeSearchForm({
                 setSelectAttributeKeyOpen(false);
                 setValue("name", option.name!);
               }}
-            />
+            >
+              {label(t, option.displayName!, option.name)}
+            </SelectOption>
           ))}
         </KeycloakSelect>
       );

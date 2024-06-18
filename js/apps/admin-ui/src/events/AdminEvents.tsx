@@ -333,7 +333,9 @@ export const AdminEvents = () => {
                             }
                           >
                             {resourceTypes?.map((option) => (
-                              <SelectOption key={option} value={option} />
+                              <SelectOption key={option} value={option}>
+                                {option}
+                              </SelectOption>
                             ))}
                           </KeycloakSelect>
                         )}
@@ -399,7 +401,9 @@ export const AdminEvents = () => {
                               <SelectOption
                                 key={option.toString()}
                                 value={option}
-                              />
+                              >
+                                {option}
+                              </SelectOption>
                             ))}
                           </KeycloakSelect>
                         )}
