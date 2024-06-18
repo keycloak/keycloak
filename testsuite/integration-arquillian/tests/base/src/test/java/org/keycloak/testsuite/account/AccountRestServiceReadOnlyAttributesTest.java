@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.userprofile.UserProfileConstants;
@@ -46,6 +47,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -141,6 +143,31 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
         // Denied only for admin, but allowed for normal user
         testAccountUpdateAttributeExpectSuccess("deniedSomeAdmin");
+    }
+
+    @Test
+    public void testUpdateProfileCannotUpdateReadOnlyAttributesUnmanagedEnabled() throws IOException {
+        UPConfig configuration = testRealm().users().userProfile().getConfiguration();
+        UnmanagedAttributePolicy unmanagedAttributePolicy = configuration.getUnmanagedAttributePolicy();
+        configuration.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        getCleanup().addCleanup(() -> {
+            configuration.setUnmanagedAttributePolicy(unmanagedAttributePolicy);
+            testRealm().users().userProfile().update(configuration);
+        });
+        testRealm().users().userProfile().update(configuration);
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserResource adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        org.keycloak.representations.idm.UserRepresentation adminUserRep = adminUserResource.toRepresentation();
+        adminUserRep.singleAttribute("deniedFoo", "foo");
+        adminUserResource.update(adminUserRep);
+        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserRep = adminUserResource.toRepresentation();
+        assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
+        assertNull(user.getAttributes());
+        updateAndGet(user);
+        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserRep = adminUserResource.toRepresentation();
+        assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
     }
 
     private void testAccountUpdateAttributeExpectFailure(String attrName) throws IOException {
