@@ -23,6 +23,14 @@ In a production environment, {project_name} instances usually run in a private n
 
 For details on the endpoint categories and instructions on how to configure the public hostname for them, see <@links.server id="hostname"/>.
 
+=== Exposing the {project_name} Administration APIs and UI on a different hostname
+
+It is considered a best practice to expose the {project_name} Administration REST API and Console on a different hostname or context-path than the one used for the public frontend URLs that are use e.g. by login flows. This separation ensures that the Administration interfaces are not exposed to the public internet, which reduces the attack surface.
+
+WARNING: Access to REST APIs needs to be blocked on the reverse proxy level, if they are not intended to be publicly exposed.
+
+For details, see <@links.server id="hostname"/>.
+
 == Reverse proxy in a distributed environment
 Apart from <@links.server id="hostname"/>, production environments usually include a reverse proxy / load balancer component. It separates and unifies access to the network used by your company or organization. For a {project_name} production environment, this component is recommended.
 
