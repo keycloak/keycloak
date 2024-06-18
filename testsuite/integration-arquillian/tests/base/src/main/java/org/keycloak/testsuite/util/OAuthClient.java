@@ -83,6 +83,8 @@ import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -116,6 +118,9 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class OAuthClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(OAuthClient.class);
+
     public static String SERVER_ROOT;
     public static String AUTH_SERVER_ROOT;
     public static String APP_ROOT;
@@ -384,7 +389,7 @@ public class OAuthClient {
             }
             driver.findElement(By.name("login")).click();
         } catch (Throwable t) {
-            System.err.println(src);
+            logger.error("Unexpected page was loaded\n{}", src);
             throw t;
         }
     }
@@ -592,6 +597,9 @@ public class OAuthClient {
                     post.addHeader(header.getKey(), header.getValue());
                 }
             }
+            if (dpopProof != null) {
+                post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+            }
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
@@ -747,6 +755,9 @@ public class OAuthClient {
             if (clientSecret != null) {
                 String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
                 post.setHeader("Authorization", authorization);
+            }
+            if (dpopProof != null) {
+                post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
             }
 
             List<NameValuePair> parameters = new LinkedList<>();

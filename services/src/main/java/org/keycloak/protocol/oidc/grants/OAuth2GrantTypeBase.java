@@ -24,12 +24,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 
@@ -37,7 +32,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.VerificationException;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -46,7 +40,6 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -58,14 +51,12 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
-import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
@@ -90,7 +81,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected EventBuilder event;
     protected Cors cors;
     protected TokenManager tokenManager;
-    protected DPoP dPoP;
     protected HttpRequest request;
     protected HttpResponse response;
     protected HttpHeaders headers;
@@ -110,7 +100,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         this.event = context.event;
         this.cors = context.cors;
         this.tokenManager = (TokenManager) context.tokenManager;
-        this.dPoP = context.dPoP;
     }
 
     protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
@@ -125,7 +114,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
 
         checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
-        checkAndBindDPoPToken(responseBuilder, useRefreshToken && client.isPublicClient(), Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
@@ -182,21 +170,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
     }
 
-    protected void checkAndBindDPoPToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken, boolean isDPoPSupported) {
-        if (!isDPoPSupported) return;
-
-        if (clientConfig.isUseDPoP() || dPoP != null) {
-            DPoPUtil.bindToken(responseBuilder.getAccessToken(), dPoP);
-            responseBuilder.getAccessToken().type(DPoPUtil.DPOP_TOKEN_TYPE);
-            responseBuilder.responseTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
-
-            // Bind refresh tokens for public clients, See "Section 5. DPoP Access Token Request" from DPoP specification
-            if (useRefreshToken) {
-                DPoPUtil.bindToken(responseBuilder.getRefreshToken(), dPoP);
-            }
-        }
-    }
-
     protected void updateClientSession(AuthenticatedClientSessionModel clientSession) {
 
         if(clientSession == null) {
@@ -224,21 +197,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected void updateUserSessionFromClientAuth(UserSessionModel userSession) {
         for (Map.Entry<String, String> attr : clientAuthAttributes.entrySet()) {
             userSession.setNote(attr.getKey(), attr.getValue());
-        }
-    }
-
-    protected void checkAndRetrieveDPoPProof(boolean isDPoPSupported) {
-        if (!isDPoPSupported) return;
-
-        if (clientConfig.isUseDPoP() || request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null) {
-            try {
-                dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
-                session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-            } catch (VerificationException ex) {
-                event.detail(Details.REASON, ex.getMessage());
-                event.error(Errors.INVALID_DPOP_PROOF);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_DPOP_PROOF, ex.getMessage(), Response.Status.BAD_REQUEST);
-            }
         }
     }
 
