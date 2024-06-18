@@ -94,6 +94,10 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public boolean isReadOnly(String name) {
+        if (isReadOnlyFromMetadata(name) || isReadOnlyInternalAttribute(name)) {
+            return true;
+        }
+
         if (!isManagedAttribute(name)) {
             return !isAllowEditUnmanagedAttribute();
         }
@@ -108,10 +112,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             if (isServiceAccountUser()) {
                 return false;
             }
-        }
-
-        if (isReadOnlyFromMetadata(name) || isReadOnlyInternalAttribute(name)) {
-            return true;
         }
 
         return getMetadata(name) == null;
