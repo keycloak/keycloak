@@ -1,9 +1,8 @@
 .kc-dropdown-panel {
   background-color: transparent;
-  padding: var(--pf-v5-global--spacer--form-element) var(--pf-v5-global--spacer--sm)
-    var(--pf-v5-global--spacer--form-element) var(--pf-v5-global--spacer--sm);
-  border-color: var(--pf-v5-global--BorderColor--300)
-    var(--pf-v5-global--BorderColor--300) var(--pf-v5-global--BorderColor--200)
+  padding: var(--pf-v5-global--spacer--form-element) var(--pf-v5-global--spacer--sm) var(--pf-v5-global--spacer--form-element)
+    var(--pf-v5-global--spacer--sm);
+  border-color: var(--pf-v5-global--BorderColor--300) var(--pf-v5-global--BorderColor--300) var(--pf-v5-global--BorderColor--200)
     var(--pf-v5-global--BorderColor--300);
   border-width: var(--pf-v5-global--BorderWidth--sm);
   border-style: solid;
@@ -35,4 +34,12 @@
   box-shadow: 0px 0.5rem 1rem 0px rgba(0, 0, 0, 0.2);
   padding: 0.75rem;
   z-index: 1;
+}
+
+.light-mode {
+  background-color: var(--pf-v5-global--Color--light-100);
+}
+
+.dark-mode {
+  background-color: var(--pf-v5-global--BackgroundColor--300);
 }

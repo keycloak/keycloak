@@ -83,9 +83,10 @@ export function convertAttributeNameToForm<T>(
   name: string,
 ): PathValue<T, Path<T>> {
   const index = name.indexOf(".");
-  return `${name.substring(0, index)}.${beerify(
-    name.substring(index + 1),
-  )}` as PathValue<T, Path<T>>;
+  return `${name.substring(0, index)}.${beerify(name.substring(index + 1))}` as PathValue<
+    T,
+    Path<T>
+  >;
 }
 
 export const beerify = <T extends string>(name: T) =>
@@ -182,7 +183,7 @@ export const localeToDisplayName = (locale: string, displayLocale: string) => {
 };
 
 const DARK_MODE_CLASS = "pf-v5-theme-dark";
-const mediaQuery =
+export const mediaQuery =
   window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 
 updateDarkMode(mediaQuery?.matches);
