@@ -16,8 +16,12 @@
  */
 package org.keycloak.models.sessions.infinispan.changes.remote.updater.loginfailures;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+
 import org.infinispan.client.hotrod.MetadataValue;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
@@ -25,11 +29,6 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Consumer;
 
 /**
  * Implementation of {@link Updater} and {@link UserLoginFailureModel}.
@@ -42,6 +41,11 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
 
     private LoginFailuresUpdater(LoginFailureKey key, LoginFailureEntity entity, long version, UpdaterState initialState) {
         super(key, entity, version, initialState);
+        if (entity == null) {
+            assert initialState == UpdaterState.DELETED;
+            changes = List.of();
+            return;
+        }
         changes = new ArrayList<>(4);
     }
 
@@ -50,7 +54,7 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
     }
 
     public static LoginFailuresUpdater wrap(LoginFailureKey key, MetadataValue<LoginFailureEntity> entity) {
-        return new LoginFailuresUpdater(Objects.requireNonNull(key), Objects.requireNonNull(entity.getValue()), entity.getVersion(), UpdaterState.READ_ONLY);
+        return new LoginFailuresUpdater(Objects.requireNonNull(key), Objects.requireNonNull(entity.getValue()), entity.getVersion(), UpdaterState.READ);
     }
 
     public static LoginFailuresUpdater delete(LoginFailureKey key) {
@@ -58,11 +62,10 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
     }
 
     @Override
-    public Expiration computeExpiration(KeycloakSession session) {
-        var realm = session.realms().getRealm(getValue().getRealmId());
+    public Expiration computeExpiration() {
         return new Expiration(
-                SessionTimeouts.getLoginFailuresMaxIdleMs(realm, null, getValue()),
-                SessionTimeouts.getLoginFailuresLifespanMs(realm, null, getValue()));
+                SessionTimeouts.getLoginFailuresMaxIdleMs(null, null, getValue()),
+                SessionTimeouts.getLoginFailuresLifespanMs(null, null, getValue()));
     }
 
     @Override
@@ -115,6 +118,7 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
 
     @Override
     public void clearFailures() {
+        changes.clear();
         addAndApplyChange(CLEAR);
     }
 
@@ -143,15 +147,14 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
         addAndApplyChange(e -> e.setLastIPFailure(ip));
     }
 
+    @Override
+    protected boolean isUnchanged() {
+        return changes.isEmpty();
+    }
+
     private void addAndApplyChange(Consumer<LoginFailureEntity> change) {
-        if (change == CLEAR) {
-            changes.clear();
-            changes.add(CLEAR);
-        } else {
-            changes.add(change);
-        }
+        changes.add(change);
         change.accept(getValue());
-        onFieldChanged();
     }
 
     private static final Consumer<LoginFailureEntity> CLEAR = LoginFailureEntity::clearFailures;

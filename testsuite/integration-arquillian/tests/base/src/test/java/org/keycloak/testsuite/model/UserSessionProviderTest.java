@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
-import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -328,15 +327,8 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         var user1 = session.users().getUserByUsername(realm, "user1");
         var user2 = session.users().getUserByUsername(realm, "user2");
 
-        // TODO! [pruivo] to be removed when the session cache is remote only
-        // TODO! the Hot Rod events are async
-        if (InfinispanUtils.isRemoteInfinispan()) {
-            eventuallyEquals(null, 0L, () -> session.sessions().getUserSessionsStream(realm, user1).count());
-            eventuallyEquals(null, 0L, () -> session.sessions().getUserSessionsStream(realm, user2).count());
-        } else {
-            assertEquals(0, session.sessions().getUserSessionsStream(realm, user1).count());
-            assertEquals(0, session.sessions().getUserSessionsStream(realm, user2).count());
-        }
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, user1).count());
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, user2).count());
     }
 
     @Test

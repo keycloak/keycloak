@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.sessions.infinispan.changes.remote.updater;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
 
 import java.util.function.BiFunction;
@@ -69,10 +68,16 @@ public interface Updater<K, V> extends BiFunction<K, V, V> {
     void markDeleted();
 
     /**
+     * @return {@code true} if the entity is transient and shouldn't be stored in the Infinispan cache.
+     */
+    default boolean isTransient() {
+        return false;
+    }
+
+    /**
      * Computes the expiration data for Infinispan cache.
      *
-     * @param session The current Keycloak session.
      * @return The {@link Expiration} data.
      */
-    Expiration computeExpiration(KeycloakSession session);
+    Expiration computeExpiration();
 }

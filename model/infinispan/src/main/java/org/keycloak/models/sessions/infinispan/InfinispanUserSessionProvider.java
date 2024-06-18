@@ -57,7 +57,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -204,15 +203,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     @Override
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
         final UUID clientSessionId = keyGenerator.generateKeyUUID(session, clientSessionCache);
-        AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
-        entity.setRealmId(realm.getId());
-        entity.setClientId(client.getId());
-        entity.setTimestamp(Time.currentTime());
-        entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));
-        entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
-        if (userSession.isRememberMe()) {
-            entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
-        }
+        var entity = AuthenticatedClientSessionEntity.create(clientSessionId, realm, client, userSession);
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(false);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
@@ -238,8 +229,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             id = keyGenerator.generateKeyString(session, sessionCache);
         }
 
-        UserSessionEntity entity = new UserSessionEntity(id);
-        updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+        UserSessionEntity entity = UserSessionEntity.create(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
         SessionUpdateTask<UserSessionEntity> createSessionTask = Tasks.addIfAbsentSync();
         sessionTx.addTask(id, createSessionTask, entity, persistenceState);
@@ -251,21 +241,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         return adapter;
     }
 
-    static void updateSessionEntity(UserSessionEntity entity, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-        entity.setRealmId(realm.getId());
-        entity.setUser(user.getId());
-        entity.setLoginUsername(loginUsername);
-        entity.setIpAddress(ipAddress);
-        entity.setAuthMethod(authMethod);
-        entity.setRememberMe(rememberMe);
-        entity.setBrokerSessionId(brokerSessionId);
-        entity.setBrokerUserId(brokerUserId);
-
-        int currentTime = Time.currentTime();
-
-        entity.setStarted(currentTime);
-        entity.setLastSessionRefresh(currentTime);
-    }
 
     @Override
     public UserSessionModel getUserSession(RealmModel realm, String id) {
@@ -889,7 +864,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         Map<String, SessionEntityWrapper<UserSessionEntity>> sessionsById = persistentUserSessions.stream()
                 .map((UserSessionModel persistentUserSession) -> {
 
-                    UserSessionEntity userSessionEntityToImport = createUserSessionEntityInstance(persistentUserSession);
+                    UserSessionEntity userSessionEntityToImport = UserSessionEntity.createFromModel(persistentUserSession);
 
                     for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
                         String clientUUID = entry.getKey();
@@ -1039,7 +1014,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     // Imports just userSession without it's clientSessions
     protected UserSessionAdapter importUserSession(UserSessionModel userSession, boolean offline) {
-        UserSessionEntity entity = createUserSessionEntityInstance(userSession);
+        UserSessionEntity entity = UserSessionEntity.createFromModel(userSession);
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
 
@@ -1049,38 +1024,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         UserSessionAdapter importedSession = wrap(userSession.getRealm(), entity, offline);
 
         return importedSession;
-    }
-
-
-    private UserSessionEntity createUserSessionEntityInstance(UserSessionModel userSession) {
-        UserSessionEntity entity = new UserSessionEntity(userSession.getId());
-        entity.setRealmId(userSession.getRealm().getId());
-
-        entity.setAuthMethod(userSession.getAuthMethod());
-        entity.setBrokerSessionId(userSession.getBrokerSessionId());
-        entity.setBrokerUserId(userSession.getBrokerUserId());
-        entity.setIpAddress(userSession.getIpAddress());
-        entity.setNotes(userSession.getNotes() == null ? new ConcurrentHashMap<>() : userSession.getNotes());
-        entity.setAuthenticatedClientSessions(new AuthenticatedClientSessionStore());
-        entity.setRememberMe(userSession.isRememberMe());
-        entity.setState(userSession.getState());
-        if (userSession instanceof OfflineUserSessionModel) {
-            // this is a hack so that UserModel doesn't have to be available when offline token is imported.
-            // see related JIRA - KEYCLOAK-5350 and corresponding test
-            OfflineUserSessionModel oline = (OfflineUserSessionModel) userSession;
-            entity.setUser(oline.getUserId());
-            // NOTE: Hack
-            // We skip calling entity.setLoginUsername(userSession.getLoginUsername())
-
-        } else {
-            entity.setLoginUsername(userSession.getLoginUsername());
-            entity.setUser(userSession.getUser().getId());
-        }
-
-        entity.setStarted(userSession.getStarted());
-        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
-
-        return entity;
     }
 
 

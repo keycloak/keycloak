@@ -377,7 +377,7 @@ jobs:
 
       - name: Run base tests without cache
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh remote-cache`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 

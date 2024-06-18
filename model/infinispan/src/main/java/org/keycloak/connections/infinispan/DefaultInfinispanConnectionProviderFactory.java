@@ -332,15 +332,15 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .stateTransfer().awaitInitialTransfer(awaitInitialTransfer).timeout(30, TimeUnit.SECONDS);
         }
 
-        // Base configuration doesn't contain any remote stores
-        var clusteredConfiguration = builder.build();
-
-        defineClusteredCache(cacheManager, USER_SESSION_CACHE_NAME, clusteredConfiguration);
-        defineClusteredCache(cacheManager, OFFLINE_USER_SESSION_CACHE_NAME, clusteredConfiguration);
-        defineClusteredCache(cacheManager, CLIENT_SESSION_CACHE_NAME, clusteredConfiguration);
-        defineClusteredCache(cacheManager, OFFLINE_CLIENT_SESSION_CACHE_NAME, clusteredConfiguration);
-
         if (InfinispanUtils.isEmbeddedInfinispan()) {
+            // Base configuration doesn't contain any remote stores
+            var clusteredConfiguration = builder.build();
+
+            defineClusteredCache(cacheManager, USER_SESSION_CACHE_NAME, clusteredConfiguration);
+            defineClusteredCache(cacheManager, OFFLINE_USER_SESSION_CACHE_NAME, clusteredConfiguration);
+            defineClusteredCache(cacheManager, CLIENT_SESSION_CACHE_NAME, clusteredConfiguration);
+            defineClusteredCache(cacheManager, OFFLINE_CLIENT_SESSION_CACHE_NAME, clusteredConfiguration);
+
             defineClusteredCache(cacheManager, LOGIN_FAILURE_CACHE_NAME, clusteredConfiguration);
             defineClusteredCache(cacheManager, AUTHENTICATION_SESSIONS_CACHE_NAME, clusteredConfiguration);
 
