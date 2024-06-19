@@ -76,16 +76,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter-spi</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core</artifactId>
             <exclusions>
                 <exclusion>
@@ -117,16 +107,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-jboss-adapter-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-undertow-adapter</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

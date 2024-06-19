@@ -34,7 +34,6 @@
         <module name="io.undertow.core"/>
         <module name="io.undertow.servlet"/>
         <module name="org.picketbox"/>
-        <module name="org.keycloak.keycloak-saml-undertow-adapter"/>
         <module name="org.keycloak.keycloak-adapter-spi"/>
         <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-saml-core"/>
