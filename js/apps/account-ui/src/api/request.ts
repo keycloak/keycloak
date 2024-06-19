@@ -54,7 +54,7 @@ export async function request(
 export const url = (environment: BaseEnvironment, path: string) =>
   new URL(
     joinPath(
-      environment.authServerUrl,
+      environment.serverBaseUrl,
       "realms",
       environment.realm,
       "account",

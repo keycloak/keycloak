@@ -96,22 +96,34 @@ public class AccountConsole implements AccountResourceProvider {
     @NoCache
     @Path("{any:.*}")
     public Response getMainPage() throws IOException, FreeMarkerException {
-        UriInfo uriInfo = session.getContext().getUri(UrlType.FRONTEND);
-        URI accountBaseUrl = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(realm.getName())
-                .path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).path("/").build(realm);
+        // Get the URI info of the server and admin console.
+        final var serverUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        final var adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
 
-        Map<String, Object> map = new HashMap<>();
+        // Get the base URLs of the server and admin console.
+        final var serverBaseUri = serverUriInfo.getBaseUri();
+        final var adminBaseUri = adminUriInfo.getBaseUri();
 
-        URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
-        URI authUrl = uriInfo.getBaseUri();
-        var authServerUrl = authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/";
-        // TODO: The 'authUrl' variable is deprecated and only exists to provide backwards compatibility for older themes, it should be removed in a future version.
-        map.put("authUrl", authServerUrl);
-        map.put("authServerUrl", authServerUrl);
+        // Strip any trailing slashes from the URLs.
+        final var serverBaseUrl = serverBaseUri.toString().replaceFirst("/+$", "");
+
+        final var map = new HashMap<String, Object>();
+        final var accountBaseUrl = serverUriInfo.getBaseUriBuilder()
+                .path(RealmsResource.class)
+                .path(realm.getName())
+                .path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .path("/")
+                .build(realm);
+
+        map.put("serverBaseUrl", serverBaseUrl);
+        // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
+        // Note that these should be removed from the template of the Account Console as well.
+        map.put("authUrl", serverBaseUrl + "/"); // Superseded by 'serverBaseUrl', remove in the future.
+        map.put("authServerUrl", serverBaseUrl + "/"); // Superseded by 'serverBaseUrl', remove in the future.
         map.put("baseUrl", accountBaseUrl.getPath().endsWith("/") ? accountBaseUrl : accountBaseUrl + "/");
         map.put("realm", realm);
         map.put("clientId", Constants.ACCOUNT_CONSOLE_CLIENT_ID);
-        map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
+        map.put("resourceUrl", Urls.themeRoot(serverBaseUri).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
         map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
         map.put("resourceVersion", Version.RESOURCES_VERSION);
 
