@@ -959,12 +959,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client-jee</artifactId>
+                <artifactId>keycloak-admin-client-jee-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client</artifactId>
+                <artifactId>keycloak-admin-client-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
