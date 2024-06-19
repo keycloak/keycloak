@@ -32,7 +32,14 @@ public class Proof {
     @JsonProperty("proof_type")
     private ProofType proofType;
 
-    private Object proofObject;
+    @JsonProperty("jwt")
+    private String jwt;
+
+    @JsonProperty("cwt")
+    private String cwt;
+
+    @JsonProperty("ldp_vp")
+    private Object ldpVp;
 
     public ProofType getProofType() {
         return proofType;
@@ -43,12 +50,30 @@ public class Proof {
         return this;
     }
 
-    public Object getProofObject() {
-        return proofObject;
+    public String getJwt() {
+        return jwt;
     }
 
-    public Proof setProofObject(Object proofObject) {
-        this.proofObject = proofObject;
+    public Proof setJwt(String jwt) {
+        this.jwt = jwt;
+        return this;
+    }
+
+    public String getCwt() {
+        return cwt;
+    }
+
+    public Proof setCwt(String cwt) {
+        this.cwt = cwt;
+        return this;
+    }
+
+    public Object getLdpVp() {
+        return ldpVp;
+    }
+
+    public Proof setLdpVp(Object ldpVp) {
+        this.ldpVp = ldpVp;
         return this;
     }
 }

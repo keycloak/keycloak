@@ -24,6 +24,8 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
@@ -53,7 +55,7 @@ public class JwtSigningService extends SigningService<String> {
     protected final String issuerDid;
 
     public JwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, String tokenType, String issuerDid, TimeProvider timeProvider) {
-        super(keycloakSession, keyId, algorithmType);
+        super(keycloakSession, keyId, Format.JWT_VC, algorithmType);
         this.issuerDid = issuerDid;
         this.timeProvider = timeProvider;
         this.tokenType = tokenType;
@@ -68,8 +70,10 @@ public class JwtSigningService extends SigningService<String> {
     }
 
     @Override
-    public String signCredential(VerifiableCredential verifiableCredential) {
+    public String signCredential(VCIssuanceContext vcIssuanceContext) {
         LOGGER.debugf("Sign credentials to jwt-vc format.");
+
+        VerifiableCredential verifiableCredential = vcIssuanceContext.getVerifiableCredential();
 
         // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
         // provided

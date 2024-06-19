@@ -50,6 +50,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
         String hashAlgorithm = model.get(SigningProperties.HASH_ALGORITHM.getKey());
         Optional<String> kid = Optional.ofNullable(model.get(SigningProperties.KID_HEADER.getKey()));
         int decoys = Integer.parseInt(model.get(SigningProperties.DECOYS.getKey()));
+        String vcConfigId = model.get(SigningProperties.VC_CONFIG_ID.getKey());
 
         List<String> visibleClaims = Optional.ofNullable(model.get(SigningProperties.VISIBLE_CLAIMS.getKey()))
                 .map(visibileClaims -> visibileClaims.split(","))
@@ -63,7 +64,7 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
                                 .getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
                 .orElseThrow(() -> new VCIssuerException("No issuerDid configured."));
 
-        return new SdJwtSigningService(session, new ObjectMapper(), keyId, algorithmType, tokenType, hashAlgorithm, issuerDid, decoys, visibleClaims, new OffsetTimeProvider(), kid);
+        return new SdJwtSigningService(session, new ObjectMapper(), keyId, algorithmType, tokenType, hashAlgorithm, issuerDid, decoys, visibleClaims, new OffsetTimeProvider(), kid, vcConfigId);
     }
 
     @Override

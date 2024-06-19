@@ -30,9 +30,11 @@ import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SdJwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -75,7 +77,7 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                                     0,
                                     List.of(),
                                     new StaticTimeProvider(1000),
-                                    Optional.empty()));
+                                    Optional.empty(), null));
         } catch (RunOnServerException ros) {
             throw ros.getCause();
         }
@@ -194,11 +196,13 @@ public class SdJwtSigningServiceTest extends OID4VCTest {
                 decoys,
                 visibleClaims,
                 new StaticTimeProvider(1000),
-                keyId);
+                keyId, null);
 
         VerifiableCredential testCredential = getTestCredential(claims);
-
-        String sdJwt = signingService.signCredential(testCredential);
+        VCIssuanceContext vcIssuanceContext = new VCIssuanceContext()
+                .setVerifiableCredential(testCredential)
+                .setCredentialConfig(new SupportedCredentialConfiguration());
+        String sdJwt = signingService.signCredential(vcIssuanceContext);
         SignatureVerifierContext verifierContext = null;
         switch (algorithm) {
             case Algorithm.ES256: {

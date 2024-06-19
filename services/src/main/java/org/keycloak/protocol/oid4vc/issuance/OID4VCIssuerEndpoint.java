@@ -24,8 +24,6 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.google.zxing.qrcode.encoder.QRCode;
-import jakarta.annotation.Nullable;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -37,7 +35,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -69,14 +66,12 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.utils.MediaType;
 
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -107,11 +102,23 @@ public class OID4VCIssuerEndpoint {
     // lifespan of the preAuthorizedCodes in seconds
     private final int preAuthorizedCodeLifeSpan;
 
-    private final Map<Format, VerifiableCredentialsSigningService> signingServices;
+    /**
+     * Key shall be strings, as configured credential of the same format can
+     * have different configs. Like decoy, visible claims,
+     * time requirements (iat, exp, nbf, ...).
+     *
+     * Credentials with same configs can share a default entry with locator= {@link Format#name()}.
+     *
+     * Credentials in need of special configuration can provide another signer with specific
+     * locator={@link Format#name()}/vc_config_id
+     *
+     * The providerId of the signing service factory is still the format.
+     */
+    private final Map<String, VerifiableCredentialsSigningService> signingServices;
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 String issuerDid,
-                                Map<Format, VerifiableCredentialsSigningService> signingServices,
+                                Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan) {
         this.session = session;
@@ -143,10 +150,9 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
         SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
-        Format format = supportedCredentialConfiguration.getFormat();
 
         // check that the user is allowed to get such credential
-        if (getClientsOfType(supportedCredentialConfiguration.getScope(), format).isEmpty()) {
+        if (getClientsOfScope(supportedCredentialConfiguration.getScope(), supportedCredentialConfiguration.getFormat()).isEmpty()) {
             LOGGER.debugf("No OID4VP-Client supporting type %s registered.", supportedCredentialConfiguration.getScope());
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
@@ -250,7 +256,7 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Received credentials request %s.", credentialRequestVO);
 
         // do first to fail fast on auth
-        UserSessionModel userSessionModel = getUserSessionModel();
+        AuthenticationManager.AuthResult authResult = getAuthResult();
 
         Format requestedFormat = credentialRequestVO.getFormat();
         String requestedCredential = credentialRequestVO.getCredentialIdentifier();
@@ -271,7 +277,7 @@ public class OID4VCIssuerEndpoint {
 
         CredentialResponse responseVO = new CredentialResponse();
 
-        Object theCredential = getCredential(userSessionModel, supportedCredentialConfiguration.getScope(), credentialRequestVO.getFormat());
+        Object theCredential = getCredential(authResult, supportedCredentialConfiguration, credentialRequestVO);
         switch (requestedFormat) {
             case LDP_VC, JWT_VC, SD_JWT_VC -> responseVO.setCredential(theCredential);
             default -> throw new BadRequestException(
@@ -294,12 +300,6 @@ public class OID4VCIssuerEndpoint {
         return clientSession;
     }
 
-    // return the current UserSessionModel
-    private UserSessionModel getUserSessionModel() {
-        return getAuthResult(
-                new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN))).getSession();
-    }
-
     private AuthenticationManager.AuthResult getAuthResult() {
         return getAuthResult(new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN)));
     }
@@ -316,14 +316,14 @@ public class OID4VCIssuerEndpoint {
     /**
      * Get a signed credential
      *
-     * @param userSessionModel userSession to create the credential for
-     * @param vcType           type of the credential to be created
-     * @param format           format of the credential to be created
+     * @param authResult    authResult containing the userSession to create the credential for
+     * @param credentialConfig    the supported credential configuration
+     * @param credentialRequestVO
      * @return the signed credential
      */
-    private Object getCredential(UserSessionModel userSessionModel, String vcType, Format format) {
+    private Object getCredential(AuthenticationManager.AuthResult authResult, SupportedCredentialConfiguration credentialConfig, CredentialRequest credentialRequestVO) {
 
-        List<OID4VCClient> clients = getClientsOfType(vcType, format);
+        List<OID4VCClient> clients = getClientsOfScope(credentialConfig.getScope(), credentialConfig.getFormat());
 
         List<OID4VCMapper> protocolMappers = getProtocolMappers(clients)
                 .stream()
@@ -341,11 +341,21 @@ public class OID4VCIssuerEndpoint {
                 .filter(Objects::nonNull)
                 .toList();
 
-        VerifiableCredential credentialToSign = getVCToSign(protocolMappers, vcType, userSessionModel);
+        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO);
 
-        return Optional.ofNullable(signingServices.get(format))
-                .map(verifiableCredentialsSigningService -> verifiableCredentialsSigningService.signCredential(credentialToSign))
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Requested format %s is not supported.", format)));
+        String specificConfigKey = VerifiableCredentialsSigningService.locator(credentialConfig.getFormat(), credentialConfig.getId());
+        String formatKey = credentialConfig.getFormat().name();
+
+        // First retrieve by format/id, then by format only
+        VerifiableCredentialsSigningService signingService = signingServices.getOrDefault(
+                specificConfigKey, signingServices.get(formatKey)
+        );
+
+        return Optional.ofNullable(signingService)
+                .map(service -> service.signCredential(vcIssuanceContext))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        String.format("No signer found for specific config '%s' or format '%s'.", specificConfigKey, formatKey)
+                ));
     }
 
     private List<ProtocolMapperModel> getProtocolMappers(List<OID4VCClient> oid4VCClients) {
@@ -372,19 +382,20 @@ public class OID4VCIssuerEndpoint {
         return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
     }
 
-    // Return all {@link  OID4VCClient}s that support the given type and format
-    private List<OID4VCClient> getClientsOfType(String vcType, Format format) {
-        LOGGER.debugf("Retrieve all clients of type %s, supporting format %s", vcType, format.toString());
+    // Return all {@link  OID4VCClient}s that support the given scope and format
+    // Scope might be different from vct. In the case of sd-jwt for eaxample
+    private List<OID4VCClient> getClientsOfScope(String vcScope, Format format) {
+        LOGGER.debugf("Retrieve all clients of scope %s, supporting format %s", vcScope, format.toString());
 
-        if (Optional.ofNullable(vcType).filter(type -> !type.isEmpty()).isEmpty()) {
-            throw new BadRequestException("No VerifiableCredential-Type was provided in the request.");
+        if (Optional.ofNullable(vcScope).filter(scope -> !scope.isEmpty()).isEmpty()) {
+            throw new BadRequestException("No VerifiableCredential-Scope was provided in the request.");
         }
 
         return getOID4VCClientsFromSession()
                 .stream()
                 .filter(oid4VCClient -> oid4VCClient.getSupportedVCTypes()
                         .stream()
-                        .anyMatch(supportedCredential -> supportedCredential.getScope().equals(vcType)))
+                        .anyMatch(supportedCredential -> supportedCredential.getScope().equals(vcScope)))
                 .toList();
     }
 
@@ -402,28 +413,32 @@ public class OID4VCIssuerEndpoint {
     }
 
     // builds the unsigned credential by applying all protocol mappers.
-    private VerifiableCredential getVCToSign(List<OID4VCMapper> protocolMappers, String vcType,
-                                             UserSessionModel userSessionModel) {
+    private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
+                                             AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO) {
         // set the required claims
         VerifiableCredential vc = new VerifiableCredential()
                 .setIssuer(URI.create(issuerDid))
                 .setIssuanceDate(Date.from(Instant.ofEpochMilli(timeProvider.currentTimeMillis())))
-                .setType(List.of(vcType));
+                .setType(List.of(credentialConfig.getScope()));
 
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers
                 .stream()
-                .filter(mapper -> mapper.isTypeSupported(vcType))
-                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, userSessionModel));
+                .filter(mapper -> mapper.isScopeSupported(credentialConfig.getScope()))
+                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.getSession()));
 
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
                 .stream()
-                .filter(mapper -> mapper.isTypeSupported(vcType))
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, userSessionModel));
+                .filter(mapper -> mapper.isScopeSupported(credentialConfig.getScope()))
+                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.getSession()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
-        return vc;
+
+        return new VCIssuanceContext().setAuthResult(authResult)
+                .setVerifiableCredential(vc)
+                .setCredentialConfig(credentialConfig)
+                .setCredentialRequest(credentialRequestVO);
     }
 }

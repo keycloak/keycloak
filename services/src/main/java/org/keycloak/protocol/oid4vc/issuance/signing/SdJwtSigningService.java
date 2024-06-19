@@ -21,18 +21,34 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
+import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.Proof;
+import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.ProofTypeJWT;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -53,6 +69,9 @@ public class SdJwtSigningService extends SigningService<String> {
     private static final String NOT_BEFORE_CLAIM ="nbf";
     private static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
     private static final String CREDENTIAL_ID_CLAIM = "jti";
+    private static final String CNF_CLAIM = "cnf";
+    private static final String JWK_CLAIM = "jwk";
+    public static final String PROOF_JWT_TYP="openid4vci-proof+jwt";
 
     private final ObjectMapper objectMapper;
     private final SignatureSignerContext signatureSignerContext;
@@ -63,8 +82,10 @@ public class SdJwtSigningService extends SigningService<String> {
     private final List<String> visibleClaims;
     protected final String issuerDid;
 
-    public SdJwtSigningService(KeycloakSession keycloakSession, ObjectMapper objectMapper, String keyId, String algorithmType, String tokenType, String hashAlgorithm, String issuerDid, int decoys, List<String> visibleClaims, TimeProvider timeProvider, Optional<String> kid) {
-        super(keycloakSession, keyId, algorithmType);
+    private final String vcConfigId;
+
+    public SdJwtSigningService(KeycloakSession keycloakSession, ObjectMapper objectMapper, String keyId, String algorithmType, String tokenType, String hashAlgorithm, String issuerDid, int decoys, List<String> visibleClaims, TimeProvider timeProvider, Optional<String> kid, String vcConfigId) {
+        super(keycloakSession, keyId, Format.SD_JWT_VC, algorithmType);
         this.objectMapper = objectMapper;
         this.issuerDid = issuerDid;
         this.timeProvider = timeProvider;
@@ -72,17 +93,21 @@ public class SdJwtSigningService extends SigningService<String> {
         this.hashAlgorithm = hashAlgorithm;
         this.decoys = decoys;
         this.visibleClaims = visibleClaims;
+        this.vcConfigId = vcConfigId;
+        // Will return the active key if key id is null.
         KeyWrapper signingKey = getKey(keyId, algorithmType);
         if (signingKey == null) {
             throw new SigningServiceException(String.format("No key for id %s and algorithm %s available.", keyId, algorithmType));
         }
+        // @Francis: keyId header can be confusing if there is any key rotation, as key ids have to be immutable. It can lead
+        // to different keys being exposed under the same id.
         // set the configured kid if present.
         if (kid.isPresent()) {
             // we need to clone the key first, to not change the kid of the original key so that the next request still can find it.
             signingKey = signingKey.cloneKey();
             signingKey.setKid(keyId);
         }
-        kid.ifPresent(signingKey::setKid);
+
         SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class, algorithmType);
         signatureSignerContext = signatureProvider.signer(signingKey);
 
@@ -90,8 +115,17 @@ public class SdJwtSigningService extends SigningService<String> {
     }
 
     @Override
-    public String signCredential(VerifiableCredential verifiableCredential) {
+    public String signCredential(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
 
+        JWK jwk = null;
+        try {
+            // null returned is a valid result. Means no key binding will be included.
+            jwk = validateProof(vcIssuanceContext);
+        } catch (JWSInputException | VerificationException | IOException e) {
+            throw new VCIssuerException("Can not verify proof", e);
+        }
+
+        VerifiableCredential verifiableCredential = vcIssuanceContext.getVerifiableCredential();
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         JsonNode claimSet = objectMapper.valueToTree(credentialSubject);
@@ -130,6 +164,11 @@ public class SdJwtSigningService extends SigningService<String> {
         rootNode.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, verifiableCredential.getType().get(0));
         rootNode.put(CREDENTIAL_ID_CLAIM, JwtSigningService.createCredentialId(verifiableCredential));
 
+        // add the key binding if any
+        if(jwk!=null){
+            rootNode.putPOJO(CNF_CLAIM, Map.of(JWK_CLAIM, jwk));
+        }
+
         SdJwt sdJwt = SdJwt.builder()
                 .withDisclosureSpec(disclosureSpecBuilder.build())
                 .withClaimSet(claimSet)
@@ -139,6 +178,151 @@ public class SdJwtSigningService extends SigningService<String> {
                 .build();
 
         return sdJwt.toSdJwtString();
+    }
+
+    @Override
+    public String locator() {
+        return VerifiableCredentialsSigningService.locator(format,vcConfigId);
+    }
+
+    /*
+     * Validates a proof provided by the client if any.
+     *
+     * Returns null if there is no need to include a key binding in the credential
+     *
+     * Return the JWK to be included as key binding in the JWK if the provided proof was correctly validated
+     *
+     * @param vcIssuanceContext
+     * @return
+     * @throws VCIssuerException
+     * @throws JWSInputException
+     * @throws VerificationException
+     * @throws IllegalStateException: is credential type badly configured
+     * @throws IOException
+     */
+    private JWK validateProof(VCIssuanceContext vcIssuanceContext) throws VCIssuerException, JWSInputException, VerificationException, IOException {
+
+        Optional<Proof> optionalProof = getProofFromContext(vcIssuanceContext);
+
+        if (!optionalProof.isPresent()) {
+            return null; // No proof support
+        }
+
+        // Check key binding config for jwt. Only type supported.
+        checkCryptographicKeyBinding(vcIssuanceContext);
+
+        JWSInput jwsInput = getJwsInput(optionalProof.get());
+        JWSHeader jwsHeader = jwsInput.getHeader();
+        validateJwsHeader(vcIssuanceContext, jwsHeader);
+
+        JWK jwk = Optional.ofNullable(jwsHeader.getKey())
+                .orElseThrow(() -> new VCIssuerException("Missing binding key. Make sure provided JWT contains the jwk jwsHeader claim."));
+
+        // Parsing the Proof as an access token shall work, as a proof is a strict subset of an access token.
+        AccessToken proofPayload = JsonSerialization.readValue(jwsInput.getContent(), AccessToken.class);
+        validateProofPayload(vcIssuanceContext, proofPayload);
+
+        if (!getVerifier(jwk, jwsHeader.getAlgorithm().name()).verify(jwsInput.getContent(), jwsInput.getSignature())) {
+            throw new VCIssuerException("Could not verify provided proof");
+        }
+
+        return jwk;
+    }
+
+    private void checkCryptographicKeyBinding(VCIssuanceContext vcIssuanceContext){
+        // Make sure we are dealing with a jwk proof.
+        if (vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported() != null ||
+                !vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported().contains("jwk")) {
+            throw new IllegalStateException("This SD-JWT implementation only supports jwk as cryptographic binding method");
+        }
+    }
+
+    private Optional<Proof> getProofFromContext(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
+        return Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
+                .map(config -> config.getProofTypesSupported())
+                .flatMap(proofTypesSupported -> {
+                    if (proofTypesSupported == null) {
+                        LOGGER.debugf("No proof support. Will skip proof validation.");
+                        return Optional.empty();
+                    }
+
+                    ProofTypeJWT jwt = Optional.ofNullable(proofTypesSupported.getJwt())
+                            .orElseThrow(() -> new VCIssuerException("SD-JWT supports only jwt proof type."));
+
+                    Proof proof = Optional.ofNullable(vcIssuanceContext.getCredentialRequest().getProof())
+                            .orElseThrow(() -> new VCIssuerException("Credential configuration requires a proof of type: " + ProofType.JWT.getValue()));
+
+                    if (!Objects.equals(proof.getProofType(), ProofType.JWT)) {
+                        throw new VCIssuerException("Wrong proof type");
+                    }
+
+                    return Optional.of(proof);
+                });
+    }
+
+    private JWSInput getJwsInput(Proof proof) throws JWSInputException {
+        return new JWSInput(proof.getJwt());
+    }
+
+    /**
+     * As we limit accepted algorithm to the ones listed by the issuer, we can omit checking for "none"
+     * The Algorithm enum class does not list the none value anyway.
+     *
+     * @param vcIssuanceContext
+     * @param jwsHeader
+     * @throws VCIssuerException
+     */
+    private void validateJwsHeader(VCIssuanceContext vcIssuanceContext, JWSHeader jwsHeader) throws VCIssuerException {
+        Optional.ofNullable(jwsHeader.getAlgorithm())
+                .orElseThrow(() -> new VCIssuerException("Missing jwsHeader claim alg"));
+
+        // As we limit accepted algorithm to the ones listed by the server, we can omit checking for "none"
+        // The Algorithm enum class does not list the none value anyway.
+        Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
+                .map(config -> config.getProofTypesSupported())
+                .map(proofTypesSupported -> proofTypesSupported.getJwt())
+                .map(jwt -> jwt.getProofSigningAlgValuesSupported())
+                .filter(supportedAlgs -> supportedAlgs.contains(jwsHeader.getAlgorithm().name()))
+                .orElseThrow(() -> new VCIssuerException("Proof signature algorithm not supported: " + jwsHeader.getAlgorithm().name()));
+
+        Optional.ofNullable(jwsHeader.getType())
+                .filter(type -> Objects.equals(PROOF_JWT_TYP, type))
+                .orElseThrow(() -> new VCIssuerException("JWT type must be: " + PROOF_JWT_TYP));
+
+        // KeyId shall not be present alongside the jwk.
+        Optional.ofNullable(jwsHeader.getKeyId())
+                .ifPresent(keyId -> {
+                    throw new VCIssuerException("KeyId not expected in this JWT. Use the jwk claim instead.");
+                });
+    }
+
+    private void validateProofPayload(VCIssuanceContext vcIssuanceContext, AccessToken proofPayload) throws VCIssuerException {
+        // azp is the id of the client, as mentioned in the access token used to request the credential.
+        String azp = vcIssuanceContext.getAuthResult().getToken().getIssuedFor();
+        Optional.ofNullable(proofPayload.getIssuer())
+                .filter(proofIssuer -> Objects.equals(azp, proofIssuer))
+                .orElseThrow(() -> new VCIssuerException("Issuer claim must be null for preauthorized code else the clientId of the client making the request: " + azp));
+
+        // The issuer is the token / credential is the audience of the proof
+        String credentialIssuer = vcIssuanceContext.getVerifiableCredential().getIssuer().toString();
+        Optional.ofNullable(proofPayload.getAudience())
+                .filter(audience -> Objects.equals(credentialIssuer, audience))
+                .orElseThrow(() -> new VCIssuerException("Proof not produced for this audience. Audience claim must be: " + credentialIssuer));
+
+        // Validate mandatory iat.
+        // I do not understand the rationale behind requiring a issue time if we are not checking expiration.
+        Optional.ofNullable(proofPayload.getIat())
+                .orElseThrow(() -> new VCIssuerException("Missing proof issuing time. iat claim must be provided."));
+
+        // Check cNonce matches.
+        // We really dislike having to produce and manage a new nonce. As in this case
+        // token and credential issuer match, we will consider the nonce in the access token
+        // the c_nonce. We will also consider the expiration time of the access token the
+        // expiration time of the c_nonce. This way nonce is automatically validated with token expiry.
+        String cNonce = vcIssuanceContext.getAuthResult().getToken().getNonce();
+        Optional.ofNullable(proofPayload.getNonce())
+                .filter(nonce -> Objects.equals(cNonce, nonce))
+                .orElseThrow(() -> new VCIssuerException("Missing or wrong nonce value. Please provide nonce returned by the issuer if any."));
     }
 
 }

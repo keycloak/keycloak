@@ -445,7 +445,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     // Tests the AuthZCode complete flow without scope from
     // 1. Get authorization code without scope specified by wallet
-    // 2. Using the code to get access token 
+    // 2. Using the code to get access token
     // 3. Get the credential configuration id from issuer metadata at .wellKnown
     // 4. With the access token, get the credential
     @Test
@@ -518,7 +518,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         return new OID4VCIssuerEndpoint(
                 session,
                 "did:web:issuer.org",
-                Map.of(Format.JWT_VC, jwtSigningService),
+                Map.of(Format.JWT_VC.name(), jwtSigningService),
                 authenticator,
                 new ObjectMapper(),
                 TIME_PROVIDER,
