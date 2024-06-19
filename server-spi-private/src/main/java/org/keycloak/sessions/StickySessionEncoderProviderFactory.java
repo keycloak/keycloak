@@ -23,4 +23,10 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface StickySessionEncoderProviderFactory extends ProviderFactory<StickySessionEncoderProvider> {
+
+    /**
+     * For testing purpose only
+     */
+    void setShouldAttachRoute(boolean shouldAttachRoute);
+
 }

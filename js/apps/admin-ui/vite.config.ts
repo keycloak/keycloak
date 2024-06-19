@@ -10,6 +10,7 @@ export default defineConfig({
     port: 5174,
   },
   build: {
+    outDir: "target/classes/theme/keycloak.v2/admin/resources",
     sourcemap: true,
     target: "esnext",
     modulePreload: false,

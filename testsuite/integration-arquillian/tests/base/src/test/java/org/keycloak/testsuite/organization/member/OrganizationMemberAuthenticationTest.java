@@ -40,16 +40,8 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 
         // first try to log in using only the email
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        loginPage.loginUsername(member.getEmail());
+        openIdentityFirstLoginPage(member.getEmail(), false, null, false, false);
 
-        // the email does not match an organization so redirect to the realm's default authentication mechanism
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertEquals(member.getEmail(), loginPage.getUsername());
         // no idp should be shown because there is only a single idp that is bound to an organization
@@ -63,13 +55,8 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
     @Test
     public void testTryLoginWithUsernameNotAnEmail() {
         testRealm().organizations().get(createOrganization().getId());
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user");
+        openIdentityFirstLoginPage("user", false, null, false, false);
 
         // check if the login page is shown
         Assert.assertTrue(loginPage.isUsernameInputPresent());
@@ -79,13 +66,8 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
     @Test
     public void testDefaultAuthenticationMechanismIfNotOrganizationMember() {
         testRealm().organizations().get(createOrganization().getId());
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user@noorg.org");
+        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
         // check if the login page is shown
         Assert.assertTrue(loginPage.isUsernameInputPresent());

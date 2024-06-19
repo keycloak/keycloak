@@ -1,1 +1,2 @@
 org.keycloak.connections.infinispan.InfinispanMultiSiteLoadBalancerCheckProviderFactory
+org.keycloak.connections.infinispan.remote.RemoteLoadBalancerCheckProviderFactory

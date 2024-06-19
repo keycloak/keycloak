@@ -22,6 +22,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.junit.Assert;
+import org.junit.AssumptionViolatedException;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
@@ -185,6 +186,8 @@ public class KeycloakTestingClient implements AutoCloseable {
 
                 if (t instanceof AssertionError) {
                     throw (AssertionError) t;
+                } else if (t instanceof AssumptionViolatedException) {
+                    throw (AssumptionViolatedException) t;
                 } else {
                     throw new RunOnServerException(t);
                 }

@@ -78,6 +78,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -86,7 +87,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -159,6 +162,7 @@ public abstract class AbstractKeycloakTest {
 
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
+        ProfileAssume.setTestContext(testContext);
         adminClient = testContext.getAdminClient();
         if (adminClient == null || adminClient.isClosed()) {
             reconnectAdminClient();
@@ -761,6 +765,33 @@ public abstract class AbstractKeycloakTest {
             assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily());
         } catch (AssertionError ex) {
             throw new AssertionError("unexpected response code " + response.getStatus() + ", body is:\n" + response.readEntity(String.class), ex);
+        }
+    }
+
+    public static <T> void eventuallyEquals(String message, T expected, Supplier<T> actual) {
+        eventuallyEquals(message, expected, actual, 10000, 100, MILLISECONDS);
+    }
+
+    public static <T> void eventuallyEquals(String message, T expected, Supplier<T> actual, long timeout,
+                                            long pollInterval, TimeUnit unit) {
+        if (pollInterval <= 0) {
+            throw new IllegalArgumentException("Check interval must be positive");
+        }
+        try {
+            long expectedEndTime = System.nanoTime() + TimeUnit.NANOSECONDS.convert(timeout, unit);
+            long sleepMillis = MILLISECONDS.convert(pollInterval, unit);
+            do {
+                if (Objects.equals(expected, actual.get())) {
+                    return;
+                }
+
+                Thread.sleep(sleepMillis);
+            } while (expectedEndTime - System.nanoTime() > 0);
+
+            //last attempt
+            assertEquals(message, expected, actual.get());
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected!", e);
         }
     }
 

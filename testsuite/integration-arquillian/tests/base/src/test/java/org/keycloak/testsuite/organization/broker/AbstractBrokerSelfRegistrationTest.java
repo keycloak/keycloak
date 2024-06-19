@@ -17,11 +17,9 @@
 
 package org.keycloak.testsuite.organization.broker;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -29,6 +27,7 @@ import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
@@ -47,7 +46,6 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
 public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganizationTest {
@@ -65,17 +63,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idp.getConfig().put(IdentityProviderModel.LOGIN_HINT, "true");
         testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        loginPage.loginUsername(bc.getUserEmail());
-
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        openIdentityFirstLoginPage(bc.getUserEmail(), true, null, false,false);
         // check if the username is automatically filled
         Assert.assertEquals(bc.getUserEmail(), loginPage.getUsername());
     }
@@ -83,16 +71,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     @Test
     public void testDefaultAuthenticationIfUserDoesNotExistAndNoOrgMatch() {
         testRealm().organizations().get(createOrganization().getId());
-        oauth.clientId("broker-app");
 
         // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user@noorg.org");
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
+
         // check if the login page is shown
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
@@ -104,18 +86,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user@neworg.org");
+        openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        // should stay at the identity-first login page
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         // registration link shown
         Assert.assertTrue(loginPage.isRegisterLinkPresent());
@@ -131,19 +104,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idpRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isRegisterLinkPresent());
-        loginPage.loginUsername("user@neworg.org");
+        openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        // should stay at the identity-first login page
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         Assert.assertEquals("Your email domain matches the neworg organization but you don't have an account yet.", loginPage.getError());
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertFalse(loginPage.isPasswordInputPresent());
@@ -159,19 +122,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isRegisterLinkPresent());
-        loginPage.loginUsername("user@neworg.org");
+        openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        // should stay at the identity-first login page
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         Assert.assertFalse(driver.getPageSource().contains("Your email domain matches the neworg organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertFalse(loginPage.isPasswordInputPresent());
@@ -201,23 +154,12 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
         idp = organization.identityProviders().get(idp.getAlias()).toRepresentation();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
-        loginPage.loginUsername("external@user.org");
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        openIdentityFirstLoginPage("external@user.org", false, idp, false, false);
+
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
         Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
 
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.FALSE.toString());
         testRealm().identityProviders().get(idp.getAlias()).update(idp);
         driver.navigate().refresh();
@@ -239,17 +181,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
         idpRep.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user@neworg.org");
+        openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isRegisterLinkPresent());
@@ -258,13 +192,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     @Test
     public void testRealmLevelBrokersAvailableIfEmailDoesNotMatchOrganization() {
         testRealm().organizations().get(createOrganization().getId());
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        loginPage.loginUsername("user");
+        openIdentityFirstLoginPage("user", false, null, false, false);
 
         // check if the login page is shown
         Assert.assertTrue(loginPage.isUsernameInputPresent());
@@ -299,30 +228,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         IdentityProviderRepresentation brokerRep = broker.toRepresentation();
         brokerRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        loginPage.loginUsername(bc.getUserEmail());
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        loginPage.clickSocial(bc.getIDPAlias());
+        openIdentityFirstLoginPage(bc.getUserEmail(), true, brokerRep, false, true);
 
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-
-        // login to the organization identity provider and run the configured first broker login flow
-        loginPage.login(bc.getUserEmail(), bc.getUserPassword());
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), bc.getUserEmail(), "Firstname", "Lastname");
+        loginOrgIdp(bc.getUserEmail(), bc.getUserEmail(),true, false);
 
         // account with the same email exists in the realm, execute account linking
         waitForPage(driver, "account already exists", false);
@@ -349,30 +258,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         IdentityProviderRepresentation brokerRep = broker.toRepresentation();
         brokerRep.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
-        oauth.clientId("broker-app");
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        loginPage.loginUsername(bc.getUserEmail());
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        loginPage.clickSocial(bc.getIDPAlias());
-
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        openIdentityFirstLoginPage(bc.getUserEmail(), true, brokerRep, false, true);
 
         // login to the organization identity provider and run the configured first broker login flow
-        loginPage.login(bc.getUserEmail(), bc.getUserPassword());
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), bc.getUserEmail(), "Firstname", "Lastname");
+        loginOrgIdp(bc.getUserEmail(), bc.getUserEmail(), true, false);
 
         // account with the same email exists in the realm, execute account linking
         waitForPage(driver, "account already exists", false);
@@ -395,15 +285,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
         realmsResouce().realm(bc.providerRealmName()).logoutAll();
 
-        // login with email only
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        loginPage.loginUsername(bc.getUserEmail());
-
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        openIdentityFirstLoginPage(bc.getUserEmail(), true, null, false, false);
 
         // login to the organization identity provider and automatically redirects to the app as the account already exists
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
@@ -476,26 +358,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
         organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
-        loginPage.loginUsername(bc.getUserEmail());
+        openIdentityFirstLoginPage(bc.getUserEmail(), true, idp, false, false);
 
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login(bc.getUserEmail(), bc.getUserPassword());
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), bc.getUserEmail(), "Firstname", "Lastname");
-        appPage.assertCurrent();
+        loginOrgIdp(bc.getUserEmail(), bc.getUserEmail(),true, true);
+
         assertIsMember(bc.getUserEmail(), organization);
         UserRepresentation user = testRealm().users().search(bc.getUserEmail()).get(0);
         List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
@@ -512,18 +378,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
         testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
-        loginPage.loginUsername(bc.getUserEmail());
+        openIdentityFirstLoginPage(bc.getUserEmail(), false, idp, false, false);
 
-        // user not automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + organizationName + " organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
@@ -547,34 +403,19 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
         organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
         String email = "external@user.org";
-        loginPage.loginUsername(email);
-        loginPage.clickSocial(idp.getAlias());
+        openIdentityFirstLoginPage(email, true, idp, false, true);
 
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login("external", "password");
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(email, email, "Firstname", "Lastname");
-        appPage.assertCurrent();
+        loginOrgIdp("external", email, true, true);
+
         assertIsMember(email, organization);
 
         // make sure the federated identity matches the expected broker
-        UserRepresentation user = testRealm().users().search(email).get(0);
+        UserRepresentation user = testRealm().users().searchByEmail(email, true).get(0);
         List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());
         assertEquals(idp.getAlias(), federatedIdentities.get(0).getIdentityProvider());
+        testRealm().users().get(user.getId()).remove();
     }
 
     @Test
@@ -598,28 +439,14 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
         organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
         String email = "external@user.org";
-        loginPage.loginUsername(email);
-        loginPage.clickSocial(idp.getAlias());
+        openIdentityFirstLoginPage(email, true, idp, false, true);
 
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login(email, "password");
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(email, email, "Firstname", "Lastname");
+        loginOrgIdp(email, email, true, false);
+
         Assert.assertTrue(driver.getPageSource().contains("Email domain does not match any domain from the organization"));
         assertIsNotMember(email, organization);
+
         updateAccountInformationPage.updateAccountInformation("external@other.org", "external@other.org", "Firstname", "Lastname");
         appPage.assertCurrent();
         assertIsMember("external@other.org", organization);
@@ -645,27 +472,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
         organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
         String email = "external@user.org";
-        loginPage.loginUsername(email);
-        loginPage.clickSocial(idp.getAlias());
+        openIdentityFirstLoginPage(email, true, idp, false, true);
 
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login(email, "password");
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation("external@unknown.org", "external@unknown.org", "Firstname", "Lastname");
-        appPage.assertCurrent();
+        loginOrgIdp(email, "external@unknown.org", true, true);
         assertIsMember("external@unknown.org", organization);
     }
 
@@ -678,31 +488,13 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         // create a second broker without a domain set
         testRealm().identityProviders().create(idp).close();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        loginPage.loginUsername("some@user.org");
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        loginPage.clickSocial(idp.getAlias());
+        openIdentityFirstLoginPage("some@user.org", true, idp, true, true);
 
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login("external", "password");
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), bc.getUserEmail(), "Firstname", "Lastname");
-        appPage.assertCurrent();
-        assertTrue(organization.members().getAll().isEmpty());
+        loginOrgIdp("external", bc.getUserEmail(), true, true);
 
-        UserRepresentation user = testRealm().users().search(bc.getUserEmail()).get(0);
+        assertThat(organization.members().getAll(), Matchers.empty());
+
+        UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
         testRealm().users().get(user.getId()).remove();
     }
 
@@ -726,23 +518,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         realmsResouce().realm(bc.providerRealmName()).users().create(user).close();
 
         // select the organization broker to authenticate
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        loginPage.loginUsername("user@different.org");
-        loginPage.clickSocial(idpRep.getAlias());
+        openIdentityFirstLoginPage("user@different.org", true, idpRep, false, true);
 
-        // login through the organization broker
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login("user@different.org", "password");
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(user.getUsername(), user.getEmail(), "Firstname", "Lastname");
-        appPage.assertCurrent();
+        loginOrgIdp(user.getEmail(), user.getEmail(), true, true);
     }
 
     @Test
@@ -764,42 +542,17 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
                 .build();
         realmsResouce().realm(bc.providerRealmName()).users().create(user).close();
 
-        // execute the identity-first login
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        loginPage.loginUsername(user.getEmail());
+        openIdentityFirstLoginPage(user.getEmail(), true, idpRep, false, true);
 
-        waitForPage(driver, "sign in to", true);
-        // select the organization broker to authenticate
-        assertTrue(loginPage.isPasswordInputPresent());
-        assertTrue(loginPage.isUsernameInputPresent());
-        loginPage.clickSocial(idpRep.getAlias());
-
-        // login through the organization broker
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login("user@different.org", "password");
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(user.getUsername(), user.getEmail(), "Firstname", "Lastname");
-        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+        loginOrgIdp(user.getEmail(), user.getEmail(),true, true);
 
         UserRepresentation account = getUserRepresentation(user.getEmail());
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
         realmsResouce().realm(bc.providerRealmName()).logoutAll();
 
         // the flow now changed and the user should be automatically redirected to the origin broker
-        loginPage.open(bc.consumerRealmName());
-        waitForPage(driver, "sign in to", true);
-        loginPage.loginUsername(user.getEmail());
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        loginPage.login("user@different.org", "password");
-        appPage.assertCurrent();
+        openIdentityFirstLoginPage(user.getEmail(), true, null, false, false);
+        loginOrgIdp(user.getEmail(), user.getEmail(),false, true);
     }
 
     @Test

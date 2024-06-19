@@ -42,7 +42,6 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.stream.IntStream;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -429,13 +428,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
             realmsResouce().create(realmRep);
             realmRes = realmsResouce().realm(realmRep.getRealm());
             realmRes.toRepresentation();
-            OrganizationRepresentation org = new OrganizationRepresentation();
-            org.setName("test-org");
-            org.addDomain(new OrganizationDomainRepresentation("test.org"));
-            org.setEnabled(true);
-            try (Response response = realmRes.organizations().create(org)) {
-                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            }
+
+            createOrganization(realmRes, "test-org", "test.org");
 
             List<OrganizationRepresentation> orgs = realmRes.organizations().getAll();
             assertThat(orgs, hasSize(1));

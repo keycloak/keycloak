@@ -30,4 +30,9 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
     public <C> C getEmbeddedCacheManager(Config.Scope config) {
         return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreateEmbeddedCacheManager();
     }
+
+    @Override
+    public <C> C getRemoteCacheManager(Config.Scope config) {
+        return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreateRemoteCacheManager();
+    }
 }
