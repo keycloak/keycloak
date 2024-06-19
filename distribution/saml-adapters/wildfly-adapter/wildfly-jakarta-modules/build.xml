@@ -49,7 +49,6 @@
 
         <module-def name="org.keycloak.keycloak-adapter-spi">
             <maven-resource group="org.keycloak" artifact="keycloak-adapter-spi"/>
-            <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter-spi"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-saml-core">
@@ -70,10 +69,6 @@
 
         <module-def name="org.keycloak.keycloak-jboss-adapter-core">
             <maven-resource group="org.keycloak" artifact="keycloak-jboss-adapter-core"/>
-        </module-def>
-
-        <module-def name="org.keycloak.keycloak-saml-undertow-adapter">
-            <maven-resource group="org.keycloak" artifact="keycloak-saml-undertow-adapter"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-saml-wildfly-jakarta-subsystem">

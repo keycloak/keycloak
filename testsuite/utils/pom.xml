@@ -181,11 +181,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-client</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>keycloak-saml-undertow-adapter-jakarta</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <!-- Dependency on services from integration-arquillian -->
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>

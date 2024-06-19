@@ -13,16 +13,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter-spi</artifactId>
-            <licenses>
-                <license>
-                    <name>Apache License 2.0</name>
-                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
-                </license>
-            </licenses>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
             <licenses>
                 <license>
@@ -94,16 +84,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core-public</artifactId>
-            <licenses>
-                <license>
-                    <name>Apache License 2.0</name>
-                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
-                </license>
-            </licenses>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-undertow-adapter</artifactId>
             <licenses>
                 <license>
                     <name>Apache License 2.0</name>
