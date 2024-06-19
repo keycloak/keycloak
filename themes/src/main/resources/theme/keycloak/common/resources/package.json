@@ -8,7 +8,7 @@
   "dependencies": {
     "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.3.1",
     "@patternfly/patternfly": "^4.224.5",
-    "alpinejs": "^3.14.0",
+    "alpinejs": "^3.14.1",
     "jquery": "^3.7.1",
     "patternfly": "^3.59.5",
     "react": "^18.3.1",
