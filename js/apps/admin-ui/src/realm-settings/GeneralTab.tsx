@@ -182,7 +182,7 @@ function RealmSettingsGeneralTabForm({
           <TextControl
             name={convertAttributeNameToForm("attributes.frontendUrl")}
             type="url"
-            label={t("htmlDisplayName")}
+            label={t("frontendUrl")}
             labelIcon={t("frontendUrlHelp")}
           />
           <SelectControl
