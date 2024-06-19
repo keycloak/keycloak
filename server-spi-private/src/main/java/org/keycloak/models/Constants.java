@@ -181,4 +181,7 @@ public final class Constants {
 
     // attribute name used in apps to mark that it is an admin console and its azp is allowed
     public static final String SECURITY_ADMIN_CONSOLE_ATTR = "security.admin.console";
+
+    //attribute name used to mark a client as realm client
+    public static final String REALM_CLIENT = "realm_client";
 }
