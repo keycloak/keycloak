@@ -222,7 +222,7 @@ export default function LdapMapperDetails() {
           <FormGroup
             label={t("name")}
             labelIcon={
-              <HelpItem helpText={t("nameHelp")} fieldLabelId="name" />
+              <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
             }
             fieldId="kc-ldap-mapper-name"
             isRequired
