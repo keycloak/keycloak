@@ -56,13 +56,6 @@
             <resource>
                 <directory>maven-resources</directory>
             </resource>
-            <resource>
-                <directory>dist</directory>
-                <targetPath>theme/keycloak.v3/account/resources</targetPath>
-                <excludes>
-                    <exclude>index.html</exclude>
-                </excludes>
-            </resource>
         </resources>
 
         <plugins>
