@@ -28,34 +28,4 @@ export type Feature = {
   isOid4VciEnabled: boolean;
 };
 
-// During development the realm can be passed as a query parameter when redirecting back from Keycloak.
-const realm =
-  new URLSearchParams(window.location.search).get("realm") ||
-  location.pathname.match("/realms/(.*?)/account")?.[1] ||
-  "master";
-
-const defaultEnvironment: Environment = {
-  // Base environment variables
-  authServerUrl: "http://localhost:8180",
-  realm: realm,
-  clientId: "security-admin-console-v2",
-  resourceUrl: "http://localhost:8080",
-  logo: "/logo.svg",
-  logoUrl: "/",
-  // Account Console specific environment variables
-  baseUrl: `http://localhost:8180/realms/${realm}/account/`,
-  locale: "en",
-  features: {
-    isRegistrationEmailAsUsername: false,
-    isEditUserNameAllowed: true,
-    isLinkedAccountsEnabled: true,
-    isMyResourcesEnabled: true,
-    deleteAccountAllowed: true,
-    updateEmailFeatureEnabled: true,
-    updateEmailActionEnabled: true,
-    isViewGroupsEnabled: true,
-    isOid4VciEnabled: true,
-  },
-};
-
-export const environment = getInjectedEnvironment(defaultEnvironment);
+export const environment = getInjectedEnvironment<Environment>();

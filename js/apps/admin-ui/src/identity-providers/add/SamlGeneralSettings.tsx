@@ -56,7 +56,7 @@ export const SamlGeneralSettings = ({
         >
           <FormattedLink
             title={t("samlEndpointsLabel")}
-            href={`${environment.authServerUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
+            href={`${environment.adminBaseUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
             isInline
           />
         </FormGroup>
