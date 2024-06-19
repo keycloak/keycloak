@@ -28,7 +28,7 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
-import { cellWidth, expandable } from "@patternfly/react-table";
+import { cellWidth } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
@@ -468,7 +468,6 @@ export default function EventsSection() {
                   {
                     name: "time",
                     displayKey: "time",
-                    cellFormatters: [expandable],
                     cellRenderer: (row) =>
                       formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
                   },
