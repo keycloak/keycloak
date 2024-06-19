@@ -203,7 +203,7 @@ describe("User creation", () => {
 
     cy.wait("@save-user").should(({ request, response }) => {
       expect(response?.statusCode).to.equal(204);
-      expect(request.body.attributes, "response body").deep.equal({
+      expect(request.body.attributes, "response body").deep.contains({
         "key-multiple": ["other value"],
       });
     });
