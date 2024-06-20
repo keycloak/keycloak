@@ -30,6 +30,7 @@ export const UsersInRoleTab = () => {
       return adminClient.clients.findUsersWithRole({
         roleName: role.name!,
         id: clientId,
+        briefRepresentation: true,
         first,
         max,
       });
@@ -37,6 +38,7 @@ export const UsersInRoleTab = () => {
 
     return adminClient.roles.findUsersWithRole({
       name: role.name!,
+      briefRepresentation: true,
       first,
       max,
     });
