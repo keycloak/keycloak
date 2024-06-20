@@ -33,9 +33,7 @@
     <modules>
         <module>core-public</module>
         <module>core</module>
-        <module>core-jakarta</module>
         <module>wildfly</module>
         <module>wildfly-elytron</module>
-        <module>wildfly-elytron-jakarta</module>
     </modules>
 </project>

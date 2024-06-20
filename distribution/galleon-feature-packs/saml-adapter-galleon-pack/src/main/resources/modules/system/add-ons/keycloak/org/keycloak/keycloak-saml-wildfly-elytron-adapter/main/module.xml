@@ -19,12 +19,12 @@
   ~ * limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-wildfly-elytron-adapter">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
     <resources>
-        <artifact name="${org.keycloak:keycloak-saml-wildfly-elytron-jakarta-adapter}"/>
+        <artifact name="${org.keycloak:keycloak-saml-wildfly-elytron-adapter}"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>
@@ -37,7 +37,7 @@
         <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-saml-adapter-api-public"/>
-        <module name="org.keycloak.keycloak-saml-adapter-core-jakarta"/>
+        <module name="org.keycloak.keycloak-saml-adapter-core"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.infinispan"/>
