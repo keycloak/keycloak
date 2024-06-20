@@ -1,27 +1,22 @@
 import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type { Environment } from "../environment";
 import { joinPath } from "./joinPath";
 
 export const convertClientToUrl = (
-  { rootUrl, baseUrl, adminUrl }: ClientRepresentation,
-  adminClientBaseUrl: string,
+  { rootUrl, baseUrl }: ClientRepresentation,
+  environment: Environment,
 ) => {
   // absolute base url configured, use base url is
   if (baseUrl?.startsWith("http")) {
     return baseUrl;
   }
 
-  if (rootUrl === "${authAdminUrl}" && adminUrl) {
-    return rootUrl.replace(
-      /\$\{(authAdminUrl)\}/,
-      joinPath(adminClientBaseUrl, adminUrl),
-    );
+  if (rootUrl === "${authAdminUrl}") {
+    return rootUrl.replace(/\$\{(authAdminUrl)\}/, environment.adminBaseUrl);
   }
 
-  if (rootUrl === "${authBaseUrl}" && baseUrl) {
-    return rootUrl.replace(
-      /\$\{(authBaseUrl)\}/,
-      joinPath(adminClientBaseUrl, baseUrl),
-    );
+  if (rootUrl === "${authBaseUrl}") {
+    return rootUrl.replace(/\$\{(authBaseUrl)\}/, environment.serverBaseUrl);
   }
 
   if (rootUrl?.startsWith("http")) {
