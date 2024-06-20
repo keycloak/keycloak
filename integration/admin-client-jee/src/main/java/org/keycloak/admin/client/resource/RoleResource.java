@@ -120,9 +120,8 @@ public interface RoleResource {
 
     /**
      * Get role members.
-     * <p/>
-     * Returns users that have the given role, sorted by username ascending, paginated according to the query
-     * parameters.
+     * <p>Returns users that have the given role, sorted by username ascending, paginated according to the query
+     * parameters.</p>
      *
      * @param firstResult Pagination offset
      * @param maxResults Pagination size
@@ -133,11 +132,27 @@ public interface RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> getUserMembers(@QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
+
+    /**
+     * Get role members.
+     * <p>Returns users that have the given role, sorted by username ascending, paginated according to the query
+     * parameters.</p>
+     *
+     * @param briefRepresentation If the user should be returned in brief or full representation
+     * @param firstResult Pagination offset
+     * @param maxResults Pagination size
+     * @return a list of users with the given role
+     */
+    @GET
+    @Path("users")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> getUserMembers(@QueryParam("briefRepresentation") Boolean briefRepresentation,
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults);
     
     /**
-     * Get role groups
-     * <p/>
-     * Returns groups that have the given role
+     * Get role groups.
+     * <p>Returns groups that have the given role.</p>
      *
      * @return a list of groups with the given role
      */
@@ -147,9 +162,8 @@ public interface RoleResource {
     Set<GroupRepresentation> getRoleGroupMembers();
 
     /**
-     * Get role groups
-     * <p/>
-     * Returns groups that have the given role, paginated according to the query parameters
+     * Get role groups.
+     * <p>Returns groups that have the given role, paginated according to the query parameters.</p>
      *
      * @param firstResult Pagination offset
      * @param maxResults  Pagination size
@@ -162,9 +176,8 @@ public interface RoleResource {
                                                @QueryParam("max") Integer maxResults);
 
     /**
-     * Get role members
-     * <p/>
-     * Returns users that have the given role
+     * Get role members.
+     * <p>Returns users that have the given role.</p>
      *
      * @return a set of users with the given role
      *
@@ -177,9 +190,8 @@ public interface RoleResource {
     Set<UserRepresentation> getRoleUserMembers();
 
     /**
-     * Get role members
-     * <p/>
-     * Returns users that have the given role, paginated according to the query parameters
+     * Get role members.
+     * <p>Returns users that have the given role, paginated according to the query parameters.</p>
      *
      * @param firstResult Pagination offset
      * @param maxResults  Pagination size
