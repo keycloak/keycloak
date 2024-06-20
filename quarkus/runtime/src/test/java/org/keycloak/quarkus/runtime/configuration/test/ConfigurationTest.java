@@ -281,7 +281,7 @@ public class ConfigurationTest {
                 .toString()
                 .replaceFirst(isWindows() ? "file:///" : "file://", "");
 
-        assertEquals("jdbc:h2:file:" + userHomeUri + "data/h2/keycloakdb;;AUTO_SERVER=TRUE;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + userHomeUri + "data/h2/keycloakdb;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
