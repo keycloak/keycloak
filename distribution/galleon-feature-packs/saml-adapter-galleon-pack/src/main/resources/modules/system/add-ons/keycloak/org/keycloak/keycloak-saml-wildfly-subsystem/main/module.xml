@@ -17,13 +17,13 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-wildfly-jakarta-subsystem">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-wildfly-subsystem">
 
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
     <resources>
-        <artifact name="${org.keycloak:keycloak-saml-wildfly-jakarta-subsystem}"/>
+        <artifact name="${org.keycloak:keycloak-saml-wildfly-subsystem}"/>
     </resources>
 
     <dependencies>
@@ -41,6 +41,6 @@
         <module name="org.jboss.metadata.web"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.infinispan.cachestore.remote"/>
-        <module name="org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter"/>
+        <module name="org.keycloak.keycloak-saml-wildfly-elytron-adapter"/>
     </dependencies>
 </module>
