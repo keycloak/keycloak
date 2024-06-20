@@ -39,7 +39,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
@@ -107,7 +106,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             UserModel user, UserProfileMetadata metadata) {
 
         if (isServiceAccountUser(user)) {
-            return new LegacyAttributes(context, attributes, user, metadata, session);
+            return new ServiceAccountAttributes(context, attributes, user, metadata, session);
         }
         return new DefaultAttributes(context, attributes, user, metadata, session);
     }

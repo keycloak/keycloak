@@ -1466,19 +1466,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.users().get(user.getId()).toRepresentation();
             }
         }, Resource.USER, false);
-        invoke(new InvocationWithResponse() {
-            public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                // no-op
-            }
-            public void invoke(Keycloak keycloak, RealmResource realm, AtomicReference<Response> response) {
-                try (Client client = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-                    Response resp = client.target(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth")
-                            .path("/admin/realms/" + realm.toRepresentation().getRealm() + "/ui-ext/users/" + user.getId() + "/unmanagedAttributes")
-                            .register(new BearerAuthFilter(keycloak.tokenManager()))
-                            .request(MediaType.APPLICATION_JSON)
-                            .get();
-                    response.set(resp);
-                }
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).getUnmanagedAttributes();
             }
         }, Resource.USER, false);
         invoke(new Invocation() {
