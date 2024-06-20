@@ -446,10 +446,10 @@ public class LoginActionsService {
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
         processLocaleParam(authSession);
 
+        event.event(EventType.RESET_PASSWORD);
         // we allow applications to link to reset credentials without going through OAuth or SAML handshakes
         if (authSession == null && code == null && clientData == null) {
             if (!realm.isResetPasswordAllowed()) {
-                event.event(EventType.RESET_PASSWORD);
                 event.error(Errors.NOT_ALLOWED);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
@@ -458,7 +458,6 @@ public class LoginActionsService {
             return processResetCredentials(false, null, authSession, null);
         }
 
-        event.event(EventType.RESET_PASSWORD);
         return resetCredentials(authSessionId, code, execution, clientId, tabId, clientData);
     }
 
