@@ -28,7 +28,7 @@ jobs:
     outputs:
       js-ci: ${{ steps.conditional.outputs.js }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -41,10 +41,10 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4
         with:
           distribution: temurin
           java-version: 21
@@ -57,7 +57,7 @@ jobs:
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         with:
           name: keycloak
           path: keycloak-999.0.0-SNAPSHOT.tar.gz
@@ -70,7 +70,7 @@ jobs:
     env:
       WORKSPACE: "@keycloak/keycloak-admin-client"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - uses: ./.github/actions/pnpm-setup
 
@@ -86,7 +86,7 @@ jobs:
     env:
       WORKSPACE: keycloak-js
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - uses: ./.github/actions/pnpm-setup
 
@@ -100,7 +100,7 @@ jobs:
     env:
       WORKSPACE: "@keycloak/keycloak-ui-shared"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - uses: ./.github/actions/pnpm-setup
 
@@ -116,7 +116,7 @@ jobs:
     env:
       WORKSPACE: "@keycloak/keycloak-account-ui"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - uses: ./.github/actions/pnpm-setup
 
@@ -132,7 +132,7 @@ jobs:
     env:
       WORKSPACE: admin-ui
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - uses: ./.github/actions/pnpm-setup
 
@@ -154,17 +154,17 @@ jobs:
     env:
       WORKSPACE: "@keycloak/keycloak-account-ui"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - uses: ./.github/actions/pnpm-setup
 
       - name: Download Keycloak server
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
         with:
           name: keycloak
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4
         with:
           distribution: temurin
           java-version: 21
@@ -184,7 +184,7 @@ jobs:
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         if: always()
         with:
           name: account-ui-playwright-report
@@ -193,7 +193,7 @@ jobs:
 
       - name: Upload server logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         with:
           name: account-ui-server-log
           path: ~/server.log
@@ -233,17 +233,17 @@ jobs:
           - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Install Google Chrome
         if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@5e2d0c82a9ccc348a1b2c4e4a6795b7d551d4d2b # v1
         with:
           chrome-version: stable
 
       - name: Install Firefox
         if: matrix.browser == 'firefox'
-        uses: browser-actions/setup-firefox@v1
+        uses: browser-actions/setup-firefox@1c86bd195006ffc64a7c8887ff25ba2547d351ab # v1
         with:
           firefox-version: latest
 
@@ -253,12 +253,12 @@ jobs:
         run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
 
       - name: Download Keycloak server
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
         with:
           name: keycloak
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4
         with:
           distribution: temurin
           java-version: 21
@@ -289,13 +289,13 @@ jobs:
 
       - name: Upload server logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         with:
           name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
       - name: Upload Cypress videos
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         if: always() && github.repository != 'keycloak/keycloak-private'
         with:
           name: cypress-videos-${{ matrix.container }}-${{ matrix.browser }}
@@ -318,7 +318,7 @@ jobs:
       - admin-ui-e2e
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

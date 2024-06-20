@@ -31,7 +31,7 @@ jobs:
     outputs:
       operator: ${{ steps.conditional.outputs.operator }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Set version
         id: vars
@@ -67,7 +67,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.11.0
+        uses: manusa/actions-setup-minikube@92af4db914ab207f837251cd53eb7060e6477614 # v2.11.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -77,7 +77,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Set version
         id: vars
@@ -111,7 +111,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.11.0
+        uses: manusa/actions-setup-minikube@92af4db914ab207f837251cd53eb7060e6477614 # v2.11.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -121,7 +121,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -148,13 +148,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.11.0
+        uses: manusa/actions-setup-minikube@92af4db914ab207f837251cd53eb7060e6477614 # v2.11.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -163,7 +163,7 @@ jobs:
           start args: --memory=${{ env.MINIKUBE_MEMORY }}
 
       - name: Install OPM
-        uses: redhat-actions/openshift-tools-installer@v1
+        uses: redhat-actions/openshift-tools-installer@2de9a80cf012ad0601021515481d433b91ef8fd5 # v1
         with:
           source: github
           opm: 1.21.0
@@ -177,7 +177,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -238,7 +238,7 @@ jobs:
       - test-olm
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}
