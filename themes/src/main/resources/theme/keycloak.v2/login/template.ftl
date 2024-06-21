@@ -27,7 +27,8 @@
     <script type="importmap">
         {
             "imports": {
-                "alpinejs": "${url.resourcesCommonPath}/node_modules/alpinejs/dist/module.esm.js"
+                "alpinejs": "${url.resourcesCommonPath}/node_modules/alpinejs/dist/module.esm.js",
+                "rfc4648": "${url.resourcesCommonPath}/node_modules/rfc4648/lib/rfc4648.js"
             }
         }
     </script>
@@ -41,17 +42,13 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
-    <#if authenticationSession??>
-        <script type="module">
-            import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+    <script type="module">
+        import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
 
-            checkCookiesAndSetTimer(
-              "${authenticationSession.authSessionId}",
-              "${authenticationSession.tabId}",
-              "${url.ssoLoginInOtherTabsUrl}"
-            );
-        </script>
-    </#if>
+        checkCookiesAndSetTimer(
+            "${url.ssoLoginInOtherTabsUrl?no_esc}"
+        );
+    </script>
 </head>
 
 <body id="keycloak-bg" class="${properties.kcBodyClass!}">
@@ -87,7 +84,7 @@
   <div class="pf-v5-c-login__container">
     <main class="pf-v5-c-login__main">
       <header class="pf-v5-c-login__main-header">
-        <h1 class="pf-v5-c-title pf-m-3xl"><#nested "header"></h1>
+        <h1 class="pf-v5-c-title pf-m-3xl" id="kc-page-title"><#nested "header"></h1>
         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
         <div class="pf-v5-c-login__main-header-utilities">
           <div class="pf-v5-c-form-control">
@@ -179,14 +176,14 @@
                     <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
                     <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
                 </div>
-                    <span class="${properties.kcAlertTitleClass!}">${kcSanitize(message.summary)?no_esc}</span>
+                    <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(message.summary)?no_esc}</span>
             </div>
         </#if>
 
         <#nested "form">
 
         <#if auth?has_content && auth.showTryAnotherWayLink()>
-          <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post">
+          <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <div class="${properties.kcFormGroupClass!}">
                   <input type="hidden" name="tryAnotherWay" value="on"/>
                   <a href="#" id="try-another-way"

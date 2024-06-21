@@ -50,7 +50,7 @@
             </li>
         </ol>
 
-        <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post">
+        <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post" novalidate="novalidate">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelClass!}">
                     <label class="pf-v5-c-form__label" for="form-vertical-name">
