@@ -31,6 +31,8 @@ import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -458,7 +460,7 @@ public class ExportUtils {
 
         if (options.isGroupsAndRolesIncluded()) {
             List<String> groups = user.getGroupsStream()
-                    .filter(g -> !g.getAttributes().containsKey(OrganizationModel.ORGANIZATION_ATTRIBUTE))
+                    .filter(g -> Type.REALM.equals(g.getType()))
                     .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
             userRep.setGroups(groups);
         }
