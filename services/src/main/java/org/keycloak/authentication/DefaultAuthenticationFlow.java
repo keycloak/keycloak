@@ -93,16 +93,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (inputData.containsKey("tryAnotherWay")) {
                 logger.trace("User clicked on link 'Try Another Way'");
 
-                List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
-
-                AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, null, null);
-                result.setAuthenticationSelections(selectionOptions);
-                return result.form().createSelectAuthenticator();
+                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, "true");
+                return createSelectAuthenticatorsScreen(model);
             }
 
             // check if the user has switched to a new authentication execution, and if so switch to it.
             if (authExecId != null && !authExecId.isEmpty()) {
 
+                processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
                 List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
 
                 // Check if switch to the requested authentication execution is allowed
@@ -222,9 +220,34 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
     }
 
+    /**
+     * Create screen where user can select from multiple authentication methods (Usually displayed when user clicks on 'try another way' link during authentication)
+     *
+     * @param executionModel Last execution (should be typically available in the methods)
+     * @return response with the screen to be displayed to the user
+     */
+    private Response createSelectAuthenticatorsScreen(AuthenticationExecutionModel executionModel) {
+        List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(executionModel);
+
+        AuthenticationProcessor.Result result = processor.createAuthenticatorContext(executionModel, null, null);
+        result.setAuthenticationSelections(selectionOptions);
+        return result.form().createSelectAuthenticator();
+    }
+
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());
+
+        if (Boolean.parseBoolean(processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED))) {
+            logger.tracef("Refreshed page on authentication selector screen");
+            String lastExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+            if (lastExecutionId != null) {
+                AuthenticationExecutionModel executionModel = processor.getRealm().getAuthenticationExecutionById(lastExecutionId);
+                if (executionModel != null) {
+                    return createSelectAuthenticatorsScreen(executionModel);
+                }
+            }
+        }
 
         //separate flow elements into required and alternative elements
         List<AuthenticationExecutionModel> requiredList = new ArrayList<>();
