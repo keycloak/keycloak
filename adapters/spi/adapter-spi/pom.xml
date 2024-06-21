@@ -31,6 +31,8 @@
     <description/>
 
     <properties>
+        <!-- We still need to support EAP 8, set the Java version to 11. -->
+        <maven.compiler.release>11</maven.compiler.release>
         <keycloak.osgi.export>
             org.keycloak.adapters.spi.*
         </keycloak.osgi.export>
