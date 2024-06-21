@@ -27,7 +27,6 @@
     <script type="importmap">
         {
             "imports": {
-                "alpinejs": "${url.resourcesCommonPath}/node_modules/alpinejs/dist/module.esm.js",
                 "rfc4648": "${url.resourcesCommonPath}/node_modules/rfc4648/lib/rfc4648.js"
             }
         }
@@ -57,30 +56,7 @@
              class="${properties.kcHeaderWrapperClass!}">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
     </div>
 </div>
-<div class="pf-v5-c-login"
-    x-data="{
-        open: false,
-        toggle() {
-            if (this.open) {
-                return this.close()
-            }
-
-            this.$refs.button.focus()
-
-            this.open = true
-        },
-        close(focusAfter) {
-            if (! this.open) return
-
-            this.open = false
-
-            focusAfter && focusAfter.focus()
-        }
-    }"
-    x-on:keydown.escape.prevent.stop="close($refs.button)"
-    x-on:focusin.window="! $refs.panel?.contains($event.target) && close()"
-    x-id="['language-select']"
->
+<div class="pf-v5-c-login">
   <div class="pf-v5-c-login__container">
     <main class="pf-v5-c-login__main">
       <header class="pf-v5-c-login__main-header">
@@ -206,11 +182,6 @@
     </main>
   </div>
 </div>
-<script type="module">
-    import Alpine from "alpinejs";
-
-    Alpine.start();
-</script>
 </body>
 </html>
 </#macro>
