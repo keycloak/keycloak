@@ -46,7 +46,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testFipsApprovedMode(KeycloakDistribution dist) {
+    void testFipsApprovedModePasswordFails(KeycloakDistribution dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.setEnvVar("KEYCLOAK_ADMIN", "admin");
             dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", "admin");
@@ -57,10 +57,19 @@ public class FipsDistTest {
                     "org.bouncycastle.crypto.fips.FipsUnapprovedOperationError: password must be at least 112 bits");
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
+        });
+    }
 
+    @Test
+    void testFipsApprovedModePasswordSucceeds(KeycloakDistribution dist) {
+        runOnFipsEnabledDistribution(dist, () -> {
+            dist.setEnvVar("KEYCLOAK_ADMIN", "admin");
             dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", "adminadminadmin");
-            cliResult = dist.run("start", "--fips-mode=strict");
+
+            CLIResult cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertStarted();
+            cliResult.assertMessage("Java security providers: [ \n"
+                    + " KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
             cliResult.assertMessage("Added user 'admin' to realm 'master'");
         });
     }

@@ -153,7 +153,7 @@ public final class HttpPropertyMappers {
         boolean enabled = Boolean.parseBoolean(value.get());
         Optional<String> proxy = Configuration.getOptionalKcValue("proxy");
 
-        if (Environment.isDevMode() || Environment.isImportExportMode()
+        if (Environment.isDevMode() || Environment.isNonServerMode()
                 || ("edge".equalsIgnoreCase(proxy.orElse("")))) {
             enabled = true;
         }

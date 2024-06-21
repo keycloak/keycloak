@@ -101,6 +101,9 @@ node
 # Vite
 dist
 
+!/quarkus/dist
+!/quarkus/**/src/**/dist
+
 # ESLint
 .eslintcache
 
