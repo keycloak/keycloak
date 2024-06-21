@@ -1,5 +1,6 @@
 {
   "name": "keycloak-server",
+  "private": true,
   "type": "module",
   "scripts": {
     "start": "node ./scripts/start-server.js",
