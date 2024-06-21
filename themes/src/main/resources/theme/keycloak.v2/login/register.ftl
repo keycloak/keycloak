@@ -9,7 +9,7 @@
             ${msg("registerTitle")}
         </#if>
     <#elseif section = "form">
-        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post" novalidate="novalidate">
 
             <@userProfileCommons.userProfileFormFields; callback, attribute>
                 <#if callback = "afterField">
