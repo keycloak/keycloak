@@ -13,8 +13,8 @@ public class EmbeddedKeycloakTestServer implements KeycloakTestServer {
 
     @Override
     public void start(KeycloakTestServerConfig serverConfig) {
-        System.setProperty("keycloakAdmin", "admin");
-        System.setProperty("keycloakAdminPassword", "admin");
+        serverConfig.adminUserName().ifPresent(username -> System.setProperty("keycloakAdmin", username));
+        serverConfig.adminUserPassword().ifPresent(password -> System.setProperty("keycloakAdminPassword", password));
 
         List<String> rawOptions = new LinkedList<>();
         rawOptions.add("start-dev");
