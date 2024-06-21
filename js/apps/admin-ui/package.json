@@ -86,7 +86,7 @@
     "react-hook-form": "^7.52.0",
     "react-i18next": "^14.1.2",
     "react-router-dom": "^6.23.1",
-    "reactflow": "^11.11.3",
+    "reactflow": "^11.11.4",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
   "devDependencies": {
