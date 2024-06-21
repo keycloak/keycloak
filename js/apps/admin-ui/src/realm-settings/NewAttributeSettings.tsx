@@ -379,7 +379,7 @@ export default function NewAttributeSettings() {
         (translation) => translation.value.trim() !== "",
       );
 
-      if (!hasNonEmptyTranslations) {
+      if (!hasNonEmptyTranslations && !formFields.displayName) {
         addError("createAttributeError", t("translationError"));
         return;
       }
