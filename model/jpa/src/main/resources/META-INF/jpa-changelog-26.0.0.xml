@@ -28,4 +28,21 @@
         <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, ALIAS" constraintName="UK_ORG_ALIAS"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.0.0-org-group">
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="TYPE" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+        <update tableName="KEYCLOAK_GROUP">
+            <column name="TYPE" valueNumeric="0" type="INT"/>
+        </update>
+        <addNotNullConstraint tableName="KEYCLOAK_GROUP" columnName="TYPE" columnDataType="INT"/>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_0_0_OrganizationGroupType"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-org-indexes">
+        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_ORG_ID">
+            <column name="ORG_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

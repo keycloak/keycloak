@@ -57,6 +57,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupCreatedEvent;
 import org.keycloak.models.GroupModel.GroupPathChangeEvent;
 import org.keycloak.models.GroupModel.GroupUpdatedEvent;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -78,7 +79,6 @@ import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 
@@ -180,20 +180,21 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         realm.getDefaultGroupIds().clear();
         em.flush();
 
-        int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
-                .setParameter("realm", realm.getId()).executeUpdate();
-
         session.clients().removeClients(adapter);
 
-        num = em.createNamedQuery("deleteDefaultClientScopeRealmMappingByRealm")
+        em.createNamedQuery("deleteDefaultClientScopeRealmMappingByRealm")
                 .setParameter("realm", realm).executeUpdate();
 
         session.clientScopes().removeClientScopes(adapter);
         session.roles().removeRoles(adapter);
 
-        session.groups().getTopLevelGroupsStream(adapter).forEach(Organizations.removeGroup(session, adapter));
+        em.createNamedQuery("deleteOrganizationDomainsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteOrganizationsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        session.groups().preRemove(adapter);
 
-        num = em.createNamedQuery("removeClientInitialAccessByRealm")
+        em.createNamedQuery("removeClientInitialAccessByRealm")
                 .setParameter("realm", realm).executeUpdate();
 
         em.remove(realm);
@@ -701,7 +702,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
+    public GroupModel createGroup(RealmModel realm, String id, Type type, String name, GroupModel toParent) {
         if (id == null) {
             id = KeycloakModelUtils.generateId();
         } else if (GroupEntity.TOP_PARENT_ID.equals(id)) {
@@ -713,6 +714,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         groupEntity.setName(name);
         groupEntity.setRealm(realm.getId());
         groupEntity.setParentId(toParent == null? GroupEntity.TOP_PARENT_ID : toParent.getId());
+        groupEntity.setType(type == null ? Type.REALM.intValue() : type.intValue());
         em.persist(groupEntity);
         em.flush();
 
@@ -737,6 +739,16 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // ClientProvider implementation
         String clientScopeMapping = JpaUtils.getTableNameForNativeQuery("SCOPE_MAPPING", em);
         em.createNativeQuery("delete from " + clientScopeMapping + " where ROLE_ID = :role").setParameter("role", role.getId()).executeUpdate();
+    }
+
+    @Override
+    public void preRemove(RealmModel realm) {
+        em.createNamedQuery("deleteGroupRoleMappingsByRealm")
+                .setParameter("realm", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteGroupAttributesByRealm")
+                .setParameter("realm", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteGroupsByRealm")
+                .setParameter("realm", realm.getId()).executeUpdate();
     }
 
     @Override
@@ -1149,6 +1161,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
+        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
 
         for (Map.Entry<String, String> entry : filteredAttributes.entrySet()) {
             String key = entry.getKey();

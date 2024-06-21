@@ -36,6 +36,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
@@ -51,16 +52,14 @@ import org.keycloak.utils.StringUtil;
 public class Organizations {
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
+        if (!Type.ORGANIZATION.equals(group.getType())) {
+            return true;
+        }
+
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            Object organization = session.getAttribute(OrganizationModel.class.getName());
+            OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
-            if (organization != null) {
-                return true;
-            }
-
-            String orgId = group.getFirstAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-
-            return StringUtil.isBlank(orgId);
+            return organization != null && organization.getId().equals(group.getName());
         }
 
         return true;
@@ -101,7 +100,7 @@ public class Organizations {
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
         return group -> {
-            if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            if (!Type.ORGANIZATION.equals(group.getType())) {
                 realm.removeGroup(group);
                 return;
             }
@@ -109,12 +108,9 @@ public class Organizations {
             OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
             try {
-                String orgId = group.getFirstAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE);
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
-                if (orgId != null) {
-                    session.setAttribute(OrganizationModel.class.getName(), provider.getById(orgId));
-                }
+                session.setAttribute(OrganizationModel.class.getName(), provider.getById(group.getName()));
 
                 realm.removeGroup(group);
             } finally {
@@ -138,6 +134,18 @@ public class Organizations {
     }
 
     public static OrganizationRepresentation toRepresentation(OrganizationModel model) {
+        OrganizationRepresentation rep = toBriefRepresentation(model);
+
+        if (rep == null) {
+            return null;
+        }
+
+        rep.setAttributes(model.getAttributes());
+
+        return rep;
+    }
+
+    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model) {
         if (model == null) {
             return null;
         }
@@ -149,7 +157,6 @@ public class Organizations {
         rep.setAlias(model.getAlias());
         rep.setEnabled(model.isEnabled());
         rep.setDescription(model.getDescription());
-        rep.setAttributes(model.getAttributes());
         model.getDomains().filter(Objects::nonNull).map(Organizations::toRepresentation)
                 .forEach(rep::addDomain);
 

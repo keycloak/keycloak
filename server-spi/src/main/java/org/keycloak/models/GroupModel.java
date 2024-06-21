@@ -30,6 +30,33 @@ import java.util.stream.Stream;
  */
 public interface GroupModel extends RoleMapperModel {
 
+    enum Type {
+        REALM(0),
+        ORGANIZATION(1);
+
+        private final int value;
+
+        Type(int value) {
+            this.value = value;
+        }
+
+        public static Type valueOf(int value) {
+            Type[] values = values();
+
+            for (int i = 0; i < values.length; i++) {
+                if (values[i].value == value) {
+                    return values[i];
+                }
+            }
+
+            throw new IllegalArgumentException("No type found with value " + value);
+        }
+
+        public int intValue() {
+            return value;
+        }
+    }
+
     interface GroupEvent extends ProviderEvent {
         RealmModel getRealm();
         GroupModel getGroup();
@@ -291,5 +318,9 @@ public interface GroupModel extends RoleMapperModel {
 
     default boolean escapeSlashesInGroupPath() {
         return GroupProvider.DEFAULT_ESCAPE_SLASHES;
+    }
+
+    default Type getType() {
+        return Type.REALM;
     }
 }

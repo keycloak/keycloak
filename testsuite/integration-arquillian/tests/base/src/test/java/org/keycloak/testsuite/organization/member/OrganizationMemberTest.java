@@ -346,18 +346,6 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testDeleteGroupOnOrganizationRemoval() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        addMember(organization);
-
-        assertTrue(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
-
-        organization.delete().close();
-
-        assertFalse(testRealm().groups().groups("", 0, 100, false).stream().anyMatch(group -> group.getAttributes().containsKey("kc.org")));
-    }
-
-    @Test
     public void testSearchMembers() {
 
         // create test users, ordered by username (e-mail).

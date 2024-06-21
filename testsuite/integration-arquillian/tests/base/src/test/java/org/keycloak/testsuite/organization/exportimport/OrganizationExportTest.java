@@ -163,7 +163,10 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
         exportImport.setFile(targetFilePath);
         exportImport.runImport();
-        getCleanup().addCleanup(() -> testRealm().remove());
+        getCleanup().addCleanup(() -> {
+            testRealm().remove();
+            getTestContext().getTestRealmReps().clear();
+        });
 
         return testRealm().toRepresentation();
     }
