@@ -88,11 +88,8 @@
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
-
         <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
-
         <bouncycastle.bctls-fips.version>1.0.19</bouncycastle.bctls-fips.version>
-
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -403,11 +400,11 @@
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
             
-          <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bc-fips</artifactId>
-            <version>${bouncycastle.bcfips.version}</version>
-          </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bc-fips</artifactId>
+                <version>${bouncycastle.bcfips.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.bouncycastle</groupId>

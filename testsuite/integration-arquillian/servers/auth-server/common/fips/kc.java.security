@@ -11,7 +11,3 @@
 # However once it is present, there won't be a need to override this and this part can be fully commented/removed.
 # TODO: Comment/remove this once https://bugzilla.redhat.com/show_bug.cgi?id=1940064 is fixed and OpenJDK 17 updated to corresponding version where XMLDSig is available by default
 #
-fips.provider.7=XMLDSig
-
-# TODO: Comment/remove this once https://issues.redhat.com/browse/RHEL-3478 is fixed.
-securerandom.strongAlgorithms=PKCS11:SunPKCS11-NSS-FIPS
