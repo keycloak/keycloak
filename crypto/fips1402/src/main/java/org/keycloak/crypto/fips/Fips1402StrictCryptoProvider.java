@@ -13,14 +13,11 @@ public class Fips1402StrictCryptoProvider extends FIPS1402Provider {
 
     static {
         System.setProperty("org.bouncycastle.fips.approved_only", Boolean.TRUE.toString());
-        // Since BC-FIPS 1.0.2.4 PKCS 1.5 is disabled by default under strict mode and must
-        // be enabled via flags
-        System.setProperty("org.bouncycastle.rsa.allow_pkcs15_enc",Boolean.TRUE.toString());
     }
 
     @Override
     public String[] getSupportedRsaKeySizes() {
-        // RSA key of 1024 bits not supported in BC-FIPS approved mode
+        // RSA key of 1024 bits not supported in BCFIPS approved mode
         return new String[] {"2048", "4096"};
     }
 }
