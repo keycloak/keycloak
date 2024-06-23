@@ -19,6 +19,8 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Proof to be used in the Credential Request(to allow holder binding) according to OID4VCI
@@ -29,6 +31,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Proof {
 
+    @JsonSerialize(using = ProofTypeSerializer.class)
+    @JsonDeserialize(using = ProofTypeDeserializer.class)
     @JsonProperty("proof_type")
     private ProofType proofType;
 
