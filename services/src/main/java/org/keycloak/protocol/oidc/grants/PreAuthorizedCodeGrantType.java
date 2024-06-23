@@ -50,10 +50,12 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         LOGGER.debug("Process grant request for preauthorized.");
         setContext(context);
 
-        String code = formParams.getFirst(OAuth2Constants.CODE);
+        // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
+        String code = formParams.getFirst(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM);
 
         if (code == null) {
-            String errorMessage = "Missing parameter: " + OAuth2Constants.CODE;
+            // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
+            String errorMessage = "Missing parameter: " + PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM;
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
