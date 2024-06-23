@@ -152,12 +152,8 @@ public class SdJwtSigningService extends SigningService<String> {
         ObjectNode rootNode = claimSet.withObject("");
         rootNode.put(ISSUER_CLAIM, issuerDid);
 
-        // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
-        // provided
-        long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
-                .map(issuanceDate -> issuanceDate.toInstant().getEpochSecond())
-                .orElse((long) timeProvider.currentTimeSeconds());
-        rootNode.put(NOT_BEFORE_CLAIM, iat);
+        // nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed
+        // see: https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-03.html#name-registered-jwt-claims
         if (verifiableCredential.getType() == null || verifiableCredential.getType().size() != 1) {
             throw new SigningServiceException("SD-JWT only supports single type credentials.");
         }
