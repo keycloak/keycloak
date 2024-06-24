@@ -45,6 +45,8 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger LOGGER = Logger.getLogger(PreAuthorizedCodeGrantType.class);
 
+    public static final String VC_ISSUANCE_FLOW = "VC-Issuance-Flow";
+
     @Override
     public Response process(Context context) {
         LOGGER.debug("Process grant request for preauthorized.");
@@ -75,6 +77,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         AuthenticatedClientSessionModel clientSession = result.getClientSession();
         ClientSessionContext sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
                 OAuth2Constants.SCOPE_OPENID, session);
+        clientSession.setNote(VC_ISSUANCE_FLOW, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
 
 
         // set the client as retrieved from the pre-authorized session

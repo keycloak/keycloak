@@ -84,9 +84,6 @@ quarkus/data/*.db
 /integration/admin-client/src/
 /adapters/saml/jakarta-servlet-filter/src/
 /adapters/oidc/jakarta-servlet-filter/src/
-/adapters/saml/wildfly-elytron-jakarta/src/
-/adapters/saml/core-jakarta/src/
-/adapters/saml/wildfly/wildfly-jakarta-subsystem/src/
 /.metadata/
 
 # Git ephemeral files

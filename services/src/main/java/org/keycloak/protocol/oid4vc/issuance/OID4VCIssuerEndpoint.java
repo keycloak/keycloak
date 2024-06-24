@@ -36,6 +36,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -62,6 +63,10 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.utils.MediaType;
@@ -72,6 +77,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -89,6 +95,8 @@ import java.util.Optional;
 public class OID4VCIssuerEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
+
+    private Cors cors;
 
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
@@ -116,6 +124,8 @@ public class OID4VCIssuerEndpoint {
      */
     private final Map<String, VerifiableCredentialsSigningService> signingServices;
 
+    private final boolean isIgnoreScopeCheck;
+
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 String issuerDid,
                                 Map<String, VerifiableCredentialsSigningService> signingServices,
@@ -128,9 +138,24 @@ public class OID4VCIssuerEndpoint {
         this.issuerDid = issuerDid;
         this.signingServices = signingServices;
         this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
-
+        this.isIgnoreScopeCheck = false;
     }
 
+    public OID4VCIssuerEndpoint(KeycloakSession session,
+                                String issuerDid,
+                                Map<String, VerifiableCredentialsSigningService> signingServices,
+                                AppAuthManager.BearerTokenAuthenticator authenticator,
+                                ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
+                                boolean isIgnoreScopeCheck) {
+        this.session = session;
+        this.bearerTokenAuthenticator = authenticator;
+        this.objectMapper = objectMapper;
+        this.timeProvider = timeProvider;
+        this.issuerDid = issuerDid;
+        this.signingServices = signingServices;
+        this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
+        this.isIgnoreScopeCheck = isIgnoreScopeCheck;
+    }
 
     /**
      * Provides the URI to the OID4VCI compliant credentials offer
@@ -244,6 +269,26 @@ public class OID4VCIssuerEndpoint {
                 .build();
     }
 
+    private void checkScope(CredentialRequest credentialRequestVO) {
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+        if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+            // authz code flow
+            ClientModel client = clientSession.getClient();
+            String credentialIdentifier = credentialRequestVO.getCredentialIdentifier();
+            String scope = client.getAttributes().get("vc." + credentialIdentifier + ".scope"); // following credential identifier in client attribute
+            AccessToken accessToken = bearerTokenAuthenticator.authenticate().getToken();
+            if (Arrays.stream(accessToken.getScope().split(" ")).sequential().noneMatch(i->i.equals(scope))) {
+                LOGGER.debugf("Scope check failure: credentialIdentifier = %s, required scope = %s, scope in access token = %s.", credentialIdentifier, scope, accessToken.getScope());
+                throw new CorsErrorResponseException(cors, ErrorType.UNSUPPORTED_CREDENTIAL_TYPE.toString(), "Scope check failure", Response.Status.BAD_REQUEST);
+            } else {
+                LOGGER.debugf("Scope check success: credentialIdentifier = %s, required scope = %s, scope in access token = %s.", credentialIdentifier, scope, accessToken.getScope());
+            }
+        } else {
+            clientSession.removeNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+        }
+    }
+
     /**
      * Returns a verifiable credential
      */
@@ -255,8 +300,14 @@ public class OID4VCIssuerEndpoint {
             CredentialRequest credentialRequestVO) {
         LOGGER.debugf("Received credentials request %s.", credentialRequestVO);
 
+        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+
         // do first to fail fast on auth
         AuthenticationManager.AuthResult authResult = getAuthResult();
+
+        if (!isIgnoreScopeCheck) {
+            checkScope(credentialRequestVO);
+        }
 
         Format requestedFormat = credentialRequestVO.getFormat();
         String requestedCredential = credentialRequestVO.getCredentialIdentifier();
