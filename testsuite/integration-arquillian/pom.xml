@@ -53,7 +53,6 @@
         <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
-        <appium.client.version>9.2.2</appium.client.version>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
         <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
         <commons.validator.version>1.8.0</commons.validator.version>

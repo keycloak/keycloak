@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import io.appium.java_client.android.AndroidDriver;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
@@ -144,10 +143,6 @@ public final class UIUtils {
         }
 
         WebDriver driver = getCurrentDriver();
-        if (driver instanceof AndroidDriver) {
-            AndroidDriver androidDriver = (AndroidDriver) driver;
-            androidDriver.hideKeyboard(); // stability improvement
-        }
     }
 
     /**
