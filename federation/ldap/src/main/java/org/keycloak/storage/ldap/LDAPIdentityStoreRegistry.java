@@ -54,7 +54,7 @@ public class LDAPIdentityStoreRegistry {
             ldapStores.put(ldapModel.getId(), ldapConfig);
         }
 
-        return createLdapIdentityStore(session, ldapConfig);
+        return new LDAPIdentityStore(session, ldapConfig);
     }
 
     // Don't log LDAP password
@@ -67,31 +67,5 @@ public class LDAPIdentityStoreRegistry {
                     logger.debugf("Mapper for provider: %s, Mapper name: %s, Provider: %s, Mapper configuration: %s",
                             ldapModel.getName(), c.getName(), c.getProviderId(), c.getConfig().toString()));
         }
-    }
-
-    /**
-     * Create LDAPIdentityStore to be cached in the local registry
-     */
-    public static LDAPIdentityStore createLdapIdentityStore(KeycloakSession session, LDAPConfig cfg) {
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", cfg.getConnectionPoolingAuthentication(), "none simple");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", cfg.getConnectionPoolingInitSize(), "1");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", cfg.getConnectionPoolingMaxSize(), "1000");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.prefsize", cfg.getConnectionPoolingPrefSize(), "5");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.timeout", cfg.getConnectionPoolingTimeout(), "300000");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", cfg.getConnectionPoolingProtocol(), "plain ssl");
-        checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", cfg.getConnectionPoolingDebug(), "off");
-
-        return new LDAPIdentityStore(session, cfg);
-    }
-
-    private static void checkSystemProperty(String name, String cfgValue, String defaultValue) {
-        String value = System.getProperty(name);
-        if(cfgValue != null) {
-            value = cfgValue;
-        }
-        if(value == null) {
-            value = defaultValue;
-        }
-        System.setProperty(name, value);
     }
 }
