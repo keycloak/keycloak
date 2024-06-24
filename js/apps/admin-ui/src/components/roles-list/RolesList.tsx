@@ -9,7 +9,7 @@ import { translationFormatter } from "../../clients/ClientsSection";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
-import { useAlerts } from "../alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";

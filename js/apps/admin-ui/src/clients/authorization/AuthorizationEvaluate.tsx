@@ -27,7 +27,7 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ForbiddenSection } from "../../ForbiddenSection";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form/FormAccess";
 import {

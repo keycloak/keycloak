@@ -1,4 +1,8 @@
 import {
+  ContinueCancelModal,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   DataList,
   DataListCell,
@@ -22,16 +26,13 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ContinueCancelModal,
-  useAlerts,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+
 import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
 import { formatDate } from "../utils/formatDate";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 
 type Application = ClientRepresentation & {
@@ -41,7 +42,7 @@ type Application = ClientRepresentation & {
 export const Applications = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
-  const { addAlert, addError } = useAlerts();
+  const { addAlert, addError } = useAccountAlerts();
 
   const [applications, setApplications] = useState<Application[]>();
   const [key, setKey] = useState(1);
@@ -67,7 +68,7 @@ export const Applications = () => {
       refresh();
       addAlert(t("removeConsentSuccess"));
     } catch (error) {
-      addError(t("removeConsentError", { error }).toString());
+      addError("removeConsentError", error);
     }
   };
 

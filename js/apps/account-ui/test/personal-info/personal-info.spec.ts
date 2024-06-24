@@ -25,7 +25,7 @@ test.describe("Personal info page", () => {
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
 
-    const alerts = page.getByTestId("alerts");
+    const alerts = page.getByTestId("global-alerts");
     await expect(alerts).toHaveText("Your account has been updated.");
   });
 });
@@ -95,7 +95,7 @@ test.describe("Personal info with userprofile enabled", () => {
     await page.getByRole("option", { name: "two" }).click();
     await page.getByTestId("email2").fill("non-valid");
     await page.getByTestId("save").click();
-    await expect(page.getByTestId("alerts")).toHaveText(
+    await expect(page.getByTestId("global-alerts")).toHaveText(
       "Could not update account due to validation errors",
     );
 

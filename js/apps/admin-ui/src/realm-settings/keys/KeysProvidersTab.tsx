@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import { useAccess } from "../../context/access/Access";

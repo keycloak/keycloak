@@ -26,7 +26,7 @@ import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useAccess } from "../context/access/Access";

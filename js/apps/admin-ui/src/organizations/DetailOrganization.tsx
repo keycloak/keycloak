@@ -9,7 +9,7 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { AttributesForm } from "../components/key-value-form/AttributeForm";
 import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";

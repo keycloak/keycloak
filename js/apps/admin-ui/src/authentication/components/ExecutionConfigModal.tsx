@@ -16,7 +16,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { useFetch } from "../../utils/useFetch";

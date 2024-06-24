@@ -1,4 +1,9 @@
 import {
+  FormErrorText,
+  SelectControl,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   Chip,
   ChipGroup,
@@ -18,14 +23,10 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  FormErrorText,
-  SelectControl,
-  useAlerts,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {
@@ -48,7 +49,7 @@ export const ShareTheResource = ({
 }: ShareTheResourceProps) => {
   const { t } = useTranslation();
   const context = useEnvironment();
-  const { addAlert, addError } = useAlerts();
+  const { addAlert, addError } = useAccountAlerts();
   const form = useForm<FormValues>();
   const {
     control,
@@ -92,7 +93,7 @@ export const ShareTheResource = ({
       addAlert(t("shareSuccess"));
       onClose();
     } catch (error) {
-      addError(t("shareError", { error }).toString());
+      addError("shareError", error);
     }
     reset({});
   };
