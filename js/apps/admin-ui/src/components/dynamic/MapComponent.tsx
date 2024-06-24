@@ -1,25 +1,24 @@
+import { HelpItem, generateId } from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
   Button,
   EmptyState,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   FormGroup,
   TextInput,
-  EmptyStateFooter,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { generateId } from "../../util";
 
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { KeyValueType } from "../key-value-form/key-value-convert";
-import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
 
 type IdKeyValueType = KeyValueType & {
   id: number;

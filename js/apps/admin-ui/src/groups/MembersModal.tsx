@@ -4,7 +4,7 @@ import { differenceBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../util";

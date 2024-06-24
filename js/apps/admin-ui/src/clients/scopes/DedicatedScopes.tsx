@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { MapperList } from "../../client-scopes/details/MapperList";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,

@@ -18,7 +18,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";

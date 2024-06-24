@@ -24,7 +24,7 @@ import {
   ClientRoleTab,
   toClientRole,
 } from "../clients/routes/ClientRole";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import {
   AttributeForm,
