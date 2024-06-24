@@ -118,7 +118,7 @@ User profile information, such as first name, last name, and email, are not prov
 
 ==== Setup and configuration of client machines
 
-Client machines must have a Kerberos client and set up the `krb5.conf` as described <<_server_setup, above>>. The client machines must also enable SPNEGO login support in their browser. See link:https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[configuring Firefox for Kerberos] if you are using the Firefox browser.
+Client machines must have a Kerberos client and set up the `krb5.conf` as described <<_server_setup, above>>. The client machines must also enable SPNEGO login support in their browser. See link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[configuring Firefox for Kerberos] if you are using the Firefox browser.
 
 The `.mydomain.org` URI must be in the `network.negotiate-auth.trusted-uris` configuration option.
 
@@ -172,7 +172,7 @@ Configure `forwardable` Kerberos tickets in `krb5.conf` file and add support for
 
 [WARNING]
 ====
-Credential delegation has security implications, so use it only if necessary and only with HTTPS. See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[this article] for more details and an example.
+Credential delegation has security implications, so use it only if necessary and only with HTTPS. See https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[this article] for more details and an example.
 ====
 
 ==== Cross-realm trust
