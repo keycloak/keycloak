@@ -25,6 +25,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -46,6 +47,7 @@ import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -218,7 +220,11 @@ public class SdJwtSigningService extends SigningService<String> {
         AccessToken proofPayload = JsonSerialization.readValue(jwsInput.getContent(), AccessToken.class);
         validateProofPayload(vcIssuanceContext, proofPayload);
 
-        if (!getVerifier(jwk, jwsHeader.getAlgorithm().name()).verify(jwsInput.getContent(), jwsInput.getSignature())) {
+        SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, jwsHeader.getAlgorithm().name());
+        if(signatureVerifierContext==null){
+            throw new VCIssuerException("No verifier configured for " +jwsHeader.getAlgorithm());
+        }
+        if (!signatureVerifierContext.verify(jwsInput.getEncodedSignatureInput().getBytes("UTF-8"), jwsInput.getSignature())) {
             throw new VCIssuerException("Could not verify provided proof");
         }
 
@@ -227,7 +233,7 @@ public class SdJwtSigningService extends SigningService<String> {
 
     private void checkCryptographicKeyBinding(VCIssuanceContext vcIssuanceContext){
         // Make sure we are dealing with a jwk proof.
-        if (vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported() != null ||
+        if (vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported() == null ||
                 !vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported().contains("jwk")) {
             throw new IllegalStateException("This SD-JWT implementation only supports jwk as cryptographic binding method");
         }
@@ -294,16 +300,20 @@ public class SdJwtSigningService extends SigningService<String> {
 
     private void validateProofPayload(VCIssuanceContext vcIssuanceContext, AccessToken proofPayload) throws VCIssuerException {
         // azp is the id of the client, as mentioned in the access token used to request the credential.
-        String azp = vcIssuanceContext.getAuthResult().getToken().getIssuedFor();
-        Optional.ofNullable(proofPayload.getIssuer())
-                .filter(proofIssuer -> Objects.equals(azp, proofIssuer))
-                .orElseThrow(() -> new VCIssuerException("Issuer claim must be null for preauthorized code else the clientId of the client making the request: " + azp));
+        // Token provided from user is obtained with a clientId that support the oidc login protocol.
+        // oid4vci client doesn't. But it is the client needed at the credential endpoint.
+//        String azp = vcIssuanceContext.getAuthResult().getToken().getIssuedFor();
+//        Optional.ofNullable(proofPayload.getIssuer())
+//                .filter(proofIssuer -> Objects.equals(azp, proofIssuer))
+//                .orElseThrow(() -> new VCIssuerException("Issuer claim must be null for preauthorized code else the clientId of the client making the request: " + azp));
 
         // The issuer is the token / credential is the audience of the proof
         String credentialIssuer = vcIssuanceContext.getVerifiableCredential().getIssuer().toString();
-        Optional.ofNullable(proofPayload.getAudience())
-                .filter(audience -> Objects.equals(credentialIssuer, audience))
-                .orElseThrow(() -> new VCIssuerException("Proof not produced for this audience. Audience claim must be: " + credentialIssuer));
+        Optional.ofNullable(proofPayload.getAudience()) // Ensure null-safety with Optional
+                .map(Arrays::asList) // Convert to List<String>
+                .filter(audiences -> audiences.contains(credentialIssuer)) // Check if the issuer is in the audience list
+                .orElseThrow(() -> new VCIssuerException(
+                        "Proof not produced for this audience. Audience claim must be: " + credentialIssuer + " but are " + Arrays.asList(proofPayload.getAudience())));
 
         // Validate mandatory iat.
         // I do not understand the rationale behind requiring a issue time if we are not checking expiration.
@@ -311,14 +321,21 @@ public class SdJwtSigningService extends SigningService<String> {
                 .orElseThrow(() -> new VCIssuerException("Missing proof issuing time. iat claim must be provided."));
 
         // Check cNonce matches.
-        // We really dislike having to produce and manage a new nonce. As in this case
-        // token and credential issuer match, we will consider the nonce in the access token
-        // the c_nonce. We will also consider the expiration time of the access token the
-        // expiration time of the c_nonce. This way nonce is automatically validated with token expiry.
-        String cNonce = vcIssuanceContext.getAuthResult().getToken().getNonce();
-        Optional.ofNullable(proofPayload.getNonce())
-                .filter(nonce -> Objects.equals(cNonce, nonce))
-                .orElseThrow(() -> new VCIssuerException("Missing or wrong nonce value. Please provide nonce returned by the issuer if any."));
+        // If the token endpoint provides a c_nonce, we would like this:
+        // - stored in the access token
+        // - having the same validity as the access token.
+        Optional.ofNullable(vcIssuanceContext.getAuthResult().getToken().getNonce())
+                        .ifPresent(
+                                cNonce -> {
+                                    Optional.ofNullable(proofPayload.getNonce())
+                                            .filter(nonce -> Objects.equals(cNonce, nonce))
+                                            .orElseThrow(() -> new VCIssuerException("Missing or wrong nonce value. Please provide nonce returned by the issuer if any."));
+
+                                    // We expect the expiration to be identical to the token expiration. We assume token expiration has been checked by AuthManager,
+                                    // So no_op
+                                }
+                        );
+
     }
 
 }
