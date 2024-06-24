@@ -105,7 +105,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                 .getProviderFactory(VerifiableCredentialsSigningService.class, componentModel.getProviderId());
         if (factory instanceof VCSigningServiceProviderFactory sspf) {
             VerifiableCredentialsSigningService verifiableCredentialsSigningService = sspf.create(keycloakSession, componentModel);
-            signingServices.put(verifiableCredentialsSigningService.locator(), sspf.create(keycloakSession, componentModel));
+            signingServices.put(verifiableCredentialsSigningService.locator(), verifiableCredentialsSigningService);
         } else {
             throw new IllegalArgumentException(String.format("The component %s is not a VerifiableCredentialsSigningServiceProviderFactory", componentModel.getProviderId()));
         }
