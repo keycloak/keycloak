@@ -19,7 +19,6 @@ package org.keycloak.testsuite.util;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
@@ -39,9 +38,5 @@ public class BrowserDriverUtil {
 
     public static boolean isDriverFirefox(WebDriver driver) {
         return isDriverInstanceOf(driver, FirefoxDriver.class);
-    }
-
-    public static boolean isDriverEdge(WebDriver driver) {
-        return isDriverInstanceOf(driver, EdgeDriver.class);
     }
 }
