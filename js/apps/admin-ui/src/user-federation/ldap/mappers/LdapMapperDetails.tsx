@@ -219,7 +219,7 @@ export default function LdapMapperDetails() {
             <TextControl
               name="name"
               label={t("name")}
-              labelIcon={t("nameHelp")}
+              labelIcon={t("mapperNameHelp")}
               isDisabled={!isNew}
               rules={{ required: t("required") }}
             />

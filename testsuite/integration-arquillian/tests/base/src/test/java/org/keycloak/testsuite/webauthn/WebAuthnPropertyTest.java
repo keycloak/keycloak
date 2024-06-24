@@ -43,10 +43,10 @@ import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.YES;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
 
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void residentKey() throws IOException {
         getVirtualAuthManager().useAuthenticator(DEFAULT_RESIDENT_KEY.getOptions());
 
@@ -82,7 +82,6 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void timeout() throws IOException {
         final Integer TIMEOUT = 3; //seconds
 
@@ -106,7 +105,6 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void changeAuthenticatorProperties() throws IOException {
         getVirtualAuthManager().useAuthenticator(DEFAULT_RESIDENT_KEY.getOptions());
 

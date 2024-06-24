@@ -445,22 +445,15 @@ If you wish to use Oracle DB, you must manually install a version of the Oracle 
 
 = Deprecated theme variables
 
-The following variables were deprecated in the Account theme:
+The following variables were deprecated in the Admin theme and will be removed in a future version:
 
-* `authUrl`. Use `authServerUrl` instead.
+* `authServerUrl`. Use `serverBaseUrl` instead.
+* `authUrl`. Use `adminBaseUrl` instead.
 
-The following variables from the environment script injected into the page of the Account theme are deprecated:
+The following variables were deprecated in the Account theme and will be removed in a future version:
 
-* `authUrl`. Use `authServerUrl` instead.
-* `features.isInternationalizationEnabled`. Do not use this variable.
-
-The following variables were deprecated in the Admin theme:
-
-* `authUrl`. Do not use this variable.
-
-The following variables from the environment script injected into the page of the Admin theme are deprecated:
-
-* `authUrl`. Do not use this variable.
+* `authServerUrl`. Use `serverBaseUrl` instead, note `serverBaseUrl` does not include trailing slash.
+* `authUrl`. Use `serverBaseUrl` instead, note `serverBaseUrl` does not include trailing slash.
 
 = Methods to get and set current refresh token in client session are now deprecated
 

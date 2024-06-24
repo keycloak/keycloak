@@ -116,10 +116,11 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
     protected void runInvalidations() {
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
-        for (String cacheKey : invalidations) {
-            keys.remove(cacheKey);
-            cluster.notify(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, PublicKeyStorageInvalidationEvent.create(cacheKey), true, ClusterProvider.DCNotify.ALL_DCS);
-        }
+        var events = invalidations.stream()
+                .peek(keys::remove)
+                .map(PublicKeyStorageInvalidationEvent::create)
+                .toList();
+        cluster.notify(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, events, true, ClusterProvider.DCNotify.ALL_DCS);
     }
 
     @Override

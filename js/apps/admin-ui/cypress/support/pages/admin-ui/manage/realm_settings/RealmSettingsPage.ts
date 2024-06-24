@@ -11,8 +11,8 @@ enum RealmSettingsTab {
 
 const expect = chai.expect;
 export default class RealmSettingsPage extends CommonPage {
-  generalSaveBtn = "general-tab-save";
-  generalRevertBtn = "general-tab-revert";
+  generalSaveBtn = "realmSettingsGeneralTab-save";
+  generalRevertBtn = "realmSettingsGeneralTab-revert";
   themesSaveBtn = "themes-tab-save";
   loginTab = "rs-login-tab";
   emailTab = "rs-email-tab";

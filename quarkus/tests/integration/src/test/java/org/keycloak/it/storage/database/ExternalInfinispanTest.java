@@ -21,6 +21,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Retry;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.InfinispanContainer;
@@ -35,10 +36,31 @@ public class ExternalInfinispanTest {
     @Test
     @Launch({ "start-dev", "--features=multi-site", "--cache=ispn", "--cache-config-file=../../../test-classes/ExternalInfinispan/kcb-infinispan-cache-remote-store-config.xml", "--spi-connections-infinispan-quarkus-site-name=ISPN" })
     void testLoadBalancerCheckFailure() {
+        runLoadBalancerCheckFailureTest();
+    }
+
+    @Test
+    @Launch({
+            "start-dev",
+            "--features=multi-site,remote-cache",
+            "--cache=ispn",
+            "--cache-remote-host=localhost",
+            "--cache-remote-username=keycloak",
+            "--cache-remote-password=Password1!",
+            "--spi-connections-infinispan-quarkus-site-name=ISPN",
+            "--spi-load-balancer-check-remote-poll-interval=500",
+            "-Dkc.cache-remote-tls-enabled=false",
+            "--verbose"
+    })
+    void testLoadBalancerCheckFailureWithRemoteOnlyCaches() {
+        runLoadBalancerCheckFailureTest();
+    }
+
+    private void runLoadBalancerCheckFailureTest() {
         when().get("/lb-check").then()
                 .statusCode(200);
 
-        InfinispanContainer.removeCache("sessions");
+        InfinispanContainer.removeCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
         // The `lb-check` relies on the Infinispan's persistence check status. By default, Infinispan checks in the background every second that the remote store is available.
         // So we'll wait on average about one second here for the check to switch its state.

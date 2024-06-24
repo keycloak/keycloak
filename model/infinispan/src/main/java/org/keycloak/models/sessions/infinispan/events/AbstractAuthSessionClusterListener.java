@@ -20,10 +20,10 @@ package org.keycloak.models.sessions.infinispan.events;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProvider;
-import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 
@@ -45,7 +45,7 @@ public abstract class AbstractAuthSessionClusterListener <SE extends SessionClus
     public void eventReceived(ClusterEvent event) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, (KeycloakSession session) -> {
             InfinispanAuthenticationSessionProvider provider = (InfinispanAuthenticationSessionProvider) session.getProvider(AuthenticationSessionProvider.class,
-                    InfinispanAuthenticationSessionProviderFactory.PROVIDER_ID);
+                    InfinispanUtils.EMBEDDED_PROVIDER_ID);
             SE sessionEvent = (SE) event;
 
             if (!provider.getCache().getStatus().allowInvocations()) {

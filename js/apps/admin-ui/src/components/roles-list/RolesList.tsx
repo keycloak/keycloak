@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
+import { translationFormatter } from "../../clients/ClientsSection";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
@@ -162,8 +163,7 @@ export const RolesList = ({
           },
           {
             name: "description",
-            displayKey: "description",
-            cellFormatters: [emptyFormatter()],
+            cellFormatters: [translationFormatter(t)],
           },
         ]}
         emptyState={

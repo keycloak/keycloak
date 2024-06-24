@@ -19,6 +19,7 @@ import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
+import { translationFormatter } from "../clients/ClientsSection";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -280,6 +281,7 @@ export const PoliciesTab = () => {
             },
             {
               name: "description",
+              cellFormatters: [translationFormatter(t)],
             },
           ]}
         />

@@ -71,6 +71,13 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           rules={{ required: t("required") }}
         />
         <TextControl
+          name="config.artifactResolutionServiceUrl"
+          label={t("artifactResolutionServiceUrl")}
+          labelIcon={t("artifactResolutionServiceUrlHelp")}
+          type="url"
+          isDisabled={readOnly}
+        />
+        <TextControl
           name="config.singleLogoutServiceUrl"
           label={t("singleLogoutServiceUrl")}
           labelIcon={t("singleLogoutServiceUrlHelp")}
@@ -170,6 +177,13 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <DefaultSwitchControl
           name="config.postBindingResponse"
           label={t("httpPostBindingResponse")}
+          isDisabled={readOnly}
+          stringify
+        />
+
+        <DefaultSwitchControl
+          name="config.artifactBindingResponse"
+          label={t("artifactBindingResponse")}
           isDisabled={readOnly}
           stringify
         />

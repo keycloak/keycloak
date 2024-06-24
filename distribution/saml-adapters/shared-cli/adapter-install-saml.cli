@@ -1,2 +1,0 @@
-/extension=org.keycloak.keycloak-saml-adapter-subsystem/:add(module=org.keycloak.keycloak-saml-adapter-subsystem)
-/subsystem=keycloak-saml:add

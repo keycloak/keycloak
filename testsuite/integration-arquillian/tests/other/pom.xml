@@ -119,12 +119,6 @@
             </dependencies>
         </profile>
         <profile>
-            <id>adapters</id>
-            <modules>
-                <module>adapters</module>
-            </modules>
-        </profile>
-        <profile>
             <id>mod_auth_mellon</id>
             <modules>
                 <module>mod_auth_mellon</module>

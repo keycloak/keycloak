@@ -1,3 +1,0 @@
-embed-server --server-config=${server.config:standalone.xml}
-/extension=org.keycloak.keycloak-saml-adapter-subsystem/:add(module=org.keycloak.keycloak-saml-adapter-subsystem)
-/subsystem=keycloak-saml:add

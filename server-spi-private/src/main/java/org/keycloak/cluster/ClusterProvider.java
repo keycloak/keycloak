@@ -18,10 +18,11 @@
 package org.keycloak.cluster;
 
 
-import org.keycloak.provider.Provider;
-
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Various utils related to clustering and concurrent tasks on cluster nodes
@@ -79,6 +80,19 @@ public interface ClusterProvider extends Provider {
      * @param dcNotify Specify which DCs to notify. See {@link DCNotify} enum values for more info
      */
     void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify);
+
+    /**
+     * An alternative to {@link #notify(String, ClusterEvent, boolean, DCNotify)} that sends multiple events in a single
+     * network call.
+     * <p>
+     * Notifies registered listeners on all cluster nodes in all datacenters. It will notify listeners registered under
+     * given {@code taskKey}
+     *
+     * @see #notify(String, ClusterEvent, boolean, DCNotify)
+     */
+    default void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+        events.forEach(event -> notify(taskKey, event, ignoreSender, dcNotify));
+    }
 
     enum DCNotify {
         /** Send message to all cluster nodes in all DCs **/

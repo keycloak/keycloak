@@ -34,10 +34,11 @@ public interface OrganizationProvider extends Provider {
      * Creates a new organization with given {@code name} to the realm.
      * The internal ID of the organization will be created automatically.
      * @param name String name of the organization.
-     * @throws ModelDuplicateException If there is already an organization with the given name
+     * @param alias the alias of the organization. If not set, defaults to the value set to {@code name}. Once set, the alias is immutable.
+     * @throws ModelDuplicateException If there is already an organization with the given name or alias
      * @return Model of the created organization.
      */
-    OrganizationModel create(String name);
+    OrganizationModel create(String name, String alias);
 
     /**
      * Returns a {@link OrganizationModel} by its {@code id};

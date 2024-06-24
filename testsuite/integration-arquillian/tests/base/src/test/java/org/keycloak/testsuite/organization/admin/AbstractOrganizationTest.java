@@ -22,6 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.List;
@@ -132,6 +133,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected OrganizationRepresentation createRepresentation(String name, String... orgDomains) {
         OrganizationRepresentation org = new OrganizationRepresentation();
         org.setName(name);
+        org.setAlias(name);
 
         for (String orgDomain : orgDomains) {
             OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
@@ -183,29 +185,31 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     protected void assertBrokerRegistration(OrganizationResource organization, String email) {
         // login with email only
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        loginPage.loginUsername(email);
+        openIdentityFirstLoginPage(email, true, null, false, false);
 
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        // login to the organization identity provider and run the configured first broker login flow
-        loginPage.login(email, bc.getUserPassword());
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        log.debug("Updating info on updateAccount page");
-        assertFalse(driver.getPageSource().contains("kc.org"));
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), email, "Firstname", "Lastname");
-        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+        loginOrgIdp(email, email, true, true);
 
         assertIsMember(email, organization);
+    }
+
+    protected void loginOrgIdp(String username, String email, boolean firstTimeLogin, boolean redirectToApp) {
+        // login to the organization identity provider and run the configured first broker login flow
+        loginPage.login(username, bc.getUserPassword());
+
+        if (firstTimeLogin) {
+            waitForPage(driver, "update account information", false);
+            updateAccountInformationPage.assertCurrent();
+            Assert.assertTrue("We must be on correct realm right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            log.debug("Updating info on updateAccount page");
+            assertFalse(driver.getPageSource().contains("kc.org"));
+            updateAccountInformationPage.updateAccountInformation(username, email, "Firstname", "Lastname");
+        }
+
+        if (redirectToApp) {
+            appPage.assertCurrent();
+            assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
+        }
     }
 
     protected void assertIsMember(String userEmail, OrganizationResource organization) {
@@ -244,5 +248,39 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
                 return realmRep;
             }
         };
+    }
+
+    protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, IdentityProviderRepresentation idp, boolean isVisible, boolean clickIdp) {
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        log.debug("Logging in");
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assert.assertTrue(loginPage.isRegisterLinkPresent());
+        if (idp != null) {
+            if (isVisible) {
+                Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
+            } else {
+                Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
+            }
+        }
+        loginPage.loginUsername(username);
+
+        if (clickIdp) {
+            assertTrue(loginPage.isPasswordInputPresent());
+            assertTrue(loginPage.isUsernameInputPresent());
+            loginPage.clickSocial(idp.getAlias());
+        }
+
+        waitForPage(driver, "sign in to", true);
+
+        // user automatically redirected to the organization identity provider
+        if (autoIDPRedirect) {
+            Assert.assertTrue("Driver should be on the provider realm page right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        } else {
+            Assert.assertTrue("Driver should be on the consumer realm page right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        }
     }
 }

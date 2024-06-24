@@ -40,6 +40,7 @@ import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthO
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
@@ -64,21 +65,18 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
 
     @Ignore("invalid cert path")
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void attestationConveyancePreferenceNone() {
         assertAttestationConveyance(true, AttestationConveyancePreference.NONE);
     }
 
     @Ignore("invalid cert path")
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void attestationConveyancePreferenceIndirect() {
         assertAttestationConveyance(true, AttestationConveyancePreference.INDIRECT);
     }
 
     @Ignore("invalid cert path")
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void attestationConveyancePreferenceDirect() {
         getVirtualAuthManager().useAuthenticator(DEFAULT.getOptions().setHasResidentKey(true).setIsUserConsenting(true).setHasUserVerification(true));
         assertAttestationConveyance(true, AttestationConveyancePreference.DIRECT);

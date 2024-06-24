@@ -17,7 +17,7 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -77,7 +77,7 @@ public class InfinispanNotificationsManager {
 
     private final Cache<String, Object> workCache;
 
-    private final RemoteCache<Object, Serializable> workRemoteCache;
+    private final RemoteCache<String, Object> workRemoteCache;
 
     private final String myAddress;
 
@@ -85,7 +85,7 @@ public class InfinispanNotificationsManager {
 
     private final ExecutorService listenersExecutor;
 
-    protected InfinispanNotificationsManager(Cache<String, Object> workCache, RemoteCache<Object, Serializable> workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
+    protected InfinispanNotificationsManager(Cache<String, Object> workCache, RemoteCache<String, Object> workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
         this.workCache = workCache;
         this.workRemoteCache = workRemoteCache;
         this.myAddress = myAddress;
@@ -96,7 +96,7 @@ public class InfinispanNotificationsManager {
 
     // Create and init manager including all listeners etc
     public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Object> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
-        RemoteCache<Object, Serializable> workRemoteCache = null;
+        RemoteCache<String, Object> workRemoteCache = null;
 
         if (!remoteStores.isEmpty()) {
             RemoteStore remoteStore = remoteStores.iterator().next();
@@ -140,13 +140,13 @@ public class InfinispanNotificationsManager {
     }
 
 
-    void notify(String taskKey, ClusterEvent event, boolean ignoreSender, ClusterProvider.DCNotify dcNotify) {
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, event, myAddress, mySite, dcNotify, ignoreSender);
+    void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, ClusterProvider.DCNotify dcNotify) {
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, myAddress, mySite, dcNotify, ignoreSender);
 
         String eventKey = UUID.randomUUID().toString();
 
         if (logger.isTraceEnabled()) {
-            logger.tracef("Sending event with key %s: %s", eventKey, event);
+            logger.tracef("Sending event with key %s: %s", eventKey, events);
         }
 
         if (dcNotify == ClusterProvider.DCNotify.LOCAL_DC_ONLY || workRemoteCache == null) {
@@ -200,9 +200,9 @@ public class InfinispanNotificationsManager {
     @ClientListener
     public class HotRodListener {
 
-        private final RemoteCache<Object, Serializable> remoteCache;
+        private final RemoteCache<String, Object> remoteCache;
 
-        public HotRodListener(RemoteCache<Object, Serializable> remoteCache) {
+        public HotRodListener(RemoteCache<String, Object> remoteCache) {
             this.remoteCache = remoteCache;
         }
 
@@ -229,8 +229,8 @@ public class InfinispanNotificationsManager {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
             try {
                 listenersExecutor.submit(() -> {
-                    Supplier<Serializable> fetchEvent = () -> remoteCache.get(key);
-                    Serializable event = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(fetchEvent);
+                    Supplier<Object> fetchEvent = () -> remoteCache.get(key);
+                    Object event = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(fetchEvent);
                     int iteration = 0;
                     // Event might have been generated from a node which is more up-to-date, so the fetch might return null.
                     // Retry until we find a node that is up-to-date and has the entry.
@@ -281,12 +281,10 @@ public class InfinispanNotificationsManager {
             logger.tracef("Received event: %s", event);
         }
 
-        ClusterEvent wrappedEvent = event.getDelegateEvent();
-
         List<ClusterListener> myListeners = listeners.get(eventKey);
         if (myListeners != null) {
-            for (ClusterListener listener : myListeners) {
-                listener.eventReceived(wrappedEvent);
+            for (var e : event.getDelegateEvents()) {
+                myListeners.forEach(e);
             }
         }
     }

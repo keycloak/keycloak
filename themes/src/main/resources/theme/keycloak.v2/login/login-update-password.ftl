@@ -4,7 +4,7 @@
     <#if section = "header">
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
-        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post" novalidate="novalidate">
             <div class="${properties.kcFormGroupClass!}">
                 <label for="password-new" class="${properties.kcLabelClass!}">
                     <span class="pf-v5-c-form__label-text">

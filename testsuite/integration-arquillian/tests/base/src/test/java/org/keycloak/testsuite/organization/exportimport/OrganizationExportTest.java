@@ -21,7 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -45,7 +45,6 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
@@ -93,14 +92,8 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
                 expectedManagedMembers.computeIfAbsent(orgRep.getName(), s -> new ArrayList<>()).add(email);
 
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-                log.debug("Logging in");
-                loginPage.loginUsername(email);
-                // user automatically redirected to the organization identity provider
-                waitForPage(driver, "sign in to", true);
-                Assert.assertTrue("Driver should be on the provider realm page right now",
-                        driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+                openIdentityFirstLoginPage(email, true, null, false, false);
+
                 // login to the organization identity provider and run the configured first broker login flow
                 loginPage.login(email, bc.getUserPassword());
                 assertIsMember(email, organization);
@@ -109,7 +102,52 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             }
         }
 
-        // export
+        RealmRepresentation importedRealm = exportRemoveImportRealm();
+
+        assertTrue(importedRealm.isOrganizationsEnabled());
+
+        List<OrganizationRepresentation> organizations = testRealm().organizations().getAll();
+        assertEquals(expectedOrganizations.size(), organizations.size());
+        assertThat(organizations.stream().map(OrganizationRepresentation::getName).toList(), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+        assertThat(organizations.stream().map(OrganizationRepresentation::getAlias).toList(), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
+
+        for (OrganizationRepresentation orgRep : organizations) {
+            OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+            List<String> members = organization.members().getAll().stream().map(UserRepresentation::getEmail).toList();
+            assertEquals(members.size(), expectedUnmanagedMembers.get(orgRep.getName()).size() + expectedManagedMembers.get(orgRep.getName()).size());
+            assertTrue(members.containsAll(expectedUnmanagedMembers.get(orgRep.getName())));
+            assertTrue(members.containsAll(expectedManagedMembers.get(orgRep.getName())));
+        }
+
+        // make sure a managed user can authenticate through the broker associated with an org
+        String email = expectedManagedMembers.values().stream().findAny().get().get(0);
+        openIdentityFirstLoginPage(email, true, null, false, false);
+        // login to the organization identity provider and run the configured first broker login flow
+        loginPage.login(email, bc.getUserPassword());
+        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+    }
+
+    @Test
+    public void testExportImportEmptyOrg() {
+        OrganizationRepresentation orgRep = createRepresentation("acme", "acme.com");
+
+        try (Response response = testRealm().organizations().create(orgRep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        List<OrganizationRepresentation> orgs = testRealm().organizations().getAll();
+        assertEquals(1, orgs.size());
+
+        RealmRepresentation importedRealm = exportRemoveImportRealm();
+
+        assertTrue(importedRealm.isOrganizationsEnabled());
+
+        orgs = testRealm().organizations().getAll();
+        assertEquals(1, orgs.size());
+        assertEquals("acme", orgs.get(0).getName());
+    }
+
+    private RealmRepresentation exportRemoveImportRealm() {
+        //export
         TestingExportImportResource exportImport = testingClient.testing().exportImport();
         exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
@@ -127,35 +165,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         exportImport.runImport();
         getCleanup().addCleanup(() -> testRealm().remove());
 
-        RealmRepresentation importedRealm = testRealm().toRepresentation();
-
-        assertTrue(importedRealm.isOrganizationsEnabled());
-
-        List<OrganizationRepresentation> organizations = testRealm().organizations().getAll();
-        assertEquals(expectedOrganizations.size(), organizations.size());
-        assertThat(organizations.stream().map(OrganizationRepresentation::getName).toList(), Matchers.containsInAnyOrder(expectedOrganizations.toArray()));
-
-        for (OrganizationRepresentation orgRep : organizations) {
-            OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
-            List<String> members = organization.members().getAll().stream().map(UserRepresentation::getEmail).toList();
-            assertEquals(members.size(), expectedUnmanagedMembers.get(orgRep.getName()).size() + expectedManagedMembers.get(orgRep.getName()).size());
-            assertTrue(members.containsAll(expectedUnmanagedMembers.get(orgRep.getName())));
-            assertTrue(members.containsAll(expectedManagedMembers.get(orgRep.getName())));
-        }
-
-        // make sure a managed user can authenticate through the broker associated with an org
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        log.debug("Logging in");
-        String email = expectedManagedMembers.values().stream().findAny().get().get(0);
-        loginPage.loginUsername(email);
-        // user automatically redirected to the organization identity provider
-        waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        // login to the organization identity provider and run the configured first broker login flow
-        loginPage.login(email, bc.getUserPassword());
-        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+        return testRealm().toRepresentation();
     }
 
     @Test

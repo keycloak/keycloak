@@ -17,21 +17,21 @@
 
 package org.keycloak.quarkus.deployment;
 
-import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
-import io.quarkus.deployment.logging.LoggingSetupBuildItem;
-import jakarta.enterprise.context.ApplicationScoped;
-import org.keycloak.quarkus.runtime.KeycloakRecorder;
-import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
-
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
+import io.quarkus.deployment.logging.LoggingSetupBuildItem;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.keycloak.quarkus.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
 
 public class CacheBuildSteps {
 
+    @Consume(ProfileBuildItem.class)
     @Consume(ConfigBuildItem.class)
     // Consume LoggingSetupBuildItem.class and record RUNTIME_INIT are necessary to ensure that logging is set up before the caches are initialized.
     // This is to prevent the class TP in JGroups to pick up the trace logging at start up. While the logs will not appear on the console,

@@ -16,10 +16,12 @@ export const i18n = createInstance({
   interpolation: {
     escapeValue: false,
   },
+  defaultNS: [environment.realm],
+  ns: [environment.realm],
   backend: {
     loadPath: joinPath(
-      environment.authServerUrl,
-      `resources/${environment.realm}/admin/{{lng}}`,
+      environment.adminBaseUrl,
+      `resources/{{ns}}/admin/{{lng}}`,
     ),
     parse: (data: string) => {
       const messages = JSON.parse(data);

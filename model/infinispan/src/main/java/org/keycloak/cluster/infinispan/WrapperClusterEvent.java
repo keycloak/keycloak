@@ -17,6 +17,8 @@
 
 package org.keycloak.cluster.infinispan;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 import org.infinispan.protostream.WrappedMessage;
@@ -42,22 +44,23 @@ public class WrapperClusterEvent implements ClusterEvent {
     final String senderSite; // can be null
     @ProtoField(4)
     final SiteFilter siteFilter;
-    final ClusterEvent delegateEvent;
+    private final Collection<? extends ClusterEvent> events;
 
-    private WrapperClusterEvent(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, ClusterEvent delegateEvent) {
+    private WrapperClusterEvent(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, Collection<? extends ClusterEvent> events) {
         this.eventKey = Objects.requireNonNull(eventKey);
         this.senderAddress = senderAddress;
         this.senderSite = senderSite;
         this.siteFilter = Objects.requireNonNull(siteFilter);
-        this.delegateEvent = Objects.requireNonNull(delegateEvent);
+        this.events = Objects.requireNonNull(events);
     }
 
     @ProtoFactory
-    static WrapperClusterEvent protoFactory(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, WrappedMessage eventPS) {
-        return new WrapperClusterEvent(eventKey, Marshalling.emptyStringToNull(senderAddress), Marshalling.emptyStringToNull(senderSite), siteFilter, (ClusterEvent) eventPS.getValue());
+    static WrapperClusterEvent protoFactory(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, List<WrappedMessage> eventPS) {
+        var events = eventPS.stream().map(WrappedMessage::getValue).map(ClusterEvent.class::cast).toList();
+        return new WrapperClusterEvent(eventKey, Marshalling.emptyStringToNull(senderAddress), Marshalling.emptyStringToNull(senderSite), siteFilter, events);
     }
 
-    public static WrapperClusterEvent wrap(String eventKey, ClusterEvent event, String senderAddress, String senderSite, ClusterProvider.DCNotify dcNotify, boolean ignoreSender) {
+    public static WrapperClusterEvent wrap(String eventKey, Collection<? extends ClusterEvent> events, String senderAddress, String senderSite, ClusterProvider.DCNotify dcNotify, boolean ignoreSender) {
         senderAddress = ignoreSender ? Objects.requireNonNull(senderAddress) : null;
         senderSite = dcNotify == ClusterProvider.DCNotify.ALL_DCS ? null : senderSite;
         var siteNotification = switch (dcNotify) {
@@ -65,20 +68,20 @@ public class WrapperClusterEvent implements ClusterEvent {
             case LOCAL_DC_ONLY -> SiteFilter.LOCAL;
             case ALL_BUT_LOCAL_DC -> SiteFilter.REMOTE;
         };
-        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteNotification, event);
+        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteNotification, events);
     }
 
     @ProtoField(5)
-    WrappedMessage getEventPS() {
-        return new WrappedMessage(delegateEvent);
+    List<WrappedMessage> getEventPS() {
+        return events.stream().map(WrappedMessage::new).toList();
     }
 
     public String getEventKey() {
         return eventKey;
     }
 
-    public ClusterEvent getDelegateEvent() {
-        return delegateEvent;
+    public Collection<? extends ClusterEvent> getDelegateEvents() {
+        return events;
     }
 
     public boolean rejectEvent(String mySiteAddress, String mySiteName) {
@@ -97,7 +100,7 @@ public class WrapperClusterEvent implements ClusterEvent {
                 Objects.equals(senderAddress, that.senderAddress) &&
                 Objects.equals(senderSite, that.senderSite) &&
                 siteFilter == that.siteFilter &&
-                delegateEvent.equals(that.delegateEvent);
+                events.equals(that.events);
     }
 
     @Override
@@ -106,13 +109,13 @@ public class WrapperClusterEvent implements ClusterEvent {
         result = 31 * result + Objects.hashCode(senderAddress);
         result = 31 * result + Objects.hashCode(senderSite);
         result = 31 * result + siteFilter.hashCode();
-        result = 31 * result + delegateEvent.hashCode();
+        result = 31 * result + events.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
-        return String.format("WrapperClusterEvent [ eventKey=%s, sender=%s, senderSite=%s, delegateEvent=%s ]", eventKey, senderAddress, senderSite, delegateEvent);
+        return String.format("WrapperClusterEvent [ eventKey=%s, sender=%s, senderSite=%s, delegateEvents=%s ]", eventKey, senderAddress, senderSite, events);
     }
 
     @Proto

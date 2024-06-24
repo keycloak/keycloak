@@ -15,10 +15,6 @@
     <packaging>jar</packaging>
     
     <properties>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
@@ -224,6 +220,19 @@
             <properties>
                 <keycloak.model.parameters>CrossDCInfinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>
@@ -238,6 +247,40 @@
             <properties>
                 <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>jpa+remote-infinispan</id>
+            <properties>
+                <keycloak.model.parameters>RemoteInfinispan,Jpa</keycloak.model.parameters>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.remote_cache>enabled</keycloak.profile.feature.remote_cache>
+                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>

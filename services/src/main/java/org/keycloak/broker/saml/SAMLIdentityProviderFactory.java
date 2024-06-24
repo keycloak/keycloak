@@ -99,13 +99,23 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
 
                 }
+                String artifactResolutionServiceUrl = null;
+                boolean artifactBindingResponse = false;
+                for (EndpointType endpoint : idpDescriptor.getArtifactResolutionService()) {
+                    if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_SOAP_BINDING.get())) {
+                        artifactResolutionServiceUrl = endpoint.getLocation().toString();
+                        break;
+                    }
+                }
                 samlIdentityProviderConfig.setIdpEntityId(entityType.getEntityID());
                 samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
+                samlIdentityProviderConfig.setArtifactResolutionServiceUrl(artifactResolutionServiceUrl);
                 samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                 samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
                 samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
+                samlIdentityProviderConfig.setArtifactBindingResponse(artifactBindingResponse);
                 samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
                 samlIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
                 samlIdentityProviderConfig.setLoginHint(false);

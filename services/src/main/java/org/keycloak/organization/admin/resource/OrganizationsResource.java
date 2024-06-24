@@ -31,6 +31,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -38,6 +39,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -90,13 +92,15 @@ public class OrganizationsResource {
         }
 
         try {
-            OrganizationModel model = provider.create(organization.getName());
+            OrganizationModel model = provider.create(organization.getName(), organization.getAlias());
 
             Organizations.toModel(organization, model);
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ModelValidationException mve) {
             throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (ModelDuplicateException mve) {
+            throw ErrorResponse.error(mve.getMessage(), Status.CONFLICT);
         }
     }
 
@@ -138,7 +142,7 @@ public class OrganizationsResource {
 
     /**
      * Base path for the admin REST API for one particular organization.
-     */ 
+     */
     @Path("{id}")
     public OrganizationResource get(@PathParam("id") String id) {
         auth.realm().requireManageRealm();

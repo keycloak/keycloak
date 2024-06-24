@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 import static org.keycloak.organization.utils.Organizations.resolveBroker;
 
@@ -29,6 +30,7 @@ import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthen
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
+import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -77,6 +79,14 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
+        OrganizationProvider provider = getOrganizationProvider();
+        OrganizationModel organization = provider.getByDomainName(emailDomain);
+
+        if (organization != null) {
+            // make sure the organization is set to the session to make it available to templates
+            session.setAttribute(OrganizationModel.class.getName(), organization);
+        }
+
         RealmModel realm = context.getRealm();
         UserModel user = session.users().getUserByEmail(realm, username);
 
@@ -91,6 +101,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
             if (broker.isEmpty()) {
                 // not a managed member, continue with the regular flow
+                if (organization != null) {
+                    context.form().setAttributeMapper(attributes -> {
+                        attributes.put("org", new OrganizationBean(session, organization, user));
+                        return attributes;
+                    });
+                }
                 context.attempted();
             } else if (broker.size() == 1) {
                 // user is a managed member and associated with a broker, redirect automatically
@@ -99,9 +115,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
             return;
         }
-
-        OrganizationProvider provider = getOrganizationProvider();
-        OrganizationModel organization = provider.getByDomainName(emailDomain);
 
         if (organization == null || !organization.isEnabled()) {
             // request does not map to any organization, go to the next step/sub-flow
@@ -171,20 +184,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         context.challenge(form.createLoginUsername());
-    }
-
-    private String getEmailDomain(String email) {
-        if (email == null) {
-            return null;
-        }
-
-        int domainSeparator = email.indexOf('@');
-
-        if (domainSeparator == -1) {
-            return null;
-        }
-
-        return email.substring(domainSeparator + 1);
     }
 
     @Override

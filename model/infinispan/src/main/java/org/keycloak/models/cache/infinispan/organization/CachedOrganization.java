@@ -34,6 +34,7 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     private final RealmModel realm;
     private final String name;
+    private final String alias;
     private final String description;
     private final boolean enabled;
     private final LazyLoader<OrganizationModel, MultivaluedHashMap<String, String>> attributes;
@@ -44,6 +45,7 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         super(revision, organization.getId());
         this.realm = realm;
         this.name = organization.getName();
+        this.alias = organization.getAlias();
         this.description = organization.getDescription();
         this.enabled = organization.isEnabled();
         this.attributes = new DefaultLazyLoader<>(orgModel -> new MultivaluedHashMap<>(orgModel.getAttributes()), MultivaluedHashMap::new);
@@ -62,6 +64,10 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     public String getName() {
         return name;
+    }
+
+    public String getAlias() {
+        return alias;
     }
 
     public String getDescription() {

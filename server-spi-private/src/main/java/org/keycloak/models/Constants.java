@@ -68,7 +68,7 @@ public final class Constants {
     public static final int DEFAULT_SESSION_IDLE_TIMEOUT = 1800; // 30 minutes
     public static final int DEFAULT_SESSION_MAX_LIFESPAN = 36000; // 10 hours
 
-    public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256;
+    public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256+","+Algorithm.RS256;
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
     // it stands for optional parameter not specified in WebAuthn
     public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
@@ -181,4 +181,7 @@ public final class Constants {
 
     // attribute name used in apps to mark that it is an admin console and its azp is allowed
     public static final String SECURITY_ADMIN_CONSOLE_ATTR = "security.admin.console";
+
+    //attribute name used to mark a client as realm client
+    public static final String REALM_CLIENT = "realm_client";
 }

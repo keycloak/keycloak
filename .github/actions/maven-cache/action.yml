@@ -40,12 +40,3 @@ runs:
           ~/.m2/repository/*/*
           !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
-
-    - name: Cache Maven Wrapper
-      uses: actions/cache@v4
-      with:
-        path: .mvn/wrapper/maven-wrapper.jar
-        key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('**/maven-wrapper.properties') }}
-        # use a previously cached JAR file as something else besides the version could have changed in the file
-        restore-keys: |
-          ${{ runner.os }}-maven-wrapper-

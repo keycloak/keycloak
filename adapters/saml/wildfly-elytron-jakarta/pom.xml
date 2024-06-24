@@ -36,6 +36,8 @@
           Reason is the transition to Jakarta APIs.
     -->
     <properties>
+        <!-- We still need to support EAP 8, set the Java version to 11. -->
+        <maven.compiler.release>11</maven.compiler.release>
         <jakarta-transformer-sources>${project.basedir}/../wildfly-elytron/src</jakarta-transformer-sources>
         <jakarta-transformer-target>${project.basedir}/src</jakarta-transformer-target>
     </properties>

@@ -40,6 +40,7 @@ tsconfig.eslint.json                        js
 tsconfig.json                               js
 js/                                         js
 rest/admin-ui-ext/                          js
+services/                                   js
 js/apps/account-ui/                         ci ci-webauthn
 js/libs/ui-shared/                          ci ci-webauthn
 

@@ -21,11 +21,14 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.Ignore;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 import org.keycloak.utils.StringUtil;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -51,6 +54,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
     protected final String REDIRECT_SCRIPT = "required\"; window.location.href = \"http://www.keycloak.org\";\"";
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void relyingPartyEntityName() {
         verifyInjection((updater) -> updater.setWebAuthnPolicyRpEntityName(REDIRECT_SCRIPT),
                 WebAuthnRealmData::getRpEntityName,
@@ -105,6 +109,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void requireResidentKey() {
         // requireResidentKey is set to 'false' and the value is ignored -> success
         verifyInjection((updater) -> updater.setWebAuthnPolicyRequireResidentKey(PROMPT_SCRIPT),
@@ -126,6 +131,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void injectUserLabel() {
         final String originalLabel = "label'`;window.prompt(\"another\");'";
 
