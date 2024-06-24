@@ -18,7 +18,7 @@ export const i18n = createInstance({
   },
   backend: {
     loadPath: joinPath(
-      environment.authServerUrl,
+      environment.adminBaseUrl,
       `resources/${environment.realm}/admin/{{lng}}`,
     ),
     parse: (data: string) => {

@@ -110,6 +110,8 @@
     <noscript>JavaScript is required to use the Administration Console.</noscript>
     <script id="environment" type="application/json">
       {
+        "serverBaseUrl": "${serverBaseUrl}",
+        "adminBaseUrl": "${adminBaseUrl}",
         "authUrl": "${authUrl}",
         "authServerUrl": "${authServerUrl}",
         "realm": "${loginRealm!"master"}",

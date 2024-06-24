@@ -22,7 +22,7 @@ import { KeycloakProvider } from "@keycloak/keycloak-account-ui";
 //...
 
 <KeycloakProvider environment={{
-      authServerUrl: "http://localhost:8080",
+      serverBaseUrl: "http://localhost:8080",
       realm: "master",
       clientId: "security-admin-console"
   }}>

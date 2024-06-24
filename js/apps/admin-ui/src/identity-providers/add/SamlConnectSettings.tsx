@@ -91,7 +91,7 @@ export const SamlConnectSettings = () => {
         name="config.entityId"
         label={t("serviceProviderEntityId")}
         labelIcon={t("serviceProviderEntityIdHelp")}
-        defaultValue={`${environment.authServerUrl}/realms/${realm}`}
+        defaultValue={`${environment.serverBaseUrl}/realms/${realm}`}
         rules={{
           required: t("required"),
         }}

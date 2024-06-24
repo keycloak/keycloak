@@ -110,6 +110,7 @@
     <noscript>JavaScript is required to use the Account Console.</noscript>
     <script id="environment" type="application/json">
       {
+        "serverBaseUrl": "${serverBaseUrl}",
         "authUrl": "${authUrl}",
         "authServerUrl": "${authServerUrl}",
         "realm": "${realm.name}",

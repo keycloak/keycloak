@@ -4,6 +4,15 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 
 export type Environment = BaseEnvironment & {
+  /**
+   * The URL to the root of the Administration Console, including the path if present, this takes into account the configured hostname of the Administration Console.
+   * For example, the Keycloak server could be hosted on `auth.example.com` and Admin Console may be hosted on `admin.example.com/some/path`.
+   *
+   * Note that this URL is normalized not to include a trailing slash, so take this into account when constructing URLs.
+   *
+   * @see {@link https://www.keycloak.org/server/hostname#_administration_console}
+   */
+  adminBaseUrl: string;
   /** The URL to the base of the Admin Console. */
   consoleBaseUrl: string;
   /** The name of the master realm. */
@@ -12,22 +21,4 @@ export type Environment = BaseEnvironment & {
   resourceVersion: string;
 };
 
-// During development the realm can be passed as a query parameter when redirecting back from Keycloak.
-const realm =
-  new URLSearchParams(window.location.search).get("realm") || "master";
-
-const defaultEnvironment: Environment = {
-  // Base environment variables
-  authServerUrl: "http://localhost:8180",
-  realm: realm,
-  clientId: "security-admin-console-v2",
-  resourceUrl: "http://localhost:8080",
-  logo: "/logo.svg",
-  logoUrl: "",
-  // Admin Console specific environment variables
-  consoleBaseUrl: "/admin/master/console/",
-  masterRealm: "master",
-  resourceVersion: "unknown",
-};
-
-export const environment = getInjectedEnvironment(defaultEnvironment);
+export const environment = getInjectedEnvironment<Environment>();

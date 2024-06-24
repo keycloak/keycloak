@@ -134,7 +134,7 @@ export async function linkAccount(
 ) {
   const redirectUri = encodeURIComponent(
     joinPath(
-      context.environment.authServerUrl,
+      context.environment.serverBaseUrl,
       "realms",
       context.environment.realm,
       "account",
