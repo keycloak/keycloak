@@ -73,7 +73,7 @@ public class RolePolicyProvider implements PolicyProvider {
     }
 
     private boolean hasRole(Identity identity, RoleModel role, RealmModel realm, AuthorizationProvider authorizationProvider, boolean fetchRoles) {
-        if (fetchRoles) {
+        if (fetchRoles && !identity.getAttributes().exists("clientId")) {
             KeycloakSession session = authorizationProvider.getKeycloakSession();
             UserModel user = session.users().getUserById(realm, identity.getId());
             return user.hasRole(role);
