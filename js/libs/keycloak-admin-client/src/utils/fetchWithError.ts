@@ -21,8 +21,8 @@ export async function fetchWithError(
 
   if (!response.ok) {
     const responseData = await parseResponse(response);
-    const description = getNetworkErrorMessage(responseData)
-    throw new NetworkError(description, {
+    const message = getErrorMessage(responseData)
+    throw new NetworkError(message, {
       response,
       responseData,
     });
@@ -47,7 +47,7 @@ export async function parseResponse(response: Response): Promise<any> {
 }
 
 
-function getNetworkErrorMessage(data: unknown): string {
+function getErrorMessage(data: unknown): string {
   if (typeof data !== "object" || data === null) {
     return "Unable to determine error message.";
   }
