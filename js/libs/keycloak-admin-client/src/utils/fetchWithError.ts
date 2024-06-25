@@ -19,7 +19,7 @@ export async function fetchWithError(
 
   if (!response.ok) {
     const responseData = await parseResponse(response);
-    throw new NetworkError("Network response was not OK.", {
+    throw new NetworkError(responseData, {
       response,
       responseData,
     });
