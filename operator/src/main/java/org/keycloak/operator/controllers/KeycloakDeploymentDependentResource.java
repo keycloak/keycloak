@@ -427,7 +427,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         for (String env : COPY_ENV) {
             String value = System.getenv(env);
             if (value != null) {
-                envVars.add(new EnvVar(env, value, null));
+                envVars.add(new EnvVarBuilder().withName(env).withValue(value).build());
             }
         }
 
