@@ -154,7 +154,10 @@ export const UserSelect = ({
                                   );
                                 }}
                               >
-                                {selection}
+                                {
+                                  users.find((u) => u?.id === selection)
+                                    ?.username
+                                }
                               </Chip>
                             ),
                           )}
