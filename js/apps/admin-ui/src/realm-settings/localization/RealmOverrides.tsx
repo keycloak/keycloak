@@ -49,7 +49,7 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import { DEFAULT_LOCALE } from "../../i18n/i18n";
+import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import { AddTranslationModal } from "../AddTranslationModal";
 
@@ -218,6 +218,8 @@ export const RealmOverrides = ({
       refreshTable();
       translationForm.setValue("key", "");
       translationForm.setValue("value", "");
+      i18n.reloadResources();
+
       addAlert(t("addTranslationSuccess"), AlertVariant.success);
     } catch (error) {
       addError(t("addTranslationError"), error);
@@ -238,15 +240,22 @@ export const RealmOverrides = ({
     onConfirm: async () => {
       try {
         for (const key of selectedRowKeys) {
-          await adminClient.realms.deleteRealmLocalizationTexts({
-            realm: currentRealm!,
-            selectedLocale: selectMenuLocale,
-            key: key,
-          });
+          delete (
+            i18n.store.data[whoAmI.getLocale()]["translation"] as Record<
+              string,
+              string
+            >
+          )[key],
+            await adminClient.realms.deleteRealmLocalizationTexts({
+              realm: currentRealm!,
+              selectedLocale: selectMenuLocale,
+              key: key,
+            });
         }
         setAreAllRowsSelected(false);
         setSelectedRowKeys([]);
         refreshTable();
+
         addAlert(t("deleteAllTranslationsSuccess"), AlertVariant.success);
       } catch (error) {
         addError("deleteAllTranslationsError", error);
@@ -309,6 +318,7 @@ export const RealmOverrides = ({
         },
         value,
       );
+      i18n.reloadResources();
 
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);

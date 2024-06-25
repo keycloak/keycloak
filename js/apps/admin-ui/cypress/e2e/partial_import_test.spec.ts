@@ -110,7 +110,7 @@ describe("Partial import test", () => {
     modal.importButton().click();
 
     cy.contains("One record added");
-    cy.contains("customer-portal");
+    cy.contains("customer-portal3");
     modal.closeButton().click();
   });
 
