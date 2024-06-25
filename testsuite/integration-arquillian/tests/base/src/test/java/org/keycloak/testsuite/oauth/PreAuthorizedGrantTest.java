@@ -98,7 +98,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair("code", preAuthorizedCode));
+        parameters.add(new BasicNameValuePair("pre-authorized_code", preAuthorizedCode));
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
         post.setEntity(formEntity);
 
