@@ -12,10 +12,14 @@ import org.keycloak.common.profile.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 
+import java.security.Provider;
+import java.security.Security;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -228,6 +232,32 @@ public class ProfileTest {
         Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
     }
 
+    @Test
+    public void kerberosConfigAvailability() {
+        // remove SunJGSS to remove kerberos availability
+        Map.Entry<Integer, Provider> removed = removeSecurityProvider("SunJGSS");
+        try {
+            Properties properties = new Properties();
+            properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.KERBEROS), "enabled");
+            ProfileException e = Assert.assertThrows(ProfileException.class, () -> Profile.configure(new PropertiesProfileConfigResolver(properties)));
+            Assert.assertEquals("Feature kerberos cannot be enabled as it is not available.", e.getMessage());
+
+            Profile.defaults();
+            properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.KERBEROS), "disabled");
+            Profile.configure(new PropertiesProfileConfigResolver(properties));
+            Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.KERBEROS));
+
+            Profile.defaults();
+            properties.clear();
+            Profile.configure(new PropertiesProfileConfigResolver(properties));
+            Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.KERBEROS));
+        } finally {
+            if (removed != null) {
+                Security.insertProviderAt(removed.getValue(), removed.getKey());
+            }
+        }
+    }
+
     public static void assertEquals(Set<Profile.Feature> actual, Collection<Profile.Feature> expected) {
         MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
     }
@@ -243,4 +273,15 @@ public class ProfileTest {
         }
     }
 
+    private Map.Entry<Integer, Provider> removeSecurityProvider(String name) {
+        int position = 1;
+        for (Provider p : Security.getProviders()) {
+            if (name.equals(p.getName())) {
+                Security.removeProvider(name);
+                return new AbstractMap.SimpleEntry<>(position, p);
+            }
+            position++;
+        }
+        return null;
+    }
 }
