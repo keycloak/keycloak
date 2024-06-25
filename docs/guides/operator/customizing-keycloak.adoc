@@ -43,10 +43,10 @@ spec:
     hostname: test.keycloak.org
 ----
 
-[NOTE]
-====
-With custom images, every build time option passed either through a dedicated field or the `additionalOptions` is ignored.
-====
+NOTE: With custom images, every build time option passed either through a dedicated field or the `additionalOptions` is ignored.
+
+NOTE: The Operator is *unaware* of any configuration options that are specified in a custom image.
+Use the Keycloak CR for any configuration that requires Operator awareness, namely the TLS and HTTP(S) settings reflected when configuring services and probes.
 
 === Non-optimized custom image
 
