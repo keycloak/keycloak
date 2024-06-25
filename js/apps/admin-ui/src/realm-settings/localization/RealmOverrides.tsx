@@ -240,11 +240,6 @@ export const RealmOverrides = ({
     onConfirm: async () => {
       try {
         for (const key of selectedRowKeys) {
-          await adminClient.realms.deleteRealmLocalizationTexts({
-            realm: currentRealm!,
-            selectedLocale: selectMenuLocale,
-            key: key,
-          });
           delete (
             i18n.store.data[whoAmI.getLocale()]["translation"] as Record<
               string,
