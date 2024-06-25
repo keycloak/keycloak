@@ -27,6 +27,9 @@ Commands:
   show-config             Print out the current configuration.
   tools                   Utilities for use and interaction with the server.
     completion            Generate bash/zsh completion script for kc.sh.
+  bootstrap-admin         Commands for bootstrapping admin access
+    user                  Add an admin user with a password
+    service               Add an admin service account
 
 Examples:
 

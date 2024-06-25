@@ -25,7 +25,7 @@ import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.client.cli.util.AuthUtil;
 import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.client.cli.util.HttpUtil;
-import org.keycloak.client.cli.util.IoUtil;
+import org.keycloak.common.util.IoUtils;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -174,7 +174,7 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
                 pass = configData.getTrustpass();
             }
             if (pass == null) {
-                pass = IoUtil.readSecret("Enter truststore password: ");
+                pass = IoUtils.readFromConsole("truststore password");
             }
 
             try {

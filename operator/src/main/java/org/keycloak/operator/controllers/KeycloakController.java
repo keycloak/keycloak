@@ -47,6 +47,7 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
@@ -61,7 +62,7 @@ import jakarta.inject.Inject;
 @ControllerConfiguration(
     dependents = {
         @Dependent(type = KeycloakDeploymentDependentResource.class),
-        @Dependent(type = KeycloakAdminSecretDependentResource.class),
+        @Dependent(type = KeycloakAdminSecretDependentResource.class, reconcilePrecondition = KeycloakAdminSecretDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource")
@@ -109,6 +110,17 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             // explicitly set defaults - and let another reconciliation happen
             // this avoids ensuring unintentional modifications have not been made to the cr
             kc.getSpec().setInstances(1);
+            modifiedSpec = true;
+        }
+        var bootstrapAdmin = kc.getSpec().getBootstrapAdminSpec();
+        if (bootstrapAdmin == null) {
+            bootstrapAdmin = new BootstrapAdminSpec();
+        }
+        if (bootstrapAdmin.getUser() == null) {
+            bootstrapAdmin.setUser(new BootstrapAdminSpec.User());
+        }
+        if (bootstrapAdmin.getUser() == null) {
+            bootstrapAdmin.getUser().setSecret(KeycloakAdminSecretDependentResource.getName(kc));
             modifiedSpec = true;
         }
         if (kc.getSpec().getIngressSpec() != null && kc.getSpec().getIngressSpec().isIngressEnabled()
