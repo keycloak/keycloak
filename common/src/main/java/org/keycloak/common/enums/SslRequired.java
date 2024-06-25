@@ -51,10 +51,23 @@ public enum SslRequired {
     private boolean isLocal(String remoteAddress) {
         try {
             InetAddress inetAddress = InetAddress.getByName(remoteAddress);
-            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress();
+            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress() || inetAddress.isLinkLocalAddress() || isUniqueLocal(inetAddress);
         } catch (UnknownHostException e) {
             return false;
         }
+    }
+
+    /**
+     * Check if the address is within IPv6 unique local address (ULA) range RFC4193.
+     */
+    private boolean isUniqueLocal(InetAddress address) {
+        if (address instanceof java.net.Inet6Address) {
+            byte[] addr = address.getAddress();
+            // Check if address is in unique local range fc00::/7
+            return ((byte) (addr[0] & 0b11111110)) == (byte) 0xFC;
+        }
+
+        return false;
     }
 
 }
