@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import sha256 from 'js-sha256';
+import { sha256 } from '@noble/hashes/sha256';
 import { jwtDecode } from 'jwt-decode';
 
 if (typeof Promise === 'undefined') {
@@ -382,7 +382,7 @@ function Keycloak (config) {
         }
 
         // hash codeVerifier, then encode as url-safe base64 without padding
-        const hashBytes = new Uint8Array(sha256.arrayBuffer(codeVerifier));
+        const hashBytes = sha256(codeVerifier);
         const encodedHash = bytesToBase64(hashBytes)
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
