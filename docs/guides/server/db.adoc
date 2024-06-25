@@ -263,7 +263,7 @@ ADD --chmod=0666 https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/d
 +
 See the <@links.server id="containers" /> {section} for details on how to build optimized images, and the <@links.operator id="customizing-keycloak" /> {section} on how to run optimized and non-optimized images with the {project_name} Operator.
 . Configure {project_name} to run with the following parameters:
-`db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
+`db-url`:: Use regular PostgreSQL JDBC URL in  format `jdbc:postgresql://<aurora.clusterEndpoint.hostname>:<port>/<db-name>`.
 `db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
 
 == Preparing for MySQL server
