@@ -42,9 +42,9 @@ import {
   AddTranslationsDialog,
   TranslationsType,
 } from "./AddTranslationsDialog";
+import { DefaultSwitchControl } from "../../../components/SwitchControl";
 
 import "../../realm-settings-section.css";
-import { DefaultSwitchControl } from "../../../components/SwitchControl";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
