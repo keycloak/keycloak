@@ -160,6 +160,16 @@ public class StartCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
+    void testStartAfterStartDev(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("start-dev");
+        cliResult.assertStartedDevMode();
+
+        cliResult = dist.run("start", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult.assertStarted();
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
     void testWarningWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
         CLIResult cliResult = dist.run("build", "--features=preview");
         cliResult.assertBuild();
