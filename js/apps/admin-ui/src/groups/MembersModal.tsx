@@ -1,5 +1,6 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import { Button, Modal, ModalVariant, Label } from "@patternfly/react-core";
+import { InfoCircleIcon } from "@patternfly/react-icons";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +14,20 @@ type MemberModalProps = {
   membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
+};
+
+const UserDetail = (user: UserRepresentation) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {user.username}{" "}
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
+    </>
+  );
 };
 
 export const MemberModal = ({
@@ -88,10 +103,12 @@ export const MemberModal = ({
           {
             name: "username",
             displayKey: "username",
+            cellRenderer: UserDetail,
           },
           {
             name: "email",
             displayKey: "email",
+            cellFormatters: [emptyFormatter()],
           },
           {
             name: "lastName",
