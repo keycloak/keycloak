@@ -44,6 +44,7 @@ import {
 } from "./AddTranslationsDialog";
 
 import "../../realm-settings-section.css";
+import { DefaultSwitchControl } from "../../../components/SwitchControl";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -271,6 +272,11 @@ export const AttributeGeneralSettings = ({
               )}
             </Grid>
           </FormGroup>
+          <DefaultSwitchControl
+            name="multivalued"
+            label={t("multivalued")}
+            labelIcon={t("multivaluedHelp")}
+          />
           <SelectControl
             name="group"
             label={t("attributeGroup")}
