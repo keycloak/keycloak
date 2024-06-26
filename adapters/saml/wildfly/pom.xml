@@ -32,6 +32,5 @@
 
     <modules>
         <module>wildfly-subsystem</module>
-        <module>wildfly-jakarta-subsystem</module>
     </modules>
 </project>

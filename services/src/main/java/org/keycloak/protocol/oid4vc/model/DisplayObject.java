@@ -14,17 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.io.IOException;
 
 /**
  * Represents a DisplayObject, as used in the OID4VCI Credentials Issuer Metadata
@@ -126,26 +124,20 @@ public class DisplayObject {
         return this;
     }
 
-    public Map<String, String> toDotNotation() {
-        Map<String, String> dotNotation = new HashMap<>();
-        dotNotation.put(NAME_KEY, name);
-        dotNotation.put(LOCALE_KEY, locale);
-        dotNotation.put(LOGO_KEY, logo);
-        dotNotation.put(DESCRIPTION_KEY, description);
-        dotNotation.put(BG_COLOR_KEY, backgroundColor);
-        dotNotation.put(TEXT_COLOR_KEY, textColor);
-        return dotNotation;
+    public String toJsonString(){
+        try {
+            return JsonSerialization.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static DisplayObject fromDotNotation(Map<String, String> dotNotated) {
-        DisplayObject displayObject = new DisplayObject();
-        Optional.ofNullable(dotNotated.get(NAME_KEY)).ifPresent(displayObject::setName);
-        Optional.ofNullable(dotNotated.get(LOCALE_KEY)).ifPresent(displayObject::setLocale);
-        Optional.ofNullable(dotNotated.get(LOGO_KEY)).ifPresent(displayObject::setLogo);
-        Optional.ofNullable(dotNotated.get(DESCRIPTION_KEY)).ifPresent(displayObject::setDescription);
-        Optional.ofNullable(dotNotated.get(BG_COLOR_KEY)).ifPresent(displayObject::setBackgroundColor);
-        Optional.ofNullable(dotNotated.get(TEXT_COLOR_KEY)).ifPresent(displayObject::setTextColor);
-        return displayObject;
+    public static DisplayObject fromJsonString(String jsonString){
+        try {
+            return JsonSerialization.readValue(jsonString, DisplayObject.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

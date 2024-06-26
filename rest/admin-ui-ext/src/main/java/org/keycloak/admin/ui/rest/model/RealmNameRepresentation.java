@@ -4,6 +4,11 @@ public class RealmNameRepresentation {
     private String name;
     private String displayName;
 
+    public RealmNameRepresentation(String name, String displayName) {
+        this.name = name;
+        this.displayName = displayName;
+    }
+
     public String getName() {
         return this.name;
     }

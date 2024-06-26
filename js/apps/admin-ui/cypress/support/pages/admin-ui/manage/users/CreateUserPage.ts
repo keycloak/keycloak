@@ -21,9 +21,9 @@ export default class CreateUserPage {
     this.addUserBtn = "add-user";
     this.joinGroupsBtn = "join-groups-button";
     this.joinBtn = "join-button";
-    this.createBtn = "create-user";
-    this.saveBtn = "save-user";
-    this.cancelBtn = "cancel-create-user";
+    this.createBtn = "user-creation-save";
+    this.saveBtn = "user-creation-save";
+    this.cancelBtn = "user-creation-revert";
   }
 
   //#region General Settings

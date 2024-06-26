@@ -70,13 +70,21 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel create(String name) {
+    public OrganizationModel create(String name, String alias) {
         if (StringUtil.isBlank(name)) {
             throw new ModelValidationException("Name can not be null");
         }
 
+        if (StringUtil.isBlank(alias)) {
+            alias = name;
+        }
+
         if (getByName(name) != null) {
             throw new ModelDuplicateException("A organization with the same name already exists.");
+        }
+
+        if (getAllStream(Map.of(OrganizationModel.ALIAS, alias), -1, -1).findAny().isPresent()) {
+            throw new ModelDuplicateException("A organization with the same alias already exists");
         }
 
         RealmModel realm = getRealm();
@@ -88,6 +96,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
             adapter.setGroupId(group.getId());
             adapter.setName(name);
+            adapter.setAlias(alias);
             adapter.setEnabled(true);
 
             em.persist(adapter.getEntity());
@@ -224,7 +233,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         predicates.add(builder.equal(org.get("groupId"), group.get("id")));
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            if (StringUtil.isNotBlank(entry.getKey())) {
+            if (StringUtil.isBlank(entry.getKey())) {
+                continue;
+            }
+
+            if (OrganizationModel.ALIAS.equals(entry.getKey())) {
+                predicates.add(builder.equal(org.get("alias"), entry.getValue()));
+            } else {
                 Join<GroupEntity, GroupAttributeEntity> groupJoin = group.join("attributes");
                 Predicate attrNamePredicate = builder.equal(groupJoin.get("name"), entry.getKey());
                 Predicate attrValuePredicate = builder.equal(groupJoin.get("value"), entry.getValue());
@@ -274,7 +289,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return null;
         }
 
-        return getById(orgId);
+        // need to go via the session to avoid bypassing the cache
+        return session.getProvider(OrganizationProvider.class).getById(orgId);
     }
 
     @Override

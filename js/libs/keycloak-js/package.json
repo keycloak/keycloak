@@ -30,6 +30,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "wireit",
     "duplicate-types": "shx cp dist/keycloak.d.ts dist/keycloak.d.mts && shx cp dist/keycloak-authz.d.ts dist/keycloak-authz.d.mts",
@@ -75,7 +78,7 @@
     "shx": "^0.3.4"
   },
   "dependencies": {
-    "js-sha256": "^0.11.0",
+    "@noble/hashes": "^1.4.0",
     "jwt-decode": "^4.0.0"
   }
 }

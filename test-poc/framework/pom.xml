@@ -44,6 +44,18 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-junit5</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>4.21.0</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-firefox-driver</artifactId>
+            <version>4.21.0</version>
+            <type>pom</type>
+        </dependency>
     </dependencies>
 
 </project>

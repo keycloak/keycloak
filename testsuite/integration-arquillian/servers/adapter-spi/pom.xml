@@ -15,23 +15,10 @@
 
     <modules>
         <module>undertow-adapter-spi-jakarta</module>
-        <module>undertow-adapter-saml-jakarta</module>
     </modules>
 
     <properties>
-        <ant.jvm.args>-Dnone</ant.jvm.args>
+        <!-- For more information, see https://github.com/apache/ant/pull/200 -->
+        <ant.jvm.args>-Djava.security.manager=allow</ant.jvm.args>
     </properties>
-
-    <profiles>
-        <profile>
-            <id>jdk17+</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <properties>
-                <!--For more information, see https://github.com/apache/ant/pull/200-->
-                <ant.jvm.args>-Djava.security.manager=allow</ant.jvm.args>
-            </properties>
-        </profile>
-    </profiles>
 </project>

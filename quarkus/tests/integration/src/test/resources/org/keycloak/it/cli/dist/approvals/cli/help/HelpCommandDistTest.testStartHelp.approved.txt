@@ -237,7 +237,8 @@ Proxy:
 
 --proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
                        reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
-                       Default: none. Use the following option instead: proxy-headers.
+                       Default: none. Use the following options instead: http-enabled,
+                       proxy-headers.
 --proxy-headers <headers>
                      The proxy headers that should be accepted by the server. Misconfiguration
                        might leave the server exposed to security vulnerabilities. Takes precedence

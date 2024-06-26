@@ -30,7 +30,7 @@ import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.util.Set;
 
 /**

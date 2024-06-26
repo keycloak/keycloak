@@ -42,7 +42,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     }
 
     private static void initializeSources() {
-        String profile = Environment.getProfile();
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         if (profile != null) {
             System.setProperty("quarkus.profile", profile);
@@ -100,9 +100,13 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
         if (configSource == null) {
             return "Derived";
         }
-        if (configSource.startsWith("KeyStoreConfigSource")) {
+        if (isKeyStoreConfigSource(configSource)) {
             return "config-keystore";
         }
         return CONFIG_SOURCE_DISPLAY_NAMES.getOrDefault(configSource, configSource);
+    }
+
+    public static boolean isKeyStoreConfigSource(String configSourceName) {
+        return configSourceName.contains("KeyStoreConfigSource");
     }
 }

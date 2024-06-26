@@ -20,9 +20,11 @@ import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
 import org.junit.Test;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -41,6 +43,7 @@ import static org.keycloak.crypto.Algorithm.RS512;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test

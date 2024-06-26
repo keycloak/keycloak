@@ -20,13 +20,12 @@ package org.keycloak.models.sessions.infinispan.initializer;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.io.Serializable;
 import java.util.function.Function;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SessionInitializerWorker implements Function<KeycloakSessionFactory, SessionLoader.WorkerResult>, Serializable {
+public class SessionInitializerWorker implements Function<KeycloakSessionFactory, SessionLoader.WorkerResult> {
 
     private SessionLoader.LoaderContext loaderCtx;
     private SessionLoader.WorkerContext workerCtx;

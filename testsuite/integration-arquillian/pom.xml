@@ -53,7 +53,6 @@
         <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
-        <appium.client.version>9.2.2</appium.client.version>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
         <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
         <commons.validator.version>1.8.0</commons.validator.version>
@@ -66,6 +65,7 @@
         <migration.73.version>4.8.3.Final</migration.73.version>
 
         <!-- By default, skip docker-maven-plugin when running base tests-->
+        <docker.infinispan.skip>true</docker.infinispan.skip>
         <docker.database.skip>true</docker.database.skip>
         <docker.database.postStart>/bin/true</docker.database.postStart>
         <docker.database.wait-for-log-regex>NEVER-MATCHING-REGEX</docker.database.wait-for-log-regex>
@@ -77,8 +77,6 @@
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
 
         <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
-
-        <dballocator.skip>true</dballocator.skip>
     </properties>
 
     <dependencyManagement>
@@ -139,21 +137,6 @@
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-firefox-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-ie-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-edge-driver</artifactId>
-                <version>${selenium.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-safari-driver</artifactId>
                 <version>${selenium.version}</version>
             </dependency>
             <dependency>
@@ -236,18 +219,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>db-allocator-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <configuration>
-                        <propertyDatabase>keycloak.connectionsJpa.database</propertyDatabase>
-                        <propertyDriver>keycloak.connectionsJpa.driver</propertyDriver>
-                        <propertyURL>keycloak.connectionsJpa.url</propertyURL>
-                        <propertyUser>keycloak.connectionsJpa.user</propertyUser>
-                        <propertyPassword>keycloak.connectionsJpa.password</propertyPassword>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <failIfNoTests>false</failIfNoTests>
@@ -326,28 +297,6 @@
     </modules>
     
     <profiles>
-        <profile>
-            <id>jpa</id>
-            <build>
-                <plugins>
-                    <!-- Just allocate the DB now. It will be released after the tests, so the "release" is declared in the base-tests module -->
-                    <plugin>
-                        <groupId>org.keycloak</groupId>
-                        <artifactId>db-allocator-plugin</artifactId>
-                        <inherited>false</inherited>
-                        <executions>
-                            <execution>
-                                <id>allocate-db</id>
-                                <goals>
-                                    <goal>allocate</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
         <profile>
             <id>test-70-migration</id>
             <properties>
@@ -429,13 +378,11 @@
             </build>
         </profile>
         <!-- Specifies default DB properties, which are used for test with embedded H2. Those are overriden when testing with any docker container
-             profile like "db-mysql" or any dballocator profile. Also those can be manually overriden when running the test from CMD -->
+             profile like "db-mysql". Also those can be manually overriden when running the test from CMD -->
         <profile>
             <id>db-default-properties</id>
             <activation>
-                <property>
-                    <name>!dballocator.uri</name>
-                </property>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
                 <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
@@ -466,14 +413,6 @@
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>mysqld</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
-            </properties>
-        </profile>
-        <profile>
-            <id>db-allocator-db-mysql</id>
-            <properties>
-                <keycloak.storage.connections.vendor>mysql</keycloak.storage.connections.vendor>
-                <dballocator.type>mysql80</dballocator.type>
-                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
@@ -517,22 +456,6 @@
             </properties>
         </profile>
         <profile>
-            <id>db-allocator-db-postgres</id>
-            <properties>
-                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
-                <dballocator.type>postgresql132</dballocator.type>
-                <dballocator.skip>false</dballocator.skip>
-            </properties>
-        </profile>
-        <profile>
-            <id>db-allocator-db-postgresplus</id>
-            <properties>
-                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
-                <dballocator.type>postgresplus131</dballocator.type>
-                <dballocator.skip>false</dballocator.skip>
-            </properties>
-        </profile>
-        <profile>
             <id>db-mariadb</id>
             <properties>
                 <keycloak.storage.connections.vendor>mariadb</keycloak.storage.connections.vendor>
@@ -553,14 +476,6 @@
                 <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
                 <docker.database.cmd>--character-set-server=utf8 --collation-server=utf8_unicode_ci</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
-            </properties>
-        </profile>
-        <profile>
-            <id>db-allocator-db-mariadb</id>
-            <properties>
-                <keycloak.storage.connections.vendor>mariadb</keycloak.storage.connections.vendor>
-                <dballocator.type>mariadb_galera_103</dballocator.type>
-                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
@@ -587,14 +502,6 @@
             </properties>
         </profile>
         <profile>
-            <id>db-allocator-db-mssql2019</id>
-            <properties>
-                <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
-                <dballocator.type>mssql2019</dballocator.type>
-                <dballocator.skip>false</dballocator.skip>
-            </properties>
-        </profile>
-        <profile>
             <id>db-oracle</id>
             <properties>
                 <docker.database.image>docker.io/miquelsi/oracle-19c:${oracledb.version}</docker.database.image>
@@ -617,14 +524,6 @@
                 <jdbc.mvn.groupId>com.oracle.database.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>ojdbc11</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${oracle-jdbc.version}</jdbc.mvn.version>
-            </properties>
-        </profile>
-        <profile>
-            <id>db-allocator-db-oracleRAC</id>
-            <properties>
-                <keycloak.storage.connections.vendor>oracle</keycloak.storage.connections.vendor>
-                <dballocator.type>oracle19cRAC</dballocator.type>
-                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
     </profiles>

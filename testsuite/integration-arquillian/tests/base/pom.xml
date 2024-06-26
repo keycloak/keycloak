@@ -32,7 +32,7 @@
     <description></description>
 
     <properties>
-        <arquillian.protocol.default>Servlet 3.0</arquillian.protocol.default>
+        <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
         <cli.log.output>false</cli.log.output>
         <test.intermittent>false</test.intermittent>
         <exclude.test>-</exclude.test>
@@ -45,10 +45,6 @@
         <mvel.version>2.5.2.Final</mvel.version>
         <systemrules.version>1.19.0</systemrules.version>
         <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
-        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
-        <maven.compiler.release>17</maven.compiler.release>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.source>17</maven.compiler.source>
     </properties>
     
     <dependencies>
@@ -127,6 +123,11 @@
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-test-apps-servlets</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -379,9 +380,6 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>${docker.maven.plugin.version}</version>
-                <configuration>
-                    <skip>${docker.database.skip}</skip>
-                </configuration>
                 <executions>
                     <execution>
                         <id>start-db-container</id>
@@ -390,6 +388,7 @@
                             <goal>start</goal>
                         </goals>
                         <configuration>
+                            <skip>${docker.database.skip}</skip>
                             <showLogs>true</showLogs>
                             <images>
                                 <image>
@@ -442,60 +441,18 @@
                         <goals>
                             <goal>stop</goal>
                         </goals>
+                        <configuration>
+                            <skip>${docker.database.skip}</skip>
+                        </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
             </plugin>
         </plugins>
 
     </build>
 
     <profiles>
-        <profile>
-            <id>jpa</id>
-            <build>
-                <plugins>
-                    <!-- DB will be released after the test -->
-                    <plugin>
-                        <groupId>org.keycloak</groupId>
-                        <artifactId>db-allocator-plugin</artifactId>
-                        <inherited>false</inherited>
-                        <executions>
-                            <execution>
-                                <id>release-db</id>
-                                <goals>
-                                    <goal>release</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
-        <profile>
-            <id>app-server-undertow</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>undertow</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>undertow</app.server> <!--in case the profile is called directly-->
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-        </profile>
         <profile>
             <id>app-server-wildfly</id>
             <activation>
@@ -545,7 +502,6 @@
                 <app.server>eap8</app.server>
                 <app.server.skip.unpack>false</app.server.skip.unpack>
                 <app.server.artifactId>integration-arquillian-servers-app-server-jboss-galleon</app.server.artifactId>
-                <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
                 <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
@@ -800,6 +756,67 @@
                     <version>${byte-buddy.version}</version>
                 </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <id>infinispan-server</id>
+            <properties>
+                <docker.infinispan.skip>false</docker.infinispan.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${docker.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>start-ispn-container</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.infinispan.skip}</skip>
+                                    <showLogs>true</showLogs>
+                                    <images>
+                                        <image>
+                                            <alias>infinispan</alias>
+                                            <name>quay.io/infinispan/server:${infinispan.version}</name>
+                                            <run>
+                                                <ports>
+                                                    <port>11222:11222</port>
+                                                </ports>
+                                                <env>
+                                                    <USER>keycloak</USER>
+                                                    <PASS>Password1!</PASS>
+                                                </env>
+                                                <net>host</net>
+                                                <cmd>-b 127.0.0.1 -k 127.0.0.1</cmd>
+                                                <wait>
+                                                    <log>.*ISPN080001.*</log>
+                                                    <time>2000000</time>
+                                                    <kill>10000</kill>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-ispn-container</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.infinispan.skip}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
     </profiles>

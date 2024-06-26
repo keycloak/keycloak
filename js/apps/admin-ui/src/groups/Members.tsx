@@ -154,8 +154,8 @@ export const Members = () => {
     <>
       {addMembers && (
         <MemberModal
-          membersQuery={async () =>
-            await adminClient.groups.listMembers({ id: id! })
+          membersQuery={(first, max) =>
+            adminClient.groups.listMembers({ id: id!, first, max })
           }
           onAdd={async (selectedRows) => {
             try {

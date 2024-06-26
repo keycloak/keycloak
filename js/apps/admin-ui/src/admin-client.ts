@@ -25,7 +25,7 @@ export async function initAdminClient(
   const adminClient = new KeycloakAdminClient();
 
   adminClient.setConfig({ realmName: environment.realm });
-  adminClient.baseUrl = environment.authServerUrl;
+  adminClient.baseUrl = environment.adminBaseUrl;
   adminClient.registerTokenProvider({
     async getAccessToken() {
       try {

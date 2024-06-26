@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -26,9 +27,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.micrometer.core.instrument.Metrics;
-import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.DefaultTemplate;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.commons.api.Lifecycle;
+import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
@@ -48,7 +51,7 @@ import org.jgroups.util.TLSClientAuth;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
-import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
@@ -62,11 +65,15 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 public class CacheManagerFactory {
@@ -74,18 +81,31 @@ public class CacheManagerFactory {
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
 
     private final CompletableFuture<DefaultCacheManager> cacheManagerFuture;
+    private final CompletableFuture<RemoteCacheManager> remoteCacheManagerFuture;
 
     public CacheManagerFactory(String config) {
         this.cacheManagerFuture = startEmbeddedCacheManager(config);
+        if (InfinispanUtils.isRemoteInfinispan()) {
+            logger.debug("Remote Cache feature is enabled");
+            this.remoteCacheManagerFuture = CompletableFuture.supplyAsync(this::startRemoteCacheManager);
+        } else {
+            logger.debug("Remote Cache feature is disabled");
+            this.remoteCacheManagerFuture = CompletableFutures.completedNull();
+        }
     }
 
     public DefaultCacheManager getOrCreateEmbeddedCacheManager() {
         return join(cacheManagerFuture);
     }
 
+    public RemoteCacheManager getOrCreateRemoteCacheManager() {
+        return join(remoteCacheManagerFuture);
+    }
+
     public void shutdown() {
-        logger.debug("Shutdown embedded cache manager");
+        logger.debug("Shutdown embedded and remote cache managers");
         cacheManagerFuture.thenAccept(CacheManagerFactory::close);
+        remoteCacheManagerFuture.thenAccept(CacheManagerFactory::close);
     }
 
     private static <T> T join(Future<T> future) {
@@ -105,7 +125,56 @@ public class CacheManagerFactory {
         }
     }
 
+    private RemoteCacheManager startRemoteCacheManager() {
+        logger.info("Starting Infinispan remote cache manager (Hot Rod Client)");
+        String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
+        Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
+                .map(Integer::parseInt)
+                .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
+        String cacheRemoteUsername = requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY);
+        String cacheRemotePassword = requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY);
+
+        org.infinispan.client.hotrod.configuration.ConfigurationBuilder builder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
+        builder.addServer().host(cacheRemoteHost).port(cacheRemotePort);
+        builder.connectionPool().maxActive(16).exhaustedAction(org.infinispan.client.hotrod.configuration.ExhaustedAction.CREATE_NEW);
+
+        if (isRemoteTLSEnabled()) {
+            builder.security().ssl()
+                    .enable()
+                    .sslContext(createSSLContext())
+                    .sniHostName(cacheRemoteHost);
+        }
+
+        if (isRemoteAuthenticationEnabled()) {
+            builder.security().authentication()
+                    .enable()
+                    .username(cacheRemoteUsername)
+                    .password(cacheRemotePassword)
+                    .realm("default")
+                    .saslMechanism(SCRAM_SHA_512);
+        }
+
+        Marshalling.configure(builder);
+
+        if (createRemoteCaches()) {
+            // fall back for distributed caches if not defined
+            logger.warn("Creating remote cache in external Infinispan server. It should not be used in production!");
+            for (String name : CLUSTERED_CACHE_NAMES) {
+                builder.remoteCache(name).templateName(DefaultTemplate.DIST_SYNC);
+            }
+        }
+
+        RemoteCacheManager remoteCacheManager = new RemoteCacheManager(builder.build());
+
+        // establish connection to all caches
+        if (isStartEagerly()) {
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(remoteCacheManager::getCache);
+        }
+        return remoteCacheManager;
+    }
+
     private CompletableFuture<DefaultCacheManager> startEmbeddedCacheManager(String config) {
+        logger.info("Starting Infinispan embedded cache manager");
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
         if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
@@ -113,7 +182,7 @@ public class CacheManagerFactory {
             configureRemoteStores(builder);
         }
 
-        DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+        Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
             if (cacheName.equals(USER_SESSION_CACHE_NAME) || cacheName.equals(CLIENT_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_USER_SESSION_CACHE_NAME) || cacheName.equals(OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
                 ConfigurationBuilder configurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
                 if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
@@ -150,6 +219,13 @@ public class CacheManagerFactory {
         }
 
         Marshalling.configure(builder.getGlobalConfigurationBuilder());
+        if (InfinispanUtils.isRemoteInfinispan()) {
+            var builders = builder.getNamedConfigurationBuilders();
+            // remove all distributed caches
+            logger.debug("Removing all distributed caches.");
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(builders::remove);
+        }
+
         var start = isStartEagerly();
         return CompletableFuture.supplyAsync(() -> new DefaultCacheManager(builder, start));
     }
@@ -161,6 +237,10 @@ public class CacheManagerFactory {
     private static boolean isRemoteAuthenticationEnabled() {
         return Configuration.getOptionalKcValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
                 Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent();
+    }
+
+    private static boolean createRemoteCaches() {
+        return Boolean.getBoolean("kc.cache-remote-create-caches");
     }
 
     private static SSLContext createSSLContext() {
@@ -237,7 +317,7 @@ public class CacheManagerFactory {
 
             SSLContext sslContext = createSSLContext();
 
-            DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
                 PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
 
                 //if specified via command line -> cannot be defined in the xml file

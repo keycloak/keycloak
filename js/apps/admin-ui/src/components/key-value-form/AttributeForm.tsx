@@ -1,11 +1,10 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { ActionGroup, Button } from "@patternfly/react-core";
 import { FormProvider, UseFormReturn } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../form/FormAccess";
 import type { KeyValueType } from "./key-value-convert";
 import { KeyValueInput } from "./KeyValueInput";
+import { FixedButtonsGroup } from "../form/FixedButtonGroup";
 
 export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
   attributes?: KeyValueType[];
@@ -28,12 +27,8 @@ export const AttributesForm = ({
   name = "attributes",
   isDisabled = false,
 }: AttributesFormProps) => {
-  const { t } = useTranslation();
   const noSaveCancelButtons = !save && !reset;
-  const {
-    formState: { isDirty },
-    handleSubmit,
-  } = form;
+  const { handleSubmit } = form;
 
   return (
     <FormAccess
@@ -45,19 +40,7 @@ export const AttributesForm = ({
         <KeyValueInput name={name} isDisabled={isDisabled} />
       </FormProvider>
       {!noSaveCancelButtons && (
-        <ActionGroup className="kc-attributes__action-group">
-          <Button
-            data-testid="save-attributes"
-            variant="primary"
-            type="submit"
-            isDisabled={!isDirty}
-          >
-            {t("save")}
-          </Button>
-          <Button onClick={reset} variant="link" isDisabled={!isDirty}>
-            {t("revert")}
-          </Button>
-        </ActionGroup>
+        <FixedButtonsGroup name="attributes" reset={reset} isActive isSubmit />
       )}
     </FormAccess>
   );

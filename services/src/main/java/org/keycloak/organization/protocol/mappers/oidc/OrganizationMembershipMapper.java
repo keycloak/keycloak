@@ -91,7 +91,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         Map<String, Map<String, Object>> claim = new HashMap<>();
-        claim.put(organization.getName(), Map.of());
+        claim.put(organization.getAlias(), Map.of());
         token.getOtherClaims().put(OAuth2Constants.ORGANIZATION, claim);
     }
 

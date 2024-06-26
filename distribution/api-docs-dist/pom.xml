@@ -31,7 +31,6 @@
 
     <properties>
         <javadoc.branding>Keycloak ${project.version}</javadoc.branding>
-        <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
     <dependencies>
@@ -81,7 +80,6 @@
                     <maxmemory>2400m</maxmemory>
                     <encoding>UTF-8</encoding>
                     <includeDependencySources>true</includeDependencySources>
-                    <source>${maven.compiler.source}</source>
                     <failOnError>true</failOnError>
                     <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                     <dependencySourceIncludes>

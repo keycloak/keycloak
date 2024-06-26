@@ -16,34 +16,35 @@
  */
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
+
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  *
  * @author hmlnarik
  */
-@SerializeWith(AuthenticatedClientSessionStore.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.AUTHENTICATED_CLIENT_SESSION_STORE)
 public class AuthenticatedClientSessionStore {
 
     /**
      * Maps client UUID to client session ID.
      */
-    private final ConcurrentHashMap<String, UUID> authenticatedClientSessionIds;
+    private final ConcurrentMap<String, UUID> authenticatedClientSessionIds;
 
     public AuthenticatedClientSessionStore() {
         authenticatedClientSessionIds = new ConcurrentHashMap<>();
     }
 
-    private AuthenticatedClientSessionStore(ConcurrentHashMap<String, UUID> authenticatedClientSessionIds) {
+    @ProtoFactory
+    AuthenticatedClientSessionStore(ConcurrentMap<String, UUID> authenticatedClientSessionIds) {
         this.authenticatedClientSessionIds = authenticatedClientSessionIds;
     }
 
@@ -79,37 +80,14 @@ public class AuthenticatedClientSessionStore {
         return authenticatedClientSessionIds.size();
     }
 
+    @ProtoField(value = 1, mapImplementation = ConcurrentHashMap.class)
+    ConcurrentMap<String, UUID> getAuthenticatedClientSessionIds() {
+        return authenticatedClientSessionIds;
+    }
+
     @Override
     public String toString() {
         return this.authenticatedClientSessionIds.toString();
     }
 
-    public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionStore> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, AuthenticatedClientSessionStore obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            KeycloakMarshallUtil.writeMap(obj.authenticatedClientSessionIds, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.UUID_EXT, output);
-        }
-
-        @Override
-        public AuthenticatedClientSessionStore readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public AuthenticatedClientSessionStore readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            AuthenticatedClientSessionStore res = new AuthenticatedClientSessionStore(
-              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.UUID_EXT, ConcurrentHashMap::new)
-            );
-            return res;
-        }
-    }
 }

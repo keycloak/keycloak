@@ -11,6 +11,9 @@
   "engines": {
     "node": ">=18"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "wireit",
     "lint": "wireit",
@@ -45,11 +48,11 @@
     "@faker-js/faker": "^8.4.1",
     "@types/chai": "^4.3.16",
     "@types/lodash-es": "^4.17.12",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20.14.2",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.9",
     "chai": "^5.1.1",
     "lodash-es": "^4.17.21",
-    "mocha": "^10.4.0",
+    "mocha": "^10.5.1",
     "ts-node": "^10.9.2"
   },
   "author": {

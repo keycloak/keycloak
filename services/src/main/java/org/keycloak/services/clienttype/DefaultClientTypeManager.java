@@ -21,6 +21,8 @@ package org.keycloak.services.clienttype;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -102,8 +104,13 @@ public class DefaultClientTypeManager implements ClientTypeManager {
             throw ClientTypeException.Message.CLIENT_TYPE_NOT_FOUND.exception();
         }
 
+        ClientType parent = null;
+        if (clientType.getParent() != null) {
+            parent = getClientType(realm, clientType.getParent());
+        }
+
         ClientTypeProvider provider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
-        return provider.getClientType(clientType);
+        return provider.getClientType(clientType, parent);
     }
 
     @Override

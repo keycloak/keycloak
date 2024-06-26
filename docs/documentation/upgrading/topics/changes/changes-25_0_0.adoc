@@ -83,7 +83,7 @@ For more details and more comprehensive scenarios, see https://www.keycloak.org/
 = Persistent user sessions
 
 Previous versions of {project_name} stored only offline user and offline client sessions in the databases.
-The new feature `persistent-user-session` stores online user sessions and online client sessions not only in memory, but also in the database.
+The new feature `persistent-user-sessions` stores online user sessions and online client sessions not only in memory, but also in the database.
 This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
 
 == Enabling persistent user sessions
@@ -91,7 +91,7 @@ This will allow a user to stay logged in even if all instances of {project_name}
 The feature is a preview feature and disabled by default. To use it, add the following to your build command:
 
 ----
-bin/kc.sh build --features=persistent-user-session ...
+bin/kc.sh build --features=persistent-user-sessions ...
 ----
 
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
@@ -162,7 +162,7 @@ TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduc
 == Signing out existing users
 
 In previous versions and when the feature is disabled, a restart of all {project_name} nodes logged out all users.
-To sign out all online users sessions of a realm with the `persistent-user-session` feature enabled, use the following steps as before:
+To sign out all online users sessions of a realm with the `persistent-user-sessions` feature enabled, use the following steps as before:
 
 . Log in to the Admin Console.
 . Select the menu entry *Sessions*.
@@ -445,22 +445,15 @@ If you wish to use Oracle DB, you must manually install a version of the Oracle 
 
 = Deprecated theme variables
 
-The following variables were deprecated in the Account theme:
+The following variables were deprecated in the Admin theme and will be removed in a future version:
 
-* `authUrl`. Use `authServerUrl` instead.
+* `authServerUrl`. Use `serverBaseUrl` instead.
+* `authUrl`. Use `adminBaseUrl` instead.
 
-The following variables from the environment script injected into the page of the Account theme are deprecated:
+The following variables were deprecated in the Account theme and will be removed in a future version:
 
-* `authUrl`. Use `authServerUrl` instead.
-* `features.isInternationalizationEnabled`. Do not use this variable.
-
-The following variables were deprecated in the Admin theme:
-
-* `authUrl`. Do not use this variable.
-
-The following variables from the environment script injected into the page of the Admin theme are deprecated:
-
-* `authUrl`. Do not use this variable.
+* `authServerUrl`. Use `serverBaseUrl` instead, note `serverBaseUrl` does not include trailing slash.
+* `authUrl`. Use `serverBaseUrl` instead, note `serverBaseUrl` does not include trailing slash.
 
 = Methods to get and set current refresh token in client session are now deprecated
 

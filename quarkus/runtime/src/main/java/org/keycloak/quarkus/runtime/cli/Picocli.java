@@ -34,7 +34,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getCurren
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -67,6 +67,7 @@ import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
+import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -168,7 +169,7 @@ public final class Picocli {
         }
 
         if (currentCommandName.equals(StartDev.NAME)) {
-            String profile = Environment.getProfile();
+            String profile = org.keycloak.common.util.Environment.getProfile();
 
             if (profile == null) {
                 // force the server image to be set with the dev profile
@@ -193,6 +194,14 @@ public final class Picocli {
     }
 
     private static boolean requiresReAugmentation(CommandLine cmdCommand) {
+        if (ConfigArgsConfigSource.getAllCliArgs().contains(Start.NAME)
+            // run time dev mode is not set
+            && !org.keycloak.common.util.Environment.isDevMode()
+            // build time dev mode was set
+            && org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null))) {
+            return true;
+        }
+
         if (hasConfigChanges(cmdCommand)) {
             if (!ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME) && "dev".equals(getConfig().getOptionalValue("kc.profile", String.class).orElse(null))) {
                 return false;
@@ -222,7 +231,7 @@ public final class Picocli {
                     return;
                 }
 
-                properties.add(key + "=" + formatValue(key, value));
+                properties.add(key + "=" + maskValue(key, value));
             }
         }, arg -> {
             properties.add(arg);
@@ -461,7 +470,7 @@ public final class Picocli {
     }
 
     private static boolean hasConfigChanges(CommandLine cmdCommand) {
-        Optional<String> currentProfile = ofNullable(Environment.getProfile());
+        Optional<String> currentProfile = ofNullable(org.keycloak.common.util.Environment.getProfile());
         Optional<String> persistedProfile = getBuildTimeProperty("kc.profile");
 
         if (!persistedProfile.orElse("").equals(currentProfile.orElse(""))) {

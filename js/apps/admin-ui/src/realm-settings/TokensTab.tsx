@@ -126,7 +126,9 @@ export const RealmSettingsTokensTab = ({
                       selected={p === field.value}
                       key={`default-sig-alg-${idx}`}
                       value={p}
-                    ></SelectOption>
+                    >
+                      {p}
+                    </SelectOption>
                   ))}
                 </KeycloakSelect>
               )}
@@ -517,6 +519,12 @@ export const RealmSettingsTokensTab = ({
             label={t("emailVerification")}
             fieldId="emailVerification"
             id="email-verification"
+            labelIcon={
+              <HelpItem
+                helpText={t("emailVerificationHelp")}
+                fieldLabelId="emailVerification"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(
@@ -539,6 +547,12 @@ export const RealmSettingsTokensTab = ({
             label={t("idpAccountEmailVerification")}
             fieldId="idpAccountEmailVerification"
             id="idp-acct-label"
+            labelIcon={
+              <HelpItem
+                helpText={t("idpAccountEmailVerificationHelp")}
+                fieldLabelId="idpAccountEmailVerification"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(
@@ -561,6 +575,12 @@ export const RealmSettingsTokensTab = ({
             label={t("forgotPassword")}
             fieldId="forgotPassword"
             id="forgot-password-label"
+            labelIcon={
+              <HelpItem
+                helpText={t("forgotPasswordHelp")}
+                fieldLabelId="forgotPassword"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(
@@ -583,6 +603,12 @@ export const RealmSettingsTokensTab = ({
             label={t("executeActions")}
             fieldId="executeActions"
             id="execute-actions"
+            labelIcon={
+              <HelpItem
+                helpText={t("executeActionsHelp")}
+                fieldLabelId="executeActions"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(

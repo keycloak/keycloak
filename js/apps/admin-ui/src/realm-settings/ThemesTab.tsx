@@ -163,7 +163,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={adminUIThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-admin-theme"
-                aria-label="selectAdminTheme"
+                aria-label={t("selectAdminTheme")}
               >
                 {themeTypes.admin
                   .filter((theme) => theme.name !== "base")

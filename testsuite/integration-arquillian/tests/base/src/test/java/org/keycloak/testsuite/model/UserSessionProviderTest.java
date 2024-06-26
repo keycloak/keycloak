@@ -322,14 +322,13 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         RealmModel realm = session.realms().getRealmByName("test");
         createSessions(session);
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
-            kcSession.sessions().removeUserSessions(realm);
-        });
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> kcSession.sessions().removeUserSessions(realm));
 
-        assertEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1"))
-                .count());
-        assertEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername(realm, "user2"))
-                .count());
+        var user1 = session.users().getUserByUsername(realm, "user1");
+        var user2 = session.users().getUserByUsername(realm, "user2");
+
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, user1).count());
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, user2).count());
     }
 
     @Test

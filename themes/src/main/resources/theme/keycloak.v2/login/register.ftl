@@ -9,7 +9,7 @@
             ${msg("registerTitle")}
         </#if>
     <#elseif section = "form">
-        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post" novalidate="novalidate">
 
             <@userProfileCommons.userProfileFormFields; callback, attribute>
                 <#if callback = "afterField">
@@ -23,7 +23,7 @@
                                 </span>
                             </label>
                             <span class="${properties.kcInputGroup!}">
-                                <span class="${properties.kcInputClass!}">
+                                <span class="${properties.kcInputClass!}" dir="ltr">
                                     <input type="password" id="password" name="password"
                                             autocomplete="new-password"
                                             aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
@@ -53,7 +53,7 @@
                                     </span>
                                 </label>
                             </div>
-                            <div class="${properties.kcInputGroup!}">
+                            <div class="${properties.kcInputGroup!}" dir="ltr">
                                 <span class="${properties.kcInputClass!}">
                                     <input type="password" id="password-confirm"
                                             name="password-confirm"

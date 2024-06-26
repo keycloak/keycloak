@@ -34,8 +34,8 @@ public class DefaultClientTypeProvider implements ClientTypeProvider {
     private static final Logger logger = Logger.getLogger(DefaultClientTypeProvider.class);
 
     @Override
-    public ClientType getClientType(ClientTypeRepresentation clientTypeRep) {
-        return new DefaultClientType(clientTypeRep);
+    public ClientType getClientType(ClientTypeRepresentation clientTypeRep, ClientType parent) {
+        return new DefaultClientType(clientTypeRep, parent);
     }
 
     @Override

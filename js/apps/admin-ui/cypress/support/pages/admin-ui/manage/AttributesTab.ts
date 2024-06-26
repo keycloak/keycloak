@@ -1,5 +1,5 @@
 export default class AttributesTab {
-  #saveAttributeBtn = "save-attributes";
+  #saveAttributeBtn = "attributes-save";
   #attributesTab = "attributes";
   #emptyState = "attributes-empty-state";
   #addAttributeBtn: string;

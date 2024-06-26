@@ -17,12 +17,16 @@
 
 package org.keycloak.testsuite.model;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
@@ -37,15 +41,13 @@ import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 
-import java.util.concurrent.atomic.AtomicReference;
-
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import org.keycloak.models.Constants;
-import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -212,10 +214,10 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
     @Test
     @ModelTest
     public void testExpiredAuthSessions(KeycloakSession session) {
+        assumeFalse(Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
         AtomicReference<String> authSessionID = new AtomicReference<>();
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionExpired) -> {
-            KeycloakSession mainSession = sessionExpired;
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), mainSession -> {
             try {
                 // AccessCodeLifespan = 10 ; AccessCodeLifespanUserAction = 10 ; AccessCodeLifespanLogin = 30
                 setAccessCodeLifespan(mainSession, 10, 10, 30);

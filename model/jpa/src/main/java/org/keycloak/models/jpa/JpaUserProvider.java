@@ -733,7 +733,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
         query.setParameter("roleId", role.getId());
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+        final UserProvider users = session.users();
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(userEntity -> users.getUserById(realm, userEntity.getId()))
+                .filter(Objects::nonNull);
     }
 
     @Override

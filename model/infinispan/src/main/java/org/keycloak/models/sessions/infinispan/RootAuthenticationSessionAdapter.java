@@ -17,23 +17,22 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
-import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
-import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,35 +41,29 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     private static final Logger log = Logger.getLogger(RootAuthenticationSessionAdapter.class);
 
-    private KeycloakSession session;
-    private InfinispanAuthenticationSessionProvider provider;
-    private Cache<String, RootAuthenticationSessionEntity> cache;
-    private RealmModel realm;
-    private RootAuthenticationSessionEntity entity;
+    private final KeycloakSession session;
+    private final RealmModel realm;
     private final int authSessionsLimit;
-    private static Comparator<Map.Entry<String, AuthenticationSessionEntity>> TIMESTAMP_COMPARATOR =
+    private final SessionEntityUpdater<RootAuthenticationSessionEntity> updater;
+    private final static Comparator<Map.Entry<String, AuthenticationSessionEntity>> TIMESTAMP_COMPARATOR =
             Comparator.comparingInt(e -> e.getValue().getTimestamp());
 
-    public RootAuthenticationSessionAdapter(KeycloakSession session, InfinispanAuthenticationSessionProvider provider,
-                                            Cache<String, RootAuthenticationSessionEntity> cache, RealmModel realm,
-                                            RootAuthenticationSessionEntity entity, int authSessionsLimt) {
+    public RootAuthenticationSessionAdapter(KeycloakSession session, SessionEntityUpdater<RootAuthenticationSessionEntity> updater, RealmModel realm,
+                                            int authSessionsLimit) {
         this.session = session;
-        this.provider = provider;
-        this.cache = cache;
+        this.updater = updater;
         this.realm = realm;
-        this.entity = entity;
-        this.authSessionsLimit = authSessionsLimt;
+        this.authSessionsLimit = authSessionsLimit;
     }
 
     void update() {
-        int expirationSeconds = getTimestamp() - Time.currentTime() + SessionExpiration.getAuthSessionLifespan(realm);
-        provider.tx.replace(cache, entity.getId(), entity, expirationSeconds, TimeUnit.SECONDS);
+        updater.onEntityUpdated();
     }
 
 
     @Override
     public String getId() {
-        return entity.getId();
+        return updater.getEntity().getId();
     }
 
     @Override
@@ -80,12 +73,12 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     @Override
     public int getTimestamp() {
-        return entity.getTimestamp();
+        return updater.getEntity().getTimestamp();
     }
 
     @Override
     public void setTimestamp(int timestamp) {
-        entity.setTimestamp(timestamp);
+        updater.getEntity().setTimestamp(timestamp);
         update();
     }
 
@@ -93,7 +86,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     public Map<String, AuthenticationSessionModel> getAuthenticationSessions() {
         Map<String, AuthenticationSessionModel> result = new HashMap<>();
 
-        for (Map.Entry<String, AuthenticationSessionEntity> entry : entity.getAuthenticationSessions().entrySet()) {
+        for (Map.Entry<String, AuthenticationSessionEntity> entry : updater.getEntity().getAuthenticationSessions().entrySet()) {
             String tabId = entry.getKey();
             result.put(tabId , new AuthenticationSessionAdapter(session, this, tabId, entry.getValue()));
         }
@@ -120,7 +113,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     public AuthenticationSessionModel createAuthenticationSession(ClientModel client) {
         Objects.requireNonNull(client, "client");
 
-        Map<String, AuthenticationSessionEntity> authenticationSessions = entity.getAuthenticationSessions();
+        Map<String, AuthenticationSessionEntity> authenticationSessions = updater.getEntity().getAuthenticationSessions();
         if (authenticationSessions.size() >= authSessionsLimit) {
             String tabId = authenticationSessions.entrySet().stream().min(TIMESTAMP_COMPARATOR).map(Map.Entry::getKey).orElse(null);
 
@@ -138,11 +131,11 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
         int timestamp = Time.currentTime();
         authSessionEntity.setTimestamp(timestamp);
 
-        String tabId = provider.generateTabId();
+        String tabId = Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
         authenticationSessions.put(tabId, authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
-        entity.setTimestamp(timestamp);
+        updater.getEntity().setTimestamp(timestamp);
 
         update();
 
@@ -153,12 +146,11 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     @Override
     public void removeAuthenticationSessionByTabId(String tabId) {
-        if (entity.getAuthenticationSessions().remove(tabId) != null) {
-            if (entity.getAuthenticationSessions().isEmpty()) {
-                provider.tx.remove(cache, entity.getId());
+        if (updater.getEntity().getAuthenticationSessions().remove(tabId) != null) {
+            if (updater.getEntity().getAuthenticationSessions().isEmpty()) {
+                updater.onEntityRemoved();
             } else {
-                entity.setTimestamp(Time.currentTime());
-
+                updater.getEntity().setTimestamp(Time.currentTime());
                 update();
             }
         }
@@ -166,8 +158,8 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     @Override
     public void restartSession(RealmModel realm) {
-        entity.getAuthenticationSessions().clear();
-        entity.setTimestamp(Time.currentTime());
+        updater.getEntity().getAuthenticationSessions().clear();
+        updater.getEntity().setTimestamp(Time.currentTime());
         update();
     }
 }

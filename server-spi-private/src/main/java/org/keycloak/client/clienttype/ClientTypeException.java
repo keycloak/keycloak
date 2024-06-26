@@ -29,10 +29,6 @@ public class ClientTypeException extends ModelException {
         super(message, parameters);
     }
 
-    private ClientTypeException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
     public enum Message {
         /**
          * Register all client type exception messages through this enum to keep things consistent across the services.
@@ -55,10 +51,6 @@ public class ClientTypeException extends ModelException {
 
         public ClientTypeException exception(Object... parameters) {
             return new ClientTypeException(message, parameters);
-        }
-
-        public ClientTypeException exception(String message, Throwable cause) {
-            return new ClientTypeException(message, cause);
         }
 
         public String getMessage() {

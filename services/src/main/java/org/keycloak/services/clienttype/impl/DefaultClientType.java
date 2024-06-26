@@ -23,8 +23,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.services.clienttype.client.TypeAwareClientModelDelegate;
 
-import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -32,9 +33,11 @@ import java.util.Set;
 public class DefaultClientType implements ClientType {
 
     private final ClientTypeRepresentation clientType;
+    private final ClientType parentClientType;
 
-    public DefaultClientType(ClientTypeRepresentation clientType) {
+    public DefaultClientType(ClientTypeRepresentation clientType, ClientType parentClientType) {
         this.clientType = clientType;
+        this.parentClientType = parentClientType;
     }
 
     @Override
@@ -44,31 +47,40 @@ public class DefaultClientType implements ClientType {
 
     @Override
     public boolean isApplicable(String optionName) {
-        // Each property is applicable by default if not configured for the particular client type
-        return getConfiguration(optionName)
-                .map(ClientTypeRepresentation.PropertyConfig::getApplicable)
-                .orElse(true);
+        ClientTypeRepresentation.PropertyConfig propertyConfig = clientType.getConfig().get(optionName);
+        if (propertyConfig != null) {
+            return propertyConfig.getApplicable();
+        }
+
+        if (parentClientType != null) {
+            return parentClientType.isApplicable(optionName);
+        }
+
+        return true;
     }
 
     @Override
     public <T> T getTypeValue(String optionName, Class<T> optionType) {
-
-        return getConfiguration(optionName)
-                .map(ClientTypeRepresentation.PropertyConfig::getValue)
-                .map(optionType::cast).orElse(null);
+        ClientTypeRepresentation.PropertyConfig propertyConfig = clientType.getConfig().get(optionName);
+        if (propertyConfig != null) {
+            return optionType.cast(propertyConfig.getValue());
+        } else if (parentClientType != null) {
+            return parentClientType.getTypeValue(optionName, optionType);
+        }
+        return null;
     }
 
     @Override
     public Set<String> getOptionNames() {
-        return clientType.getConfig().keySet();
+        Stream<String> optionNames = clientType.getConfig().keySet().stream();
+        if (parentClientType != null) {
+            optionNames = Stream.concat(optionNames, parentClientType.getOptionNames().stream());
+        }
+        return optionNames.collect(Collectors.toSet());
     }
 
     @Override
     public ClientModel augment(ClientModel client) {
         return new TypeAwareClientModelDelegate(this, () -> client);
-    }
-
-    private Optional<ClientTypeRepresentation.PropertyConfig> getConfiguration(String optionName) {
-        return Optional.ofNullable(clientType.getConfig().get(optionName));
     }
 }

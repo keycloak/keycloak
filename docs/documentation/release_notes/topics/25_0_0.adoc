@@ -59,13 +59,13 @@ For information on how to migrate, see the link:{upgradingguide_link}[{upgrading
 = Persistent user sessions
 
 Previous versions of {project_name} stored only offline user and offline client sessions in the databases.
-The new feature `persistent-user-session` stores online user sessions and online client sessions not only in memory, but also in the database.
+The new feature `persistent-user-sessions` stores online user sessions and online client sessions not only in memory, but also in the database.
 This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
 
 The feature is a preview feature and disabled by default. To use it, add the following to your build command:
 
 ----
-bin/kc.sh build --features=persistent-user-session ...
+bin/kc.sh build --features=persistent-user-sessions ...
 ----
 
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
@@ -231,3 +231,17 @@ For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 = Support for PostgreSQL 16
 
 The supported and tested databases now include PostgreSQL 16.
+
+= Introducing support for Customer Identity and Access Management (CIAM) and Multi-tenancy
+
+In this release, we are delivering Keycloak Organizations as a technology preview feature.
+
+This feature provides a realm with some core CIAM capabilities, which will serve as the baseline for more capabilities
+in the future to address Business-to-Business (B2B) and Business-to-Business-to-Customers (B2B2C) use cases.
+
+In terms of functionality, the feature is completed. However, we still have work to do to make it fully supported in the next major release.
+This remaining work is mainly about preparing the feature for production deployments with a focus on scalability. Also, depending
+on the feedback we get until the next major release, we might eventually accept additional capabilities and add more value to
+the feature, without compromising its roadmap.
+
+For more details, see link:{adminguide_link}#_managing_organizations[{adminguide_name}].

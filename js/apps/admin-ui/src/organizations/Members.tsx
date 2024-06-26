@@ -72,9 +72,7 @@ export const Members = () => {
     <PageSection variant="light">
       {openAddMembers && (
         <MemberModal
-          membersQuery={async () =>
-            await adminClient.organizations.listMembers({ orgId })
-          }
+          membersQuery={() => adminClient.organizations.listMembers({ orgId })}
           onAdd={async (selectedRows) => {
             try {
               await Promise.all(

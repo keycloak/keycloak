@@ -53,6 +53,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,6 +74,8 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
+
+    private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
     private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
     private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
@@ -419,7 +422,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                     }
                     return envBuilder.build();
                 })
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        for (String env : COPY_ENV) {
+            String value = System.getenv(env);
+            if (value != null) {
+                envVars.add(new EnvVarBuilder().withName(env).withValue(value).build());
+            }
+        }
 
         envVars.add(
                 new EnvVarBuilder()
@@ -461,13 +471,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         var reconciledContainer = reconciledDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         if (!previousContainer.getImage().equals(reconciledContainer.getImage())
-                && previousDeployment.getStatus().getReplicas() > 1) {
+                && previousDeployment.getStatus().getReplicas() > 0) {
             // TODO Check if migration is really needed (e.g. based on actual KC version); https://github.com/keycloak/keycloak/issues/10441
             Log.info("Detected changed Keycloak image, assuming Keycloak upgrade. Scaling down the deployment to one instance to perform a safe database migration");
             Log.infof("original image: %s; new image: %s", previousContainer.getImage(), reconciledContainer.getImage());
 
             reconciledContainer.setImage(previousContainer.getImage());
-            reconciledDeployment.getSpec().setReplicas(1);
+            reconciledDeployment.getSpec().setReplicas(0);
 
             reconciledDeployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString());
         }

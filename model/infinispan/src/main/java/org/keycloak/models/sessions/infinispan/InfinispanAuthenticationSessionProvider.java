@@ -17,15 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import org.keycloak.cluster.ClusterProvider;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import org.infinispan.Cache;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -34,12 +27,16 @@ import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNote
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionPredicate;
+import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -88,7 +85,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
 
     private RootAuthenticationSessionAdapter wrap(RealmModel realm, RootAuthenticationSessionEntity entity) {
-        return entity==null ? null : new RootAuthenticationSessionAdapter(session, this, cache, realm, entity, authSessionsLimit);
+        return entity == null ? null : new RootAuthenticationSessionAdapter(session, new RootAuthenticationSessionUpdater(entity, this, realm), realm, authSessionsLimit);
     }
 
 
@@ -120,7 +117,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         Iterator<Map.Entry<String, RootAuthenticationSessionEntity>> itr = CacheDecorators.localCache(cache)
                 .entrySet()
                 .stream()
-                .filter(RootAuthenticationSessionPredicate.create(realmId))
+                .filter(SessionPredicate.create(realmId))
                 .iterator();
 
         while (itr.hasNext()) {
@@ -149,7 +146,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.notify(
           InfinispanAuthenticationSessionProviderFactory.AUTHENTICATION_SESSION_EVENTS,
-          AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), compoundId.getClientUUID(), authNotesFragment),
+          AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), authNotesFragment),
           true,
           ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
         );
@@ -177,8 +174,24 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         return cache;
     }
 
+    private record RootAuthenticationSessionUpdater(RootAuthenticationSessionEntity entity,
+                                                    InfinispanAuthenticationSessionProvider provider,
+                                                    RealmModel realm) implements SessionEntityUpdater<RootAuthenticationSessionEntity> {
 
-    protected String generateTabId() {
-        return Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
+        @Override
+        public RootAuthenticationSessionEntity getEntity() {
+            return entity;
+        }
+
+        @Override
+        public void onEntityUpdated() {
+            int expirationSeconds = entity.getTimestamp() - Time.currentTime() + SessionExpiration.getAuthSessionLifespan(realm);
+            provider.tx.replace(provider.cache, entity.getId(), entity, expirationSeconds, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void onEntityRemoved() {
+            provider.tx.remove(provider.cache, entity.getId());
+        }
     }
 }

@@ -17,20 +17,20 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+import java.util.Objects;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@SerializeWith(LoginFailureEntity.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.LOGIN_FAILURE_ENTITY)
 public class LoginFailureEntity extends SessionEntity {
 
-    private String userId;
+    private final String userId;
     private int failedLoginNotBefore;
     private int numFailures;
 
@@ -38,27 +38,28 @@ public class LoginFailureEntity extends SessionEntity {
     private long lastFailure;
     private String lastIPFailure;
 
-    public LoginFailureEntity() {
+    public LoginFailureEntity(String realmId, String userId) {
+        super(Objects.requireNonNull(realmId));
+        this.userId = Objects.requireNonNull(userId);
     }
 
-    private LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, int numTemporaryLockouts, long lastFailure, String lastIPFailure) {
+    @ProtoFactory
+    LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, int numTemporaryLockouts, long lastFailure, String lastIPFailure) {
         super(realmId);
         this.userId = userId;
         this.failedLoginNotBefore = failedLoginNotBefore;
         this.numFailures = numFailures;
         this.numTemporaryLockouts = numTemporaryLockouts;
         this.lastFailure = lastFailure;
-        this.lastIPFailure = lastIPFailure;
+        this.lastIPFailure = Marshalling.emptyStringToNull(lastIPFailure);
     }
 
+    @ProtoField(2)
     public String getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
+    @ProtoField(3)
     public int getFailedLoginNotBefore() {
         return failedLoginNotBefore;
     }
@@ -69,6 +70,7 @@ public class LoginFailureEntity extends SessionEntity {
         }
     }
 
+    @ProtoField(4)
     public int getNumFailures() {
         return numFailures;
     }
@@ -77,6 +79,7 @@ public class LoginFailureEntity extends SessionEntity {
         this.numFailures = numFailures;
     }
 
+    @ProtoField(5)
     public int getNumTemporaryLockouts() {
         return numTemporaryLockouts;
     }
@@ -85,6 +88,7 @@ public class LoginFailureEntity extends SessionEntity {
         this.numTemporaryLockouts = numTemporaryLockouts;
     }
 
+    @ProtoField(6)
     public long getLastFailure() {
         return lastFailure;
     }
@@ -95,6 +99,7 @@ public class LoginFailureEntity extends SessionEntity {
         }
     }
 
+    @ProtoField(7)
     public String getLastIPFailure() {
         return lastIPFailure;
     }
@@ -114,15 +119,9 @@ public class LoginFailureEntity extends SessionEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LoginFailureEntity)) return false;
-
-        LoginFailureEntity that = (LoginFailureEntity) o;
-
-        if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-        if (getRealmId() != null ? !getRealmId().equals(that.getRealmId()) : that.getRealmId() != null) return false;
-
-
-        return true;
+        if (!(o instanceof LoginFailureEntity that)) return false;
+        return Objects.equals(userId, that.userId) &&
+                Objects.equals(getRealmId(), that.getRealmId());
     }
 
     @Override
@@ -137,43 +136,4 @@ public class LoginFailureEntity extends SessionEntity {
         return String.format("LoginFailureEntity [ userId=%s, realm=%s, numFailures=%d ]", userId, getRealmId(), numFailures);
     }
 
-    public static class ExternalizerImpl implements Externalizer<LoginFailureEntity> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, LoginFailureEntity value) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(value.getRealmId(), output);
-            MarshallUtil.marshallString(value.userId, output);
-            output.writeInt(value.failedLoginNotBefore);
-            output.writeInt(value.numFailures);
-            output.writeInt(value.numTemporaryLockouts);
-            output.writeLong(value.lastFailure);
-            MarshallUtil.marshallString(value.lastIPFailure, output);
-        }
-
-        @Override
-        public LoginFailureEntity readObject(ObjectInput input) throws IOException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public LoginFailureEntity readObjectVersion1(ObjectInput input) throws IOException {
-            return new LoginFailureEntity(
-              MarshallUtil.unmarshallString(input),
-              MarshallUtil.unmarshallString(input),
-              input.readInt(),
-              input.readInt(),
-              input.readInt(),
-              input.readLong(),
-              MarshallUtil.unmarshallString(input)
-            );
-        }
-    }
 }

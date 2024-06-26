@@ -18,13 +18,6 @@
 
 package org.keycloak.testsuite.util;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -36,6 +29,13 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSession;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Used to dynamically reload EnvironmentDependentProviderFactories after some feature is enabled/disabled

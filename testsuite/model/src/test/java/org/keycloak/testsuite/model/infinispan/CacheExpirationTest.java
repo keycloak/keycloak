@@ -19,6 +19,7 @@ package org.keycloak.testsuite.model.infinispan;
 import org.infinispan.Cache;
 import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.testsuite.model.KeycloakModelTest;
@@ -55,6 +56,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
 
     @Test
     public void testCacheExpiration() throws Exception {
+        assumeFalse("Embedded caches not available for testing.", Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE) && Profile.isFeatureEnabled(Profile.Feature.REMOTE_CACHE));
 
         log.debugf("Number of previous instances of the class on the heap: %d", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class));
 
@@ -66,8 +68,8 @@ public class CacheExpirationTest extends KeycloakModelTest {
               .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
               .forEach((c, me) -> c.remove(me.getKey()));
 
-            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", "r1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
-            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", "r2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
         });
         Instant expiryInstant = Instant.now().plusSeconds(30);
 

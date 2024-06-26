@@ -118,10 +118,7 @@
 
     <changeSet author="keycloak" id="unique-consentuser">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
-            <or>
-                <dbms type="mariadb"/>
-                <dbms type="postgresql"/>
-            </or>
+            <dbms type="postgresql"/>
         </preConditions>
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_ConsentConstraints"/>
         <dropUniqueConstraint tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>
@@ -131,7 +128,10 @@
 
     <changeSet author="keycloak" id="unique-consentuser-mysql">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
-            <dbms type="mysql"/>
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+            </or>
         </preConditions>
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_MySQL_ConsentConstraints"/>
         <dropUniqueConstraint tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>

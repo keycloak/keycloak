@@ -82,8 +82,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -101,6 +103,8 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.models.DeploymentStateProviderFactory;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
@@ -392,7 +396,7 @@ public abstract class KeycloakModelTest {
             CountDownLatch start = new CountDownLatch(numThreads);
             CountDownLatch stop = new CountDownLatch(numThreads);
             Callable<?> independentTask = () -> inIndependentFactory(() -> {
-
+                LOG.infof("Started Keycloak server in thread: %s", Thread.currentThread().getName());
                 // use the latch to ensure that all caches are online while the transaction below runs to avoid a RemoteException
                 start.countDown();
                 start.await();
@@ -486,11 +490,11 @@ public abstract class KeycloakModelTest {
             throw new IllegalStateException("USE_DEFAULT_FACTORY must be false to use an independent factory");
         }
         KeycloakSessionFactory original = getFactory();
-        KeycloakSessionFactory factory = createKeycloakSessionFactory();
         try {
-            setFactory(factory);
+            setFactory(createKeycloakSessionFactory());
             return task.call();
         } catch (Exception ex) {
+            LOG.errorf(ex, "Exception caught while starting Keycloak server in thread %s", Thread.currentThread().getName());
             throw new RuntimeException(ex);
         } finally {
             closeKeycloakSessionFactory();
@@ -628,5 +632,37 @@ public abstract class KeycloakModelTest {
         inComittedTransaction(session -> {
             Time.setOffset(seconds);
         });
+    }
+
+    public static void eventually(BooleanSupplier condition) {
+        eventually(null, condition, 5000, 10, MILLISECONDS);
+    }
+
+    public static void eventually(Supplier<String> message, BooleanSupplier condition) {
+        eventually(message, condition, 5000, 10, MILLISECONDS);
+    }
+
+    public static void eventually(Supplier<String> message, BooleanSupplier condition, long timeout,
+                                  long pollInterval, TimeUnit unit) {
+        if (pollInterval <= 0) {
+            throw new IllegalArgumentException("Check interval must be positive");
+        }
+        if (message == null) {
+            message = () -> null;
+        }
+        try {
+            long expectedEndTime = System.nanoTime() + TimeUnit.NANOSECONDS.convert(timeout, unit);
+            long sleepMillis = MILLISECONDS.convert(pollInterval, unit);
+            do {
+                if (condition.getAsBoolean()) return;
+
+                Thread.sleep(sleepMillis);
+            } while (expectedEndTime - System.nanoTime() > 0);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected!", e);
+        }
+        // last check
+        Assert.assertTrue(message.get(), condition.getAsBoolean());
     }
 }

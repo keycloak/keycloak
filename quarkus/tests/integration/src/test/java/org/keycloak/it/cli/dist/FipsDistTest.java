@@ -41,7 +41,7 @@ public class FipsDistTest {
             // Not shown as FIPS is not a preview anymore
             cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips:v1", 0);
             cliResult.assertMessage("Java security providers: [ \n"
-                    + " KC(BCFIPS version 1.000203, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
+                    + " KC(BCFIPS version 1.000205, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
         });
     }
 
@@ -56,7 +56,7 @@ public class FipsDistTest {
             cliResult.assertMessage(
                     "org.bouncycastle.crypto.fips.FipsUnapprovedOperationError: password must be at least 112 bits");
             cliResult.assertMessage("Java security providers: [ \n"
-                    + " KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
+                    + " KC(BCFIPS version 1.000205 Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
 
             dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", "adminadminadmin");
             cliResult = dist.run("start", "--fips-mode=strict");

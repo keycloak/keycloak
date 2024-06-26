@@ -35,6 +35,12 @@
     <packaging>pom</packaging>
 
     <properties>
+        <!-- Maven -->
+        <maven.version>3.9.8</maven.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+
         <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
@@ -59,7 +65,7 @@
         <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
 
         <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
-        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
+        <tests.wildfly.core.version>21.1.1.Final</tests.wildfly.core.version>
 
         <!-- Upstream WildFly Versions -->
         <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
@@ -82,8 +88,8 @@
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
-        <!-- 1.0.2.4 exhibits class loading issues -->
-        <bouncycastle.bcfips.version>1.0.2.3</bouncycastle.bcfips.version>
+        <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
+        <bouncycastle.bctls-fips.version>1.0.19</bouncycastle.bctls-fips.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -93,7 +99,7 @@
         <h2.version>2.2.224</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.4.Final</infinispan.version>
+        <infinispan.version>15.0.5.Final</infinispan.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -146,10 +152,6 @@
         <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
 
         <liquibase.version>4.25.1</liquibase.version>
-        <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
-        <osgi.version>6.0.0</osgi.version>
-        <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
-        <pax.web.version>7.4.6</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
@@ -183,14 +185,12 @@
         <assertj-core.version>3.22.0</assertj-core.version>
         
         <!-- Maven Plugins -->
-        <maven.version>3.9.6</maven.version>
-        <maven.plugins.version>3.11.0</maven.plugins.version>
+        <maven.plugins.version>3.13.1</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
-        <osgi.bundle.plugin.version>5.1.8</osgi.bundle.plugin.version>
-        <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
+        <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
@@ -199,6 +199,7 @@
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <infinispan.maven-plugins.version>1.0.5.Final</infinispan.maven-plugins.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -206,7 +207,11 @@
         <surefire.memory.metaspace>96m</surefire.memory.metaspace>
         <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
         <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
-        <surefire.system.args></surefire.system.args>
+        <!-- See: https://github.com/keycloak/keycloak/issues/9899 -->
+        <surefire.system.args>
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+        </surefire.system.args>
 
         <!-- webauthn support -->
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
@@ -236,6 +241,9 @@
         <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
         <!-- The clean step is skipped on Windows -->
         <js.skip.clean>false</js.skip.clean>
+
+        <!-- Set to true on release to update proto.lock files -->
+        <commitProtoLockChanges>false</commitProtoLockChanges>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -387,11 +395,17 @@
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
             
-          <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bc-fips</artifactId>
-            <version>${bouncycastle.bcfips.version}</version>
-          </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bc-fips</artifactId>
+                <version>${bouncycastle.bcfips.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-fips</artifactId>
+                <version>${bouncycastle.bctls-fips.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
@@ -872,31 +886,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>osgi.core</artifactId>
-                <version>${osgi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.enterprise</artifactId>
-                <version>${osgi.enterprise.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-runtime</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-api</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-spi</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
 
             <!-- keycloak -->
             <dependency>
@@ -1035,11 +1024,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-wildfly-elytron-jakarta-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adduser</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1110,11 +1094,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1122,16 +1101,6 @@
            <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-wildfly-jakarta-subsystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-undertow-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1544,6 +1513,15 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <doclint>none</doclint>
+                        <failOnError>false</failOnError>
+                        <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>com.lazerycode.jmeter</groupId>
                     <artifactId>jmeter-maven-plugin</artifactId>
                     <version>${jmeter.plugin.version}</version>
@@ -1631,11 +1609,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.felix</groupId>
-                    <artifactId>maven-bundle-plugin</artifactId>
-                    <version>${osgi.bundle.plugin.version}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
                     <configuration>
@@ -1721,24 +1694,19 @@
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.infinispan.maven-plugins</groupId>
+                    <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
+                    <version>${infinispan.maven-plugins.version}</version>
+                    <configuration>
+                        <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
 
     <profiles>
-        <profile>
-            <id>jdk9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <properties>
-                <surefire.system.args>
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                </surefire.system.args>
-            </properties>
-        </profile>
-
         <profile>
             <id>testsuite</id>
             <activation>
@@ -1827,42 +1795,6 @@
             <modules>
                 <module>operator</module>
             </modules>
-        </profile>
-
-        <profile>
-            <id>doclint-java8-disable</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <doclint>none</doclint>
-                            <failOnError>false</failOnError>
-                            <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>built-with-jdk-9-or-later</id>
-            <activation>
-                <!-- only activate this on JDK 9 or later as this option is unknown for JDK 8, and as it is not necessary for JDK 8 -->
-                <!-- support for running with JDK 8 is still necessary for some downstream integration tests -->
-                <jdk>(9,)</jdk>
-            </activation>
-            <properties>
-                <!-- Minimum Java version supported for running Keycloak -->
-                <!-- maven.compiler.target and maven.compiler.source already set to 1.8 in the parent pom -->
-                <!-- other modules will configure a higher Java version (for example, Quarkus) -->
-                <maven.compiler.release>8</maven.compiler.release>
-            </properties>
         </profile>
 
         <profile>

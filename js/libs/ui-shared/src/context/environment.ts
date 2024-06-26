@@ -1,12 +1,14 @@
 /** The base environment variables that are shared between the Admin and Account Consoles. */
 export type BaseEnvironment = {
   /**
-   * The URL to the root of the Keycloak server, this is **NOT** always equivalent to the URL of the Admin Console.
-   * For example, the Keycloak server could be hosted on `auth.example.com` and Admin Console may be hosted on `admin.example.com`.
+   * The URL to the root of the Keycloak server, including the path if present, this is **NOT** always equivalent to the URL of the Admin Console.
+   * For example, the Keycloak server could be hosted on `auth.example.com` and Admin Console may be hosted on `admin.example.com/some/path`.
+   *
+   * Note that this URL is normalized not to include a trailing slash, so take this into account when constructing URLs.
    *
    * @see {@link https://www.keycloak.org/server/hostname#_administration_console}
    */
-  authServerUrl: string;
+  serverBaseUrl: string;
   /** The identifier of the realm used to authenticate the user. */
   realm: string;
   /** The identifier of the client used to authenticate the user. */
@@ -20,25 +22,29 @@ export type BaseEnvironment = {
 };
 
 /**
- * Extracts the environment variables that are passed if the application is running as a Keycloak theme and combines them with the provided defaults.
- * These variables are injected by Keycloak into the `index.ftl` as a script tag, the contents of which can be parsed as JSON.
+ *  Extracts the environment variables from the document, these variables are injected by Keycloak as a script tag, the contents of which can be parsed as JSON. For example:
  *
- * @argument defaults - The default values to fall to if a value is not present in the environment.
+ *```html
+ * <script id="environment" type="application/json">
+ *   {
+ *     "realm": "master",
+ *     "clientId": "security-admin-console",
+ *     "etc": "..."
+ *   }
+ * </script>
+ * ```
  */
-export function getInjectedEnvironment<T>(defaults: T): T {
+export function getInjectedEnvironment<T>(): T {
   const element = document.getElementById("environment");
-  let env = {} as T;
+  const contents = element?.textContent;
 
-  // Attempt to parse the contents as JSON and return its value.
-  try {
-    // If the element cannot be found, return an empty record.
-    if (element?.textContent) {
-      env = JSON.parse(element.textContent);
-    }
-  } catch (error) {
-    console.error("Unable to parse environment variables.");
+  if (typeof contents !== "string") {
+    throw new Error("Environment variables not found in the document.");
   }
 
-  // Return the merged environment variables with the defaults.
-  return { ...defaults, ...env };
+  try {
+    return JSON.parse(contents);
+  } catch (error) {
+    throw new Error("Unable to parse environment variables as JSON.");
+  }
 }

@@ -4,14 +4,12 @@ import { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/us
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   FormErrorText,
-  FormSubmitButton,
   HelpItem,
   SwitchControl,
   TextControl,
   UserProfileFields,
 } from "@keycloak/keycloak-ui-shared";
 import {
-  ActionGroup,
   AlertVariant,
   Button,
   Chip,
@@ -26,7 +24,6 @@ import { TFunction } from "i18next";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { useAlerts } from "../components/alert/Alerts";
@@ -39,7 +36,9 @@ import useFormatDate from "../utils/useFormatDate";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserFormFields, toUserFormFields } from "./form-state";
 import { toUsers } from "./routes/Users";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
+import { useNavigate } from "react-router-dom";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -79,15 +78,15 @@ export const UserForm = ({
   const { whoAmI } = useWhoAmI();
   const currentLocale = whoAmI.getLocale();
 
-  const { handleSubmit, setValue, watch, control, reset, formState } = form;
+  const { handleSubmit, setValue, control, reset, formState } = form;
   const { errors } = formState;
 
-  const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
   );
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setValue("requiredActions", user?.requiredActions || []);
@@ -130,6 +129,14 @@ export const UserForm = ({
 
   const toggleModal = () => {
     setOpen(!open);
+  };
+
+  const onFormReset = () => {
+    if (user?.id) {
+      reset(toUserFormFields(user));
+    } else {
+      navigate(toUsers({ realm: realm.realm! }));
+    }
   };
 
   return (
@@ -327,37 +334,15 @@ export const UserForm = ({
             )}
           </FormGroup>
         )}
-
-        <ActionGroup>
-          <FormSubmitButton
-            formState={formState}
-            data-testid={!user?.id ? "create-user" : "save-user"}
-            isDisabled={
-              !user?.id &&
-              !watchUsernameInput &&
-              realm.registrationEmailAsUsername === false
-            }
-            allowNonDirty
-            allowInvalid
-          >
-            {user?.id ? t("save") : t("create")}
-          </FormSubmitButton>
-          <Button
-            data-testid="cancel-create-user"
-            variant="link"
-            onClick={user?.id ? () => reset(toUserFormFields(user)) : undefined}
-            component={
-              !user?.id
-                ? (props) => (
-                    <Link {...props} to={toUsers({ realm: realm.realm! })} />
-                  )
-                : undefined
-            }
-          >
-            {user?.id ? t("revert") : t("cancel")}
-          </Button>
-        </ActionGroup>
       </FormProvider>
+      <FixedButtonsGroup
+        name="user-creation"
+        saveText={user?.id ? t("save") : t("create")}
+        reset={onFormReset}
+        resetText={user?.id ? t("revert") : t("cancel")}
+        isActive
+        isSubmit
+      />
     </FormAccess>
   );
 };

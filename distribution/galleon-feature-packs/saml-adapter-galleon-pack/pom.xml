@@ -103,7 +103,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
+            <artifactId>keycloak-saml-adapter-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -136,7 +136,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-undertow-adapter</artifactId>
+            <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -147,29 +147,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-elytron-jakarta-adapter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-jakarta-subsystem</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter-spi</artifactId>
+            <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

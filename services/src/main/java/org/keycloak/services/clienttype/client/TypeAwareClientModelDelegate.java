@@ -49,7 +49,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isStandardFlowEnabled() {
         return TypedClientSimpleAttribute.STANDARD_FLOW_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isStandardFlowEnabled, Boolean.class);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isBearerOnly() {
         return TypedClientSimpleAttribute.BEARER_ONLY
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isBearerOnly, Boolean.class);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isConsentRequired() {
         return TypedClientSimpleAttribute.CONSENT_REQUIRED
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isConsentRequired, Boolean.class);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isDirectAccessGrantsEnabled() {
         return TypedClientSimpleAttribute.DIRECT_ACCESS_GRANTS_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isDirectAccessGrantsEnabled, Boolean.class);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isAlwaysDisplayInConsole() {
         return TypedClientSimpleAttribute.ALWAYS_DISPLAY_IN_CONSOLE
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isAlwaysDisplayInConsole, Boolean.class);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isFrontchannelLogout() {
         return TypedClientSimpleAttribute.FRONTCHANNEL_LOGOUT
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isFrontchannelLogout, Boolean.class);
     }
 
     @Override
@@ -121,7 +121,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isImplicitFlowEnabled() {
         return TypedClientSimpleAttribute.IMPLICIT_FLOW_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isImplicitFlowEnabled, Boolean.class);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isServiceAccountsEnabled() {
         return TypedClientSimpleAttribute.SERVICE_ACCOUNTS_ENABLED
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isServiceAccountsEnabled, Boolean.class);
     }
 
     @Override
@@ -145,7 +145,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public String getProtocol() {
         return TypedClientSimpleAttribute.PROTOCOL
-                .getClientAttribute(clientType, String.class);
+                .getClientAttribute(clientType, super::getProtocol, String.class);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public boolean isPublicClient() {
         return TypedClientSimpleAttribute.PUBLIC_CLIENT
-                .getClientAttribute(clientType, Boolean.class);
+                .getClientAttribute(clientType, super::isPublicClient, Boolean.class);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public Set<String> getWebOrigins() {
         return TypedClientSimpleAttribute.WEB_ORIGINS
-                .getClientAttribute(clientType, Set.class);
+                .getClientAttribute(clientType, super::getWebOrigins, Set.class);
     }
 
     @Override
@@ -193,7 +193,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     @Override
     public Set<String> getRedirectUris() {
         return TypedClientSimpleAttribute.REDIRECT_URIS
-                .getClientAttribute(clientType, Set.class);
+                .getClientAttribute(clientType, super::getRedirectUris, Set.class);
     }
 
     @Override
@@ -238,7 +238,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     public String getAttribute(String name) {
         TypedClientExtendedAttribute attribute = TypedClientExtendedAttribute.getAttributesByName().get(name);
         if (attribute != null) {
-            return attribute.getClientAttribute(clientType, String.class);
+            return attribute.getClientAttribute(clientType, () -> super.getAttribute(name), String.class);
         } else {
             return super.getAttribute(name);
         }
@@ -252,8 +252,8 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
         // Get extended client type attributes and values from the client type configuration.
         Set<String> extendedClientTypeAttributes =
                 clientType.getOptionNames().stream()
-                        .filter(optionName -> TypedClientExtendedAttribute.getAttributesByName().containsKey(optionName))
-                        .collect(Collectors.toSet());
+                .filter(optionName -> TypedClientExtendedAttribute.getAttributesByName().containsKey(optionName))
+                .collect(Collectors.toSet());
 
         // Augment client type attributes on top of attributes on the delegate.
         for (String entry : extendedClientTypeAttributes) {

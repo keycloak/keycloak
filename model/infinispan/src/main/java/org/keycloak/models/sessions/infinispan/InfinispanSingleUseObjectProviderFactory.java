@@ -18,6 +18,8 @@
 package org.keycloak.models.sessions.infinispan;
 
 
+import java.util.function.Supplier;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -26,19 +28,17 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
-
-import java.util.function.Supplier;
-
-import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory {
+public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 
@@ -85,11 +85,16 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public String getId() {
-        return "infinispan";
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        return PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 }
