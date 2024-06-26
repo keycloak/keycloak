@@ -14,6 +14,7 @@ const PersonalInfo = lazy(() => import("./personal-info/PersonalInfo"));
 const Resources = lazy(() => import("./resources/Resources"));
 const ContentComponent = lazy(() => import("./content/ContentComponent"));
 const Oid4Vci = lazy(() => import("./oid4vci/Oid4Vci"));
+const SSHKeys = lazy(() => import("./account-security/SSHKeys"));
 
 export const DeviceActivityRoute: RouteObject = {
   path: "account-security/device-activity",
@@ -64,6 +65,11 @@ export const Oid4VciRoute: RouteObject = {
   element: <Oid4Vci />,
 };
 
+export const SSHKeysRoute: RouteObject = {
+  path: "account-security/ssh-keys",
+  element: <SSHKeys />,
+};
+
 export const RootRoute: RouteObject = {
   path: decodeURIComponent(new URL(environment.baseUrl).pathname),
   element: <Root />,
@@ -79,6 +85,7 @@ export const RootRoute: RouteObject = {
     ResourcesRoute,
     ContentRoute,
     Oid4VciRoute,
+    SSHKeysRoute,
   ],
 };
 
