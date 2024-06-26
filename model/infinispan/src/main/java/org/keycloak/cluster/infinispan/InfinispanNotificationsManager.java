@@ -141,6 +141,9 @@ public class InfinispanNotificationsManager {
 
 
     void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, ClusterProvider.DCNotify dcNotify) {
+        if (events == null || events.isEmpty()) {
+            return;
+        }
         var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, myAddress, mySite, dcNotify, ignoreSender);
 
         String eventKey = UUID.randomUUID().toString();
