@@ -81,4 +81,8 @@ Using the value `required` sets up {project_name} to always ask for certificates
 
 Be aware that this is the basic certificate configuration for mTLS use cases where {project_name} acts as server. When {project_name} acts as client instead, e.g. when {project_name} tries to get a token from a token endpoint of a brokered identity provider that is secured by mTLS, you need to set up the HttpClient to provide the right certificates in the keystore for the outgoing request. To configure mTLS in these scenarios, see <@links.server id="outgoinghttp"/>.
 
+NOTE: Management interface properties are inherited from the main HTTP server, including mTLS settings.
+It means when mTLS is set, it is also enabled for the management interface.
+To override the behavior, use the `https-management-client-auth` property.
+
 </@tmpl.guide>
