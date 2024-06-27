@@ -6,7 +6,8 @@ package org.keycloak.models;
 public enum ImpersonationSessionNote implements UserSessionNoteDescriptor {
     IMPERSONATOR_ID("Impersonator User ID"),
     IMPERSONATOR_USERNAME("Impersonator Username"),
-    IMPERSONATOR_CLIENT("Impersonator Client");
+    IMPERSONATOR_CLIENT("Impersonator Client"),
+    IMPERSONATOR_TARGETCLIENT("Impersonator Target Client");
 
     final String displayName;
 

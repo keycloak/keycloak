@@ -56,6 +56,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -85,6 +86,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
@@ -227,7 +229,7 @@ public class AuthenticationManager {
             verifier.verifierContext(signatureVerifier);
 
             AccessToken token = verifier.verify().getToken();
-            UserSessionModel cookieSession = session.sessions().getUserSession(realm, token.getSessionState());
+            UserSessionModel cookieSession = session.sessions().getUserSession(realm, token.getSessionId());
             if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return true;
             expireIdentityCookie(session);
             return true;
@@ -1422,6 +1424,19 @@ public class AuthenticationManager {
         return factory;
     }
 
+    public static ClientModel getClientFromUserSessionIfTokenExchange(KeycloakSession session, RealmModel realm, UserSessionModel userSession, ClientModel client) {
+        if (client != null && userSession != null && Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE)) {
+            final String targetClientId = userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_TARGETCLIENT.toString());
+            if (targetClientId != null) {
+                final ClientModel targetClient = realm.getClientById(targetClientId);
+                if (targetClient != null && AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
+                    return targetClient;
+                }
+            }
+        }
+        return client;
+    }
+
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                  String checkAudience, boolean isCookie, String tokenString, HttpHeaders headers, Predicate<? super AccessToken>... additionalChecks) {
         try {
@@ -1457,13 +1472,13 @@ public class AuthenticationManager {
 
             UserSessionModel userSession = null;
             UserModel user = null;
-            if (token.getSessionState() == null) {
+            if (token.getSessionId() == null) {
                 user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
                 if (!TokenManager.isUserValid(session, realm, token, user)) {
                     return null;
                 }
             } else {
-                userSession = session.sessions().getUserSession(realm, token.getSessionState());
+                userSession = session.sessions().getUserSession(realm, token.getSessionId());
                 if (userSession != null) {
                     user = userSession.getUser();
                     if (!TokenManager.isUserValid(session, realm, token, user)) {
@@ -1472,13 +1487,13 @@ public class AuthenticationManager {
                 }
             }
 
-            if (token.getSessionState() != null && !isSessionValid(realm, userSession)) {
+            if (token.getSessionId() != null && !isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
-                    UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+                    UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionId());
                     if (isSessionValid(realm, offlineUserSession)) {
                         user = offlineUserSession.getUser();
-                        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+                        ClientModel client = getClientFromUserSessionIfTokenExchange(session, realm, userSession, realm.getClientByClientId(token.getIssuedFor()));
                         if (!isClientValid(offlineUserSession, client, token)) {
                             return null;
                         }
@@ -1497,7 +1512,7 @@ public class AuthenticationManager {
             if (isCookie) {
                 client = null;
             } else {
-                client = realm.getClientByClientId(token.getIssuedFor());
+                client = getClientFromUserSessionIfTokenExchange(session, realm, userSession, realm.getClientByClientId(token.getIssuedFor()));
                 if (!isClientValid(userSession, client, token)) {
                     return null;
                 }

@@ -76,6 +76,7 @@ import org.keycloak.util.TokenUtil;
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_TARGETCLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
 import java.util.Arrays;
@@ -231,7 +232,9 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 disallowOnHolderOfTokenMismatch = false;
             }
 
-            tokenSession = new UserSessionManager(session).createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+            tokenSession = new UserSessionManager(session).createUserSession(null, realm, requestedUser, requestedUser.getUsername(),
+                    clientConnection.getRemoteAddr(), "impersonate", false, null, null,
+                    sessionPersistenceType(formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE)));
             if (tokenUser != null) {
                 tokenSession.setNote(IMPERSONATOR_ID.toString(), tokenUser.getId());
                 tokenSession.setNote(IMPERSONATOR_USERNAME.toString(), tokenUser.getUsername());
@@ -409,8 +412,9 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         if (targetUserSession == null) {
             // if no session is associated with a subject_token, a stateless session is created to only allow building a token to the audience
-            targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+            targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm,
+                    targetUser, targetUser.getUsername(), clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH,
+                    false, null, null, sessionPersistenceType(requestedTokenType));
 
         }
 
@@ -434,10 +438,16 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
         }
 
+        if (client != targetClient) {
+            targetUserSession.setNote(IMPERSONATOR_TARGETCLIENT.toString(), targetClient.getId());
+        }
+
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
             && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());
+        } else {
+            responseBuilder.getAccessToken().setSessionId(null);
         }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
@@ -540,7 +550,9 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         UserModel user = importUserFromExternalIdentity(context);
 
-        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(null, realm, user, user.getUsername(),
+                clientConnection.getRemoteAddr(), "external-exchange", false, null, null,
+                sessionPersistenceType(formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE)));
         externalIdp.get().exchangeExternalComplete(userSession, context, formParams);
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off
@@ -668,6 +680,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         return user;
+    }
+
+    private UserSessionModel.SessionPersistenceState sessionPersistenceType(String requestedTokenType) {
+        // if no refresh token to return then transient session can be created
+        return (requestedTokenType == null || requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE))
+                && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
+                            ? UserSessionModel.SessionPersistenceState.PERSISTENT
+                            : UserSessionModel.SessionPersistenceState.TRANSIENT;
     }
 
     // TODO: move to utility class

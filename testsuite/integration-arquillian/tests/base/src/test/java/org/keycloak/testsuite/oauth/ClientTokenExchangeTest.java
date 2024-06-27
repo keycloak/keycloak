@@ -37,6 +37,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -67,7 +68,6 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -130,6 +130,8 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
         ClientModel target = realm.getClientByClientId("target");
         assertNotNull(target);
+        ClientModel target2 = realm.getClientByClientId("target2");
+        assertNotNull(target2);
 
         RoleModel impersonateRole = management.getRealmManagementClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
 
@@ -232,6 +234,16 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         serviceAccount.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         serviceAccount.setFullScopeAllowed(false);
 
+        ClientModel clientRefreshTokens = realm.addClient("client-use-refresh-tokens");
+        clientRefreshTokens.setClientId("client-use-refresh-tokens");
+        clientRefreshTokens.setPublicClient(false);
+        clientRefreshTokens.setDirectAccessGrantsEnabled(true);
+        clientRefreshTokens.setEnabled(true);
+        clientRefreshTokens.setSecret("secret");
+        clientRefreshTokens.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        clientRefreshTokens.setFullScopeAllowed(false);
+        clientRefreshTokens.setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, Boolean.TRUE.toString());
+
         // permission for client to client exchange to "target" client
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
         clientRep.setName("to");
@@ -241,10 +253,13 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientRep.addClient(noRefreshToken.getId());
         clientRep.addClient(serviceAccount.getId());
         clientRep.addClient(differentScopeClient.getId());
+        clientRep.addClient(target.getId());
+        clientRep.addClient(clientRefreshTokens.getId());
 
         ResourceServer server = management.realmResourceServer();
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
+        management.clients().exchangeToPermission(target2).addAssociatedPolicy(clientPolicy);
 
         // permission for user impersonation for a client
 
@@ -1051,6 +1066,106 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     }
 
+    @Test
+    public void testMultipleUseOfTokenExchangeUseRefreshTokens() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-use-refresh-tokens");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+
+        // perform a exchange token from client-use-refresh-tokens to target
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "client-use-refresh-tokens", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("client-use-refresh-tokens", token.getIssuedFor());
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+
+        // perform a exchange token from target to target2
+        response = oauth.doTokenExchange(TEST, accessToken, "target2", "target", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("target", token.getIssuedFor());
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+    }
+
+    @Test
+    public void testMultipleUseOfTokenExchangeNoUseRefreshTokens() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("no-refresh-token");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+
+        // perform a exchange token from no-refresh-token to target
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "no-refresh-token", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("no-refresh-token", token.getIssuedFor());
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+
+        // perform a exchange token from target to target2
+        oauth.clientId("target");
+        response = oauth.doTokenExchange(TEST, accessToken, "target2", "target", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("target", token.getIssuedFor());
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+    }
+
+    @Test
+    public void testTokenExchangeRefreshToken() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-use-refresh-tokens");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+
+        // perform a exchange token from client-use-refresh-tokens to target
+        response = oauth.doTokenExchange(TEST, accessToken, "target", "client-use-refresh-tokens", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("client-use-refresh-tokens", token.getIssuedFor());
+        Assert.assertEquals("value", token.getOtherClaims().get("hardcoded"));
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        String refreshToken = response.getRefreshToken();
+        Assert.assertNotNull(refreshToken);
+
+        // perform token refresh with the returned refresh token
+        response = oauth.doRefreshTokenRequest(refreshToken, "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        accessToken = response.getAccessToken();
+        accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals("client-use-refresh-tokens", token.getIssuedFor());
+        Assert.assertEquals("value", token.getOtherClaims().get("hardcoded"));
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        refreshToken = response.getRefreshToken();
+        Assert.assertNotNull(refreshToken);
+    }
+
     private static void addDirectExchanger(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel exampleRole = realm.addRole("example");
@@ -1065,6 +1180,17 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         target.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         target.setFullScopeAllowed(false);
         target.addScopeMapping(exampleRole);
+        target.addProtocolMapper(HardcodedClaim.create("hardcoded", "hardcoded", "value", "String", true, false, false));
+
+        ClientModel target2 = realm.addClient("target2");
+        target2.setName("target2");
+        target2.setClientId("target2");
+        target2.setDirectAccessGrantsEnabled(true);
+        target2.setEnabled(true);
+        target2.setSecret("secret");
+        target2.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        target2.setFullScopeAllowed(false);
+        target2.addScopeMapping(exampleRole);
 
         ClientModel directExchanger = realm.addClient("direct-exchanger");
         directExchanger.setName("direct-exchanger");
@@ -1078,6 +1204,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
         // permission for client to client exchange to "target" client
         management.clients().setPermissionsEnabled(target, true);
+        management.clients().setPermissionsEnabled(target2, true);
 
         ClientPolicyRepresentation clientImpersonateRep = new ClientPolicyRepresentation();
         clientImpersonateRep.setName("clientImpersonatorsDirect");

@@ -46,7 +46,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
-import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -149,7 +148,7 @@ public class TokenManager {
         if (offline) {
 
             UserSessionManager sessionManager = new UserSessionManager(session);
-            userSession = sessionManager.findOfflineUserSession(realm, oldToken.getSessionState());
+            userSession = sessionManager.findOfflineUserSession(realm, oldToken.getSessionId());
             if (userSession != null) {
 
                 // Revoke timeouted offline userSession
@@ -163,7 +162,7 @@ public class TokenManager {
             }
         } else {
             // Find userSession regularly for online tokens
-            userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
+            userSession = session.sessions().getUserSession(realm, oldToken.getSessionId());
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                 AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
@@ -184,8 +183,8 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token issued before the user session started");
         }
 
+        ClientModel client = AuthenticationManager.getClientFromUserSessionIfTokenExchange(session, realm, userSession, session.getContext().getClient());
 
-        ClientModel client = session.getContext().getClient();
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
         // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
@@ -209,7 +208,7 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "refresh token issued before the client session started");
         }
 
-        if (!client.getClientId().equals(oldToken.getIssuedFor())) {
+        if (!session.getContext().getClient().getClientId().equals(oldToken.getIssuedFor())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
         }
 
@@ -241,6 +240,7 @@ public class TokenManager {
 
         // recreate token.
         AccessToken newToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+        newToken.issuedFor(session.getContext().getClient().getClientId());
 
         return new TokenValidation(user, userSession, clientSessionCtx, newToken);
     }
@@ -380,7 +380,7 @@ public class TokenManager {
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
-        event.session(refreshToken.getSessionState())
+        event.session(refreshToken.getSessionId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
 
@@ -402,11 +402,6 @@ public class TokenManager {
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
-
-        // validate authorizedClient is same as validated client
-        if (!clientSession.getClient().getId().equals(authorizedClient.getId())) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
-        }
 
         validateTokenReuseForRefresh(session, realm, refreshToken, validation);
 
@@ -1243,7 +1238,7 @@ public class TokenManager {
                 String encodedToken = session.tokens().encode(accessToken);
                 res.setToken(encodedToken);
                 res.setTokenType(responseTokenType);
-                res.setSessionState(accessToken.getSessionState());
+                res.setSessionState(accessToken.getSessionId());
                 if (accessToken.getExp() != 0) {
                     res.setExpiresIn(accessToken.getExp() - Time.currentTime());
                 }
