@@ -113,7 +113,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findRole = this.makeRequest<
     { id: string; roleName: string },
-    RoleRepresentation
+    RoleRepresentation | null
   >({
     method: "GET",
     path: "/{id}/roles/{roleName}",
