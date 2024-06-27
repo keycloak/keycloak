@@ -32,6 +32,8 @@ import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+
 public class UserSessionPersistentChangelogBasedTransaction extends PersistentSessionsChangelogBasedTransaction<String, UserSessionEntity> {
 
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
@@ -47,14 +49,16 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                                                           ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                           SerializeExecutionsByKey<String> serializerOnline,
                                                           SerializeExecutionsByKey<String> serializerOffline) {
-        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+        super(session, USER_SESSION_CACHE_NAME, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, boolean offline) {
         SessionUpdatesList<UserSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
-            wrappedEntity = getCache(offline).get(key);
+            if (getCache(offline) != null) {
+                wrappedEntity = getCache(offline).get(key);
+            }
 
             if (wrappedEntity == null) {
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
@@ -108,6 +112,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
         if (isScheduledForRemove(sessionId, offline)) {
             return null;
+        }
+
+        if (getCache(offline) == null) {
+            return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).wrapPersistentEntity(persistentUserSession.getRealm(), offline, persistentUserSession);
         }
 
         LOG.debugf("Attempting to import user-session for sessionId=%s offline=%s", sessionId, offline);

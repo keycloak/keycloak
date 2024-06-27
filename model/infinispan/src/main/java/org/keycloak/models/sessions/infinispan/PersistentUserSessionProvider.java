@@ -425,6 +425,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         // Try lookup userSession from remoteCache
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
+        if (cache == null) {
+            return null;
+        }
+
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
 
         if (remoteCache != null) {

@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,17 +26,14 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.stream.Stream;
-
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEntity> extends AbstractKeycloakTransaction implements SessionsChangelogBasedTransaction<K, V> {
 
@@ -54,6 +50,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final SessionFunction<V> offlineMaxIdleTimeMsLoader;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
+                                                       String cacheName,
                                                        Cache<K, SessionEntityWrapper<V>> cache,
                                                        Cache<K, SessionEntityWrapper<V>> offlineCache,
                                                        RemoteCacheInvoker remoteCacheInvoker,
@@ -66,46 +63,49 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                                                        SerializeExecutionsByKey<K> serializerOffline) {
         kcSession = session;
 
-        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
-            throw new IllegalStateException("Persistent user sessions are not enabled");
-        }
+        changesPerformers = new LinkedList<>();
 
-        if (! (
-                cache.getName().equals(USER_SESSION_CACHE_NAME)
-                        || cache.getName().equals(CLIENT_SESSION_CACHE_NAME)
-                        || cache.getName().equals(OFFLINE_USER_SESSION_CACHE_NAME)
-                        || cache.getName().equals(OFFLINE_CLIENT_SESSION_CACHE_NAME)
-        )) {
-            throw new IllegalStateException("Cache name is not valid for persistent user sessions: " + cache.getName());
-        }
-
-        changesPerformers = List.of(
-                new JpaChangesPerformer<>(cache.getName(), batchingQueue),
-                new EmbeddedCachesChangesPerformer<>(cache, serializerOnline) {
-                    @Override
-                    public boolean shouldConsumeChange(V entity) {
-                        return !entity.isOffline();
-                    }
-                },
-                new EmbeddedCachesChangesPerformer<>(offlineCache, serializerOffline){
-                    @Override
-                    public boolean shouldConsumeChange(V entity) {
-                        return entity.isOffline();
-                    }
-                },
-                new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker) {
-                    @Override
-                    public boolean shouldConsumeChange(V entity) {
-                        return !entity.isOffline();
-                    }
-                },
-                new RemoteCachesChangesPerformer<>(session, offlineCache, remoteCacheInvoker) {
-                    @Override
-                    public boolean shouldConsumeChange(V entity) {
-                        return entity.isOffline();
-                    }
+        if (batchingQueue != null) {
+            changesPerformers.add(new JpaChangesPerformer<>(cacheName, batchingQueue));
+        } else {
+            changesPerformers.add(new JpaChangesPerformer<>(cacheName, null) {
+                @Override
+                public void applyChanges() {
+                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                            super::applyChangesSynchronously);
                 }
-        );
+            });
+        }
+
+        if (cache != null) {
+            changesPerformers.add(new EmbeddedCachesChangesPerformer<>(cache, serializerOnline) {
+                @Override
+                public boolean shouldConsumeChange(V entity) {
+                    return !entity.isOffline();
+                }
+            });
+            changesPerformers.add(new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker) {
+                @Override
+                public boolean shouldConsumeChange(V entity) {
+                    return !entity.isOffline();
+                }
+            });
+        }
+
+        if (offlineCache != null) {
+            changesPerformers.add(new EmbeddedCachesChangesPerformer<>(offlineCache, serializerOffline){
+                @Override
+                public boolean shouldConsumeChange(V entity) {
+                    return entity.isOffline();
+                }
+            });
+            changesPerformers.add(new RemoteCachesChangesPerformer<>(session, offlineCache, remoteCacheInvoker) {
+                @Override
+                public boolean shouldConsumeChange(V entity) {
+                    return entity.isOffline();
+                }
+            });
+        }
 
         this.cache = cache;
         this.offlineCache = offlineCache;
