@@ -159,6 +159,8 @@ public abstract class AbstractKeycloakTest {
 
     private boolean resetTimeOffset;
 
+    private static String PREFERRED_DEFAULT_LOGIN_THEME = System.getProperty("login.theme.default");
+
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
         ProfileAssume.setTestContext(testContext);
@@ -491,7 +493,13 @@ public abstract class AbstractKeycloakTest {
             }
         }
 
-        log.debug("--importing realm: " + realm.getRealm());
+        // modify login theme if desired
+        if (PREFERRED_DEFAULT_LOGIN_THEME != null && ! PREFERRED_DEFAULT_LOGIN_THEME.isBlank() && realm.getLoginTheme() == null) {
+            log.debugf("Modifying login theme to %s", PREFERRED_DEFAULT_LOGIN_THEME);
+            realm.setLoginTheme(PREFERRED_DEFAULT_LOGIN_THEME);
+        }
+
+         log.debug("--importing realm: " + realm.getRealm());
         try {
             adminClient.realms().realm(realm.getRealm()).remove();
             log.debug("realm already existed on server, re-importing");

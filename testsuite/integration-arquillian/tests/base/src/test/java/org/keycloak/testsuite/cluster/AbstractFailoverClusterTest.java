@@ -151,7 +151,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
     protected Cookie verifyLoggedIn(Cookie sessionCookieForVerification) {
         // verify on realm path
-        URLUtils.navigateToUri(AUTH_SERVER_ROOT + "/realms/test");
+        URLUtils.navigateToUri(AUTH_SERVER_ROOT + "/realms/test/");
         Cookie sessionCookieOnRealmPath = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookieOnRealmPath);
         assertEquals(sessionCookieOnRealmPath.getValue(), sessionCookieForVerification.getValue());

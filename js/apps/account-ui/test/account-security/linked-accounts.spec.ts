@@ -100,9 +100,9 @@ async function updateProfile(page, firstName, lastName, email) {
   await expect(
     page.getByRole("heading", { name: "Update Account Information" }),
   ).toBeVisible();
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("First name", { exact: true }).fill(firstName);
-  await page.getByLabel("Last name", { exact: true }).fill(lastName);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("First name").fill(firstName);
+  await page.getByLabel("Last name").fill(lastName);
   await page.getByRole("button", { name: "Submit" }).click();
 }
 
