@@ -81,7 +81,7 @@ import static org.junit.Assert.assertNull;
 
 /**
  * This test class is for testing a newly supported event for client policies.
- * 
+ *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 @EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
@@ -484,6 +484,58 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
         assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId(), refreshedRefreshToken.getSubject());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForTokenRefreshResponseWithOffline() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId(clientId);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+
+        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        assertEquals(200, res.getStatusCode());
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+        assertNotNull(token);
+        assertNotNull(token.getSessionId());
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SuppressRefreshTokenRotationExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // delete the non-offline session to force the NPE
+        adminClient.realm(REALM_NAME).deleteSession(token.getSessionId(), false);
+
+        String refreshTokenString = res.getRefreshToken();
+        OAuthClient.AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
+        assertNull(accessTokenResponseRefreshed.getRefreshToken());
     }
 
     @Test
