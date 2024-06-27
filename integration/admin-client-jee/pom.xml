@@ -29,7 +29,7 @@
     <artifactId>keycloak-admin-client-jee-tests</artifactId>
     <name>Keycloak Admin REST Client JavaEE For Tests</name>
     <description>Keycloak Admin REST Client. This module is supposed to be used just in the Keycloak repository for the testsuite. It is NOT supposed to be used by the 3rd party applications.
-        For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client` module.
+        For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client-jee` module.
     </description>
 
     <properties>
