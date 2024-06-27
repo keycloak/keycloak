@@ -1,8 +1,0 @@
-{
-  "realm" : "cors",
-  "auth-server-url" : "http://localhost-auth-127.0.0.1.nip.io:8180/auth",
-  "ssl-required" : "external",
-  "disable-trust-manager" : "true",
-  "resource" : "angular-cors-product",
-  "public-client" : true
-}
