@@ -36,7 +36,7 @@ import java.util.Optional;
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public class LDSigningServiceProviderFactory implements VCSigningServiceProviderFactory {
-    public static final Format SUPPORTED_FORMAT = Format.LDP_VC;
+    public static final String SUPPORTED_FORMAT = Format.LDP_VC;
     private static final String HELP_TEXT = "Issues Verifiable Credentials in the W3C Data Model, using Linked-Data Proofs. See https://www.w3.org/TR/vc-data-model/";
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -77,7 +77,7 @@ public class LDSigningServiceProviderFactory implements VCSigningServiceProvider
     }
 
     @Override
-    public Format supportedFormat() {
+    public String supportedFormat() {
         return SUPPORTED_FORMAT;
     }
 
