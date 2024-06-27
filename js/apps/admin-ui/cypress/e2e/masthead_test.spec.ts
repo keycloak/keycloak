@@ -1,7 +1,9 @@
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
+import adminClient from "../support/util/AdminClient";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -61,6 +63,47 @@ describe("Masthead tests", () => {
       cy.get(helpLabel).should("not.exist");
       masthead.toggleGlobalHelp();
       cy.get(helpLabel).should("exist");
+    });
+  });
+
+  describe("Login works for unprivileged users", () => {
+    const realmName = `test-realm-${uuid()}`;
+    const username = `test-user-${uuid()}`;
+
+    before(async () => {
+      await adminClient.createRealm(realmName, { enabled: true });
+
+      await adminClient.inRealm(realmName, () =>
+        adminClient.createUser({
+          username,
+          enabled: true,
+          emailVerified: true,
+          credentials: [{ type: "password", value: "test" }],
+          firstName: "Test",
+          lastName: "User",
+          email: "test@keycloak.org",
+        }),
+      );
+    });
+
+    after(() => adminClient.deleteRealm(realmName));
+
+    it("Login without privileges to see admin console", () => {
+      sidebarPage.waitForPageLoad();
+      masthead.signOut();
+
+      cy.visit(`/admin/${realmName}/console`);
+
+      cy.get('[role="progressbar"]').should("not.exist");
+      cy.get("#username").type(username);
+      cy.get("#password").type("test");
+
+      cy.get("#kc-login").click();
+
+      sidebarPage.waitForPageLoad();
+      masthead.signOut();
+      sidebarPage.waitForPageLoad();
+      loginPage.isLogInPage();
     });
   });
 
