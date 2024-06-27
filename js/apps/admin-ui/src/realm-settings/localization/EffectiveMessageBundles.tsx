@@ -1,3 +1,4 @@
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -8,19 +9,18 @@ import {
   FlexItem,
   Form,
   FormGroup,
-  Select,
   SelectOption,
-  SelectVariant,
   Text,
   TextContent,
+  TextInput,
   TextVariants,
 } from "@patternfly/react-core";
 import { pickBy } from "lodash-es";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../../admin-client";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { useAdminClient } from "../../admin-client";
+import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -29,7 +29,6 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
-import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
@@ -54,6 +53,8 @@ export const EffectiveMessageBundles = ({
   defaultSupportedLocales,
   defaultLocales,
 }: EffectiveMessageBundlesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
@@ -203,7 +204,7 @@ export const EffectiveMessageBundles = ({
         <FlexItem>
           <TextContent>
             <Text
-              className="pf-u-mb-md pf-u-mt-0 pf-u-mr-md"
+              className="pf-v5-u-mb-md pf-v5-u-mt-0 pf-v5-u-mr-md"
               component={TextVariants.p}
             >
               {t("effectiveMessageBundlesDescription")}
@@ -220,7 +221,7 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="pf-u-w-25vw"
+              className="pf-v5-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
               onSubmit={(e) => e.preventDefault()}
             >
@@ -228,12 +229,12 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="theme"
                   control={control}
+                  defaultValue=""
                   rules={{
                     validate: (value) => (value || "").length > 0,
                   }}
                   render={({ field }) => (
-                    <Select
-                      name="theme"
+                    <KeycloakSelect
                       data-testid="effective_message_bundles-theme-searchField"
                       chipGroupProps={{
                         numChips: 1,
@@ -242,18 +243,17 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={setSelectThemesOpen}
+                      onToggle={(val) => setSelectThemesOpen(val)}
                       selections={field.value}
-                      onSelect={(_, selectedValue) => {
+                      onSelect={(selectedValue) => {
                         field.onChange(selectedValue.toString());
                         setSelectThemesOpen(false);
                       }}
-                      onClear={(theme) => {
-                        theme.stopPropagation();
+                      onClear={() => {
                         field.onChange("");
                       }}
                       isOpen={selectThemesOpen}
-                      aria-labelledby={t("theme")}
+                      aria-label={t("selectTheme")}
                       chipGroupComponent={
                         <ChipGroup>
                           <Chip
@@ -271,17 +271,19 @@ export const EffectiveMessageBundles = ({
                       {[
                         <SelectOption
                           key="theme_placeholder"
-                          value="Select theme"
                           label={t("selectTheme")}
-                          className="kc__effective_message_bundles_search_theme__placeholder"
                           isDisabled
-                        />,
+                        >
+                          {t("selectTheme")}
+                        </SelectOption>,
                       ].concat(
                         themeNames.map((option) => (
-                          <SelectOption key={option} value={option} />
+                          <SelectOption key={option} value={option}>
+                            {option}
+                          </SelectOption>
                         )),
                       )}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 />
               </FormGroup>
@@ -293,12 +295,12 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="themeType"
                   control={control}
+                  defaultValue=""
                   rules={{
                     validate: (value) => (value || "").length > 0,
                   }}
                   render={({ field }) => (
-                    <Select
-                      name="themeType"
+                    <KeycloakSelect
                       data-testid="effective-message-bundles-feature-searchField"
                       chipGroupProps={{
                         numChips: 1,
@@ -307,18 +309,17 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={setSelectThemeTypeOpen}
+                      onToggle={(val) => setSelectThemeTypeOpen(val)}
                       selections={field.value}
-                      onSelect={(_, selectedValue) => {
+                      onSelect={(selectedValue) => {
                         field.onChange(selectedValue.toString());
                         setSelectThemeTypeOpen(false);
                       }}
-                      onClear={(themeType) => {
-                        themeType.stopPropagation();
+                      onClear={() => {
                         field.onChange("");
                       }}
                       isOpen={selectThemeTypeOpen}
-                      aria-labelledby={t("themeType")}
+                      aria-label={t("selectThemeType")}
                       chipGroupComponent={
                         <ChipGroup>
                           <Chip
@@ -336,17 +337,19 @@ export const EffectiveMessageBundles = ({
                       {[
                         <SelectOption
                           key="themeType_placeholder"
-                          value="Select theme type"
                           label={t("selectThemeType")}
-                          className="pf-m-plain"
                           isDisabled
-                        />,
+                        >
+                          {t("selectThemeType")}
+                        </SelectOption>,
                       ].concat(
                         themeTypes.map((option) => (
-                          <SelectOption key={option} value={option} />
+                          <SelectOption key={option} value={option}>
+                            {option}
+                          </SelectOption>
                         )),
                       )}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 />
               </FormGroup>
@@ -354,12 +357,12 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="locale"
                   control={control}
+                  defaultValue=""
                   rules={{
                     validate: (value) => (value || "").length > 0,
                   }}
                   render={({ field }) => (
-                    <Select
-                      name="language"
+                    <KeycloakSelect
                       data-testid="effective-message-bundles-language-searchField"
                       chipGroupProps={{
                         numChips: 1,
@@ -368,18 +371,17 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={setSelectLanguageOpen}
+                      onToggle={(val) => setSelectLanguageOpen(val)}
                       selections={field.value}
-                      onSelect={(_, selectedValue) => {
+                      onSelect={(selectedValue) => {
                         field.onChange(selectedValue.toString());
                         setSelectLanguageOpen(false);
                       }}
-                      onClear={(language) => {
-                        language.stopPropagation();
+                      onClear={() => {
                         field.onChange("");
                       }}
                       isOpen={selectLanguageOpen}
-                      aria-labelledby="language"
+                      aria-label={t("selectLanguage")}
                       chipGroupComponent={
                         <ChipGroup>
                           {field.value ? (
@@ -402,11 +404,11 @@ export const EffectiveMessageBundles = ({
                       {[
                         <SelectOption
                           key="language_placeholder"
-                          value="Select language"
                           label={t("selectLanguage")}
-                          className="pf-m-plain"
                           isDisabled
-                        />,
+                        >
+                          {t("selectLanguage")}
+                        </SelectOption>,
                       ].concat(
                         combinedLocales.map((option) => (
                           <SelectOption key={option} value={option}>
@@ -414,7 +416,7 @@ export const EffectiveMessageBundles = ({
                           </SelectOption>
                         )),
                       )}
-                    </Select>
+                    </KeycloakSelect>
                   )}
                 />
               </FormGroup>
@@ -424,7 +426,7 @@ export const EffectiveMessageBundles = ({
                   control={control}
                   render={({ field }) => (
                     <div>
-                      <KeycloakTextInput
+                      <TextInput
                         id="kc-hasWords"
                         data-testid="effective-message-bundles-hasWords-searchField"
                         value={field.value.join(" ")}
@@ -462,7 +464,7 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <ActionGroup className="pf-u-mt-sm">
+              <ActionGroup className="pf-v5-u-mt-sm">
                 <Button
                   variant={"primary"}
                   onClick={() => {
@@ -496,7 +498,7 @@ export const EffectiveMessageBundles = ({
                 ];
                 return (
                   <ChipGroup
-                    className="pf-u-mt-md pf-u-mr-md"
+                    className="pf-v5-u-mt-md pf-v5-u-mr-md"
                     key={key}
                     categoryName={filterLabels[key]}
                     isClosable
@@ -534,7 +536,7 @@ export const EffectiveMessageBundles = ({
   if (!searchPerformed) {
     return (
       <>
-        <div className="pf-u-py-lg pf-u-pl-md">
+        <div className="pf-v5-u-py-lg pf-v5-u-pl-md">
           {effectiveMessageBunldesSearchFormDisplay()}
         </div>
         <Divider />

@@ -25,6 +25,7 @@ public class Messages {
     public static final String LOGIN_TIMEOUT = "loginTimeout";
 
     public static final String REAUTHENTICATE = "reauthenticate";
+    public static final String AUTHENTICATE_STRONG = "authenticateStrong";
 
     public static final String INVALID_USER = "invalidUserMessage";
 
@@ -35,6 +36,12 @@ public class Messages {
     public static final String INVALID_PASSWORD = "invalidPasswordMessage";
 
     public static final String INVALID_EMAIL = "invalidEmailMessage";
+
+    public static final String ORG_NOT_FOUND = "orgNotFoundMessage";
+
+    public static final String ORG_MEMBER_ALREADY = "orgMemberAlready";
+
+    public static final String INVALID_ORG_INVITE = "invalidOrgInviteMessage";
 
     public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
 
@@ -87,6 +94,8 @@ public class Messages {
     public static final String FEDERATED_IDENTITY_UNAVAILABLE = "federatedIdentityUnavailableMessage";
 
     public static final String FEDERATED_IDENTITY_CONFIRM_LINK_MESSAGE = "federatedIdentityConfirmLinkMessage";
+
+    public static final String FEDERATED_IDENTITY_CONFIRM_OVERRIDE_MESSAGE = "federatedIdentityConfirmOverrideMessage";
 
     public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE = "federatedIdentityConfirmReauthenticateMessage";
 
@@ -180,8 +189,10 @@ public class Messages {
 
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
 
+    public static final String STALE_INVITE_ORG_LINK = "staleInviteOrgLink";
+
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
-    
+
     public static final String IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR = "federatedIdentityUnmatchedEssentialClaimMessage";
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
@@ -234,6 +245,8 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER = "federatedIdentityRemovingLastProviderMessage";
 
+    public static final String FEDERATED_IDENTITY_BOUND_ORGANIZATION = "federatedIdentityBoundOrganization";
+
     public static final String IDENTITY_PROVIDER_REDIRECT_ERROR = "identityProviderRedirectErrorMessage";
 
     public static final String IDENTITY_PROVIDER_REMOVED = "identityProviderRemovedMessage";
@@ -247,6 +260,8 @@ public class Messages {
     public static final String INVALID_PARAMETER = "invalidParameterMessage";
 
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
+
+    public static final String IDENTITY_PROVIDER_LOGOUT_FAILURE = "identityProviderLogoutFailure";
 
     public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
 
@@ -307,4 +322,7 @@ public class Messages {
     public static final String OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER = "oauth2DeviceVerificationFailedHeader";
     public static final String OAUTH2_DEVICE_CONSENT_DENIED = "oauth2DeviceConsentDeniedMessage";
 
+    public static final String CONFIRM_ORGANIZATION_MEMBERSHIP = "organization.confirm-membership";
+    public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
+    public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
 }

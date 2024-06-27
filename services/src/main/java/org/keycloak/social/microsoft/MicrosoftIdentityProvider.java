@@ -86,7 +86,7 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     @Override
     protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
         String id = getJsonProperty(profile, "id");
-        BrokeredIdentityContext user = new BrokeredIdentityContext(id);
+        BrokeredIdentityContext user = new BrokeredIdentityContext(id, getConfig());
 
         String email = getJsonProperty(profile, "mail");
         if (email == null && profile.has("userPrincipalName")) {
@@ -100,7 +100,6 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
         user.setLastName(getJsonProperty(profile, "surname"));
         if (email != null)
             user.setEmail(email);
-        user.setIdpConfig(getConfig());
         user.setIdp(this);
 
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());

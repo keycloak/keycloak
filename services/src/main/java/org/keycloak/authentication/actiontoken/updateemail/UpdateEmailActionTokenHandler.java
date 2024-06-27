@@ -79,7 +79,7 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
         UpdateEmail.updateEmailNow(tokenContext.getEvent(), user, emailUpdateValidationResult);
 
         if (Boolean.TRUE.equals(token.getLogoutSessions())) {
-            AuthenticatorUtil.logoutOtherSessions(tokenContext);
+            AuthenticatorUtil.logoutOtherSessions(token, tokenContext);
         }
 
         tokenContext.getEvent().success();

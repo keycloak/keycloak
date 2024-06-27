@@ -48,6 +48,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -59,6 +60,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -71,13 +73,13 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -92,6 +94,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -105,6 +108,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
+import org.keycloak.utils.StringUtil;
 
 import java.net.URI;
 import java.text.MessageFormat;
@@ -115,6 +119,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -122,6 +127,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -159,7 +166,7 @@ public class UserResource {
         this.adminEvent = adminEvent.resource(ResourceType.USER);
         this.headers = session.getContext().getRequestHeaders();
     }
-    
+
     /**
      * Update the user
      *
@@ -221,6 +228,15 @@ public class UserResource {
         } catch (ReadOnlyException re) {
             session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+        } catch (PasswordPolicyNotMetException e) {
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            session.getTransactionManager().setRollbackOnly();
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Status.BAD_REQUEST);
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
             session.getTransactionManager().setRollbackOnly();
@@ -241,6 +257,12 @@ public class UserResource {
         } catch (ValidationException pve) {
             List<ErrorRepresentation> errors = new ArrayList<>();
             for (ValidationException.Error error : pve.getErrors()) {
+                // some messages are managed directly as before
+                switch (error.getMessage()) {
+                    case Messages.MISSING_USERNAME -> throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
+                    case Messages.USERNAME_EXISTS -> throw ErrorResponse.exists("User exists with same username");
+                    case Messages.EMAIL_EXISTS -> throw ErrorResponse.exists("User exists with same email");
+                }
                 errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }
 
@@ -677,6 +699,14 @@ public class UserResource {
             throw new BadRequestException("Resetting to N old passwords is not allowed.");
         } catch (ReadOnlyException mre) {
             throw new BadRequestException("Can't reset password as account is read only");
+        } catch (PasswordPolicyNotMetException e) {
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Status.BAD_REQUEST);
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             logger.warn("Could not update user password.", e);
             Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
@@ -996,6 +1026,9 @@ public class UserResource {
                 user.leaveGroup(group);
                 adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
             }
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me) {
             Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(me.getMessage(), MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
@@ -1015,10 +1048,36 @@ public class UserResource {
             throw new NotFoundException("Group not found");
         }
         auth.groups().requireManageMembership(group);
+
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
         }
+    }
+
+    @GET
+    @Path("unmanagedAttributes")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation()
+    public Map<String, List<String>> getUnmanagedAttributes() {
+        auth.users().requireView(user);
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
+        UserProfile profile = provider.create(USER_API, user);
+        Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
+        Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
+        managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
+        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+        attributes.entrySet().removeAll(managedAttributes.entrySet());
+
+        attributes.remove(UserModel.USERNAME);
+        attributes.remove(UserModel.EMAIL);
+
+        return attributes.entrySet().stream()
+                .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     /**

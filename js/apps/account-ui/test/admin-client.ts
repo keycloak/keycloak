@@ -5,9 +5,11 @@ import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmR
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
+import { DEFAULT_REALM, SERVER_URL } from "./constants";
+
 const adminClient = new KeycloakAdminClient({
-  baseUrl: process.env.KEYCLOAK_SERVER || "http://127.0.0.1:8080",
-  realmName: "master",
+  baseUrl: SERVER_URL,
+  realmName: DEFAULT_REALM,
 });
 
 await adminClient.auth({
@@ -18,9 +20,12 @@ await adminClient.auth({
 });
 
 export async function useTheme() {
-  const masterRealm = await adminClient.realms.findOne({ realm: "master" });
+  const masterRealm = await adminClient.realms.findOne({
+    realm: DEFAULT_REALM,
+  });
+
   await adminClient.realms.update(
-    { realm: "master" },
+    { realm: DEFAULT_REALM },
     { ...masterRealm, accountTheme: "keycloak.v3" },
   );
 }
@@ -76,7 +81,7 @@ export async function importUserProfile(
   await adminClient.users.updateProfile({ ...userProfile, realm });
 }
 
-export async function enableLocalization(realm: string) {
+export async function enableLocalization(realm = DEFAULT_REALM) {
   const realmRepresentation = await adminClient.realms.findOne({ realm });
   await adminClient.realms.update(
     { realm },
@@ -121,9 +126,9 @@ export async function getUserByUsername(username: string, realm: string) {
 
 export async function deleteUser(username: string) {
   try {
-    const users = await adminClient.users.find({ username, realm });
+    const users = await adminClient.users.find({ username });
     const { id } = users[0];
-    await adminClient.users.del({ id: id!, realm });
+    await adminClient.users.del({ id: id! });
   } catch (error) {
     console.error(error);
   }

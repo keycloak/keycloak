@@ -49,6 +49,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin) {
+        rep.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        return this;
+    }
+
     public RealmAttributeUpdater setSsoSessionIdleTimeout(Integer timeout) {
         rep.setSsoSessionIdleTimeout(timeout);
         return this;
@@ -167,6 +172,16 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setSmtpServer(String name, String value) {
         rep.getSmtpServer().put(name, value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setBrowserSecurityHeader(String name, String value) {
+        rep.getBrowserSecurityHeaders().put(name, value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOrganizationEnabled(Boolean organizationsEnabled) {
+        rep.setOrganizationsEnabled(organizationsEnabled);
         return this;
     }
 }

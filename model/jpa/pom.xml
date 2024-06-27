@@ -30,10 +30,6 @@
     <description/>
 
     <properties>
-        <maven.compiler.release>17</maven.compiler.release>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
@@ -80,11 +76,6 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

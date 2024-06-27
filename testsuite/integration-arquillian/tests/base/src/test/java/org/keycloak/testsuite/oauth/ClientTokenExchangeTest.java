@@ -17,11 +17,13 @@
 
 package org.keycloak.testsuite.oauth;
 
+import jakarta.ws.rs.core.Response.Status;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
@@ -65,6 +67,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -179,6 +182,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directLegal.setSecret("secret");
         directLegal.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directLegal.setFullScopeAllowed(false);
+        directLegal.addRedirectUri(OAuthClient.APP_ROOT + "/auth");
 
         ClientModel directPublic = realm.addClient("direct-public");
         directPublic.setClientId("direct-public");
@@ -1008,6 +1012,43 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         response = oauth.doTokenExchange(TEST, accessToken, null, "client-exchanger", "secret");
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
         assertEquals("Client is not within the token audience", response.getErrorDescription());
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @UncaughtServerErrorExpected
+    public void testExchangeWithDynamicScopesEnabled() throws Exception {
+        testExchange();
+    }
+
+    @Test
+    public void testSupportedTokenTypesWhenValidatingSubjectToken() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+        oauth.realm(TEST);
+        oauth.clientId("direct-legal");
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, oauth.APP_ROOT + "/admin/backchannelLogout");
+        getCleanup().addCleanup(() -> {
+            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+            clients.get(rep.getId()).update(rep);
+        });
+        clients.get(rep.getId()).update(rep);
+        String logoutToken;
+        oauth.clientSessionState("client-session");
+        oauth.doLogin("user", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret");
+        String idTokenString = tokenResponse.getIdToken();
+        String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString)
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
+        driver.navigate().to(logoutUrl);
+        logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
+        Assert.assertNotNull(logoutToken);
+        OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, logoutToken, "target", "direct-legal", "secret");
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+
     }
 
     private static void addDirectExchanger(KeycloakSession session) {

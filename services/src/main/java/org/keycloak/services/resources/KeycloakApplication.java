@@ -16,12 +16,9 @@
  */
 package org.keycloak.services.resources;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
@@ -42,80 +39,44 @@ import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.error.KeycloakErrorHandler;
-import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
-import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
-import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.ws.rs.core.Application;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.ServiceLoader;
-import java.util.Set;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ *
  */
-public class KeycloakApplication extends Application {
+public abstract class KeycloakApplication extends Application {
 
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
     protected final PlatformProvider platform = Platform.getPlatform();
 
-    protected Set<Object> singletons = new HashSet<>();
-    protected Set<Class<?>> classes = new HashSet<>();
-
     private static KeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
-
         try {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
-            logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
 
             loadConfig();
-
-            classes.add(RobotsResource.class);
-            classes.add(RealmsResource.class);
-            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
-                classes.add(AdminRoot.class);
-            }
-            classes.add(ThemeResource.class);
-
-            if (Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
-                classes.add(JsResource.class);
-            }
-
-            classes.add(KeycloakSecurityHeadersFilter.class);
-            classes.add(KeycloakErrorHandler.class);
-            classes.add(KcUnrecognizedPropertyExceptionHandler.class);
-            classes.add(KeycloakMismatchedInputExceptionHandler.class);
-
-            singletons.add(new ObjectMapperResolver());
-            classes.add(WelcomeResource.class);
-
-            if (Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
-                // If we are running in multi-site mode, we need to add a resource which to expose
-                // an endpoint for the load balancer to gather information whether this site should receive requests or not.
-                classes.add(LoadBalancerResource.class);
-            }
 
             platform.onStartup(this::startup);
             platform.onShutdown(this::shutdown);
@@ -123,7 +84,6 @@ public class KeycloakApplication extends Application {
         } catch (Throwable t) {
             platform.exit(t);
         }
-
     }
 
     protected void startup() {
@@ -223,24 +183,10 @@ public class KeycloakApplication extends Application {
 
     }
 
-    protected KeycloakSessionFactory createSessionFactory() {
-        DefaultKeycloakSessionFactory factory = new DefaultKeycloakSessionFactory();
-        factory.init();
-        return factory;
-    }
+    protected abstract KeycloakSessionFactory createSessionFactory();
 
     public static KeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
-    }
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        return classes;
-    }
-
-    @Override
-    public Set<Object> getSingletons() {
-        return singletons;
     }
 
     public void importRealms(ExportImportManager exportImportManager) {

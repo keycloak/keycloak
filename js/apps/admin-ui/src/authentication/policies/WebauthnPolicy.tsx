@@ -7,7 +7,6 @@ import {
   FormGroup,
   PageSection,
   Popover,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
@@ -21,8 +20,7 @@ import {
   SwitchControl,
   TextControl,
   useHelp,
-} from "ui-shared";
-import { adminClient } from "../../admin-client";
+} from "@keycloak/keycloak-ui-shared";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
@@ -30,6 +28,7 @@ import { TimeSelectorControl } from "../../components/time-selector/TimeSelector
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
+import { useAdminClient } from "../../admin-client";
 import "./webauthn-policy.css";
 
 const SIGNATURE_ALGORITHMS = [
@@ -84,15 +83,12 @@ const WebauthnSelect = ({
     <SelectControl
       name={name}
       label={t(label)}
-      variant={
-        isMultiSelect ? SelectVariant.typeaheadMulti : SelectVariant.single
-      }
+      variant={isMultiSelect ? "typeaheadMulti" : "single"}
       controller={{ defaultValue: options[0] }}
       options={options.map((option) => ({
         key: option,
         value: labelPrefix ? t(`${labelPrefix}.${option}`) : option,
       }))}
-      typeAheadAriaLabel={t(name)}
     />
   );
 };
@@ -108,6 +104,8 @@ export const WebauthnPolicy = ({
   realmUpdated,
   isPasswordLess = false,
 }: WebauthnPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();

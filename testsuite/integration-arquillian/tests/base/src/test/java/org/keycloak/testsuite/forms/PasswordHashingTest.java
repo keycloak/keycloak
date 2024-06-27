@@ -17,8 +17,12 @@
 package org.keycloak.testsuite.forms;
 
 import jakarta.ws.rs.BadRequestException;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -27,17 +31,24 @@ import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
+import org.keycloak.crypto.hash.Argon2Parameters;
+import org.keycloak.crypto.hash.Argon2PasswordHashProvider;
+import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.DefaultPasswordHash;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.crypto.SecretKeyFactory;
@@ -68,8 +79,11 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected LoginPage loginPage;
 
+    @Page
+    protected AppPage appPage;
+
     @Test
-    public void testSetInvalidProvider() throws Exception {
+    public void testSetInvalidProvider() {
         try {
             setPasswordPolicy("hashAlgorithm(nosuch)");
             fail("Expected error");
@@ -104,25 +118,51 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testPasswordRehashedOnIterationsChanged() throws Exception {
-        setPasswordPolicy("hashIterations(10000)");
+    public void testPasswordRehashedToDefaultProviderIfHashAlgorithmRemoved() {
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ")");
 
-        String username = "testPasswordRehashedOnIterationsChanged";
+        String username = "testPasswordRehashedToDefaultProviderIfHashAlgorithmRemoved";
         createUser(username);
 
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
-        assertEquals(10000, credential.getPasswordCredentialData().getHashIterations());
+        assertEquals(Pbkdf2Sha256PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
 
-        setPasswordPolicy("hashIterations(1)");
+        setPasswordPolicy("");
 
         loginPage.open();
         loginPage.login(username, "password");
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
+        assertEquals(DefaultPasswordHash.getDefaultAlgorithm(), credential.getPasswordCredentialData().getAlgorithm());
+    }
+
+    @Test
+    public void testPasswordRehashedOnIterationsChanged() throws Exception {
+        setPasswordPolicy("hashIterations(1)");
+
+        String username = "testPasswordRehashedOnIterationsChanged";
+        createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
         assertEquals(1, credential.getPasswordCredentialData().getHashIterations());
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", 1);
+
+        setPasswordPolicy("hashIterations(2)");
+
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        assertEquals(2, credential.getPasswordCredentialData().getHashIterations());
+
+        if (notFips()) {
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "Argon2id", 2);
+        } else {
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", 2);
+        }
     }
 
     // KEYCLOAK-5282
@@ -173,7 +213,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
                 Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS,
                 0,
                 256);
-        String encodedPassword = specificKeySizeHashProvider.encode(password, -1);
+        String encodedPassword = specificKeySizeHashProvider.encodedCredential(password, -1).getPasswordSecretData().getValue();
 
         // Create a user with the encoded password, simulating a user import from a different system using a specific key size
         UserRepresentation user = UserBuilder.create().username(username).password(encodedPassword).build();
@@ -187,7 +227,6 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     }
 
-
     @Test
     public void testPbkdf2Sha1() throws Exception {
         setPasswordPolicy("hashAlgorithm(" + Pbkdf2PasswordHashProviderFactory.ID + ")");
@@ -199,13 +238,50 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testArgon2() {
+        Assume.assumeTrue("Argon2 tests skipped in FIPS mode", notFips());
+
+        setPasswordPolicy("hashAlgorithm(" + Argon2PasswordHashProviderFactory.ID + ")");
+        String username = "testArgon2";
+        createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+        PasswordCredentialData data = credential.getPasswordCredentialData();
+
+        Assert.assertEquals("argon2", data.getAlgorithm());
+        Assert.assertEquals(5, data.getHashIterations());
+        Assert.assertEquals("1.3", data.getAdditionalParameters().getFirst("version"));
+        Assert.assertEquals("id", data.getAdditionalParameters().getFirst("type"));
+        Assert.assertEquals("32", data.getAdditionalParameters().getFirst("hashLength"));
+        Assert.assertEquals("7168", data.getAdditionalParameters().getFirst("memory"));
+        Assert.assertEquals("1", data.getAdditionalParameters().getFirst("parallelism"));
+
+        loginPage.open();
+        loginPage.login("testArgon2", "invalid");
+        loginPage.assertCurrent();
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+
+        loginPage.login("testArgon2", "password");
+
+        appPage.assertCurrent();
+    }
+
+    private static boolean notFips() {
+        return AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.DISABLED;
+    }
+
+    @Test
     public void testDefault() throws Exception {
         setPasswordPolicy("");
         String username = "testDefault";
         createUser(username);
-
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS);
+
+        if (notFips()) {
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "Argon2id", Argon2Parameters.DEFAULT_ITERATIONS);
+        } else {
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS);
+        }
     }
 
     @Test
@@ -279,18 +355,34 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void assertEncoded(PasswordCredentialModel credential, String password, byte[] salt, String algorithm, int iterations, boolean expectedSuccess) throws Exception {
-        int keyLength = 512;
+        if (algorithm.startsWith("PBKDF2")) {
+            int keyLength = 512;
 
-        if (Pbkdf2Sha256PasswordHashProviderFactory.ID.equals(credential.getPasswordCredentialData().getAlgorithm())) {
-            keyLength = 256;
-        }
+            if (Pbkdf2Sha256PasswordHashProviderFactory.ID.equals(credential.getPasswordCredentialData().getAlgorithm())) {
+                keyLength = 256;
+            }
 
-        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, keyLength);
-        byte[] key = SecretKeyFactory.getInstance(algorithm).generateSecret(spec).getEncoded();
-        if (expectedSuccess) {
-            assertEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
-        } else {
-            assertNotEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, keyLength);
+            byte[] key = SecretKeyFactory.getInstance(algorithm).generateSecret(spec).getEncoded();
+            if (expectedSuccess) {
+                assertEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+            } else {
+                assertNotEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+            }
+        } else if (algorithm.equals("Argon2id")) {
+            org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(org.bouncycastle.crypto.params.Argon2Parameters.ARGON2_id)
+                    .withVersion(org.bouncycastle.crypto.params.Argon2Parameters.ARGON2_VERSION_13)
+                    .withSalt(salt)
+                    .withParallelism(1)
+                    .withMemoryAsKB(7168)
+                    .withIterations(iterations).build();
+
+            Argon2BytesGenerator generator = new Argon2BytesGenerator();
+            generator.init(parameters);
+
+            byte[] result = new byte[32];
+            generator.generateBytes(password.toCharArray(), result);
+            Assert.assertEquals(Base64.encodeBytes(result), credential.getPasswordSecretData().getValue());
         }
     }
 
@@ -324,7 +416,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         BiFunction<PasswordHashProvider, Integer, Long> hasher = (provider, iterations) -> {
             long result = 0L;
             for (String password : plainTextPasswords) {
-                String encoded = provider.encode(password, iterations);
+                String encoded = provider.encodedCredential(password, iterations).getPasswordSecretData().getValue();
                 result += encoded.hashCode();
             }
             return result;

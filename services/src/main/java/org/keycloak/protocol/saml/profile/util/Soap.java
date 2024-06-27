@@ -85,7 +85,7 @@ public final class Soap {
     }
 
     /**
-     * <p>Returns Docuemnt based on the given <code>inputStream</code> which must contain a valid SOAP message.
+     * <p>Returns Document based on the given <code>inputStream</code> which must contain a valid SOAP message.
      *
      * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
      *
@@ -103,7 +103,7 @@ public final class Soap {
     }
 
     /**
-     * <p>Returns Docuemnt based on the given SOAP message.
+     * <p>Returns Document based on the given SOAP message.
      *
      * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
      * @param soapMessage a SOAPMessage from which to extract the body
@@ -214,7 +214,7 @@ public final class Soap {
         }
 
         /**
-         * Build method for testing, generates an appache httpcomponents HttpPost
+         * Build method for testing, generates an apache httpcomponents HttpPost
          * @param uri the URI to which to POST the soap message
          * @return an HttpPost containing the SOAP message
          */

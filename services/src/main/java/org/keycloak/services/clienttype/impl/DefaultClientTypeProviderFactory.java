@@ -18,23 +18,11 @@
 
 package org.keycloak.services.clienttype.impl;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.client.clienttype.ClientTypeProvider;
 import org.keycloak.client.clienttype.ClientTypeProviderFactory;
 
@@ -45,41 +33,13 @@ public class DefaultClientTypeProviderFactory implements ClientTypeProviderFacto
 
     public static final String PROVIDER_ID = "default";
 
-    private Map<String, PropertyDescriptor> clientRepresentationProperties;
-
     @Override
     public ClientTypeProvider create(KeycloakSession session) {
-        return new DefaultClientTypeProvider(session, clientRepresentationProperties);
+        return new DefaultClientTypeProvider();
     }
 
     @Override
-    public void init(Config.Scope config) {
-        Set<String> filtered = Arrays.stream(new String[] {"attributes", "type"}).collect(Collectors.toSet());
-
-        try {
-            BeanInfo bi = Introspector.getBeanInfo(ClientRepresentation.class);
-            PropertyDescriptor[] pd = bi.getPropertyDescriptors();
-            clientRepresentationProperties = Arrays.stream(pd)
-                    .filter(desc -> !filtered.contains(desc.getName()))
-                    .filter(desc -> desc.getWriteMethod() != null)
-                    .map(desc -> {
-                        // Take "is" methods into consideration
-                        if (desc.getReadMethod() == null && Boolean.class.equals(desc.getPropertyType())) {
-                            String methodName = "is" + desc.getName().substring(0, 1).toUpperCase() + desc.getName().substring(1);
-                            try {
-                                Method getter = ClientRepresentation.class.getDeclaredMethod(methodName);
-                                desc.setReadMethod(getter);
-                            } catch (Exception e) {
-                                throw new IllegalStateException("Getter method for property " + desc.getName() + " cannot be found");
-                            }
-                        }
-                        return desc;
-                    })
-                    .collect(Collectors.toMap(PropertyDescriptor::getName, Function.identity()));
-        } catch (IntrospectionException ie) {
-            throw new IllegalStateException("Introspection of Client representation failed", ie);
-        }
-    }
+    public void init(Config.Scope config) {}
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
@@ -97,7 +57,7 @@ public class DefaultClientTypeProviderFactory implements ClientTypeProviderFacto
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES);
     }
 }

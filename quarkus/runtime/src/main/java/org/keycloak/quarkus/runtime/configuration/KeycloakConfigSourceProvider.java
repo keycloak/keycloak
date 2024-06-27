@@ -18,8 +18,12 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.quarkus.runtime.configuration.ConfigBuilder;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -30,6 +34,7 @@ import org.keycloak.quarkus.runtime.Environment;
 public class KeycloakConfigSourceProvider implements ConfigSourceProvider, ConfigBuilder {
 
     private static final List<ConfigSource> CONFIG_SOURCES = new ArrayList<>();
+    private static final Map<String, String> CONFIG_SOURCE_DISPLAY_NAMES = new HashMap<>();
 
     // we initialize in a static block to avoid discovering the config sources multiple times when starting the application
     static {
@@ -37,23 +42,35 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     }
 
     private static void initializeSources() {
-        String profile = Environment.getProfile();
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         if (profile != null) {
             System.setProperty("quarkus.profile", profile);
         }
 
-        CONFIG_SOURCES.add(new ConfigArgsConfigSource());
-        CONFIG_SOURCES.add(new KcEnvConfigSource());
+        addConfigSources("CLI", List.of(new ConfigArgsConfigSource()));
 
-        CONFIG_SOURCES.addAll(new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
+        addConfigSources("ENV", List.of(new KcEnvConfigSource()));
 
-        CONFIG_SOURCES.add(PersistedConfigSource.getInstance());
+        addConfigSources("quarkus.properties", new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
 
-        CONFIG_SOURCES.addAll(new KeycloakPropertiesConfigSource.InFileSystem().getConfigSources(Thread.currentThread().getContextClassLoader()));
+        addConfigSources("Persisted", List.of(PersistedConfigSource.getInstance()));
+
+        KeycloakPropertiesConfigSource.InFileSystem inFileSystem = new KeycloakPropertiesConfigSource.InFileSystem();
+        Path path = inFileSystem.getConfigurationFile();
+        if (path != null) {
+            addConfigSources(path.getFileName().toString(), inFileSystem.getConfigSources(Thread.currentThread().getContextClassLoader(), path));
+        }
 
         // by enabling this config source we are able to rely on the default settings when running tests
-        CONFIG_SOURCES.addAll(new KeycloakPropertiesConfigSource.InClassPath().getConfigSources(Thread.currentThread().getContextClassLoader()));
+        addConfigSources("classpath keycloak.conf", new KeycloakPropertiesConfigSource.InClassPath().getConfigSources(Thread.currentThread().getContextClassLoader()));
+    }
+
+    private static void addConfigSources(String displayName, Collection<ConfigSource> configSources) {
+        for (ConfigSource cs : configSources) {
+            CONFIG_SOURCES.add(cs);
+            CONFIG_SOURCE_DISPLAY_NAMES.put(cs.getName(), displayName);
+        }
     }
 
     /**
@@ -62,6 +79,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
      */
     public static void reload() {
         CONFIG_SOURCES.clear();
+        CONFIG_SOURCE_DISPLAY_NAMES.clear();
         initializeSources();
     }
 
@@ -76,5 +94,19 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     @Override
     public SmallRyeConfigBuilder configBuilder(SmallRyeConfigBuilder builder) {
         return builder.withSources(CONFIG_SOURCES);
+    }
+
+    public static String getConfigSourceDisplayName(String configSource) {
+        if (configSource == null) {
+            return "Derived";
+        }
+        if (isKeyStoreConfigSource(configSource)) {
+            return "config-keystore";
+        }
+        return CONFIG_SOURCE_DISPLAY_NAMES.getOrDefault(configSource, configSource);
+    }
+
+    public static boolean isKeyStoreConfigSource(String configSourceName) {
+        return configSourceName.contains("KeyStoreConfigSource");
     }
 }

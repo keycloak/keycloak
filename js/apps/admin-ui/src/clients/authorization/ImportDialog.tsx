@@ -14,7 +14,7 @@ import {
 
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 type ImportDialogProps = {
   onConfirm: (value: ResourceServerRepresentation) => void;
@@ -61,7 +61,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
       {Object.keys(imported).length !== 0 && (
         <>
           <Divider />
-          <p className="pf-u-my-lg">{t("importResources")}</p>
+          <p className="pf-v5-u-my-lg">{t("importResources")}</p>
           <Form isHorizontal>
             <FormGroup
               label={t("policyEnforcementMode")}
@@ -82,7 +82,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 )}
                 isChecked
                 isDisabled
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
               />
             </FormGroup>
             <FormGroup
@@ -102,7 +102,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 isChecked
                 isDisabled
                 label={t(`decisionStrategies.${imported.decisionStrategy}`)}
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
               />
             </FormGroup>
             <FormGroup
@@ -126,13 +126,13 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               />
             </FormGroup>
           </Form>
-          <div className="pf-u-mt-md">
+          <div className="pf-v5-u-mt-md">
             {Object.entries(imported)
               .filter(([, value]) => Array.isArray(value))
               .map(([key, value]) => (
                 <Fragment key={key}>
                   <Divider />
-                  <p className="pf-u-my-sm">
+                  <p className="pf-v5-u-my-sm">
                     <strong>
                       {value.length} {t(key)}
                     </strong>
@@ -143,7 +143,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
           <Divider />
           <Alert
             variant="warning"
-            className="pf-u-mt-lg"
+            className="pf-v5-u-mt-lg"
             isInline
             title={t("importWarning")}
           />

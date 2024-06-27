@@ -18,6 +18,7 @@ package test.org.keycloak.quarkus.services.health;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.test.QuarkusUnitTest;
+import io.restassured.RestAssured;
 import org.hamcrest.Matchers;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -41,6 +42,8 @@ public class KeycloakNegativeHealthCheckTest {
     @Test
     public void testReadinessDown() {
         agroalDataSource.close();
+
+        RestAssured.port = 9001;
         given()
                 .when().get("/health/ready")
                 .then()

@@ -25,7 +25,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.client.admin.cli.util.ConfigUtil;
+import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;

@@ -6,13 +6,14 @@
 <@tmpl.guide
 title="Configuring logging"
 summary="Learn how to configure Logging"
-includedOptions="log-*">
+includedOptions="log log-*">
 
 {project_name} uses the JBoss Logging framework. The following is a high-level overview for the available log handlers:
 
 * root
 ** console (_default_)
 ** file
+** Syslog
 <@profile.ifCommunity>
 ** GELF
 </@profile.ifCommunity>
@@ -74,10 +75,10 @@ To enable log handlers, enter the following command:
 
 The available handlers are
 <@profile.ifCommunity>
-`console`, `file` and `gelf`.
+`console`, `file`, `syslog` and `gelf`.
 </@profile.ifCommunity>
 <@profile.ifProduct>
-`console` and `file`.
+`console`, `file` and `syslog`.
 </@profile.ifProduct>
 The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
 
@@ -148,8 +149,8 @@ To use unstructured logging, enter the following command:
 
 <@kc.start parameters="--log-console-output=default"/>
 
-.Example Log Message:
-[source, bash]
+.Example Log Message
+[source]
 ----
 2022-03-02 10:36:50,603 INFO  [io.quarkus] (main) Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.615s. Listening on: http://0.0.0.0:8080
 ----
@@ -167,7 +168,7 @@ Logging to a file is disabled by default. To enable it, enter the following comm
 
 <@kc.start parameters="--log=\"console,file\""/>
 
-A log file named `keycloak.log` is created inside the `data/log` directory of your Keycloak installation.
+A log file named `keycloak.log` is created inside the `data/log` directory of your {project_name} installation.
 
 === Configuring the location and name of the log file
 
@@ -188,9 +189,80 @@ To configure a different logging format for the file log handler, enter the foll
 
 See <<Configuring the console log format>> for more information and a table of the available pattern configuration.
 
+== Centralized logging using Syslog
+
+{project_name} provides the ability to send logs to a remote Syslog server.
+It utilizes the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].
+
+=== Enable the Syslog handler
+To enable logging using Syslog, add it to the list of activated log handlers as follows:
+
+<@kc.start parameters="--log=\"console,syslog\""/>
+
+=== Configuring the Syslog endpoint
+
+To configure the endpoint(_host:port_) of your centralized logging system, enter the following command and substitute the values with your specific values:
+
+<@kc.start parameters="--log=\"console,syslog\" --log-syslog-endpoint=myhost:12345"/>
+
+When the Syslog handler is enabled, the host is using `localhost` as host value.
+The Default port is `514`.
+
+=== Configuring the Syslog protocol
+Syslog uses TCP as the default protocol for communication.
+To use UDP instead of TCP, add the `--log-syslog-protocol` option as follows:
+
+<@kc.start parameters="--log=\"console,syslog\" --log-syslog-protocol=udp"/>
+
+The available protocols are: `tpc`, `udp`, and `ssl-tcp`.
+
+=== Configuring the Syslog log format
+To set the logging format for a logged line, perform these steps:
+
+. Build your desired format template using the preceding table.
+. Enter the following command:
++
+<@kc.start parameters="--log-syslog-format=\"\'<format>\'\""/>
+
+Note that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI. Therefore, consider setting it in the configuration file instead.
+
+.Example: Abbreviate the fully qualified category name
+<@kc.start parameters="--log-syslog-format=\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
+
+This example abbreviates the category name to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
+
+=== Configuring the Syslog structured output
+By default, the Syslog log handler sends plain unstructured data to the Syslog server.
+To use structured JSON log output instead, enter the following command:
+
+<@kc.start parameters="--log-syslog-output=json"/>
+
+.Example Log Message
+[source, bash]
+----
+2024-04-05T12:32:20.616+02:00 mabartos keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
+----
+
+When using JSON output, colors are disabled and the format settings set by `--log-syslog-format` will not apply.
+
+To use unstructured logging, enter the following command:
+
+<@kc.start parameters="--log-syslog-output=default"/>
+
+.Example Log Message
+[source, bash]
+----
+2024-04-05T12:31:38.473+02:00 mabartos keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
+----
+
+As you can see, the timestamp is present twice, so you can amend it correspondingly via the `--log-syslog-format` property.
+
 <@profile.ifCommunity>
 
 == Centralized logging using GELF
+NOTE: The support for GELF log handler is deprecated and will be removed in a future {project_name} release.
+The recommended alternative is using the Syslog log handler described above.
+
 {project_name} can send logs to a centralized log management system such as the following:
 
 * Graylog
@@ -208,6 +280,7 @@ To enable logging using GELF, add it to the list of activated log handlers.
 === Configuring the GELF handler
 
 To configure the Host and Port of your centralized logging system, enter the following command and substitute the values with your specific values:
+
 .Host and port of the GELF server:
 <@kc.start parameters="--log=\"console,gelf\" --log-gelf-host=myhost --log-gelf-port=12345"/>
 

@@ -29,7 +29,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-@DistributionTest(keepAlive =true)
+@DistributionTest(keepAlive = true,
+        requestPort = 9000,
+        containerExposedPorts = {8080, 9000})
 public class HealthDistTest {
 
     @Test
@@ -83,7 +85,7 @@ public class HealthDistTest {
     @Test
     void testUsingRelativePath(KeycloakDistribution distribution) {
         for (String relativePath : List.of("/auth", "/auth/", "auth")) {
-            distribution.run("start-dev", "--health-enabled=true", "--http-relative-path=" + relativePath);
+            distribution.run("start-dev", "--health-enabled=true", "--http-management-relative-path=" + relativePath);
             if (!relativePath.endsWith("/")) {
                 relativePath = relativePath + "/";
             }
@@ -95,7 +97,7 @@ public class HealthDistTest {
     @Test
     void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
         for (String relativePath : List.of("/", "/auth/", "auth")) {
-            distribution.run("start-dev", "--health-enabled=true", "--http-relative-path=" + relativePath);
+            distribution.run("start-dev", "--health-enabled=true", "--http-management-relative-path=" + relativePath);
             CompletableFuture future = CompletableFuture.completedFuture(null);
 
             for (int i = 0; i < 3; i++) {
@@ -123,7 +125,9 @@ public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev", "--features=multi-site" })
-    void testLoadBalancerCheck() {
+    void testLoadBalancerCheck(KeycloakDistribution distribution) {
+        distribution.setRequestPort(8080);
+
         when().get("/lb-check").then()
                 .statusCode(200);
     }

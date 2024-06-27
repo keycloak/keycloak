@@ -17,47 +17,54 @@
 
 package org.keycloak.quarkus.runtime;
 
-import java.io.File;
-import java.lang.annotation.Annotation;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.stream.Stream;
-
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.runtime.RuntimeValue;
+import io.quarkus.runtime.ShutdownContext;
+import io.quarkus.runtime.annotations.Recorder;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
-
+import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
-import org.infinispan.manager.DefaultCacheManager;
-
+import org.infinispan.commons.util.FileLookupFactory;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
-
-import io.quarkus.runtime.RuntimeValue;
-import io.quarkus.runtime.ShutdownContext;
-import io.quarkus.runtime.annotations.Recorder;
-import liquibase.servicelocator.ServiceLocator;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.annotation.Annotation;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 
 @Recorder
 public class KeycloakRecorder {
@@ -71,6 +78,11 @@ public class KeycloakRecorder {
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
+    }
+
+    // default handler for the management interface
+    public Handler<RoutingContext> getManagementHandler() {
+        return routingContext -> routingContext.response().end("Keycloak Management Interface");
     }
 
     public void configureTruststore() {
@@ -92,8 +104,9 @@ public class KeycloakRecorder {
 
     public void configureLiquibase(Map<String, List<String>> services) {
         ServiceLocator locator = Scope.getCurrentScope().getServiceLocator();
-        if (locator instanceof FastServiceLocator)
+        if (locator instanceof FastServiceLocator) {
             ((FastServiceLocator) locator).initServices(services);
+        }
     }
 
     public void configSessionFactory(
@@ -104,24 +117,42 @@ public class KeycloakRecorder {
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
     }
 
-    public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, boolean metricsEnabled, ShutdownContext shutdownContext) {
+    public RuntimeValue<CacheManagerFactory> createCacheInitializer(ShutdownContext shutdownContext) {
         try {
-            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(config, metricsEnabled);
-
-            shutdownContext.addShutdownTask(new Runnable() {
-                @Override
-                public void run() {
-                    DefaultCacheManager cacheManager = cacheManagerFactory.getOrCreate();
-
-                    if (cacheManager != null) {
-                        cacheManager.stop();
-                    }
-                }
-            });
-
+            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(getInfinispanConfigFile());
+            shutdownContext.addShutdownTask(cacheManagerFactory::shutdown);
             return new RuntimeValue<>(cacheManagerFactory);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private String getInfinispanConfigFile() {
+        String configFile = getKcConfigValue("spi-connections-infinispan-quarkus-config-file").getValue();
+
+        if (configFile != null) {
+            Path configPath = Paths.get(configFile);
+            String path;
+
+            if (configPath.toFile().exists()) {
+                path = configPath.toFile().getAbsolutePath();
+            } else {
+                path = configPath.getFileName().toString();
+            }
+
+            InputStream url = FileLookupFactory.newInstance().lookupFile(path, KeycloakRecorder.class.getClassLoader());
+
+            if (url == null) {
+                throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url))) {
+                return reader.lines().collect(Collectors.joining("\n"));
+            } catch (Exception cause) {
+                throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
+            }
+        } else {
+            throw new IllegalArgumentException("Option 'configFile' needs to be specified");
         }
     }
 

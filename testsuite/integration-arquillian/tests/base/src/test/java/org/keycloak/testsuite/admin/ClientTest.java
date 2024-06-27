@@ -51,6 +51,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -72,6 +73,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,12 +96,26 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
+    @Test
+    public void getRealmClients() {
+        assertTrue(realm.clients().findAll().stream().filter(client-> client.getAttributes().get(Constants.REALM_CLIENT).equals("true"))
+                .map(ClientRepresentation::getClientId)
+                .allMatch(clientId -> clientId.equals(Constants.REALM_MANAGEMENT_CLIENT_ID) || clientId.equals(Constants.BROKER_SERVICE_CLIENT_ID) || clientId.endsWith("-realm")));
+    }
+
     private ClientRepresentation createClient() {
+        return createClient(null);
+    }
+
+    private ClientRepresentation createClient(String protocol) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
         rep.setPublicClient(true);
+        if (protocol != null) {
+            rep.setProtocol(protocol);
+        }
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
@@ -113,7 +129,7 @@ public class ClientTest extends AbstractAdminTest {
 
         return rep;
     }
-    
+
     private ClientRepresentation createClientNonPublic() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
@@ -133,7 +149,7 @@ public class ClientTest extends AbstractAdminTest {
 
         return rep;
     }
-    
+
     @Test
     public void createClientVerifyWithSecret() {
         String id = createClientNonPublic().getId();
@@ -183,6 +199,49 @@ public class ClientTest extends AbstractAdminTest {
                 "Redirect URIs must not contain an URI fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testSamlSpecificUrls() {
+        testSamlSpecificUrls(true, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+        testSamlSpecificUrls(false, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+    }
+
+    private void testSamlSpecificUrls(boolean create, String... testUrls) {
+        ClientRepresentation rep;
+        if (create) {
+            rep = new ClientRepresentation();
+            rep.setClientId("my-app2");
+            rep.setEnabled(true);
+            rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        }
+        else {
+            rep = createClient(SamlProtocol.LOGIN_PROTOCOL);
+        }
+        rep.setAttributes(new HashMap<>());
+
+        Map<String, String> attrs = Map.of(
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
+                    SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service");
+
+        for (String testUrl : testUrls) {
+            // admin url
+            rep.setAdminUrl(testUrl);
+            createOrUpdateClientExpectingValidationErrors(rep, create, "Master SAML Processing URL uses an illegal scheme");
+            rep.setAdminUrl(null);
+            // attributes
+            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                rep.getAttributes().put(entry.getKey(), testUrl);
+                createOrUpdateClientExpectingValidationErrors(rep, create, entry.getValue() + " uses an illegal scheme");
+                rep.getAttributes().remove(entry.getKey());
+            }
+        }
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
@@ -390,14 +449,14 @@ public class ClientTest extends AbstractAdminTest {
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME), Collections.singletonList(role), ResourceType.REALM_ROLE);
 
-        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
                 hasItem(role.getName()));
 
         realm.clients().get(id).roles().deleteRole("test");
 
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(id, "test"), ResourceType.CLIENT_ROLE);
 
-        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
                 not(hasItem(role)));
     }
 
@@ -429,6 +488,8 @@ public class ClientTest extends AbstractAdminTest {
         newClient.setSecret("new-secret");
 
         realm.clients().get(client.getId()).update(newClient);
+
+        newClient.setSecret("**********"); // secrets are masked in events
 
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
@@ -488,6 +549,7 @@ public class ClientTest extends AbstractAdminTest {
         getCleanup().addClientUuid(id);
         response.close();
 
+        client.setSecret("**********"); // secrets are masked in events
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), client, ResourceType.CLIENT);
 
         client.setId(id);
@@ -503,7 +565,7 @@ public class ClientTest extends AbstractAdminTest {
 
         realm.clients().get(id).registerNode(Collections.singletonMap("node", "foo#"));
     }
-    
+
     @Test
     public void nodes() {
         testingClient.testApp().clearAdminActions();

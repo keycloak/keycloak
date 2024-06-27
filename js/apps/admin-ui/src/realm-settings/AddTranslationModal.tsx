@@ -2,16 +2,13 @@ import {
   Button,
   ButtonVariant,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
-  ValidatedOptions,
 } from "@patternfly/react-core";
-import { SubmitHandler, UseFormReturn } from "react-hook-form";
+import { FormProvider, SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type AddTranslationModalProps = {
   id?: string;
@@ -29,18 +26,14 @@ export type TranslationForm = {
 export const AddTranslationModal = ({
   handleModalToggle,
   save,
-  form: {
-    register,
-    handleSubmit,
-    formState: { errors },
-  },
+  form,
 }: AddTranslationModalProps) => {
   const { t } = useTranslation();
 
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("AddTranslation")}
+      title={t("addTranslation")}
       isOpen
       onClose={handleModalToggle}
       actions={[
@@ -66,46 +59,28 @@ export const AddTranslationModal = ({
         </Button>,
       ]}
     >
-      <Form id="translation-form" isHorizontal onSubmit={handleSubmit(save)}>
-        <FormGroup
-          label={t("key")}
-          name="key"
-          fieldId="key-id"
-          helperTextInvalid={t("required")}
-          validated={
-            errors.key ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          isRequired
-        >
-          <KeycloakTextInput
-            data-testid="key-input"
+      <Form
+        id="translation-form"
+        isHorizontal
+        onSubmit={form.handleSubmit(save)}
+      >
+        <FormProvider {...form}>
+          <TextControl
+            name="key"
+            label={t("key")}
             autoFocus
-            id="key-id"
-            validated={
-              errors.key ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            {...register("key", { required: true })}
+            rules={{
+              required: t("required"),
+            }}
           />
-        </FormGroup>
-        <FormGroup
-          label={t("value")}
-          name="add-value"
-          fieldId="value-id"
-          helperTextInvalid={t("required")}
-          validated={
-            errors.value ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          isRequired
-        >
-          <KeycloakTextInput
-            data-testid="value-input"
-            id="value-id"
-            validated={
-              errors.value ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            {...register("value", { required: true })}
+          <TextControl
+            name="value"
+            label={t("value")}
+            rules={{
+              required: t("required"),
+            }}
           />
-        </FormGroup>
+        </FormProvider>
       </Form>
     </Modal>
   );

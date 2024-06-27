@@ -1,4 +1,4 @@
-<#import "pf-5-template.ftl" as layout>
+<#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
 
@@ -50,7 +50,7 @@
             </li>
         </ol>
 
-        <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post">
+        <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post" novalidate="novalidate">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelClass!}">
                     <label class="pf-v5-c-form__label" for="form-vertical-name">
@@ -60,6 +60,7 @@
                 <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('totp')>pf-m-error</#if>">
                     <input type="text" required id="totp" name="totp" autocomplete="off"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                           dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('totp')>
@@ -88,6 +89,7 @@
                 <div class="${properties.kcInputClass!}">
                     <input type="text" id="userLabel" name="userLabel" autocomplete="off"
                            aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>"
+                           dir="ltr"
                     />
 
                     <#if messagesPerField.existsError('userLabel')>

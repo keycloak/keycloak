@@ -9,8 +9,8 @@ import {
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextControl } from "ui-shared";
-import { adminClient } from "../../admin-client";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -33,6 +33,8 @@ type FormFields = Omit<
 >;
 
 export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<FormFields>({ mode: "onChange" });
   const { realm: realmName } = useRealm();

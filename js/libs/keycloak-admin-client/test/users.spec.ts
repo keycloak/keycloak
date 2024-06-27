@@ -10,6 +10,7 @@ import type GroupRepresentation from "../src/defs/groupRepresentation.js";
 import { RequiredActionAlias } from "../src/defs/requiredActionProviderRepresentation.js";
 import type RoleRepresentation from "../src/defs/roleRepresentation.js";
 import type UserRepresentation from "../src/defs/userRepresentation.js";
+import { UnmanagedAttributePolicy } from "../src/defs/userProfileMetadata.js";
 import { credentials } from "./constants.js";
 
 const expect = chai.expect;
@@ -24,6 +25,14 @@ describe("Users", () => {
   before(async () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
+
+    // Enable unmanaged attributes
+    const currentProfileConfig = await kcAdminClient.users.getProfile();
+    await kcAdminClient.users.updateProfile({
+      ...currentProfileConfig,
+      unmanagedAttributePolicy: UnmanagedAttributePolicy.Enabled,
+    });
+
     // initialize user
     const username = faker.internet.userName();
     const user = await kcAdminClient.users.create({
@@ -95,10 +104,19 @@ describe("Users", () => {
     expect(profile).to.be.ok;
   });
 
-  it.skip("find users by custom attributes", async () => {
+  it("find users by custom attributes", async () => {
     // Searching by attributes is only available from Keycloak > 15
-    const users = await kcAdminClient.users.find({ key: "value" });
-    expect(users.length).to.be.equal(2);
+    const users = await kcAdminClient.users.find({ q: "key:value" });
+    expect(users.length).to.be.equal(1);
+    expect(users[0]).to.be.deep.include(currentUser);
+  });
+
+  it("find users by builtin attributes", async () => {
+    // Searching by attributes is only available from Keycloak > 15
+    const users = await kcAdminClient.users.find({
+      q: `email:${currentUser.email}`,
+    });
+    expect(users.length).to.be.equal(1);
     expect(users[0]).to.be.deep.include(currentUser);
   });
 

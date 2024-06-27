@@ -597,6 +597,41 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    // KEYCLOAK-27643
+    @Test
+    public void registerUserNotContainsUsernamePasswordPolicy() throws IOException {
+        try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("notContainsUsername").update()) {
+            loginPage.open();
+
+            assertTrue(loginPage.isCurrent());
+
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "Bob123", "Bob123");
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Invalid password: Can not contain the username.", registerPage.getInputPasswordErrors().getPasswordError());
+
+            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "123Bob", "123Bob");
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Invalid password: Can not contain the username.", registerPage.getInputPasswordErrors().getPasswordError());
+
+            try (Response response = adminClient.realm("test").users().create(UserBuilder.create().username("Bob").build())) {
+                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", "Bob", "registerUserNotContainsUsername", "registerUserNotContainsUsername");
+
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
+
+            registerPage.register("firstName", "lastName", "registerUserNotContainsUsername@email", null, "password", "password");
+
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
+        }
+    }
+
     // KEYCLOAK-12729
     @Test
     public void registerUserNotEmailPasswordPolicy() throws IOException {

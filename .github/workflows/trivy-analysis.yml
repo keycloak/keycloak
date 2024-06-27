@@ -19,18 +19,17 @@ jobs:
       fail-fast: false
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@84384bd6e777ef152729993b8145ea352e9dd3ef
+        uses: aquasecurity/trivy-action@fd25fed6972e341ff0007ddb61f77e88103953c2
         with:
           image-ref: quay.io/keycloak/${{ matrix.container}}:nightly
-          format: template
-          template: '@/contrib/sarif.tpl'
+          format: sarif
           output: trivy-results.sarif
           severity: MEDIUM,CRITICAL,HIGH
           ignore-unfixed: true
-          security-checks: vuln
           timeout: 15m
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
+          category: ${{ matrix.container}}

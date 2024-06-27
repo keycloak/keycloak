@@ -43,6 +43,15 @@ public class Config {
         }
     }
 
+    public static String getDefaultProvider(String spi) {
+        String provider = configProvider.getDefaultProvider(spi);
+        if (provider == null || provider.trim().equals("")) {
+            return null;
+        } else {
+            return provider;
+        }
+    }
+
     public static Scope scope(String... scope) {
          return configProvider.scope(scope);
     }
@@ -50,6 +59,8 @@ public class Config {
     public static interface ConfigProvider {
 
         String getProvider(String spi);
+
+        String getDefaultProvider(String spi);
 
         Scope scope(String... scope);
 
@@ -60,6 +71,11 @@ public class Config {
         @Override
         public String getProvider(String spi) {
             return System.getProperties().getProperty("keycloak." + spi + ".provider");
+        }
+
+        @Override
+        public String getDefaultProvider(String spi) {
+            return System.getProperties().getProperty("keycloak." + spi + ".provider.default");
         }
 
         @Override

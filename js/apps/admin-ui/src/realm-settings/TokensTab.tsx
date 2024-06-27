@@ -1,23 +1,29 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  FormPanel,
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   NumberInput,
   PageSection,
-  Select,
   SelectOption,
-  SelectVariant,
   Switch,
   Text,
+  TextInput,
   TextVariants,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import {
   TimeSelector,
   toHumanFormat,
@@ -100,16 +106,16 @@ export const RealmSettingsTokensTab = ({
               defaultValue={"RS256"}
               control={form.control}
               render={({ field }) => (
-                <Select
+                <KeycloakSelect
                   toggleId="kc-default-sig-alg"
                   onToggle={() =>
                     setDefaultSigAlgDrpdwnOpen(!defaultSigAlgDrpdwnIsOpen)
                   }
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     field.onChange(value.toString());
                     setDefaultSigAlgDrpdwnOpen(false);
                   }}
-                  selections={[field.value?.toString()]}
+                  selections={field.value?.toString()}
                   variant={SelectVariant.single}
                   aria-label={t("defaultSigAlg")}
                   isOpen={defaultSigAlgDrpdwnIsOpen}
@@ -120,9 +126,11 @@ export const RealmSettingsTokensTab = ({
                       selected={p === field.value}
                       key={`default-sig-alg-${idx}`}
                       value={p}
-                    ></SelectOption>
+                    >
+                      {p}
+                    </SelectOption>
                   ))}
-                </Select>
+                </KeycloakSelect>
               )}
             />
           </FormGroup>
@@ -173,8 +181,14 @@ export const RealmSettingsTokensTab = ({
                       id="oAuthDevicePollingInterval"
                       value={field.value}
                       min={0}
-                      onPlus={() => field.onChange(field.value || 0 + 1)}
-                      onMinus={() => field.onChange(field.value || 0 - 1)}
+                      onPlus={() => field.onChange(Number(field?.value) + 1)}
+                      onMinus={() =>
+                        field.onChange(
+                          Number(field?.value) > 0
+                            ? Number(field?.value) - 1
+                            : 0,
+                        )
+                      }
                       onChange={(event) => {
                         const newValue = Number(event.currentTarget.value);
                         field.onChange(!isNaN(newValue) ? newValue : 0);
@@ -194,10 +208,35 @@ export const RealmSettingsTokensTab = ({
                   />
                 }
               >
-                <KeycloakTextInput
+                <TextInput
                   id="shortVerificationUri"
                   placeholder={t("shortVerificationUri")}
                   {...form.register("attributes.shortVerificationUri")}
+                />
+              </FormGroup>
+              <FormGroup
+                label={t("parRequestUriLifespan")}
+                fieldId="parRequestUriLifespan"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("parRequestUriLifespanHelp")}
+                    fieldLabelId="parRequestUriLifespan"
+                  />
+                }
+              >
+                <Controller
+                  name="attributes.parRequestUriLifespan"
+                  control={form.control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      id="parRequestUriLifespan"
+                      className="par-request-uri-lifespan"
+                      data-testid="par-request-uri-lifespan-input"
+                      aria-label="par-request-uri-lifespan"
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </FormGroup>
             </>
@@ -211,7 +250,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={form.handleSubmit(save)}
         >
           <FormGroup
@@ -283,15 +322,12 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={form.handleSubmit(save)}
         >
           <FormGroup
             label={t("accessTokenLifespan")}
             fieldId="accessTokenLifespan"
-            helperText={t("recommendedSsoTimeout", {
-              time: toHumanFormat(ssoSessionIdleTimeout!, whoAmI.getLocale()),
-            })}
             labelIcon={
               <HelpItem
                 helpText={t("accessTokenLifespanHelp")}
@@ -318,6 +354,18 @@ export const RealmSettingsTokensTab = ({
                 />
               )}
             />
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem>
+                  {t("recommendedSsoTimeout", {
+                    time: toHumanFormat(
+                      ssoSessionIdleTimeout!,
+                      whoAmI.getLocale(),
+                    ),
+                  })}
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
           </FormGroup>
 
           <FormGroup
@@ -406,7 +454,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={form.handleSubmit(save)}
         >
           <FormGroup
@@ -471,6 +519,12 @@ export const RealmSettingsTokensTab = ({
             label={t("emailVerification")}
             fieldId="emailVerification"
             id="email-verification"
+            labelIcon={
+              <HelpItem
+                helpText={t("emailVerificationHelp")}
+                fieldLabelId="emailVerification"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(
@@ -493,6 +547,12 @@ export const RealmSettingsTokensTab = ({
             label={t("idpAccountEmailVerification")}
             fieldId="idpAccountEmailVerification"
             id="idp-acct-label"
+            labelIcon={
+              <HelpItem
+                helpText={t("idpAccountEmailVerificationHelp")}
+                fieldLabelId="idpAccountEmailVerification"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(
@@ -515,6 +575,12 @@ export const RealmSettingsTokensTab = ({
             label={t("forgotPassword")}
             fieldId="forgotPassword"
             id="forgot-password-label"
+            labelIcon={
+              <HelpItem
+                helpText={t("forgotPasswordHelp")}
+                fieldLabelId="forgotPassword"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(
@@ -537,6 +603,12 @@ export const RealmSettingsTokensTab = ({
             label={t("executeActions")}
             fieldId="executeActions"
             id="execute-actions"
+            labelIcon={
+              <HelpItem
+                helpText={t("executeActionsHelp")}
+                fieldLabelId="executeActions"
+              />
+            }
           >
             <Controller
               name={`attributes.${beerify(

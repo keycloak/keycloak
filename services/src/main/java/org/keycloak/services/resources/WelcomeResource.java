@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -29,6 +30,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ext.Provider;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -40,7 +43,6 @@ import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
@@ -64,6 +66,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/")
 public class WelcomeResource {
 

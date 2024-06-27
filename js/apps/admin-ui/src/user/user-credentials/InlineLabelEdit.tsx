@@ -1,12 +1,16 @@
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
-import { AlertVariant, Button, Form, FormGroup } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  Button,
+  Form,
+  FormGroup,
+  TextInput,
+} from "@patternfly/react-core";
 import { CheckIcon, PencilAltIcon, TimesIcon } from "@patternfly/react-icons";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type UserLabelForm = {
   userLabel: string;
@@ -25,6 +29,8 @@ export const InlineLabelEdit = ({
   isEditable,
   toggle,
 }: InlineLabelEditProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { register, handleSubmit } = useForm<UserLabelForm>();
 
@@ -56,7 +62,7 @@ export const InlineLabelEdit = ({
         <div className="kc-form-group-userLabel">
           {isEditable ? (
             <>
-              <KeycloakTextInput
+              <TextInput
                 data-testid="userLabelFld"
                 defaultValue={credential.userLabel}
                 className="kc-userLabel"

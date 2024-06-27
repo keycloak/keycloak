@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -20,8 +20,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -66,6 +65,8 @@ export const AuthorizationPolicies = ({
   clientId,
   isDisabled = false,
 }: PoliciesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -134,11 +135,11 @@ export const AuthorizationPolicies = ({
               isPlain
               component="p"
               title={t("deletePolicyWarning")}
-              className="pf-u-pt-lg"
+              className="pf-v5-u-pt-lg"
             >
-              <p className="pf-u-pt-xs">
+              <p className="pf-v5-u-pt-xs">
                 {selectedPolicy.dependentPolicies.map((policy) => (
-                  <strong key={policy.id} className="pf-u-pr-md">
+                  <strong key={policy.id} className="pf-v5-u-pr-md">
                     {policy.name}
                   </strong>
                 ))}
@@ -169,7 +170,7 @@ export const AuthorizationPolicies = ({
   const noData = policies.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <>
@@ -218,7 +219,7 @@ export const AuthorizationPolicies = ({
             }
           >
             {!noData && (
-              <TableComposable aria-label={t("resources")} variant="compact">
+              <Table aria-label={t("resources")} variant="compact">
                 <Thead>
                   <Tr>
                     <Th aria-hidden="true" />
@@ -311,7 +312,7 @@ export const AuthorizationPolicies = ({
                     </Tr>
                   </Tbody>
                 ))}
-              </TableComposable>
+              </Table>
             )}
           </PaginatingTableToolbar>
         </>

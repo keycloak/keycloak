@@ -28,6 +28,8 @@ public class AdminEvent {
     
     private String realmId;
 
+    private String realmName;
+
     private AuthDetails authDetails;
 
     /**
@@ -48,6 +50,7 @@ public class AdminEvent {
         this.id = toCopy.getId();
         this.time = toCopy.getTime();
         this.realmId = toCopy.getRealmId();
+        this.realmName = toCopy.getRealmName();
         this.authDetails = new AuthDetails(toCopy.getAuthDetails());
         this.resourceType = toCopy.getResourceTypeAsString();
         this.operationType = toCopy.getOperationType();
@@ -93,6 +96,17 @@ public class AdminEvent {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    /**
+     * @return the name of the realm
+     */
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
     }
 
     /**

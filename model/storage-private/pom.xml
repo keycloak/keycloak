@@ -31,8 +31,8 @@
         <dependency>
             <!-- needed for LegacyExportImportManager that is calling ValidationUtil.validateClient (which is in server-spi-private) might throw a BadRequestException -->
             <!-- see: https://github.com/hmlnarik/keycloak/pull/23#discussion_r862293798 -->
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core</artifactId>
+            <groupId>io.quarkus.resteasy.reactive</groupId>
+            <artifactId>resteasy-reactive-common</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -47,6 +47,11 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan.protostream</groupId>
+            <artifactId>protostream</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

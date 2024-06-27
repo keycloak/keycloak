@@ -8,15 +8,15 @@ import {
   DropdownItem,
   FormGroup,
   PageSection,
+  TextInput,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { KeycloakTextInput, TextControl } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { toClient } from "../../clients/routes/Client";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { toDedicatedScope } from "../../clients/routes/DedicatedScopeDetails";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
@@ -31,6 +31,8 @@ import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 
 export default function MappingDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -53,7 +55,7 @@ export default function MappingDetails() {
   const toDetails = () =>
     isOnClientScope
       ? toClientScope({ realm, id, tab: "mappers" })
-      : toClient({ realm, clientId: id, tab: "mappers" });
+      : toDedicatedScope({ realm, clientId: id, tab: "mappers" });
 
   useFetch(
     async () => {
@@ -200,7 +202,7 @@ export default function MappingDetails() {
             role="manage-clients"
           >
             <FormGroup label={t("mapperType")} fieldId="mapperType">
-              <KeycloakTextInput
+              <TextInput
                 type="text"
                 id="mapperType"
                 name="mapperType"

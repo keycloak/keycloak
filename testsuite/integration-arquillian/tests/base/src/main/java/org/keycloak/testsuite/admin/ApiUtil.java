@@ -24,11 +24,13 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -40,6 +42,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
@@ -163,7 +166,6 @@ public class ApiUtil {
      * Creates a user
      * @param realm
      * @param user
-     * @param password
      * @return ID of the new user
      */
     public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
@@ -274,6 +276,64 @@ public class ApiUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Updates the order of required actions
+     * 
+     * @param realmResource the realm
+     * @param requiredActionsInTargetOrder the required actions for which the order should be changed (order will be the
+     *        order of this list) - can be a subset of the available required actions
+     * @see #updateRequiredActionsOrderByAlias(RealmResource, List)                                     
+     */
+    public static void updateRequiredActionsOrder(final RealmResource realmResource,
+            final List<UserModel.RequiredAction> requiredActionsInTargetOrder) {
+        updateRequiredActionsOrderByAlias(realmResource,
+                requiredActionsInTargetOrder.stream().map(Enum::name).collect(Collectors.toList()));
+    }
+
+    /**
+     * @see #updateRequiredActionsOrder(RealmResource, List)
+     */
+    public static void updateRequiredActionsOrderByAlias(final RealmResource realmResource,
+            final List<String> requiredActionsInTargetOrder) {
+        final var realmName = realmResource.toRepresentation().getRealm();
+        final var initialRequiredActionsOrdered = realmResource.flows().getRequiredActions().stream()
+                .map(RequiredActionProviderRepresentation::getAlias).collect(Collectors.toList());
+        log.infof("initial required actions order for realm '%s': %s", realmName, initialRequiredActionsOrdered);
+        log.infof("target order for realm '%s' (maybe partial): %s", realmName, requiredActionsInTargetOrder);
+
+        final var requiredActionsToConfigureWithLowerPrio = new ArrayList<>(requiredActionsInTargetOrder);
+        for (final var requiredActionAlias : requiredActionsInTargetOrder) {
+            var allRequiredActionsOrdered = realmResource.flows().getRequiredActions().stream()
+                    .map(RequiredActionProviderRepresentation::getAlias).collect(Collectors.toList());
+
+            requiredActionsToConfigureWithLowerPrio.remove(requiredActionAlias);
+
+            final var currentIndex = allRequiredActionsOrdered.indexOf(requiredActionAlias);
+            if (currentIndex == -1) {
+                throw new IllegalStateException("Required action not found: " + requiredActionAlias);
+            }
+
+            final var aliasOfCurrentlyFirstActionWithLowerTargetPrioOpt = allRequiredActionsOrdered.stream()
+                    .filter(requiredActionsToConfigureWithLowerPrio::contains).findFirst();
+            aliasOfCurrentlyFirstActionWithLowerTargetPrioOpt
+                    .ifPresent(aliasOfCurrentlyFirstActionWithLowerTargetPrio -> {
+                        final var indexOfCurrentlyFirstActionWithLowerTargetPrio =
+                                allRequiredActionsOrdered.indexOf(aliasOfCurrentlyFirstActionWithLowerTargetPrio);
+                        final var positionsToMoveCurrentActionUp =
+                                Math.max(currentIndex - indexOfCurrentlyFirstActionWithLowerTargetPrio, 0);
+                        if (positionsToMoveCurrentActionUp > 0) {
+                            for (var i = 0; i < positionsToMoveCurrentActionUp; i++) {
+                                realmResource.flows().raiseRequiredActionPriority(requiredActionAlias);
+                            }
+                        }
+                    });
+        }
+
+        final var updatedRequiredActionsOrdered = realmResource.flows().getRequiredActions().stream()
+                .map(RequiredActionProviderRepresentation::getAlias).collect(Collectors.toList());
+        log.infof("updated required actions order for realm '%s': %s", realmName, updatedRequiredActionsOrdered);
     }
 
 }

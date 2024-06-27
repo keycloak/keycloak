@@ -18,8 +18,8 @@ import {
   NumberControl,
   SelectControl,
   SwitchControl,
-} from "ui-shared";
-import { adminClient } from "../../admin-client";
+} from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
@@ -43,6 +43,8 @@ type FormFields = Omit<
 >;
 
 export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<FormFields>({ mode: "onChange", defaultValues: realm });
   const {
@@ -210,13 +212,15 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
               />
             }
           >
-            <ChipGroup data-testid="supportedApplications">
-              {supportedApplications.map((label) => (
-                <Chip key={label} isReadOnly>
-                  {label}
-                </Chip>
-              ))}
-            </ChipGroup>
+            <span data-testid="supportedApplications">
+              <ChipGroup>
+                {supportedApplications.map((label) => (
+                  <Chip key={label} isReadOnly>
+                    {label}
+                  </Chip>
+                ))}
+              </ChipGroup>
+            </span>
           </FormGroup>
 
           {otpType === POLICY_TYPES[0] && (

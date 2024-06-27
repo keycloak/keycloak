@@ -77,6 +77,7 @@ public class DefaultRequiredActions {
         UPDATE_PASSWORD(UserModel.RequiredAction.UPDATE_PASSWORD.name(), DefaultRequiredActions::addUpdatePasswordAction),
         TERMS_AND_CONDITIONS(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name(), DefaultRequiredActions::addTermsAndConditionsAction),
         DELETE_ACCOUNT("delete_account", DefaultRequiredActions::addDeleteAccountAction),
+        DELETE_CREDENTIAL("delete_credential", DefaultRequiredActions::addDeleteCredentialAction),
         UPDATE_USER_LOCALE("update_user_locale", DefaultRequiredActions::addUpdateLocaleAction),
         UPDATE_EMAIL(UserModel.RequiredAction.UPDATE_EMAIL.name(), DefaultRequiredActions::addUpdateEmailAction, () -> isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)),
         CONFIGURE_RECOVERY_AUTHN_CODES(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name(), DefaultRequiredActions::addRecoveryAuthnCodesAction, () -> isFeatureEnabled(Profile.Feature.RECOVERY_CODES)),
@@ -206,6 +207,19 @@ public class DefaultRequiredActions {
             deleteAccount.setDefaultAction(false);
             deleteAccount.setPriority(60);
             realm.addRequiredActionProvider(deleteAccount);
+        }
+    }
+
+    public static void addDeleteCredentialAction(RealmModel realm) {
+        if (realm.getRequiredActionProviderByAlias("delete_credential") == null) {
+            RequiredActionProviderModel deleteCredential = new RequiredActionProviderModel();
+            deleteCredential.setEnabled(true);
+            deleteCredential.setAlias("delete_credential");
+            deleteCredential.setName("Delete Credential");
+            deleteCredential.setProviderId("delete_credential");
+            deleteCredential.setDefaultAction(false);
+            deleteCredential.setPriority(100);
+            realm.addRequiredActionProvider(deleteCredential);
         }
     }
 

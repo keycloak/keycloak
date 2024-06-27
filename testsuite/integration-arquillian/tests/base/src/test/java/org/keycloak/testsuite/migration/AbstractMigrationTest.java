@@ -18,6 +18,7 @@ package org.keycloak.testsuite.migration;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -47,6 +48,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -72,6 +74,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -82,6 +85,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -409,10 +413,54 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             testUnmanagedAttributePolicySet(migrationRealm2, null);
             testHS512KeyCreated(migrationRealm);
             testHS512KeyCreated(migrationRealm2);
+            testClientAttributes(migrationRealm);
+            testDeleteCredentialActionAvailable(migrationRealm);
         }
         if (testLdapUseTruststoreSpiMigration) {
             testLdapUseTruststoreSpiMigration(migrationRealm2);
         }
+    }
+
+    protected void testMigrationTo25_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+        testClientContainsExpectedClientScopes();
+    }
+
+
+    private void testClientContainsExpectedClientScopes() {
+        // Test OIDC client contains expected client scopes
+        ClientResource migrationTestOIDCClient = ApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
+        List<String> defaultClientScopes = migrationTestOIDCClient.getDefaultClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        List<String> optionalClientScopes = migrationTestOIDCClient.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+
+        assertThat(defaultClientScopes, Matchers.hasItems(
+                OIDCLoginProtocolFactory.BASIC_SCOPE,
+                OAuth2Constants.SCOPE_PROFILE,
+                OAuth2Constants.SCOPE_EMAIL
+        ));
+        assertThat(optionalClientScopes, Matchers.hasItems(
+                OAuth2Constants.SCOPE_ADDRESS,
+                OAuth2Constants.OFFLINE_ACCESS,
+                OAuth2Constants.SCOPE_PHONE
+        ));
+
+        // Test SAML client
+        ClientResource migrationTestSAMLClient = ApiUtil.findClientByClientId(migrationRealm, "migration-saml-client");
+        defaultClientScopes = migrationTestSAMLClient.getDefaultClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        optionalClientScopes = migrationTestSAMLClient.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        assertThat(defaultClientScopes, Matchers.hasItems(
+                SamlProtocolFactory.SCOPE_ROLE_LIST
+        ));
+        Assert.assertTrue(optionalClientScopes.isEmpty());
     }
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -847,7 +895,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void assertOfflineToken(String offlineToken) {
         RefreshToken offlineTokenParsed = oauth.parseRefreshToken(offlineToken);
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineTokenParsed.getType());
-        assertEquals(0, offlineTokenParsed.getExpiration());
+        assertNull(offlineTokenParsed.getExp());
         assertTrue(TokenUtil.hasScope(offlineTokenParsed.getScope(), OAuth2Constants.OFFLINE_ACCESS));
     }
 
@@ -929,6 +977,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             for (RequiredActionProviderRepresentation action : actions) {
                 if (action.getAlias().equals("update_user_locale")) {
                     assertEquals(1000, action.getPriority());
+                } else if (action.getAlias().equals("delete_credential")) {
+                    assertEquals(100, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }
@@ -1107,6 +1157,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo24_0_0(testUserProfileMigration, testLdapUseTruststoreSpiMigration);
     }
 
+    protected void testMigrationTo25_x() {
+        testMigrationTo25_0_0();
+    }
+
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
         if (supportedAuthzServices) {
             testDecisionStrategySetOnResourceServer();
@@ -1116,7 +1170,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testResourceTag() {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             URI url = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth").build();
-            String response = SimpleHttp.doGet(url.toString(), client).asString();
+            String response = SimpleHttpDefault.doGet(url.toString(), client).asString();
             Matcher m = Pattern.compile("resources/([^/]*)/common").matcher(response);
             assertTrue(m.find());
             assertTrue(m.group(1).matches("[a-zA-Z0-9_\\-.~]{5}"));
@@ -1253,5 +1307,32 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         KeysMetadataRepresentation keysMetadata = realm.keys().getKeyMetadata();
         Assert.assertNotNull("Old HS256 key does not exist", keysMetadata.getActive().get(Algorithm.HS256));
         Assert.assertNotNull("New HS256 key does not exist", keysMetadata.getActive().get(Algorithm.HS512));
+    }
+
+    private void testClientAttributes(RealmResource realm) {
+        List<ClientRepresentation> clients = realm.clients().findByClientId("migration-saml-client");
+        Assert.assertEquals(1, clients.size());
+        ClientRepresentation client = clients.get(0);
+        Assert.assertNotNull(client.getAttributes().get("saml.artifact.binding.identifier"));
+        Assert.assertNotNull(client.getAttributes().get("saml_idp_initiated_sso_url_name"));
+        List<String> clientIds = realm.clients().query("saml.artifact.binding.identifier:\"" + client.getAttributes().get("saml.artifact.binding.identifier") + "\"")
+                .stream().map(ClientRepresentation::getClientId)
+                .collect(Collectors.toList());
+        Assert.assertEquals(Collections.singletonList(client.getClientId()), clientIds);
+        clientIds = realm.clients().query("saml_idp_initiated_sso_url_name:\"" + client.getAttributes().get("saml_idp_initiated_sso_url_name") + "\"")
+                .stream().map(ClientRepresentation::getClientId)
+                .collect(Collectors.toList());
+        Assert.assertEquals(Collections.singletonList(client.getClientId()), clientIds);
+    }
+
+    private void testDeleteCredentialActionAvailable(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("delete_credential");
+        assertNotNull(rep);
+        assertEquals("delete_credential", rep.getAlias());
+        assertEquals("delete_credential", rep.getProviderId());
+        assertEquals("Delete Credential", rep.getName());
+        assertEquals(100, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
     }
 }

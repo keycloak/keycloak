@@ -19,6 +19,8 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.authentication.forms.RegistrationRecaptcha;
+import org.keycloak.authentication.forms.RegistrationRecaptchaEnterprise;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
@@ -61,9 +63,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         List<Map<String, Object>> result = authMgmtResource.getFormActionProviders();
 
         List<Map<String, Object>> expected = new LinkedList<>();
-        addProviderInfo(expected, "registration-recaptcha-action", "Recaptcha",
-                "Adds Google Recaptcha button.  Recaptchas verify that the entity that is registering is a human.  " +
-                        "This can only be used on the internet and must be configured after you add it.");
+        addProviderInfo(expected, RegistrationRecaptcha.PROVIDER_ID, "reCAPTCHA", "Adds Google reCAPTCHA to the form.");
+        addProviderInfo(expected, RegistrationRecaptchaEnterprise.PROVIDER_ID, "reCAPTCHA Enterprise", "Adds Google reCAPTCHA Enterprise to the form.");
         addProviderInfo(expected, "registration-password-action", "Password Validation",
                 "Validates that password matches password confirmation field.  It also will store password in user's credential store.");
         addProviderInfo(expected, "registration-user-creation", "Registration User Profile Creation",
@@ -172,6 +173,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "idp-auto-link", "Automatically set existing user", "Automatically set existing user to authentication context without any verification");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
                 "to link identity provider with existing account or rather edit user profile data retrieved from identity provider to avoid conflict");
+        addProviderInfo(result, "idp-confirm-override-link", "Confirm override existing link", "Confirm override the link if there is an existing broker user linked to the account.");
         addProviderInfo(result, "idp-create-user-if-unique", "Create User If Unique", "Detect if there is existing Keycloak account " +
                 "with same email like identity provider. If no, create new user");
         addProviderInfo(result, "idp-email-verification", "Verify existing account by Email", "Email verification of existing Keycloak " +

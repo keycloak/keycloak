@@ -20,6 +20,7 @@ package org.keycloak.models;
 
 import java.util.Map;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.sessions.CommonClientSessionModel;
 
 /**
@@ -30,6 +31,9 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     final String STARTED_AT_NOTE = "startedAt";
     final String USER_SESSION_STARTED_AT_NOTE = "userSessionStartedAt";
     final String USER_SESSION_REMEMBER_ME_NOTE = "userSessionRememberMe";
+    final String REFRESH_TOKEN_PREFIX = "refreshTokenPrefix";
+    final String REFRESH_TOKEN_USE_PREFIX = "refreshTokenUsePrefix";
+    final String REFRESH_TOKEN_LAST_REFRESH_PREFIX = "refreshTokenLastRefreshPrefix";
 
     String getId();
 
@@ -49,6 +53,11 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     }
 
     int getTimestamp();
+
+    /**
+     * Set the timestamp for the client session.
+     * If the timestamp is smaller or equal than the current timestamp, the operation is ignored.
+     */
     void setTimestamp(int timestamp);
 
     /**
@@ -57,14 +66,73 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     void detachFromUserSession();
     UserSessionModel getUserSession();
 
-    String getCurrentRefreshToken();
-    void setCurrentRefreshToken(String currentRefreshToken);
+    /**
+     * @deprecated use {@link #getRefreshToken(String)}
+     */
+    @Deprecated
+    default String getCurrentRefreshToken() {
+        return null;
+    }
 
-    int getCurrentRefreshTokenUseCount();
-    void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount);
+    /**
+     *  @deprecated use {@link #setRefreshToken(String, String)}}
+     */
+    @Deprecated
+    default void setCurrentRefreshToken(String currentRefreshToken) {
+    }
+
+    /**
+     * @deprecated use {@link #getRefreshTokenUseCount(String)}
+     */
+    @Deprecated
+    default int getCurrentRefreshTokenUseCount() {
+        return 0;
+    }
+
+    /**
+     * deprecated use {@link #setRefreshTokenUseCount(String, int)}
+     */
+    @Deprecated
+    default void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+    }
+
+    default String getRefreshToken(String reuseId) {
+        return getNote(REFRESH_TOKEN_PREFIX + reuseId);
+    }
+    default void setRefreshToken(String reuseId, String refreshTokenId) {
+        setNote(REFRESH_TOKEN_PREFIX + reuseId, refreshTokenId);
+    }
+    default int getRefreshTokenUseCount(String reuseId) {
+        String count = getNote(REFRESH_TOKEN_USE_PREFIX + reuseId);
+        return count == null ? 0 : Integer.parseInt(count);
+    }
+    default void setRefreshTokenUseCount(String reuseId, int refreshTokenUseCount) {
+        setNote(REFRESH_TOKEN_USE_PREFIX + reuseId, String.valueOf(refreshTokenUseCount));
+    }
+    default int getRefreshTokenLastRefresh(String reuseId) {
+        String timestamp = getNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId);
+        return timestamp == null ? 0 : Integer.parseInt(timestamp);
+    }
+    default void setRefreshTokenLastRefresh(String reuseId, int refreshTokenLastRefresh) {
+        setNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId, String.valueOf(refreshTokenLastRefresh));
+    }
 
     String getNote(String name);
     void setNote(String name, String value);
     void removeNote(String name);
     Map<String, String> getNotes();
+
+    default void restartClientSession() {
+        setAction(null);
+        setRedirectUri(null);
+        setTimestamp(Time.currentTime());
+        for (String note : getNotes().keySet()) {
+            if (!AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE.equals(note)
+                    && !AuthenticatedClientSessionModel.STARTED_AT_NOTE.equals(note)
+                    && !AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE.equals(note)) {
+                removeNote(note);
+            }
+        }
+        getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(getTimestamp()));
+    }
 }

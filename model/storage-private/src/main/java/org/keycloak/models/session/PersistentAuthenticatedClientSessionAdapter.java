@@ -17,6 +17,7 @@
 
 package org.keycloak.models.session;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -52,9 +53,45 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         data.setNotes(clientSession.getNotes());
         data.setRedirectUri(clientSession.getRedirectUri());
 
-        model = new PersistentClientSessionModel();
+        model = new PersistentClientSessionModel() {
+            private String userSessionId;
+            private String clientId;
+            private int timestamp;
+            private String data;
+
+            public String getUserSessionId() {
+                return userSessionId;
+            }
+
+            public void setUserSessionId(String userSessionId) {
+                this.userSessionId = userSessionId;
+            }
+
+            public String getClientId() {
+                return clientId;
+            }
+
+            public void setClientId(String clientId) {
+                this.clientId = clientId;
+            }
+
+            public int getTimestamp() {
+                return timestamp;
+            }
+
+            public void setTimestamp(int timestamp) {
+                this.timestamp = timestamp;
+            }
+
+            public String getData() {
+                return data;
+            }
+
+            public void setData(String data) {
+                this.data = data;
+            }
+        };
         model.setClientId(clientSession.getClient().getId());
-        model.setUserId(clientSession.getUserSession().getUser().getId());
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());
 
@@ -78,7 +115,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
             try {
                 data = JsonSerialization.readValue(model.getData(), PersistentClientSessionData.class);
             } catch (IOException ioe) {
-                throw new ModelException(ioe);
+                throw new ModelException("Error restoring session", ioe);
             }
         }
 
@@ -91,7 +128,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
             String updatedData = JsonSerialization.writeValueAsString(getData());
             this.model.setData(updatedData);
         } catch (IOException ioe) {
-            throw new ModelException(ioe);
+            throw new ModelException("Error persisting session", ioe);
         }
 
         return this.model;
@@ -146,27 +183,10 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public void setTimestamp(int timestamp) {
+        if (timestamp <= model.getTimestamp()) {
+            return;
+        }
         model.setTimestamp(timestamp);
-    }
-
-    @Override
-    public String getCurrentRefreshToken() {
-        return null; // Information not persisted.
-    }
-
-    @Override
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-        // Information not persisted.
-    }
-
-    @Override
-    public int getCurrentRefreshTokenUseCount() {
-        return 0; // Information not persisted.
-    }
-
-    @Override
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        // Information not persisted.
     }
 
     @Override
@@ -238,6 +258,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         return getId();
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     protected static class PersistentClientSessionData {
 
         @JsonProperty("authMethod")
@@ -263,7 +284,6 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         private Set<String> protocolMappers;
         @JsonProperty("roles")
         private Set<String> roles;
-
 
         public String getAuthMethod() {
             return authMethod;
@@ -336,5 +356,6 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         public void setRoles(Set<String> roles) {
             this.roles = roles;
         }
+
     }
 }

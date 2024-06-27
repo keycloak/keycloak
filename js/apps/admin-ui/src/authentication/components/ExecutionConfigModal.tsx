@@ -14,8 +14,8 @@ import { CogIcon, TrashIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { TextControl } from "ui-shared";
-import { adminClient } from "../../admin-client";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -34,6 +34,8 @@ type ExecutionConfigModalProps = {
 export const ExecutionConfigModal = ({
   execution,
 }: ExecutionConfigModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -184,7 +186,7 @@ export const ExecutionConfigModal = ({
               </Button>
               {config && (
                 <Button
-                  className="pf-u-ml-4xl"
+                  className="pf-v5-u-ml-4xl"
                   data-testid="clear"
                   variant={ButtonVariant.link}
                   onClick={async () => {

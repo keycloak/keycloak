@@ -37,6 +37,7 @@ import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +57,7 @@ import static java.util.stream.Collectors.toSet;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/resources")
 public class ThemeResource {
 
@@ -107,7 +109,7 @@ public class ThemeResource {
     @Path("/{realm}/{themeType}/{locale}")
     @OPTIONS
     public Response localizationTextPreflight() {
-        return Cors.add(session.getContext().getHttpRequest(), Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     @GET
@@ -149,8 +151,7 @@ public class ThemeResource {
                     new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
         }
 
-        Response.ResponseBuilder responseBuilder = Response.ok(result);
-        return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").auth().build();
+        return Cors.builder().allowedOrigins("*").auth().add(Response.ok(result));
     }
 }
 

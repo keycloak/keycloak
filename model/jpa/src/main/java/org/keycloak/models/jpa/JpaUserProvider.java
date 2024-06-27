@@ -62,6 +62,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.keycloak.storage.jpa.JpaHashUtils;
+import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -167,7 +168,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         entity.setRealmId(realm.getId());
         entity.setIdentityProvider(identity.getIdentityProvider());
         entity.setUserId(identity.getUserId());
-        entity.setUserName(identity.getUserName().toLowerCase());
+        entity.setUserName(identity.getUserName());
         entity.setToken(identity.getToken());
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         entity.setUser(userEntity);
@@ -208,15 +209,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
-
-        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.NONE);
-        if (consentEntity != null) {
-            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
-        }
-
+        
         long currentTime = Time.currentTimeMillis();
 
-        consentEntity = new UserConsentEntity();
+        UserConsentEntity consentEntity = new UserConsentEntity();
         consentEntity.setId(KeycloakModelUtils.generateId());
         consentEntity.setUser(em.getReference(UserEntity.class, userId));
         StorageId clientStorageId = new StorageId(clientId);
@@ -716,11 +712,31 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer first, Integer max) {
+        TypedQuery<UserEntity> query;
+        if (StringUtil.isBlank(search)) {
+            query = em.createNamedQuery("groupMembership", UserEntity.class);
+        } else if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("groupMembershipByUser", UserEntity.class);
+            query.setParameter("search", search);
+        } else {
+            query = em.createNamedQuery("groupMembershipByUserContained", UserEntity.class);
+            query.setParameter("search", search.toLowerCase());
+        }
+        query.setParameter("groupId", group.getId());
+
+        return closing(paginateQuery(query, first, max).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+    }
+
+    @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
         query.setParameter("roleId", role.getId());
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+        final UserProvider users = session.users();
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(userEntity -> users.getUserById(realm, userEntity.getId()))
+                .filter(Objects::nonNull);
     }
 
     @Override
@@ -1006,15 +1022,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 // All unknown attributes will be assumed as custom attributes
                 default:
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
-
                     if (value.length() > 255) {
                         customLongValueSearchAttributes.put(key, value);
                         attributePredicates.add(builder.and(
-                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
                     } else {
                         attributePredicates.add(builder.and(
-                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
                     }
                     break;

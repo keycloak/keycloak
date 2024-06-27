@@ -6,7 +6,7 @@
     ${msg("recovery-code-config-header")}
 <#elseif section = "form">
     <!-- warning -->
-    <div class="pf-c-alert pf-m-warning pf-m-inline ${properties.kcRecoveryCodesWarning}" aria-label="Warning alert">
+    <div class="pf-c-alert pf-m-warning pf-m-inline ${properties.kcRecoveryCodesWarning!}" aria-label="Warning alert">
         <div class="pf-c-alert__icon">
             <i class="pficon-warning-triangle-o" aria-hidden="true"></i>
         </div>
@@ -26,7 +26,7 @@
     </ol>
 
     <!-- actions -->
-    <div class="${properties.kcRecoveryCodesActions}">
+    <div class="${properties.kcRecoveryCodesActions!}">
         <button id="printRecoveryCodes" class="pf-c-button pf-m-link" type="button">
             <i class="pficon-print"></i> ${msg("recovery-codes-print")}
         </button>
@@ -40,7 +40,7 @@
 
     <!-- confirmation checkbox -->
     <div class="${properties.kcFormOptionsClass!}">
-        <input class="${properties.kcCheckInputClass}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck" 
+        <input class="${properties.kcCheckInputClass!}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck"
         onchange="document.getElementById('saveRecoveryAuthnCodesBtn').disabled = !this.checked;"
         />
         <label for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>

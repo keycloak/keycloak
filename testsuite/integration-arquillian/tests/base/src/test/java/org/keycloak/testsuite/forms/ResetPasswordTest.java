@@ -160,9 +160,33 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
 
-        openResetPasswordUrlAndDoFlow(resetUri, "account", oauth.AUTH_SERVER_ROOT + "/realms/test/account/");
+        openResetPasswordUrlAndDoFlow(resetUri, "account", oauth.AUTH_SERVER_ROOT + "/realms/test/account/", false);
 
         AccountHelper.logout(testRealm(), username);
+        WaitUtils.waitForPageToLoad();
+
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        testAppHelper.login(username, "resetPassword");
+
+        appPage.assertCurrent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void resetPasswordLoggedUser() throws IOException {
+        String username = "login-test";
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
+
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+
+        openResetPasswordUrlAndDoFlow(resetUri, "account", oauth.AUTH_SERVER_ROOT + "/realms/test/account/", true);
+
+        AccountHelper.logout(testRealm(), username);
+        WaitUtils.waitForPageToLoad();
 
         TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
         testAppHelper.login(username, "resetPassword");
@@ -173,13 +197,14 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     // Starts by opening "reset-password-url". Then go through the successful reset-password flow for the particular user. After user confirms new password, this method ends.
-    private void openResetPasswordUrlAndDoFlow(String resetUri, String expectedClientId, String expectedRedirectUri) throws IOException {
+    private void openResetPasswordUrlAndDoFlow(String resetUri, String expectedClientId, String expectedRedirectUri, boolean userAuthenticated) throws IOException {
         String username = "login-test";
         driver.navigate().to(resetUri);
 
-        resetPasswordPage.assertCurrent();
-
-        resetPasswordPage.changePassword(username);
+        if (!userAuthenticated) {
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword(username);
+        }
 
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
@@ -207,6 +232,10 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.assertCurrent();
 
+        if(userAuthenticated) {
+            updatePasswordPage.uncheckLogoutSessions();
+        }
+
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
         event = events.expectRequiredAction(EventType.UPDATE_PASSWORD)
@@ -224,7 +253,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void resetPasswordLinkTestAppWithoutRedirectUriParam() throws IOException {
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app";
 
-        openResetPasswordUrlAndDoFlow(resetUri, "test-app", null);
+        openResetPasswordUrlAndDoFlow(resetUri, "test-app", null, false);
 
         // Link "Back to application" with the baseUrl of client "test-app"
         infoPage.assertCurrent();
@@ -239,7 +268,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void resetPasswordLinkTestAppWithRedirectUriParam() throws IOException {
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app&redirect_uri=" + oauth.getRedirectUri();
 
-        openResetPasswordUrlAndDoFlow(resetUri, "test-app", oauth.getRedirectUri());
+        openResetPasswordUrlAndDoFlow(resetUri, "test-app", oauth.getRedirectUri(), false);
 
         // Should be directly redirected to "application because of "redirect_uri" parameter
         appPage.assertCurrent();

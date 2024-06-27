@@ -87,6 +87,10 @@ $ kcadm.sh config truststore --trustpass $PASSWORD ~/.keycloak/truststore.jks
 c:\> kcadm config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\truststore.jks
 ----
 
+=== Sensitive Options
+
+Sensitive values, such as passwords, may be specified as command options. That is generally not recommended. There are also mechanisms by which you can be prompted for the sensitive value - by either omitting the option or providing a value or -. Finally all will have a corresponding env variable that can be used instead - check the help of the command you are running to see all possible options.
+
 === Authenticating
 
 When you log in with the Admin CLI, you specify:
@@ -105,7 +109,7 @@ Two primary mechanisms are available for authentication. One mechanism uses `kca
 
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
+$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin
 ----
 
 This mechanism maintains an authenticated session between the `kcadm` command invocations by saving the obtained access token and its associated refresh token. It can maintain other secrets in a private configuration file. See the <<_working_with_alternative_configurations, next chapter>> for more information.
@@ -115,13 +119,14 @@ The second mechanism authenticates each command invocation for the duration of t
 For example, when performing an operation, specify all the information required for authentication.
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh get realms --no-config --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
+$ kcadm.sh get realms --no-config --server http://localhost:8080{kc_base_path} --realm master --user admin 
 ----
 
 Run the `kcadm.sh help` command for more information on using the Admin CLI.
 
 Run the `kcadm.sh config credentials --help` command for more information about starting an authenticated session.
 
+If you do not specify the --password option (it is generally recommended to not provide passwords as part of the command), you will be prompted for a password unless one is specified as the environment variable KC_CLI_PASSWORD.
 
 [[_working_with_alternative_configurations]]
 === Working with alternative configurations
@@ -184,13 +189,20 @@ SERVER_URI/admin/realms/TARGET_REALM/ENDPOINT
 For example:
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
+$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin
 $ kcadm.sh create users -s username=testuser -s enabled=true -r demorealm
 ----
 
 In this example, you start a session authenticated as the `admin` user in the `master` realm. You then perform a POST call against the resource URL `http://localhost:8080{kc_admins_path}/realms/demorealm/users`.
 
 The `create` and `update` commands send a JSON body to the server. You can use `-f FILENAME` to read a pre-made document from a file. When you can use the `-f -` option, {project_name} reads the message body from the standard input. You can specify individual attributes and their values, as seen in the `create users` example. {project_name} composes the attributes into a JSON body and sends them to the server.
+
+[NOTE]
+====
+The value in name=value pairs used in --set, -s options, are assumed to be JSON. If it cannot be parsed as valid JSON, then it will be sent to the server as a text value. 
+
+If the value is enclosed in quotes after shell processing, but is not valid JSON, the quotes will be stripped and the rest of the value will be sent as text. This behavior is deprecated, please consider specifying your value without quotes or a valid JSON string literal with double quotes.
+====
 
 Several methods are available in {project_name} to update a resource using the `update` command. You can determine the current state of a resource and save it to a file, edit that file, and send it to the server for an update.
 
@@ -1024,15 +1036,15 @@ You can filter users by `username`, `firstName`, `lastName`, or `email`.
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh get users -r demorealm -q email=google.com
-$ kcadm.sh get users -r demorealm -q username=testuser
+$ kcadm.sh get users -r demorealm -q q=email:google.com
+$ kcadm.sh get users -r demorealm -q q=username:testuser
 ----
 [NOTE]
 ====
 Filtering does not use exact matching. This example matches the value of the `username` attribute against the `\*testuser*` pattern.
 ====
 
-You can filter across multiple attributes by specifying multiple `-q` options. {project_name} returns users that match the condition for all the attributes only.
+For clients, groups, and users you can filter across multiple attributes by specifying a more complex `q` query parameter.  you may use something like -q q="field1:value1 field2:value2". {project_name} returns users that match the condition for all the attributes only.
 
 [discrete]
 ==== Getting a specific user

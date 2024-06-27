@@ -30,7 +30,7 @@ public abstract class AbstractExtendableRevisioned extends AbstractRevisioned {
     }
 
     /**
-     * Cache things along with this cachable object
+     * Cache things along with this cacheable object
      *
      * @return
      */

@@ -18,8 +18,6 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.BasicCache;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
 import org.infinispan.context.Flag;
 import org.keycloak.models.KeycloakTransaction;
 
@@ -36,8 +34,23 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
     private final static Logger log = Logger.getLogger(InfinispanKeycloakTransaction.class);
 
+    /**
+     * Tombstone to mark an entry as already removed for the current session.
+     */
+    private static final CacheTask TOMBSTONE = new CacheTask() {
+        @Override
+        public void execute() {
+            // noop
+        }
+
+        @Override
+        public String toString() {
+            return "Tombstone after removal";
+        }
+    };
+
     public enum CacheOperation {
-        ADD, ADD_WITH_LIFESPAN, REMOVE, REPLACE, ADD_IF_ABSENT // ADD_IF_ABSENT throws an exception if there is existing value
+        ADD_WITH_LIFESPAN, REMOVE, REPLACE
     }
 
     private boolean active;
@@ -78,32 +91,6 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         return active;
     }
 
-    public <K, V> void put(Cache<K, V> cache, K key, V value) {
-        log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD, key);
-
-        Object taskKey = getTaskKey(cache, key);
-        if (tasks.containsKey(taskKey)) {
-            throw new IllegalStateException("Can't add session: task in progress for session");
-        } else {
-            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
-                @Override
-                public void execute() {
-                    decorateCache(cache).put(key, value);
-                }
-
-                @Override
-                public String toString() {
-                    return String.format("CacheTaskWithValue: Operation 'put' for key %s", key);
-                }
-
-                @Override
-                public Operation getOperation() {
-                    return Operation.PUT;
-                }
-            });
-        }
-    }
-
     public <K, V> void put(BasicCache<K, V> cache, K key, V value, long lifespan, TimeUnit lifespanUnit) {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD_WITH_LIFESPAN, key);
 
@@ -120,35 +107,6 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 @Override
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'put' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit);
-                }
-
-                @Override
-                public Operation getOperation() {
-                    return Operation.PUT;
-                }
-            });
-        }
-    }
-
-    public <K, V> void putIfAbsent(Cache<K, V> cache, K key, V value) {
-        log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD_IF_ABSENT, key);
-
-        Object taskKey = getTaskKey(cache, key);
-        if (tasks.containsKey(taskKey)) {
-            throw new IllegalStateException("Can't add session: task in progress for session");
-        } else {
-            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
-                @Override
-                public void execute() {
-                    V existing = cache.putIfAbsent(key, value);
-                    if (existing != null) {
-                        throw new IllegalStateException("There is already existing value in cache for key " + key);
-                    }
-                }
-
-                @Override
-                public String toString() {
-                    return String.format("CacheTaskWithValue: Operation 'putIfAbsent' for key %s", key);
                 }
 
                 @Override
@@ -185,18 +143,6 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         }
     }
 
-    public <K, V> void notify(ClusterProvider clusterProvider, String taskKey, ClusterEvent event, boolean ignoreSender) {
-        log.tracev("Adding cache operation SEND_EVENT: {0}", event);
-
-        String theTaskKey = taskKey;
-        int i = 1;
-        while (tasks.containsKey(theTaskKey)) {
-            theTaskKey = taskKey + "-" + (i++);
-        }
-
-        tasks.put(taskKey, () -> clusterProvider.notify(taskKey, event, ignoreSender, ClusterProvider.DCNotify.ALL_DCS));
-    }
-
     public <K, V> void remove(BasicCache<K, V> cache, K key) {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
 
@@ -205,7 +151,10 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         CacheTask current = tasks.get(taskKey);
         if (current != null) {
             if (current instanceof CacheTaskWithValue && ((CacheTaskWithValue<?>) current).getOperation() == Operation.PUT) {
-                tasks.remove(taskKey);
+                tasks.put(taskKey, TOMBSTONE);
+                return;
+            }
+            if (current == TOMBSTONE) {
                 return;
             }
         }
@@ -259,10 +208,6 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         protected V value;
         protected long lifespan;
         protected TimeUnit lifespanUnit;
-
-        public CacheTaskWithValue(V value) {
-            this(value, -1, TimeUnit.SECONDS);
-        }
 
         public CacheTaskWithValue(V value, long lifespan, TimeUnit lifespanUnit) {
             this.value = value;

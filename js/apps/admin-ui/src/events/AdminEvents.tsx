@@ -1,4 +1,9 @@
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
+import {
+  KeycloakSelect,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
@@ -12,24 +17,23 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  Select,
   SelectOption,
-  SelectVariant,
 } from "@patternfly/react-core";
 import {
   Table,
-  TableBody,
-  TableHeader,
   TableVariant,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
   cellWidth,
 } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { TextControl } from "ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
@@ -92,6 +96,8 @@ const DisplayDialog = ({
 };
 
 export const AdminEvents = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
@@ -203,16 +209,31 @@ export const AdminEvents = () => {
             aria-label="authData"
             data-testid="auth-dialog"
             variant={TableVariant.compact}
-            cells={[t("attribute"), t("value")]}
-            rows={[
-              [t("realm"), authEvent.authDetails?.realmId],
-              [t("client"), authEvent.authDetails?.clientId],
-              [t("user"), authEvent.authDetails?.userId],
-              [t("ipAddress"), authEvent.authDetails?.ipAddress],
-            ]}
           >
-            <TableHeader />
-            <TableBody />
+            <Thead>
+              <Tr>
+                <Th>{t("attribute")}</Th>
+                <Th>{t("value")}</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              <Tr>
+                <Td>{t("realm")}</Td>
+                <Td>{authEvent.authDetails?.realmId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("client")}</Td>
+                <Td>{authEvent.authDetails?.clientId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("user")}</Td>
+                <Td>{authEvent.authDetails?.userId}</Td>
+              </Tr>
+              <Tr>
+                <Td>{t("ipAddress")}</Td>
+                <Td>{authEvent.authDetails?.ipAddress}</Td>
+              </Tr>
+            </Tbody>
           </Table>
         </DisplayDialog>
       )}
@@ -264,9 +285,8 @@ export const AdminEvents = () => {
                         name="resourceTypes"
                         control={control}
                         render={({ field }) => (
-                          <Select
+                          <KeycloakSelect
                             className="keycloak__events_search__type_select"
-                            name="resourceTypes"
                             data-testid="resource-types-searchField"
                             chipGroupProps={{
                               numChips: 1,
@@ -279,7 +299,7 @@ export const AdminEvents = () => {
                               setSelectResourceTypesOpen(isOpen)
                             }
                             selections={field.value}
-                            onSelect={(_, selectedValue) => {
+                            onSelect={(selectedValue) => {
                               const option = selectedValue.toString();
                               const changedValue = field.value.includes(option)
                                 ? field.value.filter((item) => item !== option)
@@ -287,8 +307,7 @@ export const AdminEvents = () => {
 
                               field.onChange(changedValue);
                             }}
-                            onClear={(resource) => {
-                              resource.stopPropagation();
+                            onClear={() => {
                               field.onChange([]);
                             }}
                             isOpen={selectResourceTypesOpen}
@@ -314,9 +333,11 @@ export const AdminEvents = () => {
                             }
                           >
                             {resourceTypes?.map((option) => (
-                              <SelectOption key={option} value={option} />
+                              <SelectOption key={option} value={option}>
+                                {option}
+                              </SelectOption>
                             ))}
-                          </Select>
+                          </KeycloakSelect>
                         )}
                       />
                     </FormGroup>
@@ -329,9 +350,8 @@ export const AdminEvents = () => {
                         name="operationTypes"
                         control={control}
                         render={({ field }) => (
-                          <Select
+                          <KeycloakSelect
                             className="keycloak__events_search__type_select"
-                            name="operationTypes"
                             data-testid="operation-types-searchField"
                             chipGroupProps={{
                               numChips: 1,
@@ -344,7 +364,7 @@ export const AdminEvents = () => {
                               setSelectOperationTypesOpen(isOpen)
                             }
                             selections={field.value}
-                            onSelect={(_, selectedValue) => {
+                            onSelect={(selectedValue) => {
                               const option = selectedValue.toString();
                               const changedValue = field.value.includes(option)
                                 ? field.value.filter((item) => item !== option)
@@ -352,8 +372,7 @@ export const AdminEvents = () => {
 
                               field.onChange(changedValue);
                             }}
-                            onClear={(operation) => {
-                              operation.stopPropagation();
+                            onClear={() => {
                               field.onChange([]);
                             }}
                             isOpen={selectOperationTypesOpen}
@@ -379,9 +398,14 @@ export const AdminEvents = () => {
                             }
                           >
                             {operationTypes?.map((option) => (
-                              <SelectOption key={option} value={option} />
+                              <SelectOption
+                                key={option.toString()}
+                                value={option}
+                              >
+                                {option}
+                              </SelectOption>
                             ))}
-                          </Select>
+                          </KeycloakSelect>
                         )}
                       />
                     </FormGroup>
@@ -403,7 +427,7 @@ export const AdminEvents = () => {
                         control={control}
                         render={({ field }) => (
                           <DatePicker
-                            className="pf-u-w-100"
+                            className="pf-v5-u-w-100"
                             value={field.value}
                             onChange={(_, value) => field.onChange(value)}
                             inputProps={{ id: "kc-dateFrom" }}
@@ -421,7 +445,7 @@ export const AdminEvents = () => {
                         control={control}
                         render={({ field }) => (
                           <DatePicker
-                            className="pf-u-w-100"
+                            className="pf-v5-u-w-100"
                             value={field.value}
                             onChange={(_, value) => field.onChange(value)}
                             inputProps={{ id: "kc-dateTo" }}
@@ -451,7 +475,7 @@ export const AdminEvents = () => {
               </FlexItem>
               <FlexItem>
                 {Object.entries(activeFilters).length > 0 && (
-                  <div className="keycloak__searchChips pf-u-ml-md">
+                  <div className="keycloak__searchChips pf-v5-u-ml-md">
                     {Object.entries(activeFilters).map((filter) => {
                       const [key, value] = filter as [
                         keyof AdminEventSearchForm,
@@ -460,7 +484,7 @@ export const AdminEvents = () => {
 
                       return (
                         <ChipGroup
-                          className="pf-u-mt-md pf-u-mr-md"
+                          className="pf-v5-u-mt-md pf-v5-u-mr-md"
                           key={key}
                           categoryName={filterLabels[key]}
                           isClosable
@@ -528,8 +552,8 @@ export const AdminEvents = () => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("emptyEvents")}
-            instructions={t("emptyEventsInstructions")}
+            message={t("emptyAdminEvents")}
+            instructions={t("emptyAdminEventsInstructions")}
           />
         }
         isSearching={Object.keys(activeFilters).length > 0}

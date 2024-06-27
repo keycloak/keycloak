@@ -1245,6 +1245,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+            return null;
+        }
+
+        @Override
+        public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
+
+        }
+
+        @Override
         public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
             return null;
         }
@@ -1763,6 +1773,39 @@ public class IdentityBrokerStateTestHelpers {
         public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
 
         }
-    }
 
+        @Override
+        public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+            return null;
+        }
+
+        @Override
+        public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+            return null;
+        }
+
+        @Override
+        public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+
+        }
+
+        @Override
+        public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+
+        }
+
+        @Override
+        public boolean isOrganizationsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        }
+    }
 }

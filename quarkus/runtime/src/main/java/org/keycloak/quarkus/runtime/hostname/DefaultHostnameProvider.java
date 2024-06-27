@@ -40,8 +40,7 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.config.HostnameOptions;
+import org.keycloak.config.HostnameV1Options;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.ProxyOptions.Mode;
 import org.keycloak.models.KeycloakSession;
@@ -50,6 +49,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 import org.keycloak.urls.UrlType;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -195,7 +195,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     }
 
     protected URI getRealmFrontEndUrl() {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
 
         if (session == null) {
             return null;
@@ -272,7 +272,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         if (frontEndHostName != null && frontEndBaseUri != null) {
-            throw new RuntimeException("You can not set both '" + HostnameOptions.HOSTNAME.getKey() + "' and '" + HostnameOptions.HOSTNAME_URL.getKey() + "' options");
+            throw new RuntimeException("You can not set both '" + HostnameV1Options.HOSTNAME.getKey() + "' and '" + HostnameV1Options.HOSTNAME_URL.getKey() + "' options");
         }
 
         if (config.getBoolean("strict", false) && (frontEndHostName == null && frontEndBaseUri == null)) {
@@ -325,7 +325,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         if (adminHostName != null && adminBaseUri != null) {
-            throw new RuntimeException("You can not set both '" + HostnameOptions.HOSTNAME_ADMIN.getKey() + "' and '" + HostnameOptions.HOSTNAME_ADMIN_URL.getKey() + "' options");
+            throw new RuntimeException("You can not set both '" + HostnameV1Options.HOSTNAME_ADMIN.getKey() + "' and '" + HostnameV1Options.HOSTNAME_ADMIN_URL.getKey() + "' options");
         }
 
         if (adminBaseUri != null) {
@@ -359,7 +359,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Feature.HOSTNAME_V1);
     }
 }

@@ -6,19 +6,29 @@ import { checker } from "vite-plugin-checker";
 export default defineConfig({
   base: "",
   server: {
-    port: 8080,
+    origin: "http://localhost:5174",
+    port: 5174,
   },
   build: {
+    outDir: "target/classes/theme/keycloak.v2/admin/resources",
     sourcemap: true,
     target: "esnext",
     modulePreload: false,
     cssMinify: "lightningcss",
+    manifest: true,
     rollupOptions: {
+      input: "src/main.tsx",
       external: ["react", "react/jsx-runtime", "react-dom"],
     },
   },
   plugins: [react(), checker({ typescript: true })],
   test: {
     watch: false,
+    environment: "jsdom",
+    server: {
+      deps: {
+        inline: [/@patternfly\/.*/],
+      },
+    },
   },
 });

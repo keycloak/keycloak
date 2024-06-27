@@ -241,7 +241,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * This method should not be overriden
+     * This method should not be overridden
      *
      * @return
      */
@@ -251,7 +251,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * This method should not be overriden
+     * This method should not be overridden
      *
      * @return
      */
@@ -261,7 +261,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * This method should not be overriden
+     * This method should not be overridden
      *
      * @return
      */
@@ -271,7 +271,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * This method should not be overriden
+     * This method should not be overridden
      *
      * @return
      */

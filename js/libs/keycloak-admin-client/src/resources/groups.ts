@@ -23,7 +23,8 @@ interface SummarizedQuery {
 }
 
 export type GroupQuery = Query & PaginatedQuery & SummarizedQuery;
-export type SubGroupQuery = PaginatedQuery &
+export type SubGroupQuery = Query &
+  PaginatedQuery &
   SummarizedQuery & {
     parentId: string;
   };
@@ -142,7 +143,7 @@ export class Groups extends Resource<{ realm?: string }> {
       method: "GET",
       path: "/{parentId}/children",
       urlParamKeys: ["parentId"],
-      queryParamKeys: ["first", "max", "briefRepresentation"],
+      queryParamKeys: ["search", "first", "max", "briefRepresentation"],
       catchNotFound: true,
     },
   );

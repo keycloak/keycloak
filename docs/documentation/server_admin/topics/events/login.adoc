@@ -159,12 +159,21 @@ The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal
 
 ===== The Email Event Listener
 
-The Email Event Listener sends an email to the user's account when an event occurs and supports the following events:
+The Email Event Listener sends a message to the user's email address when an event occurs and supports the following events:
 
 * Login Error.
 * Update Password.
 * Update Time-based One-time Password (TOTP).
-* Remove Time-based One-time Password (TOTP).
+* Remove One-time Password (OTP).
+
+The following conditions need to be met for an email to be sent:
+
+* User has an email address.
+* User's email address is marked as verified.
+
+.Prerequisites
+
+* Realm's email settings configured.
 
 .Procedure
 

@@ -1,10 +1,10 @@
-<#import "pf-5-template.ftl" as layout>
+<#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('password','password-confirm'); section>
     <#if section = "header">
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
-        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post" novalidate="novalidate">
             <div class="${properties.kcFormGroupClass!}">
                 <label for="password-new" class="${properties.kcLabelClass!}">
                     <span class="pf-v5-c-form__label-text">
@@ -12,7 +12,7 @@
                     </span>
                 </label>
                 <div class="${properties.kcInputGroup!}">
-                    <span class="${properties.kcInputClass!}">
+                    <span class="${properties.kcInputClass!}" dir="ltr">
                         <input type="password" id="password-new" name="password-new" autofocus autocomplete="new-password"
                                 aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
                         />
@@ -39,7 +39,7 @@
                     </span>
                 </label>
                 <div class="${properties.kcInputGroup!}">
-                    <span class="${properties.kcInputClass!}">
+                    <span class="${properties.kcInputClass!}" dir="ltr">
                         <input type="password" id="password-confirm" name="password-confirm"
                                 autocomplete="new-password"
                                 aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"

@@ -1,11 +1,10 @@
-import { FormGroup } from "@patternfly/react-core";
+import { FormGroup, TextInput } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
-import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
 
 export const StringComponent = ({
   name,
@@ -25,7 +24,7 @@ export const StringComponent = ({
       fieldId={name!}
       isRequired={required}
     >
-      <KeycloakTextInput
+      <TextInput
         id={name!}
         data-testid={name}
         isDisabled={isDisabled}

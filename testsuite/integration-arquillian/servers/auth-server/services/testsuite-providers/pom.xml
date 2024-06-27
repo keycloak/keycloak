@@ -33,10 +33,6 @@
     <properties>
         <js-adapter.version>${project.version}</js-adapter.version>
         <js-adapter.file.path>${project.basedir}/target/classes/javascript</js-adapter.file.path>
-        <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-        <maven.compiler.release>17</maven.compiler.release>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -86,21 +82,11 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-client-hotrod-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-tasks-api</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 

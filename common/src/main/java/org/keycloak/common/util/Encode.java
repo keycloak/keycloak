@@ -46,6 +46,7 @@ public class Encode
    private static final String[] matrixParameterEncoding = new String[128];
    private static final String[] queryNameValueEncoding = new String[128];
    private static final String[] queryStringEncoding = new String[128];
+   private static final String[] userInfoStringEncoding = new String[128];
 
    static
    {
@@ -158,6 +159,44 @@ public class Encode
          }
          queryStringEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
       }
+
+     /*
+      * userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )
+      * unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+      * pct-encoded   = "%" HEXDIG HEXDIG
+      * sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+      *                   / "*" / "+" / "," / ";" / "="
+      */
+      for (int i = 0; i < 128; i++)
+      {
+         if (i >= 'a' && i <= 'z') continue;
+         if (i >= 'A' && i <= 'Z') continue;
+         if (i >= '0' && i <= '9') continue;
+         switch ((char) i)
+         {
+            case '-':
+            case '.':
+            case '_':
+            case '~':
+            case '!':
+            case '$':
+            case '&':
+            case '\'':
+            case '(':
+            case ')':
+            case '*':
+            case '+':
+            case ',':
+            case ';':
+            case '=':
+            case ':':
+               continue;
+            case ' ':
+               userInfoStringEncoding[i] = "%20";
+               continue;
+         }
+         userInfoStringEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
+      }
    }
 
    /**
@@ -175,6 +214,24 @@ public class Encode
     */
    public static String encodeQueryStringNotTemplateParameters(String value) {
       return encodeNonCodes(encodeFromArray(value, queryStringEncoding, false));
+   }
+
+   /**
+    * Keep encoded values "%..." and template parameters intact.
+    * @param value The user-info value to encode
+    * @return The user-info encoded
+    */
+   public static String encodeUserInfo(String value) {
+      return encodeValue(value, userInfoStringEncoding);
+   }
+
+   /**
+    * Keep encoded values "%..." but not the template parameters.
+    * @param value The user-info to encode
+    * @return The user-info encoded
+    */
+   public static String encodeUserInfoNotTemplateParameters(String value) {
+      return encodeNonCodes(encodeFromArray(value, userInfoStringEncoding, false));
    }
 
    /**
@@ -348,7 +405,7 @@ public class Encode
    }
 
    /**
-    * Encode via <a href="http://ietf.org/rfc/rfc3986.txt">RFC 3986</a>.  PCHAR is allowed allong with '/'
+    * Encode via <a href="http://ietf.org/rfc/rfc3986.txt">RFC 3986</a>.  PCHAR is allowed along with '/'
     * <p/>
     * unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
     * sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
@@ -374,7 +431,7 @@ public class Encode
    }
 
    /**
-    * Encode via <a href="http://ietf.org/rfc/rfc3986.txt">RFC 3986</a>.  PCHAR is allowed allong with '/'
+    * Encode via <a href="http://ietf.org/rfc/rfc3986.txt">RFC 3986</a>.  PCHAR is allowed along with '/'
     * <p/>
     * unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
     * sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
@@ -420,6 +477,30 @@ public class Encode
    public static String encodeQueryParamSaveEncodings(String segment)
    {
       String result = encodeFromArray(segment, queryNameValueEncoding, false);
+      result = encodeNonCodes(result);
+      return result;
+   }
+
+   /**
+    * Encodes everything in user-info
+    *
+    * @param nameOrValue
+    * @return
+    */
+   public static String encodeUserInfoAsIs(String nameOrValue)
+   {
+      return encodeFromArray(nameOrValue, userInfoStringEncoding, true);
+   }
+
+   /**
+    * Keep any valid encodings from string i.e. keep "%2D" but don't keep "%p"
+    *
+    * @param segment
+    * @return
+    */
+   public static String encodeUserInfoSaveEncodings(String segment)
+   {
+      String result = encodeFromArray(segment, userInfoStringEncoding, false);
       result = encodeNonCodes(result);
       return result;
    }

@@ -1,16 +1,13 @@
-import {
-  FormGroup,
-  FormGroupProps,
-  ValidatedOptions,
-} from "@patternfly/react-core";
-import { PropsWithChildren } from "react";
+import { FormGroup, FormGroupProps } from "@patternfly/react-core";
+import { PropsWithChildren, ReactNode } from "react";
 import { FieldError, FieldValues, Merge } from "react-hook-form";
+import { FormErrorText } from "./FormErrorText";
 import { HelpItem } from "./HelpItem";
 
 export type FieldProps<T extends FieldValues = FieldValues> = {
   label?: string;
   name: string;
-  labelIcon?: string;
+  labelIcon?: string | ReactNode;
   error?: FieldError | Merge<FieldError, T>;
   isRequired: boolean;
 };
@@ -33,10 +30,11 @@ export const FormLabel = ({
         <HelpItem helpText={labelIcon} fieldLabelId={name} />
       ) : undefined
     }
-    helperTextInvalid={error?.message}
-    validated={error ? ValidatedOptions.error : ValidatedOptions.default}
     {...rest}
   >
     {children}
+    {error && (
+      <FormErrorText data-testid={`${name}-helper`} message={error.message} />
+    )}
   </FormGroup>
 );

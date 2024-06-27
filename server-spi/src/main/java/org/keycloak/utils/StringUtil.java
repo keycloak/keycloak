@@ -20,14 +20,23 @@ import java.util.Collection;
 
 public class StringUtil {
 
+    /**
+     * Returns true if string is null or blank
+     */
     public static boolean isBlank(String str) {
         return !(isNotBlank(str));
     }
 
-    public static boolean  isNotBlank(String str) {
-        return str != null && !"".equals(str.trim());
+    /**
+     * Returns true if string is not null and not blank
+     */
+    public static boolean isNotBlank(String str) {
+        return str != null && !str.isBlank();
     }
 
+    /**
+     * Returns true if string is null or empty
+     */
     public static boolean isNullOrEmpty(String str) {
         return str == null || str.isEmpty();
     }
@@ -89,5 +98,13 @@ public class StringUtil {
             }
         }
         return sb == null? str : sb.toString();
+    }
+
+    public static String removeSuffix(String str, String suffix) {
+        int index = str.lastIndexOf(suffix);
+        if (str.endsWith(suffix) && index > 0) {
+            str = str.substring(0, index);
+        }
+        return str;
     }
 }

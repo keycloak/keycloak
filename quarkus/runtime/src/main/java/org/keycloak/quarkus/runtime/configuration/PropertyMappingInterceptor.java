@@ -20,6 +20,8 @@ import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import io.smallrye.config.Priorities;
+import jakarta.annotation.Priority;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.quarkus.runtime.Environment;
@@ -27,7 +29,6 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.util.Iterator;
-import java.util.function.Function;
 
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 
@@ -42,8 +43,11 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuild;
  * from Keycloak (e.g.: database) is mapped to multiple properties in Quarkus.
  *
  * <p>This interceptor must execute after the {@link io.smallrye.config.ExpressionConfigSourceInterceptor} so that expressions
- * are properly resolved before executing this interceptor. Hence, leaving the default priority.
+ * are properly resolved before executing this interceptor.
+ * <p>
+ * The reason for the used priority is to always execute the interceptor before default Application Config Source interceptors
  */
+@Priority(Priorities.APPLICATION - 10)
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     private static ThreadLocal<Boolean> disable = new ThreadLocal<>();
@@ -55,14 +59,14 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
     public static void enable() {
         disable.remove();
     }
-    
-    <T> Iterator<T> filterRuntime(Iterator<T> iter, Function<T, String> nameFunc) {
+
+    static Iterator<String> filterRuntime(Iterator<String> iter) {
         if (!isRebuild() && !Environment.isRebuildCheck()) {
             return iter;
         }
-        return new FilterIterator<>(iter, item -> !isRuntime(nameFunc.apply(item)));
+        return new FilterIterator<>(iter, item -> !isRuntime(item));
     }
-    
+
     static boolean isRuntime(String name) {
         PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
         return mapper != null && mapper.isRunTime();
@@ -70,12 +74,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     @Override
     public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
-        return filterRuntime(context.iterateNames(), Function.identity());
-    }
-
-    @Override
-    public Iterator<ConfigValue> iterateValues(ConfigSourceInterceptorContext context) {
-        return filterRuntime(context.iterateValues(), ConfigValue::getName);
+        return filterRuntime(context.iterateNames());
     }
 
     @Override

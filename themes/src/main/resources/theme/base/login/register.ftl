@@ -3,7 +3,11 @@
 <#import "register-commons.ftl" as registerCommons>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
     <#if section = "header">
-        ${msg("registerTitle")}
+        <#if messageHeader??>
+            ${kcSanitize(msg("${messageHeader}"))?no_esc}
+        <#else>
+            ${msg("registerTitle")}
+        </#if>
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
 
@@ -16,7 +20,7 @@
                                 <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label> *
                             </div>
                             <div class="${properties.kcInputWrapperClass!}">
-                                <div class="${properties.kcInputGroup!}">
+                                <div class="${properties.kcInputGroup!}" dir="ltr">
                                     <input type="password" id="password" class="${properties.kcInputClass!}" name="password"
                                            autocomplete="new-password"
                                            aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
@@ -43,7 +47,7 @@
                                        class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label> *
                             </div>
                             <div class="${properties.kcInputWrapperClass!}">
-                                <div class="${properties.kcInputGroup!}">
+                                <div class="${properties.kcInputGroup!}" dir="ltr">
                                     <input type="password" id="password-confirm" class="${properties.kcInputClass!}"
                                            name="password-confirm"
                                            aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
@@ -69,10 +73,10 @@
 
             <@registerCommons.termsAcceptance/>
 
-            <#if recaptchaRequired??>
+            <#if recaptchaRequired?? && (recaptchaVisible!false)>
                 <div class="form-group">
                     <div class="${properties.kcInputWrapperClass!}">
-                        <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                        <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}" data-action="${recaptchaAction}"></div>
                     </div>
                 </div>
             </#if>
@@ -84,9 +88,23 @@
                     </div>
                 </div>
 
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
-                </div>
+                <#if recaptchaRequired?? && !(recaptchaVisible!false)>
+                    <script>
+                        function onSubmitRecaptcha(token) {
+                            document.getElementById("kc-register-form").submit();
+                        }
+                    </script>
+                    <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                        <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} g-recaptcha" 
+                            data-sitekey="${recaptchaSiteKey}" data-callback='onSubmitRecaptcha' data-action='${recaptchaAction}' type="submit">
+                            ${msg("doRegister")}
+                        </button>
+                    </div>
+                <#else>
+                    <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
+                    </div>
+                </#if>
             </div>
         </form>
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>

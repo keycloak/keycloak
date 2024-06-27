@@ -219,7 +219,7 @@ After entering the username, the flow works as follows:
 
 If users have WebAuthn passwordless credentials recorded, they can use these credentials to log in directly. This is the password-less login. The user can also select *Password with OTP* because the `WebAuthn Passwordless` execution and the `Password with OTP` flow are set to *Alternative*. If they are set to *Required*, the user has to enter WebAuthn, password, and OTP.
 
-If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Security Key` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
+If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Passkey` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
 
 [NOTE]
 ====
@@ -271,7 +271,7 @@ Now you configure the flow for the first authentication level.
 . Enter `Level 1` as an alias.
 . Enter `1` for the Level of Authentication (LoA).
 . Set Max Age to *36000*. This value is in seconds and it is equivalent to 10 hours, which is the default `SSO Session Max` timeout set in the realm.
-  As a result, when a user authenticates with this level, subsequent SSO logins can re-use this level and the user does not need to authenticate
+  As a result, when a user authenticates with this level, subsequent SSO logins can reuse this level and the user does not need to authenticate
   with this level until the end of the user session, which is 10 hours by default.
 . Click *Save*
 +
@@ -360,7 +360,7 @@ For more details see the https://openid.net/specs/openid-connect-core-1_0.html#a
 
 The logic for the previous configured authentication flow is as follows: +
 If a client request a high authentication level, meaning Level of Authentication 2 (LoA 2), a user has to perform full 2-factor authentication: Username/Password + OTP.
-However, if a user already has a session in Keycloak, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
+However, if a user already has a session in {project_name}, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
 
 The option *Max Age* in the condition determines how long (how much seconds) the subsequent authentication level is valid. This setting helps to decide
 whether the user will be asked to present the authentication factor again during a subsequent authentication. If the particular level X is requested
@@ -380,6 +380,11 @@ If no explicit level is requested by parameters, the {project_name} will require
 condition found in the authentication flow, such as the Username/Password in the preceding example. When a user was already authenticated with that level
 and that level expired, the user is not required to re-authenticate, but `acr` in the token will have the value 0. This result is considered as authentication
 based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
+
+NOTE: During the first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
+the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown 
+in the example above. For example, if you configure a subflow with level 2 and then add another subflow with level 1, the level 2 subflow will be always asked during the first authentication, which may
+not be the desired behavior.
 
 NOTE: A conflict situation may arise when an admin specifies several flows, sets different LoA levels to each, and assigns the flows to different clients. However, the rule is always the same: if a user has a certain level, it needs only have that level to connect to a client. It's up to the admin to make sure that the LoA is coherent.
 
@@ -407,7 +412,7 @@ in the authentication flow), then {project_name} will throw an error.
 ==== Registration or Reset credentials requested by client
 
 Usually when the user is redirected to the {project_name} from client application, the `browser` flow is triggered. This flow may allow the user to <<con-user-registration_{context}, register>> in case
-that realm registration is enabled and the user clicks `Register`on the login screen. Also, if  <<enabling-forgot-password, Forget password>> is enabled for the realm, the user can
+that realm registration is enabled and the user clicks `Register` on the login screen. Also, if <<enabling-forgot-password,Forget password>> is enabled for the realm, the user can
 click `Forget password` on the login screen, which triggers the `Reset credentials` flow where users can reset credentials after email address confirmation.
 
 Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the 

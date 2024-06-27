@@ -225,9 +225,10 @@ export class Agent {
       requestOptions.body = payload;
     } else {
       // Otherwise assume it's JSON and stringify it.
-      requestOptions.body = JSON.stringify(
-        payloadKey ? payload[payloadKey] : payload,
-      );
+      requestOptions.body =
+        payloadKey && typeof payload[payloadKey] === "string"
+          ? payload[payloadKey]
+          : JSON.stringify(payloadKey ? payload[payloadKey] : payload);
     }
 
     if (!requestHeaders.has("content-type") && !(payload instanceof FormData)) {

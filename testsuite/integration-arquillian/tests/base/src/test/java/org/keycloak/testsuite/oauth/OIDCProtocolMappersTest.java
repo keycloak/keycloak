@@ -378,7 +378,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // create a user attr mapping for some claims that exist as properties in the tokens
         ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-        app.getProtocolMappers().createMapper(createClaimMapper("userid-as-sub", "userid", "sub", "String", true, true, true,false)).close();
+        app.getProtocolMappers().createMapper(createClaimMapper("userid-as-sub", "userid", "sub", "String", false, true, true,false)).close();
         app.getProtocolMappers().createMapper(createClaimMapper("useraud", "useraud", "aud", "String", true, true, true, true)).close();
         app.getProtocolMappers().createMapper(createHardcodedClaim("website-hardcoded", "website", "http://localhost", "String", true, true, true)).close();
         app.getProtocolMappers().createMapper(createHardcodedClaim("iat-hardcoded", "iat", "123", "long", true, false, true)).close();
@@ -394,7 +394,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         assertThat(Arrays.asList(idToken.getAudience()), hasItems("test-app", "other"));
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals(user.firstAttribute("userid"), accessToken.getSubject());
+        assertNotEquals(user.firstAttribute("userid"), accessToken.getSubject());
         assertEquals("http://localhost", accessToken.getWebsite());
         assertNotNull(accessToken.getAudience());
         assertThat(Arrays.asList(accessToken.getAudience()), hasItems("test-app", "other"));

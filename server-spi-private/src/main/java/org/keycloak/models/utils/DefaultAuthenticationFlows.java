@@ -469,6 +469,7 @@ public class DefaultAuthenticationFlows {
         firstBrokerLogin.setTopLevel(true);
         firstBrokerLogin.setBuiltIn(true);
         firstBrokerLogin = realm.addAuthenticationFlow(firstBrokerLogin);
+        realm.setFirstBrokerLoginFlow(firstBrokerLogin);
 
         AuthenticatorConfigModel reviewProfileConfig = new AuthenticatorConfigModel();
         reviewProfileConfig.setAlias(IDP_REVIEW_PROFILE_CONFIG_ALIAS);
@@ -604,13 +605,15 @@ public class DefaultAuthenticationFlows {
             if (browserFlow == null) {
                 browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
             }
-            List<AuthenticationExecutionModel> browserExecutions = new LinkedList<>();
-            KeycloakModelUtils.deepFindAuthenticationExecutions(realm, browserFlow, browserExecutions);
-            for (AuthenticationExecutionModel browserExecution : browserExecutions) {
-                if (browserExecution.isAuthenticatorFlow()){
-                    if (realm.getAuthenticationExecutionsStream(browserExecution.getFlowId())
-                            .anyMatch(e -> e.getAuthenticator().equals("auth-otp-form"))){
-                        execution.setRequirement(browserExecution.getRequirement());
+            if (browserFlow != null) {
+                List<AuthenticationExecutionModel> browserExecutions = new LinkedList<>();
+                KeycloakModelUtils.deepFindAuthenticationExecutions(realm, browserFlow, browserExecutions);
+                for (AuthenticationExecutionModel browserExecution : browserExecutions) {
+                    if (browserExecution.isAuthenticatorFlow()){
+                        if (realm.getAuthenticationExecutionsStream(browserExecution.getFlowId())
+                                .anyMatch(e -> e.getAuthenticator().equals("auth-otp-form"))){
+                            execution.setRequirement(browserExecution.getRequirement());
+                        }
                     }
                 }
             }

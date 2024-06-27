@@ -68,7 +68,6 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -86,7 +85,6 @@ import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSAAlgorithm;
-import org.keycloak.crypto.ECDSASignatureProvider;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
@@ -801,15 +799,15 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         @Override
         protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
             JsonWebToken reqToken = new JsonWebToken();
-            if (isClaimEnabled("id")) reqToken.id(AdapterUtils.generateId());
+            if (isClaimEnabled("id")) reqToken.id(KeycloakModelUtils.generateId());
             if (isClaimEnabled("issuer")) reqToken.issuer(clientId);
             if (isClaimEnabled("subject")) reqToken.subject(clientId);
             if (isClaimEnabled("audience")) reqToken.audience(realmInfoUrl);
 
-            int now = Time.currentTime();
-            if (isClaimEnabled("issuedAt")) reqToken.issuedAt(now);
-            if (isClaimEnabled("expiration")) reqToken.expiration(now + getTokenTimeout());
-            if (isClaimEnabled("notBefore")) reqToken.notBefore(now);
+            long now = Time.currentTime();
+            if (isClaimEnabled("issuedAt")) reqToken.iat(now);
+            if (isClaimEnabled("expiration")) reqToken.exp(now + getTokenTimeout());
+            if (isClaimEnabled("notBefore")) reqToken.nbf(now);
 
             return reqToken;
         }
@@ -929,15 +927,15 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
     protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken reqToken = new JsonWebToken();
-        reqToken.id(AdapterUtils.generateId());
+        reqToken.id(KeycloakModelUtils.generateId());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.issuedAt(now);
-        reqToken.expiration(now + 10);
-        reqToken.notBefore(now);
+        long now = Time.currentTime();
+        reqToken.iat(now);
+        reqToken.exp(now + 10);
+        reqToken.nbf(now);
 
         return reqToken;
     }

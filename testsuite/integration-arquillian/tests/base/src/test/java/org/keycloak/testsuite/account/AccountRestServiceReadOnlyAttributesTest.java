@@ -38,14 +38,17 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.userprofile.UserProfileConstants;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -143,13 +146,38 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         testAccountUpdateAttributeExpectSuccess("deniedSomeAdmin");
     }
 
+    @Test
+    public void testUpdateProfileCannotUpdateReadOnlyAttributesUnmanagedEnabled() throws IOException {
+        UPConfig configuration = testRealm().users().userProfile().getConfiguration();
+        UnmanagedAttributePolicy unmanagedAttributePolicy = configuration.getUnmanagedAttributePolicy();
+        configuration.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        getCleanup().addCleanup(() -> {
+            configuration.setUnmanagedAttributePolicy(unmanagedAttributePolicy);
+            testRealm().users().userProfile().update(configuration);
+        });
+        testRealm().users().userProfile().update(configuration);
+        UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserResource adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        org.keycloak.representations.idm.UserRepresentation adminUserRep = adminUserResource.toRepresentation();
+        adminUserRep.singleAttribute("deniedFoo", "foo");
+        adminUserResource.update(adminUserRep);
+        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserRep = adminUserResource.toRepresentation();
+        assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
+        assertNull(user.getAttributes());
+        updateAndGet(user);
+        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserRep = adminUserResource.toRepresentation();
+        assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
+    }
+
     private void testAccountUpdateAttributeExpectFailure(String attrName) throws IOException {
         testAccountUpdateAttributeExpectFailure(attrName, false);
     }
 
     private void testAccountUpdateAttributeExpectFailure(String attrName, boolean deniedForAdminAsWell) throws IOException {
         // Attribute not yet supposed to be on the user
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertThat(Optional.ofNullable(user.getAttributes()).orElse(Map.of()).keySet(), not(contains(attrName)));
 
         // Assert not possible to add the attribute to the user
@@ -175,7 +203,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         }
 
         // Update attribute of the user with account REST to the same value (Case when we are updating existing attribute) - should be fine as our attribute is not changed
-        user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         Assert.assertEquals("foo", user.getAttributes().get(attrName).get(0));
         user.singleAttribute("someOtherAttr", "foo");
         user = updateAndGet(user);
@@ -198,7 +226,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
     private void testAccountUpdateAttributeExpectSuccess(String attrName) throws IOException {
         // Attribute not yet supposed to be on the user
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertThat(Optional.ofNullable(user.getAttributes()).orElse(Map.of()).keySet(), not(contains(attrName)));
 
         // Assert not possible to add the attribute to the user
@@ -206,7 +234,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         user = updateAndGet(user);
 
         // Update attribute of the user with account REST to the same value (Case when we are updating existing attribute) - should be fine as our attribute is not changed
-        user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         Assert.assertEquals("foo", user.getAttributes().get(attrName).get(0));
         user.singleAttribute("someOtherAttr", "foo");
         user = updateAndGet(user);
@@ -226,18 +254,18 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
     }
 
     private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
-        int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
+        int status = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
         assertEquals(204, status);
         return get();
     }
 
     private UserRepresentation get() throws IOException {
-        return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        return SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
     }
 
 
     private void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
-        SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
     }

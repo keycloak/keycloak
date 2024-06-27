@@ -163,7 +163,7 @@ public class UserStorageProviderResource {
                 String errorMsg = getErrorCode(e);
                 throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
             }
-        } else if (action == null || action == "") {
+        } else if (action == null || action.isEmpty()) {
             logger.debug("Missing action");
             throw new BadRequestException("Missing action");
         } else {
@@ -252,9 +252,19 @@ public class UserStorageProviderResource {
 
         SynchronizationResult syncResult;
         if ("fedToKeycloak".equals(direction)) {
-            syncResult = mapper.syncDataFromFederationProviderToKeycloak(realm);
+            try {
+                syncResult = mapper.syncDataFromFederationProviderToKeycloak(realm);
+            } catch(Exception e) {
+                String errorMsg = getErrorCode(e);
+                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+            }
         } else if ("keycloakToFed".equals(direction)) {
-            syncResult = mapper.syncDataFromKeycloakToFederationProvider(realm);
+            try {
+                syncResult = mapper.syncDataFromKeycloakToFederationProvider(realm);
+            } catch(Exception e) {
+                String errorMsg = getErrorCode(e);
+                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+            }
         } else {
             throw new BadRequestException("Unknown direction: " + direction);
         }

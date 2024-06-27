@@ -21,8 +21,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.testsuite.actions.DummyConfigurableRequiredActionFactory;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
@@ -58,6 +61,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         addRequiredAction(expected, "VERIFY_EMAIL", "Verify Email", true, false, null);
         addRequiredAction(expected, "VERIFY_PROFILE", "Verify Profile", true, false, null);
         addRequiredAction(expected, "delete_account", "Delete Account", false, false, null);
+        addRequiredAction(expected, "delete_credential", "Delete Credential", true, false, null);
         addRequiredAction(expected, "update_user_locale", "Update User Locale", true, false, null);
         addRequiredAction(expected, "webauthn-register", "Webauthn Register", true, false, null);
         addRequiredAction(expected, "webauthn-register-passwordless", "Webauthn Register Passwordless", true, false, null);
@@ -91,7 +95,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
-        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(2, result.size());
         RequiredActionProviderSimpleRepresentation action = result.stream().filter(
                 a -> a.getProviderId().equals(DummyRequiredActionFactory.PROVIDER_ID)
         ).findFirst().get();
@@ -106,6 +110,17 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         try {
             authMgmtResource.registerRequiredAction(action);
         } catch (ClientErrorException ex) {
+            // Expected
+        }
+
+        // Try to register required action with fake providerId
+        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setName("not-existent");
+        requiredAction.setProviderId("not-existent");
+        try {
+            authMgmtResource.registerRequiredAction(requiredAction);
+            Assert.fail("Didn't expect to register requiredAction with providerId: 'not-existent'");
+        } catch (Exception ex) {
             // Expected
         }
 
@@ -154,6 +169,65 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
     }
 
+    @Test
+    public void testConfigurableRequiredActionMetadata() {
+
+        String providerId = DummyConfigurableRequiredActionFactory.PROVIDER_ID;
+
+        // query configurable properties
+        RequiredActionConfigInfoRepresentation requiredActionConfigDescription = authMgmtResource.getRequiredActionConfigDescription(providerId);
+        Assert.assertNotNull(requiredActionConfigDescription);
+        Assert.assertNotNull(requiredActionConfigDescription.getProperties());
+        Assert.assertTrue(requiredActionConfigDescription.getProperties().size() == 2);
+    }
+
+    @Test
+    public void testCRUDConfigurableRequiredAction() {
+        int lastPriority = authMgmtResource.getRequiredActions().get(authMgmtResource.getRequiredActions().size() - 1).getPriority();
+
+        // Dummy RequiredAction is not registered in the realm and WebAuthn actions
+        List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
+        Assert.assertEquals(2, result.size());
+        String providerId = DummyConfigurableRequiredActionFactory.PROVIDER_ID;
+        RequiredActionProviderSimpleRepresentation action = result.stream().filter(
+                a -> providerId.equals(a.getProviderId())
+        ).findFirst().get();
+        Assert.assertEquals(providerId, action.getProviderId());
+        Assert.assertEquals("Configurable Test Action", action.getName());
+
+        // Register it
+        authMgmtResource.registerRequiredAction(action);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
+
+        RequiredActionConfigRepresentation requiredActionConfigRep = new RequiredActionConfigRepresentation();
+        Map<String, String> newActionConfig = Map.ofEntries(Map.entry("setting1", "value1"), Map.entry("setting2", "false"));
+        requiredActionConfigRep.setConfig(newActionConfig);
+
+        authMgmtResource.updateRequiredActionConfig(providerId, requiredActionConfigRep);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionConfigPath(providerId), ResourceType.REQUIRED_ACTION_CONFIG);
+
+        RequiredActionConfigRepresentation savedRequiredActionConfigRep = authMgmtResource.getRequiredActionConfig(providerId);
+        Assert.assertNotNull(savedRequiredActionConfigRep);
+        Assert.assertNotNull(savedRequiredActionConfigRep.getConfig());
+        Assert.assertTrue(savedRequiredActionConfigRep.getConfig().entrySet().containsAll(newActionConfig.entrySet()));
+
+        // delete config
+        authMgmtResource.removeRequiredActionConfig(providerId);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authRequiredActionConfigPath(providerId), ResourceType.REQUIRED_ACTION_CONFIG);
+
+        RequiredActionProviderRepresentation rep = authMgmtResource.getRequiredAction(providerId);
+
+        // Remove success
+        authMgmtResource.removeRequiredAction(providerId);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), ResourceType.REQUIRED_ACTION);
+
+        // Retrieval after deletion should throw a NotFound exception
+        try {
+            authMgmtResource.getRequiredActionConfig(providerId);
+        } catch (Exception ex) {
+            Assert.assertTrue(NotFoundException.class.isInstance(ex));
+        }
+    }
 
     private RequiredActionProviderRepresentation findRequiredActionByAlias(String alias, List<RequiredActionProviderRepresentation> list) {
         for (RequiredActionProviderRepresentation a: list) {

@@ -38,6 +38,9 @@ import org.keycloak.migration.migrators.MigrateTo21_0_0;
 import org.keycloak.migration.migrators.MigrateTo22_0_0;
 import org.keycloak.migration.migrators.MigrateTo23_0_0;
 import org.keycloak.migration.migrators.MigrateTo24_0_0;
+import org.keycloak.migration.migrators.MigrateTo24_0_3;
+import org.keycloak.migration.migrators.MigrateTo25_0_0;
+import org.keycloak.migration.migrators.MigrateTo26_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
@@ -61,6 +64,7 @@ import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.Constants;
 import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.MigrationManager;
@@ -113,7 +117,10 @@ public class DefaultMigrationManager implements MigrationManager {
             new MigrateTo21_0_0(),
             new MigrateTo22_0_0(),
             new MigrateTo23_0_0(),
-            new MigrateTo24_0_0()
+            new MigrateTo24_0_0(),
+            new MigrateTo24_0_3(),
+            new MigrateTo25_0_0(),
+            new MigrateTo26_0_0(),
     };
 
     private final KeycloakSession session;
@@ -141,6 +148,14 @@ public class DefaultMigrationManager implements MigrationManager {
                     m.migrate(session);
                 }
             }
+        } else if (currentVersion.lessThan(databaseVersion)) {
+            if (databaseVersion.equals(SNAPSHOT_VERSION)) {
+                throw new ModelException("Incorrect state of migration. You are trying to run server version '" + currentVersion + "' against a database which was migrated to snapshot version '"
+                        + databaseVersion + "'. Databases that have been migrated to a snapshot version can't be migrated to a released version of Keycloak or to a more recent snapshot version.");
+            } else {
+                logger.warnf("Possibly incorrect state of migration. You are trying to run server version '" + currentVersion + "' against database, which was already migrated to newer version '"  +
+                        databaseVersion + "'.");
+            }
         }
 
         if (databaseVersion == null || databaseVersion.lessThan(currentVersion)) {
@@ -155,6 +170,7 @@ public class DefaultMigrationManager implements MigrationManager {
     public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.3");
     public static final ModelVersion RHSSO_VERSION_7_3_KEYCLOAK_VERSION = new ModelVersion("4.8.3");
     public static final ModelVersion RHSSO_VERSION_7_4_KEYCLOAK_VERSION = new ModelVersion("9.0.3");
+    public static final ModelVersion SNAPSHOT_VERSION = new ModelVersion("999.0.0-SNAPSHOT");
 
     private static final Map<Pattern, ModelVersion> PATTERN_MATCHER = new LinkedHashMap<>();
     static {
@@ -176,6 +192,12 @@ public class DefaultMigrationManager implements MigrationManager {
         }
         if (stored == null) {
             stored = migrations[0].getVersion();
+        } else {
+            ModelVersion currentVersion = new ModelVersion(Version.VERSION);
+            if (currentVersion.lessThan(stored)) {
+                logger.warnf("Possibly incorrect state of migration during realm import. You are running server version '" + currentVersion + "' when importing JSON file, which was created in the newer version '"  +
+                        stored + "'.");
+            }
         }
 
         for (Migration m : migrations) {

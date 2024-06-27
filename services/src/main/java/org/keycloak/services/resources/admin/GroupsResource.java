@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.Response.Status;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -44,6 +46,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -51,8 +54,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
-
-
 
 /**
  * @resource Groups
@@ -120,11 +121,18 @@ public class GroupsResource {
      * @return
      */
     @Path("{group-id}")
+    @Operation( summary = "Get group details. Does not expand hierarchy.  Subgroups will not be set.")
     public GroupResource getGroupById(@PathParam("group-id") String id) {
         GroupModel group = realm.getGroupById(id);
+
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
+
+        if (!Organizations.canManageOrganizationGroup(session, group)) {
+            throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Status.BAD_REQUEST);
+        }
+
         return new GroupResource(realm, group, session, this.auth, adminEvent);
     }
 

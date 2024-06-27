@@ -2,6 +2,6 @@ import CommonElements from "../../CommonElements";
 
 export default class EmptyStatePage extends CommonElements {
   constructor() {
-    super(".pf-c-empty-state__content");
+    super(".pf-v5-c-empty-state__content");
   }
 }

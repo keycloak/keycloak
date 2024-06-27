@@ -1,8 +1,12 @@
 import { Checkbox, Radio } from "@patternfly/react-core";
 import { Controller } from "react-hook-form";
-import { Options, UserProfileFieldProps } from "./UserProfileFields";
+import {
+  OptionLabel,
+  Options,
+  UserProfileFieldProps,
+} from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { fieldName, isRequiredAttribute } from "./utils";
+import { fieldName, isRequiredAttribute, label } from "./utils";
 
 export const OptionComponent = (props: UserProfileFieldProps) => {
   const { form, inputType, attribute } = props;
@@ -11,6 +15,9 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
   const Component = isMultiSelect ? Checkbox : Radio;
   const options =
     (attribute.validators?.options as Options | undefined)?.options || [];
+
+  const optionLabel =
+    (attribute.annotations?.["inputOptionLabels"] as OptionLabel) || {};
 
   return (
     <UserProfileGroup {...props}>
@@ -25,7 +32,7 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
                 key={option}
                 id={option}
                 data-testid={option}
-                label={option}
+                label={label(props.t, optionLabel[option], option)}
                 value={option}
                 isChecked={field.value.includes(option)}
                 onChange={() => {

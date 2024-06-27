@@ -20,8 +20,6 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.group.GroupLookupProvider;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -31,6 +29,8 @@ import java.util.stream.Stream;
  *
  */
 public interface GroupProvider extends Provider, GroupLookupProvider {
+
+    static boolean DEFAULT_ESCAPE_SLASHES = false;
 
     /**
      * Returns groups for the given realm.

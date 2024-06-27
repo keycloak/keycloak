@@ -19,7 +19,7 @@ export default class UserDetailsPage extends PageObject {
 
   constructor() {
     super();
-    this.saveBtn = "save-user";
+    this.saveBtn = "user-creation-save";
     this.cancelBtn = "cancel-create-user";
     this.emailInput = "email";
     this.emailValue = () => "example" + "_" + uuid() + "@example.com";

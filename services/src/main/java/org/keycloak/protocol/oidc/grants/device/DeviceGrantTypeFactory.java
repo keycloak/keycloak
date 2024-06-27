@@ -45,7 +45,7 @@ public class DeviceGrantTypeFactory implements OAuth2GrantTypeFactory, Environme
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW);
     }
 

@@ -1,7 +1,7 @@
 import CommonElements from "../CommonElements";
 
 export default class SidebarPage extends CommonElements {
-  #realmsDrpDwn = "realmSelectorToggle";
+  #realmsDrpDwn = "realmSelector";
   #createRealmBtn = "add-realm";
 
   #clientsBtn = "#nav-item-clients";
@@ -17,7 +17,7 @@ export default class SidebarPage extends CommonElements {
   #identityProvidersBtn = "#nav-item-identity-providers";
   #userFederationBtn = "#nav-item-user-federation";
 
-  realmsElements = '[data-testid="realmSelector"] li';
+  realmsElements = '[id="realm-select"] li';
 
   showCurrentRealms(length: number) {
     cy.findByTestId(this.#realmsDrpDwn).click();

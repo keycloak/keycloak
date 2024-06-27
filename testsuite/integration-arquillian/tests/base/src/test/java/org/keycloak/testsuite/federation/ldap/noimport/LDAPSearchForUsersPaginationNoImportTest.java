@@ -28,12 +28,15 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.UserBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -191,5 +194,37 @@ public class LDAPSearchForUsersPaginationNoImportTest extends AbstractLDAPTest {
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
         Assert.assertEquals(Set.of("john"), usernames);
+    }
+
+    public void testDuplicateEmailInDatabase() {
+        setLDAPEnabled(false);
+        try {
+            // create a local db user with the same email than an a ldap user
+            String userId = ApiUtil.getCreatedId(testRealm().users().create(UserBuilder.create()
+                    .username("jdoe").firstName("John").lastName("Doe")
+                    .email("john14@email.org")
+                    .build()));
+            Assert.assertNotNull("User not created", userId);
+            getCleanup().addUserId(userId);
+        } finally {
+            setLDAPEnabled(true);
+        }
+
+        List<UserRepresentation> search = adminClient.realm(TEST_REALM_NAME).users()
+                .search("john14@email.org", null, null)
+                .stream().collect(Collectors.toList());
+        Assert.assertEquals("User not found", 1, search.size());
+        Assert.assertEquals("Incorrect User", "jdoe", search.get(0).getUsername());
+        Assert.assertTrue("Duplicated user created", adminClient.realm(TEST_REALM_NAME).users().search("john", true).isEmpty());
+    }
+
+    private void setLDAPEnabled(final boolean enabled) {
+        testingClient.server().run((KeycloakSession session) -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ctx.getLdapModel().getConfig().putSingle("enabled", Boolean.toString(enabled));
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
     }
 }

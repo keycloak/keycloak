@@ -24,10 +24,6 @@ runs:
       with:
         create-cache-if-it-doesnt-exist: true
 
-    - id: phantomjs-cache
-      name: PhantomJS cache
-      uses: ./.github/actions/phantomjs-cache
-
     - id: frontend-plugin-cache
       name: Frontend Plugin Cache
       uses: ./.github/actions/frontend-plugin-cache
@@ -35,9 +31,11 @@ runs:
     - id: build-keycloak
       name: Build Keycloak
       shell: bash
-      # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
       run: |
-        ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples
+        # Ensure this plugin is built first to avoid warnings in the build
+        ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
+        # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
+        ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples -DexcludeGroupIds=org.keycloak -Dsilent=true
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts
@@ -51,7 +49,7 @@ runs:
     - id: upload-keycloak-maven-repository
       name: Upload Keycloak Maven artifacts
       if: inputs.upload-m2-repo == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: m2-keycloak.tzts
         path: m2-keycloak.tzts
@@ -60,7 +58,7 @@ runs:
     - id: upload-keycloak-dist
       name: Upload Keycloak dist
       if: inputs.upload-dist == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: keycloak-dist
         path: quarkus/dist/target/keycloak*.tar.gz

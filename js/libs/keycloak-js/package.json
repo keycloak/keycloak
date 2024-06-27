@@ -30,14 +30,17 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "wireit",
     "duplicate-types": "shx cp dist/keycloak.d.ts dist/keycloak.d.mts && shx cp dist/keycloak-authz.d.ts dist/keycloak-authz.d.mts",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm build"
   },
   "wireit": {
     "build": {
-      "command": "rollup --config --configPlugin typescript && pnpm run duplicate-types",
+      "command": "rollup --config --configPlugin typescript && pnpm duplicate-types",
       "files": [
         "src/**",
         "package.json",
@@ -65,17 +68,17 @@
     "authentication"
   ],
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-inject": "^5.0.5",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
     "es6-promise": "^4.2.8",
-    "rollup": "^4.12.0",
+    "rollup": "^4.18.0",
     "shx": "^0.3.4"
   },
   "dependencies": {
-    "js-sha256": "^0.11.0",
+    "@noble/hashes": "^1.4.0",
     "jwt-decode": "^4.0.0"
   }
 }

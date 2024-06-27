@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -190,7 +191,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     }
 
     private void waitForPage(final String title, final boolean htmlTitle) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
 
         ExpectedCondition<Boolean> condition = (WebDriver input) -> htmlTitle ? input.getTitle().toLowerCase().contains(title) : PageUtils.getPageTitle(input).toLowerCase().contains(title);
 

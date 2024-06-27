@@ -1,18 +1,17 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, FormProvider, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 
 export const SyncSettings = () => {
   const { t } = useTranslation();
-  const { control, register, watch } = useFormContext();
+  const form = useFormContext();
+  const { control, watch } = form;
   const watchPeriodicSync = watch("config.fullSyncPeriod", "-1");
   const watchChangedSync = watch("config.changedSyncPeriod", "-1");
 
   return (
-    <>
+    <FormProvider {...form}>
       <FormGroup
         label={t("periodicFullSync")}
         labelIcon={
@@ -32,7 +31,7 @@ export const SyncSettings = () => {
             <Switch
               id="kc-periodic-full-sync"
               data-testid="periodic-full-sync"
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 field.onChange(value ? "604800" : "-1");
               }}
               isChecked={field.value !== "-1"}
@@ -44,26 +43,14 @@ export const SyncSettings = () => {
         />
       </FormGroup>
       {watchPeriodicSync !== "-1" && (
-        <FormGroup
-          hasNoPaddingTop
+        <TextControl
+          name="config.fullSyncPeriod"
           label={t("fullSyncPeriod")}
-          labelIcon={
-            <HelpItem
-              helpText={t("fullSyncPeriodHelp")}
-              fieldLabelId="fullSyncPeriod"
-            />
-          }
-          fieldId="kc-full-sync-period"
-        >
-          <KeycloakTextInput
-            type="number"
-            min={-1}
-            defaultValue="604800"
-            id="kc-full-sync-period"
-            data-testid="full-sync-period"
-            {...register("config.fullSyncPeriod")}
-          />
-        </FormGroup>
+          labelIcon={t("fullSyncPeriodHelp")}
+          type="number"
+          min={-1}
+          defaultValue="604800"
+        />
       )}
       <FormGroup
         label={t("periodicChangedUsersSync")}
@@ -84,7 +71,7 @@ export const SyncSettings = () => {
             <Switch
               id="kc-periodic-changed-users-sync"
               data-testid="periodic-changed-users-sync"
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 field.onChange(value ? "86400" : "-1");
               }}
               isChecked={field.value !== "-1"}
@@ -96,27 +83,15 @@ export const SyncSettings = () => {
         />
       </FormGroup>
       {watchChangedSync !== "-1" && (
-        <FormGroup
+        <TextControl
+          name="config.changedSyncPeriod"
           label={t("changedUsersSyncPeriod")}
-          labelIcon={
-            <HelpItem
-              helpText={t("changedUsersSyncHelp")}
-              fieldLabelId="changedUsersSyncPeriod"
-            />
-          }
-          fieldId="kc-changed-users-sync-period"
-          hasNoPaddingTop
-        >
-          <KeycloakTextInput
-            type="number"
-            min={-1}
-            defaultValue="86400"
-            id="kc-changed-users-sync-period"
-            data-testid="changed-users-sync-period"
-            {...register("config.changedSyncPeriod")}
-          />
-        </FormGroup>
+          labelIcon={t("changedUsersSyncHelp")}
+          type="number"
+          min={-1}
+          defaultValue="86400"
+        />
       )}
-    </>
+    </FormProvider>
   );
 };

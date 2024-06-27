@@ -1,3 +1,5 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -5,20 +7,21 @@ import {
   Divider,
   Dropdown,
   DropdownItem,
+  DropdownList,
   Form,
   FormGroup,
-  KebabToggle,
-  Select,
+  MenuToggle,
   SelectGroup,
   SelectOption,
-  SelectVariant,
-  TextContent,
   Text,
-  ToolbarItem,
+  TextContent,
+  TextInput,
   TextVariants,
+  ToolbarItem,
 } from "@patternfly/react-core";
 import {
   CheckIcon,
+  EllipsisVIcon,
   PencilAltIcon,
   SearchIcon,
   TimesIcon,
@@ -34,21 +37,19 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeyValueType } from "../../components/key-value-form/key-value-convert";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import { DEFAULT_LOCALE } from "../../i18n/i18n";
+import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import { AddTranslationModal } from "../AddTranslationModal";
 
@@ -56,6 +57,7 @@ type RealmOverridesProps = {
   internationalizationEnabled: boolean;
   watchSupportedLocales: string[];
   realm: RealmRepresentation;
+  tableData: Record<string, string>[] | undefined;
 };
 
 type EditStatesType = { [key: number]: boolean };
@@ -77,7 +79,10 @@ export const RealmOverrides = ({
   internationalizationEnabled,
   watchSupportedLocales,
   realm,
+  tableData,
 }: RealmOverridesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [addTranslationModalOpen, setAddTranslationModalOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
@@ -173,7 +178,7 @@ export const RealmOverrides = ({
 
       setTableRows(updatedRows);
     });
-  }, [tableKey, first, max, filter]);
+  }, [tableKey, tableData, first, max, filter]);
 
   const handleModalToggle = () => {
     setAddTranslationModalOpen(!addTranslationModalOpen);
@@ -213,6 +218,8 @@ export const RealmOverrides = ({
       refreshTable();
       translationForm.setValue("key", "");
       translationForm.setValue("value", "");
+      i18n.reloadResources();
+
       addAlert(t("addTranslationSuccess"), AlertVariant.success);
     } catch (error) {
       addError(t("addTranslationError"), error);
@@ -233,15 +240,22 @@ export const RealmOverrides = ({
     onConfirm: async () => {
       try {
         for (const key of selectedRowKeys) {
-          await adminClient.realms.deleteRealmLocalizationTexts({
-            realm: currentRealm!,
-            selectedLocale: selectMenuLocale,
-            key: key,
-          });
+          delete (
+            i18n.store.data[whoAmI.getLocale()][currentRealm] as Record<
+              string,
+              string
+            >
+          )[key],
+            await adminClient.realms.deleteRealmLocalizationTexts({
+              realm: currentRealm!,
+              selectedLocale: selectMenuLocale,
+              key: key,
+            });
         }
         setAreAllRowsSelected(false);
         setSelectedRowKeys([]);
         refreshTable();
+
         addAlert(t("deleteAllTranslationsSuccess"), AlertVariant.success);
       } catch (error) {
         addError("deleteAllTranslationsError", error);
@@ -304,6 +318,7 @@ export const RealmOverrides = ({
         },
         value,
       );
+      i18n.reloadResources();
 
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);
@@ -331,7 +346,10 @@ export const RealmOverrides = ({
         />
       )}
       <TextContent>
-        <Text className="pf-u-mt-lg pf-u-ml-md" component={TextVariants.p}>
+        <Text
+          className="pf-v5-u-mt-lg pf-v5-u-ml-md"
+          component={TextVariants.p}
+        >
           {t("realmOverridesDescription")}
         </Text>
       </TextContent>
@@ -366,13 +384,22 @@ export const RealmOverrides = ({
             </Button>
             <ToolbarItem>
               <Dropdown
-                toggle={
-                  <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
-                }
+                toggle={(ref) => (
+                  <MenuToggle
+                    ref={ref}
+                    onClick={() => setKebabOpen(!kebabOpen)}
+                    variant="plain"
+                    isExpanded={kebabOpen}
+                    data-testid="toolbar-deleteBtn"
+                    aria-label="kebab"
+                  >
+                    <EllipsisVIcon />
+                  </MenuToggle>
+                )}
                 isOpen={kebabOpen}
                 isPlain
-                data-testid="toolbar-deleteBtn"
-                dropdownItems={[
+              >
+                <DropdownList>
                   <DropdownItem
                     key="action"
                     component="button"
@@ -386,22 +413,22 @@ export const RealmOverrides = ({
                     }}
                   >
                     {t("delete")}
-                  </DropdownItem>,
-                ]}
-              />
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
             </ToolbarItem>
           </>
         }
         searchTypeComponent={
           <ToolbarItem>
-            <Select
+            <KeycloakSelect
               width={180}
               isOpen={filterDropdownOpen}
               className="kc-filter-by-locale-select"
               variant={SelectVariant.single}
               isDisabled={!internationalizationEnabled}
               onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 setSelectMenuLocale(value.toString());
                 setSelectMenuValueSelected(true);
                 refreshTable();
@@ -416,7 +443,7 @@ export const RealmOverrides = ({
               }
             >
               {options}
-            </Select>
+            </KeycloakSelect>
           </ToolbarItem>
         }
       >
@@ -444,7 +471,7 @@ export const RealmOverrides = ({
           >
             <Thead>
               <Tr>
-                <Th className="pf-u-px-lg">
+                <Th className="pf-v5-u-px-lg">
                   <input
                     type="checkbox"
                     aria-label={t("selectAll")}
@@ -453,8 +480,8 @@ export const RealmOverrides = ({
                     data-testid="selectAll"
                   />
                 </Th>
-                <Th className="pf-u-py-lg">{t("key")}</Th>
-                <Th className="pf-u-py-lg">{t("value")}</Th>
+                <Th className="pf-v5-u-py-lg">{t("key")}</Th>
+                <Th className="pf-v5-u-py-lg">{t("value")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
@@ -462,7 +489,7 @@ export const RealmOverrides = ({
               {tableRows.map((row, rowIndex) => (
                 <Tr key={(row.cells?.[0] as IRowCell).props.value}>
                   <Td
-                    className="pf-u-px-lg"
+                    className="pf-v5-u-px-lg"
                     select={{
                       rowIndex,
                       onSelect: (event) =>
@@ -475,11 +502,11 @@ export const RealmOverrides = ({
                       ),
                     }}
                   />
-                  <Td className="pf-m-sm pf-u-px-sm" dataLabel={t("key")}>
+                  <Td className="pf-m-sm pf-v5-u-px-sm" dataLabel={t("key")}>
                     {(row.cells?.[0] as IRowCell).props.value}
                   </Td>
                   <Td
-                    className="pf-m-sm pf-u-px-sm"
+                    className="pf-m-sm pf-v5-u-px-sm"
                     dataLabel={t("value")}
                     key={rowIndex}
                   >
@@ -492,20 +519,21 @@ export const RealmOverrides = ({
                     >
                       <FormGroup
                         fieldId="kc-translationValue"
-                        className="pf-u-display-inline-block"
+                        className="pf-v5-u-display-inline-block"
                       >
                         {editStates[rowIndex] ? (
                           <>
-                            <KeycloakTextInput
+                            <TextInput
                               aria-label={t("editTranslationValue")}
                               type="text"
-                              className="pf-u-w-initial"
+                              className="pf-v5-u-w-initial"
                               data-testid={`editTranslationValueInput-${rowIndex}`}
                               value={formValue}
                               onChange={(
-                                event: ChangeEvent<HTMLInputElement>,
+                                event: FormEvent<HTMLInputElement>,
+                                value: string,
                               ) => {
-                                setFormValue(event.target.value);
+                                setFormValue(value);
                               }}
                               key={`edit-input-${rowIndex}`}
                             />

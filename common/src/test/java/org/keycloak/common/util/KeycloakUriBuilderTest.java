@@ -80,4 +80,16 @@ public class KeycloakUriBuilderTest {
         Assert.assertEquals("https://localhost:8443/%7Bpath%7D?key=%7Bquery%7D#%7Bfragment%7D", KeycloakUriBuilder.fromUri(
                 "https://localhost:8443/{path}?key={query}#{fragment}", false).buildAsString());
     }
+
+    @Test
+    public void testUserInfo() {
+        Assert.assertEquals("https://user-info@localhost:8443/path?key=query#fragment", KeycloakUriBuilder.fromUri(
+                "https://{userinfo}@localhost:8443/{path}?key={query}#{fragment}").buildAsString("user-info", "path", "query", "fragment"));
+        Assert.assertEquals("https://user%20info%40%2F@localhost:8443/path?key=query#fragment", KeycloakUriBuilder.fromUri(
+                "https://{userinfo}@localhost:8443/{path}?key={query}#{fragment}").buildAsString("user info@/", "path", "query", "fragment"));
+        Assert.assertEquals("https://user-info%E2%82%AC@localhost:8443", KeycloakUriBuilder.fromUri(
+                "https://user-info%E2%82%AC@localhost:8443", false).buildAsString());
+        Assert.assertEquals("https://user-info%E2%82%AC@localhost:8443", KeycloakUriBuilder.fromUri(
+                "https://user-info€@localhost:8443", false).buildAsString());
+    }
 }

@@ -17,11 +17,6 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -31,11 +26,16 @@ import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG. Especially tests "putIfAbsent" contract.
@@ -46,11 +46,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
  */
 public class ConcurrencyJDGCachePutTest {
 
-    private static Map<String, EntryInfo> state = new HashMap<>();
-
-    private RemoteCache remoteCache1;
-    private RemoteCache remoteCache2;
-
+    private static final Map<String, EntryInfo> state = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
         // Init map somehow
@@ -105,7 +101,8 @@ public class ConcurrencyJDGCachePutTest {
 
         System.out.println("Retrieved cache: " + threadId);
 
-        RemoteStore remoteStore = cache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class).iterator().next();
+        RemoteStore<?, ?> remoteStore = ComponentRegistry.componentOf(cache, PersistenceManager.class)
+                .getStores(RemoteStore.class).iterator().next();
         HotRodListener listener = new HotRodListener();
         remoteStore.getRemoteCache().addClientListener(listener);
 
@@ -119,14 +116,14 @@ public class ConcurrencyJDGCachePutTest {
         //private AtomicInteger listenerCount = new AtomicInteger(0);
 
         @ClientCacheEntryCreated
-        public void created(ClientCacheEntryCreatedEvent event) {
-            String cacheKey = (String) event.getKey();
+        public void created(ClientCacheEntryCreatedEvent<String> event) {
+            String cacheKey = event.getKey();
             state.get(cacheKey).successfulListenerWrites.incrementAndGet();
         }
 
         @ClientCacheEntryModified
-        public void updated(ClientCacheEntryModifiedEvent event) {
-            String cacheKey = (String) event.getKey();
+        public void updated(ClientCacheEntryModifiedEvent<String> event) {
+            String cacheKey = event.getKey();
             state.get(cacheKey).successfulListenerWrites.incrementAndGet();
         }
 
@@ -171,7 +168,10 @@ public class ConcurrencyJDGCachePutTest {
         //Integer existingClusterStartTime = (Integer) cache.putIfAbsent(cacheKey, startupTime);
 
         // Concurrency works fine with this
-        RemoteCache remoteCache = cache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class).iterator().next().getRemoteCache();
+        RemoteCache remoteCache = ComponentRegistry.componentOf(cache, PersistenceManager.class)
+                .getStores(RemoteStore.class)
+                .iterator().next()
+                .getRemoteCache();
 
         Integer existingClusterStartTime = null;
         for (int i=0 ; i<10 ; i++) {

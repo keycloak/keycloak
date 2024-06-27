@@ -40,6 +40,7 @@ export default class FlowDetails {
       .parentsUntil(".keycloak__authentication__flow-row")
       .find(".keycloak__authentication__requirement-dropdown")
       .click()
+      .parent()
       .contains(requirement)
       .click();
     return this;
@@ -53,6 +54,7 @@ export default class FlowDetails {
   #clickEditDropdownForFlow(subFlowName: string, option: string) {
     cy.findByTestId(`${subFlowName}-edit-dropdown`)
       .click()
+      .parent()
       .contains(option)
       .click();
   }
@@ -60,7 +62,7 @@ export default class FlowDetails {
   addExecution(subFlowName: string, executionTestId: string) {
     this.#clickEditDropdownForFlow(subFlowName, "Add step");
 
-    cy.get(".pf-c-pagination").should("exist");
+    cy.get(".pf-v5-c-pagination").should("exist");
     cy.findByTestId(executionTestId).click();
     cy.findByTestId("modal-add").click();
 
@@ -90,7 +92,7 @@ export default class FlowDetails {
   }
 
   #fillSubFlowModal(subFlowName: string, name: string) {
-    cy.get(".pf-c-modal-box__title-text").contains(
+    cy.get(".pf-v5-c-modal-box__title-text").contains(
       "Add step to " + subFlowName,
     );
     cy.findByTestId("name").type(name);

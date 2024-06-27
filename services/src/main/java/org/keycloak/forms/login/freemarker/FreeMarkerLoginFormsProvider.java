@@ -24,11 +24,14 @@ import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -44,6 +47,7 @@ import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
+import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean;
@@ -60,9 +64,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
@@ -92,9 +98,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+import static org.keycloak.organization.utils.Organizations.resolveOrganization;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -131,6 +140,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected UserModel user;
 
     protected final Map<String, Object> attributes = new HashMap<>();
+    private Function<Map<String, Object>, Map<String, Object>> attributeMapper;
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session) {
         this.session = session;
@@ -260,6 +270,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("email", emailBean);
                 break;
             case LOGIN_IDP_LINK_CONFIRM:
+            case LOGIN_IDP_LINK_CONFIRM_OVERRIDE:
             case LOGIN_IDP_LINK_EMAIL:
                 BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
                 String idpAlias = brokerContext.getIdpConfig().getAlias();
@@ -367,6 +378,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         if (authenticationSession != null) {
             uriBuilder.queryParam(Constants.TAB_ID, authenticationSession.getTabId());
+            String authSessionAction = authenticationSession.getAction();
+            if (!AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(authSessionAction) && !AuthenticationSessionModel.Action.LOGGED_OUT.name().equals(authSessionAction)) {
+                uriBuilder.queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession));
+            }
         }
         return uriBuilder;
     }
@@ -392,7 +407,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         Properties messagesBundle;
         try {
             messagesBundle = theme.getEnhancedMessages(realm, locale);
-            attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
+            Map<Object, Object> msgParams = new HashMap<>(attributes);
+            msgParams.putAll(messagesBundle);
+            attributes.put("msg", new MessageFormatterMethod(locale, msgParams));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -429,7 +446,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             }
             attributes.put("message", wholeMessage);
         } else {
-            attributes.put("message", null);
+            attributes.remove("message");
         }
         attributes.put("messagesPerField", messagesPerField);
     }
@@ -464,12 +481,17 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = LoginFormsUtil
                     .filterIdentityProvidersForTheme(realm.getIdentityProvidersStream(), session, context);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId));
+            IdentityProviderBean idpBean = new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId);
 
+            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+                idpBean = new OrganizationAwareIdentityProviderBean(idpBean, session);
+            }
+
+            attributes.put("social", idpBean);
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
             attributes.put("auth", new AuthenticationContextBean(context, page));
-            attributes.put(Constants.EXECUTION, execution);
+            setAttribute(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
                 UriBuilder b;
@@ -521,12 +543,21 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
                 attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
             }
+
+            if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+                OrganizationModel organization = resolveOrganization(session, user);
+
+                if (organization != null) {
+                    attributes.put("org", new OrganizationBean(session, organization, user));
+                }
+            }
         }
         if (realm != null && user != null && session != null) {
             attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
         }
 
-        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null) {
+        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null
+                && !Boolean.TRUE.toString().equals(authenticationSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             attributes.put("isAppInitiatedAction", true);
         }
     }
@@ -541,6 +572,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      */
     protected Response processTemplate(Theme theme, String templateName, Locale locale) {
         try {
+            Map<String, Object> attributes = Optional.ofNullable(attributeMapper).orElse(Function.identity()).apply(this.attributes);
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
@@ -644,6 +676,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createIdpLinkConfirmLinkPage() {
         return createResponse(LoginFormsPages.LOGIN_IDP_LINK_CONFIRM);
+    }
+
+    @Override
+    public Response createIdpLinkConfirmOverrideLinkPage() {
+        return createResponse(LoginFormsPages.LOGIN_IDP_LINK_CONFIRM_OVERRIDE);
     }
 
     @Override
@@ -869,7 +906,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @Override
     public LoginFormsProvider setAttribute(String name, Object value) {
-        this.attributes.put(name, value);
+        if (value == null) {
+            attributes.remove(name);
+        } else {
+            attributes.put(name, value);
+        }
         return this;
     }
 
@@ -897,8 +938,15 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return this;
     }
 
+    @Override
     public LoginFormsProvider setAuthContext(AuthenticationFlowContext context) {
         this.context = context;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setAttributeMapper(Function<Map<String, Object>, Map<String, Object>> mapper) {
+        this.attributeMapper = mapper;
         return this;
     }
 

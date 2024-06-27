@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import FeatureRepresentation, {
+  FeatureType,
+} from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
+import { HelpItem, label, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
@@ -14,6 +16,7 @@ import {
   DescriptionListTerm,
   EmptyState,
   EmptyStateBody,
+  EmptyStateHeader,
   Grid,
   GridItem,
   Label,
@@ -28,51 +31,40 @@ import {
   TextVariants,
   Title,
 } from "@patternfly/react-core";
-
-import FeatureRepresentation, {
-  FeatureType,
-} from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { HelpItem, label } from "ui-shared";
-import environment from "../environment";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { DashboardTab, toDashboard } from "./routes/Dashboard";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import helpUrls from "../help-urls";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { ProviderInfo } from "./ProviderInfo";
+import { DashboardTab, toDashboard } from "./routes/Dashboard";
 
 import "./dashboard.css";
-import { useFetch } from "../utils/useFetch";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { adminClient } from "../admin-client";
-import helpUrls from "../help-urls";
 
 const EmptyDashboard = () => {
+  const { environment } = useEnvironment();
+
   const { t } = useTranslation();
-  const { realm } = useRealm();
-  const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
+  const { realm, realmRepresentation: realmInfo } = useRealm();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
-  useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
   const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
 
   return (
     <PageSection variant="light">
-      <EmptyState variant="large">
+      <EmptyState variant="lg">
         <Brand
           src={environment.resourceUrl + brandImage}
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />
-        <Title headingLevel="h2" size="3xl">
-          {t("welcome")}
-        </Title>
-        <Title headingLevel="h1" size="4xl">
-          {realmDisplayInfo}
-        </Title>
+        <EmptyStateHeader titleText={<>{t("welcome")}</>} headingLevel="h2" />
+        <EmptyStateHeader titleText={realmDisplayInfo} headingLevel="h1" />
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
       </EmptyState>
     </PageSection>
@@ -86,7 +78,7 @@ type FeatureItemProps = {
 const FeatureItem = ({ feature }: FeatureItemProps) => {
   const { t } = useTranslation();
   return (
-    <ListItem className="pf-u-mb-sm">
+    <ListItem className="pf-v5-u-mb-sm">
       {feature.name}&nbsp;
       {feature.type === FeatureType.Experimental && (
         <Label color="orange">{t("experimental")}</Label>
@@ -103,10 +95,9 @@ const FeatureItem = ({ feature }: FeatureItemProps) => {
 
 const Dashboard = () => {
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation: realmInfo } = useRealm();
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
-  const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
 
   const sortedFeatures = useMemo(
     () => localeSort(serverInfo.features ?? [], mapByKey("name")),
@@ -131,8 +122,6 @@ const Dashboard = () => {
       }),
     );
 
-  useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
-
   const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
 
   const welcomeTab = useTab("welcome");
@@ -146,11 +135,11 @@ const Dashboard = () => {
   return (
     <>
       <PageSection variant="light">
-        <TextContent className="pf-u-mr-sm">
+        <TextContent className="pf-v5-u-mr-sm">
           <Text component="h1">{t("realmNameTitle", { name: realm })}</Text>
         </TextContent>
       </PageSection>
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           data-testid="dashboard-tabs"
           defaultLocation={toDashboard({
@@ -167,22 +156,22 @@ const Dashboard = () => {
             {...welcomeTab}
           >
             <PageSection variant="light">
-              <div className="pf-l-grid pf-u-ml-lg">
-                <div className="pf-l-grid__item pf-m-12-col">
+              <div className="pf-v5-l-grid pf-v5-u-ml-lg">
+                <div className="pf-v5-l-grid__item pf-m-12-col">
                   <Title
-                    className="pf-u-font-weight-bold"
+                    className="pf-v5-u-font-weight-bold"
                     headingLevel="h2"
                     size="3xl"
                   >
                     {t("welcomeTo", { realmDisplayInfo })}
                   </Title>
                 </div>
-                <div className="pf-l-grid__item keycloak__dashboard_welcome_tab">
+                <div className="pf-v5-l-grid__item keycloak__dashboard_welcome_tab">
                   <Text component={TextVariants.h3}>{t("welcomeText")}</Text>
                 </div>
-                <div className="pf-l-grid__item pf-m-10-col pf-u-mt-md">
+                <div className="pf-v5-l-grid__item pf-m-10-col pf-v5-u-mt-md">
                   <Button
-                    className="pf-u-px-lg pf-u-py-sm"
+                    className="pf-v5-u-px-lg pf-v5-u-py-sm"
                     component="a"
                     href={helpUrls.documentation}
                     target="_blank"
@@ -191,7 +180,7 @@ const Dashboard = () => {
                     {t("viewDocumentation")}
                   </Button>
                 </div>
-                <ActionList className="pf-u-mt-sm">
+                <ActionList className="pf-v5-u-mt-sm">
                   <ActionListItem>
                     <Button
                       component="a"

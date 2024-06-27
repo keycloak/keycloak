@@ -1,5 +1,6 @@
 import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-import { FormGroup, Select, SelectOption } from "@patternfly/react-core";
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
@@ -26,10 +27,10 @@ export const ValidatorSelect = ({
 
   return (
     <FormGroup label={t("validatorType")} fieldId="validator">
-      <Select
+      <KeycloakSelect
         toggleId="validator"
         onToggle={toggle}
-        onSelect={(_, value) => {
+        onSelect={(value) => {
           const option = value as ComponentTypeRepresentation;
           onChange(option);
           setValue(option);
@@ -53,7 +54,7 @@ export const ValidatorSelect = ({
             {option.id}
           </SelectOption>
         ))}
-      </Select>
+      </KeycloakSelect>
     </FormGroup>
   );
 };

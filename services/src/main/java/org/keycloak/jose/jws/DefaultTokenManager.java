@@ -78,7 +78,8 @@ public class DefaultTokenManager implements TokenManager {
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
         SignatureSignerContext signer = signatureProvider.signer();
 
-        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).sign(signer);
+        String type = type(token.getCategory());
+        String encodedToken = new JWSBuilder().type(type).jsonContent(token).sign(signer);
         return encodedToken;
     }
 
@@ -235,6 +236,15 @@ public class DefaultTokenManager implements TokenManager {
         return encodedToken;
     }
 
+    private String type(TokenCategory category) {
+        switch (category) {
+            case LOGOUT:
+                return TokenUtil.TOKEN_TYPE_JWT_LOGOUT_TOKEN;
+            default:
+                return "JWT";
+        }
+    }
+
     private boolean isTokenEncryptRequired(TokenCategory category) {
         if (cekManagementAlgorithm(category) == null) return false;
         if (encryptAlgorithm(category) == null) return false;
@@ -273,6 +283,8 @@ public class DefaultTokenManager implements TokenManager {
     public String cekManagementAlgorithm(TokenCategory category) {
         if (category == null) return null;
         switch (category) {
+            case INTERNAL:
+                return Algorithm.AES;
             case ID:
             case LOGOUT:
                 return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
@@ -300,6 +312,8 @@ public class DefaultTokenManager implements TokenManager {
         switch (category) {
             case ID:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, JWEConstants.A128CBC_HS256);
+            case INTERNAL:
+                return JWEConstants.A128CBC_HS256;
             case LOGOUT:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
             case AUTHORIZATION_RESPONSE:

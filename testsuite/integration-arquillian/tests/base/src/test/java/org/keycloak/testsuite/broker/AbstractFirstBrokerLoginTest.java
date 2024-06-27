@@ -23,6 +23,7 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -30,10 +31,12 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SecondBrowser;
@@ -52,6 +55,7 @@ import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureConfirmOverrideLinkFlow;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.grantReadTokenRole;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
@@ -359,7 +363,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Click browser 'back' and then 'forward' and then continue
         driver.navigate().back();
-        assertTrue(driver.getPageSource().contains("You are already logged in."));
+        loginExpiredPage.assertCurrent();
         driver.navigate().forward(); // here a new execution ID is added to the URL using JS, see below
         idpConfirmLinkPage.assertCurrent();
 
@@ -368,11 +372,9 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         driver.navigate().back();
-        // JS-capable browsers (i.e. all except HtmlUnit) add a new execution ID to the URL which then causes the login expire page to appear (because the old ID and new ID don't match)
-        if (!(driver instanceof HtmlUnitDriver)) {
-            loginExpiredPage.assertCurrent();
-            loginExpiredPage.clickLoginContinueLink();
-        }
+
+        loginExpiredPage.assertCurrent();
+        loginExpiredPage.clickLoginContinueLink();
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), "FirstName", "LastName");
@@ -1453,6 +1455,73 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         } finally {
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         }
+    }
+
+    @Test
+    public void testConfirmOverrideLink() {
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        testingClient.server(bc.consumerRealmName())
+                .run(configureConfirmOverrideLinkFlow(bc.getIDPAlias()));
+
+        // create a user with existing federated identity
+        String createdUser = createUser(bc.getUserLogin());
+
+        FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
+                .userId("id")
+                .userName("username")
+                .identityProvider(bc.getIDPAlias())
+                .build();
+
+        try (Response response = consumerRealm.users().get(createdUser)
+                .addFederatedIdentity(bc.getIDPAlias(), identity)) {
+            assertEquals("status", 204, response.getStatus());
+        }
+
+        // login with the same username user but different user id from provider
+        logInAsUserInIDP();
+
+        idpConfirmOverrideLinkPage.assertCurrent();
+        String expectMessage = "You are trying to link your account testuser with the " + bc.getIDPAlias() + " account testuser. " +
+                "But your account is already linked with different " + bc.getIDPAlias() + " account username. " +
+                "Can you confirm if you want to replace the existing link with the new account?";
+        assertEquals(expectMessage, idpConfirmOverrideLinkPage.getMessage());
+        idpConfirmOverrideLinkPage.clickConfirmOverride();
+
+        // assert federated identity override
+        UserRepresentation user = ApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
+        String providerUserId = user.getId();
+        List<FederatedIdentityRepresentation> federatedIdentities = consumerRealm.users().get(createdUser).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        FederatedIdentityRepresentation actual = federatedIdentities.get(0);
+        assertEquals(bc.getIDPAlias(), actual.getIdentityProvider());
+        assertEquals(bc.getUserLogin(), actual.getUserName());
+        if (this instanceof KcSamlFirstBrokerLoginTest) {
+            // for SAML, the userID is username
+            assertEquals(bc.getUserLogin(), actual.getUserId());
+        } else {
+            // for OIDC, the userID is id
+            assertEquals(providerUserId, actual.getUserId());
+        }
+
+        RealmRepresentation consumerRealmRep = consumerRealm.toRepresentation();
+
+        // one for showing the confirm page
+        events.expectIdentityProviderFirstLogin(consumerRealmRep, bc.getIDPAlias(), bc.getUserLogin())
+                .assertEvent(getFirstConsumerEvent());
+        // one for submitting the confirmAction
+        events.expectIdentityProviderFirstLogin(consumerRealmRep, bc.getIDPAlias(), bc.getUserLogin())
+                .assertEvent(getFirstConsumerEvent());
+
+        events.expect(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .client("broker-app")
+                .realm(consumerRealmRep)
+                .user(createdUser)
+                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, "username")
+                .assertEvent(getFirstConsumerEvent());
     }
 
     private Runnable toggleRegistrationAllowed(String realmName, boolean registrationAllowed) {

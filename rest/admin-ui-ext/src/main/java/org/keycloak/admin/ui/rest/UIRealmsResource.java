@@ -1,12 +1,12 @@
 package org.keycloak.admin.ui.rest;
 
-import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
-
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -17,7 +17,6 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.admin.ui.rest.model.RealmNameRepresentation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.RealmsPermissionEvaluator;
@@ -51,18 +50,16 @@ public class UIRealmsResource {
                     )
             )}
     )
-    public Stream<RealmNameRepresentation> getRealms() {
-        Stream<RealmNameRepresentation> realms = session.realms().getRealmsStream()
-                .filter(realm -> {
-                    RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
-                    return eval.canView(realm) || eval.isAdmin(realm);
-                })
-                .map((RealmModel realm) -> {
-                    RealmNameRepresentation realmNameRep = new RealmNameRepresentation();
-                    realmNameRep.setDisplayName(realm.getDisplayName());
-                    realmNameRep.setName(realm.getName());
-                    return realmNameRep;
-                });
-        return throwIfEmpty(realms, new ForbiddenException());
+    public Stream<RealmNameRepresentation> getRealms(@QueryParam("first") @DefaultValue("0") int first,
+                                                     @QueryParam("max") @DefaultValue("10") int max,
+                                                     @QueryParam("search") @DefaultValue("") String search) {
+        final RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
+
+        return session.realms().getRealmsStream()
+                .filter(realm -> eval.canView(realm) || eval.isAdmin(realm))
+                .filter(realm -> search.isEmpty() || realm.getName().toLowerCase().contains(search.trim().toLowerCase()))
+                .skip(first)
+                .limit(max)
+                .map((RealmModel realm) -> new RealmNameRepresentation(realm.getName(), realm.getDisplayName()));
     }
 }

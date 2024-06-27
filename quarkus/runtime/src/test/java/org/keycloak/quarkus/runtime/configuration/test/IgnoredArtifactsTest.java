@@ -24,12 +24,16 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -94,21 +98,46 @@ public class IgnoredArtifactsTest {
         assertJdbc("postgres", JDBC_POSTGRES);
     }
 
+    // default ignored JDBC artifacts specified in quarkus.properties
+    private static final Set<String> IGNORED_JDBC_FROM_PROPS = Stream.of(JDBC_MARIADB, JDBC_POSTGRES)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toSet());
+
+    @Test
+    public void multipleDatasources() {
+        var defaultDS = Configuration.getOptionalValue("quarkus.datasource.db-kind");
+        assertThat(defaultDS.isPresent(), is(true));
+        assertThat(defaultDS.get(), is("h2"));
+
+        var dogStoreDS = Configuration.getOptionalValue("quarkus.datasource.dog-store.db-kind");
+        assertThat(dogStoreDS.isPresent(), is(true));
+        assertThat(dogStoreDS.get(), is("mariadb"));
+
+        var catStoreDS = Configuration.getOptionalValue("quarkus.datasource.cat-store.db-kind");
+        assertThat(catStoreDS.isPresent(), is(true));
+        assertThat(catStoreDS.get(), is("postgresql"));
+
+        assertJdbc("h2", JDBC_H2);
+    }
+
     private void assertJdbc(String vendor, Set<String> notIgnored) {
+        var notIgnoredWithDefaults = new HashSet<>(notIgnored);
+        notIgnoredWithDefaults.addAll(IGNORED_JDBC_FROM_PROPS);
+
         System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), vendor);
         try {
             final var resultArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
             assertThat(String.format("Ignored artifacts does not comply with the specified artifacts for '%s' JDBC driver", vendor),
                     resultArtifacts,
-                    not(CoreMatchers.hasItems(notIgnored.toArray(new String[0]))));
+                    not(CoreMatchers.hasItems(notIgnoredWithDefaults.toArray(new String[0]))));
 
             final var includedArtifacts = new HashSet<>(IgnoredArtifacts.JDBC_DRIVERS);
-            includedArtifacts.removeAll(notIgnored);
+            includedArtifacts.removeAll(notIgnoredWithDefaults);
             assertThat("Ignored artifacts does not contain items for the other JDBC drivers",
                     resultArtifacts,
                     CoreMatchers.hasItems(includedArtifacts.toArray(new String[0])));
         } finally {
-            System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), "");
+            System.getProperties().remove(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey());
         }
     }
 

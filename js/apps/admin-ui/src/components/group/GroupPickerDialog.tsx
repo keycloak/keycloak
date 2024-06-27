@@ -20,14 +20,13 @@ import {
 import { AngleRightIcon } from "@patternfly/react-icons";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";
-import { countGroups } from "../../groups/components/GroupTree";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -54,6 +53,8 @@ export const GroupPickerDialog = ({
   onClose,
   onConfirm,
 }: GroupPickerDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<SelectableGroup[]>([]);
 
@@ -79,7 +80,7 @@ export const GroupPickerDialog = ({
 
       if (!groupId) {
         const args: GroupQuery = {
-          first: first,
+          first,
           max: max + 1,
         };
         if (isSearching) {
@@ -93,14 +94,13 @@ export const GroupPickerDialog = ({
             throw new Error(t("notFound"));
           }
         }
-        if (group?.id) {
-          const args: SubGroupQuery = {
-            first: first,
-            max: max + 1,
-            parentId: group.id,
-          };
-          groups = await adminClient.groups.listSubGroups(args);
-        }
+
+        const args: SubGroupQuery = {
+          first,
+          max,
+          parentId: groupId,
+        };
+        groups = await adminClient.groups.listSubGroups(args);
       }
 
       if (id) {
@@ -115,15 +115,16 @@ export const GroupPickerDialog = ({
       setJoinedGroups(existingUserGroups || []);
       if (selectedGroup) {
         setNavigation([...navigation, selectedGroup]);
+        setCount(selectedGroup.subGroupCount!);
       }
 
-      if (groups) {
-        groups.forEach((group: SelectableGroup) => {
-          group.checked = !!selectedRows.find((r) => r.id === group.id);
-        });
-        setGroups(groups);
+      groups.forEach((group: SelectableGroup) => {
+        group.checked = !!selectedRows.find((r) => r.id === group.id);
+      });
+      setGroups(groups);
+      if (isSearching || !groupId) {
+        setCount(groups.length);
       }
-      setCount(isSearching ? countGroups(groups || []) : groups?.length || 0);
     },
     [groupId, filter, first, max],
   );
@@ -222,10 +223,9 @@ export const GroupPickerDialog = ({
           ))}
         </Breadcrumb>
         <DataList aria-label={t("groups")} isCompact>
-          {groups
-            .slice(groupId ? first : 0, max + (groupId ? first : 0))
-            .map((group: SelectableGroup) => (
-              <Fragment key={group.id}>
+          {groups.slice(0, max).map((group: SelectableGroup) => (
+            <Fragment key={group.id}>
+              {(!isSearching || group.name?.includes(filter)) && (
                 <GroupRow
                   key={group.id}
                   group={group}
@@ -238,23 +238,24 @@ export const GroupPickerDialog = ({
                   setSelectedRows={setSelectedRows}
                   canBrowse={canBrowse}
                 />
-                {isSearching &&
-                  group.subGroups?.map((g) => (
-                    <GroupRow
-                      key={g.id}
-                      group={g}
-                      isRowDisabled={isRowDisabled}
-                      onSelect={setGroupId}
-                      type={type}
-                      isSearching={isSearching}
-                      setIsSearching={setIsSearching}
-                      selectedRows={selectedRows}
-                      setSelectedRows={setSelectedRows}
-                      canBrowse={canBrowse}
-                    />
-                  ))}
-              </Fragment>
-            ))}
+              )}
+              {isSearching &&
+                group.subGroups?.map((g) => (
+                  <GroupRow
+                    key={g.id}
+                    group={g}
+                    isRowDisabled={isRowDisabled}
+                    onSelect={setGroupId}
+                    type={type}
+                    isSearching={isSearching}
+                    setIsSearching={setIsSearching}
+                    selectedRows={selectedRows}
+                    setSelectedRows={setSelectedRows}
+                    canBrowse={canBrowse}
+                  />
+                ))}
+            </Fragment>
+          ))}
         </DataList>
         {groups.length === 0 && !isSearching && (
           <ListEmptyState
@@ -307,7 +308,10 @@ const GroupRow = ({
       onClick={(e) => {
         if (type === "selectOne") {
           onSelect(group.id!);
-        } else if ((e.target as HTMLInputElement).type !== "checkbox") {
+        } else if (
+          (e.target as HTMLInputElement).type !== "checkbox" &&
+          group.subGroupCount !== 0
+        ) {
           onSelect(group.id!);
           setIsSearching(false);
         }
@@ -326,7 +330,7 @@ const GroupRow = ({
             aria-label={group.name}
             checked={group.checked}
             isDisabled={isRowDisabled(group)}
-            onChange={(checked) => {
+            onChange={(_event, checked) => {
               group.checked = checked;
               let newSelectedRows: SelectableGroup[] = [];
               if (!group.checked) {
@@ -361,7 +365,7 @@ const GroupRow = ({
           aria-label={t("groupName")}
           isPlainButtonAction
         >
-          {(canBrowse || type === "selectOne") && (
+          {(canBrowse || type === "selectOne") && group.subGroupCount !== 0 && (
             <Button variant="link" aria-label={t("select")}>
               <AngleRightIcon />
             </Button>

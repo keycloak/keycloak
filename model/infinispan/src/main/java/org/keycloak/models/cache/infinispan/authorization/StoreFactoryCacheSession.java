@@ -99,7 +99,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     protected Set<String> invalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
 
-    protected boolean clearAll;
     protected final long startupRevision;
     protected StoreFactory delegate;
     protected KeycloakSession session;
@@ -250,16 +249,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         cache.sendInvalidationEvents(session, invalidationEvents, InfinispanCacheStoreFactoryProviderFactory.AUTHORIZATION_INVALIDATION_EVENTS);
     }
 
-
-
-    public long getStartupRevision() {
-        return startupRevision;
-    }
-
-    public boolean isInvalid(String id) {
-        return invalidations.contains(id);
-    }
-
     public void registerResourceServerInvalidation(String id) {
         cache.resourceServerUpdated(id, invalidations);
         ResourceServerAdapter adapter = managedResourceServers.get(id);
@@ -281,7 +270,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         ResourceAdapter adapter = managedResources.get(id);
         if (adapter != null) adapter.invalidateFlag();
 
-        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uris, scopes, serverId, owner));
+        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uris, owner, scopes, serverId));
     }
 
     public void registerPolicyInvalidation(String id, String name, Set<String> resources, Set<String> scopes, String defaultResourceType, String serverId) {
@@ -454,7 +443,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (server == null) return;
 
             cache.invalidateObject(id);
-            invalidationEvents.add(ResourceServerRemovedEvent.create(id, server.getId()));
+            invalidationEvents.add(ResourceServerRemovedEvent.create(id));
             cache.resourceServerRemoval(id, invalidations);
             getResourceServerStoreDelegate().delete(client);
 

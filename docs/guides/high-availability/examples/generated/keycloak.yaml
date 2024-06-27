@@ -328,7 +328,7 @@ spec:
             - name: SQLPAD_SEED_DATA_PATH
               value: /etc/sqlpad/seed-data
             - name: SQLPAD_CONNECTIONS__pgdemo__name
-              value: PostgresSQL Keycloak
+              value: PostgreSQL Keycloak
             - name: SQLPAD_CONNECTIONS__pgdemo__port
               value: '5432'
             - name: SQLPAD_CONNECTIONS__pgdemo__host

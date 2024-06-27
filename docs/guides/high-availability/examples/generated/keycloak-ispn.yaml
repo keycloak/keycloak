@@ -47,299 +47,6 @@ metadata:
   namespace: keycloak
 type: kubernetes.io/tls
 ---
-# Source: keycloak/templates/keycloak-infinispan-configmap.yaml
-# tag::keycloak-ispn-configmap[]
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kcb-infinispan-cache-config
-  namespace: keycloak
-data:
-  kcb-infinispan-cache-remote-store-config.xml: |
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!-- end::keycloak-ispn-configmap[] -->
-
-    <!--
-      ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
-      ~ and other contributors as indicated by the @author tags.
-      ~
-      ~ Licensed under the Apache License, Version 2.0 (the "License");
-      ~ you may not use this file except in compliance with the License.
-      ~ You may obtain a copy of the License at
-      ~
-      ~ http://www.apache.org/licenses/LICENSE-2.0
-      ~
-      ~ Unless required by applicable law or agreed to in writing, software
-      ~ distributed under the License is distributed on an "AS IS" BASIS,
-      ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-      ~ See the License for the specific language governing permissions and
-      ~ limitations under the License.
-      -->
-
-    <!--tag::keycloak-ispn-configmap[] -->
-    <infinispan
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:14.0 https://www.infinispan.org/schemas/infinispan-config-14.0.xsd
-                urn:infinispan:config:store:remote:14.0 https://www.infinispan.org/schemas/infinispan-cachestore-remote-config-14.0.xsd"
-            xmlns="urn:infinispan:config:14.0">
-        <!--end::keycloak-ispn-configmap[] -->
-
-        <!-- the statistics="true" attribute is not part of the original KC config and was added by Keycloak Benchmark -->
-        <cache-container name="keycloak" statistics="true">
-            <transport lock-timeout="60000"/>
-            <metrics names-as-tags="true" />
-            <local-cache name="realms" simple-cache="true" statistics="true">
-                <encoding>
-                    <key media-type="application/x-java-object"/>
-                    <value media-type="application/x-java-object"/>
-                </encoding>
-                <memory max-count="10000"/>
-            </local-cache>
-            <local-cache name="users" simple-cache="true" statistics="true">
-                <encoding>
-                    <key media-type="application/x-java-object"/>
-                    <value media-type="application/x-java-object"/>
-                </encoding>
-                <memory max-count="10000"/>
-            </local-cache>
-            <!--tag::keycloak-ispn-remotestore[] -->
-            <distributed-cache name="sessions" owners="2" statistics="true">
-                <expiration lifespan="-1"/>
-                <persistence passivation="false"> <!--1-->
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="sessions"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/> <!--2-->
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/> <!--3-->
-                            </authentication>
-                            <encryption protocol="TLSv1.3"
-                                        sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/> <!--4-->
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </distributed-cache>
-            <!--end::keycloak-ispn-remotestore[] -->
-            <distributed-cache name="authenticationSessions" owners="2" statistics="true">
-                <expiration lifespan="-1"/>
-                <persistence passivation="false">
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="authenticationSessions"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/>
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/>
-                            </authentication>
-                            <encryption protocol="TLSv1.3"
-                                        sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/>
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </distributed-cache>
-            <distributed-cache name="offlineSessions" owners="2" statistics="true">
-                <expiration lifespan="-1"/>
-                <persistence passivation="false">
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="offlineSessions"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/>
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/>
-                            </authentication>
-                            <encryption protocol="TLSv1.3"
-                                        sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/>
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </distributed-cache>
-            <distributed-cache name="clientSessions" owners="2" statistics="true">
-                <expiration lifespan="-1"/>
-                <persistence passivation="false">
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="clientSessions"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/>
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/>
-                            </authentication>
-                            <encryption protocol="TLSv1.3" sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/>
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </distributed-cache>
-            <distributed-cache name="offlineClientSessions" owners="2" statistics="true">
-                <expiration lifespan="-1"/>
-                <persistence passivation="false">
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="offlineClientSessions"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/>
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/>
-                            </authentication>
-                            <encryption protocol="TLSv1.3" sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/>
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </distributed-cache>
-            <distributed-cache name="loginFailures" owners="2" statistics="true">
-                <expiration lifespan="-1"/>
-                <persistence passivation="false">
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="loginFailures"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/>
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/>
-                            </authentication>
-                            <encryption protocol="TLSv1.3" sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/>
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </distributed-cache>
-            <local-cache name="authorization" simple-cache="true" statistics="true">
-                <encoding>
-                    <key media-type="application/x-java-object"/>
-                    <value media-type="application/x-java-object"/>
-                </encoding>
-                <memory max-count="10000"/>
-            </local-cache>
-            <!--tag::keycloak-ispn-remotestore-work[] -->
-            <replicated-cache name="work" statistics="true">
-                <expiration lifespan="-1"/>
-                <persistence passivation="false">
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="work"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/>
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/>
-                            </authentication>
-                            <encryption protocol="TLSv1.3" sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/>
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </replicated-cache>
-            <!--end::keycloak-ispn-remotestore-work[] -->
-            <local-cache name="keys" simple-cache="true" statistics="true">
-                <encoding>
-                    <key media-type="application/x-java-object"/>
-                    <value media-type="application/x-java-object"/>
-                </encoding>
-                <expiration max-idle="3600000"/>
-                <memory max-count="1000"/>
-            </local-cache>
-            <distributed-cache name="actionTokens" owners="2" statistics="true">
-                <encoding>
-                    <key media-type="application/x-java-object"/>
-                    <value media-type="application/x-java-object"/>
-                </encoding>
-                <expiration max-idle="-1" lifespan="-1" interval="300000"/>
-                <memory max-count="-1"/>
-                <persistence passivation="false">
-                    <remote-store xmlns="urn:infinispan:config:store:remote:14.0"
-                                  cache="actionTokens"
-                                  raw-values="true"
-                                  shared="true"
-                                  segmented="false">
-                        <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                       port="${env.KC_REMOTE_STORE_PORT}"/>
-                        <connection-pool max-active="16"
-                                         exhausted-action="CREATE_NEW"/>
-                        <security>
-                            <authentication server-name="infinispan">
-                                <digest username="${env.KC_REMOTE_STORE_USERNAME}"
-                                        password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                        realm="default"/>
-                            </authentication>
-                            <encryption protocol="TLSv1.3" sni-hostname="${env.KC_REMOTE_STORE_HOST}">
-                                <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                            type="pem"/>
-                            </encryption>
-                        </security>
-                    </remote-store>
-                </persistence>
-            </distributed-cache>
-        </cache-container>
-    </infinispan>
----
 # Source: keycloak/templates/keycloak-providers-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -634,7 +341,7 @@ spec:
             - name: SQLPAD_SEED_DATA_PATH
               value: /etc/sqlpad/seed-data
             - name: SQLPAD_CONNECTIONS__pgdemo__name
-              value: PostgresSQL Keycloak
+              value: PostgreSQL Keycloak
             - name: SQLPAD_CONNECTIONS__pgdemo__port
               value: '5432'
             - name: SQLPAD_CONNECTIONS__pgdemo__host
@@ -743,12 +450,6 @@ spec:
   features:
     enabled:
       - multi-site # <3>
-  # tag::keycloak-ispn[]
-  cache:
-    configMapFile:
-      name: kcb-infinispan-cache-config # <1>
-      key: kcb-infinispan-cache-remote-store-config.xml # <1>
-  # end::keycloak-ispn[]
   transaction:
     xaEnabled: false # <4>
   # tag::keycloak-ispn[]
@@ -765,19 +466,19 @@ spec:
     - name: http-pool-max-threads # <6>
       value: "200"
     # tag::keycloak-ispn[]
-    - name: remote-store-host # <2>
+    - name: cache-remote-host # <1>
       value: "infinispan.keycloak.svc"
-    - name: remote-store-port # <2>
+    - name: cache-remote-port # <2>
       value: "11222"
-    - name: remote-store-username # <3>
+    - name: cache-remote-username # <3>
       secret:
         name: remote-store-secret
         key: username
-    - name: remote-store-password # <3>
+    - name: cache-remote-password # <4>
       secret:
         name: remote-store-secret
         key: password
-    - name: spi-connections-infinispan-quarkus-site-name # <4>
+    - name: spi-connections-infinispan-quarkus-site-name # <5>
       value: keycloak
     # end::keycloak-ispn[]
     - name: db-driver
@@ -790,7 +491,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: 2cae63c85a3485c135aebe1472971dd056b1dda42fb54ef2f891bc521e31fc1a-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3-<KEYCLOAK_IMAGE_HERE>-56f92cd9012613402e2a7a61aded0f218d077b8c6345b22922ca7bf1a5c64984-v1.27.0
+          checksum/config: 385f54cb8e4bf326f6970aa2a0c8e573d35d9071e69ab2baee252728748bca76-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-v1.27.0
       spec:
         containers:
           - env:

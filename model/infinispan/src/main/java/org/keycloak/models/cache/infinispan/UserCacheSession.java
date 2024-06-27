@@ -19,10 +19,12 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -54,6 +56,7 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
@@ -63,6 +66,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 
@@ -108,7 +112,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     public void clear() {
         cache.clear();
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true, ClusterProvider.DCNotify.ALL_DCS);
+        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), true, ClusterProvider.DCNotify.ALL_DCS);
     }
 
     public UserProvider getDelegate() {
@@ -119,7 +123,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return delegate;
     }
 
-    public void registerUserInvalidation(RealmModel realm,CachedUser user) {
+    public void registerUserInvalidation(CachedUser user) {
         cache.userUpdatedInvalidations(user.getId(), user.getUsername(), user.getEmail(), user.getRealm(), invalidations);
         invalidationEvents.add(UserUpdatedEvent.create(user.getId(), user.getUsername(), user.getEmail(), user.getRealm()));
     }
@@ -210,7 +214,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
-        
+
         UserModel adapter = null;
         if (cached == null) {
             logger.trace("not cached");
@@ -325,7 +329,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
             // its also hard to test stuff
             if (model.shouldInvalidate(cached)) {
-                registerUserInvalidation(realm, cached);
+                registerUserInvalidation(cached);
                 return getDelegate().getUserById(realm, cached.getId());
             }
         }
@@ -334,6 +338,22 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
+            OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizationProvider.getByMember(delegate);
+
+            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate) && !organization.isEnabled()) ||
+                    (!organizationProvider.isEnabled() && organization != null && organization.isManaged(delegate))) {
+                return new ReadOnlyUserModelDelegate(delegate) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+        }
 
         StorageId storageId = delegate.getFederationLink() != null ?
                 new StorageId(delegate.getFederationLink(), delegate.getId()) : new StorageId(delegate.getId());
@@ -472,6 +492,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        return getDelegate().getGroupMembersStream(realm, group, search, exact, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
         return getDelegate().getGroupMembersStream(realm, group);
     }
@@ -484,7 +509,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
         return getDelegate().getRoleMembersStream(realm, role);
-    }    
+    }
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {
@@ -950,9 +975,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
-    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
         if (getDelegate() instanceof UserProfileDecorator) {
-            ((UserProfileDecorator) getDelegate()).decorateUserProfile(realm, metadata);
+            return ((UserProfileDecorator) getDelegate()).decorateUserProfile(providerId, metadata);
         }
+        return List.of();
     }
 }

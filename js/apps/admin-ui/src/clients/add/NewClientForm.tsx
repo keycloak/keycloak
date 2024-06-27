@@ -1,17 +1,15 @@
 import {
   AlertVariant,
-  Button,
   PageSection,
+  useWizardContext,
   Wizard,
-  WizardContextConsumer,
   WizardFooter,
+  WizardStep,
 } from "@patternfly/react-core";
-import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -23,13 +21,41 @@ import { toClients } from "../routes/Clients";
 import { CapabilityConfig } from "./CapabilityConfig";
 import { GeneralSettings } from "./GeneralSettings";
 import { LoginSettings } from "./LoginSettings";
+import { useState } from "react";
+
+const NewClientFooter = (newClientForm: any) => {
+  const { t } = useTranslation();
+  const { trigger } = newClientForm;
+  const { activeStep, goToNextStep, goToPrevStep, close } = useWizardContext();
+
+  const forward = async (onNext: () => void) => {
+    if (!(await trigger())) {
+      return;
+    }
+    onNext?.();
+  };
+
+  return (
+    <WizardFooter
+      activeStep={activeStep}
+      onNext={() => forward(goToNextStep)}
+      onBack={goToPrevStep}
+      onClose={close}
+      isBackDisabled={activeStep.index === 1}
+      backButtonText={t("back")}
+      nextButtonText={t("next")}
+      cancelButtonText={t("cancel")}
+    />
+  );
+};
 
 export default function NewClientForm() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
-
-  const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState<boolean>(false);
 
   const { addAlert, addError } = useAlerts();
   const form = useForm<FormFields>({
@@ -50,10 +76,12 @@ export default function NewClientForm() {
       },
     },
   });
-  const { getValues, watch, trigger } = form;
+  const { getValues, watch } = form;
   const protocol = watch("protocol");
 
   const save = async () => {
+    if (saving) return;
+    setSaving(true);
     const client = convertFormValuesToObject(getValues());
     try {
       const newClient = await adminClient.clients.create({
@@ -64,33 +92,8 @@ export default function NewClientForm() {
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
       addError("createClientError", error);
-    }
-  };
-
-  const forward = async (onNext?: () => void) => {
-    if (!(await trigger())) {
-      return;
-    }
-    if (!isFinalStep()) {
-      setStep(step + 1);
-    }
-    onNext?.();
-  };
-
-  const isFinalStep = () =>
-    protocol === "openid-connect" ? step === 2 : step === 1;
-
-  const back = () => {
-    setStep(step - 1);
-  };
-
-  const onGoToStep = (newStep: { id?: string | number }) => {
-    if (newStep.id === "generalSettings") {
-      setStep(0);
-    } else if (newStep.id === "capabilityConfig") {
-      setStep(1);
-    } else {
-      setStep(2);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -103,75 +106,39 @@ export default function NewClientForm() {
           <Wizard
             onClose={() => navigate(toClients({ realm }))}
             navAriaLabel={`${title} steps`}
-            mainAriaLabel={`${title} content`}
-            steps={[
-              {
-                id: "generalSettings",
-                name: t("generalSettings"),
-                component: <GeneralSettings />,
-              },
-              ...(protocol !== "saml"
-                ? [
-                    {
-                      id: "capabilityConfig",
-                      name: t("capabilityConfig"),
-                      component: <CapabilityConfig protocol={protocol} />,
-                      canJumpTo: step >= 1,
-                    },
-                  ]
-                : []),
-              {
-                id: "loginSettings",
-                name: t("loginSettings"),
-                component: (
-                  <FormAccess isHorizontal role="manage-clients">
-                    <LoginSettings protocol={protocol} />
-                  </FormAccess>
-                ),
-                canJumpTo: step >= 1,
-              },
-            ]}
-            footer={
-              <WizardFooter>
-                <WizardContextConsumer>
-                  {({ activeStep, onNext, onBack, onClose }) => (
-                    <>
-                      <Button
-                        variant="primary"
-                        data-testid={isFinalStep() ? "save" : "next"}
-                        type="submit"
-                        onClick={() => {
-                          forward(onNext);
-                        }}
-                      >
-                        {isFinalStep() ? t("save") : t("next")}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        data-testid="back"
-                        onClick={() => {
-                          back();
-                          onBack();
-                        }}
-                        isDisabled={activeStep.name === t("generalSettings")}
-                      >
-                        {t("back")}
-                      </Button>
-                      <Button
-                        data-testid="cancel"
-                        variant="link"
-                        onClick={onClose}
-                      >
-                        {t("cancel")}
-                      </Button>
-                    </>
-                  )}
-                </WizardContextConsumer>
-              </WizardFooter>
-            }
             onSave={save}
-            onGoToStep={onGoToStep}
-          />
+            footer={<NewClientFooter {...form} />}
+          >
+            <WizardStep
+              name={t("generalSettings")}
+              id="generalSettings"
+              key="generalSettings"
+            >
+              <GeneralSettings />
+            </WizardStep>
+            <WizardStep
+              name={t("capabilityConfig")}
+              id="capabilityConfig"
+              key="capabilityConfig"
+              isHidden={protocol === "saml"}
+            >
+              <CapabilityConfig protocol={protocol} />
+            </WizardStep>
+            <WizardStep
+              name={t("loginSettings")}
+              id="loginSettings"
+              key="loginSettings"
+              footer={{
+                backButtonText: t("back"),
+                nextButtonText: t("save"),
+                cancelButtonText: t("cancel"),
+              }}
+            >
+              <FormAccess isHorizontal role="manage-clients">
+                <LoginSettings protocol={protocol} />
+              </FormAccess>
+            </WizardStep>
+          </Wizard>
         </FormProvider>
       </PageSection>
     </>

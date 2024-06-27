@@ -115,7 +115,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
         events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
                 .client("client1")
-                .user(client1SAUserId)
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
@@ -574,6 +574,10 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     }
 
     @Test
+    public void testTokenIntrospectionEndpointAsAudience() throws Exception {
+        testEndpointAsAudience(oauth.getTokenIntrospectionUrl());
+    }
+    @Test
     public void testInvalidAudience() throws Exception {
         ClientRepresentation clientRepresentation = app2;
         ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
@@ -649,8 +653,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         setTimeOffset(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
-        
-        
+
+
     }
 
     @Test

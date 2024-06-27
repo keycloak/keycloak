@@ -33,7 +33,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
-import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -162,8 +161,11 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
                         .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
-                                createSecureRedirectUrisEnforcerExecutorConfig(it->
-                                    it.setAllowIPv6LoopbackAddress(true)))
+                                createSecureRedirectUrisEnforcerExecutorConfig(it-> {
+                                    it.setOAuth2_1Compliant(true);
+                                    it.setAllowIPv6LoopbackAddress(true);
+                                })
+                        )
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -180,6 +182,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
 
         // register - fail
         // IPv4 loopback address not allowed
+        testSecureRedirectUrisEnforcerExecutor_failRegisterDynamically(Arrays.asList("https://[::1]/", "https://127.0.0.1/auth/admin"));
+
+        // register - fail
+        // IPv4 loopback address not allowed (even when "localhost" is used)
         testSecureRedirectUrisEnforcerExecutor_failRegisterDynamically(Arrays.asList("https://[::1]/", "https://localhost/auth/admin"));
 
         // register - success
@@ -189,7 +195,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         String alphaCid = registerResultList.get(1);
 
         // update - fail
-        // representation of IPv6 loopback address [0:0:0:0:0:0:0:1] not allowed
+        // representation of IPv6 loopback address [0:0:0:0:0:0:0:1] not allowed with OAuth 2.1 mode enabled
         testSecureRedirectUrisEnforcerExecutor_failUpdateByAdmin(alphaCid, List.of("https://[0:0:0:0:0:0:0:1]/oauth2redirect/example-provider"));
 
         // update - success
@@ -375,6 +381,27 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         testSecureRedirectUrisEnforcerExecutor_failUpdateDynamically(alphaClientId,
                 Arrays.asList("http://dev.oauth.redirect/*", "http://test-example.com/redirect"));
 
+        // update using rootUrl - fail
+        try {
+            updateClientByAdmin(alphaCid, (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.setRootUrl("http://incorrect.org");
+                clientRep.setRedirectUris(List.of("/redirect"));
+            });
+            fail("Expected to fail when updating clientId " + alphaCid + " with redirectUris: '/redirect'");
+        } catch (ClientPolicyException cpe) {
+            assertEquals(Errors.INVALID_REQUEST, cpe.getError());
+        }
+
+        // update using rootUrl - success
+        updateClientByAdmin(alphaCid, (ClientRepresentation clientRep) -> {
+            clientRep.setAttributes(new HashMap<>());
+            clientRep.setRootUrl("http://dev-example.org");
+            clientRep.setRedirectUris(List.of("/redirect"));
+        });
+        ClientRepresentation cRep = getClientByAdmin(alphaCid);
+        assertEquals(List.of("/redirect"), cRep.getRedirectUris());
+
         // update - success
         testSecureRedirectUrisEnforcerExecutor_successUpdateByAdmin(alphaCid,
                 Arrays.asList("http://oauth.redirect/*", "http://dev-example.org/redirect", ServerURLs.getAuthServerContextRoot() + "/*"));
@@ -464,6 +491,63 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(List.of(""));
     }
 
+    @Test
+    public void testSecureRedirectUrisEnforcerExecutor_postLogoutRedirectUris() throws Exception {
+        // register profiles
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it-> {
+                                    it.setAllowPermittedDomains(List.of("oauth.redirect"));
+                                })
+                        )
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Success - register without post-logout redirect uris
+        String clientId = testSecureRedirectUrisEnforcerExecutor_successRegisterDynamically(List.of("https://oauth.redirect/something"));
+
+        // Success - update with post-logout redirect uris as "+"
+        updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+                clientRep.setPostLogoutRedirectUris(List.of("+"));
+        });
+        OIDCClientRepresentation clientRepp = reg.oidc().get(clientId);
+        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
+        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getPostLogoutRedirectUris());
+
+        // Fail - incorrect domain for post-logout redirect uri
+        try {
+            updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+                clientRep.setPostLogoutRedirectUris(List.of("https://incorrect.domain/some"));
+            });
+            fail();
+        } catch (ClientRegistrationException e) {
+            assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
+        }
+
+        // Success - update with post-logout redirect uris as "+"
+        updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
+            clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+            clientRep.setPostLogoutRedirectUris(List.of("https://oauth.redirect/some-post-logout"));
+        });
+        clientRepp = reg.oidc().get(clientId);
+        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
+        Assert.assertEquals(List.of("https://oauth.redirect/some-post-logout"), clientRepp.getPostLogoutRedirectUris());
+    }
+
 
     private void testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List<String> redirectUrisList) {
         try {
@@ -481,11 +565,13 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         try {
             createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) ->
                 clientRep.setRedirectUris(redirectUrisList));
+            fail("Expected to fail with redirectUris: " +redirectUrisList);
         } catch (ClientRegistrationException cre) {
             assertEquals(ERR_MSG_CLIENT_REG_FAIL, cre.getMessage());
         }
     }
 
+    // First item in the list is clientId. Second item is clientUUID (DB entity ID)
     private List<String> testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(List<String> redirectUrisList) {
         String alphaClientId = null;
         String alphaCid = null;
@@ -503,12 +589,25 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         return Arrays.asList(alphaClientId, alphaCid);
     }
 
+    // Return clientId (not DB UUID)
+    private String testSecureRedirectUrisEnforcerExecutor_successRegisterDynamically(List<String> redirectUrisList) {
+        try {
+            return createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) ->
+                    clientRep.setRedirectUris(redirectUrisList));
+        } catch (ClientRegistrationException cre) {
+            fail("Did not expected to fail when dynamically registering client with redirectUris: " + redirectUrisList);
+            // Should not be here
+            return null;
+        }
+    }
+
     private void testSecureRedirectUrisEnforcerExecutor_failUpdateByAdmin(String cId, List<String> redirectUrisList) {
         try {
             updateClientByAdmin(cId, (ClientRepresentation clientRep) -> {
                 clientRep.setAttributes(new HashMap<>());
                 clientRep.setRedirectUris(redirectUrisList);
             });
+            fail("Expected to failwhen updating clientId " + cId + " with redirectUris: " +redirectUrisList);
         } catch (ClientPolicyException cpe) {
             assertEquals(Errors.INVALID_REQUEST, cpe.getError());
         }

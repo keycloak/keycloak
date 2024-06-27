@@ -25,10 +25,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessTokenResponse;
@@ -65,6 +65,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
             session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams));
             refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
@@ -91,20 +92,23 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
             logger.trace(e.getMessage(), e);
             // KEYCLOAK-6771 Certificate Bound Token
             if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.NOT_ALLOWED);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
             } else {
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
             }
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Override

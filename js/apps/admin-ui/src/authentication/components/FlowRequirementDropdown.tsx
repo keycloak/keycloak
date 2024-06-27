@@ -1,6 +1,11 @@
+import {
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
 
 import type { ExpandableExecution } from "../execution-model";
 
@@ -26,18 +31,26 @@ export const FlowRequirementDropdown = ({
     <>
       {flow.requirementChoices && flow.requirementChoices.length > 1 && (
         <Select
-          className="keycloak__authentication__requirement-dropdown"
-          variant={SelectVariant.single}
-          onToggle={setOpen}
+          onOpenChange={(isOpen) => setOpen(isOpen)}
           onSelect={(_event, value) => {
-            flow.requirement = value.toString();
+            flow.requirement = value?.toString();
             onChange(flow);
             setOpen(false);
           }}
-          selections={[flow.requirement]}
+          selected={flow.requirement}
           isOpen={open}
+          toggle={(ref) => (
+            <MenuToggle
+              className="keycloak__authentication__requirement-dropdown"
+              ref={ref}
+              onClick={() => setOpen(!open)}
+              isExpanded={open}
+            >
+              {t(`requirements.${flow.requirement}`)}
+            </MenuToggle>
+          )}
         >
-          {options}
+          <SelectList>{options}</SelectList>
         </Select>
       )}
       {(!flow.requirementChoices || flow.requirementChoices.length <= 1) && (

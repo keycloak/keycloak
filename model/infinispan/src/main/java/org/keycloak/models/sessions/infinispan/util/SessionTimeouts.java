@@ -35,12 +35,9 @@ public class SessionTimeouts {
     /**
      * This indicates that entry is already expired and should be removed from the cache
      */
-    public static final long ENTRY_EXPIRED_FLAG = -2l;
+    public static final long ENTRY_EXPIRED_FLAG = -2;
 
-    /**
-     * This is used just if timeouts are not set on the realm (usually happens just during tests when realm is created manually with the model API)
-     */
-    public static final int MINIMAL_EXPIRATION_SEC = 300;
+    private static final long IMMORTAL_FLAG = -1;
 
     /**
      * Get the maximum lifespan, which this userSession can remain in the infinispan cache.
@@ -216,7 +213,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getLoginFailuresLifespanMs(RealmModel realm, ClientModel client, LoginFailureEntity loginFailureEntity) {
-        return -1l;
+        return IMMORTAL_FLAG;
     }
 
 
@@ -229,6 +226,6 @@ public class SessionTimeouts {
      * @return
      */
     public static long getLoginFailuresMaxIdleMs(RealmModel realm, ClientModel client, LoginFailureEntity loginFailureEntity) {
-        return -1l;
+        return IMMORTAL_FLAG;
     }
 }

@@ -43,6 +43,7 @@ spec:
     adminUrl: https://www.my-admin-hostname.org:8448/something
     strict: true
     strictBackchannel: true
+    backchannelDynamic: true
   cache:
     configMapFile:
       name: my-config-map
@@ -65,6 +66,12 @@ spec:
       memory: "1500M"
   proxy:
     headers: forwarded
+  truststores:
+    x:
+      secret:
+        name: my-secret
+  httpManagement:
+    port: 9003
   unsupported:
     podTemplate:
       metadata:

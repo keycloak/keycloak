@@ -112,7 +112,7 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
 
             // Authority Key Identifier
             certGen.addExtension(Extension.authorityKeyIdentifier, false,
-                    x509ExtensionUtils.createAuthorityKeyIdentifier(subjPubKeyInfo));
+                    x509ExtensionUtils.createAuthorityKeyIdentifier(caCert));
 
             // Key Usage
             certGen.addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign

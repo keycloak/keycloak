@@ -17,9 +17,20 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.util.Arrays;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.factories.KnownComponentNames;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.persistence.manager.PersistenceManager;
+import org.infinispan.util.concurrent.BlockingManager;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -36,6 +47,14 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
         this.topologyInfo = topologyInfo;
     }
 
+    private static PersistenceManager persistenceManager(Cache<?, ?> cache) {
+        return ComponentRegistry.componentOf(cache, PersistenceManager.class);
+    }
+
+    private static CompletionStage<Void> clearPersistenceManager(PersistenceManager persistenceManager) {
+        return persistenceManager.clearAllStores(PersistenceManager.AccessMode.BOTH);
+    }
+
     @Override
     public <K, V> Cache<K, V> getCache(String name, boolean createIfAbsent) {
         return cacheManager.getCache(name, createIfAbsent);
@@ -49,6 +68,30 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     @Override
     public TopologyInfo getTopologyInfo() {
         return topologyInfo;
+    }
+
+    @Override
+    public CompletionStage<Void> migrateToProtostream() {
+        // Only the CacheStore (persistence) stores data in binary format and needs to be deleted.
+        // We assume rolling-upgrade between KC 25 and KC 26 is not available, in other words, KC 25 and KC 26 servers are not present in the same cluster.
+        var stage = CompletionStages.aggregateCompletionStage();
+        Arrays.stream(CLUSTERED_CACHE_NAMES)
+                .map(this::getCache)
+                .map(DefaultInfinispanConnectionProvider::persistenceManager)
+                .map(DefaultInfinispanConnectionProvider::clearPersistenceManager)
+                .forEach(stage::dependsOn);
+        return stage.freeze();
+    }
+
+    @Override
+    public Executor getExecutor(String name) {
+        return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class).asExecutor(name);
+    }
+
+    @Override
+    public ScheduledExecutorService getScheduledExecutor() {
+        //noinspection removal
+        return GlobalComponentRegistry.of(cacheManager).getComponent(ScheduledExecutorService.class, KnownComponentNames.TIMEOUT_SCHEDULE_EXECUTOR);
     }
 
     @Override

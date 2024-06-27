@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -32,6 +31,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -41,7 +41,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
@@ -50,6 +50,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -60,12 +61,15 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -133,23 +137,6 @@ public class UsersResource {
         if(realm.isRegistrationEmailAsUsername()) {
             username = rep.getEmail();
         }
-        if (ObjectUtil.isBlank(username)) {
-            throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
-        }
-
-        // Double-check duplicated username and email here due to federation
-        if (session.users().getUserByUsername(realm, username) != null) {
-            throw ErrorResponse.exists("User exists with same username");
-        }
-        if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
-            try {
-                if(session.users().getUserByEmail(realm, rep.getEmail()) != null) {
-                    throw ErrorResponse.exists("User exists with same email");
-                }
-            } catch (ModelDuplicateException e) {
-                throw ErrorResponse.exists("User exists with same email");
-            }
-        }
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
 
@@ -170,25 +157,18 @@ public class UsersResource {
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().commit();
-            }
-
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().setRollbackOnly();
-            }
             throw ErrorResponse.exists("User exists with same username or email");
         } catch (PasswordPolicyNotMetException e) {
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().setRollbackOnly();
-            }
-            throw ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Response.Status.BAD_REQUEST);
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me){
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().setRollbackOnly();
-            }
             logger.warn("Could not create user", me);
             throw ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }

@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.client.clienttype.ClientTypeManagerFactory;
 import org.keycloak.common.Profile;
@@ -68,7 +69,7 @@ public class DefaultClientTypeManagerFactory implements ClientTypeManagerFactory
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES);
     }
 
@@ -82,7 +83,8 @@ public class DefaultClientTypeManagerFactory implements ClientTypeManagerFactory
                         ClientTypesRepresentation globalTypesRep  = JsonSerialization.readValue(getClass().getResourceAsStream("/keycloak-default-client-types.json"), ClientTypesRepresentation.class);
                         this.globalClientTypes = DefaultClientTypeManager.validateAndCastConfiguration(session, globalTypesRep.getRealmClientTypes(), Collections.emptyList());
                     } catch (IOException e) {
-                        throw new IllegalStateException("Failed to deserialize global proposed client types from JSON.", e);
+                        logger.error("Failed to deserialize global proposed client types from JSON.");
+                        throw ClientTypeException.Message.CLIENT_TYPE_FAILED_TO_LOAD.exception(e);
                     }
                 }
             }

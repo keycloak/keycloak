@@ -38,6 +38,7 @@ import org.keycloak.util.TokenUtil;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -204,6 +205,15 @@ public class AssertEvents implements TestRule {
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
     }
 
+    public ExpectedEvent expectIdentityProviderFirstLogin(RealmRepresentation realm, String identityProvider, String idpUsername) {
+        return expect(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .client("broker-app")
+                .realm(realm)
+                .user((String)null)
+                .detail(Details.IDENTITY_PROVIDER, identityProvider)
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, idpUsername);
+    }
+
     public ExpectedEvent expectRegisterError(String username, String email) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER_ERROR)
@@ -359,7 +369,39 @@ public class AssertEvents implements TestRule {
         }
 
         public EventRepresentation assertEvent() {
-            return assertEvent(poll());
+            return assertEvent(false);
+        }
+
+        /**
+         * Assert the expected event was sent to the listener by Keycloak server. Returns this event.
+         *
+         * @param ignorePreviousEvents if true, test will ignore all the events, which were already present. Test will poll the events from the queue until it finds the event of expected type
+         * @return the expected event
+         */
+        public EventRepresentation assertEvent(boolean ignorePreviousEvents) {
+            if (expected.getError() != null && ! expected.getType().endsWith("_ERROR")) {
+                expected.setType(expected.getType() + "_ERROR");
+            }
+
+            if (ignorePreviousEvents) {
+                // Consider 25 as a "limit" for maximum number of events in the queue for now
+                List<String> presentedEventTypes = new LinkedList<>();
+                for (int i = 0 ; i < 25 ; i++) {
+                    EventRepresentation event = fetchNextEvent();
+                    if (event == null) {
+                        Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
+                    }
+                    if (expected.getType().equals(event.getType())) {
+                        return assertEvent(event);
+                    } else {
+                        presentedEventTypes.add(event.getType());
+                    }
+                }
+                Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
+                return null; // Unreachable code
+            } else {
+                return assertEvent(poll());
+            }
         }
 
         public EventRepresentation assertEvent(EventRepresentation actual) {

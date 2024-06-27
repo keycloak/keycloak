@@ -279,8 +279,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
-        Response response = ((ExchangeTokenToIdentityProviderToken) provider).exchangeFromToken(session.getContext().getUri(), event, client, targetUserSession, targetUser, formParams);
-        return cors.builder(Response.fromResponse(response)).build();
+        Response response = ((ExchangeTokenToIdentityProviderToken)provider).exchangeFromToken(session.getContext().getUri(), event, client, targetUserSession, targetUser, formParams);
+        return cors.add(Response.fromResponse(response));
 
     }
 
@@ -360,7 +360,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
         }
 
-
         if (scope != null) {
             // verification of existing users consents for requested scopes of target client
             if (!TokenManager.verifyConsentStillAvailable(session, targetUser, targetClient, TokenManager.getRequestedClientScopes(scope, client))) {
@@ -374,13 +373,17 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client requires user consent", Response.Status.BAD_REQUEST);
             }
         }
-
-        switch (requestedTokenType) {
-            case OAuth2Constants.ACCESS_TOKEN_TYPE:
-            case OAuth2Constants.REFRESH_TOKEN_TYPE:
-                return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
-            case OAuth2Constants.SAML2_TOKEN_TYPE:
-                return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
+        try {
+            session.getContext().setClient(targetClient);
+            switch (requestedTokenType) {
+                case OAuth2Constants.ACCESS_TOKEN_TYPE:
+                case OAuth2Constants.REFRESH_TOKEN_TYPE:
+                    return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+                case OAuth2Constants.SAML2_TOKEN_TYPE:
+                    return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
+            }
+        } finally {
+            session.getContext().setClient(client);
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
@@ -456,7 +459,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, ClientModel targetClient) {
@@ -506,7 +509,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     protected Response exchangeExternalToken(String issuer, String subjectToken) {

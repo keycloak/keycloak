@@ -23,6 +23,8 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 
@@ -86,7 +88,7 @@ public interface AuthenticationManagementResource {
     @Path("/flows/{flowAlias}/copy")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    Response copy(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
+    Response copy(@PathParam("flowAlias") String flowAlias, Map<String, Object> data);
 
     @Path("/flows/{id}")
     @PUT
@@ -96,12 +98,12 @@ public interface AuthenticationManagementResource {
     @Path("/flows/{flowAlias}/executions/flow")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
+    void addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, Object> data);
 
     @Path("/flows/{flowAlias}/executions/execution")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void addExecution(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
+    void addExecution(@PathParam("flowAlias") String flowAlias, Map<String, Object> data);
 
     @Path("/flows/{flowAlias}/executions")
     @GET
@@ -176,6 +178,25 @@ public interface AuthenticationManagementResource {
     @Path("required-actions/{alias}/lower-priority")
     @POST
     void lowerRequiredActionPriority(@PathParam("alias") String alias);
+
+    @Path("required-actions/{alias}/config-description")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    RequiredActionConfigInfoRepresentation getRequiredActionConfigDescription(@PathParam("alias") String alias);
+
+    @Path("required-actions/{alias}/config")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    RequiredActionConfigRepresentation getRequiredActionConfig(@PathParam("alias") String alias);
+
+    @Path("required-actions/{alias}/config")
+    @DELETE
+    void removeRequiredActionConfig(@PathParam("alias") String alias);
+
+    @Path("required-actions/{alias}/config")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    void updateRequiredActionConfig(@PathParam("alias") String alias, RequiredActionConfigRepresentation rep);
 
     @Path("config-description/{providerId}")
     @GET

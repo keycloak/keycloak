@@ -35,6 +35,12 @@
     <packaging>pom</packaging>
 
     <properties>
+        <!-- Maven -->
+        <maven.version>3.9.8</maven.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+
         <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
@@ -45,8 +51,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.7.4</quarkus.version>
-        <quarkus.build.version>3.7.4</quarkus.build.version>
+        <quarkus.version>3.8.5</quarkus.version>
+        <quarkus.build.version>3.8.5</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -59,7 +65,7 @@
         <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
 
         <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
-        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
+        <tests.wildfly.core.version>21.1.1.Final</tests.wildfly.core.version>
 
         <!-- Upstream WildFly Versions -->
         <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
@@ -73,21 +79,17 @@
         <eap8.wildfly.build-tools.version>1.2.13.Final</eap8.wildfly.build-tools.version>
 
         <wildfly.jakarta.adapters>true</wildfly.jakarta.adapters>
-        <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
-        <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
 
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
-        <jboss.aesh.version>0.66.19</jboss.aesh.version>
-        <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
-        <!-- 1.0.2.4 exhibits class loading issues -->
-        <bouncycastle.bcfips.version>1.0.2.3</bouncycastle.bcfips.version>
+        <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
+        <bouncycastle.bctls-fips.version>1.0.19</bouncycastle.bctls-fips.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -97,7 +99,7 @@
         <h2.version>2.2.224</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.25.Final</infinispan.version>
+        <infinispan.version>15.0.5.Final</infinispan.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -114,7 +116,7 @@
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
         <resteasy.version>6.2.7.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
-        <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
+        <owasp.html.sanitizer.version>20240325.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.saaj.version>2.0.1</sun.saaj.version>
@@ -127,7 +129,6 @@
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
         <wildfly-elytron.version>2.2.3.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
-        <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
         <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
@@ -146,12 +147,11 @@
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.32</freemarker.version>
 
-        <jetty9.version>${jetty94.version}</jetty9.version>
+        <!-- json-ld processing for oid4vci ld-proofs -->
+        <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
+        <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
+
         <liquibase.version>4.25.1</liquibase.version>
-        <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
-        <osgi.version>6.0.0</osgi.version>
-        <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
-        <pax.web.version>7.4.6</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
@@ -159,12 +159,12 @@
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
-        <postgresql.version>15</postgresql.version>
-        <aurora-postgresql.version>15.3</aurora-postgresql.version>
+        <postgresql.version>16</postgresql.version>
+        <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.1</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.2</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
-        <mariadb-jdbc.version>3.3.2</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.3.3</mariadb-jdbc.version>
         <mssql.version>2022-latest</mssql.version>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
         <mssql-jdbc.version>12.4.2.jre11</mssql-jdbc.version>
@@ -185,22 +185,21 @@
         <assertj-core.version>3.22.0</assertj-core.version>
         
         <!-- Maven Plugins -->
-        <maven.version>3.9.6</maven.version>
-        <maven.plugins.version>3.11.0</maven.plugins.version>
+        <maven.plugins.version>3.13.1</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
-        <osgi.bundle.plugin.version>5.1.8</osgi.bundle.plugin.version>
-        <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
+        <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.14.2</frontend.plugin.version>
+        <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <infinispan.maven-plugins.version>1.0.5.Final</infinispan.maven-plugins.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -208,14 +207,11 @@
         <surefire.memory.metaspace>96m</surefire.memory.metaspace>
         <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
         <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
-        <surefire.system.args></surefire.system.args>
-
-        <!-- Tomcat versions -->
-        <tomcat8.version>8.5.76</tomcat8.version>
-        <tomcat9.version>9.0.16</tomcat9.version>
-
-        <!-- Spring Boot versions, used for tests -->
-        <spring-boot27.version>2.7.14</spring-boot27.version>
+        <!-- See: https://github.com/keycloak/keycloak/issues/9899 -->
+        <surefire.system.args>
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+        </surefire.system.args>
 
         <!-- webauthn support -->
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
@@ -240,9 +236,14 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.18.2</node.version>
-        <pnpm.version>8.10.0</pnpm.version>
+        <node.version>v20.13.0</node.version>
+        <pnpm.version>9.1.0</pnpm.version>
         <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
+        <!-- The clean step is skipped on Windows -->
+        <js.skip.clean>false</js.skip.clean>
+
+        <!-- Set to true on release to update proto.lock files -->
+        <commitProtoLockChanges>false</commitProtoLockChanges>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -317,42 +318,6 @@
                 <version>${infinispan.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-jboss-marshalling</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <!-- this conflicts with infinispan-*-jakarta -->
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-commons</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-remote</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <!-- this conflicts with infinispan-*-jakarta -->
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-commons</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-client-hotrod</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.quarkus.platform</groupId>
@@ -430,11 +395,17 @@
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
             
-          <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bc-fips</artifactId>
-            <version>${bouncycastle.bcfips.version}</version>
-          </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bc-fips</artifactId>
+                <version>${bouncycastle.bcfips.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-fips</artifactId>
+                <version>${bouncycastle.bctls-fips.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
@@ -577,6 +548,16 @@
                 <version>${owasp.html.sanitizer.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>java8-shim</artifactId>
+                <version>${owasp.html.sanitizer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>java10-shim</artifactId>
+                <version>${owasp.html.sanitizer.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
@@ -586,7 +567,6 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
@@ -741,12 +721,6 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${apache.httpcomponents.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.common</groupId>
@@ -888,11 +862,6 @@
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
-                <groupId>${ee.maven.groupId}</groupId>
-                <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
-                <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
                 <artifactId>undertow-server</artifactId>
                 <version>${elytron.undertow-server.version}</version>
@@ -916,36 +885,6 @@
                         <artifactId>commons-text</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>osgi.core</artifactId>
-                <version>${osgi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.enterprise</artifactId>
-                <version>${osgi.enterprise.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-runtime</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-api</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.web</groupId>
-                <artifactId>pax-web-spi</artifactId>
-                <version>${pax.web.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.aesh</groupId>
-                <artifactId>aesh</artifactId>
-                <version>${jboss.aesh.version}</version>
             </dependency>
 
             <!-- keycloak -->
@@ -1020,27 +959,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-servlet-adapter-spi</artifactId>
+                <artifactId>keycloak-admin-client-jee-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jakarta-servlet-adapter-spi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-adapter-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client-jee</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client</artifactId>
+                <artifactId>keycloak-admin-client-tests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1055,42 +979,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-installed-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jaxrs-oauth-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jboss-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty-adapter-spi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty94-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-as7-subsystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wildfly-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1110,46 +1004,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-spring-boot-adapter-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-spring-boot-2-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat-adapter-spi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat-core-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-jakarta-servlet-filter-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-servlet-filter-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jakarta-servlet-filter-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-as7-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1160,37 +1014,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-undertow-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-undertow-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wildfly-elytron-oidc-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-wildfly-elytron-jakarta-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1265,49 +1094,25 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-jetty-adapter-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
+           <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-wildfly-jakarta-subsystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-jetty94-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-undertow-adapter</artifactId>
+                <artifactId>keycloak-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-services</artifactId>
                 <version>${project.version}</version>
+                <type>test-jar</type>
             </dependency>
 
             <!-- Authorization -->
@@ -1396,24 +1201,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-fuse-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-fuse-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>tar.gz</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1455,12 +1242,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-as7-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1474,18 +1255,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-feature-pack</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-jetty94-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1528,11 +1297,6 @@
                 <artifactId>product-portal-example</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-client-registration-cli</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -1664,6 +1428,17 @@
                 <scope>test</scope>
                 <version>${version.org.wildfly.glow}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.apicatalog</groupId>
+                <artifactId>titanium-json-ld</artifactId>
+                <version>${com.apicatalog.titanium-json-ld.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.setl</groupId>
+                <artifactId>rdf-urdna</artifactId>
+                <version>${io.setl.rdf-urdna.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1735,6 +1510,15 @@
                     <artifactId>maven-install-plugin</artifactId>
                     <configuration>
                         <createChecksum>true</createChecksum>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <doclint>none</doclint>
+                        <failOnError>false</failOnError>
+                        <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1825,19 +1609,65 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.felix</groupId>
-                    <artifactId>maven-bundle-plugin</artifactId>
-                    <version>${osgi.bundle.plugin.version}</version>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <configuration>
+                        <followSymLinks>false</followSymLinks>
+                        <!-- Skip this step if on windows -->
+                        <skip>${js.skip.clean}</skip>
+                        <filesets>
+                            <fileset>
+                                <directory>${basedir}</directory>
+                                <includes>
+                                    <include>**/.wireit/**</include>
+                                    <include>**/node_modules/**</include>
+                                </includes>
+                            </fileset>
+                            <!-- include all non-maven projects here as well -->
+                            <fileset>
+                                <directory>js/apps/keycloak-server</directory>
+                                <includes>
+                                    <include>server/**</include>
+                                </includes>
+                            </fileset>
+                        </filesets>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${frontend.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>install-node-and-pnpm</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>pnpm-install</id>
+                            <goals>
+                                <goal>pnpm</goal>
+                            </goals>
+                            <configuration>
+                                <arguments>install --prefer-offline --frozen-lockfile --ignore-scripts</arguments>
+                                <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>pnpm-build</id>
+                            <goals>
+                                <goal>pnpm</goal>
+                            </goals>
+                            <configuration>
+                                <arguments>build</arguments>
+                            </configuration>
+                        </execution>
+                    </executions>
                     <configuration>
                         <nodeVersion>${node.version}</nodeVersion>
                         <pnpmVersion>${pnpm.version}</pnpmVersion>
-                        <!-- Warning, this is an undocumented property https://issues.apache.org/jira/browse/MNG-6589. But there is nothing better. -->
                         <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
+                        <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1864,24 +1694,19 @@
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.infinispan.maven-plugins</groupId>
+                    <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
+                    <version>${infinispan.maven-plugins.version}</version>
+                    <configuration>
+                        <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
 
     <profiles>
-        <profile>
-            <id>jdk9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <properties>
-                <surefire.system.args>
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                </surefire.system.args>
-            </properties>
-        </profile>
-
         <profile>
             <id>testsuite</id>
             <activation>
@@ -1895,14 +1720,9 @@
         </profile>
 
         <profile>
-            <id>examples</id>
-            <activation>
-                <property>
-                    <name>!skipExamples</name>
-                </property>
-            </activation>
+            <id>test-poc</id>
             <modules>
-                <module>examples</module>
+                <module>test-poc</module>
             </modules>
         </profile>
 
@@ -1978,42 +1798,6 @@
         </profile>
 
         <profile>
-            <id>doclint-java8-disable</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <doclint>none</doclint>
-                            <failOnError>false</failOnError>
-                            <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>built-with-jdk-9-or-later</id>
-            <activation>
-                <!-- only activate this on JDK 9 or later as this option is unknown for JDK 8, and as it is not necessary for JDK 8 -->
-                <!-- support for running with JDK 8 is still necessary for some downstream integration tests -->
-                <jdk>(9,)</jdk>
-            </activation>
-            <properties>
-                <!-- Minimum Java version supported for running Keycloak -->
-                <!-- maven.compiler.target and maven.compiler.source already set to 1.8 in the parent pom -->
-                <!-- other modules will configure a higher Java version (for example, Quarkus) -->
-                <maven.compiler.release>8</maven.compiler.release>
-            </properties>
-        </profile>
-
-        <profile>
             <id>nexus-staging</id>
             <build>
                 <plugins>
@@ -2080,5 +1864,16 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>clean-when-not-on-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <js.skip.clean>true</js.skip.clean>
+            </properties>
+        </profile>
     </profiles>
 </project>

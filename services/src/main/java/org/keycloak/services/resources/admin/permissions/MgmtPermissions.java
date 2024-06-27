@@ -37,13 +37,14 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+
+import jakarta.ws.rs.ForbiddenException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -96,12 +97,17 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
-        if (Constants.ADMIN_CLI_CLIENT_ID.equals(auth.getToken().getIssuedFor())
-                || Constants.ADMIN_CONSOLE_CLIENT_ID.equals(auth.getToken().getIssuedFor())) {
-            this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
+        final String issuedFor = auth.getToken().getIssuedFor();
 
+        if (Constants.ADMIN_CLI_CLIENT_ID.equals(issuedFor) || Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
+            this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
         } else {
-            this.identity = new KeycloakIdentity(auth.getToken(), session);
+            ClientModel client  = session.clients().getClientByClientId(auth.getRealm(), issuedFor);
+            if (client != null && Boolean.parseBoolean(client.getAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR))) {
+                this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
+            } else {
+                this.identity = new KeycloakIdentity(auth.getToken(), session);
+            }
         }
     }
 

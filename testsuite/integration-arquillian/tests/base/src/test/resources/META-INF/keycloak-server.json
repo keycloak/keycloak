@@ -1,19 +1,11 @@
 {
 
     "hostname": {
-        "provider": "${keycloak.hostname.provider:default}",
-
-        "fixed": {
-            "hostname": "${keycloak.hostname.fixed.hostname:localhost}",
-            "httpPort": "${keycloak.hostname.fixed.httpPort:-1}",
-            "httpsPort": "${keycloak.hostname.fixed.httpsPort:-1}",
-            "alwaysHttps": "${keycloak.hostname.fixed.alwaysHttps:false}"
-        },
-
-        "default": {
-            "frontendUrl": "${keycloak.frontendUrl:}",
-            "adminUrl": "${keycloak.adminUrl:}",
-            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:false}"
+        "v2": {
+            "hostname": "${keycloak.hostname:}",
+            "hostname-admin": "${keycloak.hostname-admin:}",
+            "hostname-backchannel-dynamic": "${keycloak.hostname-backchannel-dynamic:}",
+            "hostname-strict": "${keycloak.hostname-strict:}"
         }
     },
 
@@ -184,6 +176,7 @@
     "connectionsInfinispan": {
         "default": {
             "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
+            "jgroupsBindAddr": "${keycloak.connectionsInfinispan.jgroupsBindAddr:127.0.0.1}",
             "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
             "siteName": "${keycloak.connectionsInfinispan.siteName:}",
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
@@ -202,7 +195,7 @@
         "file": {
             "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
-            "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
+            "hostname-verification-policy": "${keycloak.truststore.policy:DEFAULT}",
             "type": "${keycloak.truststore.type:}",
             "disabled": "${keycloak.truststore.disabled:false}"
         }
@@ -273,5 +266,12 @@
 
     "saml-artifact-resolver": {
         "provider": "${keycloak.saml-artifact-resolver.provider:default}"
+    },
+
+    "security-profile": {
+        "provider": "${keycloak.security-profile.provider:default}",
+        "default": {
+            "name":"${keycloak.security-profile.default.name:none-security-profile}"
+        }
     }
 }

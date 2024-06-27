@@ -84,7 +84,7 @@ public interface GroupLookupProvider {
      *
      * @param realm Realm.
      * @param search Case sensitive searched string.
-     * @param exact Boolean which defines wheather search param should be matched exactly.
+     * @param exact Boolean which defines whether search param should be matched exactly.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of root groups that have the given string in their name themself or a group in their child-collection has.

@@ -74,7 +74,7 @@ include::partials/aurora/aurora-failover.adoc[]
 
 === Route53
 
-If switching over to the secondary site has been triggered by changing the health endpoint, edit the health check in AWS to point to a correct endpoint (`health/live`).
+If switching over to the secondary site has been triggered by changing the health endpoint, edit the health check in AWS to point to a correct endpoint (`/lb-check`).
 After some minutes, the clients will notice the change and traffic will gradually move over to the secondary site.
 
 == Further reading

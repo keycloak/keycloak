@@ -24,14 +24,16 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.ClientModel;
+import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
@@ -40,26 +42,23 @@ import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionCluster
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.initializer.InfinispanCacheInitializer;
+import org.keycloak.models.sessions.infinispan.initializer.InitializerState;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-import java.io.Serializable;
 import java.util.Set;
-import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory {
+public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<InfinispanUserLoginFailureProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserLoginFailureProviderFactory.class);
-
-    public static final String PROVIDER_ID = "infinispan";
 
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
 
@@ -68,13 +67,14 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     private Config.Scope config;
 
     private RemoteCacheInvoker remoteCacheInvoker;
+    SerializeExecutionsByKey<LoginFailureKey> serializer = new SerializeExecutionsByKey<>();
 
     @Override
-    public UserLoginFailureProvider create(KeycloakSession session) {
+    public InfinispanUserLoginFailureProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
 
-        return new InfinispanUserLoginFailureProvider(session, remoteCacheInvoker, loginFailures);
+        return new InfinispanUserLoginFailureProvider(session, remoteCacheInvoker, loginFailures, serializer);
     }
 
     @Override
@@ -93,9 +93,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
                     registerClusterListeners(session);
                     loadLoginFailuresFromRemoteCaches(session);
                 });
-            } else if (event instanceof UserModel.UserRemovedEvent) {
-                UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
-
+            } else if (event instanceof UserModel.UserRemovedEvent userRemovedEvent) {
                 UserLoginFailureProvider provider = userRemovedEvent.getKeycloakSession().getProvider(UserLoginFailureProvider.class, getId());
                 provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
             }
@@ -110,7 +108,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
                 new AbstractUserSessionClusterListener<RealmRemovedSessionEvent, UserLoginFailureProvider>(sessionFactory, UserLoginFailureProvider.class) {
 
                     @Override
-                    protected void eventReceived(KeycloakSession session, UserLoginFailureProvider provider, RealmRemovedSessionEvent sessionEvent) {
+                    protected void eventReceived(UserLoginFailureProvider provider, RealmRemovedSessionEvent sessionEvent) {
                         if (provider instanceof InfinispanUserLoginFailureProvider) {
                             ((InfinispanUserLoginFailureProvider) provider).removeAllLocalUserLoginFailuresEvent(sessionEvent.getRealmId());
                         }
@@ -121,7 +119,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
                 new AbstractUserSessionClusterListener<RemoveAllUserLoginFailuresEvent, UserLoginFailureProvider>(sessionFactory, UserLoginFailureProvider.class) {
 
             @Override
-            protected void eventReceived(KeycloakSession session, UserLoginFailureProvider provider, RemoveAllUserLoginFailuresEvent sessionEvent) {
+            protected void eventReceived(UserLoginFailureProvider provider, RemoveAllUserLoginFailuresEvent sessionEvent) {
                 if (provider instanceof InfinispanUserLoginFailureProvider) {
                     ((InfinispanUserLoginFailureProvider) provider).removeAllLocalUserLoginFailuresEvent(sessionEvent.getRealmId());
                 }
@@ -193,18 +191,15 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
             @Override
             public void run(KeycloakSession session) {
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+                Cache<String, InitializerState> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
                 int defaultStateTransferTimeout = (int) (connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME)
                   .getCacheConfiguration().clustering().stateTransfer().timeout() / 1000);
 
                 InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
-                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors,
+                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, maxErrors,
                         getStalledTimeoutInSeconds(defaultStateTransferTimeout));
-
-                initializer.initCache();
                 initializer.loadSessions();
             }
-
         });
 
         log.debugf("Pre-loading login failures from remote cache '%s' finished", cacheName);
@@ -217,11 +212,16 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        return PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 }

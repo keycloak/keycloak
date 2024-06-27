@@ -57,6 +57,9 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.inject.Inject;
@@ -287,6 +290,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+        assertManagementInterfaceAccessibleViaService(kc, false);
     }
 
     @Test
@@ -296,6 +300,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+
+        // if TLS is enabled, management interface should use https
+        assertManagementInterfaceAccessibleViaService(kc, true);
     }
 
     @Test
@@ -321,7 +328,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(true);
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -350,7 +356,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -371,7 +376,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -582,24 +586,25 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         var stsGetter = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName());
-        final String origImage = stsGetter.get().getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
         final String newImage = "quay.io/keycloak/non-existing-keycloak";
 
         kc.getSpec().setImage(newImage);
+
+        var upgradeCondition = k8sclient.resource(kc).informOnCondition(kcs -> {
+            try {
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
+                return true;
+            } catch (AssertionError e) {
+                return false;
+            }
+        });
+
         deployKeycloak(k8sclient, kc, false);
-
-        Awaitility.await()
-                .ignoreExceptions()
-                .pollInterval(Duration.ZERO) // make the test super fast not to miss the moment when Operator changes the STS
-                .untilAsserted(() -> {
-                    var sts = stsGetter.get();
-                    assertEquals(1, sts.getStatus().getReplicas());
-                    assertEquals(origImage, sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-
-                    var currentKc = k8sclient.resources(Keycloak.class)
-                                    .inNamespace(namespace).withName(kc.getMetadata().getName()).get();
-                    assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
-                });
+        try {
+            upgradeCondition.get(2, TimeUnit.MINUTES);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new AssertionError(e);
+        }
 
         Awaitility.await()
                 .ignoreExceptions()
@@ -723,9 +728,28 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
                     String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
                     assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
-                            .stream().map(ServicePort::getName).anyMatch(protocol::equals));
+                            .stream().map(ServicePort::getName).anyMatch(protocol::equals)).isTrue();
 
                     String url = protocol + "://" + serviceName + "." + namespace + ":" + port + "/admin/master/console/";
+                    Log.info("Checking url: " + url);
+
+                    var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);
+                    Log.info("Curl Output: " + curlOutput);
+
+                    assertEquals("200", curlOutput);
+                });
+    }
+
+    private void assertManagementInterfaceAccessibleViaService(Keycloak kc, boolean https) {
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+                    assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
+                            .stream().map(ServicePort::getName).anyMatch(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME::equals)).isTrue();
+
+                    String protocol = https ? "https" : "http";
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + Constants.KEYCLOAK_MANAGEMENT_PORT;
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);

@@ -134,7 +134,7 @@ public abstract class CacheManager {
 
     protected void bumpVersion(String id) {
         long next = counter.next();
-        Object rev = revisions.put(id, next);
+        revisions.put(id, next);
     }
 
     public void addRevisioned(Revisioned object, long startupRevision) {
@@ -207,12 +207,8 @@ public abstract class CacheManager {
 
 
     public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
-        ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
-
-        // Maybe add InvalidationEvent, which will be collection of all invalidationEvents? That will reduce cluster traffic even more.
-        for (InvalidationEvent event : invalidationEvents) {
-            clusterProvider.notify(eventKey, event, true, ClusterProvider.DCNotify.ALL_DCS);
-        }
+        session.getProvider(ClusterProvider.class)
+                .notify(eventKey, invalidationEvents, true, ClusterProvider.DCNotify.ALL_DCS);
     }
 
 

@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -90,6 +91,10 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setSubjectType("pairwise");
         OIDCClientRepresentation pairwiseClient = reg.oidc().create(clientRep);
+
+        // No need to remove default sub mapper. As the pairwise sub mapper should be executed after the default one.
+        //removeDefaultBasicClientScope(pairwiseClient.getClientId());
+
         return pairwiseClient;
     }
 
@@ -327,11 +332,8 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         Assert.assertEquals(user.getId(), tokenUserId);
 
         // Create pairwise client
-        OIDCClientRepresentation clientRep = createRep();
-        clientRep.setSubjectType("pairwise");
-        OIDCClientRepresentation pairwiseClient = reg.oidc().create(clientRep);
+        OIDCClientRepresentation pairwiseClient = createPairwise();
         Assert.assertEquals("pairwise", pairwiseClient.getSubjectType());
-
         // Login to pairwise client
         oauth.clientId(pairwiseClient.getClientId());
         oauth.openLoginForm();
@@ -371,7 +373,6 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     public void refreshPairwiseToken() throws Exception {
         // Create pairwise client
         OIDCClientRepresentation pairwiseClient = createPairwise();
-
         // Login to pairwise client
         OAuthClient.AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
 
@@ -396,11 +397,11 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         Assert.assertEquals(idToken.getSubject(), refreshedRefreshToken.getSubject());
 
         // its iat Claim MUST represent the time that the new ID Token is issued
-        Assert.assertEquals(refreshedIdToken.getIssuedAt(), refreshedRefreshToken.getIssuedAt());
+        Assert.assertEquals(refreshedIdToken.getIat(), refreshedRefreshToken.getIat());
 
         // if the ID Token contains an auth_time Claim, its value MUST represent the time of the original authentication
         // - not the time that the new ID token is issued
-        Assert.assertEquals(idToken.getAuthTime(), refreshedIdToken.getAuthTime());
+        Assert.assertEquals(idToken.getAuth_time(), refreshedIdToken.getAuth_time());
 
         // its azp Claim Value MUST be the same as in the ID Token issued when the original authentication occurred; if
         // no azp Claim was present in the original ID Token, one MUST NOT be present in the new ID Token
@@ -486,5 +487,25 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     private String getPayload(String token) {
         String payloadBase64 = token.split("\\.")[1];
         return new String(Base64.getDecoder().decode(payloadBase64));
+    }
+
+    public void addDefaultBasicClientScope(String clientId) {
+        realmsResouce().realm(REALM_NAME).getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).addDefaultClientScope(scope.getId());
+                });
+    }
+
+    public void removeDefaultBasicClientScope(String clientId) {
+        realmsResouce().realm(REALM_NAME).getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).removeDefaultClientScope(scope.getId());
+                });
     }
 }

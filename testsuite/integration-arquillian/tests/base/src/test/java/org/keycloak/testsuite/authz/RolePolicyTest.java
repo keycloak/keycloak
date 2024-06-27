@@ -30,6 +30,9 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -40,6 +43,7 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -162,6 +166,53 @@ public class RolePolicyTest extends AbstractAuthzTest {
         getRealm().users().get(user.getId()).joinGroup(groupA.getId());
 
         assertNotNull(authzClient.authorization("alice", "password").authorize(new AuthorizationRequest(ticket)));
+    }
+
+    @Test
+    public void testFetchRoles() {
+        AuthzClient authzClient = getAuthzClient();
+        RealmResource realm = getRealm();
+        ClientsResource clients = realm.clients();
+        ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
+        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientResource clientResource = clients.get(client.getId());
+        clientResource.removeDefaultClientScope(rolesScope.getId());
+        getCleanup().addCleanup(() -> clientResource.addDefaultClientScope(rolesScope.getId()));
+        PermissionRequest request = new PermissionRequest("Resource B");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        try {
+            authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
+            fail("Should fail because no role is available from the token");
+        } catch (AuthorizationDeniedException ignore) {
+        }
+
+        RolePolicyRepresentation roleRep = clientResource.authorization().policies().role().findByName("Role B Policy");
+        roleRep.setFetchRoles(true);
+        clientResource.authorization().policies().role().findById(roleRep.getId()).update(roleRep);
+        assertNotNull(authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket)));
+    }
+
+    @Test
+    public void testFetchRolesUsingServiceAccount() {
+        AuthzClient authzClient = getAuthzClient();
+        RealmResource realm = getRealm();
+        ClientsResource clients = realm.clients();
+        ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
+        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientResource clientResource = clients.get(client.getId());
+        clientResource.removeDefaultClientScope(rolesScope.getId());
+        UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();
+        RoleRepresentation roleB = realm.roles().get("Role B").toRepresentation();
+        realm.users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(roleB));
+        RolePolicyRepresentation roleRep = clientResource.authorization().policies().role().findByName("Role B Policy");
+        roleRep.setFetchRoles(true);
+        clientResource.authorization().policies().role().findById(roleRep.getId()).update(roleRep);
+        getCleanup().addCleanup(() -> {
+            clientResource.addDefaultClientScope(rolesScope.getId());
+            roleRep.setFetchRoles(false);
+            clientResource.authorization().policies().role().findById(roleRep.getId()).update(roleRep);
+        });
+        assertNotNull(authzClient.authorization().authorize(new AuthorizationRequest()));
     }
 
     private void createRealmRolePolicy(String name, String... roles) {

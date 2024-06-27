@@ -50,7 +50,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "build", "--cache-config-file=invalid" })
+    @Launch({ "start-dev", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Could not load cluster configuration file"));
     }
@@ -62,9 +62,9 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "build", "--cache-stack=invalid" })
+    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=invalid" })
     void failInvalidClusterStack(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("Invalid value for option '--cache-stack': invalid. Expected values are: tcp, udp, kubernetes, ec2, azure, google"));
+        assertTrue(result.getOutput().contains("No such JGroups stack 'invalid'"));
     }
 
     @Test

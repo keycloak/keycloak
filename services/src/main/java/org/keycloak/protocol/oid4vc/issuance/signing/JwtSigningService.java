@@ -43,7 +43,6 @@ public class JwtSigningService extends SigningService<String> {
     private static final Logger LOGGER = Logger.getLogger(JwtSigningService.class);
 
     private static final String ID_TEMPLATE = "urn:uuid:%s";
-    private static final String TOKEN_TYPE = "JWT";
     private static final String VC_CLAIM_KEY = "vc";
     private static final String ID_CLAIM_KEY = "id";
 
@@ -105,7 +104,7 @@ public class JwtSigningService extends SigningService<String> {
     }
 
     // retrieve the credential id from the given VC or generate one.
-    private String createCredentialId(VerifiableCredential verifiableCredential) {
+    static String createCredentialId(VerifiableCredential verifiableCredential) {
         return Optional.ofNullable(
                         verifiableCredential.getId())
                 .orElse(URI.create(String.format(ID_TEMPLATE, UUID.randomUUID())))

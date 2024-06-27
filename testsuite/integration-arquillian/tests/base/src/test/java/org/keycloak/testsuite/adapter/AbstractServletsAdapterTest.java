@@ -44,60 +44,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
-    protected static WebArchive servletDeploymentMultiTenant(String name, Class... servletClasses) {
-        WebArchive servletDeployment = servletDeployment(name, null, servletClasses);
-
-        String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
-        String config1 = "tenant1-keycloak.json";
-        String config2 = "tenant2-keycloak.json";
-
-        URL config1Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config1);
-        Assert.assertNotNull("config1Url should be in " + webInfPath + config1, config1Url);
-        URL config2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config2);
-        Assert.assertNotNull("config2Url should be in " + webInfPath + config2, config2Url);
-
-        servletDeployment
-                .add(new UrlAsset(config1Url), "/WEB-INF/classes/" + config1)
-                .add(new UrlAsset(config2Url), "/WEB-INF/classes/" + config2);
-
-        // In this scenario DeploymentArchiveProcessorUtils can not act automatically since the adapter configurations
-        // are not stored in typical places. We need to modify them manually.
-        DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(servletDeployment, "/WEB-INF/classes/" + config1);
-        DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(servletDeployment, "/WEB-INF/classes/" + config2);
-
-        return servletDeployment;
-    }
-
-    protected static WebArchive servletDeployment(String name, Class... servletClasses) {
-        return servletDeployment(name, "keycloak.json", servletClasses);
-    }
-
-    protected static WebArchive servletDeployment(String name, String adapterConfig, Class... servletClasses) {
-        String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
-
-        URL keycloakJSON = AbstractServletsAdapterTest.class.getResource(webInfPath + adapterConfig);
-        URL webXML = AbstractServletsAdapterTest.class.getResource(webInfPath + "web.xml");
-
-        WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
-                .addClasses(servletClasses)
-                .addAsWebInfResource(webXML, "web.xml")
-                .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
-        addSameSiteUndertowHandlers(deployment);
-
-        URL keystore = AbstractServletsAdapterTest.class.getResource(webInfPath + "keystore.jks");
-        if (keystore != null) {
-            deployment.addAsWebInfResource(keystore, "classes/keystore.jks");
-        }
-
-        if (keycloakJSON != null) {
-            deployment.addAsWebInfResource(keycloakJSON, "keycloak.json");
-        }
-
-        addContextXml(deployment, name);
-
-        return deployment;
-    }
-
     public static WebArchive samlServletDeployment(String name, Class... servletClasses) {
         return samlServletDeployment(name, "web.xml", servletClasses);
     }
@@ -154,8 +100,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
             deployment.addAsWebInfResource(keystore, "keystore.jks");
         }
 
-        addContextXml(deployment, name);
-
         if (AppServerTestEnricher.isJBossJakartaAppServer()) {
             DeploymentArchiveProcessorUtils.useJakartaEEServletClass(deployment, "/WEB-INF/web.xml");
         }
@@ -163,7 +107,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         return deployment;
     }
 
-    public static WebArchive samlServletDeploymentMultiTenant(String name, String webXMLPath, 
+    public static WebArchive samlServletDeploymentMultiTenant(String name, String webXMLPath,
             String config1, String config2,
             String keystore1, String keystore2, Class... servletClasses) {
         String baseSAMLPath = "/adapter-test/keycloak-saml/";
@@ -193,7 +137,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         URL config2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config2);
         Assert.assertNotNull("config2Url should be in " + webInfPath + config2, config2Url);
         deployment.add(new UrlAsset(config2Url), "/WEB-INF/classes/" + config2);
-        
+
         // add the keystores for each tenant in classes
         URL keystore1Url = AbstractServletsAdapterTest.class.getResource(webInfPath + keystore1);
         Assert.assertNotNull("keystore1Url should be in " + webInfPath + keystore1, keystore1Url);
@@ -201,8 +145,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         URL keystore2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + keystore2);
         Assert.assertNotNull("keystore2Url should be in " + webInfPath + keystore2, keystore2Url);
         deployment.add(new UrlAsset(keystore2Url), "/WEB-INF/classes/" + keystore2);
-
-        addContextXml(deployment, name);
 
         return deployment;
     }

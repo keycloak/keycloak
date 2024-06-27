@@ -1,5 +1,6 @@
 export default class WebAuthnPolicies {
   webAuthnPolicyCreateTimeout(value: number) {
+    cy.findByTestId("webAuthnPolicyCreateTimeout").clear();
     cy.findByTestId("webAuthnPolicyCreateTimeout").type(String(value));
     return this;
   }
@@ -22,7 +23,7 @@ export default class WebAuthnPolicies {
           isPasswordLess ? prop.replace("Policy", "PolicyPasswordless") : prop
         }`,
       ).click();
-      cy.get(".pf-c-select__menu").contains(data[prop]).click();
+      cy.get(".pf-v5-c-menu__list").contains(data[prop]).click();
     }
     return this;
   }

@@ -16,92 +16,81 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.console.command.Command;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-
 import java.util.List;
 
-import static org.keycloak.client.admin.cli.util.IoUtil.printOut;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
+import static org.keycloak.client.cli.util.IoUtil.printOut;
 
-/**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
- */
-@CommandDefinition(name = "help", description = "This help")
-public class HelpCmd implements Command {
+@Command(name = "help", description = "This Help")
+public class HelpCmd implements Runnable {
 
-    @Arguments
+    @Parameters
     List<String> args;
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (args == null || args.size() == 0) {
-                printOut(KcAdmCmd.usage());
-            } else {
-                outer:
-                switch (args.get(0)) {
-                    case "config": {
-                        if (args.size() > 1) {
-                            switch (args.get(1)) {
-                                case "credentials": {
-                                    printOut(ConfigCredentialsCmd.usage());
-                                    break outer;
-                                }
-                                case "truststore": {
-                                    printOut(ConfigTruststoreCmd.usage());
-                                    break outer;
-                                }
-                            }
-                        }
-                        printOut(ConfigCmd.usage());
-                        break;
+    public void run() {
+        if (args == null || args.size() == 0) {
+            printOut(KcAdmCmd.usage());
+        } else {
+            outer: switch (args.get(0)) {
+            case "config": {
+                if (args.size() > 1) {
+                    switch (args.get(1)) {
+                    case "credentials": {
+                        printOut(new ConfigCredentialsCmd().help());
+                        break outer;
                     }
-                    case "create": {
-                        printOut(CreateCmd.usage());
-                        break;
+                    case "truststore": {
+                        printOut(new ConfigTruststoreCmd().help());
+                        break outer;
                     }
-                    case "get": {
-                        printOut(GetCmd.usage());
-                        break;
-                    }
-                    case "update": {
-                        printOut(UpdateCmd.usage());
-                        break;
-                    }
-                    case "delete": {
-                        printOut(DeleteCmd.usage());
-                        break;
-                    }
-                    case "get-roles": {
-                        printOut(GetRolesCmd.usage());
-                        break;
-                    }
-                    case "add-roles": {
-                        printOut(AddRolesCmd.usage());
-                        break;
-                    }
-                    case "remove-roles": {
-                        printOut(RemoveRolesCmd.usage());
-                        break;
-                    }
-                    case "set-password": {
-                        printOut(SetPasswordCmd.usage());
-                        break;
-                    }
-                    default: {
-                        throw new RuntimeException("Unknown command: " + args.get(0));
                     }
                 }
+                printOut(ConfigCmd.usage());
+                break;
             }
-
-            return CommandResult.SUCCESS;
-        } finally {
-            commandInvocation.stop();
+            case "create": {
+                printOut(new CreateCmd().help());
+                break;
+            }
+            case "get": {
+                printOut(new GetCmd().help());
+                break;
+            }
+            case "update": {
+                printOut(new UpdateCmd().help());
+                break;
+            }
+            case "delete": {
+                printOut(new DeleteCmd().help());
+                break;
+            }
+            case "get-roles": {
+                printOut(new GetRolesCmd().help());
+                break;
+            }
+            case "add-roles": {
+                printOut(new AddRolesCmd().help());
+                break;
+            }
+            case "remove-roles": {
+                printOut(new RemoveRolesCmd().help());
+                break;
+            }
+            case "set-password": {
+                printOut(new SetPasswordCmd().help());
+                break;
+            }
+            case "new-object": {
+                printOut(NewObjectCmd.usage());
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unknown command: " + args.get(0));
+            }
+            }
         }
     }
 }

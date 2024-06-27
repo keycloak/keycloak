@@ -124,7 +124,7 @@ After executing the command, you will be prompted to *Enter the password to be s
 
 When the KeyStore is created, you can start the server using the following parameters:
 
-<@kc.start parameters="--config-keystore=/path/to/keystore.p12 --config-keystore-password=storepass --config-keystore-type=PKCS12"/>
+<@kc.start parameters="--config-keystore=/path/to/keystore.p12 --config-keystore-password=keystorepass --config-keystore-type=PKCS12"/>
 
 === Format for raw Quarkus properties
 In most cases, the available configuration options should suffice to configure the server.
@@ -146,7 +146,7 @@ You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtim
 
 Similarly, you can also store Quarkus properties in a Java KeyStore.
 
-Note that some Quarkus properties are already mapped in the {project_name} configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by Keycloak, defining that property key in `quarkus.properties` has no effect. The Keycloak configuration value takes precedence over the Quarkus property value.
+Note that some Quarkus properties are already mapped in the {project_name} configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by {project_Name}, defining that property key in `quarkus.properties` has no effect. The {project_Name} configuration value takes precedence over the Quarkus property value.
 
 === Using special characters in values
 
@@ -207,7 +207,7 @@ We recommend optimizing {project_name} to provide faster startup and better memo
 === Creating an optimized {project_name} build
 By default, when you use the `start` or `start-dev` command, {project_name} runs a `build` command under the covers for convenience reasons.
 
-This `build` command performs a set of optimizations for the startup and runtime behavior. The build process can take a few seconds. Especially when running {project_name} in containerized environments such as Kubernetes or OpenShift, startup time is important. To avoid losing that time, run a `build` explicity before starting up, such as a separate step in a CI/CD pipeline.
+This `build` command performs a set of optimizations for the startup and runtime behavior. The build process can take a few seconds. Especially when running {project_name} in containerized environments such as Kubernetes or OpenShift, startup time is important. To avoid losing that time, run a `build` explicitly before starting up, such as a separate step in a CI/CD pipeline.
 
 ==== First step: Run a build explicitly
 To run a `build`, enter the following command:

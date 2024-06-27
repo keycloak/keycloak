@@ -3,7 +3,7 @@ import { Tab, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,
@@ -30,6 +30,8 @@ const sortByPriority = (components: ComponentRepresentation[]) => {
 };
 
 export const KeysTab = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { realm: realmName } = useRealm();

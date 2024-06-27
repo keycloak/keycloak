@@ -7,7 +7,7 @@ import {
   UseControllerProps,
   useFormContext,
 } from "react-hook-form";
-import { HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { TimeSelector, TimeSelectorProps } from "./TimeSelector";
 
 export type NumberControlOption = {
@@ -40,6 +40,9 @@ export const TimeSelectorControl = <
     control,
     formState: { errors },
   } = useFormContext();
+
+  const error = errors[name];
+
   return (
     <FormGroup
       isRequired={controller.rules?.required === true}
@@ -49,10 +52,6 @@ export const TimeSelectorControl = <
         labelIcon ? (
           <HelpItem helpText={labelIcon} fieldLabelId={name} />
         ) : undefined
-      }
-      helperTextInvalid={errors[name]?.message as string}
-      validated={
-        errors[name] ? ValidatedOptions.error : ValidatedOptions.default
       }
     >
       <Controller
@@ -67,11 +66,12 @@ export const TimeSelectorControl = <
             value={field.value}
             onChange={field.onChange}
             validated={
-              errors[name] ? ValidatedOptions.error : ValidatedOptions.default
+              error ? ValidatedOptions.error : ValidatedOptions.default
             }
           />
         )}
       />
+      {error && <FormErrorText message={error.message as string} />}
     </FormGroup>
   );
 };

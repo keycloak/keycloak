@@ -7,10 +7,10 @@ const masthead = new Masthead();
 export default class IdentityProviderLinksTab {
   #linkedProvidersSection = ".kc-linked-idps";
   #availableProvidersSection = ".kc-available-idps";
-  #linkAccountBtn = ".pf-c-button.pf-m-link";
+  #linkAccountBtn = ".pf-v5-c-button.pf-m-link";
   #linkAccountModalIdentityProviderInput = "idpNameInput";
-  #linkAccountModalUserIdInput = "userIdInput";
-  #linkAccountModalUsernameInput = "usernameInput";
+  #linkAccountModalUserIdInput = "userId";
+  #linkAccountModalUsernameInput = "userName";
 
   public clickLinkAccount(idpName: string) {
     cy.get(this.#availableProvidersSection + " tr")
@@ -52,15 +52,13 @@ export default class IdentityProviderLinksTab {
 
   public clickUnlinkAccountModalUnlinkBtn() {
     modalUtils.confirmModal();
-    cy.intercept("/admin/realms/master").as("load");
-    cy.wait(["@load"]);
     return this;
   }
 
   public assertNoIdentityProvidersLinkedMessageExist(exist: boolean) {
     cy.get(this.#linkedProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
-      "No identity providers linked. Choose one from the list below.",
+      "No identity providers linked.",
     );
 
     return this;

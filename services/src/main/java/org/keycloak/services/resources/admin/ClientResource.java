@@ -24,11 +24,14 @@ import jakarta.ws.rs.core.Response.Status;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -78,6 +81,7 @@ import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.validation.ValidationUtil;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -170,6 +174,8 @@ public class ClientResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client already exists");
+        } catch (ClientTypeException cte) {
+            throw ErrorResponse.error(cte.getMessage(), cte.getParameters(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

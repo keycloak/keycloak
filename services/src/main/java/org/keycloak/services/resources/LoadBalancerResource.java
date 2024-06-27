@@ -22,6 +22,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
+
 import org.jboss.logging.Logger;
 import org.keycloak.health.LoadBalancerCheckProvider;
 import org.keycloak.models.KeycloakSession;
@@ -37,6 +39,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:aschwart@redhat.com">Alexander Schwartz</a>
  */
+@Provider
 @Path("/lb-check")
 @NonBlocking
 public class LoadBalancerResource {
@@ -47,7 +50,7 @@ public class LoadBalancerResource {
     KeycloakSession session;
 
     /**
-     * Return the status for a laod balancer in a multi-site setup if this Keycloak site should receive traffic.
+     * Return the status for a load balancer in a multi-site setup if this Keycloak site should receive traffic.
      * <p />
      * While a loadbalancer will usually check for the returned status code, the additional text <code>UP</code> or <code>DOWN</down>
      * is returned for humans to see the status in the browser.

@@ -4,7 +4,8 @@ import type { TFunction } from "i18next";
 /**
  * Checks if a client is intended to be used for authenticating a to a realm.
  */
-export const isRealmClient = (client: ClientRepresentation) => !client.protocol;
+export const isRealmClient = (client: ClientRepresentation): boolean =>
+  client.attributes?.["realm_client"] === true.toString();
 
 /**
  * Gets a human readable name for the specified protocol.
@@ -15,6 +16,8 @@ export const getProtocolName = (t: TFunction<"clients">, protocol: string) => {
       return t("protocolTypes.openid-connect");
     case "saml":
       return t("protocolTypes.saml");
+    case "oid4vc":
+      return t("protocolTypes.oid4vc");
     default:
       return protocol;
   }

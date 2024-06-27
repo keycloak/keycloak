@@ -26,6 +26,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -89,6 +90,10 @@ public class CRSerializationTest {
         assertEquals("usernameSecretKey", databaseSpec.getUsernameSecret().getKey());
         assertEquals("passwordSecret", databaseSpec.getPasswordSecret().getName());
         assertEquals("passwordSecretKey", databaseSpec.getPasswordSecret().getKey());
+
+        HttpManagementSpec managementSpec = keycloak.getSpec().getHttpManagementSpec();
+        assertNotNull(managementSpec);
+        assertEquals(9003, managementSpec.getPort());
     }
 
     @Test

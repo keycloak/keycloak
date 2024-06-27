@@ -29,6 +29,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
+import static org.keycloak.userprofile.config.UPConfigUtils.parseSystemDefaultConfig;
 
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
@@ -202,7 +204,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     private static void testCustomAttributeInAnyContext(KeycloakSession session) {
         Map<String, Object> attributes = new HashMap<>();
 
-        attributes.put(UserModel.USERNAME, "profiled-user");
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
         attributes.put(UserModel.FIRST_NAME, "John");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
@@ -234,6 +236,48 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testEmptyAttributeRemoved() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmptyAttributeRemoved);
+    }
+
+    private static void testEmptyAttributeRemoved(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("address", "foo");
+
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
+        config.addOrReplaceAttribute(new UPAttribute("address", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER))));
+        provider.setConfiguration(config);
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+
+        // attribute explicitly set with an empty value so we assume it should be removed regardless the `removeAttributes` parameter being set to false
+        attributes.put("address", "");
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update(false);
+
+        assertNull(user.getFirstAttribute("address"));
+
+        attributes.put("address", "bar");
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertEquals("bar", user.getFirstAttribute("address"));
+
+        // attribute not provided so we assume there is no intention to remove the attribute
+        attributes.remove("address");
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update(false);
+
+        assertNotNull(user.getFirstAttribute("address"));
+    }
+
+    @Test
     public void testResolveProfile() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testResolveProfile);
     }
@@ -243,7 +287,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         Map<String, Object> attributes = new HashMap<>();
 
-        attributes.put(UserModel.USERNAME, "profiled-user");
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
         attributes.put(UserModel.FIRST_NAME, "John");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
@@ -2243,5 +2287,20 @@ public class UserProfileTest extends AbstractUserProfileTest {
         provider.setConfiguration(upConfig);
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
         profile.update();
+    }
+
+    @Test
+    public void testDefaultConfigWhenComponentConfigIsNotSet() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultConfigWhenComponentConfigIsNotSet);
+    }
+
+    private static void testDefaultConfigWhenComponentConfigIsNotSet(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        provider.setConfiguration(parseSystemDefaultConfig());
+        RealmModel realm = session.getContext().getRealm();
+        ComponentModel component = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().get();
+        component.setConfig(new MultivaluedHashMap<>());
+        realm.updateComponent(component);
+        provider.create(UserProfileContext.USER_API, Map.of());
     }
 }

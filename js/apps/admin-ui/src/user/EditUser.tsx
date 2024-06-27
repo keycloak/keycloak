@@ -1,8 +1,11 @@
 import type {
-  UserProfileMetadata,
   UserProfileConfig,
+  UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import {
+  isUserProfileError,
+  setUserProfileServerError,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -19,11 +22,10 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { isUserProfileError, setUserProfileServerError } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,
@@ -44,27 +46,36 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import {
+  UIUserRepresentation,
   UserFormFields,
+  filterManagedAttributes,
   toUserFormFields,
   toUserRepresentation,
-  filterManagedAttributes,
-  UIUserRepresentation,
 } from "./form-state";
 import { UserParams, UserTab, toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
-import { getUnmanagedAttributes } from "../components/users/resource";
+
 import "./user-section.css";
 
 export default function EditUser() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { hasAccess } = useAccess();
   const { id } = useParams<UserParams>();
-  const { realm: realmName } = useRealm();
-  const form = useForm<UserFormFields>({ mode: "onChange" });
-  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
+  // Validation of form fields is performed on server, thus we need to clear all errors before submit
+  const clearAllErrorsBeforeSubmit = async (values: UserFormFields) => ({
+    values,
+    errors: {},
+  });
+  const form = useForm<UserFormFields>({
+    mode: "onChange",
+    resolver: clearAllErrorsBeforeSubmit,
+  });
   const [user, setUser] = useState<UIUserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [isUnmanagedAttributesEnabled, setUnmanagedAttributesEnabled] =
@@ -97,16 +108,15 @@ export default function EditUser() {
   useFetch(
     async () =>
       Promise.all([
-        adminClient.realms.findOne({ realm: realmName }),
         adminClient.users.findOne({
           id: id!,
           userProfileMetadata: true,
         }) as UIUserRepresentation | undefined,
         adminClient.attackDetection.findOne({ id: id! }),
-        getUnmanagedAttributes(id!),
+        adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
       ]),
-    ([realm, userData, attackDetection, unmanagedAttributes, upConfig]) => {
+    ([userData, attackDetection, unmanagedAttributes, upConfig]) => {
       if (!userData || !realm || !attackDetection) {
         throw new Error(t("notFound"));
       }
@@ -123,7 +133,6 @@ export default function EditUser() {
         setUnmanagedAttributesEnabled(true);
       }
 
-      setRealm(realm);
       setUser(user);
       setUpConfig(upConfig);
 
@@ -147,9 +156,46 @@ export default function EditUser() {
       refresh();
     } catch (error) {
       if (isUserProfileError(error)) {
-        setUserProfileServerError(error, form.setError, ((key, param) =>
-          t(key as string, param as any)) as TFunction);
-        addError("userNotSaved", error);
+        if (
+          isUnmanagedAttributesEnabled &&
+          Array.isArray(data.unmanagedAttributes)
+        ) {
+          const unmanagedAttributeErrors: object[] = new Array(
+            data.unmanagedAttributes.length,
+          );
+          let someUnmanagedAttributeError = false;
+          setUserProfileServerError<UserFormFields>(
+            error,
+            (field, params) => {
+              if (field.startsWith("attributes.")) {
+                const attributeName = field.substring("attributes.".length);
+                (data.unmanagedAttributes as KeyValueType[]).forEach(
+                  (attr, index) => {
+                    if (attr.key === attributeName) {
+                      unmanagedAttributeErrors[index] = params;
+                      someUnmanagedAttributeError = true;
+                    }
+                  },
+                );
+              } else {
+                form.setError(field, params);
+              }
+            },
+            ((key, param) => t(key as string, param as any)) as TFunction,
+          );
+          if (someUnmanagedAttributeError) {
+            form.setError(
+              "unmanagedAttributes",
+              unmanagedAttributeErrors as any,
+            );
+          }
+        } else {
+          setUserProfileServerError<UserFormFields>(error, form.setError, ((
+            key,
+            param,
+          ) => t(key as string, param as any)) as TFunction);
+        }
+        addError("userNotSaved", "");
       } else {
         addError("userCreateError", error);
       }
@@ -197,7 +243,7 @@ export default function EditUser() {
     },
   });
 
-  if (!realm || !user || !bruteForced) {
+  if (!user || !bruteForced) {
     return <KeycloakSpinner />;
   }
 
@@ -252,7 +298,7 @@ export default function EditUser() {
         isEnabled={user.enabled}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <UserProfileProvider>
           <FormProvider {...form}>
             <RoutableTabs
@@ -268,7 +314,7 @@ export default function EditUser() {
                 <PageSection variant="light">
                   <UserForm
                     form={form}
-                    realm={realm}
+                    realm={realm!}
                     user={user}
                     bruteForce={bruteForced}
                     userProfileMetadata={userProfileMetadata}
@@ -291,7 +337,7 @@ export default function EditUser() {
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
                 {...credentialsTab}
               >
-                <UserCredentials user={user} />
+                <UserCredentials user={user} setUser={setUser} />
               </Tab>
               <Tab
                 data-testid="role-mapping-tab"
@@ -317,17 +363,15 @@ export default function EditUser() {
               >
                 <UserConsents />
               </Tab>
-              {hasAccess("view-identity-providers") && (
-                <Tab
-                  data-testid="identity-provider-links-tab"
-                  title={
-                    <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
-                  }
-                  {...identityProviderLinksTab}
-                >
-                  <UserIdentityProviderLinks userId={user.id!} />
-                </Tab>
-              )}
+              <Tab
+                data-testid="identity-provider-links-tab"
+                title={
+                  <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
+                }
+                {...identityProviderLinksTab}
+              >
+                <UserIdentityProviderLinks userId={user.id!} />
+              </Tab>
               <Tab
                 data-testid="user-sessions-tab"
                 title={<TabTitleText>{t("sessions")}</TabTitleText>}

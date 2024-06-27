@@ -5,16 +5,17 @@ import {
   AlertVariant,
   ButtonVariant,
   DescriptionList,
+  Divider,
   Dropdown,
   DropdownItem,
-  DropdownSeparator,
-  DropdownToggle,
+  DropdownList,
+  MenuToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -24,8 +25,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -71,6 +71,8 @@ export const AuthorizationPermissions = ({
   clientId,
   isDisabled = false,
 }: PermissionsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
@@ -181,7 +183,7 @@ export const AuthorizationPermissions = ({
   const noData = permissions.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <PaginatingTableToolbar
@@ -206,21 +208,22 @@ export const AuthorizationPermissions = ({
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <DropdownToggle
-                      onToggle={toggleCreate}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      onClick={toggleCreate}
                       isDisabled={isDisabled}
-                      isPrimary
+                      variant="primary"
                       data-testid="permissionCreateDropdown"
                     >
                       {t("createPermission")}
-                    </DropdownToggle>
-                  }
+                    </MenuToggle>
+                  )}
                   isOpen={createOpen}
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
                       data-testid="create-resource"
-                      key="createResourceBasedPermission"
                       isDisabled={isDisabled || disabledCreate?.resources}
                       component="button"
                       onClick={() =>
@@ -234,11 +237,10 @@ export const AuthorizationPermissions = ({
                       }
                     >
                       {t("createResourceBasedPermission")}
-                    </DropdownItem>,
-                    <DropdownSeparator key="separator" />,
+                    </DropdownItem>
+                    <Divider />
                     <DropdownItem
                       data-testid="create-scope"
-                      key="createScopeBasedPermission"
                       isDisabled={isDisabled || disabledCreate?.scopes}
                       component="button"
                       onClick={() =>
@@ -254,22 +256,22 @@ export const AuthorizationPermissions = ({
                       {t("createScopeBasedPermission")}
                       {disabledCreate?.scopes && (
                         <Alert
-                          className="pf-u-mt-sm"
+                          className="pf-v5-u-mt-sm"
                           variant="warning"
                           isInline
                           isPlain
                           title={t("noScopeCreateHint")}
                         />
                       )}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("resources")} variant="compact">
+            <Table aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -365,7 +367,7 @@ export const AuthorizationPermissions = ({
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

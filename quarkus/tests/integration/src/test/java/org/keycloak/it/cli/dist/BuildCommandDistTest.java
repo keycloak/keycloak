@@ -76,25 +76,25 @@ class BuildCommandDistTest {
     @Launch({ "build" })
     void testFailInvalidOptionInEnv(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option 'kc.db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource KcEnvVarConfigSource");
+        cliResult.assertError("Invalid value for option 'KC_DB': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
     public void testFailInvalidOptionInConf(KeycloakDistribution distribution) {
         CLIResult cliResult = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
-        cliResult.assertError("Invalid value for option 'kc.db': foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource PropertiesConfigSource[source");
+        cliResult.assertError("Invalid value for option 'kc.db' in keycloak.conf: foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) {
         distribution.setProperty("proxy", "edge");
-        distribution.run("build", "--cache=local");
+        distribution.run("build");
         distribution.removeProperty("proxy");
 
-        CLIResult result = distribution.run("start", "--hostname=mykeycloak", OPTIMIZED_BUILD_OPTION_LONG);
-        result.assertMessage("Key material not provided to setup HTTPS");
+        CLIResult result = distribution.run("start", "--hostname=mykeycloak", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG);
+        result.assertError("Key material not provided to setup HTTPS");
     }
 
     @Test
@@ -103,16 +103,8 @@ class BuildCommandDistTest {
     void missingOracleJdbcDriver(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        String dbDriver = Database.getDriver("oracle", true).orElse("");
-        String errorMessage = String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver);
-
-        boolean isProduct = System.getProperty("product") != null;
-        if (isProduct) {
-            cliResult.assertError(errorMessage);
-            cliResult.assertNoBuild();
-        } else {
-            cliResult.assertNoMessage(errorMessage);
-            cliResult.assertBuild();
-        }
+        String dbDriver = Database.getDriver("oracle", false).orElse("");
+        cliResult.assertError(String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver));
+        cliResult.assertNoBuild();
     }
 }

@@ -30,13 +30,24 @@ The server has built-in support for different databases. You can query the avail
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
-<@profile.ifProduct>
-
 == Installing a database driver
 
-Database drivers are shipped as part of {project_name} except for the Oracle Database and Micrsoft SQL Server drivers which need to be installed separately.
+Database drivers are shipped as part of {project_name} except for the
+<@profile.ifProduct>
+Oracle Database and Microsoft SQL Server drivers.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+Oracle Database driver.
+</@profile.ifCommunity>
 
-Install the necessary driver if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
+Install the necessary missing driver manually if you want to connect to
+<@profile.ifProduct>
+one of these databases
+</@profile.ifProduct>
+<@profile.ifCommunity>
+this database
+</@profile.ifCommunity>
+or skip this section if you want to connect to a different database for which the database driver is already included.
 
 === Installing the Oracle Database driver
 
@@ -52,15 +63,15 @@ To install the Oracle Database driver for {project_name}:
 
 . When running the unzipped distribution: Place the `ojdbc11` and `orai18n` JAR files in {project_name}'s `providers` folder
 
-. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the Keycloak Operator, those images need to be optimized images with all build-time options of Keycloak set.
+. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the Operator, those images need to be optimized images with all build-time options of {project_name} set.
 +
 A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
 +
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel}
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
 # Setting the build parameter for the database:
 ENV KC_DB=oracle
 # Add all other build parameters needed, for example enable health and metrics:
@@ -73,6 +84,8 @@ RUN /opt/keycloak/bin/kc.sh build
 See the <@links.server id="containers" /> {section} for details on how to build optimized images.
 
 Then continue configuring the database as described in the next section.
+
+<@profile.ifProduct>
 
 === Installing the Microsoft SQL Server driver
 
@@ -95,7 +108,7 @@ A minimal Dockerfile to build an image which can be used with the {project_name}
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel}
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
 # Setting the build parameter for the database:
 ENV KC_DB=mssql
 # Add all other build parameters needed, for example enable health and metrics:
@@ -252,13 +265,12 @@ See the <@links.server id="containers" /> {section} for details on how to build 
 . Configure {project_name} to run with the following parameters:
 `db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
 `db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
-`transaction-xa-enabled`:: Set to `false`, as the Amazon Web Services JDBC Driver does not support XA transactions.
 
 == Preparing for MySQL server
 
 Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
 If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
-You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading Keycloak.
+You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading {project_name}.
 
 == Changing database locking timeout in a cluster configuration
 
@@ -268,12 +280,20 @@ The maximum timeout for this lock is 900 seconds. If a node waits on this lock f
 
 <@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
 
-== Using Database Vendors without XA transaction support
-{project_name} uses XA transactions and the appropriate database drivers by default. Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism. To use Keycloak without XA transaction support using the appropriate JDBC driver, enter the following command:
+== Using Database Vendors with XA transaction support
+{project_name} uses non-XA transactions and the appropriate database drivers by default.
 
-<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=false"/>
+If you wish to use the XA transaction support offered by your driver, enter the following command:
+
+<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=true"/>
 
 {project_name} automatically chooses the appropriate JDBC driver for your vendor.
+
+NOTE: Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism.
+
+XA recovery defaults to enabled and will use the file system location `KEYCLOAK_HOME/data/transaction-logs` to store transaction logs.
+
+NOTE: Enabling XA transactions in a containerized environment does not fully support XA recovery unless stable storage is available at that path.
 
 == Setting JPA provider configuration option for migrationStrategy
 

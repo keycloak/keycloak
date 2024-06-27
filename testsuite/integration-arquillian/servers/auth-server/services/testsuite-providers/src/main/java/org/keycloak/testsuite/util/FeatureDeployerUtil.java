@@ -18,14 +18,8 @@
 
 package org.keycloak.testsuite.util;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.provider.DefaultProviderLoader;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -35,6 +29,13 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSession;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Used to dynamically reload EnvironmentDependentProviderFactories after some feature is enabled/disabled
@@ -50,7 +51,9 @@ public class FeatureDeployerUtil {
     private static final Logger logger = Logger.getLogger(FeatureDeployerUtil.class);
 
     public static void initBeforeChangeFeature(Profile.Feature feature) {
-        if (deployersCache.containsKey(feature)) return;
+        if (deployersCache.containsKey(feature)) {
+            return;
+        }
 
         // Compute which provider factories are enabled before feature is enabled (disabled)
         Map<ProviderFactory, Spi>  factoriesBefore = loadEnabledEnvironmentFactories();
@@ -127,10 +130,11 @@ public class FeatureDeployerUtil {
 
         Map<ProviderFactory, Spi> providerFactories = new HashMap<>();
         for (Spi spi : loader.loadSpis()) {
+            Config.Scope scope = Config.scope(spi.getName(), Config.getProvider(spi.getName()));
             List<ProviderFactory> currentFactories = loader.load(spi);
             for (ProviderFactory factory : currentFactories) {
                 if (factory instanceof EnvironmentDependentProviderFactory) {
-                    if (((EnvironmentDependentProviderFactory) factory).isSupported()) {
+                    if (((EnvironmentDependentProviderFactory) factory).isSupported(scope)) {
                         providerFactories.put(factory, spi);
                     }
                 }

@@ -15,10 +15,6 @@
     <packaging>jar</packaging>
     
     <properties>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
@@ -29,8 +25,6 @@
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
         <jacoco.skip>true</jacoco.skip>
-        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
-        <keycloak.profile.feature.offline_session_preloading>disabled</keycloak.profile.feature.offline_session_preloading>
     </properties>
     
     <dependencies>
@@ -68,6 +62,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
         </dependency>
         <dependency>
@@ -100,7 +100,7 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -160,8 +160,6 @@
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
                         <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
-                        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
-                        <keycloak.profile.feature.offline_session_preloading>${keycloak.profile.feature.offline_session_preloading}</keycloak.profile.feature.offline_session_preloading>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <org.jboss.logging.provider>log4j</org.jboss.logging.provider>
                         <infinispan.version>${infinispan.version}</infinispan.version>
@@ -211,6 +209,33 @@
         </profile>
 
         <profile>
+            <id>jpa+infinispan+persistentsessions</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa+cross-dc-infinispan+persistentsessions</id>
+            <properties>
+                <keycloak.model.parameters>CrossDCInfinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>jpa+infinispan+client-storage</id>
             <properties>
                 <keycloak.model.parameters>Jpa,Infinispan,HardcodedClientStorage</keycloak.model.parameters>
@@ -222,24 +247,40 @@
             <properties>
                 <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>
-            <id>jpa+cross-dc-infinispan-offline-sessions-preloading</id>
+            <id>jpa+remote-infinispan</id>
             <properties>
-                <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
-                <keycloak.profile.feature.offline_session_preloading>enabled</keycloak.profile.feature.offline_session_preloading>
-                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+                <keycloak.model.parameters>RemoteInfinispan,Jpa</keycloak.model.parameters>
             </properties>
-        </profile>
-
-        <profile>
-            <id>jpa+infinispan-offline-sessions-preloading</id>
-            <properties>
-                <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
-                <keycloak.profile.feature.offline_session_preloading>enabled</keycloak.profile.feature.offline_session_preloading>
-                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
-            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.remote_cache>enabled</keycloak.profile.feature.remote_cache>
+                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>

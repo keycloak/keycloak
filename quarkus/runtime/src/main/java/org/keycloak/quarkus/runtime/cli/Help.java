@@ -17,7 +17,9 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
+import static org.keycloak.quarkus.runtime.cli.OptionRenderer.undecorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
+import static org.keycloak.utils.StringUtil.removeSuffix;
 import static picocli.CommandLine.Help.Column.Overflow.SPAN;
 import static picocli.CommandLine.Help.Column.Overflow.WRAP;
 
@@ -25,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
@@ -158,11 +162,30 @@ public final class Help extends CommandLine.Help {
             return false;
         }
 
-        PropertyMapper<?> mapper = getMapper(option.longestName());
+        String optionName = undecorateDuplicitOptionName(option.longestName());
+
+        OptionCategory category = null;
+        if (option.group() != null) {
+            category = OptionCategory.fromHeading(removeSuffix(option.group().heading(), ":"));
+        }
+        PropertyMapper<?> mapper = getMapper(optionName, category);
 
         if (mapper == null) {
+            final var disabledMapper = PropertyMappers.getDisabledMapper(optionName);
+            final var isDisabledMapper = disabledMapper.isPresent();
+
+            // Show disabled mappers, which do not have a description when they're enabled
+            final var isEnabledWhenEmpty = isDisabledMapper && disabledMapper.get().getEnabledWhen().isEmpty();
+            if (isEnabledWhenEmpty) {
+                return true;
+            }
+
+            if (allOptions && isDisabledMapper) {
+                return true;
+            }
+
             // only filter mapped options, defaults to the hidden marker
-            return !option.hidden();
+            return !option.hidden() && !isDisabledMapper;
         }
 
         boolean isUnsupportedOption = !PropertyMappers.isSupported(mapper);

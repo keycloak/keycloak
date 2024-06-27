@@ -1,5 +1,6 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
+import { IconMapper } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
@@ -9,8 +10,9 @@ import {
   Dropdown,
   DropdownGroup,
   DropdownItem,
-  DropdownToggle,
+  DropdownList,
   Gallery,
+  MenuToggle,
   PageSection,
   Split,
   SplitItem,
@@ -19,12 +21,12 @@ import {
   TextVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { IFormatterValueType } from "@patternfly/react-table";
 import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { IconMapper } from "ui-shared";
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
@@ -61,7 +63,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
         <Badge
           key={`${identityProvider.providerId}-disabled`}
           isRead
-          className="pf-u-ml-sm"
+          className="pf-v5-u-ml-sm"
         >
           {t("disabled")}
         </Badge>
@@ -71,6 +73,8 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
 };
 
 export default function IdentityProvidersSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const identityProviders = groupBy(
     useServerInfo().identityProviders,
@@ -123,18 +127,19 @@ export default function IdentityProvidersSection() {
           <DropdownItem
             key={provider.id}
             value={provider.id}
-            component={
-              <Link
-                to={toIdentityProviderCreate({
+            component="a"
+            data-testid={provider.id}
+            onClick={() =>
+              navigate(
+                toIdentityProviderCreate({
                   realm,
                   providerId: provider.id,
-                })}
-                data-testid={provider.id}
-              >
-                {provider.name}
-              </Link>
+                }),
+              )
             }
-          />
+          >
+            {provider.name}
+          </DropdownItem>
         ))}
       </DropdownGroup>
     ));
@@ -175,7 +180,7 @@ export default function IdentityProvidersSection() {
       />
       <PageSection
         variant={!hasProviders ? "default" : "light"}
-        className={!hasProviders ? "" : "pf-u-p-0"}
+        className={!hasProviders ? "" : "pf-v5-u-p-0"}
       >
         {!hasProviders && (
           <>
@@ -185,11 +190,11 @@ export default function IdentityProvidersSection() {
             {Object.keys(identityProviders).map((group) => (
               <Fragment key={group}>
                 <TextContent>
-                  <Text className="pf-u-mt-lg" component={TextVariants.h2}>
+                  <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
                     {group}:
                   </Text>
                 </TextContent>
-                <hr className="pf-u-mb-lg" />
+                <hr className="pf-v5-u-mb-lg" />
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (
                     <ClickableCard
@@ -224,17 +229,19 @@ export default function IdentityProvidersSection() {
                 <ToolbarItem>
                   <Dropdown
                     data-testid="addProviderDropdown"
-                    toggle={
-                      <DropdownToggle
-                        onToggle={() => setAddProviderOpen(!addProviderOpen)}
-                        isPrimary
+                    toggle={(ref) => (
+                      <MenuToggle
+                        ref={ref}
+                        onClick={() => setAddProviderOpen(!addProviderOpen)}
+                        variant="primary"
                       >
                         {t("addProvider")}
-                      </DropdownToggle>
-                    }
+                      </MenuToggle>
+                    )}
                     isOpen={addProviderOpen}
-                    dropdownItems={identityProviderOptions()}
-                  />
+                  >
+                    <DropdownList>{identityProviderOptions()}</DropdownList>
+                  </Dropdown>
                 </ToolbarItem>
 
                 <ToolbarItem>
@@ -267,6 +274,15 @@ export default function IdentityProvidersSection() {
                 name: "providerId",
                 displayKey: "providerDetails",
                 cellFormatters: [upperCaseFormatter()],
+              },
+              {
+                name: "config['kc.org']",
+                displayKey: "linkedOrganization",
+                cellFormatters: [
+                  (data?: IFormatterValueType) => {
+                    return data ? "X" : "—";
+                  },
+                ],
               },
             ]}
           />

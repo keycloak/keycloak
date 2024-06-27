@@ -48,6 +48,7 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -457,8 +458,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             audience = getConfig().getTokenUrl();
         }
         jwt.audience(audience);
-        int expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
-        jwt.expiration(Time.currentTime() + expirationDelay);
+        long expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
+        jwt.exp(Time.currentTime() + expirationDelay);
         jwt.issuedNow();
         return jwt;
     }
@@ -507,7 +508,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         @GET
         public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
-                                     @QueryParam(OAuth2Constants.ERROR) String error) {
+                                     @QueryParam(OAuth2Constants.ERROR) String error,
+                                     @QueryParam(OAuth2Constants.ERROR_DESCRIPTION) String errorDescription) {
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
             
             if (state == null) {
@@ -525,6 +527,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         return callback.cancelled(providerConfig);
                     } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
                         return callback.error(error);
+                    } else if (error.equals(OAuthErrorException.TEMPORARILY_UNAVAILABLE) && Constants.AUTHENTICATION_EXPIRED_MESSAGE.equals(errorDescription)) {
+                        return callback.retryLogin(this.provider, authSession);
                     } else {
                         return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                     }
@@ -558,7 +562,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
                 }
 
-                federatedIdentity.setIdpConfig(providerConfig);
                 federatedIdentity.setIdp(provider);
                 federatedIdentity.setAuthenticationSession(authSession);
 
@@ -708,7 +711,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         BrokeredIdentityContext context = exchangeExternalImpl(event, params);
         if (context != null) {
             context.setIdp(this);
-            context.setIdpConfig(getConfig());
         }
         return context;
     }

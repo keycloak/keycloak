@@ -95,6 +95,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
             @Override
             protected void runExportImportTask(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
+                session.getContext().setRealm(realm);
                 RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoRealmFile, true);
                 writeRealm(realmName + "-realm.json", rep);
                 logger.info("Realm '" + realmName + "' - data exported");
@@ -131,6 +132,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         RealmModel realm = session.realms().getRealmByName(realmName);
+                        session.getContext().setRealm(realm);
                         usersHolder.users = session.users()
                                 .searchForUserStream(realm, Collections.emptyMap(), usersHolder.currentPageStart, usersHolder.currentPageEnd - usersHolder.currentPageStart)
                                 .collect(Collectors.toList());
@@ -164,6 +166,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         RealmModel realm = session.realms().getRealmByName(realmName);
+                        session.getContext().setRealm(realm);
                         federatedUsersHolder.users = UserStorageUtil.userFederatedStorage(session)
                                 .getStoredUsersStream(realm, federatedUsersHolder.currentPageStart, federatedUsersHolder.currentPageEnd - federatedUsersHolder.currentPageStart)
                                 .collect(Collectors.toList());

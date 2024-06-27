@@ -20,73 +20,56 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(ClientRemovedEvent.ExternalizerImpl.class)
-public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
+@ProtoTypeId(Marshalling.CLIENT_REMOVED_EVENT)
+public class ClientRemovedEvent extends BaseClientEvent {
 
-    private String clientUuid;
-    private String clientId;
-    private String realmId;
+    @ProtoField(3)
+    final String clientId;
     // roleId -> roleName
-    private Map<String, String> clientRoles;
-    private static final Logger log = Logger.getLogger(ClientRemovedEvent.class);
+    @ProtoField(4)
+    final Map<String, String> clientRoles;
+
+    @ProtoFactory
+    ClientRemovedEvent(String id, String realmId, String clientId, Map<String, String> clientRoles) {
+        super(id, realmId);
+        this.clientId = Objects.requireNonNull(clientId);
+        this.clientRoles = Objects.requireNonNull(clientRoles);
+    }
+
 
     public static ClientRemovedEvent create(ClientModel client) {
-        log.tracev("Created; clientId={0}", client.getClientId());
-
-        ClientRemovedEvent event = new ClientRemovedEvent();
-
-        event.realmId = client.getRealm().getId();
-        event.clientUuid = client.getId();
-        event.clientId = client.getClientId();
-        event.clientRoles = client.getRolesStream().collect(Collectors.toMap(RoleModel::getId, RoleModel::getName));
-
-        return event;
+        var clientRoles = client.getRolesStream().collect(Collectors.toMap(RoleModel::getId, RoleModel::getName));
+        return new ClientRemovedEvent(client.getId(), client.getClientId(), client.getRealm().getId(), clientRoles);
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        log.tracev("Finalized; clientId={0}", clientId);
-        super.finalize();
-    }
-
-    @Override
-    public String getId() {
-        return clientUuid;
-    }
 
     @Override
     public String toString() {
-        return String.format("ClientRemovedEvent [ realmId=%s, clientUuid=%s, clientId=%s, clientRoleIds=%s ]", realmId, clientUuid, clientId, clientRoles);
+        return String.format("ClientRemovedEvent [ realmId=%s, clientUuid=%s, clientId=%s, clientRoleIds=%s ]", realmId, getId(), clientId, clientRoles);
     }
 
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
-        realmCache.clientRemoval(realmId, clientUuid, clientId, invalidations);
+        realmCache.clientRemoval(realmId, getId(), clientId, invalidations);
 
         // Separate iteration for all client roles to invalidate records dependent on them
         for (Map.Entry<String, String> clientRole : clientRoles.entrySet()) {
             String roleId = clientRole.getKey();
             String roleName = clientRole.getValue();
-            realmCache.roleRemoval(roleId, roleName, clientUuid, invalidations);
+            realmCache.roleRemoval(roleId, roleName, getId(), invalidations);
         }
     }
 
@@ -96,56 +79,15 @@ public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheI
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ClientRemovedEvent that = (ClientRemovedEvent) o;
-        boolean equals = Objects.equals(clientUuid, that.clientUuid) &&
-                Objects.equals(clientId, that.clientId) &&
-                Objects.equals(realmId, that.realmId) &&
-                Objects.equals(clientRoles, that.clientRoles);
-        log.tracev("Equals; clientId={0}, equals={1}", clientId, equals);
-        return equals;
+        return clientId.equals(that.clientId) &&
+                clientRoles.equals(that.clientRoles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), clientUuid, clientId, realmId, clientRoles);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<ClientRemovedEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, ClientRemovedEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.clientUuid, output);
-            MarshallUtil.marshallString(obj.clientId, output);
-            MarshallUtil.marshallString(obj.realmId, output);
-            KeycloakMarshallUtil.writeMap(obj.clientRoles, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
-
-            log.tracev("Write; clientId={0}", obj.clientId);
-        }
-
-        @Override
-        public ClientRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public ClientRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            ClientRemovedEvent res = new ClientRemovedEvent();
-            res.clientUuid = MarshallUtil.unmarshallString(input);
-            res.clientId = MarshallUtil.unmarshallString(input);
-            res.realmId = MarshallUtil.unmarshallString(input);
-            res.clientRoles = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
-              size -> new ConcurrentHashMap<>(size));
-
-            log.tracev("Read; clientId={0}", res.clientId);
-
-            return res;
-        }
+        int result = super.hashCode();
+        result = 31 * result + clientId.hashCode();
+        result = 31 * result + clientRoles.hashCode();
+        return result;
     }
 }

@@ -1,4 +1,12 @@
 import {
+  UserProfileFields,
+  beerify,
+  debeerify,
+  setUserProfileServerError,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Alert,
   Button,
@@ -11,12 +19,6 @@ import { TFunction } from "i18next";
 import { useState } from "react";
 import { ErrorOption, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  UserProfileFields,
-  debeerify,
-  setUserProfileServerError,
-  useAlerts,
-} from "ui-shared";
 
 import {
   getPersonalInfo,
@@ -28,18 +30,18 @@ import {
   UserRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
+import type { Environment } from "../environment";
 import { TFuncKey, i18n } from "../i18n";
-import { useEnvironment } from "../root/KeycloakContext";
 import { usePromise } from "../utils/usePromise";
 
 export const PersonalInfo = () => {
   const { t } = useTranslation();
-  const context = useEnvironment();
+  const context = useEnvironment<Environment>();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
   const form = useForm<UserRepresentation>({ mode: "onChange" });
-  const { handleSubmit, reset, setError } = form;
+  const { handleSubmit, reset, setValue, setError } = form;
   const { addAlert, addError } = useAlerts();
 
   usePromise(
@@ -52,6 +54,9 @@ export const PersonalInfo = () => {
       setUserProfileMetadata(personalInfo.userProfileMetadata);
       setSupportedLocales(supportedLocales);
       reset(personalInfo);
+      Object.entries(personalInfo.attributes || {}).forEach(([k, v]) =>
+        setValue(`attributes[${beerify(k)}]`, v),
+      );
     },
   );
 
@@ -101,6 +106,7 @@ export const PersonalInfo = () => {
           form={form}
           userProfileMetadata={userProfileMetadata}
           supportedLocales={supportedLocales}
+          currentLocale={context.environment.locale}
           t={
             ((key: unknown, params) =>
               t(key as TFuncKey, params as any)) as TFunction

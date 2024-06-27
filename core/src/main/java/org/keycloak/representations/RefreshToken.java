@@ -43,7 +43,7 @@ public class RefreshToken extends AccessToken {
         this.issuer = token.issuer;
         this.subject = token.subject;
         this.issuedFor = token.issuedFor;
-        this.sessionState = token.sessionState;
+        this.sessionId = token.sessionId;
         this.nonce = token.nonce;
         this.audience = new String[] { token.issuer };
         this.scope = token.scope;

@@ -27,6 +27,7 @@ import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
 import org.keycloak.protocol.oidc.utils.SubjectType;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.util.ResolveRelative;
@@ -34,6 +35,9 @@ import org.keycloak.services.util.ResolveRelative;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +80,52 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         TOS_URI(ClientModel.TOS_URI,
                 "Terms of service URL is not a valid URL", "tosURLInvalid",
                 null, null,
-                "Terms of service URL uses an illegal scheme", "tosURLIllegalSchemeError");
+                "Terms of service URL uses an illegal scheme", "tosURLIllegalSchemeError"),
+
+        ADMIN_URL("masterSamlProcessingUrl",
+                "Master SAML Processing URL is not a valid URL", "adminUrlURLInvalid",
+                null, null,
+                "Master SAML Processing URL uses an illegal scheme", "adminUrlURLIllegalSchemeError"),
+
+        SAML_ASSERTION_CONSUMER_URL_POST_URI(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE,
+                "Assertion Consumer Service POST Binding URL is not a valid URL", "samlAssertionConsumerUrlPostURLInvalid",
+                null, null,
+                "Assertion Consumer Service POST Binding URL uses an illegal scheme", "samlAssertionConsumerUrlPostURLIllegalSchemeError"),
+
+        SAML_ASSERTION_CONSUMER_URL_REDIRECT_URI(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE,
+                "Assertion Consumer Service Redirect Binding URL is not a valid URL", "samlAssertionConsumerUrlRedirectURLInvalid",
+                null, null,
+                "Assertion Consumer Service Redirect Binding URL uses an illegal scheme", "samlAssertionConsumerUrlRedirectURLIllegalSchemeError"),
+
+        SAML_ASSERTION_CONSUMER_URL_ARTIFACT_URI(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE,
+                "Artifact Binding URL is not a valid URL", "samlAssertionConsumerUrlArtifactURLInvalid",
+                null, null,
+                "Artifact Binding URL uses an illegal scheme", "samlAssertionConsumerUrlArtifactURLIllegalSchemeError"),
+
+        SAML_SINGLE_LOGOUT_SERVICE_URL_POST_URI(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE,
+                "Logout Service POST Binding URL is not a valid URL", "samlLogoutServiceUrlPostURLInvalid",
+                null, null,
+                "Logout Service POST Binding URL uses an illegal scheme", "samlLogoutServiceUrlPostURLIllegalSchemeError"),
+
+        SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_URI(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE,
+                "Logout Service ARTIFACT Binding URL is not a valid URL", "samlLogoutServiceUrlArtifactURLInvalid",
+                null, null,
+                "Logout Service ARTIFACT Binding URL uses an illegal scheme", "samlLogoutServiceUrlArtifactURLIllegalSchemeError"),
+
+        SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_URI(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE,
+                "Logout Service Redirect Binding URL is not a valid URL", "samlLogoutServiceUrlRedirectURLInvalid",
+                null, null,
+                "Logout Service Redirect Binding URL uses an illegal scheme", "samlLogoutServiceUrlRedirectURLIllegalSchemeError"),
+
+        SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_URI(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE,
+                "Logout Service SOAP Binding URL is not a valid URL", "samlLogoutServiceUrlSoapURLInvalid",
+                null, null,
+                "Logout Service SOAP Binding URL uses an illegal scheme", "samlAssertionConsumerUrlPostURLIllegalSchemeError"),
+
+        SAML_ARTIFACT_RESOLUTION_SERVICE_URL_URI(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE,
+                "Artifact Resolution Service is not a valid URL", "samlAssertionConsumerUrlPostURLInvalid",
+                null, null,
+                "Artifact Resolution Service uses an illegal scheme", "samlAssertionConsumerUrlPostURLIllegalSchemeError");
 
         private String fieldId;
 
@@ -174,7 +223,21 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         checkUriLogo(FieldMessages.LOGO_URI, client.getAttribute(ClientModel.LOGO_URI), context);
         checkUri(FieldMessages.POLICY_URI, client.getAttribute(ClientModel.POLICY_URI), context, true, false);
         checkUri(FieldMessages.TOS_URI, client.getAttribute(ClientModel.TOS_URI), context, true, false);
+
+        // extra validation URLs for SAML clients
+        if (SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            checkUri(FieldMessages.ADMIN_URL, client.getManagementUrl(), context, true, false);
+            checkUri(FieldMessages.SAML_ASSERTION_CONSUMER_URL_POST_URI, client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_ASSERTION_CONSUMER_URL_REDIRECT_URI, client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_URI, client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_URI, client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_URI, client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_URI, client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_URI, client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_URI, client.getAttribute(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE), context, true, false);
+        }
     }
+
 
     private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment) {
         if (url == null || url.isEmpty()) {
@@ -182,7 +245,14 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
 
         try {
-            URI uri = new URI(url);
+            String urlToCheck=url;
+            if(field==FieldMessages.BACKCHANNEL_LOGOUT_URL){
+                if(checkCurlyBracketsBalanced(url))
+                    // This allow user to set parametrized backchannel logout url in this format : http://{example}/{example2}
+                    urlToCheck=url.replace("{","%7B").replace("}","%7D");
+                else throw new MalformedURLException();
+            }
+            URI uri = new URI(urlToCheck);
 
             boolean valid = true;
             if (uri.getScheme() != null && (uri.getScheme().equals("data") || uri.getScheme().equals("javascript"))) {
@@ -203,9 +273,40 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                 uri.toURL(); // throws an exception
             }
         }
+
         catch (MalformedURLException | IllegalArgumentException | URISyntaxException e) {
             context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
         }
+    }
+
+    /**
+     * Check if url has curly brackets in correct position ('{' before '}')
+     * @param url to check
+     * @return true if curly brackets are balanced, else false
+     */
+    public static boolean checkCurlyBracketsBalanced(String url)
+    {
+        Deque<Character> stack
+                = new ArrayDeque<>();
+
+        for(char singleLetter:url.toCharArray()){
+            if (singleLetter == '{')
+            {
+                // Push the element in the stack
+                stack.push(singleLetter);
+                continue;
+            }
+            if(stack.isEmpty() && (singleLetter=='}')) return false;
+            char check;
+            if(singleLetter=='}'){
+                check=stack.pop();
+                if(check!='{') return false;
+            }
+
+        }
+
+
+        return stack.isEmpty();
     }
 
     private void checkUriLogo(FieldMessages field, String url, ValidationContext<ClientModel> context) {

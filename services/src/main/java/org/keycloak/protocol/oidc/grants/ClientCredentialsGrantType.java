@@ -29,7 +29,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -64,14 +63,17 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         setContext(context);
         
         if (client.isBearerOnly()) {
+            event.detail(Details.REASON, "Bearer-only client not allowed to retrieve service account");
             event.error(Errors.INVALID_CLIENT);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT, "Bearer-only client not allowed to retrieve service account", Response.Status.UNAUTHORIZED);
         }
         if (client.isPublicClient()) {
+            event.detail(Details.REASON, "Public client not allowed to retrieve service account");
             event.error(Errors.INVALID_CLIENT);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT, "Public client not allowed to retrieve service account", Response.Status.UNAUTHORIZED);
         }
         if (!client.isServiceAccountsEnabled()) {
+            event.detail(Details.REASON, "Client not enabled to retrieve service account");
             event.error(Errors.INVALID_CLIENT);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT, "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
         }
@@ -90,6 +92,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         event.user(clientUser);
 
         if (!clientUser.isEnabled()) {
+            event.detail(Details.REASON, "User '" + clientUsername + "' disabled");
             event.error(Errors.USER_DISABLED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "User '" + clientUsername + "' disabled", Response.Status.UNAUTHORIZED);
         }
@@ -129,6 +132,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         try {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenRequestContext(formParams, clientSessionCtx.getClientSession()));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -142,7 +146,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         if (useRefreshToken) {
             responseBuilder = responseBuilder.generateRefreshToken();
         } else {
-            responseBuilder.getAccessToken().setSessionState(null);
+            responseBuilder.getAccessToken().setSessionId(null);
         }
 
         checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
@@ -155,6 +159,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         try {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -164,6 +169,8 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         try {
             res = responseBuilder.build();
         } catch (RuntimeException re) {
+            event.detail(Details.REASON, re.getMessage());
+            event.error(Errors.INVALID_REQUEST);
             if ("can not get encryption KEK".equals(re.getMessage())) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                         "can not get encryption KEK", Response.Status.BAD_REQUEST);
@@ -173,7 +180,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
         event.success();
 
-        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Override

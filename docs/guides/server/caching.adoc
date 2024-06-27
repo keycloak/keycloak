@@ -90,7 +90,6 @@ to the node where their sessions were initially created. By doing that, you are 
 CPU, memory, and network utilization.
 
 .User sessions
-
 Once the user is authenticated, a user session is created. The user session tracks your active users and their state so that they can seamlessly
 authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session
 is created too, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
@@ -103,10 +102,37 @@ The following caches are used to store both user and client sessions:
 * clientSessions
 
 By relying on a distributable cache, user and client sessions are available to any node in the cluster so that users can be redirected
-to any node without loosing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
+to any node without losing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
 
+ifeval::[{project_community}==true]
+
+.Persistent user sessions
+The feature `persistent-user-sessions` stores online user and client sessions also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+The feature is disabled by default. To use it, enable the feature:
+
+----
+bin/kc.sh start --features=persistent-user-sessions ...
+----
+
+With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to, by default, 10000 entries per node which will reduce the overall memory usage of {project_name} for larger installations.
+The internal caches will run with only a single owner for each cache entry.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+
+[WARNING]
+====
+Enabling this feature via a rolling configuration upgrade can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist.
+To prevent that, remove all online user and client sessions before the first node is started with this feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
+====
+
+endif::[]
+
+.Offline user sessions
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
 when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
 of offline tokens, offline sessions are handled differently as they are long-lived and should survive a complete cluster shutdown. Because of that, they are also persisted to the database.
@@ -117,6 +143,14 @@ The following caches are used to store offline sessions:
 * offlineClientSessions
 
 Upon a cluster restart, offline sessions are lazily loaded from the database and kept in a shared cache using the two caches above.
+
+ifeval::[{project_community}==true]
+
+With feature `persistent-user-sessions` enabled, the in-memory caches for offline user sessions and offline client sessions are limited to 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+
+endif::[]
 
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
@@ -145,6 +179,22 @@ To specify your own cache configuration file, enter this command:
 <@kc.build parameters="--cache-config-file=my-cache-file.xml"/>
 
 The configuration file is relative to the `conf/` directory.
+
+=== CLI options for remote server
+
+For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
+Once any of declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
+
+==== Connecting to an insecure Infinispan server
+
+WARNING: Disabling security is not recommended in production!
+
+In a development or test environment, it is easier to start an unsecured Infinispan server.
+For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (TLS) between {project_name} and Infinispan.
+{project_name} will fail to start if the Infinispan server is configured to accept only encrypted connections.
+
+The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the Infinispan server without presenting any credentials.
+If the Infinispan server has authentication enabled, {project_name} will fail to start.
 
 == Transport stacks
 Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
@@ -197,7 +247,7 @@ Instead, when you have a distributed cache setup running on AWS EC2 instances, y
 Cloud vendor specific stacks have additional dependencies for {project_name}.
 For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/dev/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
 
-To provide the dependencies to {project_name}, put the respective JAR in the `providers` directory and build Keycloak by entering this command:
+To provide the dependencies to {project_name}, put the respective JAR in the `providers` directory and build {project_name} by entering this command:
 
 <@kc.build parameters="--cache-stack=<ec2|google|azure>"/>
 
@@ -252,26 +302,13 @@ For more information about securing cache communication, see the https://infinis
 
 == Exposing metrics from caches
 
-By default, metrics from caches are not automatically exposed when the metrics are enabled.
+Metrics from caches are automatically exposed when the metrics are enabled.
+
+To enable histograms for the cache metrics, set `cache-metrics-histograms-enabled` to `true`.
+While these metrics provide more insights into the latency distribution, collecting them might have a performance impact, so you should be cautious to activate them in an already saturated system.
+
+<@kc.start parameters="--metrics-enabled true --cache-metrics-histograms-enabled true"/>
+
 For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
-
-To enable global metrics for all caches within the `cache-container`, you need to change your cache configuration file (e.g.: `conf/cache-ispn.xml`) to enable `statistics` at the `cache-container` level as follows:
-
-.enabling metrics for all caches
-[source]
-----
-<cache-container name="keycloak" statistics="true">
-    ...
-</cache-container>
-----
-
-Similarly, you can enable metrics individually for each cache by enabling `statistics` as follows:
-
-.enabling metrics for a specific cache
-----
-<local-cache name="realms" statistics="true">
-    ...
-</local-cache>
-----
 
 </@tmpl.guide>

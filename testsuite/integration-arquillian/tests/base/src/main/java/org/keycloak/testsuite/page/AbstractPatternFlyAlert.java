@@ -27,6 +27,8 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,7 +43,7 @@ import static org.keycloak.testsuite.util.WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
  * @author tkyjovsk
  */
 public abstract class AbstractPatternFlyAlert {
-    public static final String ALERT_CLASS_NAME = "alert";
+    public static final String ALERT_CLASS_NAME = "pf-v5-c-alert";
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
@@ -66,7 +68,7 @@ public abstract class AbstractPatternFlyAlert {
     private static void waitUntilDisplayedOrHidden(boolean displayed) {
         ExpectedCondition condition = ExpectedConditions.visibilityOfElementLocated(By.className(ALERT_CLASS_NAME));
         condition = displayed ? condition : ExpectedConditions.not(condition);
-        new WebDriverWait(getCurrentDriver(), PAGELOAD_TIMEOUT_MILLIS / 1000).until(condition);
+        new WebDriverWait(getCurrentDriver(), Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS)).until(condition);
     }
 
     public String getText() {

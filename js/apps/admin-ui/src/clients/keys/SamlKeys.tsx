@@ -16,9 +16,8 @@ import { saveAs } from "file-saver";
 import { Fragment, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -88,7 +87,7 @@ const KeySection = ({
         />
       )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
-        <TextContent className="pf-u-pb-lg">
+        <TextContent className="pf-v5-u-pb-lg">
           <Text>{t(`${title}Explain`)}</Text>
         </TextContent>
         <FormAccess role="manage-clients" isHorizontal>
@@ -111,7 +110,7 @@ const KeySection = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => {
+                  onChange={(_event, value) => {
                     const v = value.toString();
                     if (v === "true") {
                       onChanged(attr);
@@ -155,6 +154,8 @@ const KeySection = ({
 };
 
 export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [isChanged, setIsChanged] = useState<KeyTypes>();
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation[]>();

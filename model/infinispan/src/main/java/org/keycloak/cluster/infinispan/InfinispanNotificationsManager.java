@@ -17,7 +17,7 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -36,6 +37,7 @@ import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.context.Flag;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
@@ -54,7 +56,6 @@ import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 
@@ -67,13 +68,16 @@ public class InfinispanNotificationsManager {
 
     protected static final Logger logger = Logger.getLogger(InfinispanNotificationsManager.class);
 
+    private static final int BACKOFF_BASE_MILLIS = 10;
+    private static final int MAX_BACKOFF_RETRIES = 10;
+
     private final ConcurrentMultivaluedHashMap<String, ClusterListener> listeners = new ConcurrentMultivaluedHashMap<>();
 
     private final ConcurrentMap<String, TaskCallback> taskCallbacks = new ConcurrentHashMap<>();
 
-    private final Cache<String, Serializable> workCache;
+    private final Cache<String, Object> workCache;
 
-    private final RemoteCache workRemoteCache;
+    private final RemoteCache<String, Object> workRemoteCache;
 
     private final String myAddress;
 
@@ -81,8 +85,7 @@ public class InfinispanNotificationsManager {
 
     private final ExecutorService listenersExecutor;
 
-
-    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
+    protected InfinispanNotificationsManager(Cache<String, Object> workCache, RemoteCache<String, Object> workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
         this.workCache = workCache;
         this.workRemoteCache = workRemoteCache;
         this.myAddress = myAddress;
@@ -92,8 +95,8 @@ public class InfinispanNotificationsManager {
 
 
     // Create and init manager including all listeners etc
-    public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Serializable> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
-        RemoteCache workRemoteCache = null;
+    public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Object> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
+        RemoteCache<String, Object> workRemoteCache = null;
 
         if (!remoteStores.isEmpty()) {
             RemoteStore remoteStore = remoteStores.iterator().next();
@@ -137,19 +140,13 @@ public class InfinispanNotificationsManager {
     }
 
 
-    void notify(String taskKey, ClusterEvent event, boolean ignoreSender, ClusterProvider.DCNotify dcNotify) {
-        WrapperClusterEvent wrappedEvent = new WrapperClusterEvent();
-        wrappedEvent.setEventKey(taskKey);
-        wrappedEvent.setDelegateEvent(event);
-        wrappedEvent.setIgnoreSender(ignoreSender);
-        wrappedEvent.setIgnoreSenderSite(dcNotify == ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC);
-        wrappedEvent.setSender(myAddress);
-        wrappedEvent.setSenderSite(mySite);
+    void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, ClusterProvider.DCNotify dcNotify) {
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, myAddress, mySite, dcNotify, ignoreSender);
 
         String eventKey = UUID.randomUUID().toString();
 
         if (logger.isTraceEnabled()) {
-            logger.tracef("Sending event with key %s: %s", eventKey, event);
+            logger.tracef("Sending event with key %s: %s", eventKey, events);
         }
 
         if (dcNotify == ClusterProvider.DCNotify.LOCAL_DC_ONLY || workRemoteCache == null) {
@@ -183,18 +180,18 @@ public class InfinispanNotificationsManager {
     public class CacheEntryListener {
 
         @CacheEntryCreated
-        public void cacheEntryCreated(CacheEntryCreatedEvent<String, Serializable> event) {
+        public void cacheEntryCreated(CacheEntryCreatedEvent<String, Object> event) {
             eventReceived(event.getKey(), event.getValue());
         }
 
         @CacheEntryModified
-        public void cacheEntryModified(CacheEntryModifiedEvent<String, Serializable> event) {
-            eventReceived(event.getKey(), event.getValue());
+        public void cacheEntryModified(CacheEntryModifiedEvent<String, Object> event) {
+            eventReceived(event.getKey(), event.getNewValue());
         }
 
         @CacheEntryRemoved
-        public void cacheEntryRemoved(CacheEntryRemovedEvent<String, Serializable> event) {
-            taskFinished(event.getKey(), true);
+        public void cacheEntryRemoved(CacheEntryRemovedEvent<String, Object> event) {
+            taskFinished(event.getKey());
         }
 
     }
@@ -203,31 +200,28 @@ public class InfinispanNotificationsManager {
     @ClientListener
     public class HotRodListener {
 
-        private final RemoteCache<Object, Object> remoteCache;
+        private final RemoteCache<String, Object> remoteCache;
 
-        public HotRodListener(RemoteCache<Object, Object> remoteCache) {
+        public HotRodListener(RemoteCache<String, Object> remoteCache) {
             this.remoteCache = remoteCache;
         }
 
 
         @ClientCacheEntryCreated
-        public void created(ClientCacheEntryCreatedEvent event) {
-            String key = event.getKey().toString();
-            hotrodEventReceived(key);
+        public void created(ClientCacheEntryCreatedEvent<String> event) {
+            hotrodEventReceived(event.getKey());
         }
 
 
         @ClientCacheEntryModified
-        public void updated(ClientCacheEntryModifiedEvent event) {
-            String key = event.getKey().toString();
-            hotrodEventReceived(key);
+        public void updated(ClientCacheEntryModifiedEvent<String> event) {
+            hotrodEventReceived(event.getKey());
         }
 
 
         @ClientCacheEntryRemoved
-        public void removed(ClientCacheEntryRemovedEvent event) {
-            String key = event.getKey().toString();
-            taskFinished(key, true);
+        public void removed(ClientCacheEntryRemovedEvent<String> event) {
+            taskFinished(event.getKey());
         }
 
 
@@ -235,11 +229,22 @@ public class InfinispanNotificationsManager {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
             try {
                 listenersExecutor.submit(() -> {
-                    Object value = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(() ->
-                            // We've seen deadlocks in Infinispan 14.x when shutting down Infinispan concurrently, therefore wrapping this
-                            remoteCache.get(key)
-                    );
-                    eventReceived(key, (Serializable) value);
+                    Supplier<Object> fetchEvent = () -> remoteCache.get(key);
+                    Object event = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(fetchEvent);
+                    int iteration = 0;
+                    // Event might have been generated from a node which is more up-to-date, so the fetch might return null.
+                    // Retry until we find a node that is up-to-date and has the entry.
+                    while (event == null && iteration < MAX_BACKOFF_RETRIES) {
+                        ++iteration;
+                        try {
+                            Thread.sleep(Retry.computeBackoffInterval(BACKOFF_BASE_MILLIS, iteration));
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                        event = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(fetchEvent);
+                    }
+                    eventReceived(key, event);
 
                 });
             } catch (RejectedExecutionException ree) {
@@ -254,11 +259,10 @@ public class InfinispanNotificationsManager {
                 }
             }
         }
-
     }
 
-    private void eventReceived(String key, Serializable obj) {
-        if (!(obj instanceof WrapperClusterEvent)) {
+    private void eventReceived(String key, Object obj) {
+        if (!(obj instanceof WrapperClusterEvent event)) {
             // Items with the TASK_KEY_PREFIX might be gone fast once the locking is complete, therefore, don't log them.
             // It is still good to have the warning in case of real events return null because they have been, for example, expired
             if (obj == null && !key.startsWith(TASK_KEY_PREFIX)) {
@@ -267,18 +271,8 @@ public class InfinispanNotificationsManager {
             return;
         }
 
-        WrapperClusterEvent event = (WrapperClusterEvent) obj;
-
-        if (event.isIgnoreSender()) {
-            if (this.myAddress.equals(event.getSender())) {
-                return;
-            }
-        }
-
-        if (event.isIgnoreSenderSite()) {
-            if (this.mySite == null || this.mySite.equals(event.getSenderSite())) {
-                return;
-            }
+        if (event.rejectEvent(myAddress, mySite)) {
+            return;
         }
 
         String eventKey = event.getEventKey();
@@ -287,27 +281,24 @@ public class InfinispanNotificationsManager {
             logger.tracef("Received event: %s", event);
         }
 
-        ClusterEvent wrappedEvent = event.getDelegateEvent();
-
         List<ClusterListener> myListeners = listeners.get(eventKey);
         if (myListeners != null) {
-            for (ClusterListener listener : myListeners) {
-                listener.eventReceived(wrappedEvent);
+            for (var e : event.getDelegateEvents()) {
+                myListeners.forEach(e);
             }
         }
     }
 
 
-    void taskFinished(String taskKey, boolean success) {
+    void taskFinished(String taskKey) {
         TaskCallback callback = taskCallbacks.remove(taskKey);
 
         if (callback != null) {
             if (logger.isDebugEnabled()) {
-                logger.debugf("Finished task '%s' with '%b'", taskKey, success);
+                logger.debugf("Finished task '%s' with '%b'", taskKey, true);
             }
-            callback.setSuccess(success);
+            callback.setSuccess(true);
             callback.getTaskCompletedLatch().countDown();
         }
-
     }
 }

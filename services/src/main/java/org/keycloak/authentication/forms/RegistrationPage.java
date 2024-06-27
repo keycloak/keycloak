@@ -17,17 +17,27 @@
 
 package org.keycloak.authentication.forms;
 
+import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAuthenticator;
 import org.keycloak.authentication.FormAuthenticatorFactory;
 import org.keycloak.authentication.FormContext;
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.VerificationException;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.services.messages.Messages;
+
 import java.util.List;
 
 /**
@@ -42,10 +52,32 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
     public static final String FIELD_USERNAME = "username";
     public static final String FIELD_LAST_NAME = "lastName";
     public static final String FIELD_FIRST_NAME = "firstName";
+    public static final String FIELD_RECAPTCHA_RESPONSE = "g-recaptcha-response";
     public static final String PROVIDER_ID = "registration-page-form";
 
     @Override
     public Response render(FormContext context, LoginFormsProvider form) {
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            try {
+                InviteOrgActionToken token = Organizations.parseInvitationToken(context.getHttpRequest());
+
+                if (token != null) {
+                    KeycloakSession session = context.getSession();
+                    OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                    OrganizationModel organization = provider.getById(token.getOrgId());
+
+                    if (organization == null || !organization.isEnabled()) {
+                        return form.setError(Messages.EXPIRED_ACTION).createErrorPage(Status.BAD_REQUEST);
+                    }
+
+                    form.setAttribute("messageHeader", Messages.REGISTER_ORGANIZATION_MEMBER);
+                    form.setAttribute(OrganizationModel.ORGANIZATION_NAME_ATTRIBUTE, organization.getName());
+                }
+            } catch (VerificationException e) {
+                return form.setError(Messages.EXPIRED_ACTION).createErrorPage(Status.BAD_REQUEST);
+            }
+        }
+
         return form.createRegistration();
     }
 
@@ -83,6 +115,7 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.DISABLED
     };
+
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
         return REQUIREMENT_CHOICES;

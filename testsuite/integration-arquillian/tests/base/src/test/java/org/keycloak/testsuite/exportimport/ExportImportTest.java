@@ -30,9 +30,11 @@ import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
+import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,6 +52,7 @@ import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -66,6 +69,7 @@ import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
@@ -208,6 +212,17 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().setFile(targetFilePath);
 
         testFullExportImport();
+        assertExportContainsGoogleClientSecret(targetFilePath);
+    }
+
+    private static void assertExportContainsGoogleClientSecret(String targetFilePath) throws IOException {
+        assertTrue("Expected an export file to exist", new File(targetFilePath).exists());
+
+        Map<String, RealmRepresentation> realms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, new FileInputStream(new File(targetFilePath)));
+        List<IdentityProviderRepresentation> idps = realms.get("test-realm").getIdentityProviders();
+        IdentityProviderRepresentation googleIdp = idps.stream().filter(idp -> idp.getAlias().equals("google1")).findFirst().get();
+        assertNotNull(googleIdp);
+        assertEquals("googleSecret", googleIdp.getConfig().get("clientSecret"));
     }
 
     @Test
@@ -255,6 +270,13 @@ public class ExportImportTest extends AbstractKeycloakTest {
         importRealmFromFile("/import/import-without-clients.json");
         Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("import-without-clients"));
         addTestRealmToTestRealmReps("import-without-clients");
+    }
+
+    @Test
+    public void testImportFromRealmWithPartialAuthenticationFlows() {
+        // import a realm with no built-in authentication flows
+        importRealmFromFile("/import/partial-authentication-flows-import.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("partial-authentication-flows-import"));
     }
 
     @Test

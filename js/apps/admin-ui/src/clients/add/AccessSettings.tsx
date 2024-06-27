@@ -1,11 +1,9 @@
-import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 
-import { HelpItem } from "ui-shared";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { FormFields } from "../ClientDetails";
 import type { ClientSettingsProps } from "../ClientSettings";
@@ -17,7 +15,7 @@ export const AccessSettings = ({
   reset,
 }: ClientSettingsProps) => {
   const { t } = useTranslation();
-  const { register, watch } = useFormContext<FormFields>();
+  const { watch } = useFormContext<FormFields>();
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || client.access?.configure;
@@ -32,19 +30,12 @@ export const AccessSettings = ({
     >
       {!client.bearerOnly && <LoginSettings protocol={protocol} />}
       {protocol !== "saml" && (
-        <FormGroup
+        <TextControl
+          type="url"
+          name="adminUrl"
           label={t("adminURL")}
-          fieldId="kc-admin-url"
-          labelIcon={
-            <HelpItem helpText={t("adminURLHelp")} fieldLabelId="adminURL" />
-          }
-        >
-          <KeycloakTextInput
-            id="kc-admin-url"
-            type="url"
-            {...register("adminUrl")}
-          />
-        </FormGroup>
+          labelIcon={t("adminURLHelp")}
+        />
       )}
       {client.bearerOnly && (
         <FixedButtonsGroup

@@ -17,29 +17,27 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
-import org.jboss.logging.Logger;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionModel.State;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.OfflineUserSessionModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@SerializeWith(UserSessionEntity.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.USER_SESSION_ENTITY)
 public class UserSessionEntity extends SessionEntity {
 
     public static final Logger logger = Logger.getLogger(UserSessionEntity.class);
@@ -47,7 +45,7 @@ public class UserSessionEntity extends SessionEntity {
     // Metadata attribute, which contains the lastSessionRefresh available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
     public static final String LAST_SESSION_REFRESH_REMOTE = "lsrr";
 
-    private String id;
+    private final String id;
 
     private String user;
 
@@ -68,18 +66,39 @@ public class UserSessionEntity extends SessionEntity {
 
     private UserSessionModel.State state;
 
-    public String getId() {
-        return id;
+    public UserSessionEntity(String id) {
+        this.id = id;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    @ProtoFactory
+    static UserSessionEntity protoFactory(String realmId, String id, String user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, int started, int lastSessionRefresh, Map<String, String> notes, AuthenticatedClientSessionStore authenticatedClientSessions, UserSessionModel.State state, String brokerSessionId, String brokerUserId) {
+        var entity = new UserSessionEntity(id);
+        entity.setRealmId(realmId);
+        entity.setUser(user);
+        entity.setLoginUsername(loginUsername);
+        entity.setIpAddress(ipAddress);
+        entity.setAuthMethod(authMethod);
+        entity.setRememberMe(rememberMe);
+        entity.setStarted(started);
+        entity.setLastSessionRefresh(lastSessionRefresh);
+        entity.setBrokerSessionId(brokerSessionId);
+        entity.setBrokerUserId(brokerUserId);
+        entity.setState(state);
+        entity.setNotes(notes);
+        entity.setAuthenticatedClientSessions(authenticatedClientSessions);
+        return entity;
+    }
+
+    @ProtoField(2)
+    public String getId() {
+        return id;
     }
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
     private AuthenticatedClientSessionStore authenticatedClientSessions = new AuthenticatedClientSessionStore();
 
+    @ProtoField(3)
     public String getUser() {
         return user;
     }
@@ -88,6 +107,7 @@ public class UserSessionEntity extends SessionEntity {
         this.user = user;
     }
 
+    @ProtoField(4)
     public String getLoginUsername() {
         return loginUsername;
     }
@@ -96,6 +116,7 @@ public class UserSessionEntity extends SessionEntity {
         this.loginUsername = loginUsername;
     }
 
+    @ProtoField(5)
     public String getIpAddress() {
         return ipAddress;
     }
@@ -104,6 +125,7 @@ public class UserSessionEntity extends SessionEntity {
         this.ipAddress = ipAddress;
     }
 
+    @ProtoField(6)
     public String getAuthMethod() {
         return authMethod;
     }
@@ -112,6 +134,7 @@ public class UserSessionEntity extends SessionEntity {
         this.authMethod = authMethod;
     }
 
+    @ProtoField(7)
     public boolean isRememberMe() {
         return rememberMe;
     }
@@ -120,6 +143,7 @@ public class UserSessionEntity extends SessionEntity {
         this.rememberMe = rememberMe;
     }
 
+    @ProtoField(8)
     public int getStarted() {
         return started;
     }
@@ -128,6 +152,7 @@ public class UserSessionEntity extends SessionEntity {
         this.started = started;
     }
 
+    @ProtoField(9)
     public int getLastSessionRefresh() {
         return lastSessionRefresh;
     }
@@ -136,6 +161,7 @@ public class UserSessionEntity extends SessionEntity {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
+    @ProtoField(value = 10, mapImplementation = ConcurrentHashMap.class)
     public Map<String, String> getNotes() {
         return notes;
     }
@@ -144,6 +170,7 @@ public class UserSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
+    @ProtoField(11)
     public AuthenticatedClientSessionStore getAuthenticatedClientSessions() {
         return authenticatedClientSessions;
     }
@@ -152,6 +179,7 @@ public class UserSessionEntity extends SessionEntity {
         this.authenticatedClientSessions = authenticatedClientSessions;
     }
 
+    @ProtoField(value = 12)
     public UserSessionModel.State getState() {
         return state;
     }
@@ -160,6 +188,7 @@ public class UserSessionEntity extends SessionEntity {
         this.state = state;
     }
 
+    @ProtoField(13)
     public String getBrokerSessionId() {
         return brokerSessionId;
     }
@@ -168,6 +197,7 @@ public class UserSessionEntity extends SessionEntity {
         this.brokerSessionId = brokerSessionId;
     }
 
+    @ProtoField(14)
     public String getBrokerUserId() {
         return brokerUserId;
     }
@@ -178,14 +208,12 @@ public class UserSessionEntity extends SessionEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UserSessionEntity)) return false;
+        if (this == o) {
+            return true;
+        }
+        return o instanceof UserSessionEntity that &&
+                Objects.equals(id, that.id);
 
-        UserSessionEntity that = (UserSessionEntity) o;
-
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
-
-        return true;
     }
 
     @Override
@@ -224,88 +252,54 @@ public class UserSessionEntity extends SessionEntity {
         return entityWrapper;
     }
 
+    public static UserSessionEntity create(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        UserSessionEntity entity = new UserSessionEntity(id);
+        updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+        return entity;
+    }
 
-    public static class ExternalizerImpl implements Externalizer<UserSessionEntity> {
+    public static void updateSessionEntity(UserSessionEntity entity, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        entity.setRealmId(realm.getId());
+        entity.setUser(user.getId());
+        entity.setLoginUsername(loginUsername);
+        entity.setIpAddress(ipAddress);
+        entity.setAuthMethod(authMethod);
+        entity.setRememberMe(rememberMe);
+        entity.setBrokerSessionId(brokerSessionId);
+        entity.setBrokerUserId(brokerUserId);
 
-        private static final int VERSION_1 = 1;
+        int currentTime = Time.currentTime();
 
-        private static final EnumMap<UserSessionModel.State, Integer> STATE_TO_ID = new EnumMap<>(UserSessionModel.State.class);
-        private static final Map<Integer, UserSessionModel.State> ID_TO_STATE = new HashMap<>();
-        static {
-            STATE_TO_ID.put(State.LOGGED_IN, 1);
-            STATE_TO_ID.put(State.LOGGED_OUT, 2);
-            STATE_TO_ID.put(State.LOGGING_OUT, 3);
+        entity.setStarted(currentTime);
+        entity.setLastSessionRefresh(currentTime);
+    }
 
-            for (Entry<State, Integer> entry : STATE_TO_ID.entrySet()) {
-                ID_TO_STATE.put(entry.getValue(), entry.getKey());
-            }
+    public static UserSessionEntity createFromModel(UserSessionModel userSession) {
+        UserSessionEntity entity = new UserSessionEntity(userSession.getId());
+        entity.setRealmId(userSession.getRealm().getId());
+
+        entity.setAuthMethod(userSession.getAuthMethod());
+        entity.setBrokerSessionId(userSession.getBrokerSessionId());
+        entity.setBrokerUserId(userSession.getBrokerUserId());
+        entity.setIpAddress(userSession.getIpAddress());
+        entity.setNotes(userSession.getNotes() == null ? new ConcurrentHashMap<>() : userSession.getNotes());
+        entity.setAuthenticatedClientSessions(new AuthenticatedClientSessionStore());
+        entity.setRememberMe(userSession.isRememberMe());
+        entity.setState(userSession.getState());
+        if (userSession instanceof OfflineUserSessionModel offline) {
+            // this is a hack so that UserModel doesn't have to be available when offline token is imported.
+            // see related JIRA - KEYCLOAK-5350 and corresponding test
+            entity.setUser(offline.getUserId());
+            // NOTE: Hack
+            // We skip calling entity.setLoginUsername(userSession.getLoginUsername())
+        } else {
+            entity.setLoginUsername(userSession.getLoginUsername());
+            entity.setUser(userSession.getUser().getId());
         }
 
-        @Override
-        public void writeObject(ObjectOutput output, UserSessionEntity session) throws IOException {
-            output.writeByte(VERSION_1);
+        entity.setStarted(userSession.getStarted());
+        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
 
-            MarshallUtil.marshallString(session.getAuthMethod(), output);
-            MarshallUtil.marshallString(session.getBrokerSessionId(), output);
-            MarshallUtil.marshallString(session.getBrokerUserId(), output);
-            MarshallUtil.marshallString(session.getId(), output);
-            MarshallUtil.marshallString(session.getIpAddress(), output);
-            MarshallUtil.marshallString(session.getLoginUsername(), output);
-            MarshallUtil.marshallString(session.getRealmId(), output);
-            MarshallUtil.marshallString(session.getUser(), output);
-
-            KeycloakMarshallUtil.marshall(session.getLastSessionRefresh(), output);
-            KeycloakMarshallUtil.marshall(session.getStarted(), output);
-            output.writeBoolean(session.isRememberMe());
-
-            int state = session.getState() == null ? 0 : STATE_TO_ID.get(session.getState());
-            output.writeInt(state);
-
-            Map<String, String> notes = session.getNotes();
-            KeycloakMarshallUtil.writeMap(notes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
-
-            output.writeObject(session.getAuthenticatedClientSessions());
-        }
-
-
-        @Override
-        public UserSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public UserSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            UserSessionEntity sessionEntity = new UserSessionEntity();
-
-            sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
-            sessionEntity.setBrokerSessionId(MarshallUtil.unmarshallString(input));
-            sessionEntity.setBrokerUserId(MarshallUtil.unmarshallString(input));
-            final String userSessionId = MarshallUtil.unmarshallString(input);
-            sessionEntity.setId(userSessionId);
-            sessionEntity.setIpAddress(MarshallUtil.unmarshallString(input));
-            sessionEntity.setLoginUsername(MarshallUtil.unmarshallString(input));
-            sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));
-            sessionEntity.setUser(MarshallUtil.unmarshallString(input));
-
-            sessionEntity.setLastSessionRefresh(KeycloakMarshallUtil.unmarshallInteger(input));
-            sessionEntity.setStarted(KeycloakMarshallUtil.unmarshallInteger(input));
-            sessionEntity.setRememberMe(input.readBoolean());
-
-            sessionEntity.setState(ID_TO_STATE.get(input.readInt()));
-
-            Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
-                    new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());
-            sessionEntity.setNotes(notes);
-
-            AuthenticatedClientSessionStore authSessions = (AuthenticatedClientSessionStore) input.readObject();
-            sessionEntity.setAuthenticatedClientSessions(authSessions);
-
-            return sessionEntity;
-        }
-
+        return entity;
     }
 }

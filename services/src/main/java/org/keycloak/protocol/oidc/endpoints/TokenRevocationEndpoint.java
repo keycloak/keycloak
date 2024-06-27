@@ -91,7 +91,7 @@ public class TokenRevocationEndpoint {
     public Response revoke() {
         event.event(EventType.REVOKE_GRANT);
 
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         checkSsl();
         checkRealm();
@@ -130,12 +130,12 @@ public class TokenRevocationEndpoint {
         }
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
-        return cors.builder(Response.ok()).build();
+        return cors.add(Response.ok());
     }
 
     @OPTIONS
     public Response preflight() {
-        return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
+        return Cors.builder().auth().preflight().allowedMethods("POST", "OPTIONS").add(Response.ok());
     }
 
     private void checkSsl() {
@@ -171,6 +171,7 @@ public class TokenRevocationEndpoint {
         String encodedToken = formParams.getFirst(PARAM_TOKEN);
 
         if (encodedToken == null) {
+            event.detail(Details.REASON, "Token not provided");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Token not provided",
                 Response.Status.BAD_REQUEST);
@@ -184,6 +185,7 @@ public class TokenRevocationEndpoint {
         }
 
         if (!(TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType()) || TokenUtil.TOKEN_TYPE_BEARER.equals(token.getType())|| TokenUtil.TOKEN_TYPE_DPOP.equals(token.getType()))) {
+            event.detail(Details.REASON, "Unsupported token type");
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_TOKEN_TYPE, "Unsupported token type",
                 Response.Status.BAD_REQUEST);
@@ -193,11 +195,13 @@ public class TokenRevocationEndpoint {
     private void checkIssuedFor() {
         String issuedFor = token.getIssuedFor();
         if (issuedFor == null) {
+            event.detail(Details.REASON, "Issued for not set");
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
 
         if (!client.getClientId().equals(issuedFor)) {
+            event.detail(Details.REASON, "Unmatching clients");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Unmatching clients",
                 Response.Status.BAD_REQUEST);
@@ -266,7 +270,7 @@ public class TokenRevocationEndpoint {
     private void revokeAccessToken() {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         int currentTime = Time.currentTime();
-        long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
+        long lifespanInSecs = Math.max(token.getExp() - currentTime + 1, 10);
         singleUseStore.put(token.getId() + SingleUseObjectProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
     }
 }

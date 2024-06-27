@@ -77,10 +77,6 @@ curl -X POST \
 
 Or even using a custom policy using JavaScript:
 
-:tech_feature_name: Upload Scripts
-:tech_feature_setting: -Dkeycloak.profile.feature.upload_scripts=enabled
-include::./templates/deprecated.adoc[]
-
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \

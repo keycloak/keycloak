@@ -15,14 +15,11 @@
     <artifactId>keycloak-operator</artifactId>
 
     <properties>
-        <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
+        <quarkus.docker.build-args.KEYCLOAK_VERSION>${project.version}</quarkus.docker.build-args.KEYCLOAK_VERSION>
     </properties>
 
     <dependencyManagement>
@@ -153,10 +150,6 @@
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.build.version}</version>
-            </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler-plugin.version}</version>
             </plugin>
             </plugins>
         </pluginManagement>

@@ -229,6 +229,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private void checkClient(String clientId) {
         if (clientId == null) {
+            event.detail(Details.REASON, "Missing parameter: " + OIDCLoginProtocol.CLIENT_ID_PARAM);
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
         }
@@ -257,8 +258,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
         if (!protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            String errorMessage = "Wrong client protocol.";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, "Wrong client protocol.");
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, errorMessage);
         }
 
         session.getContext().setClient(client);
@@ -314,6 +317,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
                 if (essential) {
                     logger.errorf("Requested essential acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct ACR passed in the 'claims' parameter.", acr);
+                    event.detail(Details.REASON, "Invalid requested essential acr value");
                     event.error(Errors.INVALID_REQUEST);
                     throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
                 } else {
@@ -363,7 +367,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     public static void performActionOnParameters(AuthorizationEndpointRequest request, BiConsumer<String, String> paramAction) {
         paramAction.accept(AdapterConstants.KC_IDP_HINT, request.getIdpHint());
-        paramAction.accept(Constants.KC_ACTION, request.getAction());
+
+        String kcAction = request.getAction();
+        String kcActionParameter = null;
+        if (kcAction != null && kcAction.contains(":")) {
+            String[] splits = kcAction.split(":");
+            kcAction = splits[0];
+            kcActionParameter = splits[1];
+        }
+        paramAction.accept(Constants.KC_ACTION, kcAction);
+        paramAction.accept(Constants.KC_ACTION_PARAMETER, kcActionParameter);
+
         paramAction.accept(OAuth2Constants.DISPLAY, request.getDisplay());
         paramAction.accept(OIDCLoginProtocol.ACR_PARAM, request.getAcr());
         paramAction.accept(OIDCLoginProtocol.CLAIMS_PARAM, request.getClaims());

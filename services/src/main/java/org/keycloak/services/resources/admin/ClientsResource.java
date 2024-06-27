@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -38,7 +39,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
@@ -51,6 +51,7 @@ import org.keycloak.validation.ValidationUtil;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -226,6 +227,9 @@ public class ClientsResource {
             throw ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+        catch (ClientTypeException cte) {
+            throw ErrorResponse.error(cte.getMessage(), cte.getParameters(), Response.Status.BAD_REQUEST);
         }
     }
 

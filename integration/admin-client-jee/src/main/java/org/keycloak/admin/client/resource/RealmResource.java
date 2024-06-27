@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -268,7 +269,7 @@ public interface RealmResource {
 
     @Path("sessions/{session}")
     @DELETE
-    void deleteSession(@PathParam("session") String sessionId);
+    void deleteSession(@PathParam("session") String sessionId, @DefaultValue("false") @QueryParam("isOffline") boolean offline);
 
     @Path("components")
     ComponentsResource components();
@@ -288,4 +289,10 @@ public interface RealmResource {
 
     @Path("client-policies/profiles")
     ClientPoliciesProfilesResource clientPoliciesProfilesResource();
+
+    @Path("organizations")
+    OrganizationsResource organizations();
+
+    @Path("client-types")
+    ClientTypesResource clientTypes();
 }

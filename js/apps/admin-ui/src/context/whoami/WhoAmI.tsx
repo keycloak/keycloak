@@ -1,10 +1,12 @@
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import { PropsWithChildren, useState } from "react";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import environment from "../../environment";
+import {
+  createNamedContext,
+  useEnvironment,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
 import { useFetch } from "../../utils/useFetch";
 import { useRealm } from "../realm-context/RealmContext";
@@ -69,6 +71,9 @@ export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
 export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
+  const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment();
+
   const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
@@ -76,7 +81,7 @@ export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
   useFetch(
     () =>
       adminClient.whoAmI.find({
-        realm: environment.loginRealm,
+        realm: environment.realm,
         currentRealm: realm!,
       }),
     (me) => {

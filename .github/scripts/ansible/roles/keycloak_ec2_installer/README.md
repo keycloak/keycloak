@@ -15,7 +15,7 @@ See `defaults/main.yml` for default values.
 ### Other
 - `update_system_packages`: Whether to update the system packages. Defaults to `no`.
 - `install_java`: Whether to install OpenJDK on the system. Defaults to `yes`.
-- `java_version`: Version of OpenJDK to be installed. Defaults to `17`.
+- `java_version`: Version of OpenJDK to be installed. Defaults to `21`.
 
 
 ## Example Playbook

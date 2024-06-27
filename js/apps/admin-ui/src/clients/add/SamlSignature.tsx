@@ -1,15 +1,7 @@
-import {
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core";
-import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { Toggle } from "./SamlConfig";
@@ -43,11 +35,7 @@ const CANONICALIZATION = [
 
 export const SamlSignature = () => {
   const { t } = useTranslation();
-  const [algOpen, setAlgOpen] = useState(false);
-  const [keyOpen, setKeyOpen] = useState(false);
-  const [canOpen, setCanOpen] = useState(false);
-
-  const { control, watch } = useFormContext<FormFields>();
+  const { watch } = useFormContext<FormFields>();
 
   const signDocs = watch(
     convertAttributeNameToForm<FormFields>("attributes.saml.server.signature"),
@@ -74,129 +62,40 @@ export const SamlSignature = () => {
       />
       {(signDocs === "true" || signAssertion === "true") && (
         <>
-          <FormGroup
+          <SelectControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.signature.algorithm",
+            )}
             label={t("signatureAlgorithm")}
-            fieldId="signatureAlgorithm"
-            labelIcon={
-              <HelpItem
-                helpText={t("signatureAlgorithmHelp")}
-                fieldLabelId="signatureAlgorithm"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.signature.algorithm",
-              )}
-              defaultValue={SIGNATURE_ALGORITHMS[0]}
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="signatureAlgorithm"
-                  onToggle={setAlgOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setAlgOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                  aria-label={t("signatureAlgorithm")}
-                  isOpen={algOpen}
-                >
-                  {SIGNATURE_ALGORITHMS.map((algorithm) => (
-                    <SelectOption
-                      selected={algorithm === field.value}
-                      key={algorithm}
-                      value={algorithm}
-                    />
-                  ))}
-                </Select>
-              )}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("signatureAlgorithmHelp")}
+            controller={{
+              defaultValue: SIGNATURE_ALGORITHMS[0],
+            }}
+            options={[...SIGNATURE_ALGORITHMS]}
+          />
+          <SelectControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer",
+            )}
             label={t("signatureKeyName")}
-            fieldId="signatureKeyName"
-            labelIcon={
-              <HelpItem
-                helpText={t("signatureKeyNameHelp")}
-                fieldLabelId="signatureKeyName"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer",
-              )}
-              defaultValue={KEYNAME_TRANSFORMER[0]}
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="signatureKeyName"
-                  onToggle={setKeyOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setKeyOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                  aria-label={t("signatureKeyName")}
-                  isOpen={keyOpen}
-                >
-                  {KEYNAME_TRANSFORMER.map((key) => (
-                    <SelectOption
-                      selected={key === field.value}
-                      key={key}
-                      value={key}
-                    />
-                  ))}
-                </Select>
-              )}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("signatureKeyNameHelp")}
+            controller={{
+              defaultValue: KEYNAME_TRANSFORMER[0],
+            }}
+            options={[...KEYNAME_TRANSFORMER]}
+          />
+          <SelectControl
+            name="attributes.saml_signature_canonicalization_method"
             label={t("canonicalization")}
-            fieldId="canonicalization"
-            labelIcon={
-              <HelpItem
-                helpText={t("canonicalizationHelp")}
-                fieldLabelId="canonicalization"
-              />
-            }
-          >
-            <Controller
-              name="attributes.saml_signature_canonicalization_method"
-              defaultValue={CANONICALIZATION[0].value}
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="canonicalization"
-                  onToggle={setCanOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setCanOpen(false);
-                  }}
-                  selections={
-                    CANONICALIZATION.find((can) => can.value === field.value)
-                      ?.name
-                  }
-                  variant={SelectVariant.single}
-                  aria-label={t("canonicalization")}
-                  isOpen={canOpen}
-                >
-                  {CANONICALIZATION.map((can) => (
-                    <SelectOption
-                      selected={can.value === field.value}
-                      key={can.name}
-                      value={can.value}
-                    >
-                      {can.name}
-                    </SelectOption>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("canonicalizationHelp")}
+            controller={{
+              defaultValue: CANONICALIZATION[0].value,
+            }}
+            options={CANONICALIZATION.map(({ name, value }) => ({
+              key: value,
+              value: name,
+            }))}
+          />
         </>
       )}
     </FormAccess>

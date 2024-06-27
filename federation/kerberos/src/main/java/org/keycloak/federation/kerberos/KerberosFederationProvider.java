@@ -42,16 +42,16 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
-import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.security.auth.login.LoginException;
@@ -302,22 +302,13 @@ public class KerberosFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
-        Predicate<AttributeContext> kerberosUsersSelector = (attributeContext -> {
-            UserModel user = attributeContext.getUser();
-            if (user == null) {
-                return false;
-            }
-
-            return model.getId().equals(user.getFederationLink());
-        });
-
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
         int guiOrder = (int) metadata.getAttributes().stream()
                 .map(AttributeMetadata::getName)
                 .distinct()
                 .count();
 
         AttributeGroupMetadata metadataGroup = UserProfileUtil.lookupUserMetadataGroup(session);
-        UserProfileUtil.addMetadataAttributeToUserProfile(KerberosConstants.KERBEROS_PRINCIPAL, metadata, metadataGroup, kerberosUsersSelector, guiOrder++, model.getName());
+        return Collections.singletonList(UserProfileUtil.createAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL, metadata, metadataGroup, guiOrder++, model.getName()));
     }
 }

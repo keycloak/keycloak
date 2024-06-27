@@ -59,6 +59,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.utils.StringUtil;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 /**
@@ -333,6 +334,56 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     }
 
     @Test
+    public void updateProfileDuplicateUsernameWithEmail() {
+        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", "password", "user1", "user1", "user1@local.org"));
+
+        loginPage.open();
+
+        loginPage.login("john-doh@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("user1@local.org").firstName("New first").lastName("New last").email("new@email.com").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assert.assertEquals("user1@local.org", updateProfilePage.getUsername());
+
+        Assert.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileDuplicatedEmailWithUsername() {
+        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", "password", "user1", "user1", "user1@local.org"));
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last")
+                .email("user1@local.com").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("user1@local.com", updateProfilePage.getEmail());
+
+        Assert.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+
+        events.assertEmpty();
+    }
+
+    @Test
     public void updateProfileExpiredCookies() {
         loginPage.open();
         loginPage.login("john-doh@localhost", "password");
@@ -462,6 +513,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 }
                 for (String value : values) {
                     updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                }
+                // make sure the last attribute is set with a value
+                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-0"))) {
+                    updateProfilePage.setAttribute(attribute + "-0", values.get(values.size() - 1));
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");

@@ -52,7 +52,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     @Test
     public void testUpdateAuthenticatorConfig() {
         // copy built-in flow so we get a new editable flow
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "new-browser-flow");
         Response response = authMgmtResource.copy("browser", params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
@@ -104,7 +104,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     public void testAddRemoveExecution() {
 
         // try add execution to built-in flow
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("provider", "idp-review-profile");
         try {
             authMgmtResource.addExecution("browser", params);
@@ -153,7 +153,9 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // we'll need auth-cookie later
         AuthenticationExecutionInfoRepresentation authCookieExec = findExecutionByProvider("auth-cookie", executionReps);
 
-        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 4, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE,DISABLED}), exec);
+        AuthenticationExecutionInfoRepresentation previousExecution = findPreviousExecution(exec, executionReps);
+        Assert.assertNotNull(previousExecution);
+        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 4, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE,DISABLED}, previousExecution.getPriority() + 1), exec);
 
         // remove execution
         authMgmtResource.removeExecution(exec.getId());
@@ -223,7 +225,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         // Note: there is no checking in addExecution if requirement is one of requirementChoices
         // Thus we can have OPTIONAL which is neither ALTERNATIVE, nor DISABLED
-        compareExecution(newExecInfo("Cookie", "auth-cookie", false, 0, 3, CONDITIONAL, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}), exec);
+        compareExecution(newExecInfo("Cookie", "auth-cookie", false, 0, 0, CONDITIONAL, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 10), exec);
     }
 
     @Test
@@ -234,9 +236,11 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider("auth-cookie", executionReps);
 
         Assert.assertEquals("auth-cookie set to ALTERNATIVE", ALTERNATIVE, exec.getRequirement());
+        Assert.assertEquals("auth-cookie is first in the flow", exec.getIndex(), 0);
 
         // switch from DISABLED to ALTERNATIVE
         exec.setRequirement(DISABLED);
+        exec.setPriority(Integer.MAX_VALUE);
         authMgmtResource.updateExecutions("browser", exec);
         assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), exec, ResourceType.AUTH_EXECUTION);
 
@@ -245,6 +249,13 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         // get current auth-cookie execution
         AuthenticationExecutionInfoRepresentation exec2 = findExecutionByProvider("auth-cookie", executionReps);
+
+        // The execution is expected to be last after priority change
+        long expectedIndex = executionReps.stream()
+            .filter(r -> r.getLevel() == exec2.getLevel())
+            .count() - 1;
+        exec.setIndex(Math.toIntExact(expectedIndex));
+
         compareExecution(exec, exec2);
     }
 
@@ -255,7 +266,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         createFlow(clientFlow);
 
         // Add execution to it
-        Map<String, String> executionData = new HashMap<>();
+        Map<String, Object> executionData = new HashMap<>();
         executionData.put("provider", ClientIdAndSecretAuthenticator.PROVIDER_ID);
         authMgmtResource.addExecution("new-client-flow", executionData);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("new-client-flow"), executionData, ResourceType.AUTH_EXECUTION);
@@ -319,7 +330,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
     @Test
     public void testRequirementsInExecution() {
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         String newBrowserFlow = "new-exec-flow";
 
         params.put("newName", newBrowserFlow);
@@ -337,7 +348,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authFlowPath(rep.getId()), ResourceType.AUTH_FLOW);
     }
 
-    private void addExecutionCheckReq(String flow, String providerID, HashMap<String, String> params, String expectedRequirement) {
+    private void addExecutionCheckReq(String flow, String providerID, HashMap<String, Object> params, String expectedRequirement) {
         params.put("provider", providerID);
         authMgmtResource.addExecution(flow, params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionPath(flow), params, ResourceType.AUTH_EXECUTION);

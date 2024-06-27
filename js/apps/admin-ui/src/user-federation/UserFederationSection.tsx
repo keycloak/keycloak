@@ -6,6 +6,7 @@ import {
   DropdownItem,
   Gallery,
   GalleryItem,
+  Icon,
   PageSection,
   Split,
   SplitItem,
@@ -17,8 +18,7 @@ import { DatabaseIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
@@ -38,11 +38,13 @@ import { toUserFederationLdap } from "./routes/UserFederationLdap";
 import "./user-federation.css";
 
 export default function UserFederationSection() {
+  const { adminClient } = useAdminClient();
+
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
@@ -57,9 +59,8 @@ export default function UserFederationSection() {
 
   useFetch(
     async () => {
-      const realmModel = await adminClient.realms.findOne({ realm });
       const testParams: { [name: string]: string | number } = {
-        parentId: realmModel!.id!,
+        parentId: realmRepresentation!.id!,
         type: "org.keycloak.storage.UserStorageProvider",
       };
       return adminClient.components.find(testParams);
@@ -157,8 +158,8 @@ export default function UserFederationSection() {
           footerText={toUpperCase(userFederation.providerId!)}
           labelText={
             userFederation.config?.["enabled"]?.[0] !== "false"
-              ? `${t("enabled")}`
-              : `${t("disabled")}`
+              ? t("enabled")
+              : t("disabled")
           }
           labelColor={
             userFederation.config?.["enabled"]?.[0] !== "false"
@@ -200,11 +201,11 @@ export default function UserFederationSection() {
               <Text component={TextVariants.p}>{t("getStarted")}</Text>
             </TextContent>
             <TextContent>
-              <Text className="pf-u-mt-lg" component={TextVariants.h2}>
+              <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
                 {t("providers")}
               </Text>
             </TextContent>
-            <hr className="pf-u-mb-lg" />
+            <hr className="pf-v5-u-mb-lg" />
             <Gallery hasGutter>
               {providers.map((p) => (
                 <ClickableCard
@@ -219,7 +220,9 @@ export default function UserFederationSection() {
                   <CardTitle>
                     <Split hasGutter>
                       <SplitItem>
-                        <DatabaseIcon size="lg" />
+                        <Icon size="lg">
+                          <DatabaseIcon />
+                        </Icon>
                       </SplitItem>
                       <SplitItem isFilled>
                         {t("addProvider", {

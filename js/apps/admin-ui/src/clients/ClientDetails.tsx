@@ -16,8 +16,7 @@ import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   ConfirmDialogModal,
@@ -188,6 +187,8 @@ export type FormFields = Omit<
 >;
 
 export default function ClientDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -413,7 +414,7 @@ export default function ClientDetails() {
           />
         )}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs
             data-testid="client-tabs"

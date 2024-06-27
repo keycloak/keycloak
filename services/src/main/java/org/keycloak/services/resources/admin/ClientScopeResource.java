@@ -28,6 +28,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -157,6 +158,9 @@ public class ClientScopeResource {
                 realm.removeClientScope(clientScope.getId());
                 adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
                 return Response.noContent().build();
+            } catch (ModelIllegalStateException e) {
+                logger.error(e.getMessage(), e);
+                throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
             } catch (ModelException me) {
                 throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
             }
@@ -209,6 +213,9 @@ public class ClientScopeResource {
         }
     }
 
+    public static void validateClientScopeProtocol(String protocol)throws ErrorResponseException{
+        if(protocol==null || (!protocol.equals("openid-connect") && !protocol.equals("saml"))) throw ErrorResponse.error("Unexpected protocol",Response.Status.BAD_REQUEST);
+    }
     /**
      * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client
      * as a default scope.

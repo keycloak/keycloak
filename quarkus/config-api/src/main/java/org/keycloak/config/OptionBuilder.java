@@ -98,27 +98,36 @@ public class OptionBuilder<T> {
     }
 
     public OptionBuilder<T> deprecated() {
-        this.deprecatedMetadata = new DeprecatedMetadata();
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null, null);
         return this;
     }
 
     public OptionBuilder<T> deprecated(String note) {
-        this.deprecatedMetadata = new DeprecatedMetadata(null, note);
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(note, null);
         return this;
     }
 
     public OptionBuilder<T> deprecated(Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, null);
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null, newOptionsKeys);
         return this;
     }
 
     public OptionBuilder<T> deprecated(String note, Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, note);
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(note, newOptionsKeys);
+        return this;
+    }
+
+    public OptionBuilder<T> deprecatedValues(Set<String> values, String note) {
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateValues(values, note);
         return this;
     }
 
 
     public Option<T> build() {
+        if (deprecatedMetadata == null && category.getSupportLevel() == ConfigSupportLevel.DEPRECATED) {
+            deprecated();
+        }
+
         return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, deprecatedMetadata);
     }
 

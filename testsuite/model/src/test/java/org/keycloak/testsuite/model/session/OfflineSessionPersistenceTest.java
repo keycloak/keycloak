@@ -16,22 +16,6 @@
  */
 package org.keycloak.testsuite.model.session;
 
-import org.infinispan.commons.CacheException;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.model.KeycloakModelTest;
-import org.keycloak.testsuite.model.RequireProvider;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -49,8 +33,27 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 import org.hamcrest.Matchers;
+import org.infinispan.commons.CacheException;
 import org.junit.Test;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
+import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
+import org.keycloak.models.sessions.infinispan.remote.RemoteUserSessionProvider;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -258,7 +261,15 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
             // Delete local user cache (persisted sessions are still kept)
             UserSessionProvider provider = session.getProvider(UserSessionProvider.class);
             // Remove in-memory representation of the offline sessions
-            ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            if (provider instanceof InfinispanUserSessionProvider) {
+                ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            } else if (provider instanceof PersistentUserSessionProvider) {
+                ((PersistentUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+            } else if (provider instanceof RemoteUserSessionProvider) {
+                //no-op, session not local
+            } else {
+                throw new IllegalStateException("Unknown UserSessionProvider: " + provider);
+            }
 
             return null;
         });
@@ -328,6 +339,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     private String createOfflineClientSession(String offlineUserSessionId, String clientId) {
         return withRealm(realmId, (session, realm) -> {
             UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, offlineUserSessionId);
+            assertThat("Can't retrieve offline session for " + offlineUserSessionId, offlineUserSession, Matchers.notNullValue());
             ClientModel client = session.clients().getClientById(realm, clientId);
             AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, offlineUserSession);
             return session.sessions().createOfflineClientSession(clientSession, offlineUserSession).getId();

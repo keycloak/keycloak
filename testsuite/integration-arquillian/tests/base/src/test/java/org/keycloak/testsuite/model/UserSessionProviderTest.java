@@ -304,6 +304,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         String userSessionId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
             UserSessionModel userSession = createSessions(kcSession)[0];
+            userSession = kcSession.sessions().getUserSession(realm, userSession.getId());
 
             kcSession.sessions().removeUserSession(realm, userSession);
             return userSession.getId();
@@ -321,14 +322,13 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         RealmModel realm = session.realms().getRealmByName("test");
         createSessions(session);
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
-            kcSession.sessions().removeUserSessions(realm);
-        });
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> kcSession.sessions().removeUserSessions(realm));
 
-        assertEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1"))
-                .count());
-        assertEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername(realm, "user2"))
-                .count());
+        var user1 = session.users().getUserByUsername(realm, "user1");
+        var user2 = session.users().getUserByUsername(realm, "user2");
+
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, user1).count());
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, user2).count());
     }
 
     @Test
@@ -559,9 +559,11 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
      public void testRemovingExpiredSession(KeycloakSession session) {
         UserSessionModel[] sessions = createSessions(session);
         try {
-            Time.setOffset(3600000);
             UserSessionModel userSession = sessions[0];
             RealmModel realm = userSession.getRealm();
+            // reload userSession in current session
+            userSession = session.sessions().getUserSession(realm, userSession.getId());
+            Time.setOffset(3600000);
             session.sessions().removeExpired(realm);
 
             // Assert no exception is thrown here

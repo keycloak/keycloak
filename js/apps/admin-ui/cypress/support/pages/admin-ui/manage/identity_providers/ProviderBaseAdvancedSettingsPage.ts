@@ -4,6 +4,7 @@ import Masthead from "../../Masthead";
 const masthead = new Masthead();
 
 export enum LoginFlowOption {
+  empty = "First login flow override",
   none = "None",
   browser = "browser",
   directGrant = "direct grant",
@@ -57,7 +58,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #storedTokensReadable = "#storedTokensReadable";
   #isAccessTokenJWT = "#isAccessTokenJWT";
   #acceptsPromptNoneForwardFromClientSwitch = "#acceptsPromptNone";
-  #advancedSettingsToggle = ".pf-c-expandable-section__toggle";
+  #advancedSettingsToggle = ".pf-v5-c-expandable-section__toggle";
   #passLoginHintSwitch = "#passLoginHint";
   #passMaxAgeSwitch = "#passMaxAge";
   #passCurrentLocaleSwitch = "#passCurrentLocale";
@@ -68,7 +69,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #doNotStoreUsers = "#doNotStoreUsers";
   #accountLinkingOnlySwitch = "#accountLinkingOnly";
   #hideOnLoginPageSwitch = "#hideOnLoginPage";
-  #firstLoginFlowSelect = "#firstBrokerLoginFlowAlias";
+  #firstLoginFlowSelect = "#firstBrokerLoginFlowAliasOverride";
   #postLoginFlowSelect = "#postBrokerLoginFlowAlias";
   #syncModeSelect = "#syncMode";
   #essentialClaimSwitch = "#filteredByClaim";
@@ -78,10 +79,10 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #saveBtn = "idp-details-save";
   #revertBtn = "idp-details-revert";
 
-  #validateSignature = "#validateSignature";
-  #jwksSwitch = "#useJwksUrl";
-  #jwksUrl = "jwksUrl";
-  #pkceSwitch = "#pkceEnabled";
+  #validateSignature = "#config\\.validateSignature";
+  #jwksSwitch = "#config\\.useJwksUrl";
+  #jwksUrl = "config.jwksUrl";
+  #pkceSwitch = "#config\\.pkceEnabled";
   #pkceMethod = "#pkceMethod";
   #clientAuth = "#clientAuthentication";
   #clientAssertionSigningAlg = "#clientAssertionSigningAlg";
@@ -170,7 +171,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#firstLoginFlowSelect).click();
     super.clickSelectMenuItem(
       loginFlowOption,
-      cy.get(".pf-c-select__menu-item").contains(loginFlowOption),
+      cy.get(".pf-v5-c-menu__list-item").contains(loginFlowOption),
     );
     return this;
   }
@@ -179,7 +180,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#postLoginFlowSelect).click();
     super.clickSelectMenuItem(
       loginFlowOption,
-      cy.get(".pf-c-select__menu-item").contains(loginFlowOption),
+      cy.get(".pf-v5-c-menu__list-item").contains(loginFlowOption),
     );
     return this;
   }
@@ -190,7 +191,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#clientAssertionSigningAlg).click();
     super.clickSelectMenuItem(
       clientAssertionSigningAlg,
-      cy.get(".pf-c-select__menu-item").contains(clientAssertionSigningAlg),
+      cy.get(".pf-v5-c-menu__list-item").contains(clientAssertionSigningAlg),
     );
     return this;
   }
@@ -204,7 +205,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#syncModeSelect).click();
     super.clickSelectMenuItem(
       syncModeOption,
-      cy.get(".pf-c-select__menu-item").contains(syncModeOption),
+      cy.get(".pf-v5-c-menu__list-item").contains(syncModeOption),
     );
     return this;
   }
@@ -213,7 +214,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#promptSelect).click();
     super.clickSelectMenuItem(
       promptOption,
-      cy.get(".pf-c-select__menu-item").contains(promptOption).parent(),
+      cy.get(".pf-v5-c-menu__list-item").contains(promptOption).parent(),
     );
     return this;
   }
@@ -346,9 +347,8 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertOIDCUrl(url: string) {
     cy.findByTestId("jump-link-openid-connect-settings").click();
-    cy.findByTestId(url + "Url")
-      .clear()
-      .type("invalidUrl");
+    cy.findByTestId(`config.${url}Url`).clear();
+    cy.findByTestId(`config.${url}Url`).type("invalidUrl");
     this.clickSaveBtn();
     masthead.checkNotificationMessage(
       "Could not update the provider The url [" + url + "_url] is malformed",
@@ -393,7 +393,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.findByTestId("jump-link-openid-connect-settings").click();
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-menu__list-item")
       .contains(option)
       .click();
     return this;
@@ -403,7 +403,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.findByTestId("jump-link-openid-connect-settings").click();
     cy.get(this.#clientAssertionSigningAlg)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-menu__list-item")
       .contains(alg)
       .click();
     return this;
@@ -413,25 +413,25 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.findByTestId("jump-link-openid-connect-settings").click();
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-menu__list-item")
       .contains(ClientAuthentication.post)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-menu__list-item")
       .contains(ClientAuthentication.basicAuth)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-menu__list-item")
       .contains(ClientAuthentication.jwt)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-menu__list-item")
       .contains(ClientAuthentication.jwtPrivKey)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("exist");
@@ -485,7 +485,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
     this.selectFirstLoginFlowOption(LoginFlowOption.browser);
     this.selectPostLoginFlowOption(LoginFlowOption.directGrant);
-    this.selectSyncModeOption(SyncModeOption.legacy);
+    this.selectSyncModeOption(SyncModeOption.import);
 
     this.clickRevertBtn();
     cy.get(this.#advancedSettingsToggle).scrollIntoView().click();
@@ -496,11 +496,9 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.assertAccountLinkingOnlySwitchTurnedOn(false);
     this.assertHideOnLoginPageSwitchTurnedOn(false);
 
-    this.assertFirstLoginFlowSelectOptionEqual(
-      LoginFlowOption.firstBrokerLogin,
-    );
+    this.assertFirstLoginFlowSelectOptionEqual(LoginFlowOption.empty);
     this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
-    this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
+    this.assertSyncModeSelectOptionEqual(SyncModeOption.legacy);
     this.assertClientAssertSigAlgSelectOptionEqual(
       ClientAssertionSigningAlg.algorithmNotSpecified,
     );

@@ -22,7 +22,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.forms.login.freemarker.AuthenticationStateCookie;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -177,7 +176,6 @@ public class AuthenticationSessionManager {
         // expire restart cookie
         if (expireRestartCookie) {
             RestartLoginCookie.expireRestartCookie(session);
-            AuthenticationStateCookie.expireCookie(session);
 
             // With browser session, this makes sure that info/error pages will be rendered correctly when locale is changed on them
             session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
@@ -213,20 +211,23 @@ public class AuthenticationSessionManager {
     public void updateAuthenticationSessionAfterSuccessfulAuthentication(RealmModel realm, AuthenticationSessionModel authSession) {
         boolean removedRootAuthSession = removeTabIdInAuthenticationSession(realm, authSession);
         if (!removedRootAuthSession) {
-            RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
+            if(realm.getSsoSessionIdleTimeout() < SessionExpiration.getAuthSessionLifespan(realm) && realm.getSsoSessionMaxLifespan() < SessionExpiration.getAuthSessionLifespan(realm)) {
+                removeAuthenticationSession(realm, authSession, true);
+            }
+            else {
+                RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
 
-            // 1 minute by default. Same timeout, which is used for client to complete "authorization code" flow
-            // Very short timeout should be OK as when this cookie is set, other existing browser tabs are supposed to be refreshed immediately by JS script authChecker.js
-            // and login user automatically. No need to have authenticationSession and cookie living any longer
-            int authSessionExpiresIn = realm.getAccessCodeLifespan();
+                // 1 minute by default. Same timeout, which is used for client to complete "authorization code" flow
+                // Very short timeout should be OK as when this cookie is set, other existing browser tabs are supposed to be refreshed immediately by JS script authChecker.js
+                // and login user automatically. No need to have authenticationSession and cookie living any longer
+                int authSessionExpiresIn = realm.getAccessCodeLifespan();
 
-            // Set timestamp to the past to make sure that authSession is scheduled for expiration in "authSessionExpiresIn" seconds
-            int authSessionExpirationTime = Time.currentTime() - SessionExpiration.getAuthSessionLifespan(realm) + authSessionExpiresIn;
-            rootAuthSession.setTimestamp(authSessionExpirationTime);
+                // Set timestamp to the past to make sure that authSession is scheduled for expiration in "authSessionExpiresIn" seconds
+                int authSessionExpirationTime = Time.currentTime() - SessionExpiration.getAuthSessionLifespan(realm) + authSessionExpiresIn;
+                rootAuthSession.setTimestamp(authSessionExpirationTime);
 
-            log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session. Root authentication session will expire in %d seconds", rootAuthSession.getId(), authSession.getTabId(), authSessionExpiresIn);
-
-            AuthenticationStateCookie.generateAndSetCookie(session, rootAuthSession, authSessionExpiresIn);
+                log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session. Root authentication session will expire in %d seconds", rootAuthSession.getId(), authSession.getTabId(), authSessionExpiresIn);
+            }
         }
     }
 

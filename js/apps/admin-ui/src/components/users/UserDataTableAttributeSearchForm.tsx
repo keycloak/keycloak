@@ -1,16 +1,21 @@
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
+  KeycloakSelect,
+  SelectVariant,
+  label,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Alert,
   AlertVariant,
   Button,
   ButtonVariant,
   InputGroup,
-  Select,
+  InputGroupItem,
   SelectOption,
-  SelectVariant,
   Text,
   TextContent,
+  TextInput,
   TextVariants,
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
@@ -18,10 +23,7 @@ import { ReactNode, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
-import { label } from "ui-shared";
-
 import { useAlerts } from "../alert/Alerts";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { UserAttribute } from "./UserDataTable";
 
 type UserDataTableAttributeSearchFormProps = {
@@ -129,12 +131,12 @@ export function UserDataTableAttributeSearchForm({
   const createAttributeKeyInputField = () => {
     if (profile) {
       return (
-        <Select
+        <KeycloakSelect
           data-testid="search-attribute-name"
           variant={SelectVariant.typeahead}
           onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
           selections={getValues().displayName}
-          onSelect={(_, selectedValue) => {
+          onSelect={(selectedValue) => {
             setValue("displayName", selectedValue.toString());
             if (isAttributeKeyDuplicate()) {
               setError("name", { type: "conflict" });
@@ -160,13 +162,15 @@ export function UserDataTableAttributeSearchForm({
                 setSelectAttributeKeyOpen(false);
                 setValue("name", option.name!);
               }}
-            />
+            >
+              {label(t, option.displayName!, option.name)}
+            </SelectOption>
           ))}
-        </Select>
+        </KeycloakSelect>
       );
     } else {
       return (
-        <KeycloakTextInput
+        <TextInput
           id="name"
           placeholder={t("keyPlaceholder")}
           validated={errors.name && "error"}
@@ -205,27 +209,31 @@ export function UserDataTableAttributeSearchForm({
       </div>
       <div className="user-attribute-search-form-right">
         <InputGroup>
-          <KeycloakTextInput
-            id="value"
-            placeholder={t("valuePlaceholder")}
-            validated={errors.value && "error"}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addToFilter();
-              }
-            }}
-            {...register("value", {
-              required: true,
-              validate: isAttributeValueValid,
-            })}
-          />
-          <Button
-            variant="control"
-            icon={<CheckIcon />}
-            onClick={addToFilter}
-            aria-label={t("addToFilter")}
-          />
+          <InputGroupItem>
+            <TextInput
+              id="value"
+              placeholder={t("valuePlaceholder")}
+              validated={errors.value && "error"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addToFilter();
+                }
+              }}
+              {...register("value", {
+                required: true,
+                validate: isAttributeValueValid,
+              })}
+            />
+          </InputGroupItem>
+          <InputGroupItem>
+            <Button
+              variant="control"
+              icon={<CheckIcon />}
+              onClick={addToFilter}
+              aria-label={t("addToFilter")}
+            />
+          </InputGroupItem>
         </InputGroup>
       </div>
       {createAttributeSearchChips()}

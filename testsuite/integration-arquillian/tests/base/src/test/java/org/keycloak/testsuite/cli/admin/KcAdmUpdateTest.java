@@ -2,7 +2,6 @@ package org.keycloak.testsuite.cli.admin;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.admin.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.TempFileResource;
@@ -18,6 +17,7 @@ import static org.hamcrest.Matchers.is;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,25 +33,27 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
 
     @Test
     public void testUpdateIDPWithoutInternalId() throws IOException {
-        
+
         final String realm = "test";
         final RealmResource realmResource = adminClient.realm(realm);
-        
+
         IdentityProviderRepresentation identityProvider = IdentityProviderBuilder.create()
                 .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                 .alias("idpAlias")
                 .displayName("SAML")
                 .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml.idp/saml")
+                .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, "https://saml.idp/saml")
                 .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "https://saml.idp/saml")
                 .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
                 .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
                 .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
                 .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+                .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
                 .build();
-        
+
         try (Closeable ipc = new IdentityProviderCreator(realmResource, identityProvider)) {
-            FileConfigHandler handler = initCustomConfigFile();
-            try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+            initCustomConfigFile();
+            try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
                 loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
 
                 KcAdmExec exe = execute("get identity-provider/instances/idpAlias -r " + realm + " --config " + configFile.getFile());
@@ -69,9 +71,9 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
     @Test
     public void testUpdateThoroughly() throws IOException {
 
-        FileConfigHandler handler = initCustomConfigFile();
+        initCustomConfigFile();
 
-        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
 
             final String realm = "test";
 
@@ -136,9 +138,9 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
             // check that using an invalid attribute key is not ignored
             exe = execute("update clients/" + client.getId() + " --nonexisting --config '" + configFile.getName() + "'");
 
-            assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-            Assert.assertEquals("error message", "Invalid option: --nonexisting", exe.stderrLines().get(0));
-            Assert.assertEquals("try help", "Try '" + CMD + " help update' for more information", exe.stderrLines().get(1));
+            assertExitCodeAndStreamSizes(exe, 2, 0, 3);
+            Assert.assertEquals("error message", "Unknown option: '--nonexisting'", exe.stderrLines().get(0));
+            Assert.assertEquals("try help", "Try '" + CMD + " update --help' for more information on the available options.", exe.stderrLines().get(2));
 
 
             // test overwrite from file

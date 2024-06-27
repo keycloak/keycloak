@@ -18,8 +18,8 @@ export default class CreateClientScopePage extends CommonPage {
 
   constructor() {
     super();
-    this.settingsTab = ".pf-c-tabs__item:nth-child(1)";
-    this.mappersTab = ".pf-c-tabs__item:nth-child(2)";
+    this.settingsTab = ".pf-v5-c-tabs__item:nth-child(1)";
+    this.mappersTab = ".pf-v5-c-tabs__item:nth-child(2)";
 
     this.clientScopeNameInput = "name";
     this.clientScopeNameError = "#name-helper";
@@ -28,7 +28,7 @@ export default class CreateClientScopePage extends CommonPage {
     this.clientScopeTypeList = "#kc-protocol + ul";
     this.displayOnConsentInput = "attributes.display🍺on🍺consent🍺screen";
     this.displayOnConsentSwitch =
-      '[for="attributes.display🍺on🍺consent🍺screen"] .pf-c-switch__toggle';
+      '[for="attributes.display🍺on🍺consent🍺screen"] .pf-v5-c-switch__toggle';
     this.consentScreenTextInput = "attributes.consent🍺screen🍺text";
     this.includeInTokenSwitch = "#attributes.include🍺in🍺token🍺scope-on";
     this.displayOrderInput = "attributes.gui🍺order";

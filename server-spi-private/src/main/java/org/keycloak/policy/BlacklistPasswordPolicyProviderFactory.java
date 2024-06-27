@@ -327,7 +327,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         protected void insertPasswordsInto(BloomFilter<String> filter) throws IOException {
             try (BufferedReader br = newReader(path)) {
-                br.lines().forEach(filter::put);
+                br.lines().map(String::toLowerCase).forEach(filter::put);
             }
         }
 

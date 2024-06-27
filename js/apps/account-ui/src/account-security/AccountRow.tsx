@@ -5,16 +5,20 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  Icon,
   Label,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
 import { LinkIcon, UnlinkIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { IconMapper, useAlerts } from "ui-shared";
+import {
+  IconMapper,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { linkAccount, unLinkAccount } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
-import { useEnvironment } from "../root/KeycloakContext";
 
 type AccountRowProps = {
   account: LinkedAccountRepresentation;
@@ -22,7 +26,11 @@ type AccountRowProps = {
   refresh: () => void;
 };
 
-export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
+export const AccountRow = ({
+  account,
+  isLinked = false,
+  refresh,
+}: AccountRowProps) => {
   const { t } = useTranslation();
   const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
@@ -31,6 +39,7 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
     try {
       await unLinkAccount(context, account);
       addAlert(t("unLinkSuccess"));
+      refresh();
     } catch (error) {
       addError(t("unLinkError", { error }).toString());
     }
@@ -59,10 +68,10 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
           dataListCells={[
             <DataListCell key="idp">
               <Split>
-                <SplitItem className="pf-u-mr-sm">
+                <SplitItem className="pf-v5-u-mr-sm">
                   <IconMapper icon={account.providerName} />
                 </SplitItem>
-                <SplitItem className="pf-u-my-xs" isFilled>
+                <SplitItem className="pf-v5-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-name`}>
                     {account.displayName}
                   </span>
@@ -71,7 +80,7 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
             </DataListCell>,
             <DataListCell key="label">
               <Split>
-                <SplitItem className="pf-u-my-xs" isFilled>
+                <SplitItem className="pf-v5-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-label`}>
                     <Label color={account.social ? "blue" : "green"}>
                       {t(account.social ? "socialLogin" : "systemDefined")}
@@ -82,7 +91,7 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
             </DataListCell>,
             <DataListCell key="username" width={5}>
               <Split>
-                <SplitItem className="pf-u-my-xs" isFilled>
+                <SplitItem className="pf-v5-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-username`}>
                     {account.linkedUsername}
                   </span>
@@ -102,7 +111,10 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
               variant="link"
               onClick={() => unLink(account)}
             >
-              <UnlinkIcon size="sm" /> {t("unLink")}
+              <Icon size="sm">
+                <UnlinkIcon />
+              </Icon>{" "}
+              {t("unLink")}
             </Button>
           )}
           {!isLinked && (
@@ -111,7 +123,10 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
               variant="link"
               onClick={() => link(account)}
             >
-              <LinkIcon size="sm" /> {t("link")}
+              <Icon size="sm">
+                <LinkIcon />
+              </Icon>{" "}
+              {t("link")}
             </Button>
           )}
         </DataListAction>

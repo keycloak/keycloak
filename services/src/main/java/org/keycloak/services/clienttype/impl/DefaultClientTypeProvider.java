@@ -18,11 +18,9 @@
 
 package org.keycloak.services.clienttype.impl;
 
-import java.beans.PropertyDescriptor;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
@@ -35,17 +33,9 @@ public class DefaultClientTypeProvider implements ClientTypeProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultClientTypeProvider.class);
 
-    private final KeycloakSession session;
-    private final Map<String, PropertyDescriptor> clientRepresentationProperties;
-
-    public DefaultClientTypeProvider(KeycloakSession session, Map<String, PropertyDescriptor> clientRepresentationProperties) {
-        this.session = session;
-        this.clientRepresentationProperties = clientRepresentationProperties;
-    }
-
     @Override
-    public ClientType getClientType(ClientTypeRepresentation clientTypeRep) {
-        return new DefaultClientType(session, clientTypeRep, clientRepresentationProperties);
+    public ClientType getClientType(ClientTypeRepresentation clientTypeRep, ClientType parent) {
+        return new DefaultClientType(clientTypeRep, parent);
     }
 
     @Override
@@ -57,13 +47,13 @@ public class DefaultClientTypeProvider implements ClientTypeProvider {
 
             if (propConfig.getApplicable() == null) {
                 logger.errorf("Property '%s' does not have 'applicable' configured for client type '%s'", propertyName, clientType.getName());
-                throw new ClientTypeException("Invalid configuration of 'applicable' property on client type");
+                throw ClientTypeException.Message.CLIENT_TYPE_FIELD_NOT_APPLICABLE.exception();
             }
 
-            // Not supported to set read-only or default-value for properties, which are not applicable for the particular client
-            if (!propConfig.getApplicable() && (propConfig.getReadOnly() != null || propConfig.getDefaultValue() != null)) {
+            // Not supported to set value for properties, which are not applicable for the particular client
+            if (!propConfig.getApplicable() && propConfig.getValue() != null) {
                 logger.errorf("Property '%s' is not applicable and so should not have read-only or default-value set for client type '%s'", propertyName, clientType.getName());
-                throw new ClientTypeException("Invalid configuration of property on client type");
+                throw ClientTypeException.Message.INVALID_CLIENT_TYPE_CONFIGURATION.exception();
             }
         }
 

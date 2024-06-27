@@ -264,7 +264,7 @@ The values specified here must be used when configuring the {project_name} datab
         "ReaderEndpoint": "keycloak-aurora.cluster-ro-clhthfqe0h8p.eu-west-1.rds.amazonaws.com",
         "MultiAZ": false,
         "Engine": "aurora-postgresql",
-        "EngineVersion": "15.3",
+        "EngineVersion": "15.5",
         "Port": 5432,
         "MasterUsername": "keycloak",
         "PreferredBackupWindow": "02:21-02:51",

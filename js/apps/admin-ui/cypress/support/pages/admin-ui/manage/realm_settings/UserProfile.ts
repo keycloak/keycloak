@@ -21,19 +21,19 @@ export default class UserProfile {
   #newAttributeAnnotationBtn = "annotations-add-row";
   #newAttributeAnnotationKey = "annotations.0.key";
   #newAttributeAnnotationValue = "annotations.0.value";
-  #validatorsList = 'tbody [data-label="name"]';
+  #validatorsList = "tbody";
   #saveNewAttributeBtn = "attribute-create";
   #addValidatorBtn = "addValidator";
   #removeValidatorBtn = "deleteValidator";
   #deleteValidatorBtn = "confirm";
   #cancelRemovingValidatorBtn = "cancel";
-  #newAttributeRequiredField = "input#kc-required.pf-c-switch__input";
+  #newAttributeRequiredField = "input#kc-required.pf-v5-c-switch__input";
   #newAttributeUserEdit = "user-edit";
   #newAttributeAdminEdit = "admin-edit";
   #newAttributeUserView = "user-view";
   #newAttributeAdminView = "admin-view";
   #createAttributesGroupButton = "create-attributes-groups-action";
-  #newAttributesGroupNameInput = "input#kc-name";
+  #newAttributesGroupNameInput = "name";
   #newAttributesGroupDisplayNameInput = 'input[name="displayHeader"]';
   #saveNewAttributesGroupBtn = "saveGroupBtn";
 
@@ -126,7 +126,7 @@ export default class UserProfile {
   }
 
   createAttributeGroup(name: string, displayName: string) {
-    cy.get(this.#newAttributesGroupNameInput).type(name);
+    cy.findByTestId(this.#newAttributesGroupNameInput).type(name);
     cy.get(this.#newAttributesGroupDisplayNameInput).type(displayName);
     return this;
   }
@@ -142,8 +142,12 @@ export default class UserProfile {
   }
 
   setAttributeGroup(group: string) {
-    cy.get("#kc-attributeGroup").click();
-    cy.get("button.pf-c-select__menu-item").contains(group).click();
+    cy.get("#group").click();
+    cy.get("#group")
+      .parent()
+      .get(".pf-v5-c-menu__list-item")
+      .contains(group)
+      .click();
 
     return this;
   }
@@ -196,7 +200,7 @@ export default class UserProfile {
   }
 
   #textArea() {
-    return cy.get(".pf-c-code-editor__code textarea");
+    return cy.get(".pf-v5-c-code-editor__code textarea");
   }
 
   #getText() {
@@ -211,6 +215,14 @@ export default class UserProfile {
   assertNotificationSaved() {
     this.masthead.checkNotificationMessage(
       "Success! User Profile configuration has been saved.",
+    );
+
+    return this;
+  }
+
+  assertNotificationUpdated() {
+    this.masthead.checkNotificationMessage(
+      "User profile settings successfully updated.",
     );
 
     return this;

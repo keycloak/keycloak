@@ -1,8 +1,7 @@
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   ClientScopeDefaultOptionalType,
@@ -15,6 +14,8 @@ import { ScopeForm } from "./details/ScopeForm";
 import { toClientScope } from "./routes/ClientScope";
 
 export default function CreateClientScope() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -37,7 +38,11 @@ export default function CreateClientScope() {
         throw new Error(t("notFound"));
       }
 
-      await changeScope({ ...clientScope, id: scope.id }, clientScope.type);
+      await changeScope(
+        adminClient,
+        { ...clientScope, id: scope.id },
+        clientScope.type,
+      );
 
       addAlert(t("createClientScopeSuccess", AlertVariant.success));
 
@@ -56,7 +61,7 @@ export default function CreateClientScope() {
   return (
     <>
       <ViewHeader titleKey="createClientScope" />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <PageSection variant="light">
           <ScopeForm save={onSubmit} />
         </PageSection>

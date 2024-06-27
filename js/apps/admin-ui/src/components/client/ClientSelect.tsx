@@ -1,21 +1,13 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import {
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core";
+import { SelectControl, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import type { ComponentProps } from "../dynamic/components";
 
-type ClientSelectProps = ComponentProps & {};
+type ClientSelectProps = ComponentProps & { variant?: `${SelectVariant}` };
 
 export const ClientSelect = ({
   name,
@@ -24,14 +16,12 @@ export const ClientSelect = ({
   defaultValue,
   isDisabled = false,
   required = false,
+  variant = "typeahead",
 }: ClientSelectProps) => {
-  const { t } = useTranslation();
-  const {
-    control,
-    formState: { errors },
-  } = useFormContext();
+  const { adminClient } = useAdminClient();
 
-  const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+
   const [clients, setClients] = useState<ClientRepresentation[]>([]);
   const [search, setSearch] = useState("");
 
@@ -50,51 +40,24 @@ export const ClientSelect = ({
     [search],
   );
 
-  const convert = (clients: ClientRepresentation[]) => [
-    <SelectOption key="empty" value="">
-      {t("none")}
-    </SelectOption>,
-    ...clients.map((option) => (
-      <SelectOption key={option.id} value={option.clientId} />
-    )),
-  ];
-
   return (
-    <FormGroup
+    <SelectControl
+      name={name!}
       label={t(label!)}
-      isRequired={required}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={label!} />}
-      fieldId={name!}
-      validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("required")}
-    >
-      <Controller
-        name={name!}
-        defaultValue={defaultValue || ""}
-        control={control}
-        rules={required ? { required: true } : {}}
-        render={({ field }) => (
-          <Select
-            toggleId={name}
-            variant={SelectVariant.typeahead}
-            onToggle={(open) => setOpen(open)}
-            isOpen={open}
-            isDisabled={isDisabled}
-            selections={field.value}
-            onFilter={(_, value) => {
-              setSearch(value);
-              return convert(clients);
-            }}
-            onSelect={(_, value) => {
-              field.onChange(value.toString());
-              setOpen(false);
-            }}
-            typeAheadAriaLabel={t(label!)}
-          >
-            {convert(clients)}
-          </Select>
-        )}
-      />
-    </FormGroup>
+      labelIcon={t(helpText!)}
+      controller={{
+        defaultValue: defaultValue || "",
+        rules: {
+          required: {
+            value: required,
+            message: t("required"),
+          },
+        },
+      }}
+      onFilter={(value) => setSearch(value)}
+      variant={variant}
+      isDisabled={isDisabled}
+      options={clients.map(({ clientId }) => clientId!)}
+    />
   );
 };

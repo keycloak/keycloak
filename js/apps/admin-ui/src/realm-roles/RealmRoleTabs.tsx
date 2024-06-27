@@ -1,4 +1,3 @@
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AlertVariant,
@@ -9,11 +8,15 @@ import {
   TabTitleText,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { SubmitHandler, useForm, useWatch } from "react-hook-form";
+import {
+  FormProvider,
+  SubmitHandler,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import {
   ClientRoleParams,
@@ -51,6 +54,8 @@ import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
 
 export default function RealmRoleTabs() {
+  const { adminClient } = useAdminClient();
+
   const isFeatureEnabled = useIsFeatureEnabled();
   const { t } = useTranslation();
   const form = useForm<AttributeForm>({
@@ -62,7 +67,7 @@ export default function RealmRoleTabs() {
   const { id, clientId } = useParams<ClientRoleParams>();
   const { pathname } = useLocation();
 
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
 
   const [key, setKey] = useState(0);
   const [attributes, setAttributes] = useState<KeyValueType[] | undefined>();
@@ -92,19 +97,10 @@ export default function RealmRoleTabs() {
     name: "composite",
   });
 
-  const [realm, setRealm] = useState<RealmRepresentation>();
-
   useFetch(
-    async () => {
-      const [realm, role] = await Promise.all([
-        adminClient.realms.findOne({ realm: realmName }),
-        adminClient.roles.findOneById({ id }),
-      ]);
-
-      return { realm, role };
-    },
-    ({ realm, role }) => {
-      if (!realm || !role) {
+    async () => adminClient.roles.findOneById({ id }),
+    (role) => {
+      if (!role) {
         throw new Error(t("notFound"));
       }
 
@@ -112,7 +108,6 @@ export default function RealmRoleTabs() {
 
       reset(convertedRole);
       setAttributes(convertedRole.attributes);
-      setRealm(realm);
     },
     [key],
   );
@@ -332,72 +327,74 @@ export default function RealmRoleTabs() {
         dropdownItems={dropdownItems}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
-        <RoutableTabs isBox mountOnEnter defaultLocation={toTab("details")}>
-          <Tab
-            title={<TabTitleText>{t("details")}</TabTitleText>}
-            {...detailsTab}
-          >
-            <RoleForm
-              form={form}
-              onSubmit={onSubmit}
-              role={clientRoleMatch ? "manage-clients" : "manage-realm"}
-              cancelLink={
-                clientRoleMatch
-                  ? toClient({ realm: realmName, clientId, tab: "roles" })
-                  : toRealmRoles({ realm: realmName })
-              }
-              editMode
-            />
-          </Tab>
-          {composites && (
+      <PageSection variant="light" className="pf-v5-u-p-0">
+        <FormProvider {...form}>
+          <RoutableTabs isBox mountOnEnter defaultLocation={toTab("details")}>
             <Tab
-              data-testid="associatedRolesTab"
-              title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
-              {...associatedRolesTab}
+              title={<TabTitleText>{t("details")}</TabTitleText>}
+              {...detailsTab}
             >
-              <RoleMapping
-                name={roleName!}
-                id={id}
-                type="roles"
-                isManager
-                save={(rows) => addComposites(rows.map((r) => r.role))}
-              />
-            </Tab>
-          )}
-          {!isDefaultRole(roleName) && (
-            <Tab
-              data-testid="attributesTab"
-              className="kc-attributes-tab"
-              title={<TabTitleText>{t("attributes")}</TabTitleText>}
-              {...attributesTab}
-            >
-              <AttributesForm
+              <RoleForm
                 form={form}
-                save={onSubmit}
-                reset={() =>
-                  setValue("attributes", attributes, { shouldDirty: false })
+                onSubmit={onSubmit}
+                role={clientRoleMatch ? "manage-clients" : "manage-realm"}
+                cancelLink={
+                  clientRoleMatch
+                    ? toClient({ realm: realmName, clientId, tab: "roles" })
+                    : toRealmRoles({ realm: realmName })
                 }
+                editMode
               />
             </Tab>
-          )}
-          {!isDefaultRole(roleName) && (
-            <Tab
-              title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
-              {...usersInRoleTab}
-            >
-              <UsersInRoleTab data-cy="users-in-role-tab" />
-            </Tab>
-          )}
-          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
-            <Tab
-              title={<TabTitleText>{t("permissions")}</TabTitleText>}
-              {...permissionsTab}
-            >
-              <PermissionsTab id={id} type="roles" />
-            </Tab>
-          )}
-        </RoutableTabs>
+            {composites && (
+              <Tab
+                data-testid="associatedRolesTab"
+                title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
+                {...associatedRolesTab}
+              >
+                <RoleMapping
+                  name={roleName!}
+                  id={id}
+                  type="roles"
+                  isManager
+                  save={(rows) => addComposites(rows.map((r) => r.role))}
+                />
+              </Tab>
+            )}
+            {!isDefaultRole(roleName) && (
+              <Tab
+                data-testid="attributesTab"
+                className="kc-attributes-tab"
+                title={<TabTitleText>{t("attributes")}</TabTitleText>}
+                {...attributesTab}
+              >
+                <AttributesForm
+                  form={form}
+                  save={onSubmit}
+                  reset={() =>
+                    setValue("attributes", attributes, { shouldDirty: false })
+                  }
+                />
+              </Tab>
+            )}
+            {!isDefaultRole(roleName) && (
+              <Tab
+                title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
+                {...usersInRoleTab}
+              >
+                <UsersInRoleTab data-cy="users-in-role-tab" />
+              </Tab>
+            )}
+            {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
+              <Tab
+                title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                {...permissionsTab}
+              >
+                <PermissionsTab id={id} type="roles" />
+              </Tab>
+            )}
+          </RoutableTabs>
+        </FormProvider>
       </PageSection>
     </>
   );

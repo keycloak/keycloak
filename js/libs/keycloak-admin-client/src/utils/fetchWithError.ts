@@ -1,3 +1,5 @@
+const ERROR_FIELDS = ["error", "errorMessage"];
+
 export type NetworkErrorOptions = { response: Response; responseData: unknown };
 
 export class NetworkError extends Error {
@@ -19,7 +21,8 @@ export async function fetchWithError(
 
   if (!response.ok) {
     const responseData = await parseResponse(response);
-    throw new NetworkError("Network response was not OK.", {
+    const message = getErrorMessage(responseData);
+    throw new NetworkError(message, {
       response,
       responseData,
     });
@@ -41,4 +44,20 @@ export async function parseResponse(response: Response): Promise<any> {
   } catch (error) {}
 
   return data;
+}
+
+function getErrorMessage(data: unknown): string {
+  if (typeof data !== "object" || data === null) {
+    return "Unable to determine error message.";
+  }
+
+  for (const key of ERROR_FIELDS) {
+    const value = (data as Record<string, unknown>)[key];
+
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+
+  return "Network response was not OK.";
 }

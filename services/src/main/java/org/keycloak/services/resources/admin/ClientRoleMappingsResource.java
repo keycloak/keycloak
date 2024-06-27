@@ -32,11 +32,13 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.storage.ReadOnlyException;
 
@@ -100,7 +102,7 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Get client-level role mappings for the user, and the app")
+    @Operation( summary = "Get client-level role mappings for the user or group, and the app")
     public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
 
@@ -132,7 +134,7 @@ public class ClientRoleMappingsResource {
     }
 
     /**
-     * Get available client-level roles that can be mapped to the user
+     * Get available client-level roles that can be mapped to the user or group
      *
      * @return
      */
@@ -141,7 +143,7 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Get available client-level roles that can be mapped to the user")
+    @Operation( summary = "Get available client-level roles that can be mapped to the user or group")
     public Stream<RoleRepresentation> getAvailableClientRoleMappings() {
         viewPermission.require();
 
@@ -152,14 +154,14 @@ public class ClientRoleMappingsResource {
     }
 
     /**
-     * Add client-level roles to the user role mapping
+     * Add client-level roles to the user or group role mapping
      *
      * @param roles
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Add client-level roles to the user role mapping")
+    @Operation( summary = "Add client-level roles to the user or group role mapping")
     @APIResponse(responseCode = "204", description = "No Content")
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
@@ -173,9 +175,12 @@ public class ClientRoleMappingsResource {
                 auth.roles().requireMapRole(roleModel);
                 user.grantRole(roleModel);
             }
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException | ReadOnlyException me) {
             logger.warn(me.getMessage(), me);
-            throw new ErrorResponseException("invalid_request", "Could not add user role mappings!", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException("invalid_request", "Could not add user role or group mappings!", Response.Status.BAD_REQUEST);
         }
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
@@ -183,14 +188,14 @@ public class ClientRoleMappingsResource {
     }
 
     /**
-     * Delete client-level roles from user role mapping
+     * Delete client-level roles from user or group role mapping
      *
      * @param roles
      */
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Delete client-level roles from user role mapping")
+    @Operation( summary = "Delete client-level roles from user or group role mapping")
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -212,9 +217,12 @@ public class ClientRoleMappingsResource {
                 auth.roles().requireMapRole(roleModel);
                 try {
                     user.deleteRoleMapping(roleModel);
+                } catch (ModelIllegalStateException e) {
+                    logger.error(e.getMessage(), e);
+                    throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
                 } catch (ModelException | ReadOnlyException me) {
                     logger.warn(me.getMessage(), me);
-                    throw new ErrorResponseException("invalid_request", "Could not remove user role mappings!", Response.Status.BAD_REQUEST);
+                    throw new ErrorResponseException("invalid_request", "Could not remove user or group role mappings!", Response.Status.BAD_REQUEST);
                 }
             }
         }

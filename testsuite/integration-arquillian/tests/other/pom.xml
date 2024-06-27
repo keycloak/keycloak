@@ -119,12 +119,6 @@
             </dependencies>
         </profile>
         <profile>
-            <id>adapters</id>
-            <modules>
-                <module>adapters</module>
-            </modules>
-        </profile>
-        <profile>
             <id>mod_auth_mellon</id>
             <modules>
                 <module>mod_auth_mellon</module>
@@ -140,25 +134,6 @@
             <id>sssd</id>
             <modules>
                 <module>sssd</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>base-ui</id>
-            <modules>
-                <module>base-ui</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>springboot</id>
-            <modules>
-                <module>springboot-tests</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>webauthn</id>
-            <modules>
-                <module>base-ui</module>
-                <module>webauthn</module>
             </modules>
         </profile>
     </profiles>

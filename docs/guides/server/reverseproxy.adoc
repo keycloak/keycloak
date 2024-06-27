@@ -29,6 +29,8 @@ If this header is incorrectly configured, rogue clients can set this header and 
 
 NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes precedence over any port included in the `X-Forwarded-Host`.
 
+NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the ‘http-enabled’ setting is required.
+
 == Proxy modes
 NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
 
@@ -81,7 +83,7 @@ It is beneficial if particular session entity is always available locally, which
 
 * User sends initial request to see the {project_name} login screen
 
-* This request is served by the frontend load balancer, which forwards it to some random node (eg. node1). Strictly said, the node doesn't need to be random, but can be chosen according to some other criterias (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
+* This request is served by the frontend load balancer, which forwards it to some random node (eg. node1). Strictly said, the node doesn't need to be random, but can be chosen according to some other criteria (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
 
 * {project_name} creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
 

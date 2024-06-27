@@ -23,7 +23,11 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
+import {
+  ContinueCancelModal,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { deleteSession, getDevices } from "../api/methods";
 import {
   ClientRepresentation,
@@ -32,7 +36,6 @@ import {
 } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
-import { useEnvironment } from "../root/KeycloakContext";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
@@ -110,7 +113,7 @@ export const DeviceActivity = () => {
       title={t("deviceActivity")}
       description={t("signedInDevicesExplanation")}
     >
-      <Split hasGutter className="pf-u-mb-lg">
+      <Split hasGutter className="pf-v5-u-mb-lg">
         <SplitItem isFilled>
           <Title headingLevel="h2" size="xl">
             {t("signedInDevices")}
@@ -149,14 +152,14 @@ export const DeviceActivity = () => {
               <DataListItemRow key={device.id} data-testid={`row-${index}`}>
                 <DataListContent
                   aria-label="device-sessions-content"
-                  className="pf-u-flex-grow-1"
+                  className="pf-v5-u-flex-grow-1"
                 >
                   <Grid hasGutter>
                     <GridItem span={1} rowSpan={2}>
                       {device.mobile ? <MobileAltIcon /> : <DesktopIcon />}
                     </GridItem>
                     <GridItem sm={8} md={9} span={10}>
-                      <span className="pf-u-mr-md session-title">
+                      <span className="pf-v5-u-mr-md session-title">
                         {device.os.toLowerCase().includes("unknown")
                           ? t("unknownOperatingSystem")
                           : device.os}{" "}
@@ -169,7 +172,7 @@ export const DeviceActivity = () => {
                       )}
                     </GridItem>
                     <GridItem
-                      className="pf-u-text-align-right"
+                      className="pf-v5-u-text-align-right"
                       sm={3}
                       md={2}
                       span={1}

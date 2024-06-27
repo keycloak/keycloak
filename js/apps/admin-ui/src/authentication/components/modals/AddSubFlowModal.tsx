@@ -9,8 +9,8 @@ import {
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextControl } from "ui-shared";
-import { adminClient } from "../../../admin-client";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../../admin-client";
 import { useFetch } from "../../../utils/useFetch";
 
 type AddSubFlowProps = {
@@ -33,6 +33,8 @@ export const AddSubFlowModal = ({
   onConfirm,
   onCancel,
 }: AddSubFlowProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<Flow>();
   const [formProviders, setFormProviders] =

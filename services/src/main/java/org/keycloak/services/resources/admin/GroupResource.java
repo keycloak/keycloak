@@ -28,6 +28,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupPathChangeEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -60,6 +61,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.utils.GroupUtils;
+
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @resource Groups
@@ -115,8 +118,13 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         String groupName = rep.getName();
+
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
+        if (rep.getId() != null && !group.getId().equals(rep.getId())) {
+            throw ErrorResponse.error("Invalid group id", Response.Status.BAD_REQUEST);
         }
 
         if (!Objects.equals(groupName, group.getName())) {
@@ -157,13 +165,17 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "Return a paginated list of subgroups that have a parent group corresponding to the group on the URL")
-    public Stream<GroupRepresentation> getSubGroups(@QueryParam("first") @DefaultValue("0") Integer first,
-        @QueryParam("max") @DefaultValue("10") Integer max,
-        @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
+    public Stream<GroupRepresentation> getSubGroups(
+            @Parameter(description = "A String representing either an exact group name or a partial name") @QueryParam("search") String search,
+            @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
+            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
         this.auth.groups().requireView(group);
         boolean canViewGlobal = auth.groups().canView();
-        return group.getSubGroupsStream(first, max)
-            .filter(g -> canViewGlobal || auth.groups().canView(g))
+        return paginatedStream(
+            group.getSubGroupsStream(search, exact, -1, -1)
+            .filter(g -> canViewGlobal || auth.groups().canView(g)), first, max)
             .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
     }
 
@@ -235,29 +247,7 @@ public class GroupResource {
 
                 String newPath = KeycloakModelUtils.buildGroupPath(model);
 
-                GroupModel.GroupPathChangeEvent event =
-                        new GroupModel.GroupPathChangeEvent() {
-                            @Override
-                            public RealmModel getRealm() {
-                                return realm;
-                            }
-
-                            @Override
-                            public String getNewPath() {
-                                return newPath;
-                            }
-
-                            @Override
-                            public String getPreviousPath() {
-                                return previousPath;
-                            }
-
-                            @Override
-                            public KeycloakSession getKeycloakSession() {
-                                return session;
-                            }
-                        };
-                session.getKeycloakSessionFactory().publish(event);
+                GroupPathChangeEvent.fire(model, newPath, previousPath, session);
             }
         }
 
@@ -361,6 +351,7 @@ public class GroupResource {
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
         auth.groups().requireManage(group);
+
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.groups().setPermissionsEnabled(group, ref.isEnabled());
         if (ref.isEnabled()) {
@@ -369,6 +360,5 @@ public class GroupResource {
             return new ManagementPermissionReference();
         }
     }
-
 }
 

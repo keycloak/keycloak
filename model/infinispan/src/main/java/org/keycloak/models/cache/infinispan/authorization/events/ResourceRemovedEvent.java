@@ -17,113 +17,34 @@
 
 package org.keycloak.models.cache.infinispan.authorization.events;
 
-import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
-
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(ResourceRemovedEvent.ExternalizerImpl.class)
-public class ResourceRemovedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
+@ProtoTypeId(Marshalling.RESOURCE_REMOVED_EVENT)
+public class ResourceRemovedEvent extends BaseResourceEvent {
 
-    private String id;
-    private String name;
-    private String owner;
-    private String serverId;
-    private String type;
-    private Set<String> uris;
-    private Set<String> scopes;
+    @ProtoFactory
+    static ResourceRemovedEvent protoFactory(String id, String name, String owner, String serverId, String type, Set<String> uris, Set<String> scopes) {
+        return new ResourceRemovedEvent(id, name, owner, serverId, Marshalling.emptyStringToNull(type), uris, scopes);
+    }
+
+    private ResourceRemovedEvent(String id, String name, String owner, String serverId, String type, Set<String> uris, Set<String> scopes) {
+        super(id, name, owner, serverId, type, uris, scopes);
+    }
 
     public static ResourceRemovedEvent create(String id, String name, String type, Set<String> uris, String owner, Set<String> scopes, String serverId) {
-        ResourceRemovedEvent event = new ResourceRemovedEvent();
-        event.id = id;
-        event.name = name;
-        event.type = type;
-        event.uris = uris;
-        event.owner = owner;
-        event.scopes = scopes;
-        event.serverId = serverId;
-        return event;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        ResourceRemovedEvent that = (ResourceRemovedEvent) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(owner, that.owner) && Objects.equals(serverId, that.serverId) && Objects.equals(type, that.type);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), id, name, owner, serverId, type);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("ResourceRemovedEvent [ id=%s, name=%s ]", id, name);
+        return new ResourceRemovedEvent(id, name, owner, serverId, type, uris, scopes);
     }
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.resourceRemoval(id, name, type, uris, owner, scopes, serverId, invalidations);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<ResourceRemovedEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, ResourceRemovedEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.id, output);
-            MarshallUtil.marshallString(obj.name, output);
-            MarshallUtil.marshallString(obj.type, output);
-            KeycloakMarshallUtil.writeCollection(obj.uris, KeycloakMarshallUtil.STRING_EXT, output);
-            MarshallUtil.marshallString(obj.owner, output);
-            KeycloakMarshallUtil.writeCollection(obj.scopes, KeycloakMarshallUtil.STRING_EXT, output);
-            MarshallUtil.marshallString(obj.serverId, output);
-        }
-
-        @Override
-        public ResourceRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public ResourceRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            ResourceRemovedEvent res = new ResourceRemovedEvent();
-            res.id = MarshallUtil.unmarshallString(input);
-            res.name = MarshallUtil.unmarshallString(input);
-            res.type = MarshallUtil.unmarshallString(input);
-            res.uris =  KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, HashSet::new);
-            res.owner = MarshallUtil.unmarshallString(input);
-            res.scopes = KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, HashSet::new);
-            res.serverId = MarshallUtil.unmarshallString(input);
-
-            return res;
-        }
+        cache.resourceRemoval(getId(), name, type, uris, owner, scopes, serverId, invalidations);
     }
 }

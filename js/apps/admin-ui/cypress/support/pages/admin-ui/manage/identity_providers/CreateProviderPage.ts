@@ -1,11 +1,11 @@
 export default class CreateProviderPage {
   #github = "github";
-  #clientIdField = "clientId";
-  #clientIdError = "#kc-client-secret-helper";
-  #clientSecretField = "clientSecret";
+  #clientIdField = "config.clientId";
+  #clientIdError = "#config\\.clientSecret-helper";
+  #clientSecretField = "config.clientSecret";
   #displayName = "displayName";
   #discoveryEndpoint = "discoveryEndpoint";
-  #authorizationUrl = "authorizationUrl";
+  #authorizationUrl = "config.authorizationUrl";
   #addButton = "createProvider";
   #saveButton = "idp-details-save";
   #ssoServiceUrl = "sso-service-url";
@@ -123,10 +123,9 @@ export default class CreateProviderPage {
   }
 
   shouldBeSuccessful() {
-    cy.findByTestId(this.#discoveryEndpoint).should(
-      "have.class",
-      "pf-m-success",
-    );
+    cy.findByTestId(this.#discoveryEndpoint)
+      .parent()
+      .should("have.class", "pf-m-success");
     return this;
   }
 

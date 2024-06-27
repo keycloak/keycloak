@@ -1,18 +1,20 @@
+import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
-  PageSection,
-  ValidatedOptions,
-} from "@patternfly/react-core";
-import { SubmitHandler, UseFormReturn, useWatch } from "react-hook-form";
+  SubmitHandler,
+  UseFormReturn,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, To } from "react-router-dom";
+import {
+  FormSubmitButton,
+  TextAreaControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 
 import { FormAccess } from "../form/FormAccess";
 import { AttributeForm } from "../key-value-form/AttributeForm";
-import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../view-header/ViewHeader";
 
 export type RoleFormProps = {
@@ -24,18 +26,14 @@ export type RoleFormProps = {
 };
 
 export const RoleForm = ({
-  form: {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors },
-  },
+  form: { formState },
   onSubmit,
   cancelLink,
   role,
   editMode,
 }: RoleFormProps) => {
   const { t } = useTranslation();
+  const { control, handleSubmit } = useFormContext<AttributeForm>();
 
   const roleName = useWatch({
     control,
@@ -51,60 +49,41 @@ export const RoleForm = ({
           isHorizontal
           onSubmit={handleSubmit(onSubmit)}
           role={role}
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
         >
-          <FormGroup
+          <TextControl
+            name="name"
             label={t("roleName")}
-            fieldId="kc-name"
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
-            isRequired={!editMode}
-          >
-            <KeycloakTextInput
-              id="kc-name"
-              isReadOnly={editMode}
-              {...register("name", {
-                required: !editMode,
-                validate: (value) => {
-                  if (!value?.trim()) {
-                    return t("required").toString();
-                  }
-                },
-              })}
-            />
-          </FormGroup>
-          <FormGroup
+            rules={{
+              required: !editMode ? t("required") : undefined,
+              validate(value) {
+                if (!value?.trim()) {
+                  return t("required");
+                }
+              },
+            }}
+            isDisabled={editMode}
+          />
+          <TextAreaControl
+            name="description"
             label={t("description")}
-            fieldId="kc-description"
-            validated={
-              errors.description
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={errors.description?.message}
-          >
-            <KeycloakTextArea
-              id="kc-description"
-              validated={
-                errors.description
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              isDisabled={roleName?.includes("default-roles")}
-              {...register("description", {
-                maxLength: {
-                  value: 255,
-                  message: t("maxLength", { length: 255 }),
-                },
-              })}
-            />
-          </FormGroup>
+            rules={{
+              maxLength: {
+                value: 255,
+                message: t("maxLength", { length: 255 }),
+              },
+            }}
+            isDisabled={roleName?.includes("default-roles") ?? false}
+          />
           <ActionGroup>
-            <Button data-testid="save" type="submit" variant="primary">
+            <FormSubmitButton
+              formState={formState}
+              data-testid="save"
+              allowInvalid
+              allowNonDirty
+            >
               {t("save")}
-            </Button>
+            </FormSubmitButton>
             <Button
               data-testid="cancel"
               variant="link"

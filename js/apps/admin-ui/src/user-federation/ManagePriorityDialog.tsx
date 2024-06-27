@@ -9,6 +9,10 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  DragDrop,
+  Draggable,
+  DraggableItemPosition,
+  Droppable,
   Modal,
   ModalVariant,
   Text,
@@ -17,8 +21,7 @@ import {
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 
 type ManagePriorityDialogProps = {
@@ -30,31 +33,42 @@ export const ManagePriorityDialog = ({
   components,
   onClose,
 }: ManagePriorityDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const [id, setId] = useState("");
   const [liveText, setLiveText] = useState("");
   const [order, setOrder] = useState(
-    components.map((component) => component.name!),
+    sortBy(components, "config.priority", "name").map(
+      (component) => component.name!,
+    ),
   );
 
-  const onDragStart = (id: string) => {
-    setId(id);
-    setLiveText(t("onDragStart", { item: id }));
+  const onDragStart = ({ index }: DraggableItemPosition) => {
+    setLiveText(t("onDragStart", { item: order[index] }));
+    return true;
   };
 
-  const onDragMove = () => {
-    setLiveText(t("onDragMove", { item: id }));
+  const onDragMove = ({ index }: DraggableItemPosition) => {
+    setLiveText(t("onDragMove", { item: order[index] }));
   };
 
-  const onDragCancel = () => {
-    setLiveText(t("onDragCancel"));
-  };
-
-  const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("onDragFinish", { list: providerOrder }));
-    setOrder(providerOrder);
+  const onDragFinish = (
+    source: DraggableItemPosition,
+    dest?: DraggableItemPosition,
+  ) => {
+    if (dest) {
+      const result = [...order];
+      const [removed] = result.splice(source.index, 1);
+      result.splice(dest.index, 0, removed);
+      setLiveText(t("onDragFinish", { list: result }));
+      setOrder(result);
+      return true;
+    } else {
+      setLiveText(t("onDragCancel"));
+      return false;
+    }
   };
 
   return (
@@ -99,45 +113,43 @@ export const ManagePriorityDialog = ({
         </Button>,
       ]}
     >
-      <TextContent className="pf-u-pb-lg">
+      <TextContent className="pf-v5-u-pb-lg">
         <Text>{t("managePriorityInfo")}</Text>
       </TextContent>
 
-      <DataList
-        aria-label={t("manageOrderTableAria")}
-        data-testid="manageOrderDataList"
-        isCompact
-        onDragFinish={onDragFinish}
-        onDragStart={onDragStart}
+      <DragDrop
+        onDrag={onDragStart}
         onDragMove={onDragMove}
-        onDragCancel={onDragCancel}
-        itemOrder={order}
+        onDrop={onDragFinish}
       >
-        {sortBy(components, "config.priority", "name").map((component) => (
-          <DataListItem
-            aria-label={component.name}
-            id={component.name}
-            key={component.name}
+        <Droppable hasNoWrapper>
+          <DataList
+            aria-label={t("manageOrderTableAria")}
+            data-testid="manageOrderDataList"
+            isCompact
           >
-            <DataListItemRow>
-              <DataListControl>
-                <DataListDragButton aria-label={t("dragHelp")} />
-              </DataListControl>
-              <DataListItemCells
-                dataListCells={[
-                  <DataListCell
-                    key={component.name}
-                    data-testid={component.name}
-                  >
-                    {component.name}
-                  </DataListCell>,
-                ]}
-              />
-            </DataListItemRow>
-          </DataListItem>
-        ))}
-      </DataList>
-      <div className="pf-screen-reader" aria-live="assertive">
+            {order.map((name) => (
+              <Draggable key={name} hasNoWrapper>
+                <DataListItem aria-label={name} id={name}>
+                  <DataListItemRow>
+                    <DataListControl>
+                      <DataListDragButton aria-label={t("dragHelp")} />
+                    </DataListControl>
+                    <DataListItemCells
+                      dataListCells={[
+                        <DataListCell key={name} data-testid={name}>
+                          {name}
+                        </DataListCell>,
+                      ]}
+                    />
+                  </DataListItemRow>
+                </DataListItem>
+              </Draggable>
+            ))}
+          </DataList>
+        </Droppable>
+      </DragDrop>
+      <div className="pf-v5-screen-reader" aria-live="assertive">
         {liveText}
       </div>
     </Modal>

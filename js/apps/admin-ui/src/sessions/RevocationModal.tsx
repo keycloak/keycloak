@@ -1,5 +1,4 @@
 import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   AlertVariant,
   Button,
@@ -9,18 +8,13 @@ import {
   Modal,
   ModalVariant,
   TextContent,
-  ValidatedOptions,
+  TextInput,
 } from "@patternfly/react-core";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { emailRegexPattern } from "../util";
-import { useFetch } from "../utils/useFetch";
 
 type RevocationModalProps = {
   handleModalToggle: () => void;
@@ -31,30 +25,13 @@ export const RevocationModal = ({
   handleModalToggle,
   save,
 }: RevocationModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert } = useAlerts();
 
-  const { realm: realmName } = useRealm();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
-
-  const [key, setKey] = useState(0);
-
-  const refresh = () => {
-    setKey(new Date().getTime());
-  };
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      setRealm(realm);
-    },
-    [key],
-  );
+  const { realm: realmName, realmRepresentation: realm, refresh } = useRealm();
+  const { register, handleSubmit } = useForm();
 
   const parseResult = (result: GlobalRequestResult, prefixKey: string) => {
     const successCount = result.successRequests?.length || 0;
@@ -195,14 +172,11 @@ export const RevocationModal = ({
           label={t("notBefore")}
           name="notBefore"
           fieldId="not-before"
-          validated={
-            errors.email ? ValidatedOptions.error : ValidatedOptions.default
-          }
         >
-          <KeycloakTextInput
+          <TextInput
             data-testid="not-before-input"
             autoFocus
-            isReadOnly
+            readOnly
             value={
               realm?.notBefore === 0
                 ? (t("none") as string)
@@ -210,13 +184,7 @@ export const RevocationModal = ({
             }
             type="text"
             id="not-before"
-            {...register("notBefore", {
-              required: true,
-              pattern: emailRegexPattern,
-            })}
-            validated={
-              errors.email ? ValidatedOptions.error : ValidatedOptions.default
-            }
+            {...register("notBefore")}
           />
         </FormGroup>
       </Form>

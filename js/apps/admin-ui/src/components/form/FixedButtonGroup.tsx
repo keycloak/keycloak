@@ -7,7 +7,9 @@ import style from "./fixed-buttons.module.css";
 type FixedButtonGroupProps = ActionGroupProps & {
   name: string;
   save?: () => void;
+  saveText?: string;
   reset?: () => void;
+  resetText?: string;
   isSubmit?: boolean;
   isActive?: boolean;
 };
@@ -15,7 +17,9 @@ type FixedButtonGroupProps = ActionGroupProps & {
 export const FixedButtonsGroup = ({
   name,
   save,
+  saveText,
   reset,
+  resetText,
   isSubmit = false,
   isActive = true,
   children,
@@ -31,7 +35,7 @@ export const FixedButtonsGroup = ({
           onClick={() => save?.()}
           type={isSubmit ? "submit" : "button"}
         >
-          {t("save")}
+          {!saveText ? t("save") : saveText}
         </Button>
       )}
       {reset && (
@@ -41,7 +45,7 @@ export const FixedButtonsGroup = ({
           variant="link"
           onClick={() => reset()}
         >
-          {t("revert")}
+          {!resetText ? t("revert") : resetText}
         </Button>
       )}
       {children}

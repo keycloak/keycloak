@@ -17,6 +17,9 @@
 
 package org.keycloak.quarkus.runtime.configuration.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
@@ -27,6 +30,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
@@ -38,12 +42,14 @@ import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.h2.Driver;
 import org.hibernate.dialect.MariaDBDialect;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
@@ -74,6 +80,10 @@ public class ConfigurationTest {
                 field.setAccessible(false);
             }
         }
+    }
+
+    public static void putEnvVars(Map<String, String> map) {
+        map.forEach(ConfigurationTest::putEnvVar);
     }
 
     @SuppressWarnings("unchecked")
@@ -175,7 +185,7 @@ public class ConfigurationTest {
 
     @Test
     public void testKeycloakProfilePropertySubstitution() {
-        System.setProperty(Environment.PROFILE, "user-profile");
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "user-profile");
         assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
@@ -274,6 +284,7 @@ public class ConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db=dev-file");
         SmallRyeConfig config = createConfig();
         assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
         // JDBC location treated as file:// URI
         final String userHomeUri = Path.of(System.getProperty("user.home"))
@@ -281,7 +292,7 @@ public class ConfigurationTest {
                 .toString()
                 .replaceFirst(isWindows() ? "file:///" : "file://", "");
 
-        assertEquals("jdbc:h2:file:" + userHomeUri + "data/h2/keycloakdb;;AUTO_SERVER=TRUE;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + userHomeUri + "data/h2/keycloakdb;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
@@ -360,6 +371,7 @@ public class ConfigurationTest {
     public void testDatabaseProperties() {
         System.setProperty("kc.db-url-properties", ";;test=test;test1=test1");
         System.setProperty("kc.db-url-path", "test-dir");
+        System.setProperty("kc.transaction-xa-enabled", "true");
         ConfigArgsConfigSource.setCliArgs("--db=dev-file");
         SmallRyeConfig config = createConfig();
         assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
@@ -418,11 +430,11 @@ public class ConfigurationTest {
         Assert.assertEquals("cache-ispn.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
-        System.clearProperty(Environment.PROFILE);
+        System.clearProperty(org.keycloak.common.util.Environment.PROFILE);
         ConfigArgsConfigSource.setCliArgs("--cache=cluster-foo.xml");
 
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
-        System.setProperty(Environment.PROFILE, "dev");
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         ConfigArgsConfigSource.setCliArgs("--cache-stack=foo");
@@ -503,25 +515,75 @@ public class ConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals("true", config.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("true", config.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config.getConfigValue("quarkus.log.syslog.enable").getValue());
         assertEquals("false", config.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--log=file");
         SmallRyeConfig config2 = createConfig();
         assertEquals("false", config2.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("true", config2.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config2.getConfigValue("quarkus.log.syslog.enable").getValue());
         assertEquals("false", config2.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--log=console");
         SmallRyeConfig config3 = createConfig();
         assertEquals("true", config3.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("false", config3.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config3.getConfigValue("quarkus.log.syslog.enable").getValue());
         assertEquals("false", config3.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--log=console,gelf");
         SmallRyeConfig config4 = createConfig();
         assertEquals("true", config4.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("false", config4.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config4.getConfigValue("quarkus.log.syslog.enable").getValue());
         assertEquals("true", config4.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--log=console,syslog");
+        SmallRyeConfig config5 = createConfig();
+        assertEquals("true", config5.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("false", config5.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("true", config5.getConfigValue("quarkus.log.syslog.enable").getValue());
+        assertEquals("false", config5.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--log=syslog");
+        SmallRyeConfig config6 = createConfig();
+        assertEquals("false", config6.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("false", config6.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("true", config6.getConfigValue("quarkus.log.syslog.enable").getValue());
+        assertEquals("false", config6.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
+    }
+
+    @Test
+    public void testSyslogProperties() {
+        putEnvVars(Map.of(
+                "KC_LOG", "syslog",
+                "KC_LOG_SYSLOG_ENDPOINT", "192.168.0.42:515",
+                "KC_LOG_SYSLOG_APP_NAME", "keycloak2",
+                "KC_LOG_SYSLOG_PROTOCOL", "udp",
+                "KC_LOG_SYSLOG_FORMAT", "some format",
+                "KC_LOG_SYSLOG_OUTPUT", "json"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "log-syslog-enabled", "true",
+                "log-syslog-endpoint", "192.168.0.42:515",
+                "log-syslog-app-name", "keycloak2",
+                "log-syslog-protocol", "udp",
+                "log-syslog-format", "some format",
+                "log-syslog-output", "json"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.log.syslog.enable", "true",
+                "quarkus.log.syslog.endpoint", "192.168.0.42:515",
+                "quarkus.log.syslog.app-name", "keycloak2",
+                "quarkus.log.syslog.protocol", "udp",
+                "quarkus.log.syslog.format", "some format",
+                "quarkus.log.syslog.json", "true"
+        ));
     }
 
     @Test
@@ -570,7 +632,7 @@ public class ConfigurationTest {
         assertEquals("secret", secret.getValue());
     }
 
-    private Config.Scope initConfig(String... scope) {
+    protected Config.Scope initConfig(String... scope) {
         Config.init(new MicroProfileConfigProvider(createConfig()));
         return Config.scope(scope);
     }
@@ -584,5 +646,28 @@ public class ConfigurationTest {
         resolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
         ConfigProviderResolver.setInstance(resolver);
         return config;
+    }
+
+    protected void assertConfig(String key, String expectedValue, boolean isExternal) {
+        Function<String, ConfigValue> getConfig = isExternal ? Configuration::getConfigValue : Configuration::getKcConfigValue;
+        var value = getConfig.apply(key).getValue();
+        assertThat(String.format("Value is null for key '%s'", key), value, notNullValue());
+        assertThat(String.format("Different value for key '%s'", key), value, is(expectedValue));
+    }
+
+    protected void assertConfig(String key, String expectedValue) {
+        assertConfig(key, expectedValue, false);
+    }
+
+    protected void assertConfig(Map<String, String> expectedValues) {
+        expectedValues.forEach(this::assertConfig);
+    }
+
+    protected void assertExternalConfig(String key, String expectedValue) {
+        assertConfig(key, expectedValue, true);
+    }
+
+    protected void assertExternalConfig(Map<String, String> expectedValues) {
+        expectedValues.forEach(this::assertExternalConfig);
     }
 }

@@ -17,12 +17,8 @@
 
 package org.keycloak.representations.info;
 
-import org.keycloak.common.Profile;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -34,41 +30,36 @@ public class ProfileInfoRepresentation {
     private List<String> previewFeatures;
     private List<String> experimentalFeatures;
 
-    public static ProfileInfoRepresentation create() {
-        ProfileInfoRepresentation info = new ProfileInfoRepresentation();
-
-        Profile profile = Profile.getInstance();
-
-        info.name = profile.getName().name().toLowerCase();
-        info.disabledFeatures = names(profile.getDisabledFeatures());
-        info.previewFeatures = names(profile.getPreviewFeatures());
-        info.experimentalFeatures = names(profile.getExperimentalFeatures());
-
-        return info;
-    }
-
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public List<String> getDisabledFeatures() {
         return disabledFeatures;
     }
 
+    public void setDisabledFeatures(List<String> disabledFeatures) {
+        this.disabledFeatures = disabledFeatures;
+    }
+
     public List<String> getPreviewFeatures() {
         return previewFeatures;
+    }
+
+    public void setPreviewFeatures(List<String> previewFeatures) {
+        this.previewFeatures = previewFeatures;
     }
 
     public List<String> getExperimentalFeatures() {
         return experimentalFeatures;
     }
 
-    private static List<String> names(Set<Profile.Feature> featureSet) {
-        List<String> l = new LinkedList();
-        for (Profile.Feature f : featureSet) {
-            l.add(f.name());
-        }
-        return l;
+    public void setExperimentalFeatures(List<String> experimentalFeatures) {
+        this.experimentalFeatures = experimentalFeatures;
     }
 
 }

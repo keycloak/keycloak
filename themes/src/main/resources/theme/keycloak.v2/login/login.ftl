@@ -1,4 +1,4 @@
-<#import "pf-5-template.ftl" as layout>
+<#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
     <#if section = "header">
         ${msg("loginAccountTitle")}
@@ -6,7 +6,7 @@
         <div id="kc-form">
           <div id="kc-form-wrapper">
             <#if realm.password>
-                <form id="kc-form-login" class="${properties.kcFormClass!} onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
+                <form id="kc-form-login" class="${properties.kcFormClass!} onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
                     <#if !usernameHidden??>
                         <div class="${properties.kcFormGroupClass!}">
                             <label for="username" class="${properties.kcLabelClass!}">
@@ -18,6 +18,7 @@
                             <span class="${properties.kcInputClass!} ${messagesPerField.existsError('username','password')?then('pf-m-error', '')}">
                                 <input tabindex="1" id="username" name="username" value="${(login.username!'')}" type="text" autofocus autocomplete="off"
                                        aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
+                                       dir="ltr"
                                 />
                                 <#if messagesPerField.existsError('username','password')>
                                     <span class="pf-v5-c-form-control__utilities">
@@ -42,7 +43,7 @@
                             <span class="pf-v5-c-form__label-text">${msg("password")}</span>
                         </label>
 
-                        <div class="${properties.kcInputGroup!}">
+                        <div class="${properties.kcInputGroup!}" dir="ltr">
                             <span class="${properties.kcInputClass!}">
                                 <input tabindex="2" id="password" name="password" type="password" autocomplete="off"
                                        aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
@@ -99,8 +100,8 @@
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
-            <div id="kc-registration-container">
-                <div id="kc-registration">
+            <div id="kc-registration-container" class="pf-v5-c-login__main-footer-band">
+                <div id="kc-registration" class="pf-v5-c-login__main-footer-band-item">
                     <span>${msg("noAccount")} <a tabindex="6"
                                                  href="${url.registrationUrl}">${msg("doRegister")}</a></span>
                 </div>
@@ -111,7 +112,7 @@
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
                 <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
                     <#list social.providers as p>
-                        <li class="${properties.kcFormSocialAccountListItmeClass!}">
+                        <li class="${properties.kcFormSocialAccountListItemClass!}">
                             <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>" aria-label="${p.displayName}"
                                     type="button" href="${p.loginUrl}">
                                 <#if p.iconClasses?has_content>
@@ -179,9 +180,11 @@
                                             </svg>
                                             <#break>
                                         <#default>
-                                            <svg viewBox="0 0 512 512" aria-hidden="true">
-                                                <path d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"/>
-                                            </svg>
+                                            <span class="${p.iconClasses!}" aria-hidden="true">
+                                                <svg viewBox="0 0 512 512" aria-hidden="true">
+                                                    <path d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 68.4l192 72v1.1l-192 78-192-78v-1.1l192-72zm32 356V275.5l160-65v133.9l-160 80z"/>
+                                                </svg>
+                                            </span>
                                     </#switch>
                                 <#else>
                                     <span class="${properties.kcFormSocialAccountNameClass!}">${p.displayName!}</span>

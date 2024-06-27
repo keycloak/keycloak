@@ -1,32 +1,38 @@
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  FormErrorText,
+  HelpItem,
+  KeycloakSelect,
+  SelectControl,
   SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
+  FormGroup,
+  SelectOption,
   Switch,
+  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 const LoginFlow = ({
   field,
   label,
   defaultValue,
-}: FieldProps & { defaultValue: string }) => {
+  labelForEmpty = "none",
+}: FieldProps & { defaultValue: string; labelForEmpty?: string }) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { control } = useFormContext();
 
@@ -51,15 +57,14 @@ const LoginFlow = ({
         defaultValue={defaultValue}
         control={control}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={label}
-            required
             onToggle={() => setOpen(!open)}
-            onSelect={(_, value) => {
+            onSelect={(value) => {
               field.onChange(value as string);
               setOpen(false);
             }}
-            selections={field.value || t("none")}
+            selections={field.value || t(labelForEmpty)}
             variant={SelectVariant.single}
             aria-label={t(label)}
             isOpen={open}
@@ -68,7 +73,7 @@ const LoginFlow = ({
               ...(defaultValue === ""
                 ? [
                     <SelectOption key="empty" value="">
-                      {t("none")}
+                      {t(labelForEmpty)}
                     </SelectOption>,
                   ]
                 : []),
@@ -82,14 +87,14 @@ const LoginFlow = ({
                 </SelectOption>
               )) || []),
             ]}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </FormGroup>
   );
 };
 
-const syncModes = ["import", "legacy", "force"];
+const SYNC_MODES = ["IMPORT", "LEGACY", "FORCE"];
 type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
 export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
@@ -100,7 +105,6 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
     setValue,
     formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
-  const [syncModeOpen, setSyncModeOpen] = useState(false);
   const filteredByClaim = useWatch({
     control,
     name: "config.filteredByClaim",
@@ -160,7 +164,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={field.value === "true"}
-                onChange={(value) => {
+                onChange={(_event, value) => {
                   field.onChange(value.toString());
                 }}
               />
@@ -180,14 +184,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             fieldId="kc-claim-filter-name"
             isRequired
-            validated={
-              errors.config?.claimFilterName
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-name"
               data-testid="claimFilterName"
@@ -198,6 +196,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               }
               {...register("config.claimFilterName", { required: true })}
             />
+            {errors.config?.claimFilterName && (
+              <FormErrorText message={t("required")} />
+            )}
           </FormGroup>
           <FormGroup
             label={t("claimFilterValue")}
@@ -209,14 +210,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             fieldId="kc-claim-filter-value"
             isRequired
-            validated={
-              errors.config?.claimFilterValue
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-value"
               data-testid="claimFilterValue"
@@ -227,13 +222,17 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               }
               {...register("config.claimFilterValue", { required: true })}
             />
+            {errors.config?.claimFilterValue && (
+              <FormErrorText message={t("required")} />
+            )}
           </FormGroup>
         </>
       )}
       <LoginFlow
         field="firstBrokerLoginFlowAlias"
-        label="firstBrokerLoginFlowAlias"
-        defaultValue="fist broker login"
+        label="firstBrokerLoginFlowAliasOverride"
+        defaultValue=""
+        labelForEmpty=""
       />
       <LoginFlow
         field="postBrokerLoginFlowAlias"
@@ -253,7 +252,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={field.value === "true"}
-                onChange={(value) => {
+                onChange={(_event, value) => {
                   field.onChange(value.toString());
                   // if field is checked, set sync mode to import
                   if (value) {
@@ -266,47 +265,24 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         </FormGroupField>
       )}
       {syncModeAvailable && (
-        <FormGroup
-          className="pf-u-pb-3xl"
+        <SelectControl
+          name="config.syncMode"
           label={t("syncMode")}
-          labelIcon={
-            <HelpItem helpText={t("syncModeHelp")} fieldLabelId="syncMode" />
-          }
-          fieldId="syncMode"
-        >
-          <Controller
-            name="config.syncMode"
-            defaultValue={syncModes[0].toUpperCase()}
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="syncMode"
-                required
-                direction="up"
-                onToggle={() => setSyncModeOpen(!syncModeOpen)}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setSyncModeOpen(false);
-                }}
-                selections={t(`syncModes.${field.value.toLowerCase()}`)}
-                variant={SelectVariant.single}
-                aria-label={t("syncMode")}
-                isOpen={syncModeOpen}
-              >
-                {syncModes.map((option) => (
-                  <SelectOption
-                    selected={option === field.value}
-                    key={option}
-                    value={option.toUpperCase()}
-                  >
-                    {t(`syncModes.${option}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("syncModeHelp")}
+          options={SYNC_MODES.map((syncMode) => ({
+            key: syncMode,
+            value: t(`syncModes.${syncMode.toLocaleLowerCase()}`),
+          }))}
+          controller={{
+            defaultValue: SYNC_MODES[0],
+            rules: { required: t("required") },
+          }}
+        />
       )}
+      <SwitchField
+        field="config.caseSensitiveOriginalUsername"
+        label="caseSensitiveOriginalUsername"
+      />
     </>
   );
 };

@@ -34,9 +34,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Main entry class for selective disclosure jwt (SD-JWT).
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
  */
 public class SdJwt {
     public static final String DELIMITER = "~";
@@ -45,11 +44,11 @@ public class SdJwt {
     private final List<SdJwtClaim> claims;
     private final List<String> disclosures = new ArrayList<>();
 
-    private Optional<String> sdJwtString = Optional.empty();
-
     private SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, List<SdJwt> nesteSdJwts,
-            Optional<KeyBindingJWT> keyBindingJWT,
-            SignatureSignerContext signer) {
+                  Optional<KeyBindingJWT> keyBindingJWT,
+                  SignatureSignerContext signer,
+                  String hashAlgorithm,
+                  String jwsType) {
         claims = new ArrayList<>();
         claimSet.fields()
                 .forEachRemaining(entry -> claims.add(createClaim(entry.getKey(), entry.getValue(), disclosureSpec)));
@@ -59,11 +58,15 @@ public class SdJwt {
                 .withDecoyClaims(createdDecoyClaims(disclosureSpec))
                 .withNestedDisclosures(!nesteSdJwts.isEmpty())
                 .withSigner(signer)
+                .withHashAlg(hashAlgorithm)
+                .withJwsType(jwsType)
                 .build();
 
         nesteSdJwts.stream().forEach(nestedJwt -> this.disclosures.addAll(nestedJwt.getDisclosures()));
         this.disclosures.addAll(getDisclosureStrings(claims));
     }
+
+    private Optional<String> sdJwtString = Optional.empty();
 
     private List<DecoyClaim> createdDecoyClaims(DisclosureSpec disclosureSpec) {
         return disclosureSpec.getDecoyClaims().stream()
@@ -73,9 +76,9 @@ public class SdJwt {
 
     /**
      * Prepare to a nested payload to this SD-JWT.
-     * 
-     * droping the algo claim.
-     * 
+     * <p>
+     * dropping the algo claim.
+     *
      * @param nestedSdJwt
      * @return
      */
@@ -147,8 +150,8 @@ public class SdJwt {
     }
 
     private SdJwtClaim createArrayDisclosure(String claimName, JsonNode claimValue,
-            Map<Integer, DisclosureSpec.DisclosureData> undisclosedArrayElts,
-            Map<Integer, DisclosureSpec.DisclosureData> decoyArrayElts) {
+                                             Map<Integer, DisclosureSpec.DisclosureData> undisclosedArrayElts,
+                                             Map<Integer, DisclosureSpec.DisclosureData> decoyArrayElts) {
         ArrayNode arrayNode = validateArrayNode(claimName, claimValue);
         ArrayDisclosure.Builder arrayDisclosureBuilder = ArrayDisclosure.builder().withClaimName(claimName);
 
@@ -175,7 +178,7 @@ public class SdJwt {
     }
 
     private void processArrayElement(ArrayDisclosure.Builder builder, JsonNode elementValue,
-            DisclosureSpec.DisclosureData disclosureData) {
+                                     DisclosureSpec.DisclosureData disclosureData) {
         if (disclosureData != null) {
             builder.withUndisclosedElement(disclosureData.getSalt(), elementValue);
         } else {
@@ -198,6 +201,8 @@ public class SdJwt {
         private Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
         private SignatureSignerContext signer;
         private final List<SdJwt> nestedSdJwts = new ArrayList<>();
+        private String hashAlgorithm;
+        private String jwsType;
 
         public Builder withDisclosureSpec(DisclosureSpec disclosureSpec) {
             this.disclosureSpec = disclosureSpec;
@@ -224,8 +229,18 @@ public class SdJwt {
             return this;
         }
 
+        public Builder withHashAlgorithm(String hashAlgorithm) {
+            this.hashAlgorithm = hashAlgorithm;
+            return this;
+        }
+
+        public Builder withJwsType(String jwsType) {
+            this.jwsType = jwsType;
+            return this;
+        }
+
         public SdJwt build() {
-            return new SdJwt(disclosureSpec, claimSet, nestedSdJwts, keyBindingJWT, signer);
+            return new SdJwt(disclosureSpec, claimSet, nestedSdJwts, keyBindingJWT, signer, hashAlgorithm, jwsType);
         }
     }
 

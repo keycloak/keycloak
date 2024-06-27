@@ -1,8 +1,13 @@
-/* Patternfly CSS places a "bg-login.jpg" as the background on this ".login-pf" class.
-   This clashes with the "keycloak-bg.png' background defined on the body below.
-   Therefore the Patternfly background must be set to none. */
-.login-pf {
-    background: none;
+.pf-v5-c-login__container {
+    grid-template-areas: "main";
+    grid-template-columns: 34rem;
+}
+
+#kc-header-wrapper {
+    padding: 62px 10px 20px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .login-pf body {
@@ -22,3 +27,45 @@ div.kc-logo-text {
 div.kc-logo-text span {
     display: none;
 }
+
+.kc-login-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.kc-login-tooltip .kc-tooltip-text{
+    top:-3px;
+    left:160%;
+    background-color: black;
+    visibility: hidden;
+    color: #fff;
+
+    min-width:130px;
+    text-align: center;
+    border-radius: 2px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.6);
+    padding: 5px;
+
+    position: absolute;
+    opacity:0;
+    transition:opacity 0.5s;
+}
+
+/* Show tooltip */
+.kc-login-tooltip:hover .kc-tooltip-text {
+    visibility: visible;
+    opacity:0.7;
+}
+
+/* Arrow for tooltip */
+.kc-login-tooltip .kc-tooltip-text::after {
+    content: " ";
+    position: absolute;
+    top: 15px;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+

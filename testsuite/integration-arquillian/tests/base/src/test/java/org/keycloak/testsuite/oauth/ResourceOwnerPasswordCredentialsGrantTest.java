@@ -452,7 +452,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).client("resource-owner")
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
+                .client("resource-owner")
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
                 .error(Errors.INVALID_TOKEN).assertEvent();
@@ -648,6 +650,38 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             UserManager.realm(realmResource).username("test-user@localhost")
                     .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         }
+    }
+
+    @Test
+    public void grantAccessTokenInvalidUserCredentialsPerf() throws Exception {
+        int count = 5;
+
+        // Measure the times when username exists, but password is invalid
+        long sumInvalidPasswordMs = perfTest(count, "Invalid password", this::grantAccessTokenInvalidUserCredentials);
+
+        // Measure the times when username does not exists
+        long sumInvalidUsernameMs = perfTest(count, "User not found", this::grantAccessTokenUserNotFound);
+
+        String errorMessage = String.format("Times in ms of %d attempts: For invalid password: %d. For invalid username: %d", count, sumInvalidPasswordMs, sumInvalidUsernameMs);
+
+        // The times should be very similar. Using the bigger difference just to avoid flakiness (Before the fix, the difference was like 3 times shorter time for invalid-username, which allowed quite accurate username enumeration)
+        Assert.assertTrue(errorMessage, sumInvalidUsernameMs * 2 > sumInvalidPasswordMs);
+    }
+
+    private long perfTest(int actionsCount, String actionMessage, RunnableWithException action) throws Exception {
+        long sumTimeMs = 0;
+        for (int i = 0 ; i < actionsCount ; i++) {
+            long start = System.currentTimeMillis();
+            action.run();
+            long took = System.currentTimeMillis() - start;
+            getLogger().infof("%s %d: %d ms", actionMessage, i + 1, took);
+            sumTimeMs = sumTimeMs + took;
+        }
+        return sumTimeMs;
+    }
+
+    private interface RunnableWithException {
+        void run() throws Exception;
     }
 
     @Test

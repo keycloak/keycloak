@@ -73,6 +73,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AppPage;
@@ -204,8 +205,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
-        int authTime = idToken.getAuthTime();
-        int currentTime = Time.currentTime();
+        long authTime = idToken.getAuth_time();
+        long currentTime = Time.currentTime();
         Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
@@ -224,7 +225,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
-        int authTimeUpdated = idToken.getAuthTime();
+        long authTimeUpdated = idToken.getAuth_time();
         Assert.assertTrue(authTime + 10 <= authTimeUpdated);
     }
 
@@ -237,8 +238,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
-        int authTime = idToken.getAuthTime();
-        int currentTime = Time.currentTime();
+        long authTime = idToken.getAuth_time();
+        long currentTime = Time.currentTime();
         Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
@@ -254,7 +255,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime is still the same
-        int authTimeUpdated = idToken.getAuthTime();
+        long authTimeUpdated = idToken.getAuth_time();
         Assert.assertEquals(authTime, authTimeUpdated);
     }
 
@@ -292,7 +293,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTime = idToken.getAuthTime();
+        long authTime = idToken.getAuth_time();
 
         // Set time offset
         setTimeOffset(10);
@@ -303,7 +304,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         loginEvent = events.expectLogin().removeDetail(Details.USERNAME).assertEvent();
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTime2 = idToken.getAuthTime();
+        long authTime2 = idToken.getAuth_time();
 
         Assert.assertEquals(authTime, authTime2);
     }
@@ -382,7 +383,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime wasn't updated
-        Assert.assertEquals(oldIdToken.getAuthTime(), newIdToken.getAuthTime());
+        Assert.assertEquals(oldIdToken.getAuth_time(), newIdToken.getAuth_time());
 
         // Set time offset
         setTimeOffset(20);
@@ -398,8 +399,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
-        Assert.assertTrue("Expected auth time to change. old auth time: " + oldIdToken.getAuthTime() + " , new auth time: " + newIdToken.getAuthTime(),
-                oldIdToken.getAuthTime() + 20 <= newIdToken.getAuthTime());
+        Assert.assertTrue("Expected auth time to change. old auth time: " + oldIdToken.getAuth_time() + " , new auth time: " + newIdToken.getAuth_time(),
+                oldIdToken.getAuth_time() + 20 <= newIdToken.getAuth_time());
 
         // Assert userSession didn't change
         Assert.assertEquals(oldIdToken.getSessionState(), newIdToken.getSessionState());
@@ -1436,11 +1437,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     private String createEncryptedRequestObject(String encAlg) throws IOException, JWEException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            OIDCConfigurationRepresentation representation = SimpleHttp
+            OIDCConfigurationRepresentation representation = SimpleHttpDefault
                     .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
                             httpClient).asJson(OIDCConfigurationRepresentation.class);
             String jwksUri = representation.getJwksUri();
-            JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
+            JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
             Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
             String keyId = null;
 
@@ -1523,11 +1524,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            OIDCConfigurationRepresentation representation = SimpleHttp
+            OIDCConfigurationRepresentation representation = SimpleHttpDefault
                     .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
                             httpClient).asJson(OIDCConfigurationRepresentation.class);
             String jwksUri = representation.getJwksUri();
-            JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
+            JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
             Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
             String keyId = jweHeader.getKeyId();
 

@@ -26,9 +26,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-admin-client-jee</artifactId>
-    <name>Keycloak Admin REST Client JavaEE</name>
-    <description/>
+    <artifactId>keycloak-admin-client-jee-tests</artifactId>
+    <name>Keycloak Admin REST Client JavaEE For Tests</name>
+    <description>Keycloak Admin REST Client. This module is supposed to be used just in the Keycloak repository for the testsuite. It is NOT supposed to be used by the 3rd party applications.
+        For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client-jee` module.
+    </description>
 
     <properties>
         <resteasy.version>${resteasy-legacy.version}</resteasy.version>
@@ -58,6 +60,11 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
+            <version>${resteasy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client-api</artifactId>
             <version>${resteasy.version}</version>
         </dependency>
         <dependency>

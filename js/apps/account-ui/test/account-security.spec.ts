@@ -9,7 +9,7 @@ test("Check page heading", async ({ page }) => {
     "account-security/linked-accounts",
   );
 
-  expect(linkedAccountsNavItem).toBeVisible();
+  await expect(linkedAccountsNavItem).toBeVisible();
   await linkedAccountsNavItem.click();
   await expect(page.getByTestId("page-heading")).toHaveText("Linked accounts");
 });

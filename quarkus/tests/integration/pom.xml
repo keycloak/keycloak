@@ -63,7 +63,6 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-fips</artifactId>
-            <version>${bouncycastle.pkixfips.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -115,7 +114,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError --add-opens=java.base/java.security=ALL-UNNAMED</argLine>
+                    <argLine>-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError --add-opens=java.base/java.security=ALL-UNNAMED -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</argLine>
                     <systemPropertyVariables>
                         <kc.quarkus.tests.dist>${kc.quarkus.tests.dist}</kc.quarkus.tests.dist>
                     </systemPropertyVariables>

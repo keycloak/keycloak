@@ -16,7 +16,6 @@
  */
 package org.keycloak.broker.saml;
 
-import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -69,9 +68,9 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
+    public Map<String, String> parseConfig(KeycloakSession session, String config) {
         try {
-            EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(inputStream);
+            EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(config);
             IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);
 
             if (idpDescriptor != null) {
@@ -100,13 +99,23 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
 
                 }
+                String artifactResolutionServiceUrl = null;
+                boolean artifactBindingResponse = false;
+                for (EndpointType endpoint : idpDescriptor.getArtifactResolutionService()) {
+                    if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_SOAP_BINDING.get())) {
+                        artifactResolutionServiceUrl = endpoint.getLocation().toString();
+                        break;
+                    }
+                }
                 samlIdentityProviderConfig.setIdpEntityId(entityType.getEntityID());
                 samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
+                samlIdentityProviderConfig.setArtifactResolutionServiceUrl(artifactResolutionServiceUrl);
                 samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                 samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
                 samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
+                samlIdentityProviderConfig.setArtifactBindingResponse(artifactBindingResponse);
                 samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
                 samlIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
                 samlIdentityProviderConfig.setLoginHint(false);

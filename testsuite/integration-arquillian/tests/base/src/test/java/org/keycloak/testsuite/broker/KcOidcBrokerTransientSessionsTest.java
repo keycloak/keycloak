@@ -53,6 +53,7 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -86,6 +87,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
@@ -362,7 +364,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         assertThat(errorPage.getError(), is("Page not found"));
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response simple = SimpleHttp.doGet(LINK, client).asResponse();
+            SimpleHttp.Response simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
             assertThat(simple, notNullValue());
             assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 
@@ -613,7 +615,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
                     .assertEvent();
 
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-            assertEquals(0, offlineToken.getExpiration());
+            assertNull(offlineToken.getExp());
 
             assertTrue(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
 
@@ -630,8 +632,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             events.expectRefresh(offlineToken.getId(), newRefreshToken.getSessionState())
                     .realm(consumerRealmRep)
                     .client(CONSUMER_BROKER_APP_CLIENT_ID)
+                    .user((String) null)
                     .error(Errors.INVALID_TOKEN)
-                    .user(lwUserId)
                     .clearDetails()
                     .assertEvent();
         } finally {

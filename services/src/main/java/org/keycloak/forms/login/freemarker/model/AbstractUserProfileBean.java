@@ -23,7 +23,7 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
- * Abstract base for Freemarker context bean providing informations about user profile to render dynamic or crafted forms.  
+ * Abstract base for Freemarker context bean providing information about user profile to render dynamic or crafted forms.  
  * 
  * @author Vlastimil Elias <velias@redhat.com>
  */
@@ -42,7 +42,7 @@ public abstract class AbstractUserProfileBean {
             return a1.compareTo(a2);
         }
 
-        return Comparator.nullsLast(AttributeGroup::compareTo).compare(g1, g2);
+        return Comparator.nullsFirst(AttributeGroup::compareTo).compare(g1, g2);
     };
 
     protected final MultivaluedMap<String, String> formData;

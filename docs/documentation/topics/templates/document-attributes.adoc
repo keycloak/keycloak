@@ -7,6 +7,9 @@
 :project_versionNpm: 999.0.0-SNAPSHOT
 :project_versionDoc: DEV
 
+:archivebasename: keycloak
+:archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{project_version}/keycloak-{project_version}.zip
+
 :standalone:
 :api-management!:
 :on-prem:
@@ -71,6 +74,8 @@
 :gettingstarted_name_short: Getting Started
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started
 :gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
+:highavailabilityguide_name: High Availability Guide
+:highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/

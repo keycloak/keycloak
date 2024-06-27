@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.DefaultValue;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -47,7 +48,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -61,6 +61,7 @@ import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
@@ -83,6 +84,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -90,7 +92,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.ErrorResponseException;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
@@ -421,7 +422,7 @@ public class RealmAdminResource {
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
-        
+
         ReservedCharValidator.validate(rep.getRealm());
         ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
@@ -454,15 +455,18 @@ public class RealmAdminResource {
             // This populates the map in DefaultKeycloakContext to be used when treating the event
             session.getContext().getUri();
 
-            adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
-            
+            adminEvent.operation(OperationType.UPDATE).representation(rep).success();
+
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
                 session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
             }
-            
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Realm with same name exists");
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {
@@ -481,6 +485,10 @@ public class RealmAdminResource {
     public void deleteRealm() {
         auth.realm().requireManageRealm();
 
+        if (Config.getAdminRealm().equals(realm.getName())) {
+            throw ErrorResponse.error("Can't remove master realm", Status.BAD_REQUEST);
+        }
+
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
         }
@@ -489,7 +497,7 @@ public class RealmAdminResource {
         // instead of the realm being deleted.
         AdminEventBuilder deleteAdminEvent = new AdminEventBuilder(auth.adminAuth().getRealm(), auth.adminAuth(), session, connection);
         deleteAdminEvent.operation(OperationType.DELETE).resource(ResourceType.REALM)
-                .realm(auth.adminAuth().getRealm().getId()).resourcePath(realm.getName()).success();
+                .realm(auth.adminAuth().getRealm()).resourcePath(realm.getName()).success();
     }
 
     /**
@@ -625,14 +633,19 @@ public class RealmAdminResource {
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation( summary = "Remove a specific user session.", description = "Any client that has an admin url will also be told to invalidate this particular session.")
-    public void deleteSession(@PathParam("session") String sessionId) {
+    public void deleteSession(@PathParam("session") String sessionId, @DefaultValue("false") @QueryParam("isOffline") boolean offline) {
         auth.users().requireManage();
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-        if (userSession == null) throw new NotFoundException("Sesssion not found");
-        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
+        UserSessionModel userSession = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
+        if (userSession == null) {
+            throw new NotFoundException("Sesssion not found");
+        }
 
+        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
+
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("offline", offline);
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
     }
 
     /**
@@ -1041,6 +1054,7 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.addDefaultGroup(group);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -1058,6 +1072,7 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.removeDefaultGroup(group);
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -1076,8 +1091,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
-    public GroupRepresentation getGroupByPath(@PathParam("path") List<PathSegment> pathSegments) {
-        String[] path = pathSegments.stream().map(PathSegment::getPath).toArray(String[]::new);
+    public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
         GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
@@ -1101,7 +1115,7 @@ public class RealmAdminResource {
         auth.realm().requireManageRealm();
         try {
             return Response.ok(
-                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
+                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), kcSession -> {
                         RealmModel realmClone = kcSession.realms().getRealm(realm.getId());
                         AdminEventBuilder adminEventClone = adminEvent.clone(kcSession);
                         // calling a static method to avoid using the wrong instances
@@ -1172,7 +1186,7 @@ public class RealmAdminResource {
         // service accounts are exported if the clients are exported
         // this means that if clients is true but groups/roles is false the service account is exported without roles
         // the other option is just include service accounts if clientsExported && groupsAndRolesExported
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported, true);
 
         ExportImportManager exportProvider = session.getProvider(DatastoreProvider.class).getExportImportManager();
 
@@ -1221,4 +1235,11 @@ public class RealmAdminResource {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
         return new ClientProfilesResource(session, auth);
     }
+
+    @Path("client-types")
+    public ClientTypesResource getClientTypesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_TYPES);
+        return new ClientTypesResource(session.getProvider(ClientTypeManager.class), realm, auth);
+    }
+
 }

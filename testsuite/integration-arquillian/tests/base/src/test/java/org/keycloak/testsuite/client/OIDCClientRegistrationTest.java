@@ -478,6 +478,40 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testIdTokenSignedResponse() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+             // create (no specification)
+             OIDCClientRepresentation clientRep = createRep();
+
+             response = reg.oidc().create(clientRep);
+             Assert.assertNull(response.getIdTokenSignedResponseAlg());
+
+             // Test Keycloak representation
+             ClientRepresentation kcClient = getClient(response.getClientId());
+             OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertNull(config.getIdTokenSignedResponseAlg());
+
+             // update
+             reg.auth(Auth.token(response));
+             response.setIdTokenSignedResponseAlg(Algorithm.ES256);
+             updated = reg.oidc().update(response);
+             Assert.assertEquals(Algorithm.ES256, updated.getIdTokenSignedResponseAlg());
+
+             // Test Keycloak representation
+             kcClient = getClient(updated.getClientId());
+             config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertEquals(Algorithm.ES256, config.getIdTokenSignedResponseAlg());
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setIdTokenSignedResponseAlg(null);
+            reg.oidc().update(updated);
+        }
+    }
+
+    @Test
     public void testTokenEndpointSigningAlg() throws Exception {
         OIDCClientRepresentation response = null;
         OIDCClientRepresentation updated = null;

@@ -7,15 +7,14 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  ValidatedOptions,
+  TextInput,
 } from "@patternfly/react-core";
 import { capitalize } from "lodash-es";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type UserIdpModalProps = {
   userId: string;
@@ -30,15 +29,17 @@ export const UserIdpModal = ({
   onClose,
   onRefresh,
 }: UserIdpModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const {
-    register,
-    handleSubmit,
-    formState: { isValid, errors },
-  } = useForm<FederatedIdentityRepresentation>({
+  const form = useForm<FederatedIdentityRepresentation>({
     mode: "onChange",
   });
+  const {
+    handleSubmit,
+    formState: { isValid },
+  } = form;
 
   const onSubmit = async (
     federatedIdentity: FederatedIdentityRepresentation,
@@ -87,55 +88,33 @@ export const UserIdpModal = ({
       isOpen
     >
       <Form id="group-form" onSubmit={handleSubmit(onSubmit)}>
-        <FormGroup label={t("identityProvider")} fieldId="identityProvider">
-          <KeycloakTextInput
-            id="identityProvider"
-            data-testid="idpNameInput"
-            value={capitalize(federatedId)}
-            isReadOnly
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("userID")}
-          fieldId="userID"
-          helperText={t("userIdHelperText")}
-          helperTextInvalid={t("required")}
-          validated={
-            errors.userId ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          isRequired
-        >
-          <KeycloakTextInput
-            id="userID"
-            data-testid="userIdInput"
-            validated={
-              errors.userId ? ValidatedOptions.error : ValidatedOptions.default
-            }
+        <FormProvider {...form}>
+          <FormGroup label={t("identityProvider")} fieldId="identityProvider">
+            <TextInput
+              id="identityProvider"
+              data-testid="idpNameInput"
+              value={capitalize(federatedId)}
+              readOnly
+            />
+          </FormGroup>
+          <TextControl
+            name="userId"
+            label={t("userID")}
+            helperText={t("userIdHelperText")}
             autoFocus
-            {...register("userId", { required: true })}
+            rules={{
+              required: t("required"),
+            }}
           />
-        </FormGroup>
-        <FormGroup
-          label={t("username")}
-          fieldId="username"
-          helperText={t("usernameHelperText")}
-          helperTextInvalid={t("required")}
-          validated={
-            errors.userName ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          isRequired
-        >
-          <KeycloakTextInput
-            id="username"
-            data-testid="usernameInput"
-            validated={
-              errors.userName
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            {...register("userName", { required: true })}
+          <TextControl
+            name="userName"
+            label={t("username")}
+            helperText={t("usernameHelperText")}
+            rules={{
+              required: t("required"),
+            }}
           />
-        </FormGroup>
+        </FormProvider>
       </Form>
     </Modal>
   );

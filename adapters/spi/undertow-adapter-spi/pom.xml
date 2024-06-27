@@ -31,14 +31,8 @@
     <description/>
 
     <properties>
-        <keycloak.osgi.export>
-            org.keycloak.adapters.undertow.*
-        </keycloak.osgi.export>
-        <keycloak.osgi.import>
-            io.undertow.*;version="[1.4,3)",
-            *;resolution:=optional
-        </keycloak.osgi.import>
-        <keycloak.osgi.fragment>${project.groupId}.keycloak-undertow-adapter</keycloak.osgi.fragment>
+        <!-- We still need to support EAP 8, set the Java version to 11. -->
+        <maven.compiler.release>11</maven.compiler.release>
     </properties>
 
     <dependencies>
@@ -76,42 +70,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <instructions>
-                        <Bundle-ClassPath>.</Bundle-ClassPath>
-                        <Bundle-Name>${project.name}</Bundle-Name>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Import-Package>${keycloak.osgi.import}</Import-Package>
-                        <Export-Package>${keycloak.osgi.export}</Export-Package>
-                        <Fragment-Host>${keycloak.osgi.fragment}</Fragment-Host>
-                    </instructions>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
 </project>

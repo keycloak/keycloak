@@ -32,7 +32,7 @@
     <description></description>
 
     <properties>
-        <arquillian.protocol.default>Servlet 3.0</arquillian.protocol.default>
+        <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
         <cli.log.output>false</cli.log.output>
         <test.intermittent>false</test.intermittent>
         <exclude.test>-</exclude.test>
@@ -42,13 +42,9 @@
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
-        <mvel.version>2.4.0.Final</mvel.version>
+        <mvel.version>2.5.2.Final</mvel.version>
         <systemrules.version>1.19.0</systemrules.version>
         <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
-        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.source>11</maven.compiler.source>
     </properties>
     
     <dependencies>
@@ -130,6 +126,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-test-apps-servlets</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.mvel</groupId>
             <artifactId>mvel2</artifactId>
             <version>${mvel.version}</version>
@@ -151,7 +152,7 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-server-hotrod-jakarta</artifactId>
+            <artifactId>infinispan-server-hotrod</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -170,6 +171,16 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.apicatalog</groupId>
+            <artifactId>titanium-json-ld</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.setl</groupId>
+            <artifactId>rdf-urdna</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -197,6 +208,11 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     
@@ -364,9 +380,6 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>${docker.maven.plugin.version}</version>
-                <configuration>
-                    <skip>${docker.database.skip}</skip>
-                </configuration>
                 <executions>
                     <execution>
                         <id>start-db-container</id>
@@ -375,6 +388,7 @@
                             <goal>start</goal>
                         </goals>
                         <configuration>
+                            <skip>${docker.database.skip}</skip>
                             <showLogs>true</showLogs>
                             <images>
                                 <image>
@@ -427,89 +441,18 @@
                         <goals>
                             <goal>stop</goal>
                         </goals>
+                        <configuration>
+                            <skip>${docker.database.skip}</skip>
+                        </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
             </plugin>
         </plugins>
 
     </build>
 
     <profiles>
-        <profile>
-            <id>jpa</id>
-            <build>
-                <plugins>
-                    <!-- DB will be released after the test -->
-                    <plugin>
-                        <groupId>org.keycloak</groupId>
-                        <artifactId>db-allocator-plugin</artifactId>
-                        <inherited>false</inherited>
-                        <executions>
-                            <execution>
-                                <id>release-db</id>
-                                <goals>
-                                    <goal>release</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
-        <profile>
-            <id>app-server-jetty94</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>jetty94</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>jetty94</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>true</app.server.skip.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-jetty-94</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-undertow</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>undertow</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>undertow</app.server> <!--in case the profile is called directly-->
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-        </profile>
         <profile>
             <id>app-server-wildfly</id>
             <activation>
@@ -548,44 +491,6 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-eap</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>${wildfly.core.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
             <id>app-server-eap8</id>
             <activation>
                 <property>
@@ -597,7 +502,6 @@
                 <app.server>eap8</app.server>
                 <app.server.skip.unpack>false</app.server.skip.unpack>
                 <app.server.artifactId>integration-arquillian-servers-app-server-jboss-galleon</app.server.artifactId>
-                <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
                 <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
@@ -625,319 +529,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>app-server-eap71</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap71</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap71</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-eap</app.server.artifactId><!-- Need to override -->
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>3.0.10.Final</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!-- EAP6, Fuse 6.x and Fuse 7.x adapter profiles, can be removed once there will be no need for supporting these adapters  -->
-        <profile>
-            <id>app-server-eap6</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap6</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
-                <!--TODO: check it when KEYCLOAK-8529 is resolved-->
-                <!--<infinispan.version>8.2.5.Final</infinispan.version>     KEYCLOAK-5302 -->
-
-                <app.server.management.protocol>remote</app.server.management.protocol>
-                <app.server.management.port>10199</app.server.management.port>
-                <app.server.1.management.port>10299</app.server.1.management.port>
-                <app.server.2.management.port>10399</app.server.2.management.port>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap6</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>2.0.10.Final</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.jboss.modules</groupId>
-                            <artifactId>jboss-modules</artifactId>  
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-fuse63</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>fuse63</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>fuse63</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <!--fuse examples expect auth server on 8080-->
-                <auth.server.port.offset>0</auth.server.port.offset>
-                <auth.server.http.port>8080</auth.server.http.port>
-                <auth.server.management.port>9990</auth.server.management.port>
-                <!--fuse examples expect default karaf http port 8181-->
-                <app.server.http.port>8181</app.server.http.port>
-
-                <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>password</app.server.management.password>
-                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-fuse63</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-container-karaf-managed</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireProperty>
-                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>
-                                    <property>additional.fuse.repos</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <message>When running fuse tests 'fuse.adapter.version' is expected to be set.</message>
-                                    <property>fuse.adapter.version</property>
-                                </requireProperty>
-                            </rules>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
-                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
-                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-fuse7x</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>fuse7x</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>fuse7x</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <!--fuse examples expect auth server on 8080-->
-                <auth.server.port.offset>0</auth.server.port.offset>
-                <auth.server.http.port>8080</auth.server.http.port>
-                <auth.server.management.port>9990</auth.server.management.port>
-                <!--fuse examples expect default karaf http port 8181-->
-                <app.server.http.port>8181</app.server.http.port>
-
-                <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>password</app.server.management.password>
-                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-fuse7x</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-container-karaf-managed</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireProperty>
-                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>
-                                    <property>additional.fuse.repos</property>
-                                </requireProperty>
-                            </rules>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
-                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
-                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!-- EAP6, Fuse 6.x and Fuse 7.x adapter profiles END -->
-
-        <profile>
-            <id>app-server-tomcat8</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>tomcat8</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>tomcat8</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat8</app.server.artifactId><!-- Need to override -->
-                <app.server.port.offset>0</app.server.port.offset>
-                <app.server.http.port>8080</app.server.http.port>
-                <app.server.management.port>9990</app.server.management.port>
-                <app.server.keystore.dir>${app.server.home}/lib</app.server.keystore.dir>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-tomcat8</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-tomcat9</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>tomcat9</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>tomcat9</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat9</app.server.artifactId><!-- Need to override -->
-                <app.server.port.offset>0</app.server.port.offset>
-                <app.server.http.port>8080</app.server.http.port>
-                <app.server.management.port>9990</app.server.management.port>
-                <app.server.keystore.dir>${app.server.home}/lib</app.server.keystore.dir>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-tomcat9</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>auth-servers-crossdc-undertow</id>
             <properties>
@@ -1162,9 +753,70 @@
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>1.12.18</version>
+                    <version>${byte-buddy.version}</version>
                 </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <id>infinispan-server</id>
+            <properties>
+                <docker.infinispan.skip>false</docker.infinispan.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${docker.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>start-ispn-container</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.infinispan.skip}</skip>
+                                    <showLogs>true</showLogs>
+                                    <images>
+                                        <image>
+                                            <alias>infinispan</alias>
+                                            <name>quay.io/infinispan/server:${infinispan.version}</name>
+                                            <run>
+                                                <ports>
+                                                    <port>11222:11222</port>
+                                                </ports>
+                                                <env>
+                                                    <USER>keycloak</USER>
+                                                    <PASS>Password1!</PASS>
+                                                </env>
+                                                <net>host</net>
+                                                <cmd>-b 127.0.0.1 -k 127.0.0.1</cmd>
+                                                <wait>
+                                                    <log>.*ISPN080001.*</log>
+                                                    <time>2000000</time>
+                                                    <kill>10000</kill>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-ispn-container</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.infinispan.skip}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
     </profiles>

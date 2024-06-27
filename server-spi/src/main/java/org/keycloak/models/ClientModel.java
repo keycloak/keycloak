@@ -39,6 +39,7 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String LOGO_URI ="logoUri";
     String POLICY_URI ="policyUri";
     String TOS_URI ="tosUri";
+    String TYPE = "type";
 
     interface ClientCreationEvent extends ProviderEvent {
         ClientModel getCreatedClient();
@@ -104,6 +105,14 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String getDescription();
 
     void setDescription(String description);
+
+    default String getType() {
+        return getAttribute(TYPE);
+    }
+
+    default void setType(String type) {
+        setAttribute(TYPE, type);
+    }
 
     boolean isEnabled();
 

@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ActionsColumn,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -20,9 +20,8 @@ import {
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -45,6 +44,8 @@ type PermissionsTabProps = {
 };
 
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -130,7 +131,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
         <CardTitle>{t("permissions")}</CardTitle>
         <CardBody>
           {t(`${type}PermissionsHint`)}
-          <Form isHorizontal className="pf-u-pt-md">
+          <Form isHorizontal className="pf-v5-u-pt-md">
             <FormGroup
               hasNoPaddingTop
               className="permission-label"
@@ -149,7 +150,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={permission.enabled}
-                onChange={async (enabled) => {
+                onChange={async (_event, enabled) => {
                   if (enabled) {
                     const permission = await togglePermissionEnabled(enabled);
                     setPermission(permission);
@@ -165,7 +166,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       </Card>
       {permission.enabled && (
         <>
-          <Card isFlat className="pf-u-mt-lg">
+          <Card isFlat className="pf-v5-u-mt-lg">
             <CardTitle>{t("permissionsList")}</CardTitle>
             <CardBody>
               <Trans i18nKey="permissionsListIntro">
@@ -181,11 +182,8 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
             </CardBody>
           </Card>
           <Card isFlat className="keycloak__permission__permission-table">
-            <CardBody className="pf-u-p-0">
-              <TableComposable
-                aria-label={t("permissionsList")}
-                variant="compact"
-              >
+            <CardBody className="pf-v5-u-p-0">
+              <Table aria-label={t("permissionsList")} variant="compact">
                 <Thead>
                   <Tr>
                     <Th id="permissionsScopeName">
@@ -237,7 +235,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                     </Tr>
                   ))}
                 </Tbody>
-              </TableComposable>
+              </Table>
             </CardBody>
           </Card>
         </>

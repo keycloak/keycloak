@@ -71,8 +71,11 @@ public class MigrateTo23_0_0 implements Migration {
             if (component.isPresent()) {
                 ComponentModel userProfileComponent = component.get();
                 int count = userProfileComponent.get(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY, 0);
+                if (count < 1) {
+                    realm.removeComponent(userProfileComponent);
+                    return;
+                }
                 userProfileComponent.getConfig().remove(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY);
-                if (count < 1) return; // default config
                 String configuration;
                 if (count == 1) {
                     configuration = userProfileComponent.get(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + "0");

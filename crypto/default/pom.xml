@@ -30,6 +30,11 @@
     <name>Keycloak Crypto Default</name>
     <description/>
 
+    <properties>
+        <!-- We still need to support EAP 8, set the Java version to 11. -->
+        <maven.compiler.release>11</maven.compiler.release>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

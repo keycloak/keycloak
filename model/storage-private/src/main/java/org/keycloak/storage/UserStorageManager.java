@@ -21,6 +21,8 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentFactory;
@@ -48,6 +51,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -60,6 +64,7 @@ import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -71,8 +76,11 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.utils.StreamsUtil;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -105,6 +113,23 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * @return
      */
     protected UserModel importValidation(RealmModel realm, UserModel user) {
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && user != null) {
+            // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
+            OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizationProvider.getByMember(user);
+
+            if ((organizationProvider.isEnabled() && organization != null && organization.isManaged(user) && !organization.isEnabled()) || 
+                    (!organizationProvider.isEnabled() && organization != null && organization.isManaged(user))) {
+                return new ReadOnlyUserModelDelegate(user) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+        }
+
         if (user == null || user.getFederationLink() == null) return user;
 
         UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
@@ -414,6 +439,36 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 return ((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, firstResultInQuery, maxResultsInQuery).
                         map(id -> getUserById(realm, id));
            }
+            return Stream.empty();
+        }, realm, firstResult, maxResults);
+
+        return importValidation(realm, results);
+    }
+
+    @Override
+    public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, final String search,
+                                                   final Boolean exact, final Integer firstResult, final Integer maxResults) {
+        Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
+            if (provider instanceof UserQueryMethodsProvider) {
+                return ((UserQueryMethodsProvider)provider).getGroupMembersStream(realm, group, search, exact, firstResultInQuery, maxResultsInQuery);
+
+            } else if (provider instanceof UserFederatedStorageProvider) {
+                // modify this if UserGroupMembershipFederatedStorage adds a getMembershipStream variant with search option.
+                return StreamsUtil.paginatedStream(((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, null, null)
+                        .map(id -> getUserById(realm, id))
+                        .filter(user -> {
+                            if (StringUtil.isBlank(search)) return true;
+                            if (Boolean.TRUE.equals(exact)) {
+                                return search.equals(user.getUsername()) || search.equals(user.getEmail())
+                                        || search.equals(user.getFirstName()) || search.equals(user.getLastName());
+                            } else {
+                                return Optional.ofNullable(user.getUsername()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                                        Optional.ofNullable(user.getEmail()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                                        Optional.ofNullable(user.getFirstName()).orElse("").toLowerCase().contains(search.toLowerCase()) ||
+                                        Optional.ofNullable(user.getLastName()).orElse("").toLowerCase().contains(search.toLowerCase());
+                            }
+                        }), firstResultInQuery, maxResultsInQuery);
+            }
             return Stream.empty();
         }, realm, firstResult, maxResults);
 
@@ -857,10 +912,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
-        for (UserProfileDecorator decorator : getEnabledStorageProviders(session.getContext().getRealm(), UserProfileDecorator.class)
-                .collect(Collectors.toList())) {
-            decorator.decorateUserProfile(realm, metadata);
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
+        RealmModel realm = session.getContext().getRealm();
+        UserStorageProviderModel providerModel = getStorageProviderModel(realm, providerId);
+
+        if (providerModel != null) {
+            UserProfileDecorator decorator = getStorageProviderInstance(providerModel, UserProfileDecorator.class);
+
+            if (decorator != null) {
+                return decorator.decorateUserProfile(providerId, metadata);
+            }
         }
+
+        return Collections.emptyList();
     }
 }

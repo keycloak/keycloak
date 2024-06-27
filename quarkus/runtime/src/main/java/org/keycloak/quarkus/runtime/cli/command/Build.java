@@ -19,23 +19,20 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
-import org.keycloak.config.ClassLoaderOptions;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.utils.StringUtil;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -84,7 +81,7 @@ public final class Build extends AbstractCommand implements Runnable {
             beforeReaugmentationOnWindows();
             QuarkusEntryPoint.main();
 
-            if (!isDevMode()) {
+            if (!isDevProfile()) {
                 println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
                 println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
             }

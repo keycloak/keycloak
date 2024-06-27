@@ -401,7 +401,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=90, value="Failed to close ProviderSession")
     void failedToCloseProviderSession(@Cause Throwable t);
 
-    @LogMessage(level = WARN)
+    @LogMessage(level = DEBUG)
     @Message(id=91, value="Request is missing scope 'openid' so it's not treated as OIDC, but just pure OAuth2 request.")
     @Once
     void oidcScopeMissing();

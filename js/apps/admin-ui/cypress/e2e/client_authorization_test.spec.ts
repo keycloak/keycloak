@@ -117,7 +117,7 @@ describe("Client authentication subtab", () => {
         name: "Regex policy",
         description: "Policy for regex",
         targetClaim: "I don't know",
-        regexPattern: ".*?",
+        pattern: ".*?",
       })
       .formUtils()
       .save();
@@ -241,11 +241,11 @@ describe("Client authentication subtab", () => {
       loginPage.logIn("test-view-authz-user", "password");
       keycloakBefore();
 
-      sidebarPage
-        .waitForPageLoad()
-        .goToRealm("realm-view-authz")
-        .waitForPageLoad()
-        .goToClients();
+      sidebarPage.waitForPageLoad().goToRealm("realm-view-authz");
+
+      cy.reload();
+
+      sidebarPage.waitForPageLoad().goToClients();
 
       listingPage
         .searchItem(clientId, true, "realm-view-authz")

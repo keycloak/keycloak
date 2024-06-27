@@ -39,7 +39,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
@@ -107,7 +106,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             UserModel user, UserProfileMetadata metadata) {
 
         if (isServiceAccountUser(user)) {
-            return new LegacyAttributes(context, attributes, user, metadata, session);
+            return new ServiceAccountAttributes(context, attributes, user, metadata, session);
         }
         return new DefaultAttributes(context, attributes, user, metadata, session);
     }
@@ -176,13 +175,9 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata, KeycloakSession session) {
         UserProfileContext context = metadata.getContext();
         UserProfileMetadata decoratedMetadata = metadata.clone();
-        RealmModel realm = session.getContext().getRealm();
-
         ComponentModel component = getComponentModel().orElse(null);
 
         if (component == null) {
-            // makes sure user providers can override metadata for any attribute
-            decorateUserProfileMetadataWithUserStorage(realm, decoratedMetadata);
             return decoratedMetadata;
         }
 
@@ -411,21 +406,8 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             }
         }
 
-        if (session != null) {
-            // makes sure user providers can override metadata for any attribute
-            decorateUserProfileMetadataWithUserStorage(session.getContext().getRealm(), decoratedMetadata);
-        }
-
         return decoratedMetadata;
 
-    }
-
-    private void decorateUserProfileMetadataWithUserStorage(RealmModel realm, UserProfileMetadata userProfileMetadata) {
-        // makes sure user providers can override metadata for any attribute
-        UserProvider users = session.users();
-        if (users instanceof UserProfileDecorator) {
-            ((UserProfileDecorator) users).decorateUserProfile(realm, userProfileMetadata);
-        }
     }
 
     private Map<String, UPGroup> asHashMap(List<UPGroup> groups) {
@@ -459,16 +441,18 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     /**
      * Get parsed config file configured in model. Default one used if not configured.
      */
-    protected UPConfig getParsedConfig(String rawConfig) {
-        if (!isBlank(rawConfig)) {
-            try {
-                return UPConfigUtils.parseConfig(rawConfig);
-            } catch (IOException e) {
-                throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid:" + e.getMessage(), e);
-            }
+    protected UPConfig parseConfigOrDefault(ComponentModel component) {
+        String rawConfig = component.get(UP_COMPONENT_CONFIG_KEY);
+
+        if (isBlank(rawConfig)) {
+            return parsedDefaultRawConfig;
         }
 
-        return null;
+        try {
+            return UPConfigUtils.parseConfig(rawConfig);
+        } catch (IOException e) {
+            throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid:" + e.getMessage(), e);
+        }
     }
 
     /**
@@ -492,22 +476,27 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     }
 
     private UPConfig getConfigFromComponentModel(ComponentModel model) {
-        if (model == null)
-            return null;
+        UPConfig cached = getParsedConfigFromCache(model);
 
-        UPConfig cfg = model.getNote(PARSED_UP_CONFIG_COMPONENT_KEY);
-        if (cfg != null) {
-            return cfg;
+        if (cached == null) {
+            cached = parseAndCacheConfig(model);
         }
 
-        String rawConfig = model.get(UP_COMPONENT_CONFIG_KEY);
-        if (rawConfig == null) {
+        return cached;
+    }
+
+    private UPConfig parseAndCacheConfig(ComponentModel model) {
+        UPConfig cfg = parseConfigOrDefault(model);
+        model.setNote(PARSED_UP_CONFIG_COMPONENT_KEY, cfg);
+        return cfg;
+    }
+
+    private UPConfig getParsedConfigFromCache(ComponentModel component) {
+        if (component == null) {
             return null;
-        } else {
-            cfg = getParsedConfig(rawConfig);
-            model.setNote(PARSED_UP_CONFIG_COMPONENT_KEY, cfg);
-            return cfg;
         }
+
+        return component.getNote(PARSED_UP_CONFIG_COMPONENT_KEY);
     }
 
     private void removeConfigJsonFromComponentModel(ComponentModel model) {
