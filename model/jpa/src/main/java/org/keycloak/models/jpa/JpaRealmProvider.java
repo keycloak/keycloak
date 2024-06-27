@@ -1021,8 +1021,23 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         entity.setName(name);
         entity.setRealmId(realm.getId());
         em.persist(entity);
+
+        ClientScopeModel clientScope = new ClientScopeAdapter(realm, em, session, entity);
+        session.getKeycloakSessionFactory().publish(new ClientScopeModel.ClientScopeCreatedEvent() {
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+
+            @Override
+            public ClientScopeModel getClientScope() {
+                return clientScope;
+            }
+        });
+
         em.flush();
-        return new ClientScopeAdapter(realm, em, session, entity);
+        return clientScope;
     }
 
     @Override
