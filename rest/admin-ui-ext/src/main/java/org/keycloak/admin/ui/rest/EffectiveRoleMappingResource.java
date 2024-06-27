@@ -60,7 +60,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         this.auth.clients().requireView(clientScope);
         return toSortedClientRoles(
                 addSubClientRoles(clientScope.getScopeMappingsStream())
-                .filter(auth.roles()::canMapClientScope));
+        );
     }
 
     @GET
@@ -90,7 +90,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         auth.clients().requireView(client);
         return toSortedClientRoles(
                 addSubClientRoles(client.getScopeMappingsStream())
-                .filter(auth.roles()::canMapRole));
+        );
     }
 
     @GET
@@ -120,7 +120,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         auth.groups().requireView(group);
         return toSortedClientRoles(
                 addSubClientRoles(addParents(group).flatMap(GroupModel::getRoleMappingsStream))
-                .filter(auth.roles()::canMapRole));
+        );
     }
 
     @GET
@@ -179,9 +179,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         auth.roles().requireList(realm);
         final RoleModel defaultRole = this.realm.getDefaultRole();
         //this definitely does not return what the descriptions says
-        return toSortedClientRoles(
-                addSubClientRoles(Stream.of(defaultRole))
-                .filter(auth.roles()::canMapRole));
+        return toSortedClientRoles(addSubClientRoles(Stream.of(defaultRole)));
     }
 
     private Stream<RoleModel> addSubClientRoles(Stream<RoleModel> roles) {
