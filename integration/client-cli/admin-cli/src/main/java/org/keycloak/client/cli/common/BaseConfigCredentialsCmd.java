@@ -104,6 +104,9 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
 
             // if user was set there needs to be a password so we can authenticate
             if (password == null) {
+            	password = System.getenv("KC_CLI_PASSWORD");
+            }
+            if (password == null) {
                 password = readSecret("Enter password: ");
             }
             // if secret was set to be read from stdin, then ask for it
@@ -114,7 +117,10 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
             grantTypeForAuthentication = OAuth2Constants.CLIENT_CREDENTIALS;
             printErr("Logging into " + server + " as " + "service-account-" + clientId + " of realm " + realm);
             if (keystore == null && secret == null) {
-                secret = readSecret("Enter client secret: ");
+            	secret = System.getenv("KC_CLI_CLIENT_SECRET");
+            	if (secret == null) {
+            		secret = readSecret("Enter client secret: ");
+            	}
             }
         }
 
@@ -128,8 +134,17 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
             }
 
             if (storePass == null) {
+            	storePass = System.getenv("KC_CLI_STORE_PASSWORD");
+            }
+            if (keyPass == null) {
+            	keyPass = System.getenv("KC_CLI_KEY_PASSWORD");
+            }
+            
+            if (storePass == null) {
                 storePass = readSecret("Enter keystore password: ");
-                keyPass = readSecret("Enter key password: ");
+                if (keyPass == null) {
+                	keyPass = readSecret("Enter key password: ");
+                }
             }
 
             if (keyPass == null) {
