@@ -60,6 +60,7 @@ import java.util.function.Consumer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
@@ -565,10 +566,8 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             WebElement aHref = driver.findElement(By.tagName("a"));
             driver.get(aHref.getAttribute("href"));
             // Waiting for account redirection from app page
-            driver.wait(1000);
+            waitForPage(driver, "Account Management", true);
             assertThat(driver.getTitle(), containsString("Account Management"));
-        } catch (Throwable t) {
-            t.printStackTrace();
         } finally {
             revertFlows("browser - alternative non-interactive executor");
         }
