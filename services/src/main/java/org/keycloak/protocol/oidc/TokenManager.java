@@ -433,7 +433,7 @@ public class TokenManager {
         }
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
-            validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
+            validation.userSession, validation.clientSessionCtx).offlineToken( TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType())).accessToken(validation.newToken);
         if (clientConfig.isUseRefreshToken()) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
             responseBuilder.generateRefreshToken(refreshToken.getScope());
@@ -1068,6 +1068,7 @@ public class TokenManager {
         String codeHash;
 
         String stateHash;
+        boolean offlineToken = false;
 
         private AccessTokenResponse response;
 
@@ -1105,6 +1106,11 @@ public class TokenManager {
 
         public AccessTokenResponseBuilder responseTokenType(String responseTokenType) {
             this.responseTokenType = responseTokenType;
+            return this;
+        }
+
+         public AccessTokenResponseBuilder offlineToken(boolean offlineToken) {
+            this.offlineToken = offlineToken;
             return this;
         }
 
@@ -1228,7 +1234,7 @@ public class TokenManager {
         }
 
         public boolean isOfflineToken() {
-            return refreshToken != null && TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType());
+            return offlineToken;
         }
 
         public AccessTokenResponse build() {
