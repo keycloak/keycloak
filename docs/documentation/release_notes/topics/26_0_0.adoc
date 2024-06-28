@@ -23,6 +23,14 @@ Consequently, all caches are cleared when upgrading to this version.
 
 Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto3/[Protocol Buffers] (proto 3), which has the advantage of backwards/forwards compatibility.
 
+= Group-related events no longer fired when removing a realm
+
+With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm.
+As a consequence, group-related events like the `GroupRemovedEvent` are no longer fired when removing a realm.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+
 = Keycloak CR supports standard scheduling options
 
 The Keycloak CR now exposes first class properties for controlling the scheduling of your Keycloak Pods.

@@ -21,6 +21,17 @@ This is an optimization to reduce traffic and network related resources.
 In {project_name} 26, the new method has a default implementation to keep backward compatibility with custom implementation.
 The default implementation performs a single network call per an event, and it will be removed in a future version of {project_name}.
 
+= Group-related events no longer fired when removing a realm
+
+With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm.
+As a consequence, group-related events like the `GroupRemovedEvent` are no longer fired when removing a realm.
+
+If you have extensions handling any group-related event when a realm is removed, make sure to use the `RealmRemovedEvent` instead
+to perform any cleanup or custom processing when a realm, and their groups, are removed.
+
+The `GroupProvider` interface is also updated with a new `preRemove(RealmModel)` method to force implementations to properly
+handle the removal of groups when a realm is removed.
+
 = Operator scheduling defaults
 
 Keycloak Pods will now have default affinities to prevent multiple instances from the same CR from being deployed on the same node, and all Pods from the same CR will prefer to be in the same zone to prevent stretch cache clusters.
