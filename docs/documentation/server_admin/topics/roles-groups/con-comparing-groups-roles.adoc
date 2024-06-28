@@ -2,7 +2,7 @@
 
 = Groups compared to roles
 [role="_abstract"]
-Groups and roles have some similarities and differences. In {project_name}, groups are a collection of users to which you apply roles and attributes. Roles define types of users and applications, assign permissions and access control to roles.
+Groups and roles have some similarities and differences. In {project_name}, groups are a collection of users to which you apply roles and attributes. Roles define types of users, and applications assign permissions and access control to roles.
 
 <<_composite-roles,Composite Roles>> are similar to Groups as they provide the same functionality. The difference between them is conceptual. Composite roles apply the permission model to a set of services and applications. Use composite roles to manage applications and services.
 
