@@ -73,6 +73,8 @@ This allows you to access {project_name} at `https://my.keycloak.org` and the Ad
 
 NOTE: Keep in mind that hostname and proxy options do not change the ports on which the server listens. Instead it changes only the ports of static resources like JavaScript and CSS links, OIDC well-known endpoints, redirect URIs, etc. that will be used in front of the proxy. You need to use HTTP configuration options to change the actual ports the server is listening on. Refer to the <@links.server id="all-config"/> for details.
 
+WARNING: Using the `hostname-admin` option does not prevent accessing the Administration REST API endpoints via the frontend URL specified by the `hostname` option. If you want to restrict access to the Administration REST API, you need to do it on the reverse proxy level. Administration Console implicitly accesses the API using the URL as specified by the `hostname-admin` option.
+
 == Background - server endpoints
 
 {project_name} exposes several endpoints, each with a different purpose. They are typically used for communication among applications or for managing the server. We recognize 3 main endpoint groups:
@@ -110,7 +112,7 @@ Note that `hostname` option must be set to a URL. For more information, refer to
 
 === Administration
 
-Similarly to the base frontend URL, you can also set the base URL for resources and endpoints of the administration console. The server exposes the administration console and static resources using a specific URL. This URL is used for redirect URLs, loading resources (CSS, JS), etc. It can be done by setting the `hostname-admin` option:
+Similarly to the base frontend URL, you can also set the base URL for resources and endpoints of the administration console. The server exposes the administration console and static resources using a specific URL. This URL is used for redirect URLs, loading resources (CSS, JS), Administration REST API etc. It can be done by setting the `hostname-admin` option:
 
 <@kc.start parameters="--hostname https://my.keycloak.org --hostname-admin https://admin.my.keycloak.org:8443"/>
 
