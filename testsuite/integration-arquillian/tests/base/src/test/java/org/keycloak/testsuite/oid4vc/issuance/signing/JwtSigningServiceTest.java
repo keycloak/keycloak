@@ -184,12 +184,12 @@ public class JwtSigningServiceTest extends OID4VCTest {
         try {
             JsonWebToken theToken = verifier.getToken();
 
-            assertEquals("JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC", TEST_EXPIRATION_DATE.toInstant().getEpochSecond(), theToken.getExp().longValue());
+            assertEquals("JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC", TEST_EXPIRATION_DATE.getEpochSecond(), theToken.getExp().longValue());
             if (claims.containsKey("issuanceDate")) {
                 assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", ((Date) claims.get("issuanceDate")).toInstant().getEpochSecond(), theToken.getNbf().longValue());
             } else {
                 // if not specific date is set, check against "currentTime"
-                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", TEST_ISSUANCE_DATE.toInstant().getEpochSecond(), theToken.getNbf().longValue());
+                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue());
             }
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
@@ -213,7 +213,7 @@ public class JwtSigningServiceTest extends OID4VCTest {
         }
     }
 
- 
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         if (testRealm.getComponents() != null) {
@@ -223,4 +223,4 @@ public class JwtSigningServiceTest extends OID4VCTest {
                     Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(rsaKey)))));
         }
     }
-} 
+}
