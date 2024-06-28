@@ -1,0 +1,324 @@
+name: Keycloak JavaScript CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+      - quarkus-next
+  pull_request:
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: js-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  conditional:
+    name: Check conditional workflows and jobs
+    runs-on: ubuntu-latest
+    outputs:
+      js-ci: ${{ steps.conditional.outputs.js }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-keycloak:
+    name: Build Keycloak
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          check-latest: true
+          cache: maven
+
+      - name: Build Keycloak
+        run: |
+          ./mvnw clean install --errors -DskipTests -DskipTestsuite -DskipExamples -Pdistribution
+          mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
+
+      - name: Upload Keycloak dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: keycloak
+          path: keycloak-999.0.0-SNAPSHOT.tar.gz
+
+  admin-client:
+    name: Admin Client
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-admin-client"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+
+  keycloak-js:
+    name: Keycloak JS
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-js
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+
+  ui-shared:
+    name: UI Shared
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-ui-shared"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+
+  account-ui:
+    name: Account UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-account-ui"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+
+  admin-ui:
+    name: Admin UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:check-types
+
+  account-ui-e2e:
+    name: Account UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-account-ui"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@v4
+        with:
+          name: keycloak
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Start Keycloak server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=transient-users,oid4vc-vci &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
+      - name: Install Playwright browsers
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: account-ui-playwright-report
+          path: js/apps/account-ui/playwright-report
+          retention-days: 30
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-ui-server-log
+          path: ~/server.log
+
+
+  generate-test-seed:
+    name: Generate Test Seed
+    needs:
+      - conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      seed: ${{ steps.generate-random-number.outputs.value }}
+    steps:
+      - name: Generate random number
+        id: generate-random-number
+        shell: bash
+        run: |
+          echo "value=$(shuf -i 1-100 -n 1)" >> $GITHUB_OUTPUT
+
+  admin-ui-e2e:
+    name: Admin UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+      - generate-test-seed
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    strategy:
+      matrix:
+        container: [1, 2, 3, 4, 5]
+        browser: [chrome, firefox]
+        exclude:
+          # Only test with Firefox on scheduled runs
+          - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Google Chrome
+        if: matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Install Firefox
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - name: Compile Admin Client
+        run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@v4
+        with:
+          name: keycloak
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Start Keycloak server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,transient-users &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
+      - name: Start LDAP server
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:ldap-server &
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          browser: ${{ matrix.browser }} 
+          wait-on: http://localhost:8080
+          working-directory: js/apps/admin-ui
+        env:
+          CYPRESS_BASE_URL: http://localhost:8080/admin/
+          SPLIT: ${{ strategy.job-total }}
+          SPLIT_INDEX: ${{ strategy.job-index }}
+          SPLIT_RANDOM_SEED: ${{ needs.generate-test-seed.outputs.seed }}
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
+          path: ~/server.log
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v4
+        if: always() && github.repository != 'keycloak/keycloak-private'
+        with:
+          name: cypress-videos-${{ matrix.container }}-${{ matrix.browser }}
+          path: js/apps/admin-ui/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 10
+
+  check:
+    name: Status Check - Keycloak JavaScript CI
+    if: always()
+    needs:
+      - conditional
+      - build-keycloak
+      - admin-client
+      - keycloak-js
+      - ui-shared
+      - account-ui
+      - account-ui-e2e
+      - admin-ui
+      - admin-ui-e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/status-check
+        with:
+          jobs: ${{ toJSON(needs) }}

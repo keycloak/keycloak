@@ -1,0 +1,20 @@
+:toc: left
+:toclevels: 3
+:sectanchors:
+:linkattrs:
+
+include::topics/templates/document-attributes.adoc[]
+
+:authorization_services_guide:
+:context: authorization_services_guide
+
+= {authorizationguide_name}
+
+:release_header_guide: {authorizationguide_name_short}
+:release_header_latest_link: {authorizationguide_link_latest}
+include::topics/templates/release-header.adoc[]
+
+include::topics.adoc[]
+
+:context:
+

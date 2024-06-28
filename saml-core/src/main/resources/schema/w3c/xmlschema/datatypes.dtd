@@ -1,0 +1,203 @@
+<!--
+        DTD for XML Schemas: Part 2: Datatypes
+        $Id: datatypes.dtd 20476 2004-04-17 13:29:24Z tdiesler $
+        Note this DTD is NOT normative, or even definitive. - - the
+        prose copy in the datatypes REC is the definitive version
+        (which shouldn't differ from this one except for this comment
+        and entity expansions, but just in case)
+  -->
+
+        <!--
+                This DTD cannot be used on its own, it is intended
+                only for incorporation in XMLSchema.dtd, q.v.
+          -->
+
+        <!-- Define all the element names, with optional prefix -->
+        <!ENTITY % simpleType "%p;simpleType">
+        <!ENTITY % restriction "%p;restriction">
+        <!ENTITY % list "%p;list">
+        <!ENTITY % union "%p;union">
+        <!ENTITY % maxExclusive "%p;maxExclusive">
+        <!ENTITY % minExclusive "%p;minExclusive">
+        <!ENTITY % maxInclusive "%p;maxInclusive">
+        <!ENTITY % minInclusive "%p;minInclusive">
+        <!ENTITY % totalDigits "%p;totalDigits">
+        <!ENTITY % fractionDigits "%p;fractionDigits">
+        <!ENTITY % length "%p;length">
+        <!ENTITY % minLength "%p;minLength">
+        <!ENTITY % maxLength "%p;maxLength">
+        <!ENTITY % enumeration "%p;enumeration">
+        <!ENTITY % whiteSpace "%p;whiteSpace">
+        <!ENTITY % pattern "%p;pattern">
+
+        <!--
+                Customisation entities for the ATTLIST of each element
+                type. Define one of these if your schema takes advantage
+                of the anyAttribute='##other' in the schema for schemas
+          -->
+
+        <!ENTITY % simpleTypeAttrs "">
+        <!ENTITY % restrictionAttrs "">
+        <!ENTITY % listAttrs "">
+        <!ENTITY % unionAttrs "">
+        <!ENTITY % maxExclusiveAttrs "">
+        <!ENTITY % minExclusiveAttrs "">
+        <!ENTITY % maxInclusiveAttrs "">
+        <!ENTITY % minInclusiveAttrs "">
+        <!ENTITY % totalDigitsAttrs "">
+        <!ENTITY % fractionDigitsAttrs "">
+        <!ENTITY % lengthAttrs "">
+        <!ENTITY % minLengthAttrs "">
+        <!ENTITY % maxLengthAttrs "">
+        <!ENTITY % enumerationAttrs "">
+        <!ENTITY % whiteSpaceAttrs "">
+        <!ENTITY % patternAttrs "">
+
+        <!-- Define some entities for informative use as attribute
+                types -->
+        <!ENTITY % URIref "CDATA">
+        <!ENTITY % XPathExpr "CDATA">
+        <!ENTITY % QName "NMTOKEN">
+        <!ENTITY % QNames "NMTOKENS">
+        <!ENTITY % NCName "NMTOKEN">
+        <!ENTITY % nonNegativeInteger "NMTOKEN">
+        <!ENTITY % boolean "(true|false)">
+        <!ENTITY % simpleDerivationSet "CDATA">
+        <!--
+                #all or space-separated list drawn from derivationChoice
+          -->
+
+        <!--
+                Note that the use of 'facet' below is less restrictive
+                than is really intended:  There should in fact be no
+                more than one of each of minInclusive, minExclusive,
+                maxInclusive, maxExclusive, totalDigits, fractionDigits,
+                length, maxLength, minLength within datatype,
+                and the min- and max- variants of Inclusive and Exclusive
+                are mutually exclusive. On the other hand,  pattern and
+                enumeration may repeat.
+          -->
+        <!ENTITY % minBound "(%minInclusive; | %minExclusive;)">
+        <!ENTITY % maxBound "(%maxInclusive; | %maxExclusive;)">
+        <!ENTITY % bounds "%minBound; | %maxBound;">
+        <!ENTITY % numeric "%totalDigits; | %fractionDigits;">
+        <!ENTITY % ordered "%bounds; | %numeric;">
+        <!ENTITY % unordered
+                "%pattern; | %enumeration; | %whiteSpace; | %length; |
+   %maxLength; | %minLength;">
+        <!ENTITY % facet "%ordered; | %unordered;">
+        <!ENTITY % facetAttr
+                "value CDATA #REQUIRED
+        id ID #IMPLIED">
+        <!ENTITY % fixedAttr "fixed %boolean; #IMPLIED">
+        <!ENTITY % facetModel "(%annotation;)?">
+        <!ELEMENT %simpleType;
+                ((%annotation;)?, (%restriction; | %list; | %union;))>
+        <!ATTLIST %simpleType;
+                name      %NCName; #IMPLIED
+                final     %simpleDerivationSet; #IMPLIED
+                id        ID       #IMPLIED
+                %simpleTypeAttrs;>
+        <!-- name is required at top level -->
+        <!ELEMENT %restriction; ((%annotation;)?,
+                (%restriction1; |
+                        ((%simpleType;)?,(%facet;)*)),
+                (%attrDecls;))>
+        <!ATTLIST %restriction;
+                base      %QName;                  #IMPLIED
+                id        ID       #IMPLIED
+                %restrictionAttrs;>
+        <!--
+                base and simpleType child are mutually exclusive,
+                one is required.
+
+                restriction is shared between simpleType and
+                simpleContent and complexContent (in XMLSchema.xsd).
+                restriction1 is for the latter cases, when this
+                is restricting a complex type, as is attrDecls.
+          -->
+        <!ELEMENT %list; ((%annotation;)?,(%simpleType;)?)>
+        <!ATTLIST %list;
+                itemType      %QName;             #IMPLIED
+                id        ID       #IMPLIED
+                %listAttrs;>
+        <!--
+                itemType and simpleType child are mutually exclusive,
+                one is required
+          -->
+        <!ELEMENT %union; ((%annotation;)?,(%simpleType;)*)>
+        <!ATTLIST %union;
+                id            ID       #IMPLIED
+                memberTypes   %QNames;            #IMPLIED
+                %unionAttrs;>
+        <!--
+                At least one item in memberTypes or one simpleType
+                child is required
+          -->
+
+        <!ELEMENT %maxExclusive; %facetModel;>
+        <!ATTLIST %maxExclusive;
+                %facetAttr;
+                %fixedAttr;
+                %maxExclusiveAttrs;>
+        <!ELEMENT %minExclusive; %facetModel;>
+        <!ATTLIST %minExclusive;
+                %facetAttr;
+                %fixedAttr;
+                %minExclusiveAttrs;>
+
+        <!ELEMENT %maxInclusive; %facetModel;>
+        <!ATTLIST %maxInclusive;
+                %facetAttr;
+                %fixedAttr;
+                %maxInclusiveAttrs;>
+        <!ELEMENT %minInclusive; %facetModel;>
+        <!ATTLIST %minInclusive;
+                %facetAttr;
+                %fixedAttr;
+                %minInclusiveAttrs;>
+
+        <!ELEMENT %totalDigits; %facetModel;>
+        <!ATTLIST %totalDigits;
+                %facetAttr;
+                %fixedAttr;
+                %totalDigitsAttrs;>
+        <!ELEMENT %fractionDigits; %facetModel;>
+        <!ATTLIST %fractionDigits;
+                %facetAttr;
+                %fixedAttr;
+                %fractionDigitsAttrs;>
+
+        <!ELEMENT %length; %facetModel;>
+        <!ATTLIST %length;
+                %facetAttr;
+                %fixedAttr;
+                %lengthAttrs;>
+        <!ELEMENT %minLength; %facetModel;>
+        <!ATTLIST %minLength;
+                %facetAttr;
+                %fixedAttr;
+                %minLengthAttrs;>
+        <!ELEMENT %maxLength; %facetModel;>
+        <!ATTLIST %maxLength;
+                %facetAttr;
+                %fixedAttr;
+                %maxLengthAttrs;>
+
+        <!-- This one can be repeated -->
+        <!ELEMENT %enumeration; %facetModel;>
+        <!ATTLIST %enumeration;
+                %facetAttr;
+                %enumerationAttrs;>
+
+        <!ELEMENT %whiteSpace; %facetModel;>
+        <!ATTLIST %whiteSpace;
+                %facetAttr;
+                %fixedAttr;
+                %whiteSpaceAttrs;>
+
+        <!-- This one can be repeated -->
+        <!ELEMENT %pattern; %facetModel;>
+        <!ATTLIST %pattern;
+                %facetAttr;
+                %patternAttrs;>

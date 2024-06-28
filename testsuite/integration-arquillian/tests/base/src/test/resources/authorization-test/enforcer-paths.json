@@ -1,0 +1,20 @@
+{
+  "realm": "authz-test",
+  "resource": "resource-server-test",
+  "auth-server-url": "http://localhost:8180/auth",
+  "credentials": {
+    "secret": "secret"
+  },
+  "lazy-load-paths": true,
+  "paths": [
+    {
+      "name": "Root",
+      "path": "/*",
+      "enforcement-mode": "DISABLED"
+    },
+    {
+      "name": "Resource A",
+      "path": "/api/*"
+    }
+  ]
+}

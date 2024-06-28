@@ -1,0 +1,281 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploy an AWS Route 53 loadbalancer"
+summary="Building block for a loadbalancer"
+tileVisible="false" >
+
+This topic describes the procedure required to configure DNS based failover for Multi-AZ {project_name} clusters using AWS Route53 for an active/passive setup. These instructions are intended to be used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="bblocks-active-passive-sync"/> {section}.
+
+include::partials/blueprint-disclaimer.adoc[]
+
+== Architecture
+
+All {project_name} client requests are routed by a DNS name managed by Route53 records.
+Route53 is responsible to ensure that all client requests are routed to the Primary cluster when it is available and healthy, or to the backup cluster in the event of the primary availability-zone or {project_name} deployment failing.
+
+If the primary site fails, the DNS changes will need to propagate to the clients.
+Depending on the client's settings, the propagation may take some minutes based on the client's configuration.
+When using mobile connections, some internet providers might not respect the TTL of the DNS entries, which can lead to an extended time before the clients can connect to the new site.
+
+.AWS Route53 Failover
+image::high-availability/route53-multi-az-failover.svg[]
+
+Two Openshift Routes are exposed on both the Primary and Backup ROSA cluster.
+The first Route uses the Route53 DNS name to service client requests, whereas the second Route is used by Route53 to monitor the health of the {project_name} cluster.
+
+== Prerequisites
+
+* Deployment of {project_name} as described in <@links.ha id="deploy-keycloak-kubernetes" /> on a ROSA cluster running OpenShift 4.14 or later in two AWS availability zones in AWS one region.
+* An owned domain for client requests to be routed through.
+
+== Procedure
+
+. [[create-hosted-zone]]Create a https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html[Route53 Hosted Zone] using the root domain name through which you want all {project_name} clients to connect.
++
+Take note of the "Hosted zone ID", because this ID is required in later steps.
+
+. Retrieve the "Hosted zone ID" and DNS name associated with each ROSA cluster.
++
+For both the Primary and Backup cluster, perform the following steps:
++
+.. Log in to the ROSA cluster.
++
+.. Retrieve the cluster LoadBalancer Hosted Zone ID and DNS hostname
++
+.Command:
+[source,bash]
+----
+<#noparse>
+HOSTNAME=$(oc -n openshift-ingress get svc router-default \
+-o jsonpath='{.status.loadBalancer.ingress[].hostname}'
+)
+aws elbv2 describe-load-balancers \
+--query "LoadBalancers[?DNSName=='${HOSTNAME}'].{CanonicalHostedZoneId:CanonicalHostedZoneId,DNSName:DNSName}" \
+--region eu-west-1 \#<1>
+--output json
+</#noparse>
+----
+<1> The AWS region hosting your ROSA cluster
++
+.Output:
+[source,json]
+----
+[
+    {
+        "CanonicalHostedZoneId": "Z2IFOLAFXWLO4F",
+        "DNSName": "ad62c8d2fcffa4d54aec7ffff902c925-61f5d3e1cbdc5d42.elb.eu-west-1.amazonaws.com"
+    }
+]
+----
++
+NOTE: ROSA clusters running OpenShift 4.13 and earlier use classic load balancers instead of application load balancers. Use the `aws elb describe-load-balancers` command and an updated query string instead.
+
+. [[create-health-checks]]Create Route53 health checks
++
+.Command:
+[source,bash]
+----
+<#noparse>
+function createHealthCheck() {
+  # Creating a hash of the caller reference to allow for names longer than 64 characters
+  REF=($(echo $1 | sha1sum ))
+  aws route53 create-health-check \
+  --caller-reference "$REF" \
+  --query "HealthCheck.Id" \
+  --no-cli-pager \
+  --output text \
+  --region us-east-1 \
+  --health-check-config '
+  {
+    "Type": "HTTPS",
+    "ResourcePath": "/lb-check",
+    "FullyQualifiedDomainName": "'$1'",
+    "Port": 443,
+    "RequestInterval": 30,
+    "FailureThreshold": 1,
+    "EnableSNI": true
+  }
+  '
+}
+CLIENT_DOMAIN="client.keycloak-benchmark.com" #<1>
+PRIMARY_DOMAIN="primary.${CLIENT_DOMAIN}" #<2>
+BACKUP_DOMAIN="backup.${CLIENT_DOMAIN}" #<3>
+createHealthCheck ${PRIMARY_DOMAIN}
+createHealthCheck ${BACKUP_DOMAIN}
+</#noparse>
+----
+<1> The domain which {project_name} clients should connect to.
+This should be the same, or a subdomain, of the root domain used to create the xref:create-hosted-zone[Hosted Zone].
+<2> The subdomain that will be used for health probes on the Primary cluster
+<3> The subdomain that will be used for health probes on the Backup cluster
++
+.Output:
+[source,bash]
+----
+233e180f-f023-45a3-954e-415303f21eab #<1>
+799e2cbb-43ae-4848-9b72-0d9173f04912 #<2>
+----
+<1> The ID of the Primary Health check
+<2> The ID of the Backup Health check
++
+. Create the Route53 record set
++
+.Command:
+[source,bash]
+----
+<#noparse>
+HOSTED_ZONE_ID="Z09084361B6LKQQRCVBEY" #<1>
+PRIMARY_LB_HOSTED_ZONE_ID="Z2IFOLAFXWLO4F"
+PRIMARY_LB_DNS=ad62c8d2fcffa4d54aec7ffff902c925-61f5d3e1cbdc5d42.elb.eu-west-1.amazonaws.com
+PRIMARY_HEALTH_ID=233e180f-f023-45a3-954e-415303f21eab
+BACKUP_LB_HOSTED_ZONE_ID="Z2IFOLAFXWLO4F"
+BACKUP_LB_DNS=a184a0e02a5d44a9194e517c12c2b0ec-1203036292.elb.eu-west-1.amazonaws.com
+BACKUP_HEALTH_ID=799e2cbb-43ae-4848-9b72-0d9173f04912
+aws route53 change-resource-record-sets \
+  --hosted-zone-id Z09084361B6LKQQRCVBEY \
+  --query "ChangeInfo.Id" \
+  --region us-east-1 \
+  --output text \
+  --change-batch '
+  {
+    "Comment": "Creating Record Set for '${CLIENT_DOMAIN}'",
+  	"Changes": [{
+  		"Action": "CREATE",
+  		"ResourceRecordSet": {
+  			"Name": "'${PRIMARY_DOMAIN}'",
+  			"Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "'${PRIMARY_LB_HOSTED_ZONE_ID}'",
+          "DNSName": "'${PRIMARY_LB_DNS}'",
+          "EvaluateTargetHealth": true
+        }
+  		}
+  	}, {
+  		"Action": "CREATE",
+  		"ResourceRecordSet": {
+  			"Name": "'${BACKUP_DOMAIN}'",
+  			"Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "'${BACKUP_LB_HOSTED_ZONE_ID}'",
+          "DNSName": "'${BACKUP_LB_DNS}'",
+          "EvaluateTargetHealth": true
+        }
+  		}
+  	}, {
+  		"Action": "CREATE",
+  		"ResourceRecordSet": {
+  			"Name": "'${CLIENT_DOMAIN}'",
+  			"Type": "A",
+        "SetIdentifier": "client-failover-primary-'${SUBDOMAIN}'",
+        "Failover": "PRIMARY",
+        "HealthCheckId": "'${PRIMARY_HEALTH_ID}'",
+        "AliasTarget": {
+          "HostedZoneId": "'${HOSTED_ZONE_ID}'",
+          "DNSName": "'${PRIMARY_DOMAIN}'",
+          "EvaluateTargetHealth": true
+        }
+  		}
+  	}, {
+  		"Action": "CREATE",
+  		"ResourceRecordSet": {
+  			"Name": "'${CLIENT_DOMAIN}'",
+  			"Type": "A",
+        "SetIdentifier": "client-failover-backup-'${SUBDOMAIN}'",
+        "Failover": "SECONDARY",
+        "HealthCheckId": "'${BACKUP_HEALTH_ID}'",
+        "AliasTarget": {
+          "HostedZoneId": "'${HOSTED_ZONE_ID}'",
+          "DNSName": "'${BACKUP_DOMAIN}'",
+          "EvaluateTargetHealth": true
+        }
+  		}
+  	}]
+  }
+  '
+</#noparse>
+----
+<1> The ID of the xref:create-hosted-zone[Hosted Zone] created earlier
++
+.Output:
+[source]
+----
+/change/C053410633T95FR9WN3YI
+----
++
+. Wait for the Route53 records to be updated
++
+.Command:
+[source,bash]
+----
+aws route53 wait resource-record-sets-changed --id /change/C053410633T95FR9WN3YI --region us-east-1
+----
++
+. Update or create the {project_name} deployment
++
+For both the Primary and Backup cluster, perform the following steps:
++
+.. Log in to the ROSA cluster
++
+.. Ensure the `Keycloak` CR has the following configuration
++
+[source,yaml]
+----
+<#noparse>
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+spec:
+  hostname:
+    hostname: ${CLIENT_DOMAIN} # <1>
+</#noparse>
+----
+<1> The domain clients used to connect to {project_name}
++
+To ensure that request forwarding works, edit the {project_name} CR to specify the hostname through which clients will access the {project_name} instances.
+This hostname must be the `$CLIENT_DOMAIN` used in the Route53 configuration.
++
+.. Create health check Route
++
+.Command:
+[source,bash]
+----
+cat <<EOF | kubectl apply -n $NAMESPACE -f - #<1>
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: aws-health-route
+spec:
+  host: $DOMAIN #<2>
+  port:
+    targetPort: https
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: passthrough
+  to:
+    kind: Service
+    name: keycloak-service
+    weight: 100
+  wildcardPolicy: None
+
+EOF
+----
+<1> `$NAMESPACE` should be replaced with the namespace of your {project_name} deployment
+<2> `$DOMAIN` should be replaced with either the `PRIMARY_DOMAIN` or `BACKUP_DOMAIN`, if the current cluster is the Primary of Backup cluster, respectively.
+
+== Verify
+
+Navigate to the chosen CLIENT_DOMAIN in your local browser and log in to the {project_name} console.
+
+To test failover works as expected, log in to the Primary cluster and scale the {project_name} deployment to zero Pods.
+Scaling will cause the Primary's health checks to fail and Route53 should start routing traffic to the {project_name} Pods on the Backup cluster.
+
+== Optional: Failover Lambda
+
+To prevent a failed Primary cluster from becoming active without SRE input, follow the steps outlined in the
+guide <@links.ha id="deploy-aws-route53-failover-lambda" />
+
+</@tmpl.guide>

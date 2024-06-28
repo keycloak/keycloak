@@ -1,0 +1,48 @@
+name: Setup PNPM
+description: Sets up Node.js and runs PNPM so dependencies are installed.
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "20"
+
+  working-directory:
+    description: The working directory where the `pnpm-lock.yaml` file is located.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        check-latest: true
+
+    - name: Enable Corepack
+      shell: bash
+      run: corepack enable
+
+    - name: Get PNPM store directory
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "store-path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@v4
+      name: Setup PNPM cache
+      with:
+        # Also cache Cypress binary.
+        path: |
+          ~/.cache/Cypress
+          ${{ steps.pnpm-cache.outputs.store-path }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('${{ inputs.working-directory }}/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Install dependencies
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: pnpm install --prefer-offline --frozen-lockfile

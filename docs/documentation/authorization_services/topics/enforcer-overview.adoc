@@ -1,0 +1,29 @@
+[[_enforcer_overview]]
+= Policy enforcers
+
+Policy Enforcement Point (PEP) is a design pattern and as such you can implement it in different ways. {project_name} provides all the necessary means
+to implement PEPs for different platforms, environments, and programming languages. {project_name} Authorization Services presents a RESTful API,
+and leverages OAuth2 authorization capabilities for fine-grained authorization using a centralized authorization server.
+
+image:images/pep-pattern-diagram.png[alt="PEP overview"]
+
+A PEP is responsible for enforcing access decisions from the {project_name} server where these decisions are taken by evaluating the policies
+associated with a protected resource. It acts as a filter or interceptor in your application in order to check whether or not a particular request
+to a protected resource can be fulfilled based on the permissions granted by these decisions.
+
+{project_name} provides built-in support for enabling the *{project_name} Policy Enforcer* to Java applications with built-in support to secure JakartaEE-compliant frameworks and web containers.
+If you are using Maven, you should configure the following dependency to your project:
+
+```xml
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-policy-enforcer</artifactId>
+    <version>${keycloak.version}</version>
+</dependency>
+```
+
+When you enable the policy enforcer all requests sent to your application are intercepted and access to protected resources will be granted
+depending on the permissions granted by {project_name} to the identity making the request.
+
+Policy enforcement is strongly linked to your application's paths and the <<_resource_overview, resources>> you created for a resource server using the {project_name} Administration Console. By default,
+when you create a resource server, {project_name} creates a <<_resource_server_default_config, default configuration>> for your resource server so you can enable policy enforcement quickly.

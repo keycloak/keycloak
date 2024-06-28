@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>999.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-themes</artifactId>
+    <name>Keycloak Themes</name>
+    <description />
+    <packaging>jar</packaging>
+
+    <properties>
+        <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
+        <!-- ignore folders for incremental builds by the maven build cache plugin -->
+        <maven.build.cache.exclude.value.1>src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.value.1>
+        <maven.build.cache.exclude.value.2>src/main/resources/theme/keycloak/common/resources/vendor</maven.build.cache.exclude.value.2>
+        <maven.build.cache.exclude.value.3>src/main/resources/theme/keycloak.v2/welcome/node_modules</maven.build.cache.exclude.value.3>
+        <maven.build.cache.exclude.value.4>src/main/resources/theme/keycloak.v2/welcome/resources/vendor</maven.build.cache.exclude.value.4>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-account-ui</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/node_modules/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <configuration>
+                    <workingDirectory>src/main/resources/theme/keycloak/common/resources</workingDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>communityTranslations</id>
+            <activation>
+                <property>
+                    <name>!skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources-community</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

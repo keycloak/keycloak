@@ -1,0 +1,118 @@
+[[audience-support]]
+= Audience support
+[role="_abstract"]
+Typically, the environment where {project_name} is deployed consists of a set of _confidential_ or _public_ client applications that use {project_name} for authentication.
+
+_Services_ (_Resource Servers_ in the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-4.2[OAuth 2 specification]) are also available that serve requests from client applications and provide resources to these applications. These services require an _Access token_ (Bearer token) to be sent to them to authenticate a request. This token is obtained by the frontend application upon login to {project_name}.
+
+In the environment where trust among services is low, you may encounter this scenario:
+
+. A frontend client application requires authentication against {project_name}.
+
+. {project_name} authenticates a user. 
+
+. {project_name} issues a token to the application.
+
+. The application uses the token to invoke an untrusted service.
+
+. The untrusted service returns the response to the application. However, it keeps the applications token.
+
+. The untrusted service then invokes a trusted service using the applications token. This results in broken security as the untrusted service misuses the token to access other services on behalf of the client application.
+
+This scenario is unlikely in environments with a high level of trust between services but not in environments where trust is low. In some environments, this workflow may be correct as the untrusted service may have to retrieve data from a trusted service to return data to the original client application.
+
+An unlimited audience is useful when a high level of trust exists between services. Otherwise, the audience should be limited. You can limit the audience and, at the same time, allow untrusted services to retrieve data from trusted services. In this case, ensure that the untrusted service and the trusted service are added as audiences to the token.
+
+To prevent any misuse of the access token, limit the audience on the token and configure your services to verify the audience on the token. The flow will change as follows:
+
+. A frontend application authenticates against {project_name}.
+
+. {project_name} authenticates a user. 
+
+. {project_name} issues a token to the application. The application knows that it will need to invoke an untrusted service so it places *scope=<untrusted service>* in the authentication request sent to {project_name} (see <<_client_scopes, Client Scopes section>> for more details about the _scope_ parameter).
++
+The token issued to the application contains a reference to the untrusted service in its audience (*"audience": [ "<untrusted service>" ]*) which declares that the client uses this access token to invoke the untrusted service. 
++
+.The untrusted service serves the request to the client application but also keeps the token.
+
+. The untrusted service invokes a trusted service with the token. Invocation is not successful because the trusted service checks the audience on the token and find that its audience is only for the untrusted service. This behavior is expected and security is not broken.
+
+If the client wants to invoke the trusted service later, it must obtain another token by reissuing the SSO login with *scope=<trusted service>*. The returned token will then contain the trusted service as an audience:
+
+[source,json]
+----
+"audience": [ "<trusted service>" ]
+----
+Use this value to invoke the *<trusted service>*.
+
+== Setup
+
+When setting up audience checking:
+
+* Ensure that services are configured to check audience on the access token sent to them. This may be done in a way specific to your client OIDC adapter, which you are using to secure your OIDC client application.
+
+* Ensure that access tokens issued by {project_name} contain all necessary audiences. Audiences can be added using the client roles as described in the <<_audience_resolve, next section>> or hardcoded. See <<_audience_hardcoded, Hardcoded audience>>.
+
+[[_audience_resolve]]
+== Automatically add audience
+
+An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each client is then added as an audience, which is useful
+if your service clients rely on client roles. Service client could be usually a client without any flows enabled, which may not have any tokens issued directly to itself. It represents an OAuth 2 _Resource Server_.
+
+For example, for a service client and a confidential client,
+you can use the access token issued for the confidential client to invoke the service client REST service. The service client will be automatically added as an audience to the access token issued for the confidential client if the following are true:
+
+* The service client has any client roles defined on itself.
+
+* Target user has at least one of those client roles assigned.
+
+* Confidential client has the role scope mappings for the assigned role.
+
+[NOTE]
+====
+If you want to ensure that the audience is not added automatically, do not configure role scope mappings directly on the confidential client. Instead, you can create a dedicated client scope that contains the role scope mappings for the client roles of your dedicated client scope. 
+
+Assuming that the client scope is added as an optional client scope to the confidential client, the client roles and the audience will be added to the token if explicitly requested by the *scope=<trusted service>*  parameter.
+====
+
+[NOTE]
+====
+The frontend client itself is not automatically added to the access token audience, therefore allowing easy differentiation between the access token and the ID token, since the access token will not contain the client for which the token is issued as an audience.
+
+If you need the client itself as an audience, see the
+<<_audience_hardcoded, hardcoded audience>> option. However, using the same client as both frontend and REST service is not recommended.
+====
+
+[[_audience_hardcoded]]
+== Hardcoded audience
+
+When your service relies on realm roles or does not rely on the roles in the token at all, it can be useful to use a hardcoded audience. A hardcoded audience is a protocol mapper, that will add the client ID of the specified service client as an audience to the token.
+You can use any custom value, for example a URL, if you want to use a different audience than the client ID.
+
+You can add the protocol mapper directly to the frontend client. If the protocol mapper is added directly, the audience will always be added as well.
+
+For more control over the protocol mapper, you can create the protocol mapper on the dedicated client scope, which will be called for example *good-service*.
+
+.Audience protocol mapper
+image:images/audience_mapper.png[]
+
+* From the <<_client_installation, Client details tab>> of the *good-service* client, you can generate the adapter configuration and confirm that _verify-token-audience_  is set to *true*. This action forces the adapter to verify the audience if you use this configuration.
+
+* You need to ensure that the confidential client is able to request *good-service* as an audience in its tokens.
++
+On the confidential client:
++
+. Click the _Client Scopes_ tab.
+. Assign *good-service* as an optional (or default) client scope. 
++
+See <<_client_scopes_linking, Client Scopes Linking section>> for more details.
+
+* You can optionally <<_client_scopes_evaluate, Evaluate Client Scopes>> and generate an example access token. *good-service* will be added to the audience of the generated access token if *good-service* is included in the _scope_ parameter, when you assigned it as an optional client scope.
+
+* In your confidential client application, ensure that the _scope_ parameter is used. The value *good-service* must be included when you want to issue the token for accessing *good-service*. 
++
+See:
++
+** link:{adapterguide_link}#_javascript_adapter[javascript adapter section] if your application uses the javascript adapter.
+
+NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the audience mappers added it.

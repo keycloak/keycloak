@@ -1,0 +1,14 @@
+= Enhanced Remember Me
+
+Introduced the ability to specify different session idle and max timeouts for remember me sessions. This enables remember
+me sessions to live longer than regular sessions.
+
+= Pagination support for Groups
+
+Large numbers of groups have previously caused issues in the admin console. This is now resolved by the introduction of
+pagination of groups.
+
+= Improve startup time with large number of offline sessions
+
+In the past, starting the server could take a long time if there were many offline sessions. This startup time has now
+been significantly reduced.

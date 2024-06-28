@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2017 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="bburke@redhat.com" id="4.0.0-KEYCLOAK-6335">
+        <validCheckSum>7:d8dc5d89c789105cfa7ca0e82cba60af</validCheckSum>
+        <createTable tableName="CLIENT_AUTH_FLOW_BINDINGS">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FLOW_ID" type="VARCHAR(36)"/>
+            <column name="BINDING_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="CLIENT_ID, BINDING_NAME" constraintName="C_CLI_FLOW_BIND" tableName="CLIENT_AUTH_FLOW_BINDINGS"/>
+    </changeSet>
+    <changeSet author="bburke@redhat.com" id="4.0.0-CLEANUP-UNUSED-TABLE">
+        <validCheckSum>7:7822e0165097182e8f653c35517656a3</validCheckSum>
+        <dropTable tableName="CLIENT_IDENTITY_PROV_MAPPING"/>
+    </changeSet>
+    <changeSet author="bburke@redhat.com" id="4.0.0-KEYCLOAK-6228">
+        <validCheckSum>7:c6538c29b9c9a08f9e9ea2de5c2b6375</validCheckSum>
+        <!-- Modifying some columns so that CLIENT_ID is 255.  Drop foreign key constraints too that referenced CLIENT tablename.
+             This is needed for client storage SPI but only needed for tables that might reference a federated client -->
+
+        <!--  Modify USER_CONSENT -->
+        <dropUniqueConstraint constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT" tableName="USER_CONSENT"/>
+        <dropNotNullConstraint tableName="USER_CONSENT" columnName="CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <addColumn tableName="USER_CONSENT">
+            <column name="CLIENT_STORAGE_PROVIDER" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="EXTERNAL_CLIENT_ID" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addUniqueConstraint columnNames="CLIENT_ID, CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT" tableName="USER_CONSENT"/>
+
+        <!-- FED_USER_CONSENT -->
+        <addColumn tableName="FED_USER_CONSENT">
+            <column name="CLIENT_STORAGE_PROVIDER" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="EXTERNAL_CLIENT_ID" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <dropNotNullConstraint tableName="FED_USER_CONSENT" columnName="CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <createIndex tableName="FED_USER_CONSENT" indexName="IDX_FU_CNSNT_EXT">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="CLIENT_STORAGE_PROVIDER" type="VARCHAR(36)" />
+            <column name="EXTERNAL_CLIENT_ID" type="VARCHAR(255)" />
+        </createIndex>
+
+        <!-- Modify OFFLINE_CLIENT_SESSION -->
+        <addColumn tableName="OFFLINE_CLIENT_SESSION">
+            <column name="CLIENT_STORAGE_PROVIDER" type="VARCHAR(36)" defaultValue="local">
+                <constraints nullable="false"/>
+            </column>
+             <column name="EXTERNAL_CLIENT_ID" type="VARCHAR(255)" defaultValue="local">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="OFFLINE_CLIENT_SESSION">
+            <column name="CLIENT_STORAGE_PROVIDER" value="local"/>
+        </update>
+        <update tableName="OFFLINE_CLIENT_SESSION">
+            <column name="EXTERNAL_CLIENT_ID" value="local"/>
+        </update>
+        <dropPrimaryKey tableName="OFFLINE_CLIENT_SESSION" constraintName="CONSTRAINT_OFFL_CL_SES_PK3"/>
+        <addPrimaryKey columnNames="USER_SESSION_ID,CLIENT_ID, CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_CL_SES_PK3" tableName="OFFLINE_CLIENT_SESSION"/>
+
+     </changeSet>
+
+    <changeSet author="mposolda@redhat.com" id="4.0.0-KEYCLOAK-5579-fixed">
+        <validCheckSum>7:6d4893e36de22369cf73bcb051ded875</validCheckSum>
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="4.0.0-KEYCLOAK-5579" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-4.0.0.xml" />
+            </not>
+        </preConditions>
+
+        <!-- 1 - Rename clientTemplate to clientScope and drop some unused things from clientTemplate -->
+        <dropForeignKeyConstraint baseTableName="CLIENT_TEMPLATE_ATTRIBUTES" constraintName="FK_CL_TEMPL_ATTR_TEMPL" />
+        <renameTable oldTableName="CLIENT_TEMPLATE_ATTRIBUTES" newTableName="CLIENT_SCOPE_ATTRIBUTES" />
+        <renameColumn tableName="CLIENT_SCOPE_ATTRIBUTES" newColumnName="SCOPE_ID" oldColumnName="TEMPLATE_ID" columnDataType="VARCHAR(36)" />
+
+        <dropForeignKeyConstraint baseTableName="TEMPLATE_SCOPE_MAPPING" constraintName="FK_TEMPL_SCOPE_TEMPL" />
+        <dropForeignKeyConstraint baseTableName="TEMPLATE_SCOPE_MAPPING" constraintName="FK_TEMPL_SCOPE_ROLE" />
+        <renameTable oldTableName="TEMPLATE_SCOPE_MAPPING" newTableName="CLIENT_SCOPE_ROLE_MAPPING" />
+        <renameColumn tableName="CLIENT_SCOPE_ROLE_MAPPING" newColumnName="SCOPE_ID" oldColumnName="TEMPLATE_ID" columnDataType="VARCHAR(36)" />
+
+        <dropForeignKeyConstraint baseTableName="CLIENT" constraintName="FK_CLI_TMPLT_CLIENT" />
+
+        <dropForeignKeyConstraint baseTableName="PROTOCOL_MAPPER" constraintName="FK_CLI_TMPLT_MAPPER" />
+        <renameColumn tableName="PROTOCOL_MAPPER" newColumnName="CLIENT_SCOPE_ID" oldColumnName="CLIENT_TEMPLATE_ID" columnDataType="VARCHAR(36)" />
+
+        <dropForeignKeyConstraint baseTableName="CLIENT_TEMPLATE" constraintName="FK_REALM_CLI_TMPLT" />
+        <dropUniqueConstraint constraintName="UK_CLI_TEMPLATE" tableName="CLIENT_TEMPLATE"/>
+
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="FULL_SCOPE_ALLOWED" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="CONSENT_REQUIRED" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="STANDARD_FLOW_ENABLED" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="IMPLICIT_FLOW_ENABLED" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="DIRECT_ACCESS_GRANTS_ENABLED" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="SERVICE_ACCOUNTS_ENABLED" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="FRONTCHANNEL_LOGOUT" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="BEARER_ONLY" />
+        <dropDefaultValue tableName="CLIENT_TEMPLATE" columnName="PUBLIC_CLIENT" />
+        
+        <dropIndex tableName="CLIENT_SCOPE_ROLE_MAPPING" indexName="IDX_TEMPL_SCOPE_MAPP_ROLE" />
+        <dropIndex tableName="PROTOCOL_MAPPER" indexName="IDX_PROTO_MAPP_CLIENT_TEMPL" />
+        <dropIndex tableName="CLIENT" indexName="IDX_CLIENT_CLIENT_TEMPL_ID" />
+
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="FULL_SCOPE_ALLOWED" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="CONSENT_REQUIRED" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="STANDARD_FLOW_ENABLED" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="IMPLICIT_FLOW_ENABLED" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="DIRECT_ACCESS_GRANTS_ENABLED" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="SERVICE_ACCOUNTS_ENABLED" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="FRONTCHANNEL_LOGOUT" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="BEARER_ONLY" />
+        <dropColumn tableName="CLIENT_TEMPLATE" columnName="PUBLIC_CLIENT" />
+
+        <renameTable oldTableName="CLIENT_TEMPLATE" newTableName="CLIENT_SCOPE" />
+
+        <addUniqueConstraint columnNames="REALM_ID,NAME" constraintName="UK_CLI_SCOPE" tableName="CLIENT_SCOPE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="CLIENT_SCOPE"
+                                 constraintName="FK_REALM_CLI_SCOPE" referencedColumnNames="ID" referencedTableName="REALM"/>
+
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SCOPE_ID" baseTableName="PROTOCOL_MAPPER"
+                                 constraintName="FK_CLI_SCOPE_MAPPER" referencedColumnNames="ID" referencedTableName="CLIENT_SCOPE"/>
+
+        <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="CLIENT_SCOPE_ROLE_MAPPING"
+                                 constraintName="FK_CL_SCOPE_RM_SCOPE" referencedColumnNames="ID" referencedTableName="CLIENT_SCOPE"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="CLIENT_SCOPE_ROLE_MAPPING"
+                                 constraintName="FK_CL_SCOPE_RM_ROLE" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+
+        <addForeignKeyConstraint baseTableName="CLIENT_SCOPE_ATTRIBUTES" baseColumnNames="SCOPE_ID"
+                                 constraintName="FK_CL_SCOPE_ATTR_SCOPE" referencedTableName="CLIENT_SCOPE" referencedColumnNames="ID" />
+
+        <!-- 2 - Client binding to more clientScopes -->
+        <createTable tableName="CLIENT_SCOPE_CLIENT">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DEFAULT_SCOPE" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="CLIENT_ID, SCOPE_ID" constraintName="C_CLI_SCOPE_BIND" tableName="CLIENT_SCOPE_CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_CLIENT" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_SCOPE" referencedColumnNames="ID" referencedTableName="CLIENT_SCOPE"/>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate4_0_0_DefaultClientScopes" />
+
+        <dropColumn tableName="CLIENT" columnName="CLIENT_TEMPLATE_ID" />
+        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_CONFIG"/>
+        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_SCOPE" />
+        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_MAPPERS" />
+        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_CONFIG" />
+        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_SCOPE" />
+        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_MAPPERS" />
+
+        <!-- Default client scopes (global scopes configured at realm level) -->
+        <createTable tableName="DEFAULT_CLIENT_SCOPE">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DEFAULT_SCOPE" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="REALM_ID, SCOPE_ID" constraintName="R_DEF_CLI_SCOPE_BIND" tableName="DEFAULT_CLIENT_SCOPE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="DEFAULT_CLIENT_SCOPE" constraintName="FK_R_DEF_CLI_SCOPE_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="DEFAULT_CLIENT_SCOPE" constraintName="FK_R_DEF_CLI_SCOPE_SCOPE" referencedColumnNames="ID" referencedTableName="CLIENT_SCOPE"/>
+
+        <!-- Remove scopeParamRequired -->
+        <dropDefaultValue tableName="KEYCLOAK_ROLE" columnName="SCOPE_PARAM_REQUIRED" />
+        <dropColumn tableName="KEYCLOAK_ROLE" columnName="SCOPE_PARAM_REQUIRED" />
+
+        <!-- Drop consent stuff from protocolMappers table -->
+        <dropDefaultValue tableName="PROTOCOL_MAPPER" columnName="CONSENT_REQUIRED" />
+        <dropColumn tableName="PROTOCOL_MAPPER" columnName="CONSENT_REQUIRED" />
+        <dropColumn tableName="PROTOCOL_MAPPER" columnName="CONSENT_TEXT" />
+
+        <!-- Consents related changes -->
+        <dropForeignKeyConstraint baseTableName="USER_CONSENT_ROLE" constraintName="FK_GRNTCSNT_ROLE_GR" />
+        <dropTable tableName="USER_CONSENT_ROLE" />
+        <dropForeignKeyConstraint baseTableName="USER_CONSENT_PROT_MAPPER" constraintName="FK_GRNTCSNT_PRM_GR" />
+        <dropTable tableName="USER_CONSENT_PROT_MAPPER" />
+
+        <createTable tableName="USER_CONSENT_CLIENT_SCOPE">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, SCOPE_ID" constraintName="CONSTRAINT_GRNTCSNT_CLSC_PM" tableName="USER_CONSENT_CLIENT_SCOPE"/>
+        <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="USER_CONSENT_CLIENT_SCOPE" constraintName="FK_GRNTCSNT_CLSC_USC" referencedColumnNames="ID" referencedTableName="USER_CONSENT"/>
+
+        <!-- Federated consents related changes -->
+        <dropTable tableName="FED_USER_CONSENT_ROLE" />
+        <dropTable tableName="FED_USER_CONSENT_PROT_MAPPER" />
+
+        <createTable tableName="FED_USER_CONSENT_CL_SCOPE">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, SCOPE_ID" constraintName="CONSTRAINT_FGRNTCSNT_CLSC_PM" tableName="FED_USER_CONSENT_CL_SCOPE"/>
+
+        <!-- Indexes for foreign keys -->
+        <createIndex indexName="IDX_REALM_CLSCOPE" tableName="CLIENT_SCOPE">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CLSCOPE_PROTMAP" tableName="PROTOCOL_MAPPER">
+            <column name="CLIENT_SCOPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CLSCOPE_ROLE" tableName="CLIENT_SCOPE_ROLE_MAPPING">
+            <column name="SCOPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_ROLE_CLSCOPE" tableName="CLIENT_SCOPE_ROLE_MAPPING">
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CLSCOPE_ATTRS" tableName="CLIENT_SCOPE_ATTRIBUTES">
+            <column name="SCOPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createIndex indexName="IDX_CLSCOPE_CL" tableName="CLIENT_SCOPE_CLIENT">
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CL_CLSCOPE" tableName="CLIENT_SCOPE_CLIENT">
+            <column name="SCOPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createIndex indexName="IDX_DEFCLS_REALM" tableName="DEFAULT_CLIENT_SCOPE">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_DEFCLS_SCOPE" tableName="DEFAULT_CLIENT_SCOPE">
+            <column name="SCOPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createIndex indexName="IDX_USCONSENT_CLSCOPE" tableName="USER_CONSENT_CLIENT_SCOPE">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,14 @@
+[[_service_overview]]
+= Authorization services
+
+{project_name} Authorization Services are built on top of well-known standards such as the OAuth2 and User-Managed Access specifications.
+
+OAuth2 clients (such as front end applications) can obtain access tokens from the server using the token endpoint and use
+these same tokens to access resources protected by a resource server (such as back end services). In the same way,
+{project_name} Authorization Services provide extensions to OAuth2 to allow access tokens to be issued based on the processing
+of all policies associated with the resource(s) or scope(s) being requested. This means that resource servers can enforce access
+to their protected resources based on the permissions granted by the server and held by an access token. In {project_name} Authorization Services
+the access token with permissions is called a Requesting Party Token or RPT for short.
+
+In addition to the issuance of RPTs, {project_name} Authorization Services also provides a set of RESTful endpoints that allow resources servers to manage their protected
+resources, scopes, permissions and policies, helping developers to extend or integrate these capabilities into their applications in order to support fine-grained authorization.

@@ -1,0 +1,54 @@
+{
+  "realm": "test-realm-authz",
+  "auth-server-url": "http://localhost:8180/auth",
+  "resource": "test-app-authz",
+  "credentials": {
+    "secret": "secret"
+  },
+  "paths": [
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "POST",
+          "scopes": [
+            "create"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "GET",
+          "scopes": [
+            "view"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "PUT",
+          "scopes": [
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/v1/product/*",
+      "methods": [
+        {
+          "method": "DELETE",
+          "scopes": [
+            "delete"
+          ]
+        }
+      ]
+    }
+  ]
+}

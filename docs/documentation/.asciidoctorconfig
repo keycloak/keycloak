@@ -1,0 +1,5 @@
+:icons: font
+:idprefix:
+:idseparator: -
+ifndef::asciidoctorconfigdir[:asciidoctorconfigdir: .]
+include::{asciidoctorconfigdir}/topics/templates/document-attributes.adoc[]

@@ -1,0 +1,23 @@
+{
+  "realm": "authz-test",
+  "auth-server-url": "http://localhost:8180/auth",
+  "resource": "resource-server-test",
+  "credentials": {
+    "secret": "secret"
+  },
+  "lazy-load-paths": true,
+  "paths": [
+    {
+      "path": "/api-method/*",
+      "methods": [
+        {
+          "method": "GET",
+          "scopes": [
+            "withdrawal"
+          ],
+          "scopes-enforcement-mode": "DISABLED"
+        }
+      ]
+    }
+  ]
+}

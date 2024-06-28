@@ -1,0 +1,112 @@
+name: Bug Report
+description: Report a non-security sensitive bug in Keycloak
+labels: ["kind/bug", "status/triage"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Before reporting an issue
+      description: |
+        Please search to see if the issue is already reported, and try to reproduce the issue on the latest release.
+
+        Any reported issues must be reproducible in the [latest](https://github.com/keycloak/keycloak/releases/latest) or [nightly](https://github.com/keycloak/keycloak/releases/nightly) version of Keycloak.
+
+        **⚠️ Failing to follow these guidelines may result in your issue being closed without action. ⚠️**
+      options:
+        - label: I have read and understood the above terms for submitting issues, and I understand that my issue may be closed without action if I do not follow them.
+          required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Affected area
+      options:
+        - 
+        - account/api
+        - account/ui
+        - adapter/fuse
+        - adapter/java-cli
+        - adapter/javascript
+        - adapter/jee
+        - adapter/jee-saml
+        - adapter/spring
+        - admin/api
+        - admin/cli
+        - admin/fine-grained-permissions
+        - admin/ui
+        - admin/client-java
+        - admin/client-js
+        - authentication
+        - authentication/webauthn
+        - authorization-services
+        - ci
+        - core
+        - dependencies
+        - dist/quarkus
+        - docs
+        - identity-brokering
+        - import-export
+        - infinispan
+        - ldap
+        - login/ui
+        - oidc
+        - oid4vc
+        - operator
+        - organizations
+        - saml
+        - storage
+        - testsuite
+        - token-exchange
+        - translations
+        - user-profile
+        - welcome/ui
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: Provide a clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of Keycloak are you running?
+    validations:
+      required: true
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regression
+      description: Was the issue introduced only after upgrading Keycloak, and it worked as expected in the past?
+      options:
+        - label: The issue is a regression
+  - type: textarea
+    id: behaviorExpected
+    attributes:
+      label: Expected behavior
+      description: Describe the expected behavior clearly and concisely.
+    validations:
+      required: true
+  - type: textarea
+    id: behaviorActual
+    attributes:
+      label: Actual behavior
+      description: Describe the actual behavior clearly and concisely.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: How to Reproduce?
+      description: Provide clear and concise steps to reproduce the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else?
+      description: Links? References? Anything that will give us more context about the issue you are encountering!
+    validations:
+      required: false

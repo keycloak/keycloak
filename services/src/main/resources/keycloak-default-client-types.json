@@ -1,0 +1,236 @@
+{
+  "client-types": [
+    {
+      "name": "sla",
+      "provider": "default",
+      "config": {
+        "standardFlowEnabled": {
+          "applicable": true,
+          "value": true
+        }
+      }
+    },
+    {
+      "name": "oidc",
+      "provider": "default",
+      "config": {
+        "alwaysDisplayInConsole": {
+          "applicable": true
+        },
+        "authorizationServicesEnabled": {
+          "applicable": true
+        },
+        "consentRequired": {
+          "applicable": true
+        },
+        "directAccessGrantsEnabled": {
+          "applicable": true
+        },
+        "frontchannelLogout": {
+          "applicable": true
+        },
+        "fullScopeAllowed": {
+          "applicable": true
+        },
+        "implicitFlowEnabled": {
+          "applicable": true
+        },
+        "nodeReRegistrationTimeout": {
+          "applicable": true
+        },
+        "oauth2.device.authorization.grant.enabled": {
+          "applicable": true
+        },
+        "oidc.ciba.grant.enabled": {
+          "applicable": true
+        },
+        "protocol": {
+          "applicable": true,
+          "value": "openid-connect"
+        },
+        "publicClient": {
+          "applicable": true
+        },
+        "serviceAccountsEnabled": {
+          "applicable": true
+        },
+        "standardFlowEnabled": {
+          "applicable": true
+        }
+      }
+    },
+    {
+      "name": "service-account",
+      "provider": "default",
+      "parent": "oidc",
+      "config": {
+        "alwaysDisplayInConsole": {
+          "applicable": false
+        },
+        "authorizationServicesEnabled": {
+          "applicable": false
+        },
+        "bearerOnly": {
+          "applicable": false
+        },
+        "consentRequired": {
+          "applicable": true,
+          "value": false
+        },
+        "directAccessGrantsEnabled": {
+          "applicable": false
+        },
+        "frontchannelLogout": {
+          "applicable": false
+        },
+        "implicitFlowEnabled": {
+          "applicable": false
+        },
+        "login_theme": {
+          "applicable": false
+        },
+        "logoUri": {
+          "applicable": false
+        },
+        "oauth2.device.authorization.grant.enabled": {
+          "applicable": false
+        },
+        "oidc.ciba.grant.enabled": {
+          "applicable": false
+        },
+        "policyUri": {
+          "applicable": false
+        },
+        "publicClient": {
+          "applicable": true,
+          "value": false
+        },
+        "redirectUris": {
+          "applicable": false
+        },
+        "serviceAccountsEnabled": {
+          "applicable": true,
+          "value": true
+        },
+        "standardFlowEnabled": {
+          "applicable": false
+        },
+        "tosUri": {
+          "applicable": false
+        },
+        "webOrigins": {
+          "applicable": false
+        }
+      }
+    },
+    {
+      "name": "saml",
+      "provider": "default",
+      "config": {
+        "consentRequired": {
+          "applicable": true
+        },
+        "fullScopeAllowed": {
+          "applicable": true
+        },
+        "frontchannelLogout": {
+          "applicable": true
+        },
+        "protocol": {
+          "applicable": true,
+          "value": "saml"
+        },
+        "saml.allow.ecp.flow": {
+          "applicable": true
+        },
+        "saml.artifact.binding": {
+          "applicable": true
+        },
+        "saml.artifact.binding.identifier": {
+          "applicable": true
+        },
+        "saml_artifact_binding_url": {
+          "applicable": true
+        },
+        "saml_artifact_resolution_service_url": {
+          "applicable": true
+        },
+        "saml_assertion_consumer_url_post": {
+          "applicable": true
+        },
+        "saml_assertion_consumer_url_redirect": {
+          "applicable": true
+        },
+        "saml.assertion.lifespan": {
+          "applicable": true
+        },
+        "saml.assertion.signature": {
+          "applicable": true
+        },
+        "saml.authnstatement": {
+          "applicable": true
+        },
+        "saml.client.signature": {
+          "applicable": true
+        },
+        "saml.encrypt": {
+          "applicable": true
+        },
+        "saml.encryption.certificate": {
+          "applicable": true
+        },
+        "saml.encryption.private.key": {
+          "applicable": true
+        },
+        "saml.force.post.binding": {
+          "applicable": true
+        },
+        "saml_force_name_id_format": {
+          "applicable": true
+        },
+        "saml_idp_initiated_sso_relay_state": {
+          "applicable": true
+        },
+        "saml_idp_initiated_sso_url_name": {
+          "applicable": true
+        },
+        "saml.onetimeuse.condition": {
+          "applicable": true
+        },
+        "saml.server.signature": {
+          "applicable": true
+        },
+        "saml.server.signature.keyinfo.ext": {
+          "applicable": true
+        },
+        "saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer": {
+          "applicable": true
+        },
+        "saml.signature.algorithm": {
+          "applicable": true
+        },
+        "saml_signature_canonicalization_method": {
+          "applicable": true
+        },
+        "saml.signing.certificate": {
+          "applicable": true
+        },
+        "saml.signing.private.key": {
+          "applicable": true
+        },
+        "saml_single_logout_service_url_artifact": {
+          "applicable": true
+        },
+        "saml_single_logout_service_url_post": {
+          "applicable": true
+        },
+        "saml_single_logout_service_url_redirect": {
+          "applicable": true
+        },
+        "saml_single_logout_service_url_soap": {
+          "applicable": true
+        }
+      }
+    }
+  ]
+}

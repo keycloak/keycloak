@@ -1,0 +1,13 @@
+org.keycloak.crypto.RS256SignatureProviderFactory
+org.keycloak.crypto.RS384SignatureProviderFactory
+org.keycloak.crypto.RS512SignatureProviderFactory
+org.keycloak.crypto.HS256SignatureProviderFactory
+org.keycloak.crypto.HS384SignatureProviderFactory
+org.keycloak.crypto.HS512SignatureProviderFactory
+org.keycloak.crypto.ES256SignatureProviderFactory
+org.keycloak.crypto.ES384SignatureProviderFactory
+org.keycloak.crypto.ES512SignatureProviderFactory
+org.keycloak.crypto.PS256SignatureProviderFactory
+org.keycloak.crypto.PS384SignatureProviderFactory
+org.keycloak.crypto.PS512SignatureProviderFactory
+org.keycloak.crypto.EdDSASignatureProviderFactory

@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<domain xmlns="urn:jboss:domain:2.1">
+
+    <extensions>
+        <?EXTENSIONS?>
+    </extensions>
+
+    <system-properties>
+        <!-- IPv4 is not required, but setting this helps avoid unintended use of IPv6 -->
+        <property name="java.net.preferIPv4Stack" value="true"/>
+    </system-properties>
+
+    <management>
+        <access-control provider="simple">
+            <role-mapping>
+                <role name="SuperUser">
+                    <include>
+                        <user name="$local"/>
+                    </include>
+                </role>
+            </role-mapping>
+        </access-control>
+    </management>
+
+    <profiles>
+       <profile name="default">
+           <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+       </profile>
+    </profiles>
+
+    <!--
+         Named interfaces that can be referenced elsewhere in the configuration. The configuration
+         for how to associate these logical names with an actual network interface can either
+         be specified here or can be declared on a per-host basis in the equivalent element in host.xml.
+
+         These default configurations require the binding specification to be done in host.xml.
+    -->
+    <interfaces>
+        <interface name="management"/>
+        <interface name="public"/>
+        <interface name="unsecure"/>
+    </interfaces>
+
+    <socket-binding-groups>
+        <socket-binding-group name="standard-sockets" default-interface="public">
+            <!-- Needed for server groups using the 'default' profile  -->
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+    </socket-binding-groups>
+
+    <server-groups>
+        <server-group name="main-server-group" profile="default">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="standard-sockets"/>
+        </server-group>
+    </server-groups>
+
+</domain>

@@ -1,0 +1,29 @@
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="http://localhost:8080/sales-post-enc/saml" ID="ID_0b43d444-d1a8-44a5-8caf-38e176489e1f" InResponseTo="ID_223d3591-22fb-4b3c-9e38-4719293b2d94" IssueInstant="2016-11-01T13:52:43.054Z" Version="2.0">
+    <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">http://localhost:8081/auth/realms/saml-demo</saml:Issuer>
+    <samlp:Extensions>
+        <kckey:KeyInfo xmlns:kckey="urn:keycloak:ext:key:1.0" MessageSigningKeyId="FJ86GcF3jTbNLOco4NvZkUCIUmfYCqoqtOQeMfbhNlE"/>
+    </samlp:Extensions>
+    <samlp:Status>
+        <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+    </samlp:Status>
+    <saml:EncryptedAssertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+        <xenc:EncryptedData xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" Type="http://www.w3.org/2001/04/xmlenc#Element">
+            <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <xenc:EncryptedKey xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+                    <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
+                    <xenc:CipherData>
+                        <xenc:CipherValue>
+                            OkvZTx/ifYLef74rY0F9I8lbJaatgSEguo+zwh5JrYWcO09Ib2gtz5+z+67Is2+wk/OzKp154r8qAI5vY9AYvuXCslKL/wbcZ1UILL78F0T/iiUW3VpWy8Wvz5nezBFPRqot8WiFQykByjlBg1Z8XOts+uIdyqBBi/WjYeJGMaQ=
+                        </xenc:CipherValue>
+                    </xenc:CipherData>
+                </xenc:EncryptedKey>
+            </ds:KeyInfo>
+            <xenc:CipherData>
+                <xenc:CipherValue>
+                    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
+                </xenc:CipherValue>
+            </xenc:CipherData>
+        </xenc:EncryptedData>
+    </saml:EncryptedAssertion>
+</samlp:Response>

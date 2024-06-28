@@ -1,0 +1,17 @@
+[id="proc_updating_client_scopes_{context}"]
+
+[role="_abstract"]
+Use *Realm Default Client Scopes* to define sets of client scopes that are automatically linked to newly created clients.
+
+.Procedure
+. Click the *Client Scopes* tab for the client.
+ifeval::[{project_product}==true]
+. Click *Default Client Scopes*.
+endif::[]
+
+From here, select the client scopes that you want to add as *Default Client Scopes* to newly created clients and *Optional Client Scopes*.
+
+.Default client scopes
+image:images/client-scopes-default.png[]
+
+When a client is created, you can unlink the default client scopes, if needed. This is similar to removing <<_default_roles, Default Roles>>.

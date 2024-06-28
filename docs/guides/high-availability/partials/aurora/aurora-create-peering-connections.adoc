@@ -1,0 +1,214 @@
+. Retrieve the Aurora VPC
++
+.Command:
+[source,bash]
+----
+aws ec2 describe-vpcs \
+  --filters "Name=tag:AuroraCluster,Values=keycloak-aurora" \
+  --query 'Vpcs[*].VpcId' \
+  --region eu-west-1 \
+  --output text
+----
++
+.Output:
+[source]
+----
+vpc-0b40bd7c59dbe4277
+----
++
+. Retrieve the ROSA cluster VPC
+.. Log in to the ROSA cluster using `oc`
+.. Retrieve the ROSA VPC
++
+.Command:
+[source,bash]
+----
+NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/worker -o jsonpath='{.items[0].metadata.name}')
+aws ec2 describe-instances \
+  --filters "Name=private-dns-name,Values=${NODE}" \
+  --query 'Reservations[0].Instances[0].VpcId' \
+  --region eu-west-1 \
+  --output text
+----
++
+.Output:
+[source]
+----
+vpc-0b721449398429559
+----
++
+. Create Peering Connection
++
+.Command:
+[source,bash]
+----
+aws ec2 create-vpc-peering-connection \
+  --vpc-id vpc-0b721449398429559 \# <1>
+  --peer-vpc-id vpc-0b40bd7c59dbe4277 \# <2>
+  --peer-region eu-west-1 \
+  --region eu-west-1
+----
+<1> ROSA cluster VPC
+<2> Aurora VPC
++
+.Output:
+[source,json]
+----
+{
+    "VpcPeeringConnection": {
+        "AccepterVpcInfo": {
+            "OwnerId": "606671647913",
+            "VpcId": "vpc-0b40bd7c59dbe4277",
+            "Region": "eu-west-1"
+        },
+        "ExpirationTime": "2023-11-08T13:26:30+00:00",
+        "RequesterVpcInfo": {
+            "CidrBlock": "10.0.17.0/24",
+            "CidrBlockSet": [
+                {
+                    "CidrBlock": "10.0.17.0/24"
+                }
+            ],
+            "OwnerId": "606671647913",
+            "PeeringOptions": {
+                "AllowDnsResolutionFromRemoteVpc": false,
+                "AllowEgressFromLocalClassicLinkToRemoteVpc": false,
+                "AllowEgressFromLocalVpcToRemoteClassicLink": false
+            },
+            "VpcId": "vpc-0b721449398429559",
+            "Region": "eu-west-1"
+        },
+        "Status": {
+            "Code": "initiating-request",
+            "Message": "Initiating Request to 606671647913"
+        },
+        "Tags": [],
+        "VpcPeeringConnectionId": "pcx-0cb23d66dea3dca9f"
+    }
+}
+----
++
+. Wait for Peering connection to exist
++
+.Command:
+[source,bash]
+----
+aws ec2 wait vpc-peering-connection-exists --vpc-peering-connection-ids pcx-0cb23d66dea3dca9f
+----
++
+. Accept the peering connection
++
+.Command:
+[source,bash]
+----
+aws ec2 accept-vpc-peering-connection \
+  --vpc-peering-connection-id pcx-0cb23d66dea3dca9f \
+  --region eu-west-1
+----
++
+.Output:
+[source,json]
+----
+{
+    "VpcPeeringConnection": {
+        "AccepterVpcInfo": {
+            "CidrBlock": "192.168.0.0/16",
+            "CidrBlockSet": [
+                {
+                    "CidrBlock": "192.168.0.0/16"
+                }
+            ],
+            "OwnerId": "606671647913",
+            "PeeringOptions": {
+                "AllowDnsResolutionFromRemoteVpc": false,
+                "AllowEgressFromLocalClassicLinkToRemoteVpc": false,
+                "AllowEgressFromLocalVpcToRemoteClassicLink": false
+            },
+            "VpcId": "vpc-0b40bd7c59dbe4277",
+            "Region": "eu-west-1"
+        },
+        "RequesterVpcInfo": {
+            "CidrBlock": "10.0.17.0/24",
+            "CidrBlockSet": [
+                {
+                    "CidrBlock": "10.0.17.0/24"
+                }
+            ],
+            "OwnerId": "606671647913",
+            "PeeringOptions": {
+                "AllowDnsResolutionFromRemoteVpc": false,
+                "AllowEgressFromLocalClassicLinkToRemoteVpc": false,
+                "AllowEgressFromLocalVpcToRemoteClassicLink": false
+            },
+            "VpcId": "vpc-0b721449398429559",
+            "Region": "eu-west-1"
+        },
+        "Status": {
+            "Code": "provisioning",
+            "Message": "Provisioning"
+        },
+        "Tags": [],
+        "VpcPeeringConnectionId": "pcx-0cb23d66dea3dca9f"
+    }
+}
+----
++
+. Update ROSA cluster VPC route-table
++
+.Command:
+[source,bash]
+----
+ROSA_PUBLIC_ROUTE_TABLE_ID=$(aws ec2 describe-route-tables \
+  --filters "Name=vpc-id,Values=vpc-0b721449398429559" "Name=association.main,Values=true" \# <1>
+  --query "RouteTables[*].RouteTableId" \
+  --output text \
+  --region eu-west-1
+)
+aws ec2 create-route \
+  --route-table-id ${ROSA_PUBLIC_ROUTE_TABLE_ID} \
+  --destination-cidr-block 192.168.0.0/16 \# <2>
+  --vpc-peering-connection-id pcx-0cb23d66dea3dca9f \
+  --region eu-west-1
+----
+<1> ROSA cluster VPC
+<2> This must be the same as the cidr-block used when creating the Aurora VPC
++
+. Update the Aurora Security Group
++
+.Command:
+[source,bash]
+----
+AURORA_SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
+  --filters "Name=group-name,Values=keycloak-aurora-security-group" \
+  --query "SecurityGroups[*].GroupId" \
+  --region eu-west-1 \
+  --output text
+)
+aws ec2 authorize-security-group-ingress \
+  --group-id ${AURORA_SECURITY_GROUP_ID} \
+  --protocol tcp \
+  --port 5432 \
+  --cidr 10.0.17.0/24 \# <1>
+  --region eu-west-1
+----
+<1> The "machine_cidr" of the ROSA cluster
++
+.Output:
+[source,json]
+----
+{
+    "Return": true,
+    "SecurityGroupRules": [
+        {
+            "SecurityGroupRuleId": "sgr-0785d2f04b9cec3f5",
+            "GroupId": "sg-0d746cc8ad8d2e63b",
+            "GroupOwnerId": "606671647913",
+            "IsEgress": false,
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "CidrIpv4": "10.0.17.0/24"
+        }
+    ]
+}
+----

@@ -1,0 +1,48 @@
+{
+  "id": "test-realm-authz",
+  "realm": "test-realm-authz",
+  "enabled": true,
+  "sslRequired": "external",
+  "requiredCredentials": [ "password" ],
+  "users": [
+    {
+      "username": "service-account-test-app-authz",
+      "enabled": true,
+      "serviceAccountClientId": "test-app-authz",
+      "clientRoles": {
+        "test-app-authz" : ["uma_protection"]
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "test-app-authz",
+      "enabled": true,
+      "baseUrl": "/test-app-authz",
+      "adminUrl": "/test-app-authz",
+      "bearerOnly": false,
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "policyEnforcementMode": "ENFORCING",
+        "resources": [
+          {
+            "name": "Product Resource",
+            "uri": "/v1/product/*",
+            "scopes": [
+              {
+                "name": "view",
+                "name": "create",
+                "name": "delete",
+                "name": "update"
+              }
+            ]
+          }
+        ]
+      },
+      "redirectUris": [
+        "/test-app-authz/*"
+      ],
+      "secret": "secret"
+    }
+  ]
+}

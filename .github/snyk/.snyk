@@ -1,0 +1,38 @@
+version: v1.22.2
+ignore:
+  SNYK-JAVA-ORGKEYCLOAK-1062507:
+    - "*":
+        reason: >
+          The Keycloak core module is not affected by Open Redirect
+          Vulnerability (CVE-2020-1723), that relates to Gatekeeper, an old
+          project already decommissioned from our org. More details:
+            - https://issues.redhat.com/browse/KEYCLOAK-11318
+            - https://www.keycloak.org/2020/08/sunsetting-louketo-project.adoc
+            - https://hub.docker.com/r/keycloak/keycloak-gatekeeper
+  SNYK-JAVA-ORGKEYCLOAK-1088339:
+    - "*":
+        reason: >
+          The Keycloak services module is not affected by CVE-2021-3461 anymore,  
+          the issue was fixed on Keycloak 14.0.0 last year. More details:
+            - https://issues.redhat.com/browse/KEYCLOAK-17495
+  SNYK-JAVA-ORGKEYCLOAK-1658295:
+    - "*":
+        reason: >
+          Keycloak is no longer vulnerable. The issue was fixed on Keycloak 18.0.0
+          More details:
+            - https://github.com/keycloak/keycloak/security/advisories/GHSA-4pc7-vqv5-5r3v   
+            - https://access.redhat.com/security/cve/cve-2021-3827
+  SNYK-JAVA-ORGKEYCLOAK-1083276:
+    - "*":
+        reason: >
+          Keycloak is no longer vulnerable. The issue was fixed on Keycloak 18.0.0
+          More details:
+            - https://github.com/keycloak/keycloak/security/advisories/GHSA-mwm4-5qwr-g9pf   
+            - https://access.redhat.com/security/cve/cve-2021-3424              
+  SNYK-JAVA-ORGKEYCLOAK-2987457:
+    - "*":
+        reason: >
+          Keycloak is no longer vulnerable. The issue was fixed on Keycloak 19.0.2
+          More details:
+            - https://github.com/keycloak/keycloak/security/advisories/GHSA-wf7g-7h6h-678v   
+            - https://access.redhat.com/security/cve/CVE-2022-2668

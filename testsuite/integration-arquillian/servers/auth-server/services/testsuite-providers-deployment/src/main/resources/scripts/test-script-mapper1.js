@@ -1,0 +1,1 @@
+'hello_' + user.username;

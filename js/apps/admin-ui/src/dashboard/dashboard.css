@@ -1,0 +1,12 @@
+.keycloak__dashboard_icon {
+  max-width: 114px;
+}
+
+.keycloak__dashboard_card {
+  height: 100%;
+}
+
+.keycloak__dashboard_welcome_tab {
+  max-width: 38%;
+  margin-top: var(--pf-v5-global--spacer--md);
+}

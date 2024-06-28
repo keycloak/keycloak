@@ -1,0 +1,19 @@
+<samlp:AttributeQuery
+    xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+    xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+    ID="aaf23196-1773-2113-474a-fe114412ab72"
+    Version="2.0"
+    IssueInstant="2006-07-17T20:31:40">
+    <samlp:Extensions>
+        <kckey:KeyInfo xmlns:kckey="urn:keycloak:ext:key:1.0" MessageSigningKeyId="FJ86GcF3jTbNLOco4NvZkUCIUmfYCqoqtOQeMfbhNlE"/>
+    </samlp:Extensions>
+    <saml:Issuer Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"> 
+        https://sp/
+    </saml:Issuer>
+    <saml:Subject>
+        <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"> 
+            CN=trscavo@uiuc.edu,OU=User,O=NCSA-TEST,C=US
+        </saml:NameID>
+    </saml:Subject>
+    <saml:Attribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName"/>
+</samlp:AttributeQuery>

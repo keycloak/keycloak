@@ -1,0 +1,7 @@
+
+=== FAPI compliance
+
+To make sure that {project_name} server will validate your client to be more secure and FAPI compliant, you can configure client policies
+for the FAPI support. Details are described in the FAPI section of link:{adapterguide_link}#_fapi-support[{adapterguide_name}]. Among other things, this ensures some security best practices
+described above like SSL required for clients, secure redirect URI used and more of similar best practices.
+

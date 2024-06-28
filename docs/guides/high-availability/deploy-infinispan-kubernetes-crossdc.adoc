@@ -1,0 +1,243 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploy {jdgserver_name} for HA with the {jdgserver_name} Operator"
+summary="Building block for an {jdgserver_name} deployment on Kubernetes"
+tileVisible="false" >
+
+include::partials/infinispan/infinispan-attributes.adoc[]
+
+This {section} describes the procedures required to deploy {jdgserver_name} in a multiple-cluster environment (cross-site).
+For simplicity, this topic uses the minimum configuration possible that allows {project_name} to be used with an external {jdgserver_name}.
+
+This {section} assumes two {ocp} clusters named `{site-a}` and `{site-b}`.
+
+This is a building block following the concepts described in the <@links.ha id="concepts-active-passive-sync" /> {section}.
+See the <@links.ha id="introduction" /> {section} for an overview.
+
+
+[IMPORTANT]
+====
+Only {jdgserver_name} server versions 15.0.0 or greater are supported for external {jdgserver_name} deployments.
+====
+
+== Architecture
+
+This setup deploys two synchronously replicating {jdgserver_name} clusters in two sites with a low-latency network connection.
+An example of this scenario could be two availability zones in one AWS region.
+
+{project_name}, loadbalancer and database have been removed from the following diagram for simplicity.
+
+image::high-availability/infinispan-crossdc-az.dio.svg[]
+
+== Prerequisites
+
+include::partials/infinispan/infinispan-prerequisites.adoc[]
+
+== Procedure
+
+include::partials/infinispan/infinispan-install-operator.adoc[]
+include::partials/infinispan/infinispan-credentials.adoc[]
++
+These commands must be executed on both {ocp} clusters.
+
+. Create a service account.
++
+A service account is required to establish a connection between clusters.
+The {ispn-operator} uses it to inspect the network configuration from the remote site and to configure the local {jdgserver_name} cluster accordingly.
++
+For more details, see the {infinispan-operator-docs}#managed-cross-site-connections_cross-site[Managing Cross-Site Connections] documentation.
++
+.. Create a `service-account-token` secret type as follows.
+The same YAML file can be used in both {ocp} clusters.
++
+.xsite-sa-secret-token.yaml
+[source,yaml,subs="+attributes"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ispn-xsite-sa-token #<1>
+  annotations:
+    kubernetes.io/service-account.name: "{sa}" #<2>
+type: kubernetes.io/service-account-token
+----
+<1> The secret name.
+<2> The service account name.
+.. Create the service account and generate an access token in both {ocp} clusters.
++
+.Create the service account in `{site-a}`
+[source,bash,subs="+attributes"]
+----
+kubectl create sa -n {ns} {sa}
+oc policy add-role-to-user view -n {ns} -z {sa}
+kubectl create -f xsite-sa-secret-token.yaml
+kubectl get secrets ispn-xsite-sa-token -o jsonpath="{.data.token}" | base64 -d > {site-a}-token.txt
+----
++
+.Create the service account in `{site-b}`
+[source,bash,subs="+attributes"]
+----
+kubectl create sa -n {ns} {sa}
+oc policy add-role-to-user view -n {ns} -z {sa}
+kubectl create -f xsite-sa-secret-token.yaml
+kubectl get secrets ispn-xsite-sa-token -o jsonpath="{.data.token}" | base64 -d > {site-b}-token.txt
+----
++
+.. The next step is to deploy the token from `{site-a}` into `{site-b}` and the reverse:
++
+.Deploy `{site-b}` token into `{site-a}`
+[source,bash,subs="+attributes"]
+----
+kubectl create secret generic -n {ns} {sa-secret} \
+  --from-literal=token="$(cat {site-b}-token.txt)"
+----
++
+.Deploy `{site-a}` token into `{site-b}`
+[source,bash,subs="+attributes"]
+----
+kubectl create secret generic -n {ns} {sa-secret} \
+  --from-literal=token="$(cat {site-a}-token.txt)"
+----
+
+. Create TLS secrets
++
+In this {section}, {jdgserver_name} uses an {ocp} Route for the cross-site communication.
+It uses the SNI extension of TLS to direct the traffic to the correct Pods.
+To achieve that, JGroups use TLS sockets, which require a Keystore and Truststore with the correct certificates.
++
+For more information, see the {infinispan-operator-docs}#securing-cross-site-connections_cross-site[Securing Cross Site Connections] documentation or this https://developers.redhat.com/learn/openshift/cross-site-and-cross-applications-red-hat-openshift-and-red-hat-data-grid[Red Hat Developer Guide].
++
+Upload the Keystore and the Truststore in an {ocp} Secret.
+The secret contains the file content, the password to access it, and the type of the store.
+Instructions for creating the certificates and the stores are beyond the scope of this guide.
++
+To upload the Keystore as a Secret, use the following command:
++
+.Deploy a Keystore
+[source,bash,subs="+attributes"]
+----
+kubectl -n {ns} create secret generic {ks-secret} \
+  --from-file=keystore.p12="./certs/keystore.p12" \ # <1>
+  --from-literal=password=secret \ #<2>
+  --from-literal=type=pkcs12 #<3>
+----
+<1> The filename and the path to the Keystore.
+<2> The password to access the Keystore.
+<3> The Keystore type.
++
+To upload the Truststore as a Secret, use the following command:
++
+.Deploy a Truststore
+[source,bash,subs="+attributes"]
+----
+kubectl -n {ns} create secret generic {ts-secret} \
+        --from-file=truststore.p12="./certs/truststore.p12" \  # <1>
+        --from-literal=password=caSecret \  # <2>
+        --from-literal=type=pkcs12  # <3>
+----
+<1> The filename and the path to the Truststore.
+<2> The password to access the Truststore.
+<3> The Truststore type.
++
+NOTE: Keystore and Truststore must be uploaded in both {ocp} clusters.
+
+. Create a Cluster for {jdgserver_name} with Cross-Site enabled
++
+The {infinispan-operator-docs}#setting-up-xsite[Setting Up Cross-Site] documentation provides all the information on how to create and configure your {jdgserver_name} cluster with cross-site enabled, including the previous steps.
++
+A basic example is provided in this {section} using the credentials, tokens, and TLS Keystore/Truststore created by the commands from the previous steps.
++
+--
+.The `Infinispan` CR for `{site-a}`
+[source,yaml]
+----
+include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
+----
+<1> The cluster name
+<2> Allows the cluster to be monitored by Prometheus.
+<3> If using a custom credential, configure here the secret name.
+<4> The name of the local site, in this case `{site-a}`.
+<5> Exposing the cross-site connection using {ocp} Route.
+<6> The secret name where the Keystore exists as defined in the previous step.
+<7> The alias of the certificate inside the Keystore.
+<8> The secret key (filename) of the Keystore as defined in the previous step.
+<9> The secret name where the Truststore exists as defined in the previous step.
+<10> The Truststore key (filename) of the Keystore as defined in the previous step.
+<11> The remote site's name, in this case  `{site-b}`.
+<12> The namespace of the {jdgserver_name} cluster from the remote site.
+<13> The {ocp} API URL for the remote site.
+<14> The secret with the access token to authenticate into the remote site.
+--
++
+When using persistent sessions, limit the cache size limit for `sessions`, `offlineSessions`, `clientSessions`, and `offlineClientSessions` by extending the configuration as follows:
+
+[source,yaml]
+----
+distributedCache:
+  owners: "1"
+  memory:
+    maxCount: 10000
+  # ...
+----
++
+For `{site-b}`, the `Infinispan` CR looks similar to the above.
+Note the differences in point 4, 11 and 13.
++
+.The `Infinispan` CR for `{site-b}`
+[source,yaml]
+----
+include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
+----
+
+. Creating the caches for {project_name}.
++
+{project_name} requires the following caches to be present: `sessions`, `actionTokens`, `authenticationSessions`, `offlineSessions`, `clientSessions`, `offlineClientSessions`, `loginFailures`, and `work`.
++
+The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
+Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
+The documentation contains more details about the options used by this {section}.
+The following example shows the `Cache` CR for `{site-a}`.
++
+--
+.sessions in `{site-a}`
+[source,yaml]
+----
+include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-sessions]
+----
+<1> The cross-site merge policy, invoked when there is a write-write conflict.
+Set this for the caches `sessions`, `authenticationSessions`, `offlineSessions`, `clientSessions` and `offlineClientSessions`, and do not set it for all other caches.
+<2> The remote site name.
+<3> The cross-site communication, in this case, `SYNC`.
+--
++
+For `{site-b}`, the `Cache` CR is similar except in point 2.
++
+.session in `{site-b}`
+[source,yaml]
+----
+include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-sessions]
+----
+
+== Verifying the deployment
+
+Confirm that the {jdgserver_name} cluster is formed, and the cross-site connection is established between the {ocp} clusters.
+
+.Wait until the {jdgserver_name} cluster is formed
+[source,bash,subs="+attributes"]
+----
+kubectl wait --for condition=WellFormed --timeout=300s infinispans.infinispan.org -n {ns} {cluster-name}
+----
+
+.Wait until the {jdgserver_name} cross-site connection is established
+[source,bash,subs="+attributes"]
+----
+kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infinispan.org -n {ns} {cluster-name}
+----
+
+== Next steps
+
+After {jdgserver_name} is deployed and running, use the procedure in the <@links.ha id="connect-keycloak-to-external-infinispan"/> {section} to connect your {project_name} cluster with the {jdgserver_name} cluster.
+
+</@tmpl.guide>

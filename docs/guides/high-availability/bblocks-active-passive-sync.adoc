@@ -1,0 +1,72 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Building blocks active-passive deployments"
+summary="Overview of building blocks, alternatives and not considered options" >
+
+The following building blocks are needed to set up an active-passive deployment with synchronous replication.
+
+The building blocks link to a blueprint with an example configuration.
+They are listed in the order in which they need to be installed.
+
+include::partials/blueprint-disclaimer.adoc[]
+
+== Prerequisites
+
+* Understanding the concepts laid out in the <@links.ha id="concepts-active-passive-sync"/> {section}.
+
+== Two sites with low-latency connection
+
+Ensures that synchronous replication is available for both the database and the external {jdgserver_name}.
+
+*Suggested setup:* Two AWS Availability Zones within the same AWS Region.
+
+*Not considered:* Two regions on the same or different continents, as it would increase the latency and the likelihood of network failures.
+Synchronous replication of databases as a services with Aurora Regional Deployments on AWS is only available within the same region.
+
+== Environment for {project_name} and {jdgserver_name}
+
+Ensures that the instances are deployed and restarted as needed.
+
+*Suggested setup:* Red Hat OpenShift Service on AWS (ROSA) deployed in each availability zone.
+
+*Not considered:* A stretched ROSA cluster which spans multiple availability zones, as this could be a single point of failure if misconfigured.
+
+== Database
+
+A synchronously replicated database across two sites.
+
+*Blueprint:* <@links.ha id="deploy-aurora-multi-az"/>.
+
+== {jdgserver_name}
+
+A deployment of {jdgserver_name} that leverages the {jdgserver_name}'s Cross-DC functionality.
+
+*Blueprint:* <@links.ha id="deploy-infinispan-kubernetes-crossdc" /> using the {jdgserver_name} Operator, and connect the two sites using {jdgserver_name}'s Gossip Router.
+
+*Not considered:* Direct interconnections between the Kubernetes clusters on the network layer.
+It might be considered in the future.
+
+[IMPORTANT]
+====
+Only {jdgserver_name} server versions 15.0.0 or greater are supported in Active/Passive deployments.
+====
+
+== {project_name}
+
+A clustered deployment of {project_name} in each site, connected to an external {jdgserver_name}.
+
+*Blueprint:* <@links.ha id="deploy-keycloak-kubernetes" /> together with <@links.ha id="connect-keycloak-to-external-infinispan"/> and the Aurora database.
+
+</@tmpl.guide>
+
+== Load balancer
+
+A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site.
+
+*Blueprint:* <@links.ha id="deploy-aws-route53-loadbalancer"/>, optionally enhanced with <@links.ha id="deploy-aws-route53-failover-lambda"/>
+
+*Not considered:* AWS Global Accelerator as it supports only weighted traffic routing and not active-passive failover.
+To support active-passive failover, additional logic using, for example, AWS CloudWatch and AWS Lambda would be necessary to simulate the active-passive handling by adjusting the weights when the probes fail.
+

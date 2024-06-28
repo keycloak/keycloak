@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="bburke@redhat.com" id="1.7.0">
+        <validCheckSum>7:91ace540896df890cc00a0490ee52bbc</validCheckSum>
+        <createTable tableName="KEYCLOAK_GROUP">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="PARENT_GROUP" type="VARCHAR(36)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="GROUP_ROLE_MAPPING">
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="GROUP_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="GROUP_ATTRIBUTE">
+            <column name="ID" type="VARCHAR(36)" defaultValue="sybase-needs-something-here">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="GROUP_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_GROUP_MEMBERSHIP">
+            <column name="GROUP_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REALM_DEFAULT_GROUPS">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="GROUP_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="FIRST_BROKER_LOGIN_FLOW_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="REALM">
+            <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LGN_MD" />
+        <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LGN_MD"/>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_GROUP" tableName="KEYCLOAK_GROUP"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="KEYCLOAK_GROUP" constraintName="FK_GROUP_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_GROUP_ATTRIBUTE_PK" tableName="GROUP_ATTRIBUTE"/>
+        <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="GROUP_ATTRIBUTE" constraintName="FK_GROUP_ATTRIBUTE_GROUP" referencedColumnNames="ID" referencedTableName="KEYCLOAK_GROUP"/>
+
+        <addPrimaryKey columnNames="GROUP_ID, USER_ID" constraintName="CONSTRAINT_USER_GROUP" tableName="USER_GROUP_MEMBERSHIP"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_GROUP_MEMBERSHIP" constraintName="FK_USER_GROUP_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+
+        <addPrimaryKey columnNames="ROLE_ID, GROUP_ID" constraintName="CONSTRAINT_GROUP_ROLE" tableName="GROUP_ROLE_MAPPING"/>
+        <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="GROUP_ROLE_MAPPING" constraintName="FK_GROUP_ROLE_GROUP" referencedColumnNames="ID" referencedTableName="KEYCLOAK_GROUP"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="GROUP_ROLE_MAPPING" constraintName="FK_GROUP_ROLE_ROLE" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+
+        <addUniqueConstraint columnNames="GROUP_ID" constraintName="CON_GROUP_ID_DEF_GROUPS" tableName="REALM_DEFAULT_GROUPS"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_GROUP" referencedColumnNames="ID" referencedTableName="KEYCLOAK_GROUP"/>
+
+        <addColumn tableName="CLIENT">
+            <column name="REGISTRATION_TOKEN" type="VARCHAR(255)"/>
+            <column name="STANDARD_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="IMPLICIT_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DIRECT_ACCESS_GRANTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <update tableName="CLIENT">
+            <column name="STANDARD_FLOW_ENABLED" valueBoolean="false"/>
+            <column name="DIRECT_ACCESS_GRANTS_ENABLED" valueBoolean="true"/>
+            <where>DIRECT_GRANTS_ONLY = :value</where>
+            <whereParams>
+                <param valueBoolean="true" />
+            </whereParams>
+        </update>
+
+        <dropDefaultValue tableName="CLIENT" columnName="DIRECT_GRANTS_ONLY" />
+        <dropColumn tableName="CLIENT" columnName="DIRECT_GRANTS_ONLY"/>
+
+        <modifyDataType tableName="REALM" columnName="PASSWORD_POLICY" newDataType="VARCHAR(2550)"/>
+
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
+        </modifySql>
+
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="mposolda@redhat.com" id="1.6.1_from15">
+        <validCheckSum>7:7e32c8f05c755e8675764e7d5f514509</validCheckSum>
+
+        <preConditions onFail="MARK_RAN" onFailMessage="Upgrading from 1.6.0 version. Skipped 1.6.1_from15 changeSet and marked as ran" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="1.6.0" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-1.6.0.xml" />
+            </not>
+        </preConditions>
+
+        <addColumn tableName="REALM">
+            <column name="OFFLINE_SESSION_IDLE_TIMEOUT" type="INT" defaultValueNumeric="0"/>
+            <column name="REVOKE_REFRESH_TOKEN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="KEYCLOAK_ROLE">
+            <column name="SCOPE_PARAM_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="CLIENT">
+            <column name="ROOT_URL" type="VARCHAR(255)"/>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+        </addColumn>
+
+        <createTable tableName="OFFLINE_USER_SESSION">
+            <column name="USER_SESSION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LAST_SESSION_REFRESH" type="INT"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DATA" type="CLOB"/>
+        </createTable>
+
+        <createTable tableName="OFFLINE_CLIENT_SESSION">
+            <column name="CLIENT_SESSION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TIMESTAMP" type="INT"/>
+            <column name="DATA" type="CLOB"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="USER_SESSION_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_US_SES_PK2" tableName="OFFLINE_USER_SESSION"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_CL_SES_PK2" tableName="OFFLINE_CLIENT_SESSION"/>
+    </changeSet>
+
+    <!-- KEYCLOAK-2404 - just for the update from 1.6.0 BUT not 1.6.1 or newer -->
+    <changeSet author="mposolda@redhat.com" id="1.6.1_from16-pre">
+        <validCheckSum>7:980ba23cc0ec39cab731ce903dd01291</validCheckSum>
+
+        <preConditions onFail="MARK_RAN" onFailMessage="Skipped 1.6.1_from16-pre changeSet and marked as ran" onSqlOutput="TEST">
+            <and>
+                <changeSetExecuted id="1.6.0" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-1.6.0.xml" />
+                <not>
+                    <changeSetExecuted id="1.6.1" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-1.6.1.xml"/>
+                </not>
+            </and>
+        </preConditions>
+
+        <delete tableName="OFFLINE_CLIENT_SESSION"/>
+        <delete tableName="OFFLINE_USER_SESSION"/>
+    
+    </changeSet>
+
+    <!-- Just for the update from 1.6.0 -->
+    <changeSet author="mposolda@redhat.com" id="1.6.1_from16">
+        <validCheckSum>7:2fa220758991285312eb84f3b4ff5336</validCheckSum>
+
+        <preConditions onFail="MARK_RAN" onFailMessage="Upgrading from 1.5.0 or older version. Skipped 1.6.1_from16 changeSet and marked as ran" onSqlOutput="TEST">
+            <changeSetExecuted id="1.6.0" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-1.6.0.xml" />
+        </preConditions>
+
+        <dropPrimaryKey constraintName="CONSTRAINT_OFFLINE_US_SES_PK" tableName="OFFLINE_USER_SESSION" />
+        <dropPrimaryKey constraintName="CONSTRAINT_OFFLINE_CL_SES_PK" tableName="OFFLINE_CLIENT_SESSION" />
+
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="OFFLINE_USER_SESSION">
+            <column name="OFFLINE_FLAG" value="1"/>
+        </update>
+        <dropColumn tableName="OFFLINE_USER_SESSION" columnName="OFFLINE" />
+
+        <addColumn tableName="OFFLINE_CLIENT_SESSION">
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="OFFLINE_CLIENT_SESSION">
+            <column name="OFFLINE_FLAG" value="1"/>
+        </update>
+        <dropColumn tableName="OFFLINE_CLIENT_SESSION" columnName="OFFLINE" />
+
+        <addPrimaryKey columnNames="USER_SESSION_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_US_SES_PK2" tableName="OFFLINE_USER_SESSION"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_CL_SES_PK2" tableName="OFFLINE_CLIENT_SESSION"/>
+
+    </changeSet>
+
+    <changeSet author="mposolda@redhat.com" id="1.6.1">
+        <validCheckSum>7:d41d8cd98f00b204e9800998ecf8427e</validCheckSum>
+    </changeSet>
+
+</databaseChangeLog>

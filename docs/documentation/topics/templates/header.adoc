@@ -1,0 +1,3 @@
+[sidebar,role="page-links"]
+link:https://github.com/keycloak/keycloak/tree/main/docs/documentation/{include_filename}[Edit this section, window="_blank"]
+link:https://github.com/keycloak/keycloak/issues/new?template=bug.yml&title=Docs:%20{include_filename}&description=%0A%0AFile:%20{include_filename}&version={project_version}&behaviorExpected=%3C!--%20describe%20what%20you%20want%20to%20see%20in%20the%20docs%20--%3E&behaviorActual=%3C!--%20describe%20what%20is%20currently%20wrong%20or%20missing%20in%20the%20docs%20--%3E&reproducer=%3C!--%20list%20steps%20in%20the%20application%20that%20show%20behavior%20that%20should%20be%20documented%20--%3E[Report an issue, window="_blank"]

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+     <changeSet author="bburke@redhat.com" id="2.5.0">
+         <validCheckSum>7:57e98a3077e29caf562f7dbf80c72600</validCheckSum>
+         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
+
+         <modifyDataType tableName="OFFLINE_USER_SESSION" columnName="USER_ID" newDataType="VARCHAR(255)"/>
+     </changeSet>
+
+    <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-oracle">
+        <validCheckSum>7:e4c7e8f2256210aee71ddc42f538b57a</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="oracle" />
+        </preConditions>
+
+        <modifyDataType tableName="AUTHENTICATION_FLOW" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="CLIENT_TEMPLATE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+
+        <modifyDataType tableName="CLIENT" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="CLIENT" columnName="NAME" newDataType="NVARCHAR(255)"/>
+
+        <modifyDataType tableName="USER_ENTITY" columnName="FIRST_NAME" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="USER_ENTITY" columnName="LAST_NAME" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="USER_ENTITY" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
+
+        <modifyDataType tableName="USERNAME_LOGIN_FAILURE" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
+
+        <modifyDataType tableName="KEYCLOAK_GROUP" columnName="NAME" newDataType="NVARCHAR(255)"/>
+
+        <modifyDataType tableName="USER_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="GROUP_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="REALM_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
+        <addColumn tableName="COMPONENT_CONFIG">
+            <column name="VALUE_NEW" type="NCLOB" />
+        </addColumn>
+        <sql>UPDATE COMPONENT_CONFIG SET VALUE_NEW = VALUE, VALUE = NULL</sql>
+        <dropColumn tableName="COMPONENT_CONFIG" columnName="VALUE"/>
+        <renameColumn tableName="COMPONENT_CONFIG" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
+<!--
+        <modifyDataType tableName="COMPONENT_CONFIG" columnName="VALUE" newDataType="NVARCHAR(2000)"/>
+-->
+
+        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+    </changeSet>
+
+    <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-other-dbs">
+        <validCheckSum>7:09a43c97e49bc626460480aa1379b522</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <dbms type="oracle" />
+            </not>
+        </preConditions>
+
+        <modifyDataType tableName="AUTHENTICATION_FLOW" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="CLIENT_TEMPLATE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+
+        <modifyDataType tableName="CLIENT" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="CLIENT" columnName="NAME" newDataType="NVARCHAR(255)"/>
+
+        <dropUniqueConstraint constraintName="UK_RU8TT6T700S9V50BU18WS5HA6" tableName="USER_ENTITY"/>
+        <modifyDataType tableName="USER_ENTITY" columnName="FIRST_NAME" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="USER_ENTITY" columnName="LAST_NAME" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="USER_ENTITY" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
+        <addUniqueConstraint columnNames="REALM_ID,USERNAME" constraintName="UK_RU8TT6T700S9V50BU18WS5HA6" tableName="USER_ENTITY"/>
+
+        <dropPrimaryKey constraintName="CONSTRAINT_17" tableName="USERNAME_LOGIN_FAILURE"/>
+        <modifyDataType tableName="USERNAME_LOGIN_FAILURE" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
+        <addNotNullConstraint tableName="USERNAME_LOGIN_FAILURE" columnName="USERNAME" columnDataType="NVARCHAR(255)"/>
+        <addPrimaryKey columnNames="REALM_ID, USERNAME" constraintName="CONSTRAINT_17-2" tableName="USERNAME_LOGIN_FAILURE"/>
+
+        <modifyDataType tableName="KEYCLOAK_GROUP" columnName="NAME" newDataType="NVARCHAR(255)"/>
+
+        <modifyDataType tableName="USER_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="GROUP_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="REALM_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
+        <modifyDataType tableName="COMPONENT_CONFIG" columnName="VALUE" newDataType="NVARCHAR(4000)"/>
+
+        <dropUniqueConstraint constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
+        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
+        <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
+        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+    </changeSet>
+    
+    <changeSet author="slawomir@dabek.name" id="2.5.0-duplicate-email-support">
+        <validCheckSum>7:26bfc7c74fefa9126f2ce702fb775553</validCheckSum>
+        <addColumn tableName="REALM">
+            <column name="LOGIN_WITH_EMAIL_ALLOWED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DUPLICATE_EMAILS_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="hmlnarik@redhat.com" id="2.5.0-unique-group-names">
+        <validCheckSum>7:a161e2ae671a9020fff61e996a207377</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <dbms type="db2" /> <!-- exclude DB2 as it requires all fields to be non-NULL for unique constraints -->
+            </not>
+        </preConditions>
+         <addUniqueConstraint columnNames="REALM_ID,PARENT_GROUP,NAME" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
+    </changeSet>
+
+</databaseChangeLog>

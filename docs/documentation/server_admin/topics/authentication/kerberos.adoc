@@ -1,0 +1,214 @@
+
+[[_kerberos]]
+
+=== Kerberos
+
+{project_name} supports login with a Kerberos ticket through the Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO) protocol. SPNEGO authenticates transparently through the web browser after the user authenticates the session. For non-web cases, or when a ticket is not available during login, {project_name} supports login with Kerberos username and password.
+
+A typical use case for web authentication is the following:
+
+. The user logs into the desktop.
+. The user accesses a web application secured by {project_name} using a browser.
+. The application redirects to {project_name} login.
+. {project_name} renders the HTML login screen with status 401 and HTTP header `WWW-Authenticate: Negotiate`
+. If the browser has a Kerberos ticket from desktop login, the browser transfers the desktop sign-on information to {project_name} in header `Authorization: Negotiate 'spnego-token'`. Otherwise, it displays the standard login screen, and the user enters the login credentials.
+. {project_name} validates the token from the browser and authenticates the user.
+. If using LDAPFederationProvider with Kerberos authentication support, {project_name} provisions user data from LDAP. If using KerberosFederationProvider, {project_name} lets the user update the profile and pre-fill  login data.
+. {project_name} returns to the application. {project_name} and the application communicate through OpenID Connect or SAML messages. {project_name} acts as a broker to Kerberos/SPNEGO login. Therefore {project_name} authenticating through Kerberos is hidden from the application.
+
+[WARNING]
+====
+The https://www.ietf.org/rfc/rfc4559.txt[Negotiate] www-authenticate scheme allows NTLM as a fallback to Kerberos and on some web browsers in Windows NTLM is supported by default.  If a www-authenticate challenge comes from a server outside a browsers permitted list, users may encounter an NTLM dialog prompt.  A user would need to click the cancel button on the dialog to continue as {project_name} does not support this mechanism.  This situation can happen if Intranet web browsers are not strictly configured or if {project_name} serves users in both the Intranet and Internet.  A https://github.com/keycloak/keycloak/issues/8989[custom authenticator] can be used to restrict Negotiate challenges to a whitelist of hosts.
+====
+
+Perform the following steps to set up Kerberos authentication:
+
+. The setup and configuration of the Kerberos server (KDC).
+. The setup and configuration of the {project_name} server.
+. The setup and configuration of the client machines.
+
+==== Setup of Kerberos server
+
+The steps to set up a Kerberos server depends on the operating system (OS) and the Kerberos vendor. Consult Windows Active Directory, MIT Kerberos, and your OS documentation for instructions on setting up and configuring a Kerberos server.
+
+During setup, perform these steps:
+
+. Add some user principals to your Kerberos database.
+You can also integrate your Kerberos with LDAP, so user accounts provision from the LDAP server.
+. Add service principal for "HTTP" service.
+For example, if the {project_name} server runs on `www.mydomain.org`, add the service principal `HTTP/www.mydomain.org@<kerberos realm>`.
++
+On MIT Kerberos, you run a "kadmin" session. On a machine with MIT Kerberos, you can use the command:
+
+[source]
+----
+sudo kadmin.local
+----
+Then, add HTTP principal and export its key to a keytab file with commands such as:
+
+[source]
+----
+addprinc -randkey HTTP/www.mydomain.org@MYDOMAIN.ORG
+ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
+----
+
+Ensure the keytab file `/tmp/http.keytab` is accessible on the host where {project_name} is running.
+
+==== Setup and configuration of {project_name} server
+
+[[_server_setup]]
+
+Install a Kerberos client on your machine.
+
+.Procedure
+. Install a Kerberos client. If your machine runs Fedora, Ubuntu, or RHEL, install the link:https://www.freeipa.org/page/Downloads[freeipa-client] package, containing a Kerberos client and other utilities.
+. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.21/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
++
+Add your Kerberos realm to the configuration and configure the HTTP domains your server runs on.
++
+For example, for the MYDOMAIN.ORG realm, you can configure the `domain_realm` section like this:
++
+[source]
+----
+[domain_realm]
+  .mydomain.org = MYDOMAIN.ORG
+  mydomain.org = MYDOMAIN.ORG
+----
+
+. Export the keytab file with the HTTP principal and ensure the file is accessible to the process running the {project_name} server. For production, ensure that the file is readable by this process only.
++
+For the MIT Kerberos example above, we exported keytab to the `/tmp/http.keytab` file. If your _Key Distribution Centre (KDC)_ and {project_name} run on the same host, the file is already available.
+
+===== Enabling SPNEGO processing
+
+By default, {project_name} disables SPNEGO protocol support. To enable it, go to the <<_authentication-flows, browser flow>> and enable *Kerberos*.
+
+.Browser flow
+image:images/browser-flow.png[Browser Flow]
+
+Set the *Kerberos* requirement from _disabled_ to _alternative_ (Kerberos is optional) or _required_ (browser must have Kerberos enabled). If you have not configured the browser to work with SPNEGO or Kerberos, {project_name} falls back to the regular login screen.
+
+===== Configure Kerberos user storage federation providers
+
+You must now use <<_user-storage-federation,User Storage Federation>> to configure how {project_name} interprets Kerberos tickets. Two different federation providers exist with Kerberos authentication support.
+
+To authenticate with Kerberos backed by an LDAP server, configure the <<_ldap, LDAP Federation Provider>>.
+
+.Procedure
+. Go to the configuration page for your LDAP provider.
++
+.Ldap kerberos integration
+image:images/ldap-kerberos.png[LDAP Kerberos Integration]
++
+. Toggle *Allow Kerberos authentication* to *ON*
+
+*Allow Kerberos authentication* makes {project_name} use the Kerberos principal access user information so information can import into the {project_name} environment.
+
+If an LDAP server is not backing up your Kerberos solution, use the *Kerberos* User Storage Federation Provider.
+
+.Procedure
+. Click *User Federation* in the menu.
+. Select *Kerberos* from the *Add provider* select box.
++
+.Kerberos user storage provider
+image:images/kerberos-provider.png[Kerberos User Storage Provider]
+
+The *Kerberos* provider parses the Kerberos ticket for simple principal information and imports the information into the local {project_name} database.
+User profile information, such as first name, last name, and email, are not provisioned.
+
+==== Setup and configuration of client machines
+
+Client machines must have a Kerberos client and set up the `krb5.conf` as described <<_server_setup, above>>. The client machines must also enable SPNEGO login support in their browser. See link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[configuring Firefox for Kerberos] if you are using the Firefox browser.
+
+The `.mydomain.org` URI must be in the `network.negotiate-auth.trusted-uris` configuration option.
+
+In Windows domains, clients do not need to adjust their configuration. Internet Explorer and Edge can already participate in SPNEGO authentication.
+
+ifeval::[{project_community}==true]
+==== Example setups
+
+===== {Project_name} and FreeIPA docker image
+
+When you install https://www.docker.com/[docker], run a docker image with the FreeIPA server installed. FreeIPA provides an integrated security solution with MIT Kerberos and 389 LDAP server. The image also contains a {project_name} server configured with an LDAP Federation provider and enabled SPNEGO/Kerberos authentication against the FreeIPA server. See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/README.md[here].
+
+===== ApacheDS testing Kerberos server
+
+For quick testing and unit tests, use a simple https://directory.apache.org/apacheds/[ApacheDS] Kerberos server. You must build {project_name} from the source and then run the Kerberos server with the maven-exec-plugin from our test suite. See details
+https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server[here].
+endif::[]
+
+==== Credential delegation
+
+Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can reuse it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
+
+Applications must deserialize the claim it receives from {project_name} before using it to make GSS calls against other services. When you deserialize the credential from the access token to the GSSCredential object, create the GSSContext with this credential passed to the `GSSManager.createContext` method. For example:
+
+[source,java]
+----
+// Obtain accessToken in your application.
+KeycloakPrincipal keycloakPrincipal = (KeycloakPrincipal) servletReq.getUserPrincipal();
+AccessToken accessToken = keycloakPrincipal.getKeycloakSecurityContext().getToken();
+
+// Retrieve Kerberos credential from accessToken and deserialize it
+String serializedGssCredential = (String) accessToken.getOtherClaims().
+    get(org.keycloak.common.constants.KerberosConstants.GSS_DELEGATION_CREDENTIAL);
+
+GSSCredential deserializedGssCredential = org.keycloak.common.util.KerberosSerializationUtils.
+    deserializeCredential(serializedGssCredential);
+
+// Create GSSContext to call other Kerberos-secured services
+GSSContext context = gssManager.createContext(serviceName, krb5Oid,
+    deserializedGssCredential, GSSContext.DEFAULT_LIFETIME);
+----
+
+[NOTE]
+====
+Configure `forwardable` Kerberos tickets in `krb5.conf` file and add support for delegated credentials to your browser.
+====
+
+[WARNING]
+====
+Credential delegation has security implications, so use it only if necessary and only with HTTPS. See https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[this article] for more details and an example.
+====
+
+==== Cross-realm trust
+
+In the Kerberos protocol, the `realm` is a set of Kerberos principals. The definition of these principals exists in the Kerberos database, which is typically an LDAP server.
+
+The Kerberos protocol allows cross-realm trust. For example, if 2 Kerberos realms, A and B, exist, then cross-realm trust will allow the users from realm A to access realm B's resources. Realm B trusts realm A.
+
+.Kerberos cross-realm trust
+image:images/kerberos-trust-basic.png[]
+
+The {project_name} server supports cross-realm trust. To implement this, perform the following:
+
+* Configure the Kerberos servers for the cross-realm trust. Implementing this step depends on the Kerberos server implementations. This step is necessary to add the Kerberos principal `krbtgt/B@A` to the Kerberos databases of realm A and B. This principal must have the same keys on both Kerberos realms. The principals must have the same password, key version numbers, and ciphers in both realms. Consult the Kerberos server documentation for more details.
+
+[NOTE]
+====
+The cross-realm trust is unidirectional by default. You must add the principal `krbtgt/A@B` to both Kerberos databases for bidirectional trust between realm A and realm B. However, trust is transitive by default. If realm B trusts realm A and realm C trusts realm B, then realm C trusts realm A without the principal, `krbtgt/C@A`, available. Additional configuration (for example, `capaths`) may be necessary on the Kerberos client-side so clients can find the trust path. Consult the Kerberos documentation for more details.
+====
+
+* Configure {project_name} server
+
+** When using an LDAP storage provider with Kerberos support, configure the server principal for realm B, as in this example: `HTTP/mydomain.com@B`. The LDAP server must find the users from realm A if users from realm A are to successfully authenticate to {project_name}, because {project_name} must perform the SPNEGO flow and then find the users.
+
+Finding users is based on the LDAP storage provider option `Kerberos principal attribute`. When this is configured for instance with value like `userPrincipalName`, then
+after SPNEGO authentication of user `john@A`, {project_name} will try to lookup LDAP user with attribute `userPrincipalName` equivalent to `john@A`. If `Kerberos principal attribute` is left
+empty, then {project_name} will lookup the LDAP user based on the prefix of his kerberos principal with the realm omitted.
+For example, Kerberos principal user `john@A` must be available in the LDAP under username `john`, so typically under an LDAP DN such as `uid=john,ou=People,dc=example,dc=com`. If you want users from realm A and B to authenticate, ensure that LDAP can find users from both realms A and B.
+
+** When using a Kerberos user storage provider (typically, Kerberos without LDAP integration), configure the server principal as `HTTP/mydomain.com@B`, and users from Kerberos realms A and B must be able to authenticate.
+
+Users from multiple Kerberos realms are allowed to authenticate as every user would have attribute `KERBEROS_PRINCIPAL` referring to the kerberos principal used for authentication and this is used
+for further lookups of this user. To avoid conflicts when there is user `john` in both kerberos realms `A` and `B`, the username of the {project_name} user might contain the kerberos realm
+lowercased. For instance username would be `john@a`. Just in case when realm matches with the configured `Kerberos realm`, the realm suffix might be omitted from the generated username. For
+instance username would be `john` for the Kerberos principal `john@A` as long as the `Kerberos realm` is configured on the Kerberos provider is `A`.
+
+==== Troubleshooting
+
+If you have issues, enable additional logging to debug the problem:
+
+* Enable `Debug` flag in the Admin Console for Kerberos or LDAP federation providers
+* Enable TRACE logging for category `org.keycloak` to receive more information in server logs
+* Add system properties `-Dsun.security.krb5.debug=true` and `-Dsun.security.spnego.debug=true`

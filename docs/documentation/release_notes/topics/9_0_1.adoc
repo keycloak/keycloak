@@ -1,0 +1,22 @@
+= Highlights
+
+== PromiseType removed from JavaScript adapter
+
+The promiseType init option has been removed from the JavaScript adapter. Instead a promise that supports
+both native promise API and legacy Keycloak promise API is returned. This allows gradually migration of
+applications from the legacy/deprecated API to the native promise API.
+
+= Other improvements
+
+== Reverted breaking API changes to LocaleSelectorSPI
+
+In 9.0.0 a breaking API change was introduced to LocaleSelectorSPI. With 9.0.1 the changes to
+this API is now reverted, and a new LocaleUpdaterSPI has been introduced.
+
+== Fixed the automatic resolution of `KeycloakConfigResolver` instances for Spring Boot Applications
+
+In previous releases, Spring Boot applications had to manually implement the `KeycloakConfigResolver` interface or extend the 
+built-in `org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver`.
+
+This release fixes the backward compatibility issue by resolving instances automatically in case none is provided. As well as still
+allowing applications to provide their own configuration resolver implementations.

@@ -1,0 +1,2 @@
+// show images in the preview when using an IDE like IntelliJ
+:imagesdir: {asciidoctorconfigdir}

@@ -1,0 +1,10 @@
+# Get the path the the Husky script.
+DIRNAME="$(dirname "$0")"
+FILE="$DIRNAME/_/husky.sh"
+
+# Exit if Husky is not installed.
+if [ ! -f "$FILE" ]; then
+  exit 0;
+fi
+
+pnpm exec lint-staged

@@ -1,0 +1,32 @@
+
+[[_mappers]]
+=== Mapping claims and assertions
+
+You can import the SAML and OpenID Connect metadata, provided by the external IDP you are authenticating with, into the realm. After importing, you can extract user profile metadata and other information, so you can make it available to your applications.
+
+Each user logging into your realm using an external identity provider has an entry in the local {project_name} database, based on the metadata from the SAML or OIDC assertions and claims.
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. Select one of the identity providers in the list.
+. Click the *Mappers* tab.
++
+.Identity provider mappers
+image:images/identity-provider-mappers.png[identity provider mappers]
++
+. Click *Add mapper*.
++
+.Identity provider mapper
+image:images/identity-provider-mapper.png[identity provider mapper]
++
+. Select a value for *Sync Mode Override*. The mapper updates user information when users log in repeatedly according to this setting.
+.. Select *legacy* to use the behavior of the previous {project_name} version.
+.. Select *import* to import data from when the user was first created in {project_name} during the first login to {project_name} with a particular identity provider. 
+.. Select *force* to update user data at each user login.
+.. Select *inherit* to use the sync mode configured in the identity provider. All other options will override this sync mode.
+. Select a mapper from the *Mapper Type* list. Hover over the *Mapper Type* for a description of the mapper and configuration to enter for the mapper.
+. Click *Save*.
+
+For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, `contact.address[0].country`.
+
+To investigate the structure of user profile JSON data provided by social providers, you can enable the `DEBUG` level logger `org.keycloak.social.user_profile_dump` when starting the server.

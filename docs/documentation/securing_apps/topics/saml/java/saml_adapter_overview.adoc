@@ -1,0 +1,6 @@
+= Overview
+
+This document describes the Keycloak SAML client adapter and how it can be configured for a variety of platforms.
+The Keycloak SAML client adapter is a standalone component that provides generic SAML 2.0 support for your web applications.
+There are no Keycloak server extensions built into it.
+As long as the Identity Provider (IdP) being communicated with supports standard SAML, the Keycloak SAML client adapter should be able to integrate with it. 

@@ -1,0 +1,277 @@
+{
+
+    "hostname": {
+        "v2": {
+            "hostname": "${keycloak.hostname:}",
+            "hostname-admin": "${keycloak.hostname-admin:}",
+            "hostname-backchannel-dynamic": "${keycloak.hostname-backchannel-dynamic:}",
+            "hostname-strict": "${keycloak.hostname-strict:}"
+        }
+    },
+
+    "admin": {
+        "realm": "master"
+    },
+
+    "eventsStore": {
+        "provider": "${keycloak.eventsStore.provider:jpa}",
+        "jpa": {
+            "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        }
+    },
+
+    "eventsListener": {
+        "jboss-logging" : {
+            "success-level": "debug",
+            "error-level": "warn"
+        },
+        "event-queue": {}
+    },
+
+    "deploymentState": {
+        "provider": "${keycloak.deploymentState.provider:jpa}"
+    },
+
+    "dblock": {
+        "provider": "${keycloak.dblock.provider:jpa}"
+    },
+
+    "realm": {
+        "provider": "${keycloak.realm.provider:jpa}"
+    },
+
+    "user": {
+        "provider": "${keycloak.user.provider:jpa}"
+    },
+
+    "client": {
+        "provider": "${keycloak.client.provider:jpa}"
+    },
+
+    "clientScope": {
+        "provider": "${keycloak.clientScope.provider:jpa}"
+    },
+
+    "group": {
+        "provider": "${keycloak.group.provider:jpa}"
+    },
+
+    "role": {
+        "provider": "${keycloak.role.provider:jpa}"
+    },
+
+    "authenticationSessions": {
+        "provider": "${keycloak.authSession.provider:infinispan}",
+        "infinispan": {
+            "authSessionsLimit": "${keycloak.authSessions.limit:300}"
+        }
+    },
+
+    "userSessions": {
+        "provider": "${keycloak.userSession.provider:infinispan}"
+    },
+
+    "loginFailure": {
+        "provider": "${keycloak.loginFailure.provider:infinispan}"
+    },
+
+    "singleUseObject": {
+        "provider": "${keycloak.singleUseObject.provider:infinispan}"
+    },
+
+    "publicKeyStorage": {
+        "provider": "${keycloak.publicKeyStorage.provider:infinispan}"
+    },
+
+    "userFederatedStorage": {
+        "provider": "${keycloak.userFederatedStorage.provider:jpa}"
+    },
+
+    "userSessionPersister": {
+        "provider": "${keycloak.userSessionPersister.provider:jpa}"
+    },
+
+    "authorizationPersister": {
+        "provider": "${keycloak.authorization.provider:jpa}"
+    },
+
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
+        }
+    },
+
+    "userCache": {
+        "default" : {
+            "enabled": "${keycloak.userCache.enabled:true}"
+        },
+        "mem": {
+            "maxSize": 20000
+        }
+    },
+
+    "publicKeyCache": {
+        "default" : {
+            "enabled": "${keycloak.publicKeyCache.enabled:true}"
+        }
+    },
+
+    "timer": {
+        "provider": "basic"
+    },
+
+    "theme": {
+        "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
+        "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
+        "cacheThemes": "${keycloak.theme.cacheThemes:true}",
+        "folder": {
+            "dir": "${keycloak.theme.dir}"
+        }
+    },
+
+    "login": {
+        "provider": "freemarker"
+    },
+
+    "account": {
+        "provider": "freemarker"
+    },
+
+    "email": {
+        "provider": "freemarker"
+    },
+
+    "scheduled": {
+        "interval": 900
+    },
+
+    "connectionsHttpClient": {
+        "default": {
+            "reuse-connections": false
+        }
+    },
+
+
+    "connectionsJpa": {
+        "default": {
+            "url": "${keycloak.connectionsJpa.url:SET-THE-keycloak.connectionsJpa.URL-PROPERTY}",
+            "driver": "${keycloak.connectionsJpa.driver:SET-THE-keycloak.connectionsJpa.driver-PROPERTY}",
+            "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
+            "user": "${keycloak.connectionsJpa.user:}",
+            "password": "${keycloak.connectionsJpa.password:}",
+            "initializeEmpty": true,
+            "migrationStrategy": "update",
+            "showSql": "${keycloak.connectionsJpa.showSql:false}",
+            "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
+            "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
+        }
+    },
+
+    "realmCache": {
+        "default" : {
+            "enabled": "${keycloak.realmCache.enabled:true}"
+        }
+    },
+
+    "connectionsInfinispan": {
+        "default": {
+            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
+            "jgroupsBindAddr": "${keycloak.connectionsInfinispan.jgroupsBindAddr:127.0.0.1}",
+            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
+            "siteName": "${keycloak.connectionsInfinispan.siteName:}",
+            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
+            "async": "${keycloak.connectionsInfinispan.async:false}",
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
+            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
+            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
+            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
+            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
+        }
+    },
+
+    "truststore": {
+        "file": {
+            "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
+            "password": "${keycloak.truststore.password:secret}",
+            "hostname-verification-policy": "${keycloak.truststore.policy:DEFAULT}",
+            "type": "${keycloak.truststore.type:}",
+            "disabled": "${keycloak.truststore.disabled:false}"
+        }
+    },
+
+    "jta-lookup": {
+        "provider": "${keycloak.jta.lookup.provider:jboss}",
+        "jboss" : {
+            "enabled": true
+        }
+
+    },
+
+    "login-protocol": {
+        "saml": {
+            "knownProtocols": [
+                "http=${auth.server.http.port}",
+                "https=${auth.server.https.port}"
+            ]
+	}
+    },
+
+    "userProfile": {
+        "provider": "${keycloak.userProfile.provider:}",
+        "declarative-user-profile": {
+            "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
+            "admin-read-only-attributes": [ "deniedSomeAdmin" ]
+        }
+    },
+
+    "x509cert-lookup": {
+        "provider": "${keycloak.x509cert.lookup.provider:default}",
+        "default": {
+          "enabled": true
+        },
+        "haproxy": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "apache": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "nginx": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        }
+    },
+
+    "vault": {
+        "files-plaintext": {
+            "dir": "target/dependency/vault",
+            "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
+        },
+        "files-keystore": {
+            "file": "target/dependency/vault/myks",
+            "pass": "keystorepassword",
+            "type": "PKCS12",
+            "enabled": "${keycloak.vault.files-keystore.provider.enabled:false}"
+        }
+    },
+
+    "saml-artifact-resolver": {
+        "provider": "${keycloak.saml-artifact-resolver.provider:default}"
+    },
+
+    "security-profile": {
+        "provider": "${keycloak.security-profile.provider:default}",
+        "default": {
+            "name":"${keycloak.security-profile.default.name:none-security-profile}"
+        }
+    }
+}

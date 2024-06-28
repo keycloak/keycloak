@@ -1,0 +1,132 @@
+
+[[password-guess-brute-force-attacks]]
+=== Brute force attacks
+
+A brute force attack attempts to guess a user's password by trying to log in multiple times. {project_name} has brute force detection capabilities and can temporarily disable a user account if the number of login failures exceeds a specified threshold.
+
+[NOTE]
+====
+{project_name} disables brute force detection by default. Enable this feature to protect against brute force attacks.
+====
+
+.Procedure
+
+To enable this protection:
+
+. Click *Realm Settings* in the menu
+. Click the *Security Defenses* tab.
+. Click the *Brute Force Detection* tab.
++
+.Brute force detection
+image:images/brute-force.png[]
+
+{project_name} can deploy permanent lockout and temporary lockout actions when it detects an attack. Permanent lockout disables a user account until an administrator re-enables it. Temporary lockout disables a user account for a specific period of time.
+The time period that the account is disabled increases as the attack continues and subsequent failures reach multiples of `Max Login Failures`.
+
+[NOTE]
+====
+When a user is temporarily locked and attempts to log in, {project_name} displays the default `Invalid username or password` error message. This message is the same error message as the message displayed for an invalid username or invalid password to ensure the attacker is unaware the account is disabled.
+====
+
+*Common Parameters*
+
+|===
+|Name |Description |Default
+
+|Max Login Failures
+|The maximum number of login failures.
+|30 failures.
+
+|Quick Login Check Milliseconds
+|The minimum time between login attempts.
+|1000 milliseconds.
+
+|Minimum Quick Login Wait
+|The minimum time the user is disabled when login attempts are quicker than _Quick Login Check Milliseconds_.
+|1 minute.
+
+|===
+
+*Temporary Lockout Parameters*
+
+|===
+|Name |Description |Default
+
+|Wait Increment
+|The time added to the time a user is temporarily disabled when the user's login attempts exceed _Max Login Failures_.
+|1 minute.
+
+|Max Wait
+|The maximum time a user is temporarily disabled.
+|15 minutes.
+
+|Failure Reset Time
+|The time when the failure count resets. The timer runs from the last failed login. Make sure this number is always greater than `Max wait`; otherwise the effective
+wait time will never reach the value you have set to `Max wait`.
+|12 hours.
+
+|===
+
+*Temporary Lockout Algorithm*
+====
+. On successful login
+.. Reset `count`
+. On failed login
+.. If the time between this failure and the last failure is greater than _Failure Reset Time_
+... Reset `count`
+.. Increment `count`
+.. Calculate `wait` using _Wait Increment_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number
+.. If `wait` equals 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_, set `wait` to _Minimum Quick Login Wait_.
+... Temporarily disable the user for the smallest of `wait` and _Max Wait_ seconds
+... Increment the temporary lockout counter
+
+`count` does not increment when a temporarily disabled account commits a login failure.
+====
+
+For instance, if you have set `Max Login Failures` to `5` and a `Wait Increment` of `30` seconds, the effective time an account will be disabled after several failed authentication attempts will be:
+
+[cols="1,1,1,1"]
+|===
+|`Number of Failures` | `Wait Increment`  | `Max Login Failures` | `Effective Wait Time`
+|1 |30 | 5 | 0
+|2 |30 | 5 | 0
+|3 |30 | 5 | 0
+|4 |30 | 5 | 0
+|**5** |**30** | 5 | **30**
+|6 |30 | 5 | 30
+|7 |30 | 5 | 30
+|8 |30 | 5 | 30
+|9 |30 | 5 | 30
+|**10** |**30** | 5 | **60**
+|===
+
+Note that the `Effective Wait Time` at the 5th failed attempt will disable the account for `30` seconds. Only after reaching
+the next multiple of `Max Login Failures`, in this case `10`, will the time increase from `30` to `60`. The time the account will be disabled
+is only increased when reaching multiples of `Max Login Failures`.
+
+*Permanent Lockout Parameters*
+
+|===
+|Name |Description |Default
+
+|Max temporary Lockouts
+|The maximum number of temporary lockouts permitted before permanent lockout occurs.
+|0
+|===
+
+*Permanent Lockout Flow*
+====
+. Follow temporary lockout flow
+. If temporary lockout counter exceeds Max temporary lockouts
+.. Permanently disable user
+
+When {project_name} disables a user, the user cannot log in until an administrator enables the user. Enabling an account resets the `count`.
+====
+
+The downside of {project_name} brute force detection is that the server becomes vulnerable to denial of service attacks. When implementing a denial of service attack, an attacker can attempt to log in by guessing passwords for any accounts it knows and eventually causing {project_name} to disable the accounts.
+
+Consider using intrusion prevention software (IPS). {project_name} logs every login failure and client IP address failure. You can point the IPS to the {project_name} server's log file, and the IPS can modify firewalls to block connections from these IP addresses.
+
+==== Password policies
+
+Ensure you have a complex password policy to force users to choose complex passwords. See the <<_password-policies, Password Policies>> chapter for more information. Prevent password guessing by setting up the {project_name} server to use one-time-passwords.

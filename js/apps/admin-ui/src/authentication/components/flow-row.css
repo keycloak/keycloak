@@ -1,0 +1,55 @@
+.keycloak__authentication__flow-item:before {
+  width: 0;
+}
+
+.keycloak__authentication__flow-row[aria-level="1"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 2
+  );
+}
+
+.keycloak__authentication__flow-row[aria-level="2"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 3
+  );
+}
+.keycloak__authentication__flow-row[aria-level="3"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 4
+  );
+}
+.keycloak__authentication__flow-row[aria-level="4"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 5
+  );
+}
+.keycloak__authentication__flow-row[aria-level="5"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 6
+  );
+}
+.keycloak__authentication__flow-row[aria-level="6"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 7
+  );
+}
+.keycloak__authentication__flow-row[aria-level="7"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 8
+  );
+}
+.keycloak__authentication__flow-row[aria-level="8"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 9
+  );
+}
+.keycloak__authentication__flow-row[aria-level="9"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 10
+  );
+}
+.keycloak__authentication__flow-row[aria-level="10"] {
+  padding-left: calc(
+    var(--pf-v5-global--spacer--lg) * 11
+  );
+}

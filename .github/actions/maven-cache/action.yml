@@ -1,0 +1,42 @@
+name: Maven Cache
+description: Caches Maven artifacts
+
+inputs:
+  create-cache-if-it-doesnt-exist:
+    description: > 
+      Only those callers which fill the cache with the right contents should set this to true to avoid creating a cache
+      which contains too few or too many entries.
+    required: false
+    default: false
+
+runs:
+  using: composite
+  steps:
+    - id: weekly-cache-key
+      name: Key for weekly rotation of cache
+      shell: bash
+      run: echo "key=mvn-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
+
+    - id: cache-maven-repository
+      name: Maven cache
+      uses: actions/cache@v4
+      if: inputs.create-cache-if-it-doesnt-exist == 'true'
+      with:
+        # Two asterisks are needed to make the follow-up exclusion work
+        # see https://github.com/actions/toolkit/issues/713 for the upstream issue
+        path: |
+          ~/.m2/repository/*/*
+          !~/.m2/repository/org/keycloak
+        key: ${{ steps.weekly-cache-key.outputs.key }}
+
+    - id: restore-maven-repository
+      name: Maven cache
+      uses: actions/cache/restore@v4
+      if: inputs.create-cache-if-it-doesnt-exist == 'false'
+      with:
+        # Two asterisks are needed to make the follow-up exclusion work
+        # see https://github.com/actions/toolkit/issues/713 for the upstream issue
+        path: |
+          ~/.m2/repository/*/*
+          !~/.m2/repository/org/keycloak
+        key: ${{ steps.weekly-cache-key.outputs.key }}

@@ -1,0 +1,24 @@
+{
+  "realm": "authz-bug",
+  "enabled": true,
+  "clients": [
+  {
+    "clientId": "appserver",
+    "enabled": true,
+    "clientAuthenticatorType": "client-secret",
+    "secret": "appserver-secret",
+    "bearerOnly": false,
+    "consentRequired": false,
+    "standardFlowEnabled": false,
+    "implicitFlowEnabled": false,
+    "directAccessGrantsEnabled": true,
+    "serviceAccountsEnabled": true,
+    "authorizationServicesEnabled": true,
+    "publicClient": false,
+    "fullScopeAllowed": true,
+    "authorizationSettings": {
+      "policyEnforcementMode": "ENFORCING",
+      "decisionStrategy": "AFFIRMATIVE"
+    }
+  }]
+}

@@ -1,0 +1,182 @@
+{
+  "allowRemoteResourceManagement": true,
+  "policyEnforcementMode": "ENFORCING",
+  "resources": [
+    {
+      "name": "User Profile Resource",
+      "uri": "/profile",
+      "type": "http://photoz.com/profile",
+      "scopes": [
+        {
+          "name": "urn:photoz.com:scopes:profile:view"
+        }
+      ]
+    },
+    {
+      "name": "Album Resource",
+      "uri": "/album/*",
+      "type": "http://photoz.com/album",
+      "scopes": [
+        {
+          "name": "urn:photoz.com:scopes:album:view"
+        },
+        {
+          "name": "urn:photoz.com:scopes:album:delete"
+        },
+        {
+          "name": "urn:photoz.com:scopes:album:create"
+        }
+      ]
+    },
+    {
+      "name": "Admin Resources",
+      "uri": "/admin/*",
+      "type": "http://photoz.com/admin",
+      "scopes": [
+        {
+          "name": "urn:photoz.com:scopes:album:admin:manage"
+        }
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "name": "View User Permission",
+      "description": "Defines who is allowed to view an user profile",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "applyPolicies": "[\"Only From @keycloak.org or Admin\"]",
+        "scopes": "[\"urn:photoz.com:scopes:profile:view\"]"
+      }
+    },
+    {
+      "name": "Only Owner Policy",
+      "description": "Defines that only the resource owner is allowed to do something",
+      "type": "script-scripts/only-owner-policy.js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS"
+    },
+    {
+      "name": "Any User Policy",
+      "description": "Defines that only users from well known clients are allowed to access",
+      "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "roles": "[{\"id\":\"user\"},{\"id\":\"resource-server-test/manage-albums\",\"required\":true}]"
+      }
+    },
+    {
+      "name": "Only From a Specific Client Address",
+      "description": "Defines that only clients from a specific address can do something",
+      "type": "script-scripts/only-from-specific-address-policy.js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS"
+    },
+    {
+      "name": "Administration Policy",
+      "description": "Defines that only administrators from a specific network address can do something.",
+      "type": "aggregate",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "applyPolicies": "[\"Only From a Specific Client Address\",\"Any Admin Policy\"]"
+      }
+    },
+    {
+      "name": "Only Owner and Administrators Policy",
+      "description": "Defines that only the resource owner and administrators can do something",
+      "type": "aggregate",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "applyPolicies": "[\"Administration Policy\",\"Only Owner Policy\"]"
+      }
+    },
+    {
+      "name": "Album Resource Permission",
+      "description": "General policies that apply to all album resources.",
+      "type": "resource",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "defaultResourceType": "http://photoz.com/album",
+        "default": "true",
+        "applyPolicies": "[\"Any User Policy\",\"Administration Policy\"]"
+      }
+    },
+    {
+      "name": "Admin Resource Permission",
+      "description": "General policy for any administrative resource.",
+      "type": "resource",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "defaultResourceType": "http://photoz.com/admin",
+        "default": "true",
+        "applyPolicies": "[\"Administration Policy\"]"
+      }
+    },
+    {
+      "name": "Delete Album Permission",
+      "description": "A policy that only allows the owner to delete his albums.",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "applyPolicies": "[\"Only Owner and Administrators Policy\"]",
+        "scopes": "[\"urn:photoz.com:scopes:album:delete\"]"
+      }
+    },
+    {
+      "name": "Any Admin Policy",
+      "description": "Defines that adminsitrators can do something",
+      "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "roles": "[{\"id\":\"resource-server-test/admin\",\"required\":true}]"
+      }
+    },
+    {
+      "name": "Only From @keycloak.org or Admin",
+      "description": "Defines that only users from @keycloak.org",
+      "type": "script-scripts/only-from-specific-domain-or-admin-policy.js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS"
+    },
+    {
+      "name": "Test Client Policy",
+      "type": "client",
+      "config": {
+        "clients": "[\"admin-cli\"]"
+      }
+    },
+    {
+      "name": "Test User Policy",
+      "type": "user",
+      "config": {
+        "users": "[\"alice\"]"
+      }
+    }
+  ],
+  "scopes": [
+    {
+      "name": "urn:photoz.com:scopes:profile:view"
+    },
+    {
+      "name": "urn:photoz.com:scopes:album:view"
+    },
+    {
+      "name": "urn:photoz.com:scopes:album:create"
+    },
+    {
+      "name": "urn:photoz.com:scopes:album:delete"
+    },
+    {
+      "name": "urn:photoz.com:scopes:album:admin:manage"
+    }
+  ]
+}
