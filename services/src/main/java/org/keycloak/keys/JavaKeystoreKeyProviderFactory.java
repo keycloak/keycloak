@@ -92,7 +92,7 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
 
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
-        return new JavaKeystoreKeyProvider(session.getContext().getRealm(), model);
+        return new JavaKeystoreKeyProvider(session.getContext().getRealm(), model, session.vault());
     }
 
     @Override
@@ -109,7 +109,7 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
                 .checkSingle(KEY_PASSWORD_PROPERTY, true);
 
         try {
-            new JavaKeystoreKeyProvider(realm, model).loadKey(realm, model);
+            new JavaKeystoreKeyProvider(realm, model, session.vault()).loadKey(realm, model);
         } catch (Throwable t) {
             logger.error("Failed to load keys.", t);
             throw new ComponentValidationException("Failed to load keys. " + t.getMessage(), t);
@@ -118,9 +118,12 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
 
     // merge the algorithms supported for RSA and EC keys and provide them as one configuration property
     private static ProviderConfigProperty mergedAlgorithmProperties() {
-        List<String> ecAlgorithms = List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
-        List<String> algorithms = Stream.of(Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
-                        ecAlgorithms, Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions())
+        List<String> algorithms = Stream.of(
+                        List.of(Algorithm.AES, Algorithm.EdDSA),
+                        List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512),
+                        Attributes.HS_ALGORITHM_PROPERTY.getOptions(),
+                        Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
+                        Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions())
                 .flatMap(Collection::stream)
                 .toList();
         return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),
