@@ -238,7 +238,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                     assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
                     assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
                     assertEquals("true", i.getMetadata().getAnnotations().get("haproxy.router.openshift.io/disable_cookies"));
-                    assertEquals(Constants.KEYCLOAK_HTTPS_PORT, i.getSpec().getDefaultBackend().getService().getPort().getNumber());
+                    assertEquals(Constants.KEYCLOAK_HTTPS_PORT_NAME, i.getSpec().getDefaultBackend().getService().getPort().getName());
                 });
 
         // Delete the ingress
