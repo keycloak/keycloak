@@ -60,7 +60,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
     public Ingress desired(Keycloak keycloak, Context<Keycloak> context) {
         var annotations = new HashMap<String, String>();
         boolean tlsConfigured = isTlsConfigured(keycloak);
-        var port = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloak);
+        var portName = tlsConfigured ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
 
         if (tlsConfigured) {
             annotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
@@ -86,7 +86,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                         .withNewService()
                             .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                             .withNewPort()
-                                .withNumber(port)
+                                .withName(portName)
                             .endPort()
                         .endService()
                     .endDefaultBackend()
@@ -98,7 +98,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                                     .withNewService()
                                         .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                                         .withNewPort()
-                                            .withNumber(port)
+                                            .withName(portName)
                                             .endPort()
                                     .endService()
                                 .endBackend()
