@@ -462,7 +462,7 @@ public class OID4VCIssuerEndpoint {
         // set the required claims
         VerifiableCredential vc = new VerifiableCredential()
                 .setIssuer(URI.create(issuerDid))
-                .setIssuanceDate(Date.from(Instant.ofEpochMilli(timeProvider.currentTimeMillis())))
+                .setIssuanceDate(Instant.ofEpochMilli(timeProvider.currentTimeMillis()))
                 .setType(List.of(vcType));
 
         Map<String, Object> subjectClaims = new HashMap<>();

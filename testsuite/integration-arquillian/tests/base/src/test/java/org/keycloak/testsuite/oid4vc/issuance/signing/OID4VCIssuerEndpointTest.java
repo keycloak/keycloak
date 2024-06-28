@@ -355,7 +355,6 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
     @Test
     public void testRequestCredential() {
         String token = getBearerToken(oauth);
-        ObjectMapper objectMapper = new ObjectMapper();
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
@@ -373,7 +372,9 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
 
                     assertNotNull("A valid credential string should have been responded", jsonWebToken);
                     assertNotNull("The credentials should be included at the vc-claim.", jsonWebToken.getOtherClaims().get("vc"));
-                    VerifiableCredential credential = objectMapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                    VerifiableCredential credential = //
+                            JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get(
+                                    "vc"), VerifiableCredential.class);
                     assertNotNull("@context is a required VC property", credential.getContext());
                     assertEquals(1, credential.getContext().size());
                     assertEquals(VerifiableCredential.VC_CONTEXT_V1, credential.getContext().get(0));
@@ -613,7 +614,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
                         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
 
-                        VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                        VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
                         assertEquals(TEST_TYPES, credential.getType());
                         assertEquals(TEST_DID, credential.getIssuer());
                         assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
@@ -704,7 +705,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         assertNotNull("The credential should have been responded.", credentialResponse.getCredential());
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
-        VerifiableCredential credential = new ObjectMapper().convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+        VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
         assertEquals(List.of("VerifiableCredential"), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
