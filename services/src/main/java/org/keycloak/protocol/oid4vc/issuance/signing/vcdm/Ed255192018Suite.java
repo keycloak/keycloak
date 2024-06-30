@@ -31,13 +31,13 @@ import com.apicatalog.rdf.io.RdfWriter;
 import com.apicatalog.rdf.io.error.RdfWriterException;
 import com.apicatalog.rdf.io.error.UnsupportedContentException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.setl.rdf.normalization.RdfNormalize;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -59,13 +59,11 @@ import java.util.Optional;
  */
 public class Ed255192018Suite implements LinkedDataCryptographicSuite {
 
-    private final ObjectMapper objectMapper;
     private final SignatureSignerContext signerContext;
 
     public static final String PROOF_TYPE = "Ed25519Signature2018";
 
-    public Ed255192018Suite(ObjectMapper objectMapper, SignatureSignerContext signerContext) {
-        this.objectMapper = objectMapper;
+    public Ed255192018Suite(SignatureSignerContext signerContext) {
         this.signerContext = signerContext;
     }
 
@@ -79,7 +77,7 @@ public class Ed255192018Suite implements LinkedDataCryptographicSuite {
     private byte[] transform(VerifiableCredential verifiableCredential) {
 
         try {
-            String credentialString = objectMapper.writeValueAsString(verifiableCredential);
+            String credentialString = JsonSerialization.mapper.writeValueAsString(verifiableCredential);
 
             var credentialDocument = JsonDocument.of(new StringReader(credentialString));
 
