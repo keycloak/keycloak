@@ -268,7 +268,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
         if (clickIdp) {
             assertTrue(loginPage.isPasswordInputPresent());
-            assertTrue(loginPage.isUsernameInputPresent());
+            assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
             loginPage.clickSocial(idp.getAlias());
         }
 

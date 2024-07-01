@@ -107,6 +107,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                         return attributes;
                     });
                 }
+                context.setUser(user);
                 context.attempted();
             } else if (broker.size() == 1) {
                 // user is a managed member and associated with a broker, redirect automatically
