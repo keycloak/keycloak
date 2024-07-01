@@ -20,3 +20,7 @@ This is an optimization to reduce traffic and network related resources.
 
 In {project_name} 26, the new method has a default implementation to keep backward compatibility with custom implementation.
 The default implementation performs a single network call per an event, and it will be removed in a future version of {project_name}.
+
+= Operator's default CPU and memory limits/requests
+
+In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the `resources` section in the operator's https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md#resources[subscription].
