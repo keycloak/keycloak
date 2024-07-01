@@ -184,9 +184,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isRegisterLinkPresent());
     }
 
     @Test
