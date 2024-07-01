@@ -204,6 +204,48 @@ It is achieved by providing certain JVM options.
 
 For more details, see <@links.server id="containers" />.
 
+=== Scheduling
+
+You may control several aspects of the server Pod scheduling via the Keycloak CR. The scheduling stanza exposes optional standard Kubernetes affinity, tolerations, topology spread constraints, and the priority class name to fine tune the scheduling and placement of your server Pods. 
+
+An example utilizing all scheduling fields:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  scheduling:
+    priorityClassName: custom-high
+    affinity:
+      podAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: keycloak
+                app.kubernetes.io/managed-by: keycloak-operator
+                app.kubernetes.io/component: server
+                topologyKey: topology.kubernetes.io/zone
+              weight: 10
+    tolerations:
+    - key: "some-taint"
+      operator: "Exists"
+      effect: "NoSchedule"
+    topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      ...
+  ...
+----
+
+Please see https://kubernetes.io/docs/concepts/scheduling-eviction[the kubernetes docs] for more on scheduling concepts.
+
+If you do not specify a custom affinity, your Pods will have an affinity for the same zone and an anti-affinity for the same node to improve availability. Scheduling to the same zone if possible helps prevent stretch clusters where cross zone cache cluster traffic may have too high of a latency.
+
 === Management Interface
 
 To change the port of the management interface, use the first-class citizen field `httpManagement.port` in the Keycloak CR.
