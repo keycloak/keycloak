@@ -1,5 +1,5 @@
 [
-  { "label": "personalInfo", "path": "/" },
+  { "label": "personalInfo", "path": "" },
   {
     "label": "accountSecurity",
     "children": [

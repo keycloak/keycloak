@@ -1,11 +1,12 @@
 import { Page } from "@playwright/test";
-import { DEFAULT_REALM } from "../src/constants";
-import { getRootPath } from "../src/utils/getRootPath";
+
+import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "./constants";
+import { getRootPath } from "./utils";
 
 export const login = async (
   page: Page,
-  username: string,
-  password: string,
+  username = ADMIN_USER,
+  password = ADMIN_PASSWORD,
   realm = DEFAULT_REALM,
   queryParams?: Record<string, string>,
 ) => {

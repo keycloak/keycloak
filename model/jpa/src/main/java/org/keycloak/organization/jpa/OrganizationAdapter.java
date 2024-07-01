@@ -75,7 +75,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         return realm;
     }
 
-    String getGroupId() {
+    public String getGroupId() {
         return entity.getGroupId();
     }
 
@@ -91,6 +91,25 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     @Override
     public String getName() {
         return entity.getName();
+    }
+
+    @Override
+    public String getAlias() {
+        return entity.getAlias();
+    }
+
+    @Override
+    public void setAlias(String alias) {
+        if (StringUtil.isBlank(alias)) {
+            alias = getName();
+        }
+        if (alias.equals(entity.getAlias())) {
+            return;
+        }
+        if (StringUtil.isNotBlank(entity.getAlias())) {
+            throw new ModelValidationException("Cannot change the alias");
+        }
+        entity.setAlias(alias);
     }
 
     @Override
@@ -118,8 +137,6 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         if (attributes == null) {
             return;
         }
-        // make sure the kc.org attribute is never removed or updated
-        attributes.put(ORGANIZATION_ATTRIBUTE, getGroup().getAttributes().get(OrganizationModel.ORGANIZATION_ATTRIBUTE));
         Set<String> attrsToRemove = getAttributes().keySet();
         attrsToRemove.removeAll(attributes.keySet());
         attrsToRemove.forEach(group::removeAttribute);
@@ -129,9 +146,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     @Override
     public Map<String, List<String>> getAttributes() {
         if (attributes == null) {
-            attributes = new HashMap<>(ofNullable(getGroup().getAttributes()).orElse(Map.of()));
-            // do not expose the kc.org attribute
-            attributes.remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+            attributes = ofNullable(getGroup().getAttributes()).orElse(Map.of());
         }
         return attributes;
     }

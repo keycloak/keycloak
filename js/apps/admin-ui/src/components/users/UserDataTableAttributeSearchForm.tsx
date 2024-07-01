@@ -1,5 +1,10 @@
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
+  KeycloakSelect,
+  SelectVariant,
+  label,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Alert,
   AlertVariant,
@@ -18,11 +23,8 @@ import { ReactNode, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
-import { SelectVariant, label } from "@keycloak/keycloak-ui-shared";
-
 import { useAlerts } from "../alert/Alerts";
 import { UserAttribute } from "./UserDataTable";
-import { KeycloakSelect } from "../select/KeycloakSelect";
 
 type UserDataTableAttributeSearchFormProps = {
   activeFilters: UserAttribute[];
@@ -160,7 +162,9 @@ export function UserDataTableAttributeSearchForm({
                 setSelectAttributeKeyOpen(false);
                 setValue("name", option.name!);
               }}
-            />
+            >
+              {label(t, option.displayName!, option.name)}
+            </SelectOption>
           ))}
         </KeycloakSelect>
       );

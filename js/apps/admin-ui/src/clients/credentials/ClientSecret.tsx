@@ -8,7 +8,7 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PasswordInput } from "@keycloak/keycloak-ui-shared";
@@ -120,6 +120,12 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
       }
     },
   });
+
+  useEffect(() => {
+    if (secretRotated !== client.attributes?.["client.secret.rotated"]) {
+      setSecretRotated(client.attributes?.["client.secret.rotated"]);
+    }
+  }, [client, secretRotated]);
 
   return (
     <>

@@ -30,12 +30,6 @@
     <name>Keycloak Server SPI</name>
     <description/>
 
-    <properties>
-        <maven.compiler.release>17</maven.compiler.release>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>jakarta.transaction</groupId>
@@ -60,6 +54,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- to use annotations -->
+        <dependency>
+            <groupId>org.infinispan.protostream</groupId>
+            <artifactId>protostream</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

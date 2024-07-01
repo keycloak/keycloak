@@ -22,7 +22,6 @@ import org.keycloak.client.cli.config.ConfigData;
 
 import picocli.CommandLine.Option;
 
-
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */

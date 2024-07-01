@@ -1,3 +1,4 @@
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -28,10 +29,6 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
@@ -232,6 +229,7 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="theme"
                   control={control}
+                  defaultValue=""
                   rules={{
                     validate: (value) => (value || "").length > 0,
                   }}
@@ -255,7 +253,7 @@ export const EffectiveMessageBundles = ({
                         field.onChange("");
                       }}
                       isOpen={selectThemesOpen}
-                      aria-labelledby={t("theme")}
+                      aria-label={t("selectTheme")}
                       chipGroupComponent={
                         <ChipGroup>
                           <Chip
@@ -273,14 +271,16 @@ export const EffectiveMessageBundles = ({
                       {[
                         <SelectOption
                           key="theme_placeholder"
-                          value="Select theme"
                           label={t("selectTheme")}
-                          className="kc__effective_message_bundles_search_theme__placeholder"
                           isDisabled
-                        />,
+                        >
+                          {t("selectTheme")}
+                        </SelectOption>,
                       ].concat(
                         themeNames.map((option) => (
-                          <SelectOption key={option} value={option} />
+                          <SelectOption key={option} value={option}>
+                            {option}
+                          </SelectOption>
                         )),
                       )}
                     </KeycloakSelect>
@@ -295,6 +295,7 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="themeType"
                   control={control}
+                  defaultValue=""
                   rules={{
                     validate: (value) => (value || "").length > 0,
                   }}
@@ -318,7 +319,7 @@ export const EffectiveMessageBundles = ({
                         field.onChange("");
                       }}
                       isOpen={selectThemeTypeOpen}
-                      aria-labelledby={t("themeType")}
+                      aria-label={t("selectThemeType")}
                       chipGroupComponent={
                         <ChipGroup>
                           <Chip
@@ -336,14 +337,16 @@ export const EffectiveMessageBundles = ({
                       {[
                         <SelectOption
                           key="themeType_placeholder"
-                          value="Select theme type"
                           label={t("selectThemeType")}
-                          className="pf-m-plain"
                           isDisabled
-                        />,
+                        >
+                          {t("selectThemeType")}
+                        </SelectOption>,
                       ].concat(
                         themeTypes.map((option) => (
-                          <SelectOption key={option} value={option} />
+                          <SelectOption key={option} value={option}>
+                            {option}
+                          </SelectOption>
                         )),
                       )}
                     </KeycloakSelect>
@@ -354,6 +357,7 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="locale"
                   control={control}
+                  defaultValue=""
                   rules={{
                     validate: (value) => (value || "").length > 0,
                   }}
@@ -377,7 +381,7 @@ export const EffectiveMessageBundles = ({
                         field.onChange("");
                       }}
                       isOpen={selectLanguageOpen}
-                      aria-labelledby="language"
+                      aria-label={t("selectLanguage")}
                       chipGroupComponent={
                         <ChipGroup>
                           {field.value ? (
@@ -400,11 +404,11 @@ export const EffectiveMessageBundles = ({
                       {[
                         <SelectOption
                           key="language_placeholder"
-                          value="Select language"
                           label={t("selectLanguage")}
-                          className="pf-m-plain"
                           isDisabled
-                        />,
+                        >
+                          {t("selectLanguage")}
+                        </SelectOption>,
                       ].concat(
                         combinedLocales.map((option) => (
                           <SelectOption key={option} value={option}>

@@ -121,7 +121,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           }}
           options={PKCE_METHODS.map((option) => ({
             key: option,
-            value: t(`${option}`),
+            value: t(option),
           }))}
         />
       )}

@@ -159,6 +159,35 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
         }
     }
 
+    // Issue https://github.com/keycloak/keycloak/issues/30520
+    @Test
+    public void testChangingLocaleOnAuthenticationSelectorScreen() {
+        try {
+            configureBrowserFlowWithAlternativeCredentials();
+
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.login("user-with-one-configured-otp");
+            passwordPage.assertCurrent();
+            passwordPage.assertTryAnotherWayLinkAvailability(true);
+            passwordPage.clickTryAnotherWayLink();
+
+            selectAuthenticatorPage.assertCurrent();
+            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
+
+            // Switch locale. Should be still on "selectAuthenticatorPage"
+            selectAuthenticatorPage.openLanguage("Deutsch");
+            selectAuthenticatorPage.assertCurrent();
+            Assert.assertEquals(Arrays.asList("Passwort", "Authenticator-Anwendung"), selectAuthenticatorPage.getAvailableLoginMethods());
+
+            // Change language back
+            selectAuthenticatorPage.openLanguage("English");
+            selectAuthenticatorPage.assertCurrent();
+            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
+        } finally {
+            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+        }
+    }
+
     private void configureBrowserFlowWithAlternativeCredentials() {
         configureBrowserFlowWithAlternativeCredentials(testingClient);
     }

@@ -28,7 +28,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.MultivaluedMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -122,8 +124,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected String masterAdminClient;
 
     protected List<RequiredCredentialModel> requiredCredentials;
-    protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
-    protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
+    protected MultivaluedMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
+    protected MultivaluedMap<String, ComponentModel> componentsByParentAndType = new ConcurrentMultivaluedHashMap<>();
     protected Map<String, ComponentModel> components;
     protected List<IdentityProviderModel> identityProviders;
 
@@ -417,11 +419,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public boolean isVerifyEmail() {
         return verifyEmail;
     }
-    
+
     public boolean isLoginWithEmailAllowed() {
         return loginWithEmailAllowed;
     }
-    
+
     public boolean isDuplicateEmailsAllowed() {
         return duplicateEmailsAllowed;
     }
@@ -650,7 +652,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
         return executionsByFlowId.get(flowId);
     }
-    
+
     public Map<String, AuthenticationExecutionModel> getExecutionsById() {
         return executionsById;
     }
@@ -723,11 +725,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return requiredActionProviderList;
     }
 
-    public MultivaluedHashMap<String, ComponentModel> getComponentsByParent() {
+    public MultivaluedMap<String, ComponentModel> getComponentsByParent() {
         return componentsByParent;
     }
 
-    public MultivaluedHashMap<String, ComponentModel> getComponentsByParentAndType() {
+    public MultivaluedMap<String, ComponentModel> getComponentsByParentAndType() {
         return componentsByParentAndType;
     }
 

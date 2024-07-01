@@ -42,11 +42,13 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
                 .alias("idpAlias")
                 .displayName("SAML")
                 .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml.idp/saml")
+                .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, "https://saml.idp/saml")
                 .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "https://saml.idp/saml")
                 .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
                 .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
                 .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
                 .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+                .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
                 .build();
 
         try (Closeable ipc = new IdentityProviderCreator(realmResource, identityProvider)) {
@@ -160,17 +162,28 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
             // test using merge with file
             exe = KcAdmExec.newBuilder()
                     .argsLine("update clients/" + client.getId() + " --config '" + configFile.getName() +
-                            "' -o -s enabled=true -m -f -")
+                            "' -o -m -f -")
                     .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp\"] }".getBytes()))
                     .execute();
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8980/myapp"), client.getWebOrigins());
-            Assert.assertTrue("enabled is true", client.isEnabled());
+            Assert.assertFalse("enabled is false", client.isEnabled());
             Assert.assertEquals("redirectUris", Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris());
+
+            exe = KcAdmExec.newBuilder()
+                    .argsLine("update clients/" + client.getId() + " --config '" + configFile.getName() +
+                            "' -o -s enabled=true -m -f -")
+                    .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp1\"] }".getBytes()))
+                    .execute();
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8980/myapp1"), client.getWebOrigins());
+            Assert.assertTrue("enabled is true", client.isEnabled());
         }
     }
 }

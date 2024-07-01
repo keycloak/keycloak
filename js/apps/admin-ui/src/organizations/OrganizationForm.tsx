@@ -9,6 +9,10 @@ import { useTranslation } from "react-i18next";
 import { AttributeForm } from "../components/key-value-form/AttributeForm";
 import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 import { keyValueToArray } from "../components/key-value-form/key-value-convert";
+import { useParams } from "react-router-dom";
+import { EditOrganizationParams } from "./routes/EditOrganization";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useEffect } from "react";
 
 export type OrganizationFormType = AttributeForm &
   Omit<OrganizationRepresentation, "domains" | "attributes"> & {
@@ -25,12 +29,31 @@ export const convertToOrg = (
 
 export const OrganizationForm = () => {
   const { t } = useTranslation();
+  const { tab } = useParams<EditOrganizationParams>();
+  const { setValue, getFieldState } = useFormContext();
+  const name = useWatch({ name: "name" });
+  const isEditable = tab !== "settings";
+
+  useEffect(() => {
+    const { isDirty } = getFieldState("alias");
+
+    if (isEditable && !isDirty) {
+      setValue("alias", name);
+    }
+  }, [name, isEditable]);
+
   return (
     <>
       <TextControl
         label={t("name")}
         name="name"
         rules={{ required: t("required") }}
+      />
+      <TextControl
+        label={t("alias")}
+        name="alias"
+        labelIcon={t("organizationAliasHelp")}
+        isDisabled={!isEditable}
       />
       <FormGroup
         label={t("domain")}

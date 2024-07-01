@@ -7,10 +7,8 @@ export {
   type KeycloakContext,
 } from "./context/KeycloakContext";
 export {
-  environment,
-  type AccountEnvironment,
-  type AdminEnvironment,
-  type Feature,
+  getInjectedEnvironment,
+  type BaseEnvironment,
 } from "./context/environment";
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";
 export {
@@ -60,3 +58,5 @@ export { isDefined } from "./utils/isDefined";
 export { useRequiredContext } from "./utils/useRequiredContext";
 export { useStoredState } from "./utils/useStoredState";
 export { default as KeycloakMasthead } from "./masthead/Masthead";
+export { KeycloakSelect } from "./select/KeycloakSelect";
+export type { Variant, KeycloakSelectProps } from "./select/KeycloakSelect";

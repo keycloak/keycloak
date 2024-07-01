@@ -31,9 +31,11 @@ runs:
     - id: build-keycloak
       name: Build Keycloak
       shell: bash
-      # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
       run: |
-        ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples
+        # Ensure this plugin is built first to avoid warnings in the build
+        ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
+        # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
+        ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples -DexcludeGroupIds=org.keycloak -Dsilent=true
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts

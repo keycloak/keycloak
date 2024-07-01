@@ -1,13 +1,15 @@
-import { FormGroup } from "@patternfly/react-core";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import {
   HelpItem,
   TextControl,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
+import { FormGroup } from "@patternfly/react-core";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
 import { FormattedLink } from "../../components/external-link/FormattedLink";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import type { Environment } from "../../environment";
 import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
 
@@ -22,7 +24,7 @@ export const SamlGeneralSettings = ({
 }: SamlGeneralSettingsProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
-  const { environment } = useEnvironment();
+  const { environment } = useEnvironment<Environment>();
 
   const { control } = useFormContext();
   const alias = useWatch({ control, name: "alias" });
@@ -54,7 +56,7 @@ export const SamlGeneralSettings = ({
         >
           <FormattedLink
             title={t("samlEndpointsLabel")}
-            href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
+            href={`${environment.adminBaseUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
             isInline
           />
         </FormGroup>

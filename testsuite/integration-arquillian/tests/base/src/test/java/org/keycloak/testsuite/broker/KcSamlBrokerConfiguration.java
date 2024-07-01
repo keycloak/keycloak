@@ -222,6 +222,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         config.put(IdentityProviderModel.SYNC_MODE, syncMode.toString());
         config.put(SINGLE_SIGN_ON_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(ARTIFACT_RESOLUTION_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(SINGLE_LOGOUT_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
         config.put(FORCE_AUTHN, "false");
@@ -231,6 +232,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(VALIDATE_SIGNATURE, "false");
         config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
         config.put(BACKCHANNEL_SUPPORTED, "false");
+        config.put(ARTIFACT_BINDING_RESPONSE, "false");
 
         return idp;
     }

@@ -185,7 +185,7 @@ public class ConfigurationTest {
 
     @Test
     public void testKeycloakProfilePropertySubstitution() {
-        System.setProperty(Environment.PROFILE, "user-profile");
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "user-profile");
         assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
@@ -292,7 +292,7 @@ public class ConfigurationTest {
                 .toString()
                 .replaceFirst(isWindows() ? "file:///" : "file://", "");
 
-        assertEquals("jdbc:h2:file:" + userHomeUri + "data/h2/keycloakdb;;AUTO_SERVER=TRUE;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + userHomeUri + "data/h2/keycloakdb;NON_KEYWORDS=VALUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
@@ -430,11 +430,11 @@ public class ConfigurationTest {
         Assert.assertEquals("cache-ispn.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
-        System.clearProperty(Environment.PROFILE);
+        System.clearProperty(org.keycloak.common.util.Environment.PROFILE);
         ConfigArgsConfigSource.setCliArgs("--cache=cluster-foo.xml");
 
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
-        System.setProperty(Environment.PROFILE, "dev");
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         ConfigArgsConfigSource.setCliArgs("--cache-stack=foo");

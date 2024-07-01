@@ -59,7 +59,7 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v3", "custom-account-provider");
         Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
-        Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak");
+        Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak", "organization");
         Assert.assertNames(info.getThemes().get("welcome"), "keycloak");
 
         assertNotNull(info.getEnums());

@@ -30,6 +30,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "wireit",
     "duplicate-types": "shx cp dist/keycloak.d.ts dist/keycloak.d.mts && shx cp dist/keycloak-authz.d.ts dist/keycloak-authz.d.mts",
@@ -65,7 +68,7 @@
     "authentication"
   ],
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.8",
+    "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-inject": "^5.0.5",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
@@ -75,7 +78,7 @@
     "shx": "^0.3.4"
   },
   "dependencies": {
-    "js-sha256": "^0.11.0",
+    "@noble/hashes": "^1.4.0",
     "jwt-decode": "^4.0.0"
   }
 }

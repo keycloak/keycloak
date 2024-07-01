@@ -50,7 +50,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
     }
-    
+
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
@@ -81,21 +81,23 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             context.challenge(createResponse(context, formData, errors));
         }
     }
-    
+
     protected UserModel.RequiredAction getResponseAction(){
         return UserModel.RequiredAction.UPDATE_PROFILE;
     }
-    
+
     protected Response createResponse(RequiredActionContext context, MultivaluedMap<String, String> formData, List<FormMessage> errors) {
         LoginFormsProvider form = context.form();
 
         if (errors != null && !errors.isEmpty()) {
             form.setErrors(errors);
         }
-        
+
         if(formData != null) {
             form = form.setFormData(formData);
         }
+
+        form.setUser(context.getUser());
 
         return form.createResponse(getResponseAction());
     }

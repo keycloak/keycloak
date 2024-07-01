@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialModel;
@@ -30,16 +31,23 @@ import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
@@ -61,20 +69,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ExportUtils {
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers, boolean internal) {
-        ExportOptions opts = new ExportOptions(includeUsers, true, true, false);
+        ExportOptions opts = new ExportOptions(includeUsers, true, true, false, false);
         return exportRealm(session, realm, opts, internal);
     }
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, ExportOptions options, boolean internal) {
-        RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, internal);
+        RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, internal, true);
         ModelToRepresentation.exportAuthenticationFlows(session, realm, rep);
         ModelToRepresentation.exportRequiredActions(realm, rep);
 
@@ -255,6 +261,42 @@ public class ExportUtils {
         // Message Bundle
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
 
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && !options.isPartial()) {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            orgProvider.getAllStream().map(m -> {
+                OrganizationRepresentation org = new OrganizationRepresentation();
+
+                org.setName(m.getName());
+                org.setAlias(m.getAlias());
+                org.setEnabled(m.isEnabled());
+                org.setDescription(m.getDescription());
+                m.getDomains().map(d -> {
+                    OrganizationDomainRepresentation domain = new OrganizationDomainRepresentation();
+
+                    domain.setName(d.getName());
+                    domain.setVerified(d.isVerified());
+
+                    return domain;
+                }).forEach(org::addDomain);
+
+                orgProvider.getMembersStream(m, null, null, -1, -1)
+                        .map(user -> {
+                            UserRepresentation member = new UserRepresentation();
+                            member.setUsername(user.getUsername());
+                            return member;
+                        }).forEach(org::addMember);
+
+                orgProvider.getIdentityProviders(m)
+                        .map(b -> {
+                            IdentityProviderRepresentation broker = new IdentityProviderRepresentation();
+                            broker.setAlias(b.getAlias());
+                            return broker;
+                        }).forEach(org::addIdentityProvider);
+
+                return org;
+            }).forEach(rep::addOrganization);
+        }
+
         return rep;
     }
 
@@ -417,9 +459,16 @@ public class ExportUtils {
         }
 
         if (options.isGroupsAndRolesIncluded()) {
-            List<String> groups = user.getGroupsStream().map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
+            List<String> groups = user.getGroupsStream()
+                    .filter(g -> Type.REALM.equals(g.getType()))
+                    .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
             userRep.setGroups(groups);
         }
+
+        if (userRep.getAttributes() != null) {
+            userRep.getAttributes().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        }
+
         return userRep;
     }
 
@@ -576,7 +625,7 @@ public class ExportUtils {
         }
         return userRep;
     }
-    
+
     private static UserFederatedStorageProvider userFederatedStorage(KeycloakSession session) {
         return session.getProvider(UserFederatedStorageProvider.class);
     }

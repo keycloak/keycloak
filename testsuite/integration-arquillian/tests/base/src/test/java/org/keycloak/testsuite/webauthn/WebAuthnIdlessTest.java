@@ -61,7 +61,7 @@ import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.YES;
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Protocol;
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport;
 
-@IgnoreBrowserDriver(FirefoxDriver.class)
+@IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
     @Rule

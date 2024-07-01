@@ -36,6 +36,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
@@ -51,34 +52,31 @@ import org.keycloak.utils.StringUtil;
 public class Organizations {
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
+        if (!Type.ORGANIZATION.equals(group.getType())) {
+            return true;
+        }
+
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            Object organization = session.getAttribute(OrganizationModel.class.getName());
+            OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
-            if (organization != null) {
-                return true;
-            }
-
-            String orgId = group.getFirstAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-
-            return StringUtil.isBlank(orgId);
+            return organization != null && organization.getId().equals(group.getName());
         }
 
         return true;
     }
 
-    public static IdentityProviderModel resolveBroker(KeycloakSession session, UserModel user) {
+    public static List<IdentityProviderModel> resolveBroker(KeycloakSession session, UserModel user) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
         OrganizationModel organization = provider.getByMember(user);
 
         if (organization == null || !organization.isEnabled()) {
-            return null;
+            return List.of();
         }
 
         if (provider.isManagedMember(organization, user)) {
-            // user is a managed member, try to resolve the origin broker and redirect automatically
             List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
-            List<IdentityProviderModel> brokers = session.users().getFederatedIdentitiesStream(realm, user)
+            return session.users().getFederatedIdentitiesStream(realm, user)
                     .map(f -> {
                         IdentityProviderModel broker = realm.getIdentityProviderByAlias(f.getIdentityProvider());
 
@@ -95,16 +93,14 @@ public class Organizations {
                         return null;
                     }).filter(Objects::nonNull)
                     .toList();
-
-            return brokers.size() == 1 ? brokers.get(0) : null;
         }
 
-        return null;
+        return List.of();
     }
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
         return group -> {
-            if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            if (!Type.ORGANIZATION.equals(group.getType())) {
                 realm.removeGroup(group);
                 return;
             }
@@ -112,12 +108,9 @@ public class Organizations {
             OrganizationModel current = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
 
             try {
-                String orgId = group.getFirstAttribute(OrganizationModel.ORGANIZATION_ATTRIBUTE);
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
-                if (orgId != null) {
-                    session.setAttribute(OrganizationModel.class.getName(), provider.getById(orgId));
-                }
+                session.setAttribute(OrganizationModel.class.getName(), provider.getById(group.getName()));
 
                 realm.removeGroup(group);
             } finally {
@@ -141,6 +134,18 @@ public class Organizations {
     }
 
     public static OrganizationRepresentation toRepresentation(OrganizationModel model) {
+        OrganizationRepresentation rep = toBriefRepresentation(model);
+
+        if (rep == null) {
+            return null;
+        }
+
+        rep.setAttributes(model.getAttributes());
+
+        return rep;
+    }
+
+    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model) {
         if (model == null) {
             return null;
         }
@@ -149,9 +154,9 @@ public class Organizations {
 
         rep.setId(model.getId());
         rep.setName(model.getName());
+        rep.setAlias(model.getAlias());
         rep.setEnabled(model.isEnabled());
         rep.setDescription(model.getDescription());
-        rep.setAttributes(model.getAttributes());
         model.getDomains().filter(Objects::nonNull).map(Organizations::toRepresentation)
                 .forEach(rep::addDomain);
 
@@ -171,6 +176,7 @@ public class Organizations {
         }
 
         model.setName(rep.getName());
+        model.setAlias(rep.getAlias());
         model.setEnabled(rep.isEnabled());
         model.setDescription(rep.getDescription());
         model.setAttributes(rep.getAttributes());
@@ -196,5 +202,42 @@ public class Organizations {
         }
 
         return TokenVerifier.create(tokenFromQuery, InviteOrgActionToken.class).getToken();
+    }
+
+    public static String getEmailDomain(String email) {
+        if (email == null) {
+            return null;
+        }
+
+        int domainSeparator = email.indexOf('@');
+
+        if (domainSeparator == -1) {
+            return null;
+        }
+
+        return email.substring(domainSeparator + 1);
+    }
+
+    public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user) {
+        OrganizationModel organization = (OrganizationModel) session.getAttribute(OrganizationModel.class.getName());
+
+        if (organization != null) {
+            return organization;
+        }
+
+        if (user == null) {
+            return null;
+        }
+
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        OrganizationModel memberOrg = provider.getByMember(user);
+
+        if (memberOrg != null) {
+            return memberOrg;
+        }
+
+        String domain = Organizations.getEmailDomain(user.getEmail());
+
+        return domain == null ? null : provider.getByDomainName(domain);
     }
 }

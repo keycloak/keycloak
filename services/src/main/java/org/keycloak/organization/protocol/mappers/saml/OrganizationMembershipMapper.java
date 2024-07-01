@@ -74,7 +74,7 @@ public class OrganizationMembershipMapper extends AbstractSAMLProtocolMapper imp
         AttributeType attribute = new AttributeType(ORGANIZATION_ATTRIBUTE_NAME);
         attribute.setFriendlyName(ORGANIZATION_ATTRIBUTE_NAME);
         attribute.setNameFormat(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.get());
-        attribute.addAttributeValue(organization.getName());
+        attribute.addAttributeValue(organization.getAlias());
         attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
     }
 

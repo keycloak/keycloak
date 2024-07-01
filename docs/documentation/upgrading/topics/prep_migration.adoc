@@ -7,7 +7,7 @@ Perform the following steps before you upgrade the server.
 .Procedure
 . Shutdown {project_name}.
 . Back up the old installation, such as configuration, themes, and so on.
-. Handle any open transactions and delete the `data/tx-object-store/` transaction directory.
+. If XA transaction is enabled, handle any open transactions and delete the `data/transaction-logs/` transaction directory.
 . Back up the database using instructions in the documentation for your relational
   database.
 +
@@ -20,7 +20,7 @@ After the upgrade of {project_name}, except for offline user sessions, user sess
 endif::[]
 
 ifeval::[{project_community}==true]
-After the upgrade of {project_name}, only if the feature `persistent-user-session` is enabled, users will still be logged in with their online sessions.
+After the upgrade of {project_name}, only if the feature `persistent-user-sessions` is enabled, users will still be logged in with their online sessions.
 If it is not enabled, users will have to log in again, except where offline user sessions are used.
 endif::[]
 

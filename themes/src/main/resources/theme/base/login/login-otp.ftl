@@ -30,7 +30,8 @@
 
             <div class="${properties.kcInputWrapperClass!}">
                 <input id="otp" name="otp" autocomplete="off" type="text" class="${properties.kcInputClass!}"
-                       autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"/>
+                       autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                       dir="ltr" />
 
                 <#if messagesPerField.existsError('totp')>
                     <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}"

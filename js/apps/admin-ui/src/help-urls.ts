@@ -4,7 +4,7 @@ const adminGuide =
 const keycloakHomepageURL = "https://www.keycloak.org";
 
 export default {
-  documentationUrl: `${adminGuide}`,
+  documentationUrl: adminGuide,
   clientsUrl: `${adminGuide}#assembly-managing-clients_server_administration_guide`,
   clientScopesUrl: `${adminGuide}#_client_scopes`,
   realmRolesUrl: `${adminGuide}#assigning-permissions-using-roles-and-groups`,

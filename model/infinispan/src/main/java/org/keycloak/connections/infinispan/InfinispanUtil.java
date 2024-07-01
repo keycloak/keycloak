@@ -102,7 +102,7 @@ public class InfinispanUtil {
     private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
 
     public static void configureTransport(GlobalConfigurationBuilder gcb, String nodeName, String siteName, String jgroupsUdpMcastAddr,
-                                          String jgroupsConfigPath) {
+                                          String jgroupsBindAddr, String jgroupsConfigPath) {
         if (nodeName == null) {
             gcb.transport().defaultTransport();
         } else {
@@ -114,6 +114,12 @@ public class InfinispanUtil {
                     System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
                 } else {
                     System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, jgroupsUdpMcastAddr);
+                }
+                var originalBindAddr = System.getProperty(InfinispanConnectionProvider.JGROUPS_BIND_ADDR);
+                if (jgroupsBindAddr == null) {
+                    System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_BIND_ADDR);
+                } else {
+                    System.setProperty(InfinispanConnectionProvider.JGROUPS_BIND_ADDR, jgroupsBindAddr);
                 }
                 try {
                     JChannel channel = new JChannel(fileLookup.lookupFileLocation(jgroupsConfigPath, InfinispanUtil.class.getClassLoader()).openStream());
@@ -143,6 +149,11 @@ public class InfinispanUtil {
                         System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
                     } else {
                         System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, originalMcastAddr);
+                    }
+                    if (originalBindAddr == null) {
+                        System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_BIND_ADDR);
+                    } else {
+                        System.setProperty(InfinispanConnectionProvider.JGROUPS_BIND_ADDR, originalBindAddr);
                     }
                 }
             }

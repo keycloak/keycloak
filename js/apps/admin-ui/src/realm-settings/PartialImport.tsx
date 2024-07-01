@@ -5,6 +5,7 @@ import type {
   PartialImportResult,
 } from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   Button,
@@ -30,7 +31,6 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
-import { KeycloakSelect } from "../components/select/KeycloakSelect";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 
@@ -332,8 +332,9 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                     toggleId="realm-selector"
                     isOpen={isRealmSelectOpen}
                     typeAheadAriaLabel={t("realmSelector")}
-                    aria-label={"realmSelector"}
+                    aria-label={t("realmSelector")}
                     onToggle={() => setIsRealmSelectOpen(!isRealmSelectOpen)}
+                    selections={targetRealm.id}
                     onSelect={(value) => handleRealmSelect(value)}
                     placeholderText={targetRealm.realm || targetRealm.id}
                   >
@@ -369,6 +370,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                   onToggle={() => {
                     setIsCollisionSelectOpen(!isCollisionSelectOpen);
                   }}
+                  selections={collisionOption}
                   onSelect={handleCollisionSelect}
                   placeholderText={t(collisionOption)}
                 >

@@ -17,9 +17,12 @@
 
 package org.keycloak.models.sessions.infinispan.events;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
@@ -33,41 +36,30 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
 
     private final KeycloakSession session;
 
-    private final List<DCEventContext> sessionEvents = new LinkedList<>();
+    private final Map<EventGroup, List<ClusterEvent>> sessionEvents = new HashMap<>();
 
     public SessionEventsSenderTransaction(KeycloakSession session) {
         this.session = session;
     }
 
     public void addEvent(SessionClusterEvent event, ClusterProvider.DCNotify dcNotify) {
-        sessionEvents.add(new DCEventContext(dcNotify, event));
+        var group = new EventGroup(event.getEventKey(), dcNotify);
+        sessionEvents.computeIfAbsent(group, eventGroup -> new ArrayList<>()).add(event);
     }
-
 
     @Override
     protected void commitImpl() {
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-
-        // TODO bulk notify (send whole list instead of separate events?)
-        for (DCEventContext entry : sessionEvents) {
-            cluster.notify(entry.event.getEventKey(), entry.event, false, entry.dcNotify);
+        var cluster = session.getProvider(ClusterProvider.class);
+        for (var entry : sessionEvents.entrySet()) {
+            cluster.notify(entry.getKey().eventKey(), entry.getValue(), false, entry.getKey().dcNotify());
         }
     }
 
 
     @Override
     protected void rollbackImpl() {
-
+        sessionEvents.clear();
     }
 
-
-    private static class DCEventContext {
-        private final ClusterProvider.DCNotify dcNotify;
-        private final SessionClusterEvent event;
-
-        DCEventContext(ClusterProvider.DCNotify dcNotify, SessionClusterEvent event) {
-            this.dcNotify = dcNotify;
-            this.event = event;
-        }
-    }
+    private record EventGroup(String eventKey, ClusterProvider.DCNotify dcNotify) {}
 }

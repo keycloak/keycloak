@@ -31,6 +31,7 @@ import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotati
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
+import { i18n } from "../i18n/i18n";
 
 type TranslationForm = {
   locale: string;
@@ -378,7 +379,7 @@ export default function NewAttributeSettings() {
         (translation) => translation.value.trim() !== "",
       );
 
-      if (!hasNonEmptyTranslations) {
+      if (!hasNonEmptyTranslations && !formFields.displayName) {
         addError("createAttributeError", t("translationError"));
         return;
       }
@@ -394,6 +395,7 @@ export default function NewAttributeSettings() {
       });
 
       await saveTranslations();
+      i18n.reloadResources();
       navigate(toUserProfile({ realm: realmName, tab: "attributes" }));
 
       addAlert(t("createAttributeSuccess"), AlertVariant.success);

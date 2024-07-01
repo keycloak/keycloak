@@ -17,17 +17,18 @@
 
 package org.keycloak.it.junit5.extension;
 
+import java.time.Duration;
+import java.util.Arrays;
+
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
-import org.infinispan.commons.configuration.XMLStringConfiguration;
+import org.infinispan.commons.configuration.StringConfiguration;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.PullPolicy;
-
-import java.time.Duration;
-import java.util.stream.Stream;
 
 public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
 
@@ -38,6 +39,7 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
 
     public static RemoteCacheManager remoteCacheManager;
 
+    @SuppressWarnings("resource")
     public InfinispanContainer() {
         super(getImageName());
         withEnv("USER", USERNAME);
@@ -76,7 +78,7 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
 
     private void establishHotRodConnection() {
         ConfigurationBuilder configBuilder = new ConfigurationBuilder()
-                .addServers(getContainerIpAddress() + ":11222")
+                .addServers(getHost() + ":11222")
                 .security()
                 .authentication()
                 .username(getUsername())
@@ -97,7 +99,7 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
 
         establishHotRodConnection();
 
-        Stream.of("sessions", "actionTokens", "authenticationSessions", "clientSessions", "offlineSessions", "offlineClientSessions", "loginFailures", "work")
+        Arrays.stream(InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES)
                 .forEach(cacheName -> {
                     LOG.infof("Creating cache '%s'", cacheName);
                     createCache(remoteCacheManager, cacheName);
@@ -117,7 +119,7 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
 
     public void createCache(RemoteCacheManager remoteCacheManager, String cacheName) {
         String xml = String.format("<distributed-cache name=\"%s\" mode=\"SYNC\" owners=\"2\"></distributed-cache>" , cacheName);
-        remoteCacheManager.administration().getOrCreateCache(cacheName, new XMLStringConfiguration(xml));
+        remoteCacheManager.administration().getOrCreateCache(cacheName, new StringConfiguration(xml));
     }
 
     public String getPort() {

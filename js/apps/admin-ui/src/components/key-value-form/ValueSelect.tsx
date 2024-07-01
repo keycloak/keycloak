@@ -1,8 +1,8 @@
+import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import { SelectOption, TextInput } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { KeycloakSelect } from "../select/KeycloakSelect";
 import { DefaultValue } from "./KeyValueInput";
 
 type ValueSelectProps = UseControllerProps & {
@@ -36,7 +36,9 @@ export const ValueSelect = ({
       placeholderText={t("valuePlaceholder")}
     >
       {defaultItem.values.map((item) => (
-        <SelectOption key={item} value={item} />
+        <SelectOption key={item} value={item}>
+          {item}
+        </SelectOption>
       ))}
     </KeycloakSelect>
   ) : (

@@ -1,5 +1,10 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   FormGroup,
@@ -9,13 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../components/select/KeycloakSelect";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../util";
 
@@ -86,7 +85,7 @@ export const RealmSettingsThemesTab = ({
                     key={`login-theme-${idx}`}
                     value={theme.name}
                   >
-                    {t(`${theme.name}`)}
+                    {t(theme.name)}
                   </SelectOption>
                 ))}
               </KeycloakSelect>
@@ -130,7 +129,7 @@ export const RealmSettingsThemesTab = ({
                       key={`account-theme-${idx}`}
                       value={theme.name}
                     >
-                      {t(`${theme.name}`)}
+                      {t(theme.name)}
                     </SelectOption>
                   ))}
               </KeycloakSelect>
@@ -164,7 +163,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={adminUIThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-admin-theme"
-                aria-label="selectAdminTheme"
+                aria-label={t("selectAdminTheme")}
               >
                 {themeTypes.admin
                   .filter((theme) => theme.name !== "base")
@@ -174,7 +173,7 @@ export const RealmSettingsThemesTab = ({
                       key={`admin-theme-${idx}`}
                       value={theme.name}
                     >
-                      {t(`${theme.name}`)}
+                      {t(theme.name)}
                     </SelectOption>
                   ))}
               </KeycloakSelect>
@@ -216,7 +215,7 @@ export const RealmSettingsThemesTab = ({
                     key={`email-theme-${idx}`}
                     value={theme.name}
                   >
-                    {t(`${theme.name}`)}
+                    {t(theme.name)}
                   </SelectOption>
                 ))}
               </KeycloakSelect>

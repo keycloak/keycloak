@@ -133,6 +133,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_IDP_INITIATED_LOGIN = "saml_idp_initiated_login";
     public static final String SAML_POST_BINDING = "post";
+    public static final String SAML_ARTIFACT_BINDING = "artifact";
     public static final String SAML_SOAP_BINDING = "soap";
     public static final String SAML_REDIRECT_BINDING = "get";
     public static final String SAML_REQUEST_ID = "SAML_REQUEST_ID";

@@ -10,7 +10,7 @@
                     <label for="password-new" class="${properties.kcLabelClass!}">${msg("passwordNew")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <div class="${properties.kcInputGroup!}">
+                    <div class="${properties.kcInputGroup!}" dir="ltr">
                         <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}"
                                autofocus autocomplete="new-password"
                                aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
@@ -36,7 +36,7 @@
                     <label for="password-confirm" class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <div class="${properties.kcInputGroup!}">
+                    <div class="${properties.kcInputGroup!}" dir="ltr">
                         <input type="password" id="password-confirm" name="password-confirm"
                                class="${properties.kcInputClass!}"
                                autocomplete="new-password"

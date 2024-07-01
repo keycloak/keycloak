@@ -1,7 +1,7 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import { AdminEnvironment, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -25,10 +26,10 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useRealms } from "../context/RealmsContext";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
+import type { Environment } from "../environment";
 import helpUrls from "../help-urls";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
@@ -74,9 +75,8 @@ const RealmSettingsHeader = ({
   refresh,
 }: RealmSettingsHeaderProps) => {
   const { adminClient } = useAdminClient();
-  const { environment } = useEnvironment<AdminEnvironment>();
+  const { environment } = useEnvironment<Environment>();
   const { t } = useTranslation();
-  const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
@@ -103,7 +103,6 @@ const RealmSettingsHeader = ({
       try {
         await adminClient.realms.del({ realm: realmName });
         addAlert(t("deletedSuccessRealmSetting"), AlertVariant.success);
-        await refreshRealms();
         navigate(toDashboard({ realm: environment.masterRealm }));
         refresh();
       } catch (error) {
@@ -177,7 +176,6 @@ export const RealmSettingsTabs = () => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName, realmRepresentation: realm, refresh } = useRealm();
-  const { refresh: refreshRealms } = useRealms();
   const combinedLocales = useLocale();
   const navigate = useNavigate();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -269,7 +267,6 @@ export const RealmSettingsTabs = () => {
 
     const isRealmRenamed = realmName !== (r.realm || realm?.realm);
     if (isRealmRenamed) {
-      await refreshRealms();
       navigate(toRealmSettings({ realm: r.realm!, tab: "general" }));
     }
     refresh();

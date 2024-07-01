@@ -1,0 +1,26 @@
+= Infinispan marshalling changes
+
+Marshalling is the process of converting Java objects into bytes to send them across the network between {project_name} servers.
+With {project_name} 26, the marshalling library has changed from JBoss Marshalling to Infinispan Protostream.
+The libraries are not compatible between each other and, it requires some steps to ensure the session data is not lost.
+
+WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with each other and incorrect usage may lead to data loss.
+Consequently, all caches are cleared when upgrading to this version.
+
+To prevent losing user sessions upgrade to Keycloak 25 first and enable the persistent sessions feature as outlined in the migration guide for {project_name} 25.
+
+= New method in `ClusterProvider` API
+
+The following method was added to `org.keycloak.cluster.ClusterProvider`:
+
+* `void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify)`
+
+When multiple events are sent to the same `taskKey`, this method batches events and just perform a single network call.
+This is an optimization to reduce traffic and network related resources.
+
+In {project_name} 26, the new method has a default implementation to keep backward compatibility with custom implementation.
+The default implementation performs a single network call per an event, and it will be removed in a future version of {project_name}.
+
+= Operator's default CPU and memory limits/requests
+
+In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the `resources` section in the operator's https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md#resources[subscription].

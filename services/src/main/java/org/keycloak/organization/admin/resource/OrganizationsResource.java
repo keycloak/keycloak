@@ -17,11 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
-import static java.util.Optional.ofNullable;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -34,6 +31,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -41,11 +39,11 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
-import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -94,13 +92,15 @@ public class OrganizationsResource {
         }
 
         try {
-            OrganizationModel model = provider.create(organization.getName());
+            OrganizationModel model = provider.create(organization.getName(), organization.getAlias());
 
             Organizations.toModel(organization, model);
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ModelValidationException mve) {
             throw ErrorResponse.error(mve.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (ModelDuplicateException mve) {
+            throw ErrorResponse.error(mve.getMessage(), Status.CONFLICT);
         }
     }
 
@@ -134,15 +134,15 @@ public class OrganizationsResource {
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return provider.getAllStream(attributes, first, max).map(Organizations::toRepresentation);
+            return provider.getAllStream(attributes, first, max).map(Organizations::toBriefRepresentation);
         } else {
-            return provider.getAllStream(search, exact, first, max).map(Organizations::toRepresentation);
+            return provider.getAllStream(search, exact, first, max).map(Organizations::toBriefRepresentation);
         }
     }
 
     /**
      * Base path for the admin REST API for one particular organization.
-     */ 
+     */
     @Path("{id}")
     public OrganizationResource get(@PathParam("id") String id) {
         auth.realm().requireManageRealm();

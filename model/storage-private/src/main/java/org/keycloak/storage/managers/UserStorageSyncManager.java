@@ -16,6 +16,8 @@
  */
 package org.keycloak.storage.managers;
 
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
@@ -355,12 +357,14 @@ public class UserStorageSyncManager {
 
 
     // Send to cluster during each update or remove of federationProvider, so all nodes can update sync periods
+    @ProtoTypeId(65540)
     public static class UserStorageProviderClusterEvent implements ClusterEvent {
 
         private boolean removed;
         private String realmId;
         private UserStorageProviderModel storageProvider;
 
+        @ProtoField(1)
         public boolean isRemoved() {
             return removed;
         }
@@ -369,6 +373,7 @@ public class UserStorageSyncManager {
             this.removed = removed;
         }
 
+        @ProtoField(2)
         public String getRealmId() {
             return realmId;
         }
@@ -377,6 +382,7 @@ public class UserStorageSyncManager {
             this.realmId = realmId;
         }
 
+        @ProtoField(3)
         public UserStorageProviderModel getStorageProvider() {
             return storageProvider;
         }

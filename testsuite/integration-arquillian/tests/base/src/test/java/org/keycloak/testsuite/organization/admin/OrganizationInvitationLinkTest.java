@@ -19,13 +19,15 @@ package org.keycloak.testsuite.organization.admin;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -77,15 +79,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Test
     public void testInviteExistingUser() throws IOException, MessagingException {
-        UserRepresentation user = UserBuilder.create()
-                .username("invited")
-                .email("invited@myemail.com")
-                .password("password")
-                .enabled(true)
-                .build();
-        try (Response response = testRealm().users().create(user)) {
-            user.setId(ApiUtil.getCreatedId(response));
-        }
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
 
@@ -96,15 +90,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Test
     public void testInviteExistingUserWithEmail() throws IOException, MessagingException {
-        UserRepresentation user = UserBuilder.create()
-                .username("invitedWithMatchingEmail")
-                .email("invitedWithMatchingEmail@myemail.com")
-                .password("password")
-                .enabled(true)
-                .build();
-        try (Response response = testRealm().users().create(user)) {
-            user.setId(ApiUtil.getCreatedId(response));
-        }
+        UserRepresentation user = createUser("invitedWithMatchingEmail", "invitedWithMatchingEmail@myemail.com");
 
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
 
@@ -115,34 +101,17 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Test
     public void testInviteNewUserRegistration() throws IOException, MessagingException {
-        UserRepresentation user = UserBuilder.create()
-                .username("invitedUser")
-                .email("inviteduser@email")
-                .enabled(true)
-                .build();
-        // User isn't created when we send the invite
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        organization.members().inviteUser(user.getEmail(), null, null).close();
+        String email = "inviteduser@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
-        Assert.assertNotNull(message);
-        Assert.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
-        EmailBody body = MailUtils.getBody(message);
-        String link = MailUtils.getLink(body.getHtml());
-        String text = body.getHtml();
-        assertTrue(text.contains("<p>You were invited to join the " + organizationName + " organization. Click the link below to join. </p>"));
-        assertTrue(text.contains("<a href=\"" + link + "\" rel=\"nofollow\">Link to join the organization</a></p>"));
-        assertTrue(text.contains("Link to join the organization"));
-        assertTrue(text.contains("<p>If you dont want to join the organization, just ignore this message.</p>"));
-        String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
-        Assert.assertNotNull(orgToken);
-        driver.navigate().to(link.trim());
-        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
-        registerPage.assertCurrent(organizationName);
-        registerPage.register("firstName", "lastName", user.getEmail(),
-                user.getUsername(), "password", "password", null, false, null);
-        List<UserRepresentation> users = testRealm().users().searchByEmail(user.getEmail(), true);
-        Assert.assertFalse(users.isEmpty());
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, firstName, lastName).close();
+
+        registerUser(organization, email);
+
+        List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+        assertThat(users, Matchers.not(empty()));
         // user is a member
         Assert.assertNotNull(organization.members().member(users.get(0).getId()).toRepresentation());
         getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
@@ -153,18 +122,14 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testFailRegistrationNotEnabledWhenInvitingNewUser() throws IOException, MessagingException {
-        UserRepresentation user = UserBuilder.create()
-                .username("invitedUser")
-                .email("inviteduser@email")
-                .enabled(true)
-                .build();
-        // User isn't created when we send the invite
+    public void testFailRegistrationNotEnabledWhenInvitingNewUser() {
+        String email = "inviteduser@email";
+
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationAllowed(false);
         testRealm().update(realm);
-        try (Response response = organization.members().inviteUser(user.getEmail(), null, null)) {
+        try (Response response = organization.members().inviteUser(email, null, null)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
             assertEquals("Realm does not allow self-registration", response.readEntity(ErrorRepresentation.class).getErrorMessage());
         } finally {
@@ -174,75 +139,87 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testEmailDoesNotChangeOnRegistration() throws IOException {
+    public void testEmailDoesNotChangeOnRegistration() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, null, null).close();
+
+        registerUser(organization, "invalid@email.com");
+
+        assertThat(driver.getPageSource(), Matchers.containsString("Email does not match the invitation"));
+        assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
+    }
+
+    private UserRepresentation createUser(String invitedWithMatchingEmail, String mail) {
         UserRepresentation user = UserBuilder.create()
-                .username("invitedUser")
-                .email("inviteduser@email")
+                .username(invitedWithMatchingEmail)
+                .email(mail)
+                .password("password")
                 .enabled(true)
                 .build();
-        // User isn't created when we send the invite
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        organization.members().inviteUser(user.getEmail(), null, null).close();
+        try (Response response = testRealm().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+        return user;
+    }
 
+    private String getInvitationLinkFromEmail(String ...parameters) throws MessagingException, IOException {
         MimeMessage message = greenMail.getLastReceivedMessage();
         Assert.assertNotNull(message);
+        Assert.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
+
         EmailBody body = MailUtils.getBody(message);
-        String link = MailUtils.getLink(body.getHtml());
+        String text = body.getHtml();
+        String link = MailUtils.getLink(body.getHtml()).trim();
+
+        if (Arrays.stream(parameters).noneMatch(Predicate.isEqual(null)) && parameters.length == 2) {
+            assertThat(text, Matchers.containsString("Hi, " + parameters[0] + " " + parameters[1] + "."));
+        }
+
+        assertThat(text, Matchers.containsString(("You were invited to join the " + organizationName + " organization. Click the link below to join. </p>")));
+        assertThat(text, Matchers.containsString(("<a href=\"" + link + "\" rel=\"nofollow\">Link to join the organization</a></p>")));
+        assertThat(text, Matchers.containsString(("Link to join the organization")));
+        assertThat(text, Matchers.containsString(("<p>If you dont want to join the organization, just ignore this message.</p>")));
+
         String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
         Assert.assertNotNull(orgToken);
-        driver.navigate().to(link.trim());
-        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
-        registerPage.assertCurrent(organizationName);
-        registerPage.register("firstName", "lastName", "invalid@email.com",
-                user.getUsername(), "password", "password", null, false, null);
-        Assert.assertTrue(driver.getPageSource().contains("Email does not match the invitation"));
-        List<UserRepresentation> users = testRealm().users().searchByEmail(user.getEmail(), true);
-        Assert.assertTrue(users.isEmpty());
+
+        return link;
     }
 
     @Test
-    public void testLinkExpired() throws IOException {
-        UserRepresentation user = UserBuilder.create()
-                .username("invitedUser")
-                .email("inviteduser@email")
-                .enabled(true)
-                .build();
-        // User isn't created when we send the invite
+    public void testLinkExpired() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        organization.members().inviteUser(user.getEmail(), "Homer", "Simpson").close();
+        organization.members().inviteUser(email, "Homer", "Simpson").close();
 
         try {
             setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
-            MimeMessage message = greenMail.getLastReceivedMessage();
-            Assert.assertNotNull(message);
-            EmailBody body = MailUtils.getBody(message);
-            String link = MailUtils.getLink(body.getHtml());
-            String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
-            Assert.assertNotNull(orgToken);
-            driver.navigate().to(link.trim());
-            Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
-            registerPage.assertCurrent(organizationName);
-            driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
-            registerPage.register("firstName", "lastName", "invalid@email.com",
-                    user.getUsername(), "password", "password", null, false, null);
-            Assert.assertTrue(driver.getPageSource().contains("The provided token is not valid or has expired."));
-            List<UserRepresentation> users = testRealm().users().searchByEmail(user.getEmail(), true);
-            Assert.assertTrue(users.isEmpty());
+
+            registerUser(organization, email);
+
+            assertThat(driver.getPageSource(), Matchers.containsString("The provided token is not valid or has expired."));
+            assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
         } finally {
             resetTimeOffset();
         }
     }
 
+    private void registerUser(OrganizationResource organization, String email) throws MessagingException, IOException {
+        String link = getInvitationLinkFromEmail();
+        driver.navigate().to(link);
+        Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> email.equals(actual.getEmail())));
+        registerPage.assertCurrent(organizationName);
+        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+        registerPage.register("firstName", "lastName", email,
+                "invitedUser", "password", "password", null, false, null);
+    }
+
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user) throws MessagingException, IOException {
-        MimeMessage message = greenMail.getLastReceivedMessage();
-        Assert.assertNotNull(message);
-        Assert.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
-        EmailBody body = MailUtils.getBody(message);
-        if (user.getFirstName() != null && user.getLastName() != null) {
-            assertThat(body.getText(), Matchers.containsString("Hi, " + user.getFirstName() + " " + user.getLastName() + "."));
-        }
-        String link = MailUtils.getLink(body.getHtml());
-        driver.navigate().to(link.trim());
+        String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
+        driver.navigate().to(link);
         // not yet a member
         Assert.assertFalse(organization.members().getAll().stream().anyMatch(actual -> user.getId().equals(actual.getId())));
         // confirm the intent of membership

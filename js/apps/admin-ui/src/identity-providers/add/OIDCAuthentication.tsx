@@ -1,18 +1,17 @@
+import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
 import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { sortProviders } from "../../util";
 import { ClientIdSecret } from "../component/ClientIdSecret";
 import { SwitchField } from "../component/SwitchField";
-import { sortProviders } from "../../util";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { TextField } from "../component/TextField";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 const clientAuthentications = [
   "client_secret_post",

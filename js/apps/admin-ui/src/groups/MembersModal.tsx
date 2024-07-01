@@ -10,7 +10,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { emptyFormatter } from "../util";
 
 type MemberModalProps = {
-  membersQuery: () => Promise<UserRepresentation[]>;
+  membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
 };
@@ -27,7 +27,7 @@ export const MemberModal = ({
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    const members = await membersQuery();
+    const members = await membersQuery(first, max);
     const params: { [name: string]: string | number } = {
       first: first!,
       max: max! + members.length,

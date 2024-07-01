@@ -1,3 +1,4 @@
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Nav,
   NavExpandable,
@@ -16,19 +17,14 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  To,
   matchPath,
   useHref,
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
-import {
-  AccountEnvironment,
-  environment,
-  useEnvironment,
-  type Feature,
-} from "@keycloak/keycloak-ui-shared";
+
 import fetchContentJson from "../content/fetchContent";
+import { environment, type Environment, type Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
@@ -49,7 +45,7 @@ export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
 export const PageNav = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>();
-  const context = useEnvironment<AccountEnvironment>();
+  const context = useEnvironment<Environment>();
 
   usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
@@ -86,7 +82,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { t } = useTranslation();
   const {
     environment: { features },
-  } = useEnvironment<AccountEnvironment>();
+  } = useEnvironment<Environment>();
   const { pathname } = useLocation();
   const isActive = useMemo(
     () => matchMenuItem(pathname, menuItem),
@@ -95,7 +91,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
 
   if ("path" in menuItem) {
     return (
-      <NavLink to={menuItem.path} isActive={isActive}>
+      <NavLink path={menuItem.path} isActive={isActive}>
         {t(menuItem.label)}
       </NavLink>
     );
@@ -119,31 +115,35 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
   );
 }
 
+function getFullUrl(path: string) {
+  return `${new URL(environment.baseUrl).pathname}${path}`;
+}
+
 function matchMenuItem(currentPath: string, menuItem: MenuItem): boolean {
   if ("path" in menuItem) {
-    return !!matchPath(menuItem.path, currentPath);
+    return !!matchPath(getFullUrl(menuItem.path), currentPath);
   }
 
   return menuItem.children.some((child) => matchMenuItem(currentPath, child));
 }
 
 type NavLinkProps = {
-  to: To;
+  path: string;
   isActive: boolean;
 };
 
 export const NavLink = ({
-  to,
+  path,
   isActive,
   children,
 }: PropsWithChildren<NavLinkProps>) => {
-  const menuItemPath = `${new URL(environment.baseUrl).pathname}${to}`;
+  const menuItemPath = getFullUrl(path);
   const href = useHref(menuItemPath);
   const handleClick = useLinkClickHandler(menuItemPath);
 
   return (
     <NavItem
-      data-testid={to}
+      data-testid={path}
       to={href}
       isActive={isActive}
       onClick={(event) =>

@@ -48,19 +48,19 @@ public class HelpCmd implements Runnable {
                     break;
                 }
                 case "create": {
-                    printOut(CreateCmd.usage());
+                    printOut(new CreateCmd().help());
                     break;
                 }
                 case "get": {
-                    printOut(GetCmd.usage());
+                    printOut(new GetCmd().help());
                     break;
                 }
                 case "update": {
-                    printOut(UpdateCmd.usage());
+                    printOut(new UpdateCmd().help());
                     break;
                 }
                 case "delete": {
-                    printOut(DeleteCmd.usage());
+                    printOut(new DeleteCmd().help());
                     break;
                 }
                 case "attrs": {
@@ -68,7 +68,7 @@ public class HelpCmd implements Runnable {
                     break;
                 }
                 case "update-token": {
-                    printOut(UpdateTokenCmd.usage());
+                    printOut(new UpdateTokenCmd().help());
                     break;
                 }
                 default: {

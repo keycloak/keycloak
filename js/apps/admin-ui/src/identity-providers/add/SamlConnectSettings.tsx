@@ -1,18 +1,19 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { FormGroup, Title } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import {
-  AdminEnvironment,
   FormErrorText,
   HelpItem,
   TextControl,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
+import { FormGroup, Title } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
 import { useAdminClient } from "../../admin-client";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import type { Environment } from "../../environment";
 import { addTrailingSlash } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
@@ -24,7 +25,7 @@ type FormFields = IdentityProviderRepresentation & {
 
 export const SamlConnectSettings = () => {
   const { adminClient } = useAdminClient();
-  const { environment } = useEnvironment<AdminEnvironment>();
+  const { environment } = useEnvironment<Environment>();
 
   const { t } = useTranslation();
   const id = "saml";
@@ -90,7 +91,7 @@ export const SamlConnectSettings = () => {
         name="config.entityId"
         label={t("serviceProviderEntityId")}
         labelIcon={t("serviceProviderEntityIdHelp")}
-        defaultValue={`${environment.authServerUrl}/realms/${realm}`}
+        defaultValue={`${environment.serverBaseUrl}/realms/${realm}`}
         rules={{
           required: t("required"),
         }}

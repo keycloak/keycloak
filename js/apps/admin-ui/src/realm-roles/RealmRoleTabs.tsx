@@ -52,6 +52,7 @@ import { useParams } from "../utils/useParams";
 import { UsersInRoleTab } from "./UsersInRoleTab";
 import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
+import { useAccess } from "../context/access/Access";
 
 export default function RealmRoleTabs() {
   const { adminClient } = useAdminClient();
@@ -75,6 +76,12 @@ export default function RealmRoleTabs() {
   const refresh = () => setKey(key + 1);
 
   const { addAlert, addError } = useAlerts();
+
+  const { hasAccess } = useAccess();
+  const canViewPermissionsTab = hasAccess(
+    "query-clients",
+    "manage-authorization",
+  );
 
   const [open, setOpen] = useState(false);
   const convert = (role: RoleRepresentation) => {
@@ -385,14 +392,15 @@ export default function RealmRoleTabs() {
                 <UsersInRoleTab data-cy="users-in-role-tab" />
               </Tab>
             )}
-            {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
-              <Tab
-                title={<TabTitleText>{t("permissions")}</TabTitleText>}
-                {...permissionsTab}
-              >
-                <PermissionsTab id={id} type="roles" />
-              </Tab>
-            )}
+            {isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
+              canViewPermissionsTab && (
+                <Tab
+                  title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                  {...permissionsTab}
+                >
+                  <PermissionsTab id={id} type="roles" />
+                </Tab>
+              )}
           </RoutableTabs>
         </FormProvider>
       </PageSection>

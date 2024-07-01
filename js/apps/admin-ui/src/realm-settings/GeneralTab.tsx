@@ -4,8 +4,6 @@ import {
   UserProfileConfig,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
-  ActionGroup,
-  Button,
   ClipboardCopy,
   FormGroup,
   PageSection,
@@ -27,6 +25,7 @@ import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
@@ -105,7 +104,7 @@ function RealmSettingsGeneralTabForm({
     control,
     handleSubmit,
     setValue,
-    formState: { isDirty, errors },
+    formState: { errors },
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const isOrganizationsEnabled = isFeatureEnabled(Feature.Organizations);
@@ -154,7 +153,7 @@ function RealmSettingsGeneralTabForm({
           className="pf-u-mt-lg"
           onSubmit={onSubmit}
         >
-          <FormGroup label={t("realmId")} fieldId="kc-realm-id" isRequired>
+          <FormGroup label={t("realmName")} fieldId="kc-realm-id" isRequired>
             <Controller
               name="realm"
               control={control}
@@ -183,7 +182,7 @@ function RealmSettingsGeneralTabForm({
           <TextControl
             name={convertAttributeNameToForm("attributes.frontendUrl")}
             type="url"
-            label={t("htmlDisplayName")}
+            label={t("frontendUrl")}
             labelIcon={t("frontendUrlHelp")}
           />
           <SelectControl
@@ -266,23 +265,12 @@ function RealmSettingsGeneralTabForm({
               </StackItem>
             </Stack>
           </FormGroup>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              data-testid="general-tab-save"
-              isDisabled={!isDirty}
-            >
-              {t("save")}
-            </Button>
-            <Button
-              data-testid="general-tab-revert"
-              variant="link"
-              onClick={setupForm}
-            >
-              {t("revert")}
-            </Button>
-          </ActionGroup>
+          <FixedButtonsGroup
+            name="realmSettingsGeneralTab"
+            reset={setupForm}
+            isActive
+            isSubmit
+          />
         </FormAccess>
       </FormProvider>
     </PageSection>

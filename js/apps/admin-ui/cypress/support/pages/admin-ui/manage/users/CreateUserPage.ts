@@ -1,5 +1,6 @@
 import Masthead from "../../Masthead";
 import FormValidation from "../../../../forms/FormValidation";
+import Select from "../../../../forms/Select";
 
 export default class CreateUserPage {
   readonly masthead = new Masthead();
@@ -20,9 +21,9 @@ export default class CreateUserPage {
     this.addUserBtn = "add-user";
     this.joinGroupsBtn = "join-groups-button";
     this.joinBtn = "join-button";
-    this.createBtn = "create-user";
-    this.saveBtn = "save-user";
-    this.cancelBtn = "cancel-create-user";
+    this.createBtn = "user-creation-save";
+    this.saveBtn = "user-creation-save";
+    this.cancelBtn = "user-creation-revert";
   }
 
   //#region General Settings
@@ -84,27 +85,10 @@ export default class CreateUserPage {
     expectedOptionsWithoutEmptyOption: string[],
     expectedValue: string,
   ) {
-    this.#getSelectFieldButton(attrName).should(
-      "have.class",
-      "pf-v5-c-select__toggle",
+    Select.assertSelectedItem(
+      this.#getSelectFieldButton(attrName),
+      expectedValue,
     );
-
-    const valueToCheck = expectedValue ? expectedValue : this.emptyOptionValue;
-    this.#getSelectFieldButton(attrName)
-      .find(".pf-v5-c-select__toggle-text")
-      .invoke("text")
-      .should("eq", valueToCheck);
-
-    const expectedOptions = [this.emptyOptionValue].concat(
-      expectedOptionsWithoutEmptyOption,
-    );
-    this.#withSelectExpanded(attrName, () => {
-      this.#getSelectOptions(attrName)
-        .should("have.length", expectedOptions.length)
-        .each(($option, index) =>
-          cy.wrap($option).should("have.text", expectedOptions[index]),
-        );
-    });
 
     return this;
   }
@@ -130,33 +114,6 @@ export default class CreateUserPage {
         cy.wrap($selectField).click();
       }
     });
-  }
-
-  /**
-   * Runs the given function in the context of an expanded select field.
-   *
-   * This method makes sure that the initial expanded/collapsed state is preserved:
-   * The select field will be expanded before running the function, if it is not already expanded.
-   * It will be collapsed after running the function, when it was not expanded before running the function.
-   *
-   * @param attrName the attribute name of the select field
-   * @param func the function to be applied
-   * @private
-   */
-  #withSelectExpanded(attrName: string, func: () => any) {
-    let wasInitiallyExpanded = false;
-    this.#toggleSelectField(attrName, (currentlyExpanded) => {
-      wasInitiallyExpanded = currentlyExpanded;
-      return !currentlyExpanded;
-    })
-      .then(() => func())
-      .then(() =>
-        // click again on the dropdown to hide the values list, when necessary
-        this.#toggleSelectField(
-          attrName,
-          (currentlyExpanded) => currentlyExpanded && !wasInitiallyExpanded,
-        ),
-      );
   }
 
   assertAttributeLabel(attrName: string, expectedText: string) {
@@ -193,9 +150,7 @@ export default class CreateUserPage {
   }
 
   setAttributeValueOnSelect(attrName: string, value: string) {
-    this.#withSelectExpanded(attrName, () => {
-      this.#getSelectOptions(attrName).contains(value).click();
-    });
+    Select.selectItem(this.#getSelectFieldButton(attrName), value);
 
     return this;
   }

@@ -42,7 +42,7 @@ import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthO
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@IgnoreBrowserDriver(FirefoxDriver.class)
+@IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class ResidentKeyRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test

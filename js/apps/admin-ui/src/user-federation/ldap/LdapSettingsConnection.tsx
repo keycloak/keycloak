@@ -1,5 +1,13 @@
 import type TestLdapConnectionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/testLdapConnection";
 import {
+  HelpItem,
+  KeycloakSelect,
+  PasswordControl,
+  SelectControl,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   Button,
   FormGroup,
@@ -15,21 +23,11 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  HelpItem,
-  PasswordControl,
-  SelectControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import {
-  KeycloakSelect,
-  SelectVariant,
-} from "../../components/select/KeycloakSelect";
 
 export type LdapSettingsConnectionProps = {
   form: UseFormReturn;

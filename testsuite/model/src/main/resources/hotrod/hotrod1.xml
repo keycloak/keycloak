@@ -43,7 +43,5 @@
     <cache-container name="site-1" statistics="true">
         <!-- Use the "xsite" stack for cluster transport. -->
         <transport cluster="external-site-1" stack="xsite"/>
-
-        <serialization marshaller="org.infinispan.jboss.marshalling.commons.GenericJBossMarshaller"/>
     </cache-container>
 </infinispan>

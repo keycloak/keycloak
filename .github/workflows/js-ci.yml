@@ -182,8 +182,6 @@ jobs:
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
-        env:
-          KEYCLOAK_SERVER: http://localhost:8080
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -284,8 +282,6 @@ jobs:
           wait-on: http://localhost:8080
           working-directory: js/apps/admin-ui
         env:
-          CYPRESS_BASE_URL: http://localhost:8080/admin/
-          CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
           SPLIT: ${{ strategy.job-total }}
           SPLIT_INDEX: ${{ strategy.job-index }}
           SPLIT_RANDOM_SEED: ${{ needs.generate-test-seed.outputs.seed }}

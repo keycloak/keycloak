@@ -16,35 +16,36 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
+import com.google.common.collect.ImmutableSet;
 import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.keys.PublicKeyStorageSpi;
 import org.keycloak.keys.infinispan.InfinispanCachePublicKeyProviderFactory;
 import org.keycloak.keys.infinispan.InfinispanPublicKeyStorageProviderFactory;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.cache.authorization.CachedStoreFactorySpi;
-import org.keycloak.models.cache.infinispan.authorization.InfinispanCacheStoreFactoryProviderFactory;
 import org.keycloak.models.cache.CachePublicKeyProviderSpi;
+import org.keycloak.models.cache.CacheRealmProviderSpi;
+import org.keycloak.models.cache.CacheUserProviderSpi;
+import org.keycloak.models.cache.authorization.CachedStoreFactorySpi;
+import org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory;
+import org.keycloak.models.cache.infinispan.InfinispanUserCacheProviderFactory;
+import org.keycloak.models.cache.infinispan.authorization.InfinispanCacheStoreFactoryProviderFactory;
 import org.keycloak.models.session.UserSessionPersisterSpi;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 import org.keycloak.sessions.StickySessionEncoderSpi;
-import org.keycloak.testsuite.model.KeycloakModelParameters;
-import org.keycloak.models.cache.CacheRealmProviderSpi;
-import org.keycloak.models.cache.CacheUserProviderSpi;
-import org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory;
-import org.keycloak.models.cache.infinispan.InfinispanUserCacheProviderFactory;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
 import org.keycloak.testsuite.model.Config;
-import com.google.common.collect.ImmutableSet;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.timer.TimerProviderFactory;
 
 import java.util.Set;
@@ -97,10 +98,10 @@ public class Infinispan extends KeycloakModelParameters {
                 .config("useKeycloakTimeService", "true")
                 .config("nodeName", "node-" + NODE_COUNTER.incrementAndGet())
                 .spi(UserLoginFailureSpi.NAME)
-                .provider(InfinispanUserLoginFailureProviderFactory.PROVIDER_ID)
+                .provider(InfinispanUtils.EMBEDDED_PROVIDER_ID)
                 .config("stalledTimeoutInSeconds", "10")
                 .spi(UserSessionSpi.NAME)
-                .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
+                .provider(InfinispanUtils.EMBEDDED_PROVIDER_ID)
                 .config("sessionPreloadStalledTimeoutInSeconds", "10")
                 .config("offlineSessionCacheEntryLifespanOverride", "43200")
                 .config("offlineClientSessionCacheEntryLifespanOverride", "43200")
