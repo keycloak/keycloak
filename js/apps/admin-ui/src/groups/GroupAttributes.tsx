@@ -15,7 +15,7 @@ import {
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
-import { convertFormValuesToObject, convertToFormValues } from "../util";
+import { convertFormValuesToObject } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { getLastId } from "./groupIdUtils";
 
@@ -35,7 +35,9 @@ export const GroupAttributes = () => {
   useFetch(
     () => adminClient.groups.findOne({ id }),
     (group) => {
-      convertToFormValues(group!, form.setValue);
+      form.reset({
+        attributes: arrayToKeyValue(group?.attributes!),
+      });
       setCurrentGroup(group);
     },
     [id],
