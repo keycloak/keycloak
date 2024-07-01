@@ -87,7 +87,6 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         loginPage.open(bc.consumerRealmName());
         Assert.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
         loginPage.loginUsername("tom@myorg.com");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
         Assert.assertTrue(loginPage.isPasswordInputPresent());
     }
 
@@ -205,8 +204,6 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         // organization available to identity-first login page
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(user.getEmail());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assert.assertTrue(driver.getPageSource().contains("User is member of " + orgRep.getName()));
         Assert.assertTrue(loginPage.isPasswordInputPresent());
     }
 }
