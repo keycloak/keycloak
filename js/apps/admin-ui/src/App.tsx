@@ -1,6 +1,5 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import {
-  AlertProvider,
   mainPageContentId,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
@@ -34,9 +33,7 @@ const AppContexts = ({ children }: PropsWithChildren) => (
         <WhoAmIContextProvider>
           <RecentRealmsProvider>
             <AccessContextProvider>
-              <AlertProvider>
-                <SubGroups>{children}</SubGroups>
-              </AlertProvider>
+              <SubGroups>{children}</SubGroups>
             </AccessContextProvider>
           </RecentRealmsProvider>
         </WhoAmIContextProvider>

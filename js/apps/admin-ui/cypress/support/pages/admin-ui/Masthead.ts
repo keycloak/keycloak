@@ -98,7 +98,9 @@ export default class Masthead extends CommonElements {
     if (typeof message === "string") {
       this.#getAlertsContainer()
         .find(this.#alertMessage)
-        .should("contain.text", message);
+        .should(($el) => {
+          expect($el).to.contain.text(message);
+        });
 
       if (closeNotification) {
         this.#getAlertsContainer()
@@ -109,8 +111,9 @@ export default class Masthead extends CommonElements {
     } else {
       this.#getAlertsContainer()
         .find(this.#alertMessage)
-        .invoke("text")
-        .should("match", message);
+        .should(($el) => {
+          expect($el).to.match(message);
+        });
 
       if (closeNotification) {
         this.#getAlertsContainer().find("button").last().click({ force: true });
