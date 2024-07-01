@@ -24,11 +24,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Pojo to represent a VerifiableCredential for internal handling
@@ -41,7 +44,15 @@ public class VerifiableCredential {
     @JsonProperty("@context")
     private List<String> context;
     private List<String> type = new ArrayList<>();
-    private URI issuer;
+
+    /**
+     * The value of the issuer property MUST be either a URL, or an object containing an id property whose value
+     * is a URL; in either case, the issuer selects this URL to identify itself in a globally unambiguous way. It is
+     * RECOMMENDED that the URL be one which, if dereferenced, results in a controller document, as defined in
+     * [VC-DATA-INTEGRITY] or [VC-JOSE-COSE], about the issuer that can be used to verify the information expressed in
+     * the credential.
+     */
+    private Object issuer;
     private Date issuanceDate;
     private URI id;
     private Date expirationDate;
@@ -78,12 +89,30 @@ public class VerifiableCredential {
         return this;
     }
 
-    public URI getIssuer() {
+    public Object getIssuer() {
         return issuer;
     }
 
     public VerifiableCredential setIssuer(URI issuer) {
         this.issuer = issuer;
+        return this;
+    }
+
+    public VerifiableCredential setIssuer(Map<String, String> issuer) {
+        this.issuer = issuer;
+        Optional.ofNullable(issuer).ifPresent(map -> {
+            String id = Optional.ofNullable(map.get("id"))
+                                .orElseThrow(() -> new IllegalArgumentException("id is a required field for issuer"));
+            try
+            {
+                // id must be a URL: https://www.w3.org/TR/vc-data-model-2.0/#issuer
+                new URI(id);
+            }
+            catch (URISyntaxException e)
+            {
+                throw new IllegalStateException("id must be a valid URI", e);
+            }
+        });
         return this;
     }
 
@@ -128,3 +157,4 @@ public class VerifiableCredential {
         return this;
     }
 }
+
