@@ -11,6 +11,22 @@ import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
 import { useFetch } from "../../utils/useFetch";
 import { useRealm } from "../realm-context/RealmContext";
 
+// can be replaced with https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/getTextInfo
+const RTL_LOCALES = [
+  "ar",
+  "dv",
+  "fa",
+  "ha",
+  "he",
+  "iw",
+  "ji",
+  "ps",
+  "sd",
+  "ug",
+  "ur",
+  "yi",
+];
+
 export class WhoAmI {
   #me?: WhoAmIRepresentation;
 
@@ -22,6 +38,9 @@ export class WhoAmI {
           console.warn("Error(s) loading locale", this.#me?.locale, error);
         }
       });
+      if (RTL_LOCALES.includes(this.#me.locale)) {
+        document.getElementsByTagName("html")[0].setAttribute("dir", "rtl");
+      }
     }
   }
 
