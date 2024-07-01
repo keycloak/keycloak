@@ -23,19 +23,24 @@ import org.keycloak.sdjwt.SdJws;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
+ *
  */
 public class KeyBindingJWT extends SdJws {
+
+    public static final String TYP = "kb+jwt";
+
+    public KeyBindingJWT(JsonNode payload, SignatureSignerContext signer, String jwsType) {
+        super(payload, signer, jwsType);
+    }
 
     public static KeyBindingJWT of(String jwsString) {
         return new KeyBindingJWT(jwsString);
     }
 
     public static KeyBindingJWT from(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        JWSInput jwsInput = sign(payload, signer, jwsType);
-        return new KeyBindingJWT(payload, jwsInput);
+        return new KeyBindingJWT(payload, signer, jwsType);
     }
 
     private KeyBindingJWT(JsonNode payload, JWSInput jwsInput) {

@@ -7,6 +7,7 @@
     "key_size": 256,
     "kty": "EC",
     "issuer_key": {
+      "kid": "doc-signer-05-25-2022",
       "kty": "EC",
       "d": "Ur2bNKuBPOrAaxsRnbSH6hIhmNTxSGXshDSUD1a1y7g",
       "crv": "P-256",
@@ -14,6 +15,7 @@
       "y": "Xv5zWwuoaTgdS6hV43yI6gBwTnjukmFQQnJ_kCxzqk8"
     },
     "holder_key": {
+      "kid": "holder",
       "kty": "EC",
       "d": "5K5SCos8zf9zRemGGUl6yfok-_NiiryNZsvANWMhF-I",
       "crv": "P-256",
