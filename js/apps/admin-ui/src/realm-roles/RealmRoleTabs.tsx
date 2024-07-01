@@ -15,7 +15,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useLocation, useMatch, useNavigate } from "react-router-dom";
+import { useMatch, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import {
@@ -66,10 +66,7 @@ export default function RealmRoleTabs() {
   const navigate = useNavigate();
 
   const { id, clientId } = useParams<ClientRoleParams>();
-  const { pathname } = useLocation();
-
   const { realm: realmName, realmRepresentation: realm } = useRealm();
-
   const [key, setKey] = useState(0);
   const [attributes, setAttributes] = useState<KeyValueType[] | undefined>();
 
@@ -217,76 +214,6 @@ export default function RealmRoleTabs() {
     },
   });
 
-  const dropdownItems = pathname.includes("associated-roles")
-    ? [
-        <DropdownItem
-          key="delete-all-associated"
-          component="button"
-          onClick={() => toggleDeleteAllAssociatedRolesDialog()}
-        >
-          {t("removeAllAssociatedRoles")}
-        </DropdownItem>,
-        <DropdownItem
-          key="delete-role"
-          component="button"
-          onClick={() => {
-            toggleDeleteDialog();
-          }}
-        >
-          {t("deleteRole")}
-        </DropdownItem>,
-      ]
-    : [
-        <DropdownItem
-          key="toggle-modal"
-          data-testid="add-roles"
-          component="button"
-          onClick={() => toggleModal()}
-        >
-          {t("addAssociatedRolesText")}
-        </DropdownItem>,
-        <DropdownItem
-          key="delete-role"
-          component="button"
-          onClick={() => toggleDeleteDialog()}
-        >
-          {t("deleteRole")}
-        </DropdownItem>,
-      ];
-
-  const [
-    toggleDeleteAllAssociatedRolesDialog,
-    DeleteAllAssociatedRolesConfirm,
-  ] = useConfirmDialog({
-    titleKey: t("removeAllAssociatedRoles") + "?",
-    messageKey: t("removeAllAssociatedRolesConfirmDialog", {
-      name: roleName || t("createRole"),
-    }),
-    continueButtonLabel: "delete",
-    continueButtonVariant: ButtonVariant.danger,
-    onConfirm: async () => {
-      try {
-        const additionalRoles = await adminClient.roles.getCompositeRoles({
-          id,
-        });
-        await adminClient.roles.delCompositeRoles({ id }, additionalRoles);
-        addAlert(
-          t("compositeRoleOff"),
-          AlertVariant.success,
-          t("compositesRemovedAlertDescription"),
-        );
-        navigate(toTab("details"));
-        refresh();
-      } catch (error) {
-        addError("roleDeleteError", error);
-      }
-    },
-  });
-
-  const toggleModal = () => {
-    setOpen(!open);
-  };
-
   const addComposites = async (composites: RoleRepresentation[]) => {
     try {
       await adminClient.roles.createComposite(
@@ -311,7 +238,6 @@ export default function RealmRoleTabs() {
   return (
     <>
       <DeleteConfirm />
-      <DeleteAllAssociatedRolesConfirm />
       {open && (
         <AddRoleMappingModal
           id={id}
@@ -331,7 +257,17 @@ export default function RealmRoleTabs() {
           },
         ]}
         actionsDropdownId="roles-actions-dropdown"
-        dropdownItems={dropdownItems}
+        dropdownItems={[
+          <DropdownItem
+            key="delete-role"
+            component="button"
+            onClick={() => {
+              toggleDeleteDialog();
+            }}
+          >
+            {t("deleteRole")}
+          </DropdownItem>,
+        ]}
         divider={false}
       />
       <PageSection variant="light" className="pf-v5-u-p-0">
@@ -353,21 +289,19 @@ export default function RealmRoleTabs() {
                 editMode
               />
             </Tab>
-            {composites && (
-              <Tab
-                data-testid="associatedRolesTab"
-                title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
-                {...associatedRolesTab}
-              >
-                <RoleMapping
-                  name={roleName!}
-                  id={id}
-                  type="roles"
-                  isManager
-                  save={(rows) => addComposites(rows.map((r) => r.role))}
-                />
-              </Tab>
-            )}
+            <Tab
+              data-testid="associatedRolesTab"
+              title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
+              {...associatedRolesTab}
+            >
+              <RoleMapping
+                name={roleName!}
+                id={id}
+                type="roles"
+                isManager
+                save={(rows) => addComposites(rows.map((r) => r.role))}
+              />
+            </Tab>
             {!isDefaultRole(roleName) && (
               <Tab
                 data-testid="attributesTab"
