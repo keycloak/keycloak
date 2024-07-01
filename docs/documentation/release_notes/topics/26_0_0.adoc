@@ -22,3 +22,10 @@ WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with ea
 Consequently, all caches are cleared when upgrading to this version.
 
 Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto3/[Protocol Buffers] (proto 3), which has the advantage of backwards/forwards compatibility.
+
+= Keycloak CR supports standard scheduling options
+
+The Keycloak CR now exposes first class properties for controlling the scheduling of your Keycloak Pods. 
+
+For more details, see the
+https://www.keycloak.org/operator/advanced-configuration[Operator Advanced Configuration].
