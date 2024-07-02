@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 
+import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.hibernate.dialect.H2Dialect;
@@ -100,6 +101,15 @@ public class ConfigurationTest {
             if (field != null) {
                 field.setAccessible(false);
             }
+        }
+    }
+
+    public static void setSystemProperty(String key, String value, Runnable runnable) {
+        System.setProperty(key, value);
+        try {
+            runnable.run();
+        } finally {
+            System.clearProperty(key);
         }
     }
 
@@ -630,6 +640,59 @@ public class ConfigurationTest {
         // Properties are loaded from the file - secret can be obtained only if the mapping works correctly
         ConfigValue secret = config.getConfigValue("my.secret");
         assertEquals("secret", secret.getValue());
+    }
+
+    @Test
+    public void testTracingDefaults() {
+        assertConfig(Map.of(
+                "tracing-enabled", "false",
+                "tracing-endpoint", "http://localhost:4317",
+                "tracing-protocol", "grpc",
+                "tracing-jdbc-enabled", "false",
+                "tracing-sampler-type", SamplerType.TRACE_ID_RATIO.getValue(),
+                "tracing-sampler-ratio", "1.0"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.otel.traces.enabled", "false",
+                "quarkus.otel.exporter.otlp.endpoint", "http://localhost:4317",
+                "quarkus.otel.exporter.otlp.traces.protocol", "grpc",
+                "quarkus.datasource.jdbc.telemetry", "false",
+                "quarkus.otel.traces.sampler", SamplerType.TRACE_ID_RATIO.getValue(),
+                "quarkus.otel.traces.sampler.arg", "1.0"
+        ));
+    }
+
+    @Test
+    public void testTracingDifferentValues() {
+        putEnvVars(Map.of(
+                "KC_TRACING_ENABLED", "true",
+                "KC_TRACING_ENDPOINT", "http://something:4444",
+                "KC_TRACING_PROTOCOL", "http/protobuf",
+                "KC_TRACING_JDBC_ENABLED", "true",
+                "KC_TRACING_SAMPLER_TYPE", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
+                "KC_TRACING_SAMPLER_RATIO", "0.5"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "tracing-enabled", "true",
+                "tracing-endpoint", "http://something:4444",
+                "tracing-protocol", "http/protobuf",
+                "tracing-jdbc-enabled", "true",
+                "tracing-sampler-type", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
+                "tracing-sampler-ratio", "0.5"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.otel.traces.enabled", "true",
+                "quarkus.otel.exporter.otlp.endpoint", "http://something:4444",
+                "quarkus.otel.exporter.otlp.traces.protocol", "http/protobuf",
+                "quarkus.datasource.jdbc.telemetry", "true",
+                "quarkus.otel.traces.sampler", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
+                "quarkus.otel.traces.sampler.arg", "0.5"
+        ));
     }
 
     protected Config.Scope initConfig(String... scope) {

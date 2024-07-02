@@ -24,6 +24,7 @@ import java.util.HashSet;
 
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.quarkus.runtime.configuration.mappers.TracingPropertyMappers;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,7 +43,8 @@ public class IgnoredArtifacts {
                         fips(),
                         jdbcDrivers(),
                         health(),
-                        metrics()
+                        metrics(),
+                        tracingJdbc()
                 )
                 .flatMap(Collection::stream)
                 .collect(Collectors.toUnmodifiableSet());
@@ -158,9 +160,7 @@ public class IgnoredArtifacts {
     );
 
     private static Set<String> health() {
-        boolean isHealthEnabled = Configuration.getOptionalBooleanValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey()).orElse(false);
-
+        boolean isHealthEnabled = Configuration.isTrue(HealthOptions.HEALTH_ENABLED);
         return !isHealthEnabled ? HEALTH : emptySet();
     }
 
@@ -173,9 +173,16 @@ public class IgnoredArtifacts {
     );
 
     private static Set<String> metrics() {
-        boolean isMetricsEnabled = Configuration.getOptionalBooleanValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + MetricsOptions.METRICS_ENABLED.getKey()).orElse(false);
-
+        boolean isMetricsEnabled = Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
         return !isMetricsEnabled ? METRICS : emptySet();
+    }
+
+    public static Set<String> TRACING_JDBC = Set.of(
+            "io.opentelemetry.instrumentation:opentelemetry-jdbc"
+    );
+
+    private static Set<String> tracingJdbc() {
+        boolean isTracingJdbcEnabled = TracingPropertyMappers.isTracingEnabled() && TracingPropertyMappers.isTracingJdbcEnabled();
+        return !isTracingJdbcEnabled ? TRACING_JDBC : emptySet();
     }
 }
