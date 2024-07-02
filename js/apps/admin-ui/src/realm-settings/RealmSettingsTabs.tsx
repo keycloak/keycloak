@@ -47,6 +47,7 @@ import { RealmSettingsSessionsTab } from "./SessionsTab";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsTokensTab } from "./TokensTab";
 import { UserRegistration } from "./UserRegistration";
+import { CrossDomainTrust } from "./CrossDomainTrustTab";
 import { EventsTab } from "./event-config/EventsTab";
 import { KeysTab } from "./keys/KeysTab";
 import { LocalizationTab } from "./localization/LocalizationTab";
@@ -288,6 +289,7 @@ export const RealmSettingsTabs = () => {
   const clientPoliciesTab = useTab("client-policies");
   const userProfileTab = useTab("user-profile");
   const userRegistrationTab = useTab("user-registration");
+  const crossDomainTrustTab = useTab("cross-domain-trust");
 
   const useClientPoliciesTab = (tab: ClientPoliciesTab) =>
     useRoutableTab(
@@ -454,6 +456,13 @@ export const RealmSettingsTabs = () => {
             {...userRegistrationTab}
           >
             <UserRegistration />
+          </Tab>
+          <Tab
+            title={<TabTitleText>{t("crossDomainTrustTab")}</TabTitleText>}
+            data-testid="rs-crossDomainTrust-tab"
+            {...crossDomainTrustTab}
+          >
+            <CrossDomainTrust realm={realm!} save={save} />
           </Tab>
         </RoutableTabs>
       </PageSection>

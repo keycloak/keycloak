@@ -168,6 +168,13 @@ public final class Constants {
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
 
+    // Assertion grant configuration constants
+    public static final String OAUTH_ASSERTION_GRANT_ENABLED = "oidc.grants.assertion.enabled";
+    public static final String OAUTH_ASSERTION_GRANT_TRUSTED_ISSUER = "oidc.grants.assertion.config";
+
+    // Authentication session note, which contains assertion used to authenticate user
+    public static final String OAUTH_ASSERTION_GRANT_NOTE = "oidc-assertion";
+
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
     public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";

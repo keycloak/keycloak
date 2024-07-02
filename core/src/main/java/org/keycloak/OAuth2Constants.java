@@ -136,6 +136,10 @@ public interface OAuth2Constants {
 
     String UMA_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:uma-ticket";
 
+    // https://datatracker.ietf.org/doc/html/draft-ietf-oauth-jwt-bearer
+    String JWT_BEARER_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer";
+    String ASSERTION = "assertion";
+
     // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.4
     String DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
     String DEVICE_CODE = "device_code";

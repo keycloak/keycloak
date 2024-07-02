@@ -182,3 +182,20 @@ really requires level 2, the client is encouraged to check the presence of the `
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 
 For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the official OIDC specification].
+
+[[_assertion_grant_configuration]]
+*JWT Bearer Authorization Grant Configuration*
+
+In the advanced settings of a client, you can define a set of cross-domain trusts for the assertion grant protocol. This configuration is used when a client submits an
+assertion to the OIDC token endpoint with  _grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer_ (see the <<_assertion_grant,JWTs as Authorization Grants>> chapter for more information).
+
+[NOTE]
+====
+Cross-domain trusts are configured at the realm level. See the <<cross_domain_trust,Configuring Cross-Domain Trusts>> chapter for more information.
+====
+
+When verifying an assertion, Keycloak will iterate through each cross-domain trust configured on the client and attempt to verify the assertion signature against it. If valid, Keycloak will then
+verify that the _iss_ and _aud_ claim in the assertion match the issuer and audience of the cross-domain trust. If the assertion is valid, Keycloak will generate an access token for the user specified
+in the _sub_ claim of the assertion and return it to the client.
+
+image:images/assertion-grant-config.png[alt="Assertion Grant Configuration"]

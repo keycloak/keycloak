@@ -11,6 +11,7 @@ export enum Feature {
   ClientTypes = "CLIENT_TYPES",
   DeclarativeUI = "DECLARATIVE_UI",
   Organizations = "ORGANIZATION",
+  AssertionGrant = "ASSERTION_GRANT",
 }
 
 export default function useIsFeatureEnabled() {

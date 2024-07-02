@@ -6,6 +6,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import type { AddAlertFunction } from "../components/alert/Alerts";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { convertAttributeNameToForm, toUpperCase } from "../util";
 import type { FormFields, SaveOptions } from "./ClientDetails";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
@@ -14,6 +15,7 @@ import { ClusteringPanel } from "./advanced/ClusteringPanel";
 import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
+import { AssertionGrantConfigPanel } from "./advanced/AssertionGrantConfigPanel";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -51,6 +53,7 @@ export type AdvancedProps = {
 export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   const { t } = useTranslation();
   const openIdConnect = "openid-connect";
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const { setValue } = useFormContext();
   const {
@@ -184,6 +187,21 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                     ]);
                   }}
                 />
+              </>
+            ),
+          },
+          {
+            title: t("oidcClientJWTBearerConfigTitle"),
+            isHidden:
+              !isFeatureEnabled(Feature.AssertionGrant) ||
+              attributes?.["oidc.grants.assertion.enabled"]?.toString() !==
+                "true",
+            panel: (
+              <>
+                <Text className="pf-u-pb-lg">
+                  {t("oidcClientJWTBearerConfigHelp")}
+                </Text>
+                <AssertionGrantConfigPanel client={client} save={save} />
               </>
             ),
           },
