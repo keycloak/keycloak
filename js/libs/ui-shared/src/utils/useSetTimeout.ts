@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 
-export default function useSetTimeout() {
+export function useSetTimeout() {
   const didUnmountRef = useRef(false);
   const scheduledTimersRef = useRef(new Set<number>());
 

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useSetTimeout } from "@keycloak/keycloak-ui-shared";
 import {
   ClipboardCopyButton,
   ClipboardCopyButtonProps,
 } from "@patternfly/react-core";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import useSetTimeout from "../../utils/useSetTimeout";
 import useQueryPermission from "../../utils/useQueryPermission";
 
 enum CopyState {

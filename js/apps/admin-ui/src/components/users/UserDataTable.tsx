@@ -33,7 +33,7 @@ import { toAddUser } from "../../user/routes/AddUser";
 import { toUser } from "../../user/routes/User";
 import { emptyFormatter } from "../../util";
 import { useFetch } from "../../utils/useFetch";
-import { useAlerts } from "../alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";

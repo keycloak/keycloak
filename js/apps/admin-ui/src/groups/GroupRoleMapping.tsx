@@ -2,7 +2,7 @@ import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/def
 import { AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 
 type GroupRoleMappingProps = {
