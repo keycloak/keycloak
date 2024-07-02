@@ -29,6 +29,7 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -79,6 +80,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         PasswordPolicy policy = realm.getPasswordPolicy();
         int expiredPasswordsPolicyValue = policy.getExpiredPasswords();
+        int passwordAgeInDaysPolicy = Math.max(0, policy.getPasswordAgeInDays());
 
         // 1) create new or reset existing password
         CredentialModel createdCredential;
@@ -94,22 +96,32 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             createdCredential = credentialModel;
 
             // 2) add a password history item based on the old password
-            if (expiredPasswordsPolicyValue > 1) {
+            if (expiredPasswordsPolicyValue > 1 || passwordAgeInDaysPolicy > 0) {
                 oldPassword.setId(null);
                 oldPassword.setType(PasswordCredentialModel.PASSWORD_HISTORY);
-                user.credentialManager().createStoredCredential(oldPassword);
+                oldPassword = user.credentialManager().createStoredCredential(oldPassword);
             }
         }
-        
-        // 3) remove old password history items
+
+        // 3) remove old password history items, if both history policies are set, more restrictive policy wins
         final int passwordHistoryListMaxSize = Math.max(0, expiredPasswordsPolicyValue - 1);
+
+        final long passwordMaxAgeMillis = Time.currentTimeMillis() - Duration.ofDays(passwordAgeInDaysPolicy).toMillis();
+
+        CredentialModel finalOldPassword = oldPassword;
         user.credentialManager().getStoredCredentialsByTypeStream(PasswordCredentialModel.PASSWORD_HISTORY)
                 .sorted(CredentialModel.comparingByStartDateDesc())
                 .skip(passwordHistoryListMaxSize)
+                .filter(credentialModel1 -> !(credentialModel1.getId().equals(finalOldPassword.getId())))
+                .filter(credential -> passwordAgePredicate(credential, passwordMaxAgeMillis))
                 .collect(Collectors.toList())
                 .forEach(p -> user.credentialManager().removeStoredCredentialById(p.getId()));
 
         return createdCredential;
+    }
+
+    private boolean passwordAgePredicate(CredentialModel credential, long passwordMaxAgeMillis) {
+        return credential.getCreatedDate() < passwordMaxAgeMillis;
     }
 
     @Override
