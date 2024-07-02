@@ -22,3 +22,9 @@ WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with ea
 Consequently, all caches are cleared when upgrading to this version.
 
 Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto3/[Protocol Buffers] (proto 3), which has the advantage of backwards/forwards compatibility.
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties.
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].

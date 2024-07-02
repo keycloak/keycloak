@@ -24,3 +24,22 @@ The default implementation performs a single network call per an event, and it w
 = Operator's default CPU and memory limits/requests
 
 In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the `resources` section in the operator's https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md#resources[subscription].
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties. The main
+reason is that the LDAP connection pool configuration is a JVM-level configuration rather than specific to an individual
+realm or LDAP provider instance.
+
+Differently than previous releases, any realm configuration related to the LDAP connection pool will be ignored.
+If you are migrating from previous versions where any of the following settings are set to your LDAP provider(s), consider using system properties instead:
+
+* `connectionPoolingAuthentication`
+* `connectionPoolingInitSize`
+* `connectionPoolingMaxSize`
+* `connectionPoolingPrefSize`
+* `connectionPoolingTimeout`
+* `connectionPoolingProtocol`
+* `connectionPoolingDebug`
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
