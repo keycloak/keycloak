@@ -80,7 +80,7 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
             }
             logger.debug(" Loading Keycloak truststore ...");
             KeycloakSessionFactory factory = kcSession.getKeycloakSessionFactory();
-            TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory.getProviderFactory(TruststoreProvider.class, "file");
+            TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory.getProviderFactory(TruststoreProvider.class);
             TruststoreProvider provider = truststoreFactory.create(kcSession);
 
             if (provider != null && provider.getTruststore() != null) {
