@@ -22,7 +22,3 @@ WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with ea
 Consequently, all caches are cleared when upgrading to this version.
 
 Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto3/[Protocol Buffers] (proto 3), which has the advantage of backwards/forwards compatibility.
-
-= Consistent usage of UTF-8 Charset for URL Encoding
-
-`org.keycloak.common.util.Encode` now always uses the `UTF-8` Charset for URL encoding instead relying implicitly on the `file.encoding` system property.

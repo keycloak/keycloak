@@ -989,7 +989,7 @@ public class Reflections {
      * @deprecated for removal in Keycloak 27
      */
     @Deprecated(forRemoval = true)
-    public static <T> T newInstance(final Class<T> fromClass) throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, InvocationTargetException, NoSuchMethodException {
+    public static <T> T newInstance(final Class<T> fromClass) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return newInstance(fromClass, fromClass.getName());
     }
 
@@ -1009,8 +1009,8 @@ public class Reflections {
      * @deprecated for removal in Keycloak 27
      */
     @Deprecated(forRemoval = true)
-    public static <T> T newInstance(final Class<?> type, final String fullQualifiedName) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, InvocationTargetException, NoSuchMethodException {
-        return (T) classForName(fullQualifiedName, type.getClassLoader()).getDeclaredConstructor().newInstance();
+    public static <T> T newInstance(final Class<?> type, final String fullQualifiedName) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        return (T) classForName(fullQualifiedName, type.getClassLoader()).newInstance();
     }
 
     /**

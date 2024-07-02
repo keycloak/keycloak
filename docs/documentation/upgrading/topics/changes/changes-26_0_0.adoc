@@ -33,3 +33,7 @@ The following items have been deprecated for removal in upcoming {project_name} 
 - `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<?>, java.lang.String)`
 - `org.keycloak.common.util.reflections.SetAccessiblePrivilegedAction`
 - `org.keycloak.common.util.reflections.UnSetAccessiblePrivilegedAction`
+
+= Consistent usage of UTF-8 charset for URL encoding
+
+`org.keycloak.common.util.Encode` now always uses the `UTF-8` charset for URL encoding instead relying implicitly on the `file.encoding` system property.
