@@ -29,7 +29,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Pojo to represent a VerifiableCredential for internal handling
@@ -39,6 +38,7 @@ import java.util.Optional;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class VerifiableCredential {
 
+    public static final String VC_CONTEXT_V1 = "https://www.w3.org/ns/credentials/v1";
     public static final String VC_CONTEXT_V2 = "https://www.w3.org/ns/credentials/v2";
 
     /**
@@ -47,7 +47,7 @@ public class VerifiableCredential {
      * combination of URLs and/or objects, where each is processable as a JSON-LD Context.
      */
     @JsonProperty("@context")
-    private List<String> context = new ArrayList<>(List.of(VC_CONTEXT_V2));
+    private List<String> context = new ArrayList<>(List.of(VC_CONTEXT_V1));
     private List<String> type = new ArrayList<>();
     private URI issuer;
     private Date issuanceDate;

@@ -376,7 +376,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     VerifiableCredential credential = objectMapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
                     assertNotNull("@context is a required VC property", credential.getContext());
                     assertEquals(1, credential.getContext().size());
-                    assertEquals(VerifiableCredential.VC_CONTEXT_V2, credential.getContext().get(0));
+                    assertEquals(VerifiableCredential.VC_CONTEXT_V1, credential.getContext().get(0));
                     assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
                     assertFalse("Only mappers supported for the requested type should have been evaluated.", credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
                 }));
