@@ -23,14 +23,9 @@ import picocli.CommandLine.Model.CommandSpec;
 
 final class HelpFactory implements CommandLine.IHelpFactory {
 
-    private Help help;
-
     @Override
     public CommandLine.Help create(CommandSpec commandSpec,
             ColorScheme colorScheme) {
-        if (help == null) {
-            help = new Help(commandSpec, colorScheme);
-        }
-        return help;
+        return new Help(commandSpec, colorScheme);
     }
 }

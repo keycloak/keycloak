@@ -20,7 +20,9 @@ package org.keycloak.it.cli;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
+import org.keycloak.it.junit5.extension.ConfigurationTestResource;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -29,6 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@QuarkusTestResource(value = ConfigurationTestResource.class, restrictToAnnotatedClass = true)
 @CLITest
 public class OptionValidationTest {
 
@@ -40,7 +43,7 @@ public class OptionValidationTest {
     }
 
     @Test
-    @Launch({"build", "--db", "foo", "bar"})
+    @Launch({"build", "--db", "mysql", "postgres"})
     public void failMultipleOptionValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getErrorOutput(), containsString("Option '--db' (vendor) expects a single value. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
