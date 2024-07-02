@@ -43,6 +43,8 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 
 import jakarta.ws.rs.core.UriBuilder;
+
+import java.io.Console;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -219,6 +221,20 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     }
 
+    @Test
+    public void authorizationRequestFormPostResponseModeWithNoneResponseType() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.responseType(OAuth2Constants.NONE);
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+        String error = driver.findElement(By.id("error")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+        assertEquals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, error);
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
+
+    }
+
     // KEYCLOAK-3281
     @Test
     public void authorizationRequestFormPostResponseMode() throws IOException {
@@ -367,8 +383,8 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Map<String, String> extraParams = new HashMap<>();
 
         oauth.addCustomParameter(OAuth2Constants.SCOPE, "read_write")
-            .addCustomParameter(OAuth2Constants.STATE, "abcdefg")
-            .addCustomParameter(OAuth2Constants.SCOPE, "pop push");
+                .addCustomParameter(OAuth2Constants.STATE, "abcdefg")
+                .addCustomParameter(OAuth2Constants.SCOPE, "pop push");
 
         oauth.openLoginForm();
 
@@ -395,5 +411,5 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).client((String) null).clearDetails().assertEvent();
     }
-    
+
 }

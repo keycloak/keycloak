@@ -155,6 +155,12 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
+        if (responseType.equals("none")) {
+            event.detail(Details.REASON, "response_type is none");
+            event.error(Errors.INVALID_REQUEST);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
+        }
+
         OIDCResponseMode parsedResponseMode = null;
         try {
             parsedResponseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
