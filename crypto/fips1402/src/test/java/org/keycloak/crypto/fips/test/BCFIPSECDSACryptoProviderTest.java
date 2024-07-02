@@ -23,7 +23,9 @@ import org.junit.runners.Parameterized;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.fips.BCFIPSECDSACryptoProvider;
-import org.keycloak.keys.AbstractEcdsaKeyProviderFactory;
+import org.keycloak.keys.AbstractEcKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdhKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
 import org.keycloak.rule.CryptoInitRule;
 
 import java.security.InvalidAlgorithmParameterException;
@@ -73,8 +75,11 @@ public class BCFIPSECDSACryptoProviderTest {
 
         try {
             KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen("ECDSA");
-            String domainParamNistRep = AbstractEcdsaKeyProviderFactory.convertAlgorithmToECDomainParmNistRep(algorithm);
-            String curve = AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToSecRep(domainParamNistRep);
+            String domainParamNistRep = GeneratedEcdsaKeyProviderFactory.convertJWSAlgorithmToECDomainParmNistRep(algorithm);
+            if (domainParamNistRep == null) {
+                domainParamNistRep = GeneratedEcdhKeyProviderFactory.convertJWEAlgorithmToECDomainParmNistRep(algorithm);
+            }
+            String curve = AbstractEcKeyProviderFactory.convertECDomainParmNistRepToSecRep(domainParamNistRep);
             ECGenParameterSpec parameterSpec = new ECGenParameterSpec(curve);
             kpg.initialize(parameterSpec);
             return kpg.generateKeyPair();

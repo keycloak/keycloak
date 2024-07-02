@@ -49,4 +49,9 @@ public interface Algorithm {
 
     /* AES */
     String AES = "AES";
+
+    String ECDH_ES = CryptoConstants.ECDH_ES;
+    String ECDH_ES_A128KW = CryptoConstants.ECDH_ES_A128KW;
+    String ECDH_ES_A192KW = CryptoConstants.ECDH_ES_A192KW;
+    String ECDH_ES_A256KW = CryptoConstants.ECDH_ES_A256KW;
 }

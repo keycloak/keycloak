@@ -27,7 +27,7 @@ import org.keycloak.models.RealmModel;
 import java.security.KeyPair;
 import java.util.stream.Stream;
 
-public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
+public abstract class AbstractEcKeyProvider implements KeyProvider {
 
     private final KeyStatus status;
 
@@ -35,7 +35,7 @@ public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
 
     private final KeyWrapper key;
 
-    public AbstractEcdsaKeyProvider(RealmModel realm, ComponentModel model) {
+    public AbstractEcKeyProvider(RealmModel realm, ComponentModel model) {
         this.model = model;
         this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
 
@@ -54,16 +54,16 @@ public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
         return Stream.of(key);
     }
 
-    protected KeyWrapper createKeyWrapper(KeyPair keyPair, String ecInNistRep) {
+    protected KeyWrapper createKeyWrapper(KeyPair keyPair, String algorithm, KeyUse keyUse) {
         KeyWrapper key = new KeyWrapper();
 
         key.setProviderId(model.getId());
         key.setProviderPriority(model.get("priority", 0l));
 
         key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
-        key.setUse(KeyUse.SIG);
+        key.setUse(keyUse);
         key.setType(KeyType.EC);
-        key.setAlgorithm(AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToAlgorithm(ecInNistRep));
+        key.setAlgorithm(algorithm);
         key.setStatus(status);
         key.setPrivateKey(keyPair.getPrivate());
         key.setPublicKey(keyPair.getPublic());
