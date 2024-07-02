@@ -28,6 +28,7 @@ import java.util.List;
  */
 public class ProviderConfigProperty {
     public static final String BOOLEAN_TYPE="boolean";
+    public static final String INT_TYPE = "int";
     public static final String STRING_TYPE="String";
 
     /**
