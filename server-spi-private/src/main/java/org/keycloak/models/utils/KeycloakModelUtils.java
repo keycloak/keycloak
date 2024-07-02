@@ -30,15 +30,17 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
+import org.keycloak.models.GroupProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -50,15 +52,18 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.utils.KeycloakSessionUtil;
 
-import javax.crypto.spec.SecretKeySpec;
 import jakarta.transaction.InvalidTransactionException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
-
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -72,19 +77,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.regex.Pattern;
-
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.GroupProviderFactory;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
-
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -650,7 +647,7 @@ public final class KeycloakModelUtils {
                 } else {
                     if (index + 1 < pathSegments.length) {
                         GroupModel found = findSubGroup(pathSegments, index + 1, group);
-                        if (found != null) return found;
+                        return found;
                     }
                 }
             }
@@ -921,6 +918,14 @@ public final class KeycloakModelUtils {
         if ((realmFlow = realm.getResetCredentialsFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getDockerAuthenticationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getFirstBrokerLoginFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+
+        boolean overrideByClient = realm.getClientsStream()
+                .anyMatch(client -> client
+                        .getAuthenticationFlowBindingOverrides()
+                        .containsValue(model.getId()));
+        if (overrideByClient) {
+            return true;
+        }
 
         return realm.getIdentityProvidersStream().anyMatch(idp ->
                 Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
