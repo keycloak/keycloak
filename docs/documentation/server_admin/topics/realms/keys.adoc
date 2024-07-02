@@ -127,11 +127,19 @@ For the associated certificate chain to be loaded it must be imported to the Jav
 . Click the *Providers* tab.
 . Click *Add provider* and select *java-keystore*.
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
-. Enter a value for *Keystore*.
-. Enter a value for *Keystore Password*.
-. Enter a value for *Key Alias*.
-. Enter a value for *Key Password*.
+. Enter the desired *Algorithm*. Note that the algorithm should match the key type (for example `RS256` requires a RSA private key, `ES256` a EC private key or `AES` an AES secret key).
+. Enter a value for *Keystore*. Path to the keystore file.
+. Enter the *Keystore Password*. The option can refer a value from an external <<_vault-administration,vault>>.
+. Enter a value for *Keystore Type* (`JKS`, `PKCS12` or `BCFKS`).
+. Enter a value for the *Key Alias* to load from the keystore.
+. Enter the *Key Password*. The option can refer a value from an external <<_vault-administration,vault>>.
+. Enter a value for *Key Use* (`sig` for signing or `enc` for encryption). Note that the use should match the algorithm type (for example `RS256` is `sig` but `RSA-OAEP` is `enc`)
 . Click *Save*.
+
+[WARNING]
+====
+Not all the keystore types support all types of keys. `JKS` and `PKCS12` in fips modes (provider `BCFIPS`) cannot store secret key entries.
+====
 
 ==== Making keys passive
 
