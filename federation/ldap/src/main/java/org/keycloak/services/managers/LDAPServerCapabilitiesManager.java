@@ -177,8 +177,8 @@ public class LDAPServerCapabilitiesManager {
         // is not needed anymore
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, ldapConfig)) {
             LdapContext ldapContext = ldapContextManager.getLdapContext();
-            if (TEST_AUTHENTICATION.equals(config.getAction()) && LDAPConstants.AUTH_TYPE_NONE.equals(config.getAuthType())) {
-                // reconnect to force an anonymous bind operation
+            if (TEST_AUTHENTICATION.equals(config.getAction())) {
+                // Reconnect to force bind operation.
                 ldapContext.reconnect(null);
             }
         } catch (Exception ne) {
