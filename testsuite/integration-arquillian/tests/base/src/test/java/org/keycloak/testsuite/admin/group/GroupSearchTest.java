@@ -349,4 +349,22 @@ public class GroupSearchTest extends AbstractGroupTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         loadTestRealm(testRealmReps);
     }
+
+    @Test
+    public void testUpdateGroupAttributes() throws Exception {
+        configureSearchableAttributes();
+        try (Creator<GroupResource> groupCreator1 = Creator.create(testRealmResource(), group1)) {
+            // Update the group's attributes
+            Map<String, List<String>> newAttributes = new HashMap<>();
+            newAttributes.put("updatedAttr", Collections.singletonList("newValue"));
+            group1.setAttributes(newAttributes);
+            groupCreator1.resource().update(group1);
+
+            // Query the updated group and verify the attribute values
+            GroupRepresentation updatedGroup = groupCreator1.resource().toRepresentation();
+            assertThat(updatedGroup.getAttributes().get("updatedAttr"), equalTo(Collections.singletonList("newValue")));
+        } finally {
+            resetSearchableAttributes();
+        }
+    }
 }
