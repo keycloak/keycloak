@@ -1,0 +1,5 @@
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties.
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].

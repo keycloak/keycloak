@@ -148,6 +148,37 @@ By default, LDAP servers such as MSAD, RHDS, or FreeIPA hash and salt passwords.
 WARNING: Always verify that user passwords are properly hashed and not stored as plaintext by inspecting a changed
 directory entry using `ldapsearch` and base64 decode the `userPassword` attribute value.
 
+[[_ldap_connection_pool]]
+==== Configuring the connection pool
+
+For more efficiency when managing LDAP connections and to improve performance when handling multiple connections, you can
+enable connection pooling. By doing that, when a connection is closed, it will be returned to the pool for future use therefore
+reducing the cost of creating new connections all the time.
+
+The LDAP connection pool configuration is configured using the following system properties:
+
+[cols="2*", options="header"]
+|===
+|Name
+|Description
+| `com.sun.jndi.ldap.connect.pool.authentication` | A list of space-separated authentication types of connections that may be pooled. Valid types are "none", "simple", and "DIGEST-MD5"
+| `com.sun.jndi.ldap.connect.pool.initsize` | The string representation of an integer that represents the number of connections per connection identity to create when initially creating a connection for the identity
+| `com.sun.jndi.ldap.connect.pool.maxsize` | The string representation of an integer that represents the maximum number of connections per connection identity that can be maintained concurrently
+| `com.sun.jndi.ldap.connect.pool.prefsize` | The string representation of an integer that represents the preferred number of connections per connection identity that should be maintained concurrently
+| `com.sun.jndi.ldap.connect.pool.timeout` | The string representation of an integer that represents the number of milliseconds that an idle connection may remain in the pool without being closed and removed from the pool
+| `com.sun.jndi.ldap.connect.pool.protocol` | A list of space-separated protocol types of connections that may be pooled. Valid types are "plain" and "ssl"
+| `com.sun.jndi.ldap.connect.pool.debug` | A string that indicates the level of debug output to produce. Valid values are "fine" (trace connection creation and removal) and "all" (all debugging information)
+|===
+
+For more details, see the link:https://docs.oracle.com/javase/jndi/tutorial/ldap/connect/config.html[Java LDAP Connection Pooling Configuration] documentation.
+
+To set any of these properties, you can set the `JAVA_OPTS_APPEND` environment variable:
+
+[source,bash]
+----
+export JAVA_OPTS_APPEND=-Dcom.sun.jndi.ldap.connect.pool.initsize=10 -Dcom.sun.jndi.ldap.connect.pool.maxsize=50
+----
+
 [[_ldap_troubleshooting]]
 ==== Troubleshooting
 
@@ -174,11 +205,10 @@ Mapper for provider: XXX, Mapper name: YYY, Provider: ZZZ ...
 ```
 Note those messages are displayed just with the enabled DEBUG logging.
 
-- For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
-the LDAP provider to value `all`. This will add lots of additional messages to server log with the included logging for the LDAP connection
-pooling. This can be used to track the issues related to connection pooling or performance.
+- For tracking the performance or connection pooling issues, consider setting the value of property `com.sun.jndi.ldap.connect.pool.debug` to `all`. This change adds many additional messages to the server log with the included logging for the LDAP connection
+pooling. As a result, you can track the issues related to connection pooling or performance. For more details, see link:#_ldap_connection_pool[Configuring the connection pool].
 
-NOTE: After changing the configuration of connection pooling, you may need to restart the Keycloak server to enforce re-initialization
+NOTE: After changing the configuration of connection pooling, you may need to restart the {project_name} server to enforce re-initialization
 of the LDAP provider connection.
 
 If no more messages appear for connection pooling even after server restart, it can indicate that connection pooling does not work
