@@ -24,3 +24,16 @@ The default implementation performs a single network call per an event, and it w
 = Operator's default CPU and memory limits/requests
 
 In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the `resources` section in the operator's https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md#resources[subscription].
+
+= Deprecations in `keycloak-common` module
+
+The following items have been deprecated for removal in upcoming {project_name} versions with no replacement:
+
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<T>)`
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<?>, java.lang.String)`
+- `org.keycloak.common.util.reflections.SetAccessiblePrivilegedAction`
+- `org.keycloak.common.util.reflections.UnSetAccessiblePrivilegedAction`
+
+= Consistent usage of UTF-8 charset for URL encoding
+
+`org.keycloak.common.util.Encode` now always uses the `UTF-8` charset for URL encoding instead relying implicitly on the `file.encoding` system property.

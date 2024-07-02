@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,18 +17,22 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
-import liquibase.exception.LiquibaseException;
-import org.keycloak.provider.Provider;
-
-import java.sql.Connection;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.resource.ResourceAccessor;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * Custom subclass to expose protected liquibase API.
  */
-public interface LiquibaseConnectionProvider extends Provider {
+public class KeycloakLiquibase extends Liquibase {
 
-    KeycloakLiquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException;
+    public KeycloakLiquibase(String changeLogFile, ResourceAccessor resourceAccessor, Database database) {
+        super(changeLogFile, resourceAccessor, database);
+    }
 
-    KeycloakLiquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException;
-
+    @Override
+    public void resetServices() {
+        // expose protected method for use without reflection
+        super.resetServices();
+    }
 }
