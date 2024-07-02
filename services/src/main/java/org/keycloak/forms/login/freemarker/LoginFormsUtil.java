@@ -48,7 +48,7 @@ public class LoginFormsUtil {
             // Fixing #14173
             // If the current user is not null, then it's a re-auth, and we should filter the possible options with the pre-14173 logic
             // If the current user is null, then it's one of the following cases:
-            //  - either connecting a new IdP to the user's account. 
+            //  - either connecting a new IdP to the user's account.
 	    //    - in this case the currentUser is null AND the current flow is the FIRST_BROKER_LOGIN_PATH
 	    //    - so we should filter out the one they just used for login, as they need to re-auth themself with an already linked IdP account
             //  - or we're on the Login page
@@ -61,7 +61,7 @@ public class LoginFormsUtil {
         }
         return providers.collect(Collectors.toList());
     }
-    
+
     public static List<IdentityProviderModel> filterIdentityProviders(Stream<IdentityProviderModel> providers, KeycloakSession session, AuthenticationFlowContext context) {
 
         if (context != null) {
@@ -76,7 +76,7 @@ public class LoginFormsUtil {
                         .map(federatedIdentityModel -> federatedIdentityModel.getIdentityProvider())
                         .collect(Collectors.toSet());
             } else {
-                federatedIdentities = null;
+                federatedIdentities = Set.of();
             }
 
             return providers
@@ -85,7 +85,7 @@ public class LoginFormsUtil {
                         return !Objects.equals(p.getAlias(), existingIdp.getAlias());
                     })
                     .filter(idp -> { // In case that we already have user established in authentication session, we show just providers already linked to this user
-                        if (federatedIdentities == null) return true;
+                        if (federatedIdentities.isEmpty()) return true;
                         return federatedIdentities.contains(idp.getAlias());
                     })
                     .collect(Collectors.toList());

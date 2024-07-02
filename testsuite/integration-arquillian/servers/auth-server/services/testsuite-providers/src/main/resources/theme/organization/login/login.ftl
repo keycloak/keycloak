@@ -1,9 +1,8 @@
 <#import "template.ftl" as layout>
 <#import "test-org-commons.ftl" as commons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
-    <#if section = "header">
+    <#if section = "form">
         <@commons.assertions org/>
-    <#elseif section = "form">
         <div id="kc-form">
           <div id="kc-form-wrapper">
             <#if realm.password>

@@ -43,12 +43,11 @@ public class OrganizationMemberAuthenticationTest extends AbstractOrganizationTe
         openIdentityFirstLoginPage(member.getEmail(), false, null, false, false);
 
         Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertEquals(member.getEmail(), loginPage.getUsername());
         // no idp should be shown because there is only a single idp that is bound to an organization
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         // the member should be able to log in using the credentials
-        loginPage.login(member.getEmail(), memberPassword);
+        loginPage.login(memberPassword);
         appPage.assertCurrent();
     }
 
