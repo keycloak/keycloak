@@ -63,8 +63,6 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     public Response process(Context context) {
         setContext(context);
 
-        checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
-
         String code = formParams.getFirst(OAuth2Constants.CODE);
         if (code == null) {
             String errorMessage = "Missing parameter: " + OAuth2Constants.CODE;
