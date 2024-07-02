@@ -10,4 +10,5 @@ export interface ConfigPropertyRepresentation {
   options?: string[];
   secret?: boolean;
   required?: boolean;
+  stringify?: boolean;
 }
