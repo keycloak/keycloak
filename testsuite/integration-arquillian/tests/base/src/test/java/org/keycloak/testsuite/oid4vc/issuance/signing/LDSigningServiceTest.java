@@ -24,6 +24,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.LDSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
@@ -156,7 +157,7 @@ public class LDSigningServiceTest extends OID4VCTest {
 
         VerifiableCredential testCredential = getTestCredential(claims);
 
-        VerifiableCredential verifiableCredential = ldSigningService.signCredential(testCredential);
+        VerifiableCredential verifiableCredential = ldSigningService.signCredential(new VCIssuanceContext().setVerifiableCredential(testCredential));
 
         assertEquals("The types should be included", TEST_TYPES, verifiableCredential.getType());
         assertEquals("The issuer should be included", TEST_DID, verifiableCredential.getIssuer());

@@ -432,7 +432,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         HttpPost postPreAuthorizedCode = new HttpPost(openidConfig.getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair("code", credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
+        parameters.add(new BasicNameValuePair("pre-authorized_code", credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
         postPreAuthorizedCode.setEntity(formEntity);
         OAuthClient.AccessTokenResponse accessTokenResponse = new OAuthClient.AccessTokenResponse(httpClient.execute(postPreAuthorizedCode));
@@ -667,7 +667,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         return new OID4VCIssuerEndpoint(
                 session,
                 "did:web:issuer.org",
-                Map.of(Format.JWT_VC, jwtSigningService),
+                Map.of(Format.JWT_VC.name(), jwtSigningService),
                 authenticator,
                 new ObjectMapper(),
                 TIME_PROVIDER,

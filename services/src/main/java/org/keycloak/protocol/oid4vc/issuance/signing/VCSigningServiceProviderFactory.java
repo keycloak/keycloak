@@ -44,13 +44,15 @@ public interface VCSigningServiceProviderFactory extends ComponentFactory<Verifi
 
     public static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
-                .property(SigningProperties.KEY_ID.asConfigProperty());
+                // I do believe the ALGORITHM_TYPE need to be mandatory instead. As the keyId might change with key rotation.
+                // If keyId is not set, service can always work with active key.
+                .property(SigningProperties.ALGORITHM_TYPE.asConfigProperty());
     }
 
     @Override
     default void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         ConfigurationValidationHelper.check(model)
-                .checkRequired(SigningProperties.KEY_ID.asConfigProperty());
+                .checkRequired(SigningProperties.ALGORITHM_TYPE.asConfigProperty());
         validateSpecificConfiguration(session, realm, model);
     }
 
@@ -86,4 +88,5 @@ public interface VCSigningServiceProviderFactory extends ComponentFactory<Verifi
      * @return the format
      */
     Format supportedFormat();
+
 }

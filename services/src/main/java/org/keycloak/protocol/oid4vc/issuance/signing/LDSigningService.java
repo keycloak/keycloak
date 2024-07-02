@@ -24,8 +24,10 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.vcdm.Ed255192018Suite;
 import org.keycloak.protocol.oid4vc.issuance.signing.vcdm.LinkedDataCryptographicSuite;
+import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
 
@@ -49,7 +51,7 @@ public class LDSigningService extends SigningService<VerifiableCredential> {
     private final String keyId;
 
     public LDSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, String ldpType, ObjectMapper objectMapper, TimeProvider timeProvider, Optional<String> kid) {
-        super(keycloakSession, keyId, algorithmType);
+        super(keycloakSession, keyId, Format.LDP_VC, algorithmType);
         this.timeProvider = timeProvider;
         this.keyId = kid.orElse(keyId);
         KeyWrapper signingKey = getKey(keyId, algorithmType);
@@ -72,8 +74,8 @@ public class LDSigningService extends SigningService<VerifiableCredential> {
     }
 
     @Override
-    public VerifiableCredential signCredential(VerifiableCredential verifiableCredential) {
-        return addProof(verifiableCredential);
+    public VerifiableCredential signCredential(VCIssuanceContext vcIssuanceContext) {
+        return addProof(vcIssuanceContext.getVerifiableCredential());
     }
 
     // add the signed proof to the credential.

@@ -19,6 +19,8 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Proof to be used in the Credential Request(to allow holder binding) according to OID4VCI
@@ -29,10 +31,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Proof {
 
+    @JsonSerialize(using = ProofTypeSerializer.class)
+    @JsonDeserialize(using = ProofTypeDeserializer.class)
     @JsonProperty("proof_type")
     private ProofType proofType;
 
-    private Object proofObject;
+    @JsonProperty("jwt")
+    private String jwt;
+
+    @JsonProperty("cwt")
+    private String cwt;
+
+    @JsonProperty("ldp_vp")
+    private Object ldpVp;
 
     public ProofType getProofType() {
         return proofType;
@@ -43,12 +54,30 @@ public class Proof {
         return this;
     }
 
-    public Object getProofObject() {
-        return proofObject;
+    public String getJwt() {
+        return jwt;
     }
 
-    public Proof setProofObject(Object proofObject) {
-        this.proofObject = proofObject;
+    public Proof setJwt(String jwt) {
+        this.jwt = jwt;
+        return this;
+    }
+
+    public String getCwt() {
+        return cwt;
+    }
+
+    public Proof setCwt(String cwt) {
+        this.cwt = cwt;
+        return this;
+    }
+
+    public Object getLdpVp() {
+        return ldpVp;
+    }
+
+    public Proof setLdpVp(Object ldpVp) {
+        this.ldpVp = ldpVp;
         return this;
     }
 }

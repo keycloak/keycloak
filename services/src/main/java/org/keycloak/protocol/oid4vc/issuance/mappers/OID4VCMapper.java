@@ -97,15 +97,15 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     /**
      * Checks if the mapper supports the given credential type. Allows to configure them not only per client, but also per VC Type.
      *
-     * @param credentialType type of the VerifiableCredential that should be checked
+     * @param credentialScope type of the VerifiableCredential that should be checked
      * @return true if it is supported
      */
-    public boolean isTypeSupported(String credentialType) {
-        var optionalTypes = Optional.ofNullable(mapperModel.getConfig().get(SUPPORTED_CREDENTIALS_KEY));
-        if (optionalTypes.isEmpty()) {
+    public boolean isScopeSupported(String credentialScope) {
+        var optionalScopes = Optional.ofNullable(mapperModel.getConfig().get(SUPPORTED_CREDENTIALS_KEY));
+        if (optionalScopes.isEmpty()) {
             return false;
         }
-        return Arrays.asList(optionalTypes.get().split(",")).contains(credentialType);
+        return Arrays.asList(optionalScopes.get().split(",")).contains(credentialScope);
     }
 
     /**

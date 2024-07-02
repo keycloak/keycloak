@@ -27,6 +27,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -105,7 +106,11 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
             kw.setPrivateKey(keyPair.getPrivate());
             kw.setPublicKey(keyPair.getPublic());
             kw.setUse(KeyUse.SIG);
-            kw.setKid(keyId);
+            if(keyId!=null) {
+                kw.setKid(keyId);
+            } else {
+                kw.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
+            }
             kw.setType("EC");
             kw.setAlgorithm("ES256");
             return kw;
@@ -206,8 +211,6 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
         componentExportRepresentation.setName("eddsa-generated");
         componentExportRepresentation.setId(UUID.randomUUID().toString());
-        componentExportRepresentation.setName("eddsa-generated");
-        componentExportRepresentation.setId(UUID.randomUUID().toString());
         componentExportRepresentation.setProviderId("eddsa-generated");
 
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
@@ -215,6 +218,15 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                                 "eddsaEllipticCurveKey", List.of("Ed25519"))
                 )
         );
+        return componentExportRepresentation;
+    }
+
+    protected ComponentExportRepresentation getEcKeyProvider() {
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName("ecdsa-issuer-key");
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId("ecdsa-generated");
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(Map.of("ecdsaEllipticCurveKey", List.of("P-256"))));
         return componentExportRepresentation;
     }
 

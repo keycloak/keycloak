@@ -31,6 +31,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.issuance.signing.SigningServiceException;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
@@ -154,7 +155,7 @@ public class JwtSigningServiceTest extends OID4VCTest {
 
         VerifiableCredential testCredential = getTestCredential(claims);
 
-        String jwtCredential = jwtSigningService.signCredential(testCredential);
+        String jwtCredential = jwtSigningService.signCredential(new VCIssuanceContext().setVerifiableCredential(testCredential));
 
         SignatureVerifierContext verifierContext = null;
         switch (algorithm) {
@@ -213,7 +214,7 @@ public class JwtSigningServiceTest extends OID4VCTest {
         }
     }
 
- 
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         if (testRealm.getComponents() != null) {
@@ -223,4 +224,4 @@ public class JwtSigningServiceTest extends OID4VCTest {
                     Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(rsaKey)))));
         }
     }
-} 
+}
