@@ -132,7 +132,8 @@
           "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
           "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
           "isViewGroupsEnabled": ${isViewGroupsEnabled?c},
-          "isOid4VciEnabled": ${isOid4VciEnabled?c}
+          "isOid4VciEnabled": ${isOid4VciEnabled?c},
+          "isSshPublicKeysEnabled": ${isSshPublicKeysEnabled?c}
         }
       }
     </script>

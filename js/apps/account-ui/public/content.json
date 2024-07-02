@@ -9,7 +9,9 @@
         "label": "linkedAccounts",
         "path": "account-security/linked-accounts",
         "isVisible": "isLinkedAccountsEnabled"
-      }
+      },
+      { "label": "sshKeys", "path": "account-security/ssh-keys", "isVisible": "isSshPublicKeysEnabled" }
+
     ]
   },
   { "label": "applications", "path": "applications" },
