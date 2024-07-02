@@ -60,6 +60,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -1112,11 +1113,8 @@ public class UserResource {
             throw ErrorResponse.error("Client id missing", Status.BAD_REQUEST);
         }
 
-        if (clientId == null) {
-            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-        }
 
-        ClientModel client = realm.getClientByClientId(clientId);
+        ClientModel client = clientId != null ? realm.getClientByClientId(clientId) : SystemClientUtil.getSystemClient(realm);
         if (client == null) {
             logger.debugf("Client %s doesn't exist", clientId);
             throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
