@@ -17,16 +17,22 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -46,6 +52,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -398,6 +405,32 @@ public class PodTemplateTest {
         assertNotNull(startup);
         assertThat(startup.getPath()).isEqualTo("/health/started");
         assertThat(startup.getPort().getIntVal()).isEqualTo(Constants.KEYCLOAK_MANAGEMENT_PORT);
+
+        var affinity = podTemplate.getSpec().getAffinity();
+        assertNotNull(affinity);
+        assertThat(Serialization.asYaml(affinity)).isEqualTo("---\n"
+                + "podAffinity:\n"
+                + "  preferredDuringSchedulingIgnoredDuringExecution:\n"
+                + "  - podAffinityTerm:\n"
+                + "      labelSelector:\n"
+                + "        matchLabels:\n"
+                + "          app: \"keycloak\"\n"
+                + "          app.kubernetes.io/managed-by: \"keycloak-operator\"\n"
+                + "          app.kubernetes.io/instance: \"instance\"\n"
+                + "          app.kubernetes.io/component: \"server\"\n"
+                + "      topologyKey: \"topology.kubernetes.io/zone\"\n"
+                + "    weight: 10\n"
+                + "podAntiAffinity:\n"
+                + "  preferredDuringSchedulingIgnoredDuringExecution:\n"
+                + "  - podAffinityTerm:\n"
+                + "      labelSelector:\n"
+                + "        matchLabels:\n"
+                + "          app: \"keycloak\"\n"
+                + "          app.kubernetes.io/managed-by: \"keycloak-operator\"\n"
+                + "          app.kubernetes.io/instance: \"instance\"\n"
+                + "          app.kubernetes.io/component: \"server\"\n"
+                + "      topologyKey: \"kubernetes.io/hostname\"\n"
+                + "    weight: 50\n");
     }
 
     @Test
@@ -482,6 +515,98 @@ public class PodTemplateTest {
         } finally {
             this.deployment.setUseServiceCaCrt(false);
         }
+    }
+
+    @Test
+    public void testPriorityClass() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.withNewSchedulingSpec().withPriorityClassName("important").endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getPriorityClassName()).isEqualTo("important");
+
+        podTemplate = getDeployment(new PodTemplateSpecBuilder().withNewSpec().withPriorityClassName("existing").endSpec().build(), null,
+                s -> s.withNewSchedulingSpec().withPriorityClassName("important").endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        assertThat(podTemplate.getSpec().getPriorityClassName()).isEqualTo("existing");
+    }
+
+    @Test
+    public void testTolerations() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        Toleration toleration = new Toleration("NoSchedule", "key", "=", null, "value");
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.withNewSchedulingSpec().addToTolerations(toleration).endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getTolerations()).isEqualTo(Arrays.asList(toleration));
+
+        podTemplate = getDeployment(new PodTemplateSpecBuilder().withNewSpec().withTolerations(new Toleration()).endSpec().build(), null,
+                s -> s.withNewSchedulingSpec().addToTolerations(toleration).endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getTolerations()).isNotEqualTo(Arrays.asList(toleration));
+
+    }
+
+    @Test
+    public void testTopologySpreadConstraints() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        TopologySpreadConstraint tsc = new TopologySpreadConstraintBuilder().withTopologyKey("key").build();
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.withNewSchedulingSpec().addToTopologySpreadConstraints(tsc).endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getTopologySpreadConstraints()).isEqualTo(Arrays.asList(tsc));
+
+        podTemplate = getDeployment(new PodTemplateSpecBuilder().withNewSpec().withTopologySpreadConstraints(new TopologySpreadConstraint()).endSpec().build(), null,
+                s -> s.withNewSchedulingSpec().addToTopologySpreadConstraints(tsc).endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getTopologySpreadConstraints()).isNotEqualTo(Arrays.asList(tsc));
+    }
+
+    @Test
+    public void testAffinity() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        var affinity = new AffinityBuilder().withNewPodAffinity()
+                .addNewPreferredDuringSchedulingIgnoredDuringExecution().withNewPodAffinityTerm().withNamespaces("x")
+                .endPodAffinityTerm().endPreferredDuringSchedulingIgnoredDuringExecution().endPodAffinity().build();
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.withNewSchedulingSpec().withAffinity(affinity).endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getAffinity()).isEqualTo(affinity);
+
+        podTemplate = getDeployment(new PodTemplateSpecBuilder().withNewSpec().withAffinity(new Affinity()).endSpec().build(), null,
+                s -> s.withNewSchedulingSpec().withAffinity(affinity).endSchedulingSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getAffinity()).isNotEqualTo(affinity);
     }
 
 }

@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.PodSpecFluent;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
@@ -45,6 +46,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -77,6 +79,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
+    private static final String ZONE_KEY = "topology.kubernetes.io/zone";
+    
     private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
     private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
 
@@ -227,6 +231,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private StatefulSet createBaseDeployment(Keycloak keycloakCR, Context<Keycloak> context) {
         Map<String, String> labels = Utils.allInstanceLabels(keycloakCR);
+        labels.put("app.kubernetes.io/component", "server");
+        Map<String, String> schedulingLabels = new LinkedHashMap<>(labels);
         if (operatorConfig.keycloak().podLabels() != null) {
             labels.putAll(operatorConfig.keycloak().podLabels());
         }
@@ -264,6 +270,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!specBuilder.hasDnsPolicy()) {
             specBuilder.withDnsPolicy("ClusterFirst");
         }
+        handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
         var containerBuilder = specBuilder.buildContainers().isEmpty() ? specBuilder.addNewContainer() : specBuilder.editFirstContainer();
@@ -351,6 +358,42 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             .endContainer().endSpec().endTemplate().endSpec().build();
 
         return baseDeployment;
+    }
+
+    private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {
+        SchedulingSpec schedulingSpec = keycloakCR.getSpec().getSchedulingSpec();
+        if (schedulingSpec != null) {
+            if (!specBuilder.hasPriorityClassName()) {
+                specBuilder.withPriorityClassName(schedulingSpec.getPriorityClassName());
+            }
+            if (!specBuilder.hasAffinity()) {
+                specBuilder.withAffinity(schedulingSpec.getAffinity());
+            }
+            if (!specBuilder.hasTolerations()) {
+                specBuilder.withTolerations(schedulingSpec.getTolerations());
+            }
+            if (!specBuilder.hasTopologySpreadConstraints()) {
+                specBuilder.withTopologySpreadConstraints(schedulingSpec.getTopologySpreadConstraints());
+            }
+        }
+
+        // set defaults if nothing was specified by the user
+        // - server pods will have an affinity for the same zone as to avoid stretch clusters
+        // - server pods will have a stronger anti-affinity for the same node
+
+        if (!specBuilder.hasAffinity()) {
+            specBuilder.editOrNewAffinity().withNewPodAffinity().addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                    .withWeight(10).withNewPodAffinityTerm().withNewLabelSelector().withMatchLabels(labels)
+                    .endLabelSelector().withTopologyKey(ZONE_KEY).endPodAffinityTerm()
+                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAffinity().endAffinity();
+
+            specBuilder.editOrNewAffinity().withNewPodAntiAffinity()
+                    .addNewPreferredDuringSchedulingIgnoredDuringExecution().withWeight(50).withNewPodAffinityTerm()
+                    .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
+                    .withTopologyKey("kubernetes.io/hostname").endPodAffinityTerm()
+                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAntiAffinity().endAffinity();
+        }
+
     }
 
     private static String getJGroupsParameter(Keycloak keycloakCR) {
