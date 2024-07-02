@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -42,9 +43,9 @@ public class VerifiableCredential {
     private List<String> context;
     private List<String> type = new ArrayList<>();
     private URI issuer;
-    private Date issuanceDate;
+    private Instant issuanceDate;
     private URI id;
-    private Date expirationDate;
+    private Instant expirationDate;
     private CredentialSubject credentialSubject = new CredentialSubject();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<>();
@@ -87,11 +88,11 @@ public class VerifiableCredential {
         return this;
     }
 
-    public Date getIssuanceDate() {
+    public Instant getIssuanceDate() {
         return issuanceDate;
     }
 
-    public VerifiableCredential setIssuanceDate(Date issuanceDate) {
+    public VerifiableCredential setIssuanceDate(Instant issuanceDate) {
         this.issuanceDate = issuanceDate;
         return this;
     }
@@ -105,11 +106,11 @@ public class VerifiableCredential {
         return this;
     }
 
-    public Date getExpirationDate() {
+    public Instant getExpirationDate() {
         return expirationDate;
     }
 
-    public VerifiableCredential setExpirationDate(Date expirationDate) {
+    public VerifiableCredential setExpirationDate(Instant expirationDate) {
         this.expirationDate = expirationDate;
         return this;
     }

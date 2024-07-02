@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -33,7 +32,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 
 import java.time.Instant;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,7 +59,6 @@ public class LDSigningServiceTest extends OID4VCTest {
                                     getKeyFromSession(session).getKid(),
                                     "EdDSA",
                                     "UnsupportedSignatureType",
-                                    new ObjectMapper(),
                                     new StaticTimeProvider(1000),
                                     Optional.empty()));
         } catch (RunOnServerException ros) {
@@ -81,7 +78,6 @@ public class LDSigningServiceTest extends OID4VCTest {
                                     "no-such-key",
                                     "EdDSA",
                                     "Ed25519Signature2018",
-                                    new ObjectMapper(),
                                     new StaticTimeProvider(1000),
                                     Optional.empty()));
         } catch (RunOnServerException ros) {
@@ -113,7 +109,7 @@ public class LDSigningServiceTest extends OID4VCTest {
                                 Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                         "test", "test",
                                         "arrayClaim", List.of("a", "b", "c"),
-                                        "issuanceDate", Date.from(Instant.ofEpochSecond(10))),
+                                        "issuanceDate", Instant.ofEpochSecond(10)),
                                 Optional.empty()));
     }
 
@@ -127,7 +123,7 @@ public class LDSigningServiceTest extends OID4VCTest {
                                 Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                         "test", "test",
                                         "arrayClaim", List.of("a", "b", "c"),
-                                        "issuanceDate", Date.from(Instant.ofEpochSecond(10))),
+                                        "issuanceDate", Instant.ofEpochSecond(10)),
                                 Optional.of("did:web:test.org#the-key-id")));
     }
 
@@ -150,7 +146,6 @@ public class LDSigningServiceTest extends OID4VCTest {
                 keyWrapper.getKid(),
                 "EdDSA",
                 "Ed25519Signature2018",
-                new ObjectMapper(),
                 new StaticTimeProvider(1000),
                 kid);
 

@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.common.util.Base64;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -48,7 +47,7 @@ public class LDSigningService extends SigningService<VerifiableCredential> {
     private final TimeProvider timeProvider;
     private final String keyId;
 
-    public LDSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, String ldpType, ObjectMapper objectMapper, TimeProvider timeProvider, Optional<String> kid) {
+    public LDSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, String ldpType, TimeProvider timeProvider, Optional<String> kid) {
         super(keycloakSession, keyId, algorithmType);
         this.timeProvider = timeProvider;
         this.keyId = kid.orElse(keyId);
@@ -66,7 +65,7 @@ public class LDSigningService extends SigningService<VerifiableCredential> {
 
         linkedDataCryptographicSuite = switch (ldpType) {
             case Ed255192018Suite.PROOF_TYPE ->
-                    new Ed255192018Suite(objectMapper, signatureProvider.signer(signingKey));
+                    new Ed255192018Suite(signatureProvider.signer(signingKey));
             default -> throw new SigningServiceException(String.format("Proof Type %s is not supported.", ldpType));
         };
     }
