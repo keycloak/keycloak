@@ -1,0 +1,34 @@
+name: Automated Backporting via Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetBranch:
+        description: 'Release (22.0, 24.0, ...)'
+        required: true
+        type: string
+        default: "24.0"
+      pullRequest:
+        description: 'Pull request (just the ID)'
+        required: true
+        type: string
+      dryRun:
+        description: 'Dry run'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  backporting:
+    name: "Backporting"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Backporting
+        uses: kiegroup/git-backporting@bce5dd4f9969d47da9cbb6ed06abbf87216afc98 # 4.5.1
+        with:
+          target-branch: release/${{ inputs.targetBranch }}
+          pull-request: https://github.com/${{ github.repository }}/pulls/${{ inputs.pullRequest }}
+          auth: ${{ secrets.GITHUB_TOKEN }}
+          dry-run: ${{ inputs.dryRun }}
+          bp-branch-name: backport/${{ inputs.targetBranch }}/pr-${{ inputs.pullRequest }}
+          no-squash: true
