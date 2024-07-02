@@ -59,7 +59,7 @@ public class SupportedCredentialConfiguration {
     private String id;
 
     @JsonProperty(FORMAT_KEY)
-    private Format format;
+    private String format;
 
     @JsonProperty(SCOPE_KEY)
     private String scope;
@@ -85,11 +85,11 @@ public class SupportedCredentialConfiguration {
     @JsonProperty(CLAIMS_KEY)
     private Claims claims;
 
-    public Format getFormat() {
+    public String getFormat() {
         return format;
     }
 
-    public SupportedCredentialConfiguration setFormat(Format format) {
+    public SupportedCredentialConfiguration setFormat(String format) {
         this.format = format;
         return this;
     }
@@ -205,7 +205,7 @@ public class SupportedCredentialConfiguration {
     public static SupportedCredentialConfiguration fromDotNotation(String credentialId, Map<String, String> dotNotated) {
 
         SupportedCredentialConfiguration supportedCredentialConfiguration = new SupportedCredentialConfiguration().setId(credentialId);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredentialConfiguration::setFormat);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + FORMAT_KEY)).ifPresent(supportedCredentialConfiguration::setFormat);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + VERIFIABLE_CREDENTIAL_TYPE_KEY)).ifPresent(supportedCredentialConfiguration::setVct);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + SCOPE_KEY)).ifPresent(supportedCredentialConfiguration::setScope);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPARATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY))

@@ -90,6 +90,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static org.keycloak.protocol.oid4vc.model.Format.JWT_VC;
+import static org.keycloak.protocol.oid4vc.model.Format.LDP_VC;
+import static org.keycloak.protocol.oid4vc.model.Format.SD_JWT_VC;
+
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
  * <p>
@@ -115,13 +119,13 @@ public class OID4VCIssuerEndpoint {
     // lifespan of the preAuthorizedCodes in seconds
     private final int preAuthorizedCodeLifeSpan;
 
-    private final Map<Format, VerifiableCredentialsSigningService> signingServices;
+    private final Map<String, VerifiableCredentialsSigningService> signingServices;
 
     private final boolean isIgnoreScopeCheck;
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 String issuerDid,
-                                Map<Format, VerifiableCredentialsSigningService> signingServices,
+                                Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan) {
         this.session = session;
@@ -136,7 +140,7 @@ public class OID4VCIssuerEndpoint {
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 String issuerDid,
-                                Map<Format, VerifiableCredentialsSigningService> signingServices,
+                                Map<String, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
                                 boolean isIgnoreScopeCheck) {
@@ -168,7 +172,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
         SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
-        Format format = supportedCredentialConfiguration.getFormat();
+        String format = supportedCredentialConfiguration.getFormat();
 
         // check that the user is allowed to get such credential
         if (getClientsOfType(supportedCredentialConfiguration.getScope(), format).isEmpty()) {
@@ -303,7 +307,7 @@ public class OID4VCIssuerEndpoint {
             checkScope(credentialRequestVO);
         }
 
-        Format requestedFormat = credentialRequestVO.getFormat();
+        String requestedFormat = credentialRequestVO.getFormat();
         String requestedCredential = credentialRequestVO.getCredentialIdentifier();
 
         SupportedCredentialConfiguration supportedCredentialConfiguration = Optional
@@ -372,7 +376,7 @@ public class OID4VCIssuerEndpoint {
      * @param format           format of the credential to be created
      * @return the signed credential
      */
-    private Object getCredential(UserSessionModel userSessionModel, String vcType, Format format) {
+    private Object getCredential(UserSessionModel userSessionModel, String vcType, String format) {
 
         List<OID4VCClient> clients = getClientsOfType(vcType, format);
 
@@ -424,7 +428,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     // Return all {@link  OID4VCClient}s that support the given type and format
-    private List<OID4VCClient> getClientsOfType(String vcType, Format format) {
+    private List<OID4VCClient> getClientsOfType(String vcType, String format) {
         LOGGER.debugf("Retrieve all clients of type %s, supporting format %s", vcType, format.toString());
 
         if (Optional.ofNullable(vcType).filter(type -> !type.isEmpty()).isEmpty()) {
