@@ -26,7 +26,7 @@ As demonstrated in the previous example, the scheme and port are not explicitly 
 
 <@kc.start parameters="--hostname https://my.keycloak.org"/>
 
-Similarly, your reverse proxy might expose {project_name} at a different context path. It is possible to configure {proxy_name} to reflect that via the `hostname` and `hostname-admin` options. See the following example:
+Similarly, your reverse proxy might expose {project_name} at a different context path. It is possible to configure {project_name} to reflect that via the `hostname` and `hostname-admin` options. See the following example:
 
 <@kc.start parameters="--hostname https://my.keycloak.org:123/auth"/>
 
