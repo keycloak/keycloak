@@ -14,19 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.crypto.def.test;
+
+package org.keycloak.crypto.def.test.sdjwt;
 
 import org.junit.Assume;
 import org.junit.Before;
 import org.keycloak.common.util.Environment;
-import org.keycloak.sdjwt.sdjwtvp.SdJwtVPTest;
+import org.keycloak.sdjwt.sdjwtvp.SdJwtVPVerificationTest;
 
 /**
- * Test with default security provider and non-fips bouncycastle
- *
- * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
+ * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class DefaultCryptoSdJwtVPTest extends SdJwtVPTest {
+public class DefaultCryptoSdJwtVPVerificationTest extends SdJwtVPVerificationTest {
 
     @Before
     public void before() {

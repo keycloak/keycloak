@@ -14,14 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.crypto.elytron.test;
 
-import org.keycloak.sdjwt.sdjwtvp.SdJwtVPTest;
+package org.keycloak.crypto.elytron.test.sdjwt;
+
+import org.junit.Assume;
+import org.junit.Before;
+import org.keycloak.common.util.Environment;
+import org.keycloak.sdjwt.SdJwsTest;
 
 /**
- * Test with Elytron provider
- *
- * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
+ * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class ElytronCryptoSdJwtVPTest  extends SdJwtVPTest {
+public class ElytronCryptoSdJwsTest extends SdJwsTest {
 }

@@ -36,18 +36,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * This class will try to test conformity to the spec by comparing json objects.
- * 
- * 
  * We are facing the situation that:
- * - json produced are not normalized. But we can compare them by natching their
+ * - json produced are not normalized. But we can compare them by matching their
  * content once loaded into a json object.
  * - ecdsa signature contains random component. We can't compare them directly.
  * Even if we had the same input byte
  * - The no rationale for ordering the disclosures. So we can only make sure
  * each of them is present and that the json content matches.
- * 
- * Warning: in orther to produce the same disclosure strings and hashes like in
- * the spect, i had to produce
+ * Warning: in other to produce the same disclosure strings and hashes like in
+ * the spec, i had to produce
  * the same print. This is by no way reliable enough to be used to test
  * conformity to the spec.
  * 
@@ -71,8 +68,8 @@ public class TestCompareSdJwt {
 
         assertEquals(e.getPayload(), a.getPayload());
 
-        List<String> expectedJwsStrings = Arrays.asList(e.getJwsString().split("\\."));
-        List<String> actualJwsStrings = Arrays.asList(a.getJwsString().split("\\."));
+        List<String> expectedJwsStrings = Arrays.asList(e.toJws().split("\\."));
+        List<String> actualJwsStrings = Arrays.asList(a.toJws().split("\\."));
 
         // compare json content of header
         assertEquals(toJsonNode(expectedJwsStrings.get(0)), toJsonNode(actualJwsStrings.get(0)));
@@ -87,7 +84,7 @@ public class TestCompareSdJwt {
         Set<JsonNode> expectedDisclosures = expectedSdJwt.getDisclosuresString().stream()
                 .map(TestCompareSdJwt::toJsonNode)
                 .collect(Collectors.toSet());
-        Set<JsonNode> actualDisclosures = expectedSdJwt.getDisclosuresString().stream()
+        Set<JsonNode> actualDisclosures = actualSdJwt.getDisclosuresString().stream()
                 .map(TestCompareSdJwt::toJsonNode)
                 .collect(Collectors.toSet());
 
