@@ -83,14 +83,14 @@ public class BuildAndStartDistTest {
     }
 
     private void assertAdminCreation(KeycloakDistribution dist, LaunchResult result, String initialUsername, String nextUsername, String password) {
-        assertTrue(result.getOutput().contains("Added user '" + initialUsername + "' to realm 'master'"),
+        assertTrue(result.getOutput().contains("Added temporary admin user '" + initialUsername + "' to realm 'master'"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
 
         dist.setEnvVar("KEYCLOAK_ADMIN", nextUsername);
         dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", password);
         CLIResult cliResult = dist.run("start-dev", "--log-level=org.keycloak.services:debug");
 
-        cliResult.assertMessage("Skipping create admin user. Admin already exists in realm 'master'.");
+        cliResult.assertNoMessage("Added temporary admin user '");
         cliResult.assertStartedDevMode();
     }
 }
