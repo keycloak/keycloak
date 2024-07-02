@@ -894,8 +894,10 @@ public class StaxParserUtil {
      */
     public static void validate(StartElement startElement, QName tag) {
         if (! Objects.equals(startElement.getName(), tag)) {
-            String foundElementTag = StaxParserUtil.getElementName(startElement);
-            throw logger.parserExpectedTag(tag.getLocalPart(), foundElementTag);
+            Location location = startElement.getLocation();
+            throw logger.parserExpectedTag(
+                    tag.toString(), startElement.getName().toString(),
+                    location.getLineNumber(), location.getColumnNumber());
         }
     }
 
