@@ -23,6 +23,9 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "department")
     private WebElement departmentInput;
+
+    @FindBy(id = "termsAccepted")
+    private WebElement termsAccepted;
     
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -42,6 +45,26 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
+
+        clickLink(submitButton);
+    }
+
+    public void acceptTerms(String userName,
+                            String email,
+                            String firstName,
+                            String lastName) {
+        usernameInput.clear();
+        usernameInput.sendKeys(userName);
+
+        emailInput.clear();
+        emailInput.sendKeys(email);
+
+        firstNameInput.clear();
+        firstNameInput.sendKeys(firstName);
+
+        lastNameInput.clear();
+        lastNameInput.sendKeys(lastName);
+        termsAccepted.click();
 
         clickLink(submitButton);
     }
