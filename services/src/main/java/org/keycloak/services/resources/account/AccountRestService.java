@@ -243,7 +243,7 @@ public class AccountRestService {
         representation.setEffectiveUrl(ResolveRelative.resolveRelativeUri(session, model.getRootUrl(), model.getBaseUrl()));
         UserConsentModel consentModel = consents.get(model.getClientId());
         if(consentModel != null) {
-            representation.setConsent(modelToRepresentation(consentModel));
+            representation.setConsent(modelToBriefRepresentation(consentModel));
             representation.setLogoUri(model.getAttribute(ClientModel.LOGO_URI));
             representation.setPolicyUri(model.getAttribute(ClientModel.POLICY_URI));
             representation.setTosUri(model.getAttribute(ClientModel.TOS_URI));
@@ -252,6 +252,13 @@ public class AccountRestService {
     }
 
     private ConsentRepresentation modelToRepresentation(UserConsentModel model) {
+        List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
+                .map(m -> new ConsentScopeRepresentation(m.getId(), m.getName(), m.getDescription(), m.getProtocol()))
+                .collect(Collectors.toList());
+        return new ConsentRepresentation(grantedScopes, model.getCreatedDate(), model.getLastUpdatedDate());
+    }
+
+    private ConsentRepresentation modelToBriefRepresentation(UserConsentModel model) {
         List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
                 .map(m -> new ConsentScopeRepresentation(m.getId(), m.getConsentScreenText()!= null ? m.getConsentScreenText() : m.getName(), StringPropertyReplacer.replaceProperties(m.getConsentScreenText(), getProperties())))
                 .collect(Collectors.toList());
@@ -275,7 +282,8 @@ public class AccountRestService {
     @Path("/applications/{clientId}/consent")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConsent(final @PathParam("clientId") String clientId) {
+    public Response getConsent(final @PathParam("clientId") String clientId,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
 
@@ -287,6 +295,10 @@ public class AccountRestService {
         UserConsentModel consent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (consent == null) {
             return Response.noContent().build();
+        }
+
+        if (briefRepresentation) {
+            return Response.ok(modelToBriefRepresentation(consent)).build();
         }
 
         return Response.ok(modelToRepresentation(consent)).build();
@@ -384,7 +396,7 @@ public class AccountRestService {
             String scopeString = grantedConsent.getGrantedClientScopes().stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
             event.detail(Details.SCOPE, scopeString).success();
             grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
-            return Response.ok(modelToRepresentation(grantedConsent)).build();
+            return Response.ok(modelToBriefRepresentation(grantedConsent)).build();
         } catch (IllegalArgumentException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
