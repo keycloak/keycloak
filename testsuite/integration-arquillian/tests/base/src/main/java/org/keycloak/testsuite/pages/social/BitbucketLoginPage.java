@@ -35,6 +35,9 @@ public class BitbucketLoginPage extends AbstractSocialLoginPage {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
+    @FindBy(id = "mfa-promote-dismiss")
+    private WebElement dismissMFA;
+
     @FindBy(xpath = "//div[contains(@class,'additional-auths')]/p/a")
     private WebElement loginWithAtlassianButton;
 
@@ -54,5 +57,12 @@ public class BitbucketLoginPage extends AbstractSocialLoginPage {
 
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
+
+        try {
+            clickLink(dismissMFA);
+        }
+        catch (NoSuchElementException e) {
+            log.info("MFA already dismissed");
+        }
     }
 }
