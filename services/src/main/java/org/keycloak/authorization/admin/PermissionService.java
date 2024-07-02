@@ -19,12 +19,18 @@ package org.keycloak.authorization.admin;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response.Status;
+
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -39,21 +45,30 @@ public class PermissionService extends PolicyService {
         super(resourceServer, authorization, auth, adminEvent);
     }
 
+    @Path("/by-type/{policy-type}")
     @Override
-    protected PolicyResourceService doCreatePolicyResource(Policy policy) {
-        return new PolicyTypeResourceService(policy, resourceServer, authorization, auth, adminEvent);
+    public PolicyTypeService getTypeService(@PathParam("policy-type") String type) {
+        PolicyProviderFactory providerFactory = getPolicyProviderFactory(type);
+
+        if (providerFactory != null) {
+            return new PolicyTypeService(type, resourceServer, authorization, auth, adminEvent) {
+                @Override
+                protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
+                    filters.put(Policy.FilterOption.PERMISSION, new String[] {Boolean.TRUE.toString()});
+                    filters.put(Policy.FilterOption.TYPE, new String[] {type});
+                    return super.doSearch(firstResult, maxResult, fields, filters);
+                }
+            };
+        }
+        throw new ErrorResponseException("No policy provider found for this type.", "Invalid type", Status.NOT_FOUND);
     }
 
+    @Path("/by-id/{policy-id}")
     @Override
-    protected PolicyTypeService doCreatePolicyTypeResource(String type) {
-        return new PolicyTypeService(type, resourceServer, authorization, auth, adminEvent) {
-            @Override
-            protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
-                filters.put(Policy.FilterOption.PERMISSION, new String[] {Boolean.TRUE.toString()});
-                filters.put(Policy.FilterOption.TYPE, new String[] {type});
-                return super.doSearch(firstResult, maxResult, fields, filters);
-            }
-        };
+    public PolicyResourceService getResourceService(@PathParam("policy-id") String policyId) {
+        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, policyId);
+
+        return new PolicyTypeResourceService(policy, resourceServer, authorization, auth, adminEvent);
     }
 
     @Override
