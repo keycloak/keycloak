@@ -112,6 +112,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(PemUtils.encodeKey(keyPair.getPublic()), keys.getKeys().get(0).getPublicKey());
         assertEquals(keyPair.getPublic(), PemUtils.decodeCertificate(key.getCertificate()).getPublicKey());
         assertEquals(keyUse, keys.getKeys().get(0).getUse());
+        assertFalse(key.getKid().isBlank());
     }
 
     @Test
@@ -149,6 +150,38 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
         assertEquals(certificatePem, key.getCertificate());
         assertEquals(keyUse, keys.getKeys().get(0).getUse());
+        assertFalse(key.getKid().isBlank());
+    }
+
+    @Test
+    public void keyAndCertificateWithCustomKidForSig() {
+        long priority = System.currentTimeMillis();
+        String kid = "my-custom-kid";
+
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "test");
+        String certificatePem = PemUtils.encodeCertificate(certificate);
+
+        ComponentRepresentation rep = createRep("valid", ImportedRsaKeyProviderFactory.ID);
+        rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
+        rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, certificatePem);
+        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
+        rep.getConfig().putSingle(Attributes.KID_KEY, kid);
+
+        Response response = adminClient.realm("test").components().add(rep);
+        String id = ApiUtil.getCreatedId(response);
+        response.close();
+
+        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst(Attributes.PRIVATE_KEY_KEY));
+        assertEquals(certificatePem, createdRep.getConfig().getFirst(Attributes.CERTIFICATE_KEY));
+
+        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
+        assertEquals(certificatePem, key.getCertificate());
+        assertEquals(KeyUse.SIG, keys.getKeys().get(0).getUse());
+        assertEquals(kid, key.getKid());
     }
 
     @Test
