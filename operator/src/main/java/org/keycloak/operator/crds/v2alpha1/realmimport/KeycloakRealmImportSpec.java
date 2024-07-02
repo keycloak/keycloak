@@ -22,6 +22,9 @@ import io.fabric8.generator.annotation.Required;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.List;
+import java.util.Map;
+
 public class KeycloakRealmImportSpec {
 
     @Required
@@ -34,6 +37,9 @@ public class KeycloakRealmImportSpec {
     @JsonProperty("resources")
     @JsonPropertyDescription("Compute Resources required by Keycloak container. If not specified, the value is inherited from the Keycloak CR.")
     private ResourceRequirements resourceRequirements;
+
+    @JsonPropertyDescription("Optionally set to replace ENV variable placeholders in the realm import.")
+    private Map<String, PlaceholderSecret> placeholders;
 
     public String getKeycloakCRName() {
         return keycloakCRName;
@@ -57,5 +63,13 @@ public class KeycloakRealmImportSpec {
 
     public void setResourceRequirements(ResourceRequirements resourceRequirements) {
         this.resourceRequirements = resourceRequirements;
+    }
+
+    public Map<String, PlaceholderSecret> getPlaceholders() {
+        return placeholders;
+    }
+
+    public void setPlaceholders(Map<String, PlaceholderSecret> placeholders) {
+        this.placeholders = placeholders;
     }
 }
