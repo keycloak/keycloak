@@ -77,6 +77,7 @@ org.keycloak.policy.PasswordPolicyManagerSpi
 org.keycloak.transaction.TransactionManagerLookupSpi
 org.keycloak.credential.hash.PasswordHashSpi
 org.keycloak.credential.CredentialSpi
+org.keycloak.crls.CrlStorageSpi
 org.keycloak.keys.PublicKeyStorageSpi
 org.keycloak.keys.KeySpi
 org.keycloak.storage.DatastoreSpi

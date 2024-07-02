@@ -40,12 +40,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.keycloak.common.crypto.CertificateUtilsProvider;
-import org.keycloak.common.crypto.CryptoConstants;
-import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.crypto.ECDSACryptoProvider;
-import org.keycloak.common.crypto.PemUtilsProvider;
-import org.keycloak.common.crypto.UserIdentityExtractorProvider;
+import org.keycloak.common.crypto.*;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
 
@@ -77,6 +72,11 @@ public class WildFlyElytronProvider implements CryptoProvider {
     @Override
     public CertificateUtilsProvider getCertificateUtils() {
         return new ElytronCertificateUtilsProvider();
+    }
+
+    @Override
+    public CRLProvider getCrlProvider() {
+        return new CRLStreamProvider();
     }
 
     @Override
