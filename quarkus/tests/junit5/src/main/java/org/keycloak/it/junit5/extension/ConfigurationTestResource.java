@@ -24,7 +24,6 @@ import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 
 import java.util.Map;
@@ -46,7 +45,6 @@ public class ConfigurationTestResource implements QuarkusTestResourceLifecycleMa
 
     @Override
     public void inject(Object testInstance) {
-        ConfigArgsConfigSource.setCliArgs(CLITestExtension.CLI_ARGS);
         KeycloakConfigSourceProvider.reload();
         SmallRyeConfig config = ConfigUtils.configBuilder(true, LaunchMode.NORMAL).build();
         SmallRyeConfigProviderResolver resolver = new SmallRyeConfigProviderResolver();

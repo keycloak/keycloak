@@ -1,8 +1,8 @@
 package org.keycloak.client.registration.cli.commands;
 
 import org.keycloak.client.registration.cli.KcRegMain;
+import org.keycloak.common.util.IoUtils;
 import org.keycloak.client.cli.config.RealmConfigData;
-import org.keycloak.client.cli.util.IoUtil;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -61,7 +61,7 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd {
 
 
         if (!delete && token == null) {
-            token = IoUtil.readSecret("Enter Registration Access Token: ");
+            token = IoUtils.readPasswordFromConsole("Registration Access Token");
         }
 
         // now update the config

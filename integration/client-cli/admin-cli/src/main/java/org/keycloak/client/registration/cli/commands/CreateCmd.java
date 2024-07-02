@@ -48,7 +48,6 @@ import static org.keycloak.client.cli.util.HttpUtil.doPost;
 import static org.keycloak.client.cli.util.IoUtil.printErr;
 import static org.keycloak.client.cli.util.IoUtil.printOut;
 import static org.keycloak.client.cli.util.IoUtil.readFully;
-import static org.keycloak.client.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
@@ -56,6 +55,7 @@ import static org.keycloak.client.registration.cli.EndpointType.DEFAULT;
 import static org.keycloak.client.registration.cli.EndpointType.OIDC;
 import static org.keycloak.client.registration.cli.EndpointType.SAML2;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
+import static org.keycloak.common.util.IoUtils.readPasswordFromConsole;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -105,7 +105,7 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
 
         // if --token is specified read it
         if ("-".equals(externalToken)) {
-            externalToken = readSecret("Enter Initial Access Token: ");
+            externalToken = readPasswordFromConsole("Initial Access Token");
         }
 
         CmdStdinContext ctx = new CmdStdinContext();

@@ -18,6 +18,7 @@
 package org.keycloak.services.resteasy;
 
 import org.keycloak.common.Profile;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
@@ -83,6 +84,11 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
         ResteasyKeycloakSessionFactory factory = new ResteasyKeycloakSessionFactory();
         factory.init();
         return factory;
+    }
+
+    @Override
+    protected void createTemporaryAdmin(KeycloakSession session) {
+        // do nothing
     }
 
 }
