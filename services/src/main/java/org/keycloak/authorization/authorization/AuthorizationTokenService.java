@@ -895,8 +895,7 @@ public class AuthorizationTokenService {
             search.put(Resource.FilterOption.URI, new String[] { uri });
             ResourceServer resourceServer = storeFactory.getResourceServerStore()
                 .findByClient(getRealm().getClientByClientId(getAudience()));
-            List<Resource> resources = storeFactory.getResourceStore().find(resourceServer, search, -1,
-                Constants.DEFAULT_MAX_RESULTS);
+            List<Resource> resources = storeFactory.getResourceStore().find(resourceServer, search, -1, -1);
 
             if (!matchingUri || !resources.isEmpty()) {
                 return resources;
