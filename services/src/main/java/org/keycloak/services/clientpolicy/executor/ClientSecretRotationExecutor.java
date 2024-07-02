@@ -159,9 +159,14 @@ public class ClientSecretRotationExecutor implements
     }
 
     private void updatedSecretExpiration(OIDCClientSecretConfigWrapper clientConfigWrapper) {
-        clientConfigWrapper.setClientSecretExpirationTime(
-                Time.currentTime() + configuration.getExpirationPeriod());
-        logger.debugv("A new secret expiration is configured for client {0}. Expires at {1}", clientConfigWrapper.getId(), Time.toDate(clientConfigWrapper.getClientSecretExpirationTime()));
+        if (configuration.getExpirationPeriod()==0) {
+            clientConfigWrapper.setClientSecretExpirationTime(null);
+            logger.debugv("Secret expiration removed for client {0}", clientConfigWrapper.getId());
+        } else {
+            clientConfigWrapper.setClientSecretExpirationTime(
+                    Time.currentTime() + configuration.getExpirationPeriod());
+            logger.debugv("A new secret expiration is configured for client {0}. Expires at {1}", clientConfigWrapper.getId(), Time.toDate(clientConfigWrapper.getClientSecretExpirationTime()));
+        }
     }
 
     private void updateClientConfigProperties(OIDCClientSecretConfigWrapper clientConfigWrapper) {
@@ -197,21 +202,22 @@ public class ClientSecretRotationExecutor implements
         @Override
         public boolean validateConfig() {
             logger.debugv("Validating configuration: [ expirationPeriod: {0}, rotatedExpirationPeriod: {1}, remainExpirationPeriod: {2} ]", expirationPeriod, rotatedExpirationPeriod, remainExpirationPeriod);
-            // expiration must be a positive value greater than 0 (seconds)
-            if (expirationPeriod <= 0) {
+            // expiration must be a positive value greater than 0 (seconds), or 0 for no expiration
+
+            if (expirationPeriod < 0) {
                 return false;
             }
 
             // rotated secret duration could not be bigger than the main secret
-            if (rotatedExpirationPeriod > expirationPeriod) {
+            if (expirationPeriod > 0 && rotatedExpirationPeriod > expirationPeriod) {
                 return false;
             }
 
             // remaining secret expiration period could not be bigger than main secret
-            if (remainExpirationPeriod > expirationPeriod) {
+            if (expirationPeriod > 0 && remainExpirationPeriod > expirationPeriod) {
                 return false;
             }
-
+            
             return true;
         }
 
