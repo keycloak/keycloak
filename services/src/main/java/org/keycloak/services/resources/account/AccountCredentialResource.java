@@ -119,7 +119,7 @@ public class AccountCredentialResource {
         public String getCategory() {
             return category;
         }
-        
+
         public String getType() {
             return type;
         }
@@ -304,10 +304,14 @@ public class AccountCredentialResource {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         CredentialModel credential = CredentialDeleteHelper.removeCredential(session, user, credentialId, this::getCurrentAuthenticatedLevel);
 
-        if (credential != null && OTPCredentialModel.TYPE.equals(credential.getType())) {
-            event.event(EventType.REMOVE_TOTP)
+        if (credential != null) {
+            event.event(EventType.REMOVE_CREDENTIAL)
+                    .detail(Details.CREDENTIAL_TYPE, credential.getType())
                     .detail(Details.SELECTED_CREDENTIAL_ID, credentialId)
                     .detail(Details.CREDENTIAL_USER_LABEL, credential.getUserLabel());
+            if (OTPCredentialModel.TYPE.equals(credential.getType())) {
+                event.clone().event(EventType.REMOVE_TOTP).success();
+            }
             event.success();
         }
     }

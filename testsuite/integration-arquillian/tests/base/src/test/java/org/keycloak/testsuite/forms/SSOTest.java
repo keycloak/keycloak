@@ -26,6 +26,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -191,7 +192,8 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword("password", "password");
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

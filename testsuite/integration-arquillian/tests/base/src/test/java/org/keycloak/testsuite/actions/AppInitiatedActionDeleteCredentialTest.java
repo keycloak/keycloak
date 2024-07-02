@@ -91,7 +91,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
     }
 
     @Test
-    public void removeTotpSuccess() throws Exception {
+    public void removeOtpSuccess() throws Exception {
         String credentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
         oauth.kcAction(getKcActionParamForDeleteCredential(credentialId));
 
@@ -113,10 +113,16 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
                 .detail(Details.CREDENTIAL_ID, credentialId)
                 .detail(Details.CUSTOM_REQUIRED_ACTION, DeleteCredentialAction.PROVIDER_ID)
                 .assertEvent();
+        events.expect(EventType.REMOVE_CREDENTIAL)
+                .user(userId)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .detail(Details.CREDENTIAL_ID, credentialId)
+                .detail(Details.CUSTOM_REQUIRED_ACTION, DeleteCredentialAction.PROVIDER_ID)
+                .assertEvent();
     }
 
     @Test
-    public void removeTotpCancel() throws Exception {
+    public void removeOtpCancel() throws Exception {
         String credentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
 
         loginPasswordAndOtp();
@@ -155,7 +161,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
         errorPage.assertCurrent();
 
-        events.expect(EventType.CUSTOM_REQUIRED_ACTION)
+        events.expect(EventType.REMOVE_CREDENTIAL)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
                 .detail(Details.CREDENTIAL_ID, credentialId)
@@ -218,7 +224,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
     }
 
     @Test
-    public void removeTotpCustomLabel() throws Exception {
+    public void removeOtpCustomLabel() throws Exception {
         String credentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
         testRealm().users().get(userId).setCredentialUserLabel(credentialId, "custom-otp-authenticator");
 
@@ -236,6 +242,13 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
         Assert.assertNull(getCredentialIdByType(OTPCredentialModel.TYPE));
 
         events.expect(EventType.REMOVE_TOTP)
+                .user(userId)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .detail(Details.CREDENTIAL_ID, credentialId)
+                .detail(Details.CREDENTIAL_USER_LABEL, "custom-otp-authenticator")
+                .detail(Details.CUSTOM_REQUIRED_ACTION, DeleteCredentialAction.PROVIDER_ID)
+                .assertEvent();
+        events.expect(EventType.REMOVE_CREDENTIAL)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                 .detail(Details.CREDENTIAL_ID, credentialId)
