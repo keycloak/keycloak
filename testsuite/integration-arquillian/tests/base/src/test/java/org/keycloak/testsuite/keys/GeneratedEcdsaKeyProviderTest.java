@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyType;
-import org.keycloak.keys.AbstractEcdsaKeyProviderFactory;
+import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -49,8 +49,8 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
-    private static final String DEFAULT_EC = "P-256";
-    private static final String ECDSA_ELLIPTIC_CURVE_KEY = "ecdsaEllipticCurveKey";
+    private static final String DEFAULT_EC = GeneratedEcdsaKeyProviderFactory.DEFAULT_ECDSA_ELLIPTIC_CURVE;
+    private static final String ECDSA_ELLIPTIC_CURVE_KEY = GeneratedEcdsaKeyProviderFactory.ECDSA_ELLIPTIC_CURVE_KEY;
     private static final String TEST_REALM_NAME = "test";
 
     @Rule
@@ -99,7 +99,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
 
         ComponentRepresentation rep = createRep("valid", GeneratedEcdsaKeyProviderFactory.ID);
         rep.setConfig(new MultivaluedHashMap<>());
-        rep.getConfig().putSingle("priority", Long.toString(priority));
+        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
         if (ecInNistRep != null) {
             rep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, ecInNistRep);
         } else {
@@ -115,7 +115,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
 
         // stands for the number of properties in the key provider config
         assertEquals(2, createdRep.getConfig().size());
-        assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
+        assertEquals(Long.toString(priority), createdRep.getConfig().getFirst(Attributes.PRIORITY_KEY));
         assertEquals(ecInNistRep, createdRep.getConfig().getFirst(ECDSA_ELLIPTIC_CURVE_KEY));
 
         KeysMetadataRepresentation keys = adminClient.realm(TEST_REALM_NAME).keys().getKeyMetadata();
@@ -210,7 +210,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
         assertNotEquals(originalKey.getKid(), key.getKid());  // kid is changed if key was regenerated
         assertEquals(KeyType.EC, key.getType());
         assertNotEquals(originalKey.getAlgorithm(), key.getAlgorithm());
-        assertEquals(ToEcInNistRep, AbstractEcdsaKeyProviderFactory.convertAlgorithmToECDomainParmNistRep(key.getAlgorithm()));
+        assertEquals(ToEcInNistRep, GeneratedEcdsaKeyProviderFactory.convertJWSAlgorithmToECDomainParmNistRep(key.getAlgorithm()));
         assertEquals(ToEcInNistRep, getCurveFromPublicKey(key.getPublicKey()));
     }
 

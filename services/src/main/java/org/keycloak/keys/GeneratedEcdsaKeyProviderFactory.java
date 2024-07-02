@@ -17,65 +17,43 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.X509EncodedKeySpec;
+import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
+
 import java.util.List;
 
-public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFactory {
+public class GeneratedEcdsaKeyProviderFactory extends AbstractGeneratedEcKeyProviderFactory<KeyProvider> {
 
     private static final Logger logger = Logger.getLogger(GeneratedEcdsaKeyProviderFactory.class);
+
+    public static final String ECDSA_PRIVATE_KEY_KEY = "ecdsaPrivateKey";
+    public static final String ECDSA_PUBLIC_KEY_KEY = "ecdsaPublicKey";
+    public static final String ECDSA_ELLIPTIC_CURVE_KEY = "ecdsaEllipticCurveKey";
+
+    // only support NIST P-256 for ES256, P-384 for ES384, P-521 for ES512
+    protected static ProviderConfigProperty ECDSA_ELLIPTIC_CURVE_PROPERTY = new ProviderConfigProperty(ECDSA_ELLIPTIC_CURVE_KEY, "Elliptic Curve", "Elliptic Curve used in ECDSA", LIST_TYPE,
+            String.valueOf(GeneratedEcdsaKeyProviderFactory.DEFAULT_ECDSA_ELLIPTIC_CURVE),
+            "P-256", "P-384", "P-521");
 
     public static final String ID = "ecdsa-generated";
 
     private static final String HELP_TEXT = "Generates ECDSA keys";
 
      // secp256r1,NIST P-256,X9.62 prime256v1,1.2.840.10045.3.1.7
-    public static final String DEFAULT_ECDSA_ELLIPTIC_CURVE = "P-256";
+    public static final String DEFAULT_ECDSA_ELLIPTIC_CURVE = DEFAULT_EC_ELLIPTIC_CURVE;
 
-    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractEcdsaKeyProviderFactory.configurationBuilder()
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractGeneratedEcKeyProviderFactory.configurationBuilder()
             .property(ECDSA_ELLIPTIC_CURVE_PROPERTY)
             .build();
 
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
         return new GeneratedEcdsaKeyProvider(session.getContext().getRealm(), model);
-    }
-
-    @Override
-    public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
-        if (keyUse.equals(KeyUse.SIG) && (algorithm.equals(Algorithm.ES256) || algorithm.equals(Algorithm.ES384) || algorithm.equals(Algorithm.ES512))) {
-            RealmModel realm = session.getContext().getRealm();
-
-            ComponentModel generated = new ComponentModel();
-            generated.setName("fallback-" + algorithm);
-            generated.setParentId(realm.getId());
-            generated.setProviderId(ID);
-            generated.setProviderType(KeyProvider.class.getName());
-
-            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-            config.putSingle(Attributes.PRIORITY_KEY, "-100");
-            config.putSingle(ECDSA_ELLIPTIC_CURVE_KEY, convertAlgorithmToECDomainParmNistRep(algorithm));
-            generated.setConfig(config);
-
-            realm.addComponentModel(generated);
-
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -94,46 +72,74 @@ public class GeneratedEcdsaKeyProviderFactory extends AbstractEcdsaKeyProviderFa
     }
 
     @Override
-    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
-        super.validateConfiguration(session, realm, model);
+    protected Logger getLogger() {
+        return logger;
+    }
 
-        ConfigurationValidationHelper.check(model).checkList(ECDSA_ELLIPTIC_CURVE_PROPERTY, false);
+    @Override
+    protected boolean isValidKeyUse(KeyUse keyUse) {
+        return KeyUse.SIG.equals(keyUse);
+    }
 
-        String ecInNistRep = model.get(ECDSA_ELLIPTIC_CURVE_KEY);
-        if (ecInNistRep == null) ecInNistRep = DEFAULT_ECDSA_ELLIPTIC_CURVE;
+    @Override
+    protected boolean isSupportedEcAlgorithm(String algorithm) {
+        return (algorithm.equals(Algorithm.ES256) || algorithm.equals(Algorithm.ES384)
+                || algorithm.equals(Algorithm.ES512));
+    }
 
-        if (!(model.contains(ECDSA_PRIVATE_KEY_KEY) && model.contains(ECDSA_PUBLIC_KEY_KEY))) {
-            generateKeys(model, ecInNistRep);
-            logger.debugv("Generated keys for {0}", realm.getName());
-        } else {
-            String currentEc = getCurveFromPublicKey(model.getConfig().getFirst(GeneratedEcdsaKeyProviderFactory.ECDSA_PUBLIC_KEY_KEY));
-            if (!ecInNistRep.equals(currentEc)) {
-                generateKeys(model, ecInNistRep);
-                logger.debugv("Elliptic Curve changed, generating new keys for {0}", realm.getName());
-            }
+    @Override
+    protected String getEcEllipticCurveKey(String algorithm) {
+        return convertJWSAlgorithmToECDomainParmNistRep(algorithm);
+    }
+
+    @Override
+    protected ProviderConfigProperty getEcEllipticCurveProperty() {
+        return ECDSA_ELLIPTIC_CURVE_PROPERTY;
+    }
+
+    @Override
+    protected String getEcEllipticCurveKey() {
+        return ECDSA_ELLIPTIC_CURVE_KEY;
+    }
+
+    @Override
+    protected String getEcPrivateKeyKey() {
+        return ECDSA_PRIVATE_KEY_KEY;
+    }
+
+    @Override
+    protected String getEcPublicKeyKey() {
+        return ECDSA_PUBLIC_KEY_KEY;
+    }
+
+    @Override
+    protected String getDefaultEcEllipticCurve() {
+        return DEFAULT_ECDSA_ELLIPTIC_CURVE;
+    }
+
+    public static String convertECDomainParmNistRepToJWSAlgorithm(String ecInNistRep) {
+        switch(ecInNistRep) {
+            case "P-256" :
+                return Algorithm.ES256;
+            case "P-384" :
+                return Algorithm.ES384;
+            case "P-521" :
+                return Algorithm.ES512;
+            default :
+                return null;
         }
     }
 
-    private void generateKeys(ComponentModel model, String ecInNistRep) {
-        KeyPair keyPair;
-        try {
-            keyPair = generateEcdsaKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));
-            model.put(ECDSA_PRIVATE_KEY_KEY, Base64.encodeBytes(keyPair.getPrivate().getEncoded()));
-            model.put(ECDSA_PUBLIC_KEY_KEY, Base64.encodeBytes(keyPair.getPublic().getEncoded()));
-            model.put(ECDSA_ELLIPTIC_CURVE_KEY, ecInNistRep);
-        } catch (Throwable t) {
-            throw new ComponentValidationException("Failed to generate ECDSA keys", t);
-        }
-    }
-
-    private String getCurveFromPublicKey(String publicEcdsaKeyBase64Encoded) {
-        try {
-            KeyFactory kf = KeyFactory.getInstance("EC");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEcdsaKeyBase64Encoded));
-            ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
-            return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
-        } catch (Throwable t) {
-            throw new ComponentValidationException("Failed to get EC from its public key", t);
+    public static String convertJWSAlgorithmToECDomainParmNistRep(String algorithm) {
+        switch(algorithm) {
+            case Algorithm.ES256 :
+                return "P-256";
+            case Algorithm.ES384 :
+                return "P-384";
+            case Algorithm.ES512 :
+                return "P-521";
+            default :
+                return null;
         }
     }
 }

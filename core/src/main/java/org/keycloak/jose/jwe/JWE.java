@@ -20,6 +20,7 @@ package org.keycloak.jose.jwe;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.util.JsonSerialization;
@@ -143,8 +144,10 @@ public class JWE implements JOSE {
             keyStorage.setEncryptionProvider(encryptionProvider);
             keyStorage.getCEKKey(JWEKeyStorage.KeyUse.ENCRYPTION, true); // Will generate CEK if it's not already present
 
-            byte[] encodedCEK = algorithmProvider.encodeCek(encryptionProvider, keyStorage, keyStorage.getEncryptionKey());
+            JWEHeaderBuilder headerBuilder = header.toBuilder();
+            byte[] encodedCEK = algorithmProvider.encodeCek(encryptionProvider, keyStorage, keyStorage.getEncryptionKey(), headerBuilder);
             base64Cek = Base64Url.encode(encodedCEK);
+            header = headerBuilder.build();
 
             encryptionProvider.encodeJwe(this);
 
@@ -191,7 +194,7 @@ public class JWE implements JOSE {
 
         keyStorage.setEncryptionProvider(encryptionProvider);
 
-        byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey());
+        byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey(), this.header, encryptionProvider);
         keyStorage.setCEKBytes(decodedCek);
 
         encryptionProvider.verifyAndDecodeJwe(this);
