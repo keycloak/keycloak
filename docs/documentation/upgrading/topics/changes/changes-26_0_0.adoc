@@ -41,3 +41,22 @@ The following items have been deprecated for removal in upcoming {project_name} 
 = Consistent usage of UTF-8 charset for URL encoding
 
 `org.keycloak.common.util.Encode` now always uses the `UTF-8` charset for URL encoding instead relying implicitly on the `file.encoding` system property.
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties. The main
+reason is that the LDAP connection pool configuration is a JVM-level configuration rather than specific to an individual
+realm or LDAP provider instance.
+
+Compared to previous releases, any realm configuration related to the LDAP connection pool will be ignored.
+If you are migrating from previous versions where any of the following settings are set to your LDAP provider(s), consider using system properties instead:
+
+* `connectionPoolingAuthentication`
+* `connectionPoolingInitSize`
+* `connectionPoolingMaxSize`
+* `connectionPoolingPrefSize`
+* `connectionPoolingTimeout`
+* `connectionPoolingProtocol`
+* `connectionPoolingDebug`
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
