@@ -142,12 +142,16 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const [accessToken, setAccessToken] = useState("");
   const [userInfo, setUserInfo] = useState("");
   const [idToken, setIdToken] = useState("");
+  // TODO use setSamlResponse
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [samlResponse, setSamlResponse] = useState("");
 
   const tabContent1 = useRef(null);
   const tabContent2 = useRef(null);
   const tabContent3 = useRef(null);
   const tabContent4 = useRef(null);
   const tabContent5 = useRef(null);
+  const tabContent6 = useRef(null);
 
   const form = useForm();
 
@@ -202,6 +206,16 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       const user = form.getValues("user");
       if (!user) return [];
 
+      // TODO handle SAML protocol
+      // if (protocol === "saml") {
+      //   return await Promise.all([
+      //     adminClient.clients.evaluateGenerateSamlResponse({
+      //       id: clientId,
+      //       userId: user[0],
+      //       scope,
+      //     }),
+      //   ]);
+      // }
       return await Promise.all([
         adminClient.clients.evaluateGenerateAccessToken({
           id: clientId,
@@ -221,6 +235,10 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       ]);
     },
     ([accessToken, userInfo, idToken]) => {
+      // TODO handle saml protocl
+      // if (protocol === "saml") {
+      //   setSamlResponse(accessToken);
+      // }
       setAccessToken(prettyPrintJSON(accessToken));
       setUserInfo(prettyPrintJSON(userInfo));
       setIdToken(prettyPrintJSON(idToken));
@@ -358,6 +376,19 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               label="generatedUserInfo"
             />
           </TabContent>
+          <TabContent
+            aria-labelledby={t("generatedSamlResponse")}
+            eventKey={5}
+            id="tab-generated-saml-response"
+            ref={tabContent6}
+            hidden
+          >
+            <GeneratedCodeTab
+              text={samlResponse}
+              user={form.getValues("user")}
+              label="generatedSamlResponse"
+            />
+          </TabContent>
         </GridItem>
         <GridItem span={4}>
           <Tabs
@@ -456,6 +487,24 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                 </TabTitleText>
               }
               tabContentRef={tabContent5}
+            />
+            <Tab
+              id="generatedSamlResponse"
+              aria-controls="generatedSamlResponse"
+              data-testid="generated-saml-response-tab"
+              eventKey={5}
+              title={
+                <TabTitleText>
+                  {t("generatedSamlResponse")}{" "}
+                  <HelpItem
+                    fieldLabelId="generatedSamlResponse"
+                    helpText={t("generatedSamlResponseHelp")}
+                    noVerticalAlign={false}
+                    unWrap
+                  />
+                </TabTitleText>
+              }
+              tabContentRef={tabContent6}
             />
           </Tabs>
         </GridItem>
