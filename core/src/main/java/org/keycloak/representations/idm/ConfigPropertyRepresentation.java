@@ -32,6 +32,7 @@ public class ConfigPropertyRepresentation {
     protected List<String> options;
     protected boolean secret;
     protected boolean required;
+    protected boolean stringify;
     private boolean readOnly;
 
     public String getName() {
@@ -104,5 +105,13 @@ public class ConfigPropertyRepresentation {
 
     public boolean isReadOnly() {
         return readOnly;
+    }
+
+    public boolean isStringify() {
+        return stringify;
+    }
+
+    public void setStringify(boolean stringify) {
+        this.stringify = stringify;
     }
 }
