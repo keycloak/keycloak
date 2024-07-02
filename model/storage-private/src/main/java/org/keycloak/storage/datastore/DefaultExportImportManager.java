@@ -183,6 +183,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isUserManagedAccessAllowed() != null) newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
+        if (rep.isUserFriendlyMessage() != null) newRealm.setUserFriendlyMessage(rep.isUserFriendlyMessage());
         if (rep.isPermanentLockout() != null) newRealm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxTemporaryLockouts() != null) newRealm.setMaxTemporaryLockouts(rep.getMaxTemporaryLockouts());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -748,6 +749,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isUserManagedAccessAllowed() != null) realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
+        if (rep.isUserFriendlyMessage() != null) realm.setUserFriendlyMessage(rep.isUserFriendlyMessage());
         if (rep.isPermanentLockout() != null) realm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxTemporaryLockouts() != null) realm.setMaxTemporaryLockouts(rep.getMaxTemporaryLockouts());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());

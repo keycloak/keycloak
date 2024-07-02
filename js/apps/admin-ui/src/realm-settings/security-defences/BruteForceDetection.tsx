@@ -4,6 +4,7 @@ import {
   KeycloakSelect,
   NumberControl,
   SelectVariant,
+  SwitchControl,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -131,6 +132,18 @@ export const BruteForceDetection = ({
         </FormGroup>
         {bruteForceMode !== BruteForceMode.Disabled && (
           <>
+            {(bruteForceMode === BruteForceMode.TemporaryLockout ||
+              bruteForceMode ===
+                BruteForceMode.PermanentAfterTemporaryLockout) && (
+              <SwitchControl
+                name="userFriendlyMessage"
+                label={t("userFriendlyMessage")}
+                id="kc-user-friendly-message-switch"
+                labelOn={t("on")}
+                labelOff={t("off")}
+              />
+            )}
+
             <NumberControl
               name="failureFactor"
               label={t("failureFactor")}

@@ -76,6 +76,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean organizationsEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
+    protected boolean userFriendlyMessage;
     protected boolean permanentLockout;
     protected int maxTemporaryLockouts;
     protected int maxFailureWaitSeconds;
@@ -200,6 +201,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         organizationsEnabled = model.isOrganizationsEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
+        userFriendlyMessage = model.isUserFriendlyMessage();
         permanentLockout = model.isPermanentLockout();
         maxTemporaryLockouts = model.getMaxTemporaryLockouts();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
@@ -382,6 +384,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isBruteForceProtected() {
         return bruteForceProtected;
+    }
+
+    public boolean isUserFriendlyMessage() {
+        return this.userFriendlyMessage;
     }
 
     public boolean isPermanentLockout() {
