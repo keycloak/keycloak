@@ -38,6 +38,8 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+
 public class ClientSessionPersistentChangelogBasedTransaction extends PersistentSessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> {
 
     private static final Logger LOG = Logger.getLogger(ClientSessionPersistentChangelogBasedTransaction.class);
@@ -55,7 +57,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                             SerializeExecutionsByKey<UUID> serializerOnline,
                                                             SerializeExecutionsByKey<UUID> serializerOffline) {
-        super(session, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
         this.userSessionTx = userSessionTx;
     }
 
@@ -63,7 +65,9 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         SessionUpdatesList<AuthenticatedClientSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<AuthenticatedClientSessionEntity> wrappedEntity = null;
-            wrappedEntity = getCache(offline).get(key);
+            if (getCache(offline) != null) {
+                wrappedEntity = getCache(offline).get(key);
+            }
 
             if (wrappedEntity == null) {
                 LOG.debugf("client-session not found in cache for sessionId=%s, offline=%s, loading from persister", key, offline);

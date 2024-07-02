@@ -321,6 +321,10 @@ jobs:
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    strategy:
+      matrix:
+        variant: [ "pus-ec", "pus-rc" ]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
@@ -328,11 +332,24 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - name: Run base tests without cache
+      - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature="persistent-user-sessions" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          case "${{ matrix.variant }}" in
+            pus-ec)
+              VARIANT="-Dauth.server.feature=persistent-user-sessions"
+              ;;
+            pus-rc)
+              VARIANT="-Pinfinispan-server -Dauth.server.feature=persistent-user-sessions,multi-site,remote-cache"
+              ;;
+            *)
+              echo "Unknown Matrix element"
+              exit 1
+              ;;
+          esac
+          echo "Variant: $VARIANT"
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus $VARIANT -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -349,7 +366,7 @@ jobs:
         if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
-          job-id: store-integration-tests-${{ matrix.db }}
+          job-id: store-integration-tests-${{ matrix.variant }}
 
       - name: EC2 Maven Logs
         if: failure()

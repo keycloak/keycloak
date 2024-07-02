@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -67,7 +68,7 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return InfinispanUtils.isRemoteInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS);
     }
 
     @Override
