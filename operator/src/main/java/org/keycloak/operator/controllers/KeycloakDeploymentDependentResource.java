@@ -49,6 +49,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -379,9 +381,21 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
         // TODO remove this once the --proxy option is finally removed from Keycloak
-        // not strictly necessary as --proxy-headers take precedence over --proxy but at least removes the warning
-        // about deprecated --proxy option in use
-        if (varMap.containsKey(getKeycloakOptionEnvVarName("proxy-headers"))) {
+        // removes the warning about deprecated --proxy option in use, or allows fixed hostname edge to work
+        
+        boolean hostnameURL = false;
+        final var hostnameSpec = keycloakCR.getSpec().getHostnameSpec();
+        if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
+            String hostname = hostnameSpec.getHostname();
+
+            try {
+                new URL(hostname);
+                hostnameURL = true;
+            } catch (MalformedURLException e) {
+            }
+        }
+        
+        if (varMap.containsKey(getKeycloakOptionEnvVarName("proxy-headers")) || hostnameURL) {
             varMap.remove(getKeycloakOptionEnvVarName("proxy"));
         }
 
