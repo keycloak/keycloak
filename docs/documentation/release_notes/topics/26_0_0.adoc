@@ -25,7 +25,13 @@ Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto
 
 = Keycloak CR supports standard scheduling options
 
-The Keycloak CR now exposes first class properties for controlling the scheduling of your Keycloak Pods. 
+The Keycloak CR now exposes first class properties for controlling the scheduling of your Keycloak Pods.
 
 For more details, see the
 https://www.keycloak.org/operator/advanced-configuration[Operator Advanced Configuration].
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties.
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
