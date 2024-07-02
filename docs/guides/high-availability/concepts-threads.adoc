@@ -14,7 +14,7 @@ For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-
 
 === Quarkus executor pool
 
-{project_name} requests, as well as blocking probes, are handled by an executor pool. Depending on the available CPU cores, it has a maximum size of 200 or more threads.
+{project_name} requests, as well as blocking probes, are handled by an executor pool. Depending on the available CPU cores, it has a maximum size of 50 or more threads.
 Threads are created as needed, and will end when no longer needed, so the system will scale up and down automatically.
 {project_name} allows configuring the maximum thread pool size by the link:{links_server_all-config_url}?q=http-pool-max-threads[`http-pool-max-threads`] configuration option. See <@links.ha id="deploy-keycloak-kubernetes" /> for an example.
 
