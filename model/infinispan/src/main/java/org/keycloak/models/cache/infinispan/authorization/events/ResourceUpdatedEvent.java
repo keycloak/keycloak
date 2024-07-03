@@ -32,7 +32,7 @@ public class ResourceUpdatedEvent extends BaseResourceEvent {
 
     @ProtoFactory
     static ResourceUpdatedEvent protoFactory(String id, String name, String owner, String serverId, String type, Set<String> uris, Set<String> scopes) {
-        return new ResourceUpdatedEvent(id, name, owner, serverId, Marshalling.emptyStringToNull(type), uris, scopes);
+        return new ResourceUpdatedEvent(id, name, owner, serverId, type, uris, scopes);
     }
 
     private ResourceUpdatedEvent(String id, String name, String owner, String serverId, String type, Set<String> uris, Set<String> scopes) {

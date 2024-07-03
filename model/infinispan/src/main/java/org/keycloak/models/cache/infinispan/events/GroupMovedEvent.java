@@ -49,7 +49,7 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
 
     @ProtoFactory
     static GroupMovedEvent protoFactory(String id, String newParentId, String oldParentId, String realmId) {
-        return new GroupMovedEvent(id, Marshalling.emptyStringToNull(newParentId), Marshalling.emptyStringToNull(oldParentId), realmId);
+        return new GroupMovedEvent(id, newParentId, oldParentId, realmId);
     }
 
     public static GroupMovedEvent create(GroupModel group, GroupModel toParent, String realmId) {
