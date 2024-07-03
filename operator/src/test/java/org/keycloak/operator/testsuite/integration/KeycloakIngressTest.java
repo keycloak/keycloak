@@ -104,38 +104,6 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .anyMatch(e -> "KC_PROXY_HEADERS".equals(e.getName()) && "xforwarded".equals(e.getValue()));
     }
 
-    // TODO remove this test once the --proxy option is finally removed from Keycloak
-    @Test
-    public void testFallbackToDefaultProxySettings() {
-        var kc = getTestKeycloakDeployment(false);
-        var hostnameSpecBuilder = new HostnameSpecBuilder()
-                .withStrict(false)
-                .withStrictBackchannel(false);
-        if (isOpenShift) {
-            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
-        }
-        kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
-        kc.getSpec().setProxySpec(null);
-
-        K8sUtils.deployKeycloak(k8sclient, kc, true);
-
-        String testHostname;
-        if (isOpenShift) {
-            testHostname = k8sclient.resource(kc).get().getSpec().getHostnameSpec().getHostname();
-        } else {
-            testHostname = kubernetesIp;
-        }
-
-        testIngressURLs("https://" + testHostname + ":443");
-
-        // just check we really have proxy set correctly
-        var envVars = k8sclient.apps().statefulSets().withName(kc.getMetadata().getName()).get().getSpec()
-                .getTemplate().getSpec().getContainers().get(0).getEnv();
-        assertThat(envVars)
-                .anyMatch(e -> "KC_PROXY".equals(e.getName()) && "passthrough".equals(e.getValue()))
-                .noneMatch(e -> "KC_PROXY_HEADERS".equals(e.getName()));
-    }
-
     private void testIngressURLs(String baseUrl) {
         Awaitility.await()
                 .ignoreExceptions()
