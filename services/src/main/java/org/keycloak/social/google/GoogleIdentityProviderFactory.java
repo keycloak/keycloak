@@ -55,6 +55,11 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return ProviderConfigurationBuilder.create()
+                .property().name("prompt")
+                .label("Prompt")
+                .helpText("Set 'prompt' query parameter when logging in with Google. The allowed values are none, consent and select_account. " +
+                        "If no value is specified and the user has not previously authorized access, then the user is shown a consent screen.")
+                .type(ProviderConfigProperty.STRING_TYPE).add()
                 .property().name("hostedDomain")
                 .label("Hosted Domain")
                 .helpText("Set 'hd' query parameter when logging in with Google. Google will list accounts only for this " +
