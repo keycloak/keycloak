@@ -32,6 +32,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.*;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.services.Urls;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -65,7 +66,16 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         String email = context.getUser().getEmail();
         if (Validation.isBlank(email)) {
-            context.ignore();
+            EventBuilder event = context.getEvent().clone();
+            event.event(EventType.VERIFY_EMAIL_ERROR)
+                    .user(context.getUser())
+                    .detail(Details.USERNAME, context.getUser().getUsername())
+                    .error(Messages.VERIFY_EMAIL_NULL_ERROR);
+
+            Response errorResponse = context.form()
+                    .setError(Messages.VERIFY_EMAIL_NULL_ERROR)
+                    .createErrorPage(Response.Status.BAD_REQUEST);
+            context.challenge(errorResponse);
             return;
         }
 

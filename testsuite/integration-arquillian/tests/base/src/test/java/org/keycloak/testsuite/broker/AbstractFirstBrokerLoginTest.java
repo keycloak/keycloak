@@ -72,7 +72,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     @Drone
     @SecondBrowser
     protected WebDriver driver2;
-    
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -1146,7 +1146,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         //test if the user has verified email
         assertTrue(consumerRealm.users().get(linkedUserId).toRepresentation().isEmailVerified());
     }
-    
+
     @Test
     public void testEventsOnUpdateProfileNoEmailChange() {
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
@@ -1165,7 +1165,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         loginPage.login("no-first-name", "password");
 
         waitForPage(driver, "update account information", false);
-        
+
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
@@ -1219,7 +1219,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         loginPage.login("no-first-name", "password");
 
         waitForPage(driver, "update account information", false);
-        
+
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("new-email@localhost.com","FirstName", "LastName");
 
@@ -1294,7 +1294,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         loginPage.login("no-first-name", "password");
 
         waitForPage(driver, "update account information", false);
-        
+
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
