@@ -1,0 +1,87 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Admin bootstrap and recovery"
+summary="Learn how to bootstrap and recover admin account.">
+
+== Creating a temporary admin account
+
+A user account created using one of the methods described below is *temporary*. This means the account should exist only for the duration necessary to perform operations needed to gain permanent and more secure admin access. Various UI/UX elements, such as the Administration Console warning banner, labels, and log messages, will indicate to a {project_name} administrator that the account is temporary.
+
+== Bootstrapping a temporary admin account at {project_name} startup
+
+{project_name} `start` and `start-dev` commands support options for bootstrapping both temporary admin users and admin service accounts. These options are standard configuration options, so they can be specified in any of the https://www.keycloak.org/server/configuration#_configuring_sources_for_keycloak[configuration sources]. For instance, the following examples demonstrate how to use the `start` and `start-dev` commands with CLI parameters to bootstrap a temporary admin user and an admin service account, respectively:
+
+<@kc.start parameters="--bootstrap-admin-username tmpadm --bootstrap-admin-password pass"/>
+
+<@kc.startdev parameters="--bootstrap-admin-client-id tmpadm --bootstrap-admin-client-secret secret"/>
+
+The purpose of these options is solely for bootstrapping temporary admin accounts. The accounts are always created in the master realm. For recovering lost admin access, use the dedicated command described in the sections below.
+
+== Bootstrapping an admin user using a dedicated command
+
+To create a temporary admin user, execute the following command:
+
+<@kc.bootstrapadmin parameters="user"/>
+
+If no other parameters are specified and/or no corresponding environment variables are set, a user is prompted to enter the required information. For more information, see the <<Environment variables>> section below.
+
+Alternatively, the parameters can be directly specified in the command:
+
+<@kc.bootstrapadmin parameters="user --username tmpadm --password tmpadmpass"/>
+
+This command creates a temporary admin user with the username `tmpadm` and the password `tmpadmpass`.
+
+NOTE: The command can be executed even before the first-ever start of {project_name}. However, this will leave the {project_name} server in a state where the temporary admin account is the only account that exists in the master realm and the default admin will not be created. The initial admin creation happens only when the master realm is created. If the intention is to recover lost admin access, the default admin must exist in the master realm prior to executing the command (see <@links.server id="configuration" anchor="create-initial-admin"/>). Additionally, it is strongly recommended to use the dedicated command with the same options that the {project_name} server is started with (e.g., `db` options).
+
+== Bootstrapping an admin service account
+
+In automated scenarios, an admin service account can be a more suitable alternative to a temporary admin user.
+
+To create a temporary admin service account, execute the following command:
+
+<@kc.bootstrapadmin parameters="service"/>
+
+Similarly, the command can be executed regardless of the `master` realm’s existence. Given the client nature of the admin service account, the default admin can be created even after the command execution. If no corresponding environment variables or additional parameters are set, the user will be prompted to enter the required information. For more information, see the <<Environment variables>> section below.
+
+Alternatively, the parameters can be directly specified in the command:
+
+<@kc.bootstrapadmin parameters="service --client-id tmpclient --client-secret:env=SECRET_VAR"/>
+
+This command creates a temporary admin service account with the client ID `tmpclient` and the secret retrieved from the environment variable.
+
+== Regaining access to the realm with an increased security
+
+Passwordless, OTP, or other advanced authentication methods can be enforced for a realm with lost admin access. In such a case, the admin service account needs to be created to recover lost admin access to the realm. After the service account is created, authentication against the {project_name} instance is required to perform all necessary operations:
+
+<@kc.admin parameters="config credentials --server http://localhost:8080 --realm master --client <service_account_client_name> --secret <service_account_secret>"/>
+
+Next, retrieve the `credentialId`. For this example, the OTP credential is the relevant one. Use the following command to get an array of `CredentialRepresentation` objects and find the one with `type` set to `otp`:
+
+<@kc.admin parameters="get users/{userId}/credentials -r {realm}"/>
+
+Finally, the retrieved ID can be used to remove the advanced authentication method (in our case, OTP):
+
+<@kc.admin parameters="delete users/{userId}/credentials/{credentialId} -r {realm}"/>
+
+== Disable the parameters prompt
+
+To disable the prompt for the parameters, the `--no-prompt` parameter can be used. For example:
+
+<@kc.bootstrapadmin parameters="user --username tmpadm --no-prompt"/>
+
+If no corresponding environment variable is set, the command will fail with an error message indicating that the required password parameter is missing.
+
+== Environment variables
+
+For the `bootstrap-admin user` command, both username and password can be optionally set as environment variables:
+
+<@kc.bootstrapadmin parameters="user --username:env=<YourUsernameEnv> --password:env=<YourPassEnv>"/>
+
+For the `bootstrap-admin service` command, the client ID is optional and defaults to temp-admin-service, while the client secret is required to be set as an environment variable:
+
+<@kc.bootstrapadmin parameters="service --client-id:env=<YourClientIdEnv> --client-secret:env=<YourSecretEnv>"/>
+
+</@tmpl.guide>

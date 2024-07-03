@@ -92,6 +92,8 @@ To disable this behavior, use the SPI option `spi-single-use-object-infinispan-p
 The SPI behavior of `SingleUseObjectProvider` has changed that for revoked tokens only the methods `put` and `contains` must be used.
 This is enforced by default, and can be disabled using the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens`.
 
-= Admin Bootstrapping
+= Admin Bootstrapping and Recovery
 
-The environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`.
+It used to be difficult to regain access to a {project_name} instance when all admin users were locked out. The process required multiple advanced steps, including direct database access and manual changes. In an effort to improve the user experience, {project_name} now provides multiple ways to bootstrap a new admin account, which can be used to recover from such situations.
+
+Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.

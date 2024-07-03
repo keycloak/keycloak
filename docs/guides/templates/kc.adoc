@@ -19,6 +19,13 @@ bin/kc.[sh|bat] start-dev ${parameters}
 ----
 </#macro>
 
+<#macro admin parameters>
+[source,bash]
+----
+bin/kcadm.[sh|bat] ${parameters}
+----
+</#macro>
+
 <#macro export parameters>
 [source,bash]
 ----
@@ -30,5 +37,12 @@ bin/kc.[sh|bat] export ${parameters}
 [source,bash]
 ----
 bin/kc.[sh|bat] import ${parameters}
+----
+</#macro>
+
+<#macro bootstrapadmin parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] bootstrap-admin ${parameters}
 ----
 </#macro>

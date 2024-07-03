@@ -193,6 +193,7 @@ Before deploying {project_name} in a production environment, make sure to follow
 
 By default, example configuration options for the production mode are commented out in the default `conf/keycloak.conf` file. These options give you an idea about the main configuration to consider when running {project_name} in production.
 
+[#create-initial-admin]
 == Creating the initial admin user
 You can create the initial admin user by using the web frontend, which you access using a local connection (localhost). You can instead create this user by using environment variables. Set `KC_BOOTSTRAP_ADMIN_USERNAME=_<username>_` for the initial admin username and `KC_BOOTSTRAP_ADMIN_PASSWORD=_<password>_` for the initial admin password.
 
