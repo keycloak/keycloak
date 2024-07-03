@@ -147,6 +147,8 @@ public final class Marshalling {
     public static final int CACHE_KEY_INVALIDATION_EVENT = 65603;
     public static final int CLEAR_CACHE_EVENT = 65604;
 
+    public static final int SESSION_KEY = 65605;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         builder.serialization()
                 .addContextInitializer(KeycloakModelSchema.INSTANCE);

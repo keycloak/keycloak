@@ -22,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
@@ -32,6 +31,7 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
@@ -48,11 +48,10 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFac
  */
 public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends AbstractKeycloakTransaction {
 
-
     private final Map<K, T> entityChanges;
     private final UpdaterFactory<K, V, T> factory;
     private final RemoteCache<K, V> cache;
-    private Predicate<V> removePredicate;
+    private RemoveEntryPredicate<K, V> removePredicate = InfinispanUtils.alwaysFalse();
 
     public RemoteChangeLogTransaction(UpdaterFactory<K, V, T> factory, RemoteCache<K, V> cache) {
         this.factory = Objects.requireNonNull(factory);
@@ -86,10 +85,10 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
     }
 
     private void doCommit(AggregateCompletionStage<Void> stage) {
-        if (removePredicate != null) {
+        if (removePredicate != InfinispanUtils.alwaysFalse()) {
             // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
             var rmStage = Flowable.fromPublisher(cache.publishEntriesWithMetadata(null, 2048))
-                    .filter(e -> removePredicate.test(e.getValue().getValue()))
+                    .filter(removePredicate::shouldRemove)
                     .map(Map.Entry::getKey)
                     .flatMapCompletable(this::removeKey)
                     .toCompletionStage(null);
@@ -97,7 +96,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
         }
 
         for (var updater : entityChanges.values()) {
-            if (updater.isReadOnly() || updater.isTransient() || (removePredicate != null && removePredicate.test(updater.getValue()))) {
+            if (updater.isReadOnly() || updater.isTransient() || removePredicate.shouldRemove(updater)) {
                 continue;
             }
             if (updater.isDeleted()) {
@@ -188,13 +187,9 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
     /**
      * Removes all Infinispan cache values that satisfy the given predicate.
      *
-     * @param predicate The {@link Predicate} which returns {@code true} for elements to be removed.
+     * @param predicate The {@link RemoveEntryPredicate} which returns {@code true} for elements to be removed.
      */
-    public void removeIf(Predicate<V> predicate) {
-        if (removePredicate == null) {
-            removePredicate = predicate;
-            return;
-        }
+    public void removeIf(RemoveEntryPredicate<K, V> predicate) {
         removePredicate = removePredicate.or(predicate);
     }
 

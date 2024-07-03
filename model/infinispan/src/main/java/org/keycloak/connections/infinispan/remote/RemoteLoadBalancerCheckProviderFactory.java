@@ -86,6 +86,7 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
             this.connectionProvider = provider;
 
             var remoteCacheChecks = Arrays.stream(CLUSTERED_CACHE_NAMES)
+                    .filter(InfinispanUtils::isNotOfflineSessionCache)
                     .map(s -> new RemoteCacheCheck(s, provider))
                     .collect(Collectors.toList());
             var sequencer = new ActionSequencer(connectionProvider.getExecutor("load-balancer-check"), false, null);

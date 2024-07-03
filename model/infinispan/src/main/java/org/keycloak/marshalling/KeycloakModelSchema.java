@@ -77,6 +77,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEnt
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionKey;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
@@ -194,6 +195,7 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 LoginFailureEntity.class,
                 LoginFailureKey.class,
                 RootAuthenticationSessionEntity.class,
+                SessionKey.class,
                 SingleUseObjectValueEntity.class,
                 UserSessionEntity.class,
                 ReplaceFunction.class

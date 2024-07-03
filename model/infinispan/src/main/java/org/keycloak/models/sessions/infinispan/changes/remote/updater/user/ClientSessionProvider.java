@@ -17,11 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.changes.remote.updater.user;
 
-import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.sessions.infinispan.entities.SessionKey;
 
 /**
  * An SPI for {@link ClientSessionMappingAdapter} to interact with the {@link RemoteCache}.
@@ -36,24 +36,24 @@ public interface ClientSessionProvider {
      * @return The {@link AuthenticatedClientSessionModel} instance or {@code null} if the client session does not exist
      * or was removed.
      */
-    AuthenticatedClientSessionModel getClientSession(String clientId, UUID clientSessionId);
+    AuthenticatedClientSessionModel getClientSession(String clientId, SessionKey clientSessionId);
 
     /**
-     * A non-blocking alternative to {@link #getClientSession(String, UUID)}.
+     * A non-blocking alternative to {@link #getClientSession(String, SessionKey)}.
      *
-     * @see #getClientSession(String, UUID)
+     * @see #getClientSession(String, SessionKey)
      */
-    CompletionStage<AuthenticatedClientSessionModel> getClientSessionAsync(String clientId, UUID clientSessionId);
+    CompletionStage<AuthenticatedClientSessionModel> getClientSessionAsync(String clientId, SessionKey clientSessionId);
 
     /**
      * Removes the client session associated with the {@link RemoteCache} key.
      * <p>
      * If {@code clientSessionId} is {@code null}, nothing is removed. The methods
-     * {@link #getClientSession(String, UUID)} and {@link #getClientSessionAsync(String, UUID)} will return {@code null}
+     * {@link #getClientSession(String, SessionKey)} and {@link #getClientSessionAsync(String, SessionKey)} will return {@code null}
      * for the session after this method is completed.
      *
      * @param clientSessionId The {@link RemoteCache} key to remove.
      */
-    void removeClientSession(UUID clientSessionId);
+    void removeClientSession(SessionKey clientSessionId);
 
 }

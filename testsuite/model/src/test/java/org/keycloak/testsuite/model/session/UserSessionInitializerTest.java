@@ -41,6 +41,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.entities.SessionKey;
 import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -182,8 +183,9 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
                         }
 
                         if (hotRodServer.isPresent()) {
-                            RemoteCache<String, Object> remoteSessions = provider.getRemoteCache(USER_SESSION_CACHE_NAME);
-                            containsSession.get().add(remoteSessions.containsKey(userSessionId.get()));
+                            var key = InfinispanUtils.isRemoteInfinispan() ? new SessionKey(userSessionId.get(), false) : userSessionId.get();
+                            RemoteCache<?, Object> remoteSessions = provider.getRemoteCache(USER_SESSION_CACHE_NAME);
+                            containsSession.get().add(remoteSessions.containsKey(key));
                         }
                     });
                 }

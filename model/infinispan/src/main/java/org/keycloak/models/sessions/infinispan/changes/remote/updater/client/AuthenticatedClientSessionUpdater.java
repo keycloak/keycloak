@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 import org.infinispan.client.hotrod.MetadataValue;
@@ -38,26 +37,24 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.helper.MapUpdater;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionKey;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 /**
  * An {@link Updater} implementation that keeps track of {@link AuthenticatedClientSessionModel} changes.
  */
-public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, AuthenticatedClientSessionEntity> implements AuthenticatedClientSessionModel {
+public class AuthenticatedClientSessionUpdater extends BaseUpdater<SessionKey, AuthenticatedClientSessionEntity> implements AuthenticatedClientSessionModel {
 
-    private static final Factory ONLINE = new Factory(false);
-    private static final Factory OFFLINE = new Factory(true);
+    public static final UpdaterFactory<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> FACTORY = new Factory();
 
     private final MapUpdater<String, String> notesUpdater;
     private final List<Consumer<AuthenticatedClientSessionEntity>> changes;
-    private final boolean offline;
     private UserSessionModel userSession;
     private ClientModel client;
-    private RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction;
+    private RemoteChangeLogTransaction<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction;
 
-    private AuthenticatedClientSessionUpdater(UUID cacheKey, AuthenticatedClientSessionEntity cacheValue, long version, boolean offline, UpdaterState initialState) {
+    private AuthenticatedClientSessionUpdater(SessionKey cacheKey, AuthenticatedClientSessionEntity cacheValue, long version, UpdaterState initialState) {
         super(cacheKey, cacheValue, version, initialState);
-        this.offline = offline;
         if (cacheValue == null) {
             assert initialState == UpdaterState.DELETED; // cannot be undone
             notesUpdater = null;
@@ -69,17 +66,8 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, Authent
         changes = new ArrayList<>(4);
     }
 
-    /**
-     * @param offline If {@code true}, it creates offline {@link AuthenticatedClientSessionModel}.
-     * @return The {@link UpdaterFactory} implementation to create instances of
-     * {@link AuthenticatedClientSessionUpdater}.
-     */
-    public static UpdaterFactory<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> factory(boolean offline) {
-        return offline ? OFFLINE : ONLINE;
-    }
-
     @Override
-    public AuthenticatedClientSessionEntity apply(UUID uuid, AuthenticatedClientSessionEntity entity) {
+    public AuthenticatedClientSessionEntity apply(SessionKey uuid, AuthenticatedClientSessionEntity entity) {
         initNotes(entity);
         notesUpdater.applyChanges(entity.getNotes());
         changes.forEach(change -> change.accept(entity));
@@ -90,7 +78,7 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, Authent
     public Expiration computeExpiration() {
         long maxIdle;
         long lifespan;
-        if (offline) {
+        if (getKey().offline()) {
             maxIdle = SessionTimeouts.getOfflineClientSessionMaxIdleMs(userSession.getRealm(), client, getValue());
             lifespan = SessionTimeouts.getOfflineClientSessionLifespanMs(userSession.getRealm(), client, getValue());
         } else {
@@ -203,7 +191,7 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, Authent
      * @param clientTransaction The {@link RemoteChangeLogTransaction} to perform the changes in this class into the
      *                          {@link RemoteCache}.
      */
-    public synchronized void initialize(UserSessionModel userSession, ClientModel client, RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction) {
+    public synchronized void initialize(UserSessionModel userSession, ClientModel client, RemoteChangeLogTransaction<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction) {
         this.userSession = Objects.requireNonNull(userSession);
         this.client = Objects.requireNonNull(client);
         this.clientTransaction = Objects.requireNonNull(clientTransaction);
@@ -231,23 +219,22 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, Authent
         }
     }
 
-    private record Factory(
-            boolean offline) implements UpdaterFactory<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> {
+    private static class Factory implements UpdaterFactory<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> {
 
         @Override
-        public AuthenticatedClientSessionUpdater create(UUID key, AuthenticatedClientSessionEntity entity) {
-            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity), -1, offline, UpdaterState.CREATED);
+        public AuthenticatedClientSessionUpdater create(SessionKey key, AuthenticatedClientSessionEntity entity) {
+            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity), -1, UpdaterState.CREATED);
         }
 
         @Override
-        public AuthenticatedClientSessionUpdater wrapFromCache(UUID key, MetadataValue<AuthenticatedClientSessionEntity> entity) {
+        public AuthenticatedClientSessionUpdater wrapFromCache(SessionKey key, MetadataValue<AuthenticatedClientSessionEntity> entity) {
             assert entity != null;
-            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity.getValue()), entity.getVersion(), offline, UpdaterState.READ);
+            return new AuthenticatedClientSessionUpdater(key, Objects.requireNonNull(entity.getValue()), entity.getVersion(), UpdaterState.READ);
         }
 
         @Override
-        public AuthenticatedClientSessionUpdater deleted(UUID key) {
-            return new AuthenticatedClientSessionUpdater(key, null, -1, offline, UpdaterState.DELETED);
+        public AuthenticatedClientSessionUpdater deleted(SessionKey key) {
+            return new AuthenticatedClientSessionUpdater(key, null, -1, UpdaterState.DELETED);
         }
     }
 

@@ -33,6 +33,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
+import org.keycloak.infinispan.util.InfinispanUtils;
 
 public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCacheManager,
                                                  RemoteCacheManager remoteCacheManager,
@@ -65,6 +66,7 @@ public record RemoteInfinispanConnectionProvider(EmbeddedCacheManager embeddedCa
         // We assume rolling-upgrade between KC 25 and KC 26 is not available, in other words, KC 25 and KC 26 servers are not present in the same cluster.
         var stage = CompletionStages.aggregateCompletionStage();
         Arrays.stream(CLUSTERED_CACHE_NAMES)
+                .filter(InfinispanUtils::isNotOfflineSessionCache)
                 .map(this::getRemoteCache)
                 .map(RemoteCache::clearAsync)
                 .forEach(stage::dependsOn);

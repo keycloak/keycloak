@@ -75,7 +75,7 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
             log.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
         }
 
-        transaction.removeIf(entity -> Objects.equals(entity.getRealmId(), realm.getId()));
+        transaction.removeIf((key, value) -> Objects.equals(value.getRealmId(), realm.getId()));
     }
 
     @Override

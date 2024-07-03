@@ -1,5 +1,9 @@
 package org.keycloak.testsuite.model;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.function.Predicate;
+
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.BackupConfiguration;
@@ -16,16 +20,7 @@ import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
 
-import java.io.IOException;
-
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 
 public class HotRodServerRule extends ExternalResource {
 
@@ -46,7 +41,7 @@ public class HotRodServerRule extends ExternalResource {
         }
     }
 
-    public void createEmbeddedHotRodServer(Config.Scope config) {
+    public void createEmbeddedHotRodServer(Config.Scope config, Predicate<String> acceptCache) {
         try {
             hotRodCacheManager = new DefaultCacheManager("hotrod/hotrod1.xml");
             hotRodCacheManager2 = new DefaultCacheManager("hotrod/hotrod2.xml");
@@ -73,25 +68,24 @@ public class HotRodServerRule extends ExternalResource {
         boolean async = config.getBoolean("async", false);
 
         // create remote keycloak caches
-        createKeycloakCaches(async, USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME,
-                OFFLINE_CLIENT_SESSION_CACHE_NAME, LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
-
-        getCaches(USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME,
-                LOGIN_FAILURE_CACHE_NAME, WORK_CACHE_NAME, ACTION_TOKEN_CACHE, AUTHENTICATION_SESSIONS_CACHE_NAME);
+        createKeycloakCaches(async, acceptCache);
+        getCaches(acceptCache);
 
         // Use Keycloak time service in remote caches
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager);
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager2);
     }
 
-    private void getCaches(String... cache) {
-        for (String c: cache) {
-            hotRodCacheManager.getCache(c, true);
-            hotRodCacheManager2.getCache(c, true);
-        }
+    private void getCaches(Predicate<String> startCachePredicate) {
+        Arrays.stream(CLUSTERED_CACHE_NAMES)
+                .filter(startCachePredicate)
+                .forEach(c -> {
+                    hotRodCacheManager.getCache(c, true);
+                    hotRodCacheManager2.getCache(c, true);
+                });
     }
 
-    private void createKeycloakCaches(boolean async, String... cache) {
+    private void createKeycloakCaches(boolean async, Predicate<String> defineCachePredicate) {
         ConfigurationBuilder sessionConfigBuilder1 = createCacheConfigurationBuilder();
         ConfigurationBuilder sessionConfigBuilder2 = createCacheConfigurationBuilder();
         sessionConfigBuilder1.clustering().cacheMode(async ? CacheMode.REPL_ASYNC: CacheMode.REPL_SYNC);
@@ -106,10 +100,12 @@ public class HotRodServerRule extends ExternalResource {
 
         Configuration sessionCacheConfiguration1 = sessionConfigBuilder1.build();
         Configuration sessionCacheConfiguration2 = sessionConfigBuilder2.build();
-        for (String c: cache) {
-            hotRodCacheManager.defineConfiguration(c, sessionCacheConfiguration1);
-            hotRodCacheManager2.defineConfiguration(c, sessionCacheConfiguration2);
-        }
+        Arrays.stream(CLUSTERED_CACHE_NAMES)
+                .filter(defineCachePredicate)
+                .forEach(c -> {
+                    hotRodCacheManager.defineConfiguration(c, sessionCacheConfiguration1);
+                    hotRodCacheManager2.defineConfiguration(c, sessionCacheConfiguration2);
+                });
     }
 
     public static ConfigurationBuilder createCacheConfigurationBuilder() {

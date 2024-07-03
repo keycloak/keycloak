@@ -53,6 +53,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.changes.remote.RemoveEntryPredicate;
 import org.keycloak.models.sessions.infinispan.changes.remote.UserSessionTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
@@ -62,6 +63,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserS
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionKey;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
@@ -87,12 +89,12 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
-        var transaction = getClientSessionTransaction(false);
-        var clientSessionId = UUID.randomUUID();
-        var entity = AuthenticatedClientSessionEntity.create(clientSessionId, realm, client, userSession);
-        var model = transaction.create(clientSessionId, entity);
+        var clientTx = transaction.getClientSessions();
+        var key = SessionKey.randomOnlineSessionKey();
+        var entity = AuthenticatedClientSessionEntity.create(UUID.fromString(key.uuid()), realm, client, userSession);
+        var model = clientTx.create(key, entity);
         if (!model.isInitialized()) {
-            model.initialize(userSession, client, transaction);
+            model.initialize(userSession, client, clientTx);
         }
         userSession.getAuthenticatedClientSessions().put(client.getId(), model);
         return model;
@@ -103,26 +105,26 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         if (clientSessionId == null) {
             return null;
         }
-        var transaction = getClientSessionTransaction(offline);
-        var updater = transaction.get(UUID.fromString(clientSessionId));
+        var clientTx = transaction.getClientSessions();
+        var updater = clientTx.get(new SessionKey(clientSessionId, offline));
         if (updater == null) {
             return null;
         }
         if (!updater.isInitialized()) {
-            updater.initialize(userSession, client, transaction);
+            updater.initialize(userSession, client, clientTx);
         }
         return updater;
     }
 
     @Override
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
-        if (id == null) {
-            id = KeycloakModelUtils.generateId();
-        }
+        var key = id == null ?
+                SessionKey.randomOnlineSessionKey() :
+                new SessionKey(id, false);
 
-        var entity = UserSessionEntity.create(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
-        var updater = transaction.getUserSessions().create(id, entity);
-        return initUserSessionUpdater(updater, persistenceState, realm, user, false);
+        var entity = UserSessionEntity.create(key.uuid(), realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+        var updater = transaction.getUserSessions().create(key, entity);
+        return initUserSessionUpdater(updater, persistenceState, realm, user);
     }
 
     @Override
@@ -132,12 +134,12 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, UserModel user) {
-        return StreamsUtil.closing(streamUserSessions(new UserAndRealmPredicate(realm.getId(), user.getId()), realm, user, false));
+        return StreamsUtil.closing(streamUserSessions(new UserAndRealmPredicate(realm.getId(), user.getId(), false), realm, user));
     }
 
     @Override
     public Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client) {
-        return StreamsUtil.closing(streamUserSessions(new ClientAndRealmPredicate(realm.getId(), client.getId()), realm, null, false));
+        return StreamsUtil.closing(streamUserSessions(new ClientAndRealmPredicate(realm.getId(), client.getId(), false), realm, null));
     }
 
     @Override
@@ -147,12 +149,12 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getUserSessionByBrokerUserIdStream(RealmModel realm, String brokerUserId) {
-        return StreamsUtil.closing(streamUserSessions(new BrokerUserIdAndRealmPredicate(realm.getId(), brokerUserId), realm, null, false));
+        return StreamsUtil.closing(streamUserSessions(new BrokerUserIdAndRealmPredicate(realm.getId(), brokerUserId, false), realm, null));
     }
 
     @Override
     public UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
-        return StreamsUtil.closing(streamUserSessions(new BrokerSessionIdAndRealmPredicate(realm.getId(), brokerSessionId), realm, null, false))
+        return StreamsUtil.closing(streamUserSessions(new BrokerSessionIdAndRealmPredicate(realm.getId(), brokerSessionId, false), realm, null))
                 .findFirst()
                 .orElse(null);
     }
@@ -170,9 +172,9 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
-        var userSessions = getUserSessionTransaction(offline);
+        var userSessions = transaction.getUserSessions();
         return Flowable.fromPublisher(userSessions.getCache().publishEntriesWithMetadata(null, batchSize))
-                .filter(new RealmPredicate(realm.getId()))
+                .filter(new RealmPredicate(realm.getId(), offline))
                 .map(Map.Entry::getValue)
                 .map(MetadataValue::getValue)
                 .map(UserSessionEntity::getAuthenticatedClientSessions)
@@ -185,7 +187,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel userSession) {
-        internalRemoveUserSession(userSession, false);
+        internalRemoveUserSession(userSession, new SessionKey(userSession.getId(), false));
     }
 
     @Override
@@ -206,19 +208,17 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     @SuppressWarnings("unchecked")
     @Override
     public void removeUserSessions(RealmModel realm) {
-        Predicate<? extends SessionEntity> predicate = e -> Objects.equals(e.getRealmId(), realm.getId());
-        transaction.getUserSessions().removeIf((Predicate<UserSessionEntity>) predicate);
-        transaction.getClientSessions().removeIf((Predicate<AuthenticatedClientSessionEntity>) predicate);
+        RemoveEntryPredicate<SessionKey, ? extends SessionEntity> predicate = (key, value) -> !key.offline() && Objects.equals(value.getRealmId(), realm.getId());
+        transaction.getUserSessions().removeIf((RemoveEntryPredicate<SessionKey, UserSessionEntity>) predicate);
+        transaction.getClientSessions().removeIf((RemoveEntryPredicate<SessionKey, AuthenticatedClientSessionEntity>) predicate);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        Predicate<? extends SessionEntity> predicate = e -> Objects.equals(e.getRealmId(), realm.getId());
-        transaction.getUserSessions().removeIf((Predicate<UserSessionEntity>) predicate);
-        transaction.getOfflineUserSessions().removeIf((Predicate<UserSessionEntity>) predicate);
-        transaction.getClientSessions().removeIf((Predicate<AuthenticatedClientSessionEntity>) predicate);
-        transaction.getOfflineClientSessions().removeIf((Predicate<AuthenticatedClientSessionEntity>) predicate);
+        RemoveEntryPredicate<SessionKey, ? extends SessionEntity> predicate = (ignored, value) -> Objects.equals(value.getRealmId(), realm.getId());
+        transaction.getUserSessions().removeIf((RemoveEntryPredicate<SessionKey, UserSessionEntity>) predicate);
+        transaction.getClientSessions().removeIf((RemoveEntryPredicate<SessionKey, AuthenticatedClientSessionEntity>) predicate);
         var database = session.getProvider(UserSessionPersisterProvider.class);
         if (database != null) {
             database.onRealmRemoved(realm);
@@ -241,8 +241,8 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
 
-        var updater = getUserSessionTransaction(true).create(entity.getId(), entity);
-        return initUserSessionUpdater(updater, userSession.getPersistenceState(), userSession.getRealm(), userSession.getUser(), true);
+        var updater = transaction.getUserSessions().create(new SessionKey(entity.getId(), true), entity);
+        return initUserSessionUpdater(updater, userSession.getPersistenceState(), userSession.getRealm(), userSession.getUser());
     }
 
     @Override
@@ -252,16 +252,16 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession) {
-        internalRemoveUserSession(userSession, true);
+        internalRemoveUserSession(userSession, new SessionKey(userSession.getId(), true));
     }
 
     @Override
     public AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession) {
-        var transaction = getClientSessionTransaction(true);
+        var clientTx = transaction.getClientSessions();
         var entity = AuthenticatedClientSessionEntity.createFromModel(clientSession);
-        var model = transaction.create(entity.getId(), entity);
+        var model = clientTx.create(new SessionKey(entity.getId().toString(), true), entity);
         if (!model.isInitialized()) {
-            model.initialize(offlineUserSession, clientSession.getClient(), transaction);
+            model.initialize(offlineUserSession, clientSession.getClient(), clientTx);
         }
         offlineUserSession.getAuthenticatedClientSessions().put(clientSession.getClient().getId(), model);
         return model;
@@ -269,22 +269,22 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, UserModel user) {
-        return StreamsUtil.closing(streamUserSessions(new UserAndRealmPredicate(realm.getId(), user.getId()), realm, user, true));
+        return StreamsUtil.closing(streamUserSessions(new UserAndRealmPredicate(realm.getId(), user.getId(), true), realm, user));
     }
 
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionByBrokerUserIdStream(RealmModel realm, String brokerUserId) {
-        return StreamsUtil.closing(streamUserSessions(new BrokerUserIdAndRealmPredicate(realm.getId(), brokerUserId), realm, null, true));
+        return StreamsUtil.closing(streamUserSessions(new BrokerUserIdAndRealmPredicate(realm.getId(), brokerUserId, true), realm, null));
     }
 
     @Override
     public long getOfflineSessionsCount(RealmModel realm, ClientModel client) {
-        return StreamsUtil.closing(streamUserSessions(new ClientAndRealmPredicate(realm.getId(), client.getId()), realm, null, true)).count();
+        return StreamsUtil.closing(streamUserSessions(new ClientAndRealmPredicate(realm.getId(), client.getId(), true), realm, null)).count();
     }
 
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults) {
-        return StreamsUtil.closing(StreamsUtil.paginatedStream(streamUserSessions(new ClientAndRealmPredicate(realm.getId(), client.getId()), realm, null, true), firstResult, maxResults));
+        return StreamsUtil.closing(StreamsUtil.paginatedStream(streamUserSessions(new ClientAndRealmPredicate(realm.getId(), client.getId(), true), realm, null), firstResult, maxResults));
     }
 
     @Override
@@ -295,11 +295,6 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     @Override
     public KeycloakSession getKeycloakSession() {
         return session;
-    }
-
-    @Override
-    public void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline) {
-        //no-op
     }
 
     @Override
@@ -330,8 +325,8 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     private boolean migrateUserSessionBatch(KeycloakSessionFactory factory, boolean offline, List<String> userSessionBuffer, List<Map.Entry<String, String>> clientSessionBuffer) {
-        var userSessionCache = getUserSessionTransaction(offline).getCache();
-        var clientSessionCache = getClientSessionTransaction(offline).getCache();
+        var userSessionCache = transaction.getUserSessions().getCache();
+        var clientSessionCache = transaction.getClientSessions().getCache();
 
         log.infof("Migrating %s user(s) session(s) from database.", batchSize);
 
@@ -341,12 +336,12 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
             database.loadUserSessionsStream(-1, batchSize, offline, "")
                     .forEach(userSessionModel -> {
                         var userSessionEntity = UserSessionEntity.createFromModel(userSessionModel);
-                        stage.dependsOn(userSessionCache.putIfAbsentAsync(userSessionModel.getId(), userSessionEntity));
+                        stage.dependsOn(userSessionCache.putIfAbsentAsync(new SessionKey(userSessionModel.getId(), offline), userSessionEntity));
                         userSessionBuffer.add(userSessionModel.getId());
                         for (var clientSessionModel : userSessionModel.getAuthenticatedClientSessions().values()) {
                             clientSessionBuffer.add(Map.entry(userSessionModel.getId(), clientSessionModel.getId()));
                             var clientSessionEntity = AuthenticatedClientSessionEntity.createFromModel(clientSessionModel);
-                            stage.dependsOn(clientSessionCache.putIfAbsentAsync(clientSessionEntity.getId(), clientSessionEntity));
+                            stage.dependsOn(clientSessionCache.putIfAbsentAsync(new SessionKey(clientSessionEntity.getId().toString(), offline), clientSessionEntity));
                         }
                     });
             CompletionStages.join(stage.freeze());
@@ -371,7 +366,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         if (id == null) {
             return null;
         }
-        var updater = getUserSessionTransaction(offline).get(id);
+        var updater = transaction.getUserSessions().get(new SessionKey(id, offline));
         if (updater == null || !updater.getValue().getRealmId().equals(realm.getId())) {
             return null;
         }
@@ -379,43 +374,33 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
             return updater;
         }
         UserModel user = session.users().getUserById(realm, updater.getValue().getUser());
-        return initUserSessionUpdater(updater, UserSessionModel.SessionPersistenceState.PERSISTENT, realm, user, offline);
+        return initUserSessionUpdater(updater, UserSessionModel.SessionPersistenceState.PERSISTENT, realm, user);
     }
 
-    private void internalRemoveUserSession(UserSessionModel userSession, boolean offline) {
-        var clientSessionTransaction = getClientSessionTransaction(offline);
-        var userSessionTransaction = getUserSessionTransaction(offline);
+    private void internalRemoveUserSession(UserSessionModel userSession, SessionKey userSessionKey) {
+        var clientSessionTransaction = transaction.getClientSessions();
+        var userSessionTransaction = transaction.getUserSessions();
         userSession.getAuthenticatedClientSessions().values()
                 .stream()
                 .filter(Objects::nonNull) // we need to filter, it may not be a UserSessionUpdater class.
                 .map(AuthenticatedClientSessionModel::getId)
                 .filter(Objects::nonNull) // we need to filter, it may not be a AuthenticatedClientSessionUpdater class.
-                .map(UUID::fromString)
+                .map(userSessionKey::withId)
                 .forEach(clientSessionTransaction::remove);
-        userSessionTransaction.remove(userSession.getId());
+        userSessionTransaction.remove(userSessionKey);
     }
 
-    private Stream<UserSessionModel> streamUserSessions(InternalUserSessionPredicate predicate, RealmModel realm, UserModel user, boolean offline) {
-        var userSessions = getUserSessionTransaction(offline);
+    private Stream<UserSessionModel> streamUserSessions(InternalUserSessionPredicate predicate, RealmModel realm, UserModel user) {
+        var userSessions = transaction.getUserSessions();
         return Flowable.fromPublisher(userSessions.getCache().publishEntriesWithMetadata(null, batchSize))
                 .filter(predicate)
                 .map(userSessions::wrap)
-                .map(s -> initFromStream(s, realm, user, offline))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .mapOptional(s -> initFromStream(s, realm, user))
                 .map(UserSessionModel.class::cast)
                 .blockingStream(batchSize);
     }
 
-    private RemoteChangeLogTransaction<String, UserSessionEntity, UserSessionUpdater> getUserSessionTransaction(boolean offline) {
-        return offline ? transaction.getOfflineUserSessions() : transaction.getUserSessions();
-    }
-
-    private RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> getClientSessionTransaction(boolean offline) {
-        return offline ? transaction.getOfflineClientSessions() : transaction.getClientSessions();
-    }
-
-    private Optional<UserSessionUpdater> initFromStream(UserSessionUpdater updater, RealmModel realm, UserModel user, boolean offline) {
+    private Optional<UserSessionUpdater> initFromStream(UserSessionUpdater updater, RealmModel realm, UserModel user) {
         if (updater.isInitialized()) {
             return Optional.of(updater);
         }
@@ -423,11 +408,11 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         if (user == null) {
             user = session.users().getUserById(realm, updater.getValue().getUser());
         }
-        return Optional.ofNullable(initUserSessionUpdater(updater, UserSessionModel.SessionPersistenceState.PERSISTENT, realm, user, offline));
+        return Optional.ofNullable(initUserSessionUpdater(updater, UserSessionModel.SessionPersistenceState.PERSISTENT, realm, user));
     }
 
-    private UserSessionUpdater initUserSessionUpdater(UserSessionUpdater updater, UserSessionModel.SessionPersistenceState persistenceState, RealmModel realm, UserModel user, boolean offline) {
-        var provider = new RemoteClientSessionAdapterProvider(getClientSessionTransaction(offline), updater);
+    private UserSessionUpdater initUserSessionUpdater(UserSessionUpdater updater, UserSessionModel.SessionPersistenceState persistenceState, RealmModel realm, UserModel user) {
+        var provider = new RemoteClientSessionAdapterProvider(transaction.getClientSessions(), updater);
         if (user instanceof LightweightUserAdapter) {
             updater.initialize(persistenceState, realm, user, provider);
             return checkExpiration(updater);
@@ -446,7 +431,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
         if (user == null) {
             // remove orphaned user session from the cache
-            internalRemoveUserSession(updater, offline);
+            internalRemoveUserSession(updater, updater.getKey());
             return null;
         }
         updater.initialize(persistenceState, realm, user, provider);
@@ -462,70 +447,97 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         return updater;
     }
 
-    private record RealmPredicate(String realmId) implements InternalUserSessionPredicate {
+    private record RealmPredicate(String realmId, boolean offline) implements InternalUserSessionPredicate {
 
         @Override
         public boolean testUserSession(UserSessionEntity userSession) {
             return Objects.equals(userSession.getRealmId(), realmId);
         }
-    }
-
-    private interface InternalUserSessionPredicate extends io.reactivex.rxjava3.functions.Predicate<Map.Entry<String, MetadataValue<UserSessionEntity>>> {
 
         @Override
-        default boolean test(Map.Entry<String, MetadataValue<UserSessionEntity>> e) {
-            return testUserSession(e.getValue().getValue());
+        public boolean testSessionKey(SessionKey key) {
+            return key.offline() == offline;
+        }
+    }
+
+    private interface InternalUserSessionPredicate extends io.reactivex.rxjava3.functions.Predicate<Map.Entry<SessionKey, MetadataValue<UserSessionEntity>>> {
+
+        @Override
+        default boolean test(Map.Entry<SessionKey, MetadataValue<UserSessionEntity>> e) {
+            return testSessionKey(e.getKey()) && testUserSession(e.getValue().getValue());
         }
 
         boolean testUserSession(UserSessionEntity userSession);
+
+        boolean testSessionKey(SessionKey key);
     }
 
-    private record UserAndRealmPredicate(String realmId, String userId) implements InternalUserSessionPredicate {
+    private record UserAndRealmPredicate(String realmId, String userId, boolean offline) implements InternalUserSessionPredicate {
 
         @Override
         public boolean testUserSession(UserSessionEntity userSession) {
             return Objects.equals(userSession.getRealmId(), realmId) && Objects.equals(userSession.getUser(), userId);
         }
 
+        @Override
+        public boolean testSessionKey(SessionKey key) {
+            return key.offline() == offline;
+        }
+
     }
 
-    private record ClientAndRealmPredicate(String realmId, String clientId) implements InternalUserSessionPredicate {
+    private record ClientAndRealmPredicate(String realmId, String clientId, boolean offline) implements InternalUserSessionPredicate {
 
         @Override
         public boolean testUserSession(UserSessionEntity userSession) {
             return Objects.equals(userSession.getRealmId(), realmId) && userSession.getAuthenticatedClientSessions().containsKey(clientId);
         }
+
+        @Override
+        public boolean testSessionKey(SessionKey key) {
+            return key.offline() == offline;
+        }
     }
 
-    private record BrokerUserIdAndRealmPredicate(String realmId, String brokerUserId) implements InternalUserSessionPredicate {
+    private record BrokerUserIdAndRealmPredicate(String realmId, String brokerUserId, boolean offline) implements InternalUserSessionPredicate {
 
         @Override
         public boolean testUserSession(UserSessionEntity userSession) {
             return Objects.equals(userSession.getRealmId(), realmId) && Objects.equals(userSession.getBrokerUserId(), brokerUserId);
         }
+
+        @Override
+        public boolean testSessionKey(SessionKey key) {
+            return key.offline() == offline;
+        }
     }
 
-    private record BrokerSessionIdAndRealmPredicate(String realmId,
-                                                    String brokeSessionId) implements InternalUserSessionPredicate {
+    private record BrokerSessionIdAndRealmPredicate(String realmId, String brokeSessionId, boolean offline)
+            implements InternalUserSessionPredicate {
 
         @Override
         public boolean testUserSession(UserSessionEntity userSession) {
             return Objects.equals(userSession.getRealmId(), realmId) && Objects.equals(userSession.getBrokerSessionId(), brokeSessionId);
         }
+
+        @Override
+        public boolean testSessionKey(SessionKey key) {
+            return key.offline() == offline;
+        }
     }
 
     private class RemoteClientSessionAdapterProvider implements ClientSessionProvider, UserSessionUpdater.ClientSessionAdapterFactory {
 
-        private final RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> transaction;
+        private final RemoteChangeLogTransaction<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> transaction;
         private final UserSessionUpdater userSession;
 
-        private RemoteClientSessionAdapterProvider(RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> transaction, UserSessionUpdater userSession) {
+        private RemoteClientSessionAdapterProvider(RemoteChangeLogTransaction<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> transaction, UserSessionUpdater userSession) {
             this.transaction = transaction;
             this.userSession = userSession;
         }
 
         @Override
-        public AuthenticatedClientSessionModel getClientSession(String clientId, UUID clientSessionId) {
+        public AuthenticatedClientSessionModel getClientSession(String clientId, SessionKey clientSessionId) {
             if (clientId == null || clientSessionId == null) {
                 return null;
             }
@@ -537,7 +549,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         }
 
         @Override
-        public CompletionStage<AuthenticatedClientSessionModel> getClientSessionAsync(String clientId, UUID clientSessionId) {
+        public CompletionStage<AuthenticatedClientSessionModel> getClientSessionAsync(String clientId, SessionKey clientSessionId) {
             if (clientId == null || clientSessionId == null) {
                 return CompletableFutures.completedNull();
             }
@@ -549,7 +561,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         }
 
         @Override
-        public void removeClientSession(UUID clientSessionId) {
+        public void removeClientSession(SessionKey clientSessionId) {
             if (clientSessionId == null) {
                 return;
             }
@@ -568,8 +580,8 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         }
 
         @Override
-        public ClientSessionMappingAdapter create(AuthenticatedClientSessionStore clientSessionStore) {
-            return new ClientSessionMappingAdapter(clientSessionStore, this);
+        public ClientSessionMappingAdapter create(AuthenticatedClientSessionStore clientSessionStore, boolean offline) {
+            return new ClientSessionMappingAdapter(clientSessionStore, this, offline);
         }
     }
 

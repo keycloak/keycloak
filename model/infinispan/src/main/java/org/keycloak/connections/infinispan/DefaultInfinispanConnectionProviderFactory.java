@@ -244,7 +244,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         RemoteCacheManager remoteCacheManager = new RemoteCacheManager(builder.build());
 
         // establish connection to all caches
-        Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(remoteCacheManager::getCache);
+        Arrays.stream(CLUSTERED_CACHE_NAMES)
+                .filter(InfinispanUtils::isNotOfflineSessionCache)
+                .forEach(remoteCacheManager::getCache);
         return remoteCacheManager;
 
     }

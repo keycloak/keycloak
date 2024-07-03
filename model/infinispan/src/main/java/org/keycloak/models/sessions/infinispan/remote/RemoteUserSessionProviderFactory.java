@@ -1,7 +1,6 @@
 package org.keycloak.models.sessions.infinispan.remote;
 
 import java.util.List;
-import java.util.UUID;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.Config;
@@ -19,6 +18,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.UserSessionTransac
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionKey;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -100,43 +100,26 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
             return;
         }
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        RemoteCache<String, UserSessionEntity> userSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-        RemoteCache<String, UserSessionEntity> offlineUserSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> offlineClientSessionsCache = connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
-        remoteCacheHolder = new RemoteCacheHolder(userSessionCache, offlineUserSessionsCache, clientSessionCache, offlineClientSessionsCache);
+        RemoteCache<SessionKey, UserSessionEntity> userSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+        RemoteCache<SessionKey, AuthenticatedClientSessionEntity> clientSessionCache = connections.getRemoteCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
+        remoteCacheHolder = new RemoteCacheHolder(userSessionCache, clientSessionCache);
     }
 
     private UserSessionTransaction createTransaction(KeycloakSession session) {
         lazyInit(session);
-        return new UserSessionTransaction(
-                createUserSessionTransaction(false),
-                createUserSessionTransaction(true),
-                createClientSessionTransaction(false),
-                createClientSessionTransaction(true)
-        );
+        return new UserSessionTransaction(createUserSessionTransaction(), createClientSessionTransaction());
     }
 
-    private RemoteChangeLogTransaction<String, UserSessionEntity, UserSessionUpdater> createUserSessionTransaction(boolean offline) {
-        return new RemoteChangeLogTransaction<>(UserSessionUpdater.factory(offline), remoteCacheHolder.userSessionCache(offline));
+    private RemoteChangeLogTransaction<SessionKey, UserSessionEntity, UserSessionUpdater> createUserSessionTransaction() {
+        return new RemoteChangeLogTransaction<>(UserSessionUpdater.FACTORY, remoteCacheHolder.userSession());
     }
 
-    private RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> createClientSessionTransaction(boolean offline) {
-        return new RemoteChangeLogTransaction<>(AuthenticatedClientSessionUpdater.factory(offline), remoteCacheHolder.clientSessionCache(offline));
+    private RemoteChangeLogTransaction<SessionKey, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> createClientSessionTransaction() {
+        return new RemoteChangeLogTransaction<>(AuthenticatedClientSessionUpdater.FACTORY, remoteCacheHolder.clientSession);
     }
 
     private record RemoteCacheHolder(
-            RemoteCache<String, UserSessionEntity> userSession,
-            RemoteCache<String, UserSessionEntity> offlineUserSession,
-            RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSession,
-            RemoteCache<UUID, AuthenticatedClientSessionEntity> offlineClientSession) {
-
-        RemoteCache<String, UserSessionEntity> userSessionCache(boolean offline) {
-            return offline ? offlineUserSession : userSession;
-        }
-
-        RemoteCache<UUID, AuthenticatedClientSessionEntity> clientSessionCache(boolean offline) {
-            return offline ? offlineClientSession : clientSession;
-        }
+            RemoteCache<SessionKey, UserSessionEntity> userSession,
+            RemoteCache<SessionKey, AuthenticatedClientSessionEntity> clientSession) {
     }
 }

@@ -93,7 +93,7 @@ public class RemoteInfinispan extends KeycloakModelParameters {
 
     @Override
     public void beforeSuite(Config cf) {
-        hotRodServerRule.createEmbeddedHotRodServer(cf.scope("connectionsInfinispan", "default"));
+        hotRodServerRule.createEmbeddedHotRodServer(cf.scope("connectionsInfinispan", "default"), InfinispanUtils::isNotOfflineSessionCache);
     }
 
     private static String siteName(int node) {

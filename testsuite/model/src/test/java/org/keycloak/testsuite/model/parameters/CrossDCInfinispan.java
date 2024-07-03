@@ -71,7 +71,7 @@ public class CrossDCInfinispan extends KeycloakModelParameters {
 
     @Override
     public void beforeSuite(Config cf) {
-        hotRodServerRule.createEmbeddedHotRodServer(cf.scope("connectionsInfinispan", "default"));
+        hotRodServerRule.createEmbeddedHotRodServer(cf.scope("connectionsInfinispan", "default"), s -> true);
     }
 
     private static String siteName(int node) {

@@ -27,6 +27,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -214,6 +215,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                 return null;
             });
         } finally {
+            processExpiration(offline);
             setTimeOffset(0);
         }
     }
@@ -249,6 +251,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                 return null;
             });
         } finally {
+            processExpiration(offline);
             setTimeOffset(0);
         }
     }
@@ -325,8 +328,8 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                 Assert.assertNull(getUserSession(session, realm, sessions[0], offline));
                 return null;
             });
-            processExpiration(offline);
         } finally {
+            processExpiration(offline);
             setTimeOffset(0);
         }
     }
@@ -402,7 +405,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
             return;
         }
 
-        var cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+        var cacheName = InfinispanUtils.isEmbeddedInfinispan() && offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
         var cache1 = hotRodServer.get().getHotRodCacheManager().getCache(cacheName);
         var cache2 = hotRodServer.get().getHotRodCacheManager2().getCache(cacheName);
         eventually(() -> "Wrong cache size. Site1: " + cache1.keySet() + ", Site2: " + cache2.keySet(),
@@ -415,7 +418,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
             return;
         }
         // force expired entries to be removed from memory
-        var cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+        var cacheName = InfinispanUtils.isEmbeddedInfinispan() && offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
         hotRodServer.get().getHotRodCacheManager().getCache(cacheName).getAdvancedCache().getExpirationManager().processExpiration();
         hotRodServer.get().getHotRodCacheManager2().getCache(cacheName).getAdvancedCache().getExpirationManager().processExpiration();
     }

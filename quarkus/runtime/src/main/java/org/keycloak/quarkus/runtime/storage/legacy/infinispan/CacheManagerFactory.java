@@ -65,15 +65,11 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 public class CacheManagerFactory {
@@ -159,16 +155,18 @@ public class CacheManagerFactory {
         if (createRemoteCaches()) {
             // fall back for distributed caches if not defined
             logger.warn("Creating remote cache in external Infinispan server. It should not be used in production!");
-            for (String name : CLUSTERED_CACHE_NAMES) {
-                builder.remoteCache(name).templateName(DefaultTemplate.DIST_SYNC);
-            }
+            Arrays.stream(CLUSTERED_CACHE_NAMES)
+                    .filter(InfinispanUtils::isNotOfflineSessionCache)
+                    .forEach(name -> builder.remoteCache(name).templateName(DefaultTemplate.DIST_SYNC));
         }
 
         RemoteCacheManager remoteCacheManager = new RemoteCacheManager(builder.build());
 
         // establish connection to all caches
         if (isStartEagerly()) {
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(remoteCacheManager::getCache);
+            Arrays.stream(CLUSTERED_CACHE_NAMES)
+                    .filter(InfinispanUtils::isNotOfflineSessionCache)
+                    .forEach(remoteCacheManager::getCache);
         }
         return remoteCacheManager;
     }

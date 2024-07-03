@@ -19,11 +19,15 @@ package org.keycloak.infinispan.util;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.models.sessions.infinispan.changes.remote.RemoveEntryPredicate;
 
 import static org.keycloak.common.Profile.Feature.MULTI_SITE;
 import static org.keycloak.common.Profile.Feature.REMOTE_CACHE;
 
 public final class InfinispanUtils {
+
+    private static final RemoveEntryPredicate<?,?> ALWAYS_FALSE = (key, value) -> false;
 
     private InfinispanUtils() {
     }
@@ -45,5 +49,15 @@ public final class InfinispanUtils {
     // true if running with embedded caches.
     public static boolean isEmbeddedInfinispan() {
         return !Profile.isFeatureEnabled(MULTI_SITE) || !Profile.isFeatureEnabled(REMOTE_CACHE);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> RemoveEntryPredicate<K, V> alwaysFalse() {
+        return (RemoveEntryPredicate<K, V>) ALWAYS_FALSE;
+    }
+
+    public static boolean isNotOfflineSessionCache(String name) {
+        return !InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME.equals(name) &&
+                !InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME.equals(name);
     }
 }
