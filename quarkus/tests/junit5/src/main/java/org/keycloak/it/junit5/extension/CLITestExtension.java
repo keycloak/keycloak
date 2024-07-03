@@ -34,6 +34,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
@@ -64,7 +65,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
     private CLIResult result;
-    static String[] CLI_ARGS = new String[0];
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -115,7 +115,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 result = dist.run(Stream.concat(List.of(launch.value()).stream(), List.of(distConfig.defaultOptions()).stream()).collect(Collectors.toList()));
             }
         } else {
-            CLI_ARGS = launch == null ? new String[] {} : launch.value();
+            ConfigArgsConfigSource.setCliArgs(launch == null ? new String[] {} : launch.value());
             configureProfile(context);
             super.beforeEach(context);
         }

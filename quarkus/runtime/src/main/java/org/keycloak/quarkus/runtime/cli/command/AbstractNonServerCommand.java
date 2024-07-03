@@ -19,14 +19,14 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
+
 import picocli.CommandLine;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class AbstractExportImportCommand extends AbstractStartCommand implements Runnable {
-
-    private final String action;
+public abstract class AbstractNonServerCommand extends AbstractStartCommand implements Runnable {
 
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin;
@@ -34,15 +34,9 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
     @CommandLine.Mixin
     HelpAllMixin helpAllMixin;
 
-    protected AbstractExportImportCommand(String action) {
-        this.action = action;
-    }
-
     @Override
     public void run() {
-        System.setProperty("keycloak.migration.action", action);
-
-        Environment.setProfile(Environment.IMPORT_EXPORT_MODE);
+        Environment.setProfile(Environment.NON_SERVER_MODE);
 
         super.run();
     }
@@ -63,5 +57,8 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
     @Override
     public boolean includeRuntime() {
         return true;
+    }
+
+    public void onStart(QuarkusKeycloakApplication application) {
     }
 }

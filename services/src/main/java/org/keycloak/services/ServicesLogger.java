@@ -346,12 +346,12 @@ public interface ServicesLogger extends BasicLogger {
     void rejectedNonLocalAttemptToCreateInitialUser(String remoteAddr);
 
     @LogMessage(level = INFO)
-    @Message(id=77, value="Created initial admin user with username %s")
-    void createdInitialAdminUser(String userName);
+    @Message(id=77, value="Created temporary admin user with username %s")
+    void createdTemporaryAdminUser(String userName);
 
-    @LogMessage(level = WARN)
-    @Message(id=78, value="Rejected attempt to create initial user as user is already created")
-    void initialUserAlreadyCreated();
+    @LogMessage(level = INFO)
+    @Message(id=78, value="Created temporary admin service account with client id %s")
+    void createdTemporaryAdminService(String clientId);
 
     @LogMessage(level = WARN)
     @Message(id=79, value="Locale not specified for messages.json")
