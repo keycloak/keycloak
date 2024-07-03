@@ -83,7 +83,7 @@ public class BuildAndStartDistTest {
     }
 
     private void assertAdminCreation(KeycloakDistribution dist, LaunchResult result, String initialUsername, String nextUsername, String password) {
-        assertTrue(result.getOutput().contains("Added temporary admin user '" + initialUsername + "' to realm 'master'"),
+        assertTrue(result.getOutput().contains("Created temporary admin user with username " + initialUsername),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
 
         dist.setEnvVar("KEYCLOAK_ADMIN", nextUsername);

@@ -72,7 +72,7 @@ public class FipsDistTest {
             cliResult.assertStarted();
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
-            cliResult.assertMessage("Added user 'admin' to realm 'master'");
+            cliResult.assertMessage("Created temporary admin user with username admin");
         });
     }
 
