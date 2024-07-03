@@ -95,29 +95,16 @@ export default class Masthead extends CommonElements {
   }
 
   checkNotificationMessage(message: string | RegExp, closeNotification = true) {
+    const alertElement = this.#getAlertsContainer().find(this.#alertMessage);
+
     if (typeof message === "string") {
-      this.#getAlertsContainer()
-        .find(this.#alertMessage)
-        .should(($el) => {
-          expect($el).to.contain.text(message);
-        });
-
-      if (closeNotification) {
-        this.#getAlertsContainer()
-          .find(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
-          .last()
-          .click({ force: true });
-      }
+      alertElement.should(($el) => expect($el).to.contain.text(message));
     } else {
-      this.#getAlertsContainer()
-        .find(this.#alertMessage)
-        .should(($el) => {
-          expect($el).to.match(message);
-        });
+      alertElement.should(($el) => expect($el).to.match(message));
+    }
 
-      if (closeNotification) {
-        this.#getAlertsContainer().find("button").last().click({ force: true });
-      }
+    if (closeNotification) {
+      this.#getAlertsContainer().find("button").last().click({ force: true });
     }
     return this;
   }

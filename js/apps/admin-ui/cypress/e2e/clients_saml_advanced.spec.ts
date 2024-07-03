@@ -52,7 +52,7 @@ describe("Clients Saml advanced tab", () => {
       advancedTab.termsOfServiceUrl("not a url").saveFineGrain();
 
       masthead.checkNotificationMessage(
-        "Client could not be updated: Terms of service URL is not a valid URL",
+        "Client could not be updated: invalid_input",
       );
     });
   });

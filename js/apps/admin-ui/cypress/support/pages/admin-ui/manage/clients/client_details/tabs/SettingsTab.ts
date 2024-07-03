@@ -222,8 +222,7 @@ export default class SettingsTab extends PageObject {
   }
 
   public assertAccessSettings() {
-    const redirectUriError =
-      /Client could not be updated:.*(Master SAML Processing URL is not a valid URL|A redirect URI is not a valid URI).*/i;
+    const redirectUriError = "Client could not be updated: invalid_input";
 
     cy.findByTestId(this.#idpInitiatedSsoUrlName).click().type("a");
     cy.findByTestId(this.#idpInitiatedSsoRelayState).click().type("b");
