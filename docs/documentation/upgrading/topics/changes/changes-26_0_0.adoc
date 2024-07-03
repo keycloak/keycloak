@@ -9,6 +9,10 @@ Consequently, all caches are cleared when upgrading to this version.
 
 To prevent losing user sessions upgrade to Keycloak 25 first and enable the persistent sessions feature as outlined in the migration guide for {project_name} 25.
 
+= Operator no longer defaults to proxy=passthrough
+
+The Operator will no longer default to the hostname v1 setting of proxy=passthrough. This allows deployments using hostname v2 for a fixed edge hostname to work as desired without additional options.
+
 = New method in `ClusterProvider` API
 
 The following method was added to `org.keycloak.cluster.ClusterProvider`:
