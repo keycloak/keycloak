@@ -75,6 +75,10 @@ export class WhoAmI {
 
     return this.#me.realm_access;
   }
+
+  public isTemporary(): boolean {
+    return this.#me?.temporary ?? false;
+  }
 }
 
 type WhoAmIProps = {

@@ -68,6 +68,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
+import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -263,8 +264,19 @@ public class ModelToRepresentation {
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
+        addAttributeToBriefRep(user, rep, IS_TEMP_ADMIN_ATTR_NAME);
 
         return rep;
+    }
+
+    private static void addAttributeToBriefRep(UserModel user, UserRepresentation userRep, String attributeName) {
+        String userAttributeValue = user.getFirstAttribute(attributeName);
+        if (userAttributeValue != null) {
+            if (userRep.getAttributes() == null) {
+                userRep.setAttributes(new HashMap<>());
+            }
+            userRep.getAttributes().put(attributeName, Collections.singletonList(userAttributeValue));
+        }
     }
 
     public static EventRepresentation toRepresentation(Event event) {

@@ -10,7 +10,9 @@ import {
   Tab,
   TabTitleText,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
+import { WarningTriangleIcon } from "@patternfly/react-icons";
 import { IRowData, TableText, cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -58,6 +60,14 @@ const ClientDetailLink = (client: ClientRepresentation) => {
           </Badge>
         )}
       </Link>
+      {client.attributes?.["is_temporary_admin"] === "true" && (
+        <Tooltip content={t("temporaryService")}>
+          <WarningTriangleIcon
+            className="pf-v5-u-ml-sm"
+            id="temporary-admin-label"
+          />
+        </Tooltip>
+      )}
     </TableText>
   );
 };
