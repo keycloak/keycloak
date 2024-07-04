@@ -54,6 +54,8 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
+        // The supported authentication URI parameters can be found in the google identity documentation
+        // See: https://developers.google.com/identity/openid-connect/openid-connect#authenticationuriparameters
         return ProviderConfigurationBuilder.create()
                 .property().name("prompt")
                 .label("Prompt")
