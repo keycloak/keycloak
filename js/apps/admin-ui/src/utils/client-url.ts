@@ -16,7 +16,10 @@ export const convertClientToUrl = (
   }
 
   if (rootUrl === "${authBaseUrl}") {
-    return rootUrl.replace(/\$\{(authBaseUrl)\}/, environment.serverBaseUrl);
+    return joinPath(
+      rootUrl.replace(/\$\{(authBaseUrl)\}/, environment.serverBaseUrl),
+      baseUrl || "",
+    );
   }
 
   if (rootUrl?.startsWith("http")) {

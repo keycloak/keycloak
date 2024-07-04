@@ -43,7 +43,7 @@ describe("convertClientToUrl", () => {
     );
 
     //then
-    expect(result).toBe("/admin");
+    expect(result).toBe("/admin/something");
   });
 
   it("when baseUrl when rootUrl is not set", () => {
