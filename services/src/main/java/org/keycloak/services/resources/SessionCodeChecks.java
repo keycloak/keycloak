@@ -53,6 +53,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 
@@ -280,7 +281,7 @@ public class SessionCodeChecks {
                 }
             }
 
-            if (execution == null || execution.equals(lastExecFromSession)) {
+            if (execution == null || execution.equals(lastExecFromSession) || CommonClientSessionModel.ExecutionStatus.CHALLENGED.equals(authSession.getExecutionStatus().get(execution))) {
                 // Allow refresh of previous page
                 clientCode = new ClientSessionCode<>(session, realm, authSession);
                 actionRequest = false;

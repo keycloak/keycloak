@@ -376,6 +376,16 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         resetPassword("login@test.com");
     }
 
+    @Test
+    public void resetPasswordBackButton() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("login@test.com", "wrongpassword");
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        driver.navigate().back();
+        loginPage.assertCurrent();
+    }
+
     private String resetPassword(String username) throws IOException, MessagingException {
         return resetPassword(username, "resetPassword");
     }
@@ -463,7 +473,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
-        
+
         resetPasswordPage.changePassword(username);
 
         loginPage.assertCurrent();
@@ -1059,12 +1069,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void resetPasswordBeforeUserIsDisabled() throws IOException, MessagingException {
         initiateResetPasswordFromResetPasswordPage("login-test");
-        
+
         assertEquals(1, greenMail.getReceivedMessages().length);
         MimeMessage message = greenMail.getReceivedMessages()[0];
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).session((String)null).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
-        
+
         UserRepresentation user = findUser("login-test");
         user.setEnabled(false);
         updateUser(user);
