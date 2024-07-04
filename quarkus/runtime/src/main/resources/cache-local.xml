@@ -25,14 +25,14 @@
         <local-cache name="default">
             <transaction transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"/>
         </local-cache>
-        <local-cache name="realms">
+        <local-cache name="realms" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
             </encoding>
             <memory max-count="10000"/>
         </local-cache>
-        <local-cache name="users">
+        <local-cache name="users" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
@@ -57,7 +57,7 @@
         <local-cache name="loginFailures">
             <expiration lifespan="-1"/>
         </local-cache>
-        <local-cache name="authorization">
+        <local-cache name="authorization" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
@@ -67,7 +67,7 @@
         <local-cache name="work">
             <expiration lifespan="-1"/>
         </local-cache>
-        <local-cache name="keys">
+        <local-cache name="keys" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
