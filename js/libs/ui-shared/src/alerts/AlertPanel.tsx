@@ -19,9 +19,10 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
       isToast
       style={{ whiteSpace: "pre-wrap" }}
     >
-      {alerts.map(({ id, variant, message, description }) => (
+      {alerts.map(({ id, variant, message, description }, index) => (
         <Alert
           key={id}
+          data-testid={index === 0 ? "last-alert" : undefined}
           isLiveRegion
           variant={AlertVariant[variant]}
           component="p"

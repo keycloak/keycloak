@@ -2,19 +2,21 @@ import CommonElements from "../CommonElements";
 export default class Masthead extends CommonElements {
   #logoBtn = ".pf-v5-c-page__header-brand-link img";
   #helpBtn = "#help";
-  #closeAlertMessageBtn = ".pf-v5-c-alert__action button";
-  #closeLastAlertMessageBtn = "li:first-child .pf-v5-c-alert__action button";
 
-  #alertMessage = ".pf-v5-c-alert__title";
   #userDrpDwn = "#user-dropdown";
   #userDrpDwnKebab = "#user-dropdown-kebab";
+  #lastAlert = "last-alert";
   #globalAlerts = "global-alerts";
   #documentationLink = "#link";
   #backToAdminConsoleLink = "referrer-link";
   #userDrpdwnItem = ".pf-v5-c-menu__item";
 
-  #getAlertsContainer() {
-    return cy.findByTestId(this.#globalAlerts);
+  #getLastAlert() {
+    return cy.findByTestId(this.#lastAlert);
+  }
+
+  #getAlerts() {
+    return cy.findAllByTestId(this.#globalAlerts);
   }
 
   checkIsAdminUI() {
@@ -95,7 +97,7 @@ export default class Masthead extends CommonElements {
   }
 
   checkNotificationMessage(message: string | RegExp, closeNotification = true) {
-    const alertElement = this.#getAlertsContainer().find(this.#alertMessage);
+    const alertElement = this.#getLastAlert();
 
     if (typeof message === "string") {
       alertElement.should(($el) => expect($el).to.contain.text(message));
@@ -104,18 +106,18 @@ export default class Masthead extends CommonElements {
     }
 
     if (closeNotification) {
-      this.#getAlertsContainer().find("button").last().click({ force: true });
+      this.#getLastAlert().find("button").last().click({ force: true });
     }
     return this;
   }
 
   closeLastAlertMessage() {
-    this.#getAlertsContainer().find(this.#closeLastAlertMessageBtn).click();
+    this.#getLastAlert().find("button").click();
     return this;
   }
 
   closeAllAlertMessages() {
-    this.#getAlertsContainer().find(this.#closeAlertMessageBtn).click({
+    this.#getAlerts().find("button").click({
       force: true,
       multiple: true,
     });
