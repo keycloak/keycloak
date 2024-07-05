@@ -103,7 +103,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react-swc": "^3.7.0",
-    "cypress": "^13.12.0",
+    "cypress": "^13.13.0",
     "cypress-axe": "^1.5.0",
     "cypress-split": "^1.24.0",
     "jsdom": "^24.1.0",
