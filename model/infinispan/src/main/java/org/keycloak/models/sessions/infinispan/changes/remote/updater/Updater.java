@@ -16,9 +16,10 @@
  */
 package org.keycloak.models.sessions.infinispan.changes.remote.updater;
 
-import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
 
 import java.util.function.BiFunction;
+
+import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
 
 /**
  * An interface used by {@link RemoteChangeLogTransaction}.

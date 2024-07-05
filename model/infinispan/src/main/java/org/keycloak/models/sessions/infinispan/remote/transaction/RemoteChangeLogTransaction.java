@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.sessions.infinispan.changes.remote;
+package org.keycloak.models.sessions.infinispan.remote.transaction;
 
 import java.util.Map;
 import java.util.Objects;
@@ -22,10 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Flowable;
 import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.MetadataValue;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -34,29 +31,31 @@ import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 
 /**
- * A {@link KeycloakTransaction} implementation that keeps track of changes made to entities stored
- * in a Infinispan cache.
+ * A {@link KeycloakTransaction} implementation that keeps track of changes made to entities stored in a Infinispan
+ * cache.
  *
  * @param <K> The type of the Infinispan cache key.
  * @param <V> The type of the Infinispan cache value.
  * @param <T> The type of the {@link Updater} implementation.
  */
-public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends AbstractKeycloakTransaction {
+public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends ConditionalRemover<K, V>> extends AbstractKeycloakTransaction {
 
 
     private final Map<K, T> entityChanges;
     private final UpdaterFactory<K, V, T> factory;
     private final RemoteCache<K, V> cache;
-    private Predicate<V> removePredicate;
+    private final R conditionalRemover;
 
-    public RemoteChangeLogTransaction(UpdaterFactory<K, V, T> factory, RemoteCache<K, V> cache) {
+    RemoteChangeLogTransaction(UpdaterFactory<K, V, T> factory, RemoteCache<K, V> cache, R conditionalRemover) {
         this.factory = Objects.requireNonNull(factory);
         this.cache = Objects.requireNonNull(cache);
+        this.conditionalRemover = Objects.requireNonNull(conditionalRemover);
         entityChanges = new ConcurrentHashMap<>(8);
     }
 
@@ -66,13 +65,11 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
         doCommit(stage);
         CompletionStages.join(stage.freeze());
         entityChanges.clear();
-        removePredicate = null;
     }
 
     @Override
     protected void rollbackImpl() {
         entityChanges.clear();
-        removePredicate = null;
     }
 
     public void commitAsync(AggregateCompletionStage<Void> stage) {
@@ -86,18 +83,10 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
     }
 
     private void doCommit(AggregateCompletionStage<Void> stage) {
-        if (removePredicate != null) {
-            // TODO [pruivo] [optimization] with protostream, use delete by query: DELETE FROM ...
-            var rmStage = Flowable.fromPublisher(cache.publishEntriesWithMetadata(null, 2048))
-                    .filter(e -> removePredicate.test(e.getValue().getValue()))
-                    .map(Map.Entry::getKey)
-                    .flatMapCompletable(this::removeKey)
-                    .toCompletionStage(null);
-            stage.dependsOn(rmStage);
-        }
+        conditionalRemover.executeRemovals(cache, stage);
 
         for (var updater : entityChanges.values()) {
-            if (updater.isReadOnly() || updater.isTransient() || (removePredicate != null && removePredicate.test(updater.getValue()))) {
+            if (updater.isReadOnly() || updater.isTransient() || conditionalRemover.willRemove(updater)) {
                 continue;
             }
             if (updater.isDeleted()) {
@@ -185,17 +174,8 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
         entityChanges.put(key, factory.deleted(key));
     }
 
-    /**
-     * Removes all Infinispan cache values that satisfy the given predicate.
-     *
-     * @param predicate The {@link Predicate} which returns {@code true} for elements to be removed.
-     */
-    public void removeIf(Predicate<V> predicate) {
-        if (removePredicate == null) {
-            removePredicate = predicate;
-            return;
-        }
-        removePredicate = removePredicate.or(predicate);
+    R getConditionalRemover() {
+        return conditionalRemover;
     }
 
     public T wrap(Map.Entry<K, MetadataValue<V>> entry) {
@@ -229,10 +209,6 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>> extends A
 
     private CompletionStage<V> merge(Updater<K, V> updater, Expiration expiration) {
         return cache.computeIfPresentAsync(updater.getKey(), updater, expiration.lifespan(), TimeUnit.MILLISECONDS, expiration.maxIdle(), TimeUnit.MILLISECONDS);
-    }
-
-    private Completable removeKey(K key) {
-        return Completable.fromCompletionStage(cache.removeAsync(key));
     }
 
 }

@@ -31,13 +31,13 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.helper.MapUpdater;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 /**
@@ -53,7 +53,7 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, Authent
     private final boolean offline;
     private UserSessionModel userSession;
     private ClientModel client;
-    private RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction;
+    private ClientSessionChangeLogTransaction clientTransaction;
 
     private AuthenticatedClientSessionUpdater(UUID cacheKey, AuthenticatedClientSessionEntity cacheValue, long version, boolean offline, UpdaterState initialState) {
         super(cacheKey, cacheValue, version, initialState);
@@ -200,10 +200,10 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<UUID, Authent
      *
      * @param userSession       The {@link UserSessionModel} associated with this client session.
      * @param client            The {@link ClientModel} associated with this client session.
-     * @param clientTransaction The {@link RemoteChangeLogTransaction} to perform the changes in this class into the
+     * @param clientTransaction The {@link ClientSessionChangeLogTransaction} to perform the changes in this class into the
      *                          {@link RemoteCache}.
      */
-    public synchronized void initialize(UserSessionModel userSession, ClientModel client, RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> clientTransaction) {
+    public synchronized void initialize(UserSessionModel userSession, ClientModel client, ClientSessionChangeLogTransaction clientTransaction) {
         this.userSession = Objects.requireNonNull(userSession);
         this.client = Objects.requireNonNull(client);
         this.clientTransaction = Objects.requireNonNull(clientTransaction);

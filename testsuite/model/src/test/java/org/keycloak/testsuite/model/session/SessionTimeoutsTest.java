@@ -327,7 +327,8 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                 Assert.assertNull(getUserSession(session, realm, sessions[0], offline));
                 return null;
             });
-            processExpiration(offline);
+            processExpiration(true);
+            processExpiration(false);
         } finally {
             setTimeOffset(0);
         }

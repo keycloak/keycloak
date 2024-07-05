@@ -39,7 +39,7 @@ public interface UserSessionProvider extends Provider {
     KeycloakSession getKeycloakSession();
 
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
-    
+
     /**
      * @deprecated Use {@link #getClientSession(UserSessionModel, ClientModel, String, boolean)} instead.
      */
@@ -204,7 +204,7 @@ public interface UserSessionProvider extends Provider {
      * @deprecated Deprecated as offline session preloading was removed in KC25. This method will be removed in KC27.
      */
     @Deprecated(forRemoval = true)
-    void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline);
+    default void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline) {}
 
     void close();
 
