@@ -125,6 +125,57 @@ public interface OAuth2GrantType extends Provider {
             this.clientAuthAttributes = clientAuthAttributes;
         }
 
+        public ClientModel getClient() {
+            return client;
+        }
+
+        public Map<String, String> getClientAuthAttributes() {
+            return clientAuthAttributes;
+        }
+
+        public Object getClientConfig() {
+            return clientConfig;
+        }
+
+        public ClientConnection getClientConnection() {
+            return clientConnection;
+        }
+
+        public Cors getCors() {
+            return cors;
+        }
+
+        public EventBuilder getEvent() {
+            return event;
+        }
+
+        public MultivaluedMap<String, String> getFormParams() {
+            return formParams;
+        }
+
+        public HttpHeaders getHeaders() {
+            return headers;
+        }
+
+        public RealmModel getRealm() {
+            return realm;
+        }
+
+        public HttpRequest getRequest() {
+            return request;
+        }
+
+        public HttpResponse getResponse() {
+            return response;
+        }
+
+        public KeycloakSession getSession() {
+            return session;
+        }
+
+        public Object getTokenManager() {
+            return tokenManager;
+        }
     }
 
 }
