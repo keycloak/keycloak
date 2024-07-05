@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,12 +30,12 @@ import java.util.Set;
 
 import liquibase.Scope;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService;
+import org.keycloak.connections.jpa.updater.liquibase.conn.KeycloakLiquibase;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
@@ -100,7 +99,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         try {
             if (needVerifyMasterChangelog()) {
                 // Run update with keycloak master changelog first
-                Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
+                KeycloakLiquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
                 if (file != null) {
                     exportWriter = new FileWriter(file);
                 }
@@ -114,7 +113,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
                 if (customChangelog != null) {
                     String factoryId = jpaProvider.getFactoryId();
                     String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
-                    Liquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
+                    KeycloakLiquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
                     updateChangeSet(liquibase, exportWriter);
                 }
             }
@@ -136,7 +135,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         return session.getAttributeOrDefault(VERIFY_AND_RUN_MASTER_CHANGELOG, Boolean.TRUE);
     }
 
-    protected void updateChangeSet(Liquibase liquibase, Writer exportWriter) throws LiquibaseException  {
+    protected void updateChangeSet(KeycloakLiquibase liquibase, Writer exportWriter) throws LiquibaseException  {
         String changelog = liquibase.getChangeLogFile();
         Database database = liquibase.getDatabase();
         Table changelogTable = SnapshotGeneratorFactory.getInstance().getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
@@ -232,7 +231,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         try {
             if (needVerifyMasterChangelog()) {
                 // Validate with keycloak master changelog first
-                Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
+                KeycloakLiquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
 
                 Status status = validateChangeSet(liquibase, liquibase.getChangeLogFile());
                 if (status != Status.VALID) {
@@ -247,7 +246,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
                 if (customChangelog != null) {
                     String factoryId = jpaProvider.getFactoryId();
                     String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
-                    Liquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
+                    KeycloakLiquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
                     if (validateChangeSet(liquibase, liquibase.getChangeLogFile()) != Status.VALID) {
                         return Status.OUTDATED;
                     }
@@ -260,7 +259,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         return Status.VALID;
     }
 
-    protected Status validateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
+    protected Status validateChangeSet(KeycloakLiquibase liquibase, String changelog) throws LiquibaseException {
         final Status result;
         List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
 
@@ -283,10 +282,8 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         return result;
     }
 
-    private void resetLiquibaseServices(Liquibase liquibase) {
-        Method resetServices = Reflections.findDeclaredMethod(Liquibase.class, "resetServices");
-        Reflections.invokeMethod(true, resetServices, liquibase);
-
+    private void resetLiquibaseServices(KeycloakLiquibase liquibase) {
+        liquibase.resetServices();
         ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
     }
 
@@ -301,12 +298,12 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         });
     }
 
-    private Liquibase getLiquibaseForKeycloakUpdate(Connection connection, String defaultSchema) throws LiquibaseException {
+    private KeycloakLiquibase getLiquibaseForKeycloakUpdate(Connection connection, String defaultSchema) throws LiquibaseException {
         LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
         return liquibaseProvider.getLiquibase(connection, defaultSchema);
     }
 
-    private Liquibase getLiquibaseForCustomProviderUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+    private KeycloakLiquibase getLiquibaseForCustomProviderUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
         LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
         return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelogLocation, classloader, changelogTableName);
     }

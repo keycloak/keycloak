@@ -1,2 +1,0 @@
-/src/main/java/org/keycloak/adapters/undertow/*
-!/src/main/java/org/keycloak/adapters/undertow/UndertowHttpServletRequest.java

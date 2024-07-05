@@ -31,7 +31,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -398,7 +397,7 @@ public class Reflections {
 
     /**
      * Set the accessibility flag on the {@link AccessibleObject} as described in {@link
-     * AccessibleObject#setAccessible(boolean)} within the context of a {link PrivilegedAction}.
+     * AccessibleObject#setAccessible(boolean)}.
      *
      * @param <A> member the accessible object type
      * @param member the accessible object
@@ -406,13 +405,13 @@ public class Reflections {
      * @return the accessible object after the accessible flag has been altered
      */
     public static <A extends AccessibleObject> A setAccessible(A member) {
-        AccessController.doPrivileged(new SetAccessiblePrivilegedAction(member));
+        member.setAccessible(true);
         return member;
     }
 
     /**
      * Set the accessibility flag on the {@link AccessibleObject} to false as described in {@link
-     * AccessibleObject#setAccessible(boolean)} within the context of a {link PrivilegedAction}.
+     * AccessibleObject#setAccessible(boolean)}.
      *
      * @param <A> member the accessible object type
      * @param member the accessible object
@@ -420,7 +419,7 @@ public class Reflections {
      * @return the accessible object after the accessible flag has been altered
      */
     public static <A extends AccessibleObject> A unsetAccessible(A member) {
-        AccessController.doPrivileged(new UnSetAccessiblePrivilegedAction(member));
+        member.setAccessible(false);
         return member;
     }
 
@@ -987,7 +986,9 @@ public class Reflections {
      * @throws ClassNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
+     * @deprecated for removal in Keycloak 27
      */
+    @Deprecated(forRemoval = true)
     public static <T> T newInstance(final Class<T> fromClass) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return newInstance(fromClass, fromClass.getName());
     }
@@ -1005,7 +1006,9 @@ public class Reflections {
      * @throws ClassNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
+     * @deprecated for removal in Keycloak 27
      */
+    @Deprecated(forRemoval = true)
     public static <T> T newInstance(final Class<?> type, final String fullQualifiedName) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return (T) classForName(fullQualifiedName, type.getClassLoader()).newInstance();
     }

@@ -17,9 +17,15 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+
+import java.util.EnumSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import picocli.CommandLine;
 
@@ -28,6 +34,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
 
     @Override
     public void run() {
+        Environment.setParsedCommand(this);
         doBeforeRun();
         CommandLine cmd = spec.commandLine();
         HttpPropertyMappers.validateConfig();
@@ -38,4 +45,15 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
     protected void doBeforeRun() {
 
     }
+
+    @Override
+    public List<OptionCategory> getOptionCategories() {
+        EnumSet<OptionCategory> excludedCategories = excludedCategories();
+        return super.getOptionCategories().stream().filter(optionCategory -> !excludedCategories.contains(optionCategory)).collect(Collectors.toList());
+    }
+
+    protected EnumSet<OptionCategory> excludedCategories() {
+        return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
+    }
+
 }

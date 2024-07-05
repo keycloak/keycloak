@@ -282,7 +282,6 @@ jobs:
           wait-on: http://localhost:8080
           working-directory: js/apps/admin-ui
         env:
-          CYPRESS_BASE_URL: http://localhost:8080/admin/
           SPLIT: ${{ strategy.job-total }}
           SPLIT_INDEX: ${{ strategy.job-index }}
           SPLIT_RANDOM_SEED: ${{ needs.generate-test-seed.outputs.seed }}

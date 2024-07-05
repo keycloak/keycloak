@@ -172,7 +172,6 @@ public class ModelToRepresentation {
     @Deprecated
     public static Stream<GroupRepresentation> toGroupHierarchy(KeycloakSession session, RealmModel realm, boolean full) {
         return session.groups().getTopLevelGroupsStream(realm, null, null)
-                .filter(g -> !g.getAttributes().containsKey(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                 .map(g -> toGroupHierarchy(g, full));
     }
 

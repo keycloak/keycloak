@@ -60,7 +60,6 @@ yq ea -i "del(.spec.install.spec.deployments[0].spec.template.spec.containers[0]
 yq ea -i "del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].startupProbe)" "$CSV_PATH"
 yq ea -i 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].env[] | select(.name == "KUBERNETES_NAMESPACE"))' "$CSV_PATH"
 
-yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].resources = {}' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.strategy = {}' "$CSV_PATH"
 yq ea -i '.spec.apiservicedefinitions = {}' "$CSV_PATH"
 

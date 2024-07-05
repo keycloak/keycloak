@@ -155,9 +155,4 @@ public final class Marshalling {
     public static void configure(ConfigurationBuilder builder) {
         builder.addContextInitializer(KeycloakModelSchema.INSTANCE);
     }
-
-
-    public static String emptyStringToNull(String value) {
-        return value == null || value.isEmpty() ? null : value;
-    }
 }

@@ -327,7 +327,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 // public clients can not exchange tokens from other client
                 forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
             }
-            if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
+            if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient, token)) {
                 event.detail(Details.REASON, "client not allowed to exchange to audience");
                 event.error(Errors.NOT_ALLOWED);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);

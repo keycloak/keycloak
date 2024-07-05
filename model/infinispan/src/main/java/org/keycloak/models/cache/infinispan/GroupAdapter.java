@@ -290,4 +290,10 @@ public class GroupAdapter implements GroupModel {
     public boolean escapeSlashesInGroupPath() {
         return KeycloakModelUtils.escapeSlashesInGroupPath(keycloakSession);
     }
+
+    @Override
+    public Type getType() {
+        if (isUpdated()) return updated.getType();
+        return cached.getType();
+    }
 }
