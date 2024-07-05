@@ -154,6 +154,18 @@ public class KeycloakDistConfiguratorTest {
 
         testFirstClassCitizen(expectedValues);
     }
+    
+    @Test
+    public void bootstrapAdmin() {
+        final Map<String, String> expectedValues = Map.of(
+                "bootstrap-admin-username", "something",
+                "bootstrap-admin-password", "something",
+                "bootstrap-admin-client-id", "else",
+                "bootstrap-admin-client-secret", "else"
+        );
+
+        testFirstClassCitizen(expectedValues);
+    }
 
     /* UTILS */
 

@@ -72,6 +72,11 @@ spec:
         name: my-secret
   httpManagement:
     port: 9003
+  bootstrapAdmin:
+    user:
+      secret: something
+    service:
+      secret: else
   unsupported:
     podTemplate:
       metadata:

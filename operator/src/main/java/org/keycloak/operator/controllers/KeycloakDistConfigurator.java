@@ -28,6 +28,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
@@ -73,6 +74,7 @@ public class KeycloakDistConfigurator {
         configureCache();
         configureProxy();
         configureManagement();
+        configureBootstrapAdmin();
     }
 
     /**
@@ -85,6 +87,18 @@ public class KeycloakDistConfigurator {
     }
 
     /* ---------- Configuration of first-class citizen fields ---------- */
+
+    void configureBootstrapAdmin() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getBootstrapAdminSpec())
+                .mapOption("bootstrap-admin-username",
+                        spec -> Optional.ofNullable(spec.getUser()).map(BootstrapAdminSpec.User::getSecret).map(s -> new SecretKeySelector("username", s, null)).orElse(null))
+                .mapOption("bootstrap-admin-password",
+                        spec -> Optional.ofNullable(spec.getUser()).map(BootstrapAdminSpec.User::getSecret).map(s -> new SecretKeySelector("password", s, null)).orElse(null))
+                .mapOption("bootstrap-admin-client-id",
+                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector("client-id", s, null)).orElse(null))
+                .mapOption("bootstrap-admin-client-secret",
+                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector("client-secret", s, null)).orElse(null));
+    }
 
     void configureHostname() {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getHostnameSpec())

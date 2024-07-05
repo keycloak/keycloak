@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
@@ -114,6 +115,10 @@ public class KeycloakSpec {
     @JsonProperty("scheduling")
     @JsonPropertyDescription("In this section you can configure Keycloak's scheduling")
     private SchedulingSpec schedulingSpec;
+
+    @JsonProperty("bootstrapAdmin")
+    @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for inital cluster creation.")
+    private BootstrapAdminSpec bootstrapAdminSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -263,5 +268,13 @@ public class KeycloakSpec {
 
     public void setSchedulingSpec(SchedulingSpec schedulingSpec) {
         this.schedulingSpec = schedulingSpec;
+    }
+    
+    public BootstrapAdminSpec getBootstrapAdminSpec() {
+        return bootstrapAdminSpec;
+    }
+
+    public void setBootstrapAdminSpec(BootstrapAdminSpec bootstrapAdminSpec) {
+        this.bootstrapAdminSpec = bootstrapAdminSpec;
     }
 }

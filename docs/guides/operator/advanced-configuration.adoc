@@ -308,4 +308,10 @@ stringData:
 When running on a Kubernetes or OpenShift environment well-known locations of trusted certificates are included automatically.
 This includes `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` and the `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` when present.
 
+=== Admin Bootstrapping
+
+When you create a new instance the Keycloak CR spec.bootstrapAdmin stanza may be used to configure the bootstrap user and/or service account. If you do not specify anything for the spec.bootstrapAdmin, the operator will create a Secret named "metadata.name"-initial-admin with a username temp-admin and a generated password. If you specify a Secret name for bootstrap admin user, then the Secret will need to contain username and password key value pairs. If you specify a Secret name for bootstrap admin service account, then the Secret will need to contain client-id and client-secret key value pairs.
+
+If a master realm has already been created for you cluster, then the spec.boostrapAdmin is effectively ignored. If you need to create a recovery admin account, then you'll need to run the CLI command against a Pod directly.
+
 </@tmpl.guide>
