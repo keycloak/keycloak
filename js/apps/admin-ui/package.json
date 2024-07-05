@@ -1,7 +1,21 @@
 {
-  "name": "admin-ui",
-  "private": true,
+  "name": "@keycloak/keycloak-admin-ui",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
+  "main": "lib/keycloak-admin-ui.js",
+  "types": "./lib/keycloak-admin-ui.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/keycloak-admin-ui.js",
+      "types": "./lib/keycloak-admin-ui.d.ts"
+    }
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
@@ -113,6 +127,7 @@
     "uuid": "^10.0.0",
     "vite": "^5.3.3",
     "vite-plugin-checker": "^0.7.0",
+    "vite-plugin-dts": "^3.9.1",
     "vitest": "^1.6.0"
   }
 }
