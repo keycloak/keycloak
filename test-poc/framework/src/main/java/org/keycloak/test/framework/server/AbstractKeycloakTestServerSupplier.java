@@ -1,6 +1,8 @@
 package org.keycloak.test.framework.server;
 
 import org.keycloak.test.framework.KeycloakIntegrationTest;
+import org.keycloak.test.framework.KeycloakTestDatabase;
+import org.keycloak.test.framework.database.TestDatabase;
 import org.keycloak.test.framework.injection.InstanceWrapper;
 import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
@@ -22,12 +24,15 @@ public abstract class AbstractKeycloakTestServerSupplier implements Supplier<Key
     @Override
     public InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> getValue(Registry registry, KeycloakIntegrationTest annotation) {
         KeycloakTestServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
+        InstanceWrapper<KeycloakTestServer, KeycloakIntegrationTest> wrapper = new InstanceWrapper<>(this, annotation);
+        TestDatabase testDatabase = registry.getDependency(TestDatabase.class, wrapper);
 
         KeycloakTestServer keycloakTestServer = getServer();
 
-        keycloakTestServer.start(serverConfig);
+        keycloakTestServer.start(serverConfig, testDatabase.getDatabaseConfig());
+        wrapper.setValue(keycloakTestServer, LifeCycle.GLOBAL);
 
-        return new InstanceWrapper<>(this, annotation, keycloakTestServer, LifeCycle.GLOBAL);
+        return wrapper;
     }
 
     @Override

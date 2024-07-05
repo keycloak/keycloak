@@ -1,9 +1,12 @@
 package org.keycloak.test.framework.server;
 
+import org.keycloak.test.framework.database.DatabaseConfig;
+import org.keycloak.test.framework.database.TestDatabase;
+
 public class RemoteKeycloakTestServer implements KeycloakTestServer {
 
     @Override
-    public void start(KeycloakTestServerConfig serverConfig) {
+    public void start(KeycloakTestServerConfig serverConfig, DatabaseConfig databaseConfig) {
 
     }
 
