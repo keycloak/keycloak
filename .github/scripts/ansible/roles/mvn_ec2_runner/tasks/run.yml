@@ -16,6 +16,7 @@
   ansible.builtin.shell: |
     set -o pipefail
     cd {{ kc_home }}
+    echo "{{ mvn_params }}"
     ./mvnw {{ mvn_params }}
   args:
     executable: /usr/bin/bash
