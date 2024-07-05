@@ -23,7 +23,7 @@
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.2",
     "tslib": "^2.6.3",
-    "typescript": "^5.5.2",
+    "typescript": "^5.5.3",
     "typescript-eslint": "^7.14.1",
     "wireit": "^0.14.4"
   },
