@@ -52,8 +52,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.changes.remote.RemoteChangeLogTransaction;
-import org.keycloak.models.sessions.infinispan.changes.remote.UserSessionTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.ClientSessionMappingAdapter;
@@ -61,8 +59,10 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.Clien
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.UseSessionChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
 
@@ -203,22 +203,14 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         //rely on Infinispan expiration
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void removeUserSessions(RealmModel realm) {
-        Predicate<? extends SessionEntity> predicate = e -> Objects.equals(e.getRealmId(), realm.getId());
-        transaction.getUserSessions().removeIf((Predicate<UserSessionEntity>) predicate);
-        transaction.getClientSessions().removeIf((Predicate<AuthenticatedClientSessionEntity>) predicate);
+        transaction.removeOnlineSessionsByRealmId(realm.getId());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        Predicate<? extends SessionEntity> predicate = e -> Objects.equals(e.getRealmId(), realm.getId());
-        transaction.getUserSessions().removeIf((Predicate<UserSessionEntity>) predicate);
-        transaction.getOfflineUserSessions().removeIf((Predicate<UserSessionEntity>) predicate);
-        transaction.getClientSessions().removeIf((Predicate<AuthenticatedClientSessionEntity>) predicate);
-        transaction.getOfflineClientSessions().removeIf((Predicate<AuthenticatedClientSessionEntity>) predicate);
+        transaction.removeAllSessionsByRealmId(realm.getId());
         var database = session.getProvider(UserSessionPersisterProvider.class);
         if (database != null) {
             database.onRealmRemoved(realm);
@@ -295,11 +287,6 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     @Override
     public KeycloakSession getKeycloakSession() {
         return session;
-    }
-
-    @Override
-    public void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline) {
-        //no-op
     }
 
     @Override
@@ -407,11 +394,11 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
                 .blockingStream(batchSize);
     }
 
-    private RemoteChangeLogTransaction<String, UserSessionEntity, UserSessionUpdater> getUserSessionTransaction(boolean offline) {
+    private UseSessionChangeLogTransaction getUserSessionTransaction(boolean offline) {
         return offline ? transaction.getOfflineUserSessions() : transaction.getUserSessions();
     }
 
-    private RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> getClientSessionTransaction(boolean offline) {
+    private ClientSessionChangeLogTransaction getClientSessionTransaction(boolean offline) {
         return offline ? transaction.getOfflineClientSessions() : transaction.getClientSessions();
     }
 
@@ -516,10 +503,10 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     private class RemoteClientSessionAdapterProvider implements ClientSessionProvider, UserSessionUpdater.ClientSessionAdapterFactory {
 
-        private final RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> transaction;
+        private final ClientSessionChangeLogTransaction transaction;
         private final UserSessionUpdater userSession;
 
-        private RemoteClientSessionAdapterProvider(RemoteChangeLogTransaction<UUID, AuthenticatedClientSessionEntity, AuthenticatedClientSessionUpdater> transaction, UserSessionUpdater userSession) {
+        private RemoteClientSessionAdapterProvider(ClientSessionChangeLogTransaction transaction, UserSessionUpdater userSession) {
             this.transaction = transaction;
             this.userSession = userSession;
         }
