@@ -640,4 +640,33 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             ctx.getRealm().updateComponent(mapperModel);
         });
     }
+    @Test
+    public void test10LDAPGroupSyncAfterDeletingFromKeycloak(){
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm=ctx.getRealm();
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            LDAPTestUtils.addOrUpdateGroupMapper(realm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY, descriptionAttrName);
+            LDAPTestUtils.createLDAPGroup(session, realm, ctx.getLdapModel(), "groupTest-1", descriptionAttrName, "group1 - description");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            ctx.getRealm().updateComponent(mapperModel);
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+
+        });
+
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+
+            RealmModel appRealm = ctx.getRealm();
+            GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/groupTest-1");
+            session.getContext().getRealm().removeGroup(kcGroup1);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+            LDAPObject group1Loaded = groupMapper.loadLDAPGroupByName("groupTest-1");
+            assertThat("Group not deleted from LDAP",group1Loaded==null);
+        });
+    }
 }

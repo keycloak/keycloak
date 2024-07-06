@@ -85,7 +85,24 @@ public interface GroupModel extends RoleMapperModel {
     }
 
     interface GroupRemovedEvent extends GroupEvent {
+        static void fire(GroupModel group, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new GroupCreatedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
 
+                @Override
+                public GroupModel getGroup() {
+                    return group;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
     }
 
     interface GroupUpdatedEvent extends GroupEvent {

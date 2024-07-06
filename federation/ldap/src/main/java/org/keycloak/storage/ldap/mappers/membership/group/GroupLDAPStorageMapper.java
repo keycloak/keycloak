@@ -27,6 +27,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -60,7 +63,7 @@ import java.util.stream.Stream;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements CommonLDAPGroupMapper {
+public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements CommonLDAPGroupMapper, ProviderEventListener {
 
     private static final Logger logger = Logger.getLogger(GroupLDAPStorageMapper.class);
 
@@ -74,6 +77,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         super(mapperModel, ldapProvider);
         this.config = new GroupMapperConfig(mapperModel);
         this.factory = factory;
+        session.getKeycloakSessionFactory().register(this);
     }
 
 
@@ -437,15 +441,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         // Query existing LDAP groups
 
-        List<LDAPObject> ldapGroups = getAllLDAPGroups(config.isPreserveGroupsInheritance());
+        Map<String,LDAPObject> ldapGroupsMap=getLdapGroupMap();
 
-        // Convert them to Map<String, LDAPObject>
-        Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
-        String groupsRdnAttr = config.getGroupNameLdapAttribute();
-        for (LDAPObject ldapGroup : ldapGroups) {
-            String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
-            ldapGroupsMap.put(groupName, ldapGroup);
-        }
 
 
         // Map to track all LDAP groups also exist in Keycloak
@@ -476,6 +473,27 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         return syncResult;
     }
 
+    private Map<String,LDAPObject> getLdapGroupMap(){
+        List<LDAPObject> ldapGroups = getAllLDAPGroups(config.isPreserveGroupsInheritance());
+
+        // Convert them to Map<String, LDAPObject>
+        Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
+        String groupsRdnAttr = config.getGroupNameLdapAttribute();
+        for (LDAPObject ldapGroup : ldapGroups) {
+            String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
+            ldapGroupsMap.put(groupName, ldapGroup);
+        }
+        return ldapGroupsMap;
+    }
+
+    private Map<String, Set<String>> getGroupAttributeMap(GroupModel kcGroup){
+        Map<String, Set<String>> supportedLdapAttributes = new HashMap<>();
+        for (String attrName : config.getGroupAttributes()) {
+            Set<String> valueSet = kcGroup.getAttributeStream(attrName).collect(Collectors.toSet());
+            supportedLdapAttributes.put(attrName, valueSet.isEmpty() ? null : valueSet);
+        }
+        return supportedLdapAttributes;
+    }
     // For given kcGroup check if it exists in LDAP (map) by name
     // If not, create it in LDAP including attributes. Otherwise update attributes in LDAP.
     // Process this recursively for all subgroups of KC group
@@ -483,11 +501,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         String groupName = kcGroup.getName();
 
         // extract group attributes to be updated to LDAP
-        Map<String, Set<String>> supportedLdapAttributes = new HashMap<>();
-        for (String attrName : config.getGroupAttributes()) {
-            Set<String> valueSet = kcGroup.getAttributeStream(attrName).collect(Collectors.toSet());
-            supportedLdapAttributes.put(attrName, valueSet.isEmpty() ? null : valueSet);
-        }
+        Map<String, Set<String>> supportedLdapAttributes=getGroupAttributeMap(kcGroup);
 
         LDAPObject ldapGroup = ldapGroupsMap.get(groupName);
 
@@ -509,6 +523,14 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         // process KC subgroups
         kcGroup.getSubGroupsStream()
                 .forEach(kcSubgroup -> processKeycloakGroupSyncToLDAP(kcSubgroup, ldapGroupsMap, ldapGroupNames, syncResult));
+    }
+
+    private void deleteGroupInLDAP(String groupName){
+        Map<String, LDAPObject> groupsLdap = getLdapGroupMap();
+        LDAPObject ldapObject=groupsLdap.get(groupName);
+        if(!groupsLdap.isEmpty() && ldapObject!=null){
+            ldapProvider.getLdapIdentityStore().remove(ldapObject);
+        }
     }
 
     // Update memberships of group in LDAP based on subgroups from KC. Do it recursively
@@ -678,6 +700,20 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     protected String getMembershipUserLdapAttribute() {
         LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
         return config.getMembershipUserLdapAttribute(ldapConfig);
+    }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if(this.getLdapProvider().getEditMode()== UserStorageProvider.EditMode.WRITABLE
+                && this.getConfig().getMode() == LDAPGroupMapperMode.LDAP_ONLY
+                && event instanceof GroupModel.GroupRemovedEvent groupRemovedEvent
+                && groupRemovedEvent.getRealm().getId().equals(session.getContext().getRealm().getId())){
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                    deleteGroupInLDAP(groupRemovedEvent.getGroup().getName());
+            });
+
+        }
     }
 
 
