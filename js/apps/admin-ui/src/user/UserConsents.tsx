@@ -100,16 +100,15 @@ export const UserConsents = () => {
           {
             name: "grantedClientScopes",
             displayKey: "grantedClientScopes",
-            cellFormatters: [emptyFormatter()],
             cellRenderer: clientScopesRenderer,
             transforms: [cellWidth(30)],
           },
           {
-            name: "createDate",
+            name: "createdDate",
             displayKey: "created",
             transforms: [cellWidth(20)],
-            cellRenderer: ({ createDate }) =>
-              createDate ? formatDate(new Date(createDate)) : "—",
+            cellRenderer: ({ createdDate }) =>
+              createdDate ? formatDate(new Date(createdDate)) : "—",
           },
           {
             name: "lastUpdatedDate",

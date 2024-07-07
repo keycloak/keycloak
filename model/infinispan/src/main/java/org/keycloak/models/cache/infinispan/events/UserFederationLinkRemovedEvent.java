@@ -53,7 +53,7 @@ public class UserFederationLinkRemovedEvent extends InvalidationEvent implements
 
     @ProtoFactory
     static UserFederationLinkRemovedEvent protoFactory(String id, String realmId, String identityProviderId, String socialUserId) {
-        return new UserFederationLinkRemovedEvent(id, realmId, Marshalling.emptyStringToNull(identityProviderId), Marshalling.emptyStringToNull(socialUserId));
+        return new UserFederationLinkRemovedEvent(id, realmId, identityProviderId, socialUserId);
     }
 
     @ProtoField(2)

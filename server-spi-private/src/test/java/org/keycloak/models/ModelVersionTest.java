@@ -25,7 +25,7 @@ import org.keycloak.migration.ModelVersion;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class MigrationVersionTest {
+public class ModelVersionTest {
 
     @Test
     public void testVersion() {
@@ -93,6 +93,11 @@ public class MigrationVersionTest {
         Assert.assertEquals(0, versionProduct.getMinor());
         Assert.assertEquals(0, versionProduct.getMicro());
         Assert.assertNull(versionProduct.getQualifier());
+
+        ModelVersion version_24_0_0 = new ModelVersion("24.0.0");
+        ModelVersion version_24_0_4_0_SNAPSHOT = new ModelVersion("24.0.4.0-SNAPSHOT");
+        Assert.assertTrue(version_24_0_0.lessThan(version_24_0_4_0_SNAPSHOT));
+        Assert.assertFalse(version_24_0_4_0_SNAPSHOT.lessThan(version_24_0_0));
     }
 
 }
