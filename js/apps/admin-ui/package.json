@@ -1,7 +1,21 @@
 {
-  "name": "admin-ui",
-  "private": true,
+  "name": "@keycloak/keycloak-admin-ui",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
+  "main": "lib/keycloak-admin-ui.js",
+  "types": "./lib/keycloak-admin-ui.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/keycloak-admin-ui.js",
+      "types": "./lib/keycloak-admin-ui.d.ts"
+    }
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
@@ -84,7 +98,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.2.3",
-    "react-hook-form": "^7.52.0",
+    "react-hook-form": "^7.52.1",
     "react-i18next": "^14.1.2",
     "react-router-dom": "^6.24.0",
     "reactflow": "^11.11.4",
@@ -93,7 +107,7 @@
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.5",
     "@testing-library/cypress": "^10.0.2",
-    "@testing-library/dom": "^10.2.0",
+    "@testing-library/dom": "^10.3.1",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",
     "@types/dagre": "^0.7.52",
@@ -103,7 +117,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react-swc": "^3.7.0",
-    "cypress": "^13.12.0",
+    "cypress": "^13.13.0",
     "cypress-axe": "^1.5.0",
     "cypress-split": "^1.24.0",
     "jsdom": "^24.1.0",
@@ -112,7 +126,8 @@
     "ts-node": "^10.9.2",
     "uuid": "^10.0.0",
     "vite": "^5.3.3",
-    "vite-plugin-checker": "^0.6.4",
+    "vite-plugin-checker": "^0.7.0",
+    "vite-plugin-dts": "^3.9.1",
     "vitest": "^1.6.0"
   }
 }

@@ -100,7 +100,9 @@ export class ExecutionList {
         currentIndex += ex.executionList.length;
       }
     }
-    return undefined;
+    return currentIndex === index
+      ? this.expandableList[this.expandableList.length - 1]
+      : undefined;
   }
 
   #getParentNodes(level: number, index: number) {
