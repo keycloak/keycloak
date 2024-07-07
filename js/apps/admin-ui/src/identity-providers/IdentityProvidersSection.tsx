@@ -21,7 +21,6 @@ import {
   TextVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { IFormatterValueType } from "@patternfly/react-table";
 import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,6 +37,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
+import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import { upperCaseFormatter } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { ManageOrderDialog } from "./ManageOrderDialog";
@@ -68,6 +68,28 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
           {t("disabled")}
         </Badge>
       )}
+    </Link>
+  );
+};
+
+const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
+  const { t } = useTranslation();
+  const { realm } = useRealm();
+
+  if (!identityProvider.config?.["kc.org"]) {
+    return "—";
+  }
+
+  return (
+    <Link
+      key={identityProvider.providerId}
+      to={toEditOrganization({
+        realm,
+        id: identityProvider.config["kc.org"],
+        tab: "identityProviders",
+      })}
+    >
+      {t("organization")}
     </Link>
   );
 };
@@ -278,11 +300,7 @@ export default function IdentityProvidersSection() {
               {
                 name: "config['kc.org']",
                 displayKey: "linkedOrganization",
-                cellFormatters: [
-                  (data?: IFormatterValueType) => {
-                    return data ? "X" : "—";
-                  },
-                ],
+                cellRenderer: OrganizationLink,
               },
             ]}
           />

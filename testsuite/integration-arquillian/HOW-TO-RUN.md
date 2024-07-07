@@ -108,7 +108,7 @@ Analogically, there is the same behaviour for JBoss based app server as for auth
     -Dapp.server.debug.port=$PORT
     -Dapp.server.debug.suspend=y
     
-When you are debugging cluster adapter tests (For example OIDCAdapterClusterTest) you may use ports 7901 and 7902 for the app
+When you are debugging cluster adapter tests (For example SAMLAdapterClusterTest) you may use ports 7901 and 7902 for the app
 server nodes. Tests are usually using 2 cluster adapter nodes.    
 
 ## Testsuite logging
@@ -137,15 +137,17 @@ and add packages manually.
 
 ## Run adapter tests
 
-### Undertow
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-        -Dtest=org.keycloak.testsuite.adapter.**.*Test
-        -Papp-server-undertow
+Running the tests with SAML adapter (OIDC java adapters were removed):
 
 ### Wildfly
 
-    # Run tests
-    mvn -f testsuite/integration-arquillian/pom.xml \
+Build the application servers
+
+    mvn clean install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
+
+Run tests with SAML applications deployed on Wildfly:
+
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
        clean install \
        -Papp-server-wildfly \
        -Dtest=org.keycloak.testsuite.adapter.**

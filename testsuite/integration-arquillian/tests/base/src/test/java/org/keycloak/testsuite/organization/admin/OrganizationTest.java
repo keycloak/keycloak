@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
@@ -43,6 +45,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.stream.IntStream;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationsResource;
@@ -104,12 +108,16 @@ public class OrganizationTest extends AbstractOrganizationTest {
         List<OrganizationRepresentation> expected = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
-            expected.add(createOrganization("kc.org." + i));
+            OrganizationRepresentation organization = createOrganization("kc.org." + i);
+            expected.add(organization);
+            organization.setAttributes(Map.of("foo", List.of("foo")));
+            testRealm().organizations().get(organization.getId()).update(organization).close();
         }
 
         List<OrganizationRepresentation> existing = testRealm().organizations().getAll();
         assertFalse(existing.isEmpty());
         assertThat(expected, containsInAnyOrder(existing.toArray()));
+        Assert.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
     }
 
     @Test
@@ -129,6 +137,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getDomains(), hasSize(2));
         assertThat(orgRep.getDomain("wayneind.com"), not(nullValue()));
         assertThat(orgRep.getDomain("wayneind-gotham.com"), not(nullValue()));
+        assertThat(orgRep.getAttributes(), nullValue());
 
         existing = testRealm().organizations().search("gtbank.net", true, 0, 10);
         assertThat(existing, hasSize(1));
@@ -138,6 +147,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getDomains(), hasSize(2));
         assertThat(orgRep.getDomain("gtbank.com"), not(nullValue()));
         assertThat(orgRep.getDomain("gtbank.net"), not(nullValue()));
+        assertThat(orgRep.getAttributes(), nullValue());
 
         existing = testRealm().organizations().search("nonexistent.org", true, 0, 10);
         assertThat(existing, is(empty()));

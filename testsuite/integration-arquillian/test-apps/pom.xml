@@ -15,11 +15,6 @@
     <name>Test apps</name>
 
     <modules>
-        <module>test-apps-dist</module>
-        <module>hello-world-authz-service</module>
-        <module>servlet-authz</module>
-        <module>servlet-policy-enforcer</module>
         <module>servlets</module>
-        <module>cors</module>
     </modules>
 </project>

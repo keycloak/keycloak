@@ -17,7 +17,7 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -34,9 +34,9 @@ public final class UsernameForm extends UsernamePasswordForm {
     public void authenticate(AuthenticationFlowContext context) {
         if (context.getUser() != null) {
             // We can skip the form when user is re-authenticating. Unless current user has some IDP set, so he can re-authenticate with that IDP
-            List<IdentityProviderModel> identityProviders = LoginFormsUtil
+            Stream<IdentityProviderModel> identityProviders = LoginFormsUtil
                     .filterIdentityProviders(context.getRealm().getIdentityProvidersStream(), context.getSession(), context);
-            if (identityProviders.isEmpty()) {
+            if (identityProviders.findAny().isEmpty()) {
                 context.success();
                 return;
             }

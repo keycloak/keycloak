@@ -184,9 +184,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isRegisterLinkPresent());
     }
 
     @Test
@@ -291,6 +289,55 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
         appPage.assertCurrent();
         assertIsMember(bc.getUserEmail(), organization);
+    }
+
+    @Test
+    public void testShowOnlyBrokersLinkedUserInPasswordPage() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation brokerRep = broker.toRepresentation();
+        brokerRep.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
+        IdentityProviderRepresentation secondIdp = bc.setUpIdentityProvider();
+        secondIdp.setAlias("second-idp");
+        secondIdp.setInternalId(null);
+        secondIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        secondIdp.getConfig().put(OrganizationModel.BROKER_PUBLIC, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(secondIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(secondIdp.getAlias()).close();
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        String email = bc.getUserEmail();
+        loginPage.loginUsername(email);
+        // second-idp shown because user is not linked yet to any broker
+        Assert.assertTrue(loginPage.isSocialButtonPresent(secondIdp.getAlias()));
+        brokerRep.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
+
+        assertBrokerRegistration(organization, email);
+
+        // logout to force the user to authenticate again
+        UserRepresentation account = getUserRepresentation(email);
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        broker = organization.identityProviders().get(bc.getIDPAlias());
+        brokerRep = broker.toRepresentation();
+        organization.identityProviders().get(brokerRep.getAlias()).delete().close();
+        IdentityProviderRepresentation finalBrokerRep = brokerRep;
+        getCleanup().addCleanup(() -> organization.identityProviders().addIdentityProvider(finalBrokerRep.getInternalId()).close());
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        log.debug("Logging in");
+        loginPage.loginUsername(email);
+        Assert.assertFalse(loginPage.isUsernameInputPresent());
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        // second-idp not shown because user is linked to another broker
+        Assert.assertFalse(loginPage.isSocialButtonPresent(secondIdp.getAlias()));
     }
 
     @Test

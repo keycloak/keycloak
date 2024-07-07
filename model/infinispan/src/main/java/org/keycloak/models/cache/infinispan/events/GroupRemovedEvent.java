@@ -46,7 +46,7 @@ public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheIn
 
     @ProtoFactory
     static GroupRemovedEvent protoFactory(String id, String realmId, String parentId) {
-        return new GroupRemovedEvent(id, realmId, Marshalling.emptyStringToNull(parentId));
+        return new GroupRemovedEvent(id, realmId, parentId);
     }
 
     public static GroupRemovedEvent create(GroupModel group, String realmId) {

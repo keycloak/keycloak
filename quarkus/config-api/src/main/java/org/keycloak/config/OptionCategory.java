@@ -1,7 +1,6 @@
 package org.keycloak.config;
 
 public enum OptionCategory {
-    // ordered by name asc
     CACHE("Cache", 10, ConfigSupportLevel.SUPPORTED),
     CONFIG("Config", 15, ConfigSupportLevel.SUPPORTED),
     DATABASE("Database", 20, ConfigSupportLevel.SUPPORTED),
@@ -20,6 +19,7 @@ public enum OptionCategory {
     SECURITY("Security", 120, ConfigSupportLevel.SUPPORTED),
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
     IMPORT("Import", 140, ConfigSupportLevel.SUPPORTED),
+    BOOTSTRAP_ADMIN("Bootstrap Admin", 998, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
 
     private final String heading;

@@ -20,3 +20,54 @@ This is an optimization to reduce traffic and network related resources.
 
 In {project_name} 26, the new method has a default implementation to keep backward compatibility with custom implementation.
 The default implementation performs a single network call per an event, and it will be removed in a future version of {project_name}.
+
+= Group-related events no longer fired when removing a realm
+
+With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm.
+As a consequence, group-related events like the `GroupRemovedEvent` are no longer fired when removing a realm.
+
+If you have extensions handling any group-related event when a realm is removed, make sure to use the `RealmRemovedEvent` instead
+to perform any cleanup or custom processing when a realm, and their groups, are removed.
+
+The `GroupProvider` interface is also updated with a new `preRemove(RealmModel)` method to force implementations to properly
+handle the removal of groups when a realm is removed.
+
+= Operator scheduling defaults
+
+Keycloak Pods will now have default affinities to prevent multiple instances from the same CR from being deployed on the same node, and all Pods from the same CR will prefer to be in the same zone to prevent stretch cache clusters.
+
+= Operator's default CPU and memory limits/requests
+
+In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the `resources` section in the operator's https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md#resources[subscription].
+
+= Deprecations in `keycloak-common` module
+
+The following items have been deprecated for removal in upcoming {project_name} versions with no replacement:
+
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<T>)`
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<?>, java.lang.String)`
+- `org.keycloak.common.util.reflections.SetAccessiblePrivilegedAction`
+- `org.keycloak.common.util.reflections.UnSetAccessiblePrivilegedAction`
+
+= Consistent usage of UTF-8 charset for URL encoding
+
+`org.keycloak.common.util.Encode` now always uses the `UTF-8` charset for URL encoding instead relying implicitly on the `file.encoding` system property.
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties. The main
+reason is that the LDAP connection pool configuration is a JVM-level configuration rather than specific to an individual
+realm or LDAP provider instance.
+
+Compared to previous releases, any realm configuration related to the LDAP connection pool will be ignored.
+If you are migrating from previous versions where any of the following settings are set to your LDAP provider(s), consider using system properties instead:
+
+* `connectionPoolingAuthentication`
+* `connectionPoolingInitSize`
+* `connectionPoolingMaxSize`
+* `connectionPoolingPrefSize`
+* `connectionPoolingTimeout`
+* `connectionPoolingProtocol`
+* `connectionPoolingDebug`
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
