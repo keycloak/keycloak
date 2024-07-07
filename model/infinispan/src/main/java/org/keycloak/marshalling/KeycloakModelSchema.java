@@ -94,6 +94,7 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
         syntax = ProtoSyntax.PROTO3,
         schemaPackageName = "keycloak",
         schemaFilePath = "proto/generated",
+        allowNullFields = true,
 
         // common-types for UUID
         dependsOn = CommonTypes.class,

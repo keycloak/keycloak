@@ -139,7 +139,7 @@ public class WelcomeResource {
             applianceBootstrap.createMasterRealmUser(username, password);
 
             shouldBootstrap.set(false);
-            ServicesLogger.LOGGER.createdInitialAdminUser(username);
+            ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
             return createWelcomePage("User created", null);
         }
     }

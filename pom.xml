@@ -100,6 +100,7 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.5.Final</infinispan.version>
+        <protostream.version>5.0.7.Final</protostream.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -199,7 +200,6 @@
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
-        <infinispan.maven-plugins.version>1.0.5.Final</infinispan.maven-plugins.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -1439,6 +1439,25 @@
                 <artifactId>rdf-urdna</artifactId>
                 <version>${io.setl.rdf-urdna.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream</artifactId>
+                <version>${protostream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream-types</artifactId>
+                <version>${protostream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream-processor</artifactId>
+                <version>${protostream.version}</version>
+                <!-- compile-only dependency -->
+                <scope>provided</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -1695,9 +1714,9 @@
                     <version>${build-helper-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.infinispan.maven-plugins</groupId>
+                    <groupId>org.infinispan.protostream</groupId>
                     <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
-                    <version>${infinispan.maven-plugins.version}</version>
+                    <version>${protostream.version}</version>
                     <configuration>
                         <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
                     </configuration>

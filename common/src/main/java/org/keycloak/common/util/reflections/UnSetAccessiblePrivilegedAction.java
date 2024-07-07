@@ -22,7 +22,9 @@ import java.security.PrivilegedAction;
 
 /**
  * A {@link PrivilegedAction} that calls {@link AccessibleObject#setAccessible(boolean)}
+ * @deprecated for removal in Keycloak 27
  */
+@Deprecated(forRemoval = true)
 public class UnSetAccessiblePrivilegedAction implements PrivilegedAction<Void> {
 
     private final AccessibleObject member;

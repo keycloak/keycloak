@@ -127,7 +127,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             throw new RuntimeException("Failed to update database.", cause);
         }
 
-        if (schemaChanged || Environment.isImportExportMode()) {
+        if (schemaChanged || Environment.isNonServerMode()) {
             runJobInTransaction(factory, this::initSchema);
         } else {
             Version.RESOURCES_VERSION = id;

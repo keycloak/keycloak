@@ -1,6 +1,6 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { label } from "@keycloak/keycloak-ui-shared";
+import { label, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
@@ -37,6 +37,7 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { Environment } from "../environment";
 import helpUrls from "../help-urls";
 import { emptyFormatter, exportClient } from "../util";
 import { convertClientToUrl } from "../utils/client-url";
@@ -90,8 +91,8 @@ const ClientDescription = (client: ClientRepresentation) => (
 );
 
 const ClientHomeLink = (client: ClientRepresentation) => {
-  const { adminClient } = useAdminClient();
-  const href = convertClientToUrl(client, adminClient.baseUrl);
+  const { environment } = useEnvironment<Environment>();
+  const href = convertClientToUrl(client, environment);
 
   if (!href) {
     return "—";

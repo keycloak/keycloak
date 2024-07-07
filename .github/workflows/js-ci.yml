@@ -130,7 +130,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: admin-ui
+      WORKSPACE: keycloak-admin-ui
     steps:
       - uses: actions/checkout@v4
 
@@ -223,7 +223,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: admin-ui
+      WORKSPACE: keycloak-admin-ui
     strategy:
       matrix:
         container: [1, 2, 3, 4, 5]

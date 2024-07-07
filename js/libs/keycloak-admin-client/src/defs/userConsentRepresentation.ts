@@ -4,7 +4,7 @@
 
 export default interface UserConsentRepresentation {
   clientId?: string;
-  createDate?: string;
+  createdDate?: number;
   grantedClientScopes?: string[];
   lastUpdatedDate?: number;
 }
