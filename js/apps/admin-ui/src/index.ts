@@ -68,8 +68,6 @@ export * as ClientDetails from "./clients/ClientDetails";
 export { ClientSessions } from "./clients/ClientSessions";
 export { ClientSettings } from "./clients/ClientSettings";
 export * as ClientsSection from "./clients/ClientsSection";
-export { AlertPanel } from "./components/alert/AlertPanel";
-export { useAlerts, AlertProvider } from "./components/alert/Alerts";
 export { GroupBreadCrumbs } from "./components/bread-crumb/GroupBreadCrumbs";
 export { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 export { ClientSelect } from "./components/client/ClientSelect";
