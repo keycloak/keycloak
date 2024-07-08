@@ -65,8 +65,9 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         SessionUpdatesList<AuthenticatedClientSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<AuthenticatedClientSessionEntity> wrappedEntity = null;
-            if (getCache(offline) != null) {
-                wrappedEntity = getCache(offline).get(key);
+            Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache = getCache(offline);
+            if (cache != null) {
+                wrappedEntity = cache.get(key);
             }
 
             if (wrappedEntity == null) {

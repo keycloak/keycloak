@@ -56,8 +56,9 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         SessionUpdatesList<UserSessionEntity> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
-            if (getCache(offline) != null) {
-                wrappedEntity = getCache(offline).get(key);
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
+            if (cache != null) {
+                wrappedEntity = cache.get(key);
             }
 
             if (wrappedEntity == null) {
