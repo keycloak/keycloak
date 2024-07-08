@@ -228,7 +228,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
 
         GroupsResource groups = getRealm().groups();
         GroupRepresentation group = groups.groups("Group G", null, null).get(0);
-        
+
         groups.group(group.getId()).remove();
 
         GroupPolicyRepresentation actual = getClient().authorization().policies().group().findByName(representation.getName());
