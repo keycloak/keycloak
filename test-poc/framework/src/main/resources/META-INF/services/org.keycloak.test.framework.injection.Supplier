@@ -1,6 +1,8 @@
 org.keycloak.test.framework.admin.KeycloakAdminClientSupplier
 org.keycloak.test.framework.realm.ClientSupplier
 org.keycloak.test.framework.realm.RealmSupplier
-org.keycloak.test.framework.server.KeycloakTestServerSupplier
+org.keycloak.test.framework.server.EmbeddedKeycloakTestServerSupplier
+org.keycloak.test.framework.server.DistributionKeycloakTestServerSupplier
+org.keycloak.test.framework.server.RemoteKeycloakTestServerSupplier
 org.keycloak.test.framework.webdriver.ChromeWebDriverSupplier
 org.keycloak.test.framework.webdriver.FirefoxWebDriverSupplier
