@@ -178,7 +178,6 @@
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
-        <selenium.version>2.35.0</selenium.version>
         <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus-quickstarts/blob/2.13.5.Final/getting-started-async/pom.xml#L14 -->
         <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
         <xml-apis.version>1.4.01</xml-apis.version>
@@ -677,20 +676,6 @@
                 <groupId>org.apache.directory.api</groupId>
                 <artifactId>api-ldap-codec-standalone</artifactId>
                 <version>${apacheds.codec.version}</version>
-            </dependency>
-
-            <!-- Selenium -->
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-java</artifactId>
-                <version>${selenium.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-chrome-driver</artifactId>
-                <version>${selenium.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>

@@ -5,9 +5,9 @@ import org.keycloak.test.framework.injection.LifeCycle;
 import org.keycloak.test.framework.injection.Registry;
 import org.keycloak.test.framework.injection.Supplier;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
 
-public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriver> {
+public class ChromeWebDriverSupplier implements Supplier<WebDriver, TestWebDriver> {
 
     @Override
     public Class<TestWebDriver> getAnnotationClass() {
@@ -21,7 +21,7 @@ public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriv
 
     @Override
     public InstanceWrapper<WebDriver, TestWebDriver> getValue(Registry registry, TestWebDriver annotation) {
-        final var driver = new FirefoxDriver();
+        final var driver = new ChromeDriver();
         return new InstanceWrapper<>(this, annotation, driver);
     }
 
@@ -39,5 +39,4 @@ public class FirefoxWebDriverSupplier implements Supplier<WebDriver, TestWebDriv
     public void close(WebDriver instance) {
         instance.quit();
     }
-
 }
