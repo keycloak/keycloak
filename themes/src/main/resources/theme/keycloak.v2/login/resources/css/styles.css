@@ -69,3 +69,10 @@ div.kc-logo-text span {
     border-color: transparent black transparent transparent;
 }
 
+.kc-recovery-codes-list {
+    columns: 2;
+}
+
+#certificate_subjectDN {
+    overflow-wrap: break-word
+}
