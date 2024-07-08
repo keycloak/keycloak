@@ -66,7 +66,7 @@ public class LDAPServerCapabilitiesManager {
 
     public static LDAPConfig buildLDAPConfig(TestLdapConnectionRepresentation config, RealmModel realm) {
         String bindCredential = config.getBindCredential();
-        if (config.getComponentId() != null && !LDAPConstants.AUTH_TYPE.equals(LDAPConstants.AUTH_TYPE_NONE)
+        if (config.getComponentId() != null && !LDAPConstants.AUTH_TYPE_NONE.equals(config.getAuthType())
                 && ComponentRepresentation.SECRET_VALUE.equals(bindCredential)) {
             // check the connection URL and the bind DN are the same to allow using the same configured password
             ComponentModel component = realm.getComponent(config.getComponentId());
