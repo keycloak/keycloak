@@ -89,11 +89,19 @@ public class KeycloakDistConfigurator {
     /* ---------- Configuration of first-class citizen fields ---------- */
 
     void configureBootstrapAdmin() {
-        optionMapper(keycloakCR -> keycloakCR.getSpec().getBootstrapAdminSpec())
+        optionMapper(Function.identity())
                 .mapOption("bootstrap-admin-username",
-                        spec -> Optional.ofNullable(spec.getUser()).map(BootstrapAdminSpec.User::getSecret).map(s -> new SecretKeySelector("username", s, null)).orElse(null))
+                        keycloakCR -> Optional.ofNullable(keycloakCR.getSpec().getBootstrapAdminSpec())
+                                .map(BootstrapAdminSpec::getUser).map(BootstrapAdminSpec.User::getSecret)
+                                .or(() -> Optional.of(KeycloakAdminSecretDependentResource.getName(keycloakCR)))
+                                .map(s -> new SecretKeySelector("username", s, null)).orElse(null))
                 .mapOption("bootstrap-admin-password",
-                        spec -> Optional.ofNullable(spec.getUser()).map(BootstrapAdminSpec.User::getSecret).map(s -> new SecretKeySelector("password", s, null)).orElse(null))
+                        keycloakCR -> Optional.ofNullable(keycloakCR.getSpec().getBootstrapAdminSpec())
+                                .map(BootstrapAdminSpec::getUser).map(BootstrapAdminSpec.User::getSecret)
+                                .or(() -> Optional.of(KeycloakAdminSecretDependentResource.getName(keycloakCR)))
+                                .map(s -> new SecretKeySelector("password", s, null)).orElse(null));
+
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getBootstrapAdminSpec())
                 .mapOption("bootstrap-admin-client-id",
                         spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector("client-id", s, null)).orElse(null))
                 .mapOption("bootstrap-admin-client-secret",

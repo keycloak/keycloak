@@ -29,7 +29,7 @@ public class KeycloakAdminSecretDependentResource extends KubernetesDependentRes
         public boolean isMet(DependentResource<Ingress, Keycloak> dependentResource, Keycloak primary,
                 Context<Keycloak> context) {
             return Optional.ofNullable(primary.getSpec().getBootstrapAdminSpec()).map(BootstrapAdminSpec::getUser)
-                    .map(BootstrapAdminSpec.User::getSecret).filter(s -> s.equals(KeycloakAdminSecretDependentResource.getName(primary))).isPresent();
+                    .map(BootstrapAdminSpec.User::getSecret).filter(s -> !s.equals(KeycloakAdminSecretDependentResource.getName(primary))).isEmpty();
         }
     }
 

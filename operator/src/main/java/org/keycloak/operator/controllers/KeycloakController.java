@@ -105,22 +105,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Log.debugf("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
+        // TODO - these modifications to the resource belong in a webhook because dependents run first
         boolean modifiedSpec = false;
         if (kc.getSpec().getInstances() == null) {
             // explicitly set defaults - and let another reconciliation happen
             // this avoids ensuring unintentional modifications have not been made to the cr
             kc.getSpec().setInstances(1);
-            modifiedSpec = true;
-        }
-        var bootstrapAdmin = kc.getSpec().getBootstrapAdminSpec();
-        if (bootstrapAdmin == null) {
-            bootstrapAdmin = new BootstrapAdminSpec();
-        }
-        if (bootstrapAdmin.getUser() == null) {
-            bootstrapAdmin.setUser(new BootstrapAdminSpec.User());
-        }
-        if (bootstrapAdmin.getUser() == null) {
-            bootstrapAdmin.getUser().setSecret(KeycloakAdminSecretDependentResource.getName(kc));
             modifiedSpec = true;
         }
         if (kc.getSpec().getIngressSpec() != null && kc.getSpec().getIngressSpec().isIngressEnabled()
