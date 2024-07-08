@@ -110,7 +110,7 @@
                     </div>
                   </form>
                 <#else>
-                  <p>To create the administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or set the environment variables <code>KEYCLOAK_ADMIN</code> and <code>KEYCLOAK_ADMIN_PASSWORD</code> when starting the server.</p>
+                  <p>To create the administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or set the environment variables <code>KC_BOOTSTRAP_ADMIN_USERNAME</code> and <code>KC_BOOTSTRAP_ADMIN_PASSWORD</code> when starting the server.</p>
                 </#if>
               </#if>
             </div>

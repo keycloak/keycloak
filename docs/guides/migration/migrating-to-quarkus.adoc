@@ -49,7 +49,7 @@ However, there is also an auto build mode that makes Keycloak behave more or les
 The Keycloak Wildfly distribution contained scripts named `add-user-keycloak.sh` to add initial users to Keycloak.
 These are no longer included in the Quarkus distribution.
 
-To add the initial admin user, set the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` for the username and password of the user.
+To add the initial admin user, set the environment variables `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` for the username and password of the user.
 Keycloak uses them at the first startup to create an initial user with administration rights.
 Once the first user with administrative rights exists, use the command line tool `kcadm.sh` (Linux) or `kcadm.bat` (Windows) to create additional users.
 

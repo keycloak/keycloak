@@ -71,3 +71,7 @@ If you are migrating from previous versions where any of the following settings 
 * `connectionPoolingDebug`
 
 For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
+
+= Admin Bootstrapping
+
+The environment variables KEYCLOAK_ADMIN and KEYCLOAK_ADMIN_PASSWORD have been deprecated. You should use KC_BOOTSTRAP_ADMIN_USERNAME and KC_BOOTSTRAP_ADMIN_PASSWORD instead. These are also general options, so they may be specified via the cli or other config sources, for example --bootstrap-admin-username=admin.
