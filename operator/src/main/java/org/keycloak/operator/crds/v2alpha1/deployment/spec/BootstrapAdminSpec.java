@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 public class BootstrapAdminSpec {
 
     public static class User {
-        @JsonPropertyDescription("Name of the secret with the username and password")
+        @JsonPropertyDescription("Name of the Secret that contains the username and password keys")
     	private String secret;
 
         public String getSecret() {
@@ -18,7 +18,7 @@ public class BootstrapAdminSpec {
     }
 
     public static class Service {
-        @JsonPropertyDescription("Name of the Secret with the client-id and client-secret")
+        @JsonPropertyDescription("Name of the Secret that contains the client-id and client-secret keys")
     	private String secret;
 
         public String getSecret() {
