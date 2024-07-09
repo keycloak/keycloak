@@ -1615,7 +1615,7 @@ public class AuthenticationManager {
             UserModel user = lookupUserForBruteForceLog(session, realm, authSession);
             if (user != null) {
                 BruteForceProtector bruteForceProtector = session.getProvider(BruteForceProtector.class);
-                bruteForceProtector.successfulLogin(realm, user, session.getContext().getConnection());
+                bruteForceProtector.successfulLogin(realm, user, session.getContext().getConnection(), session.getContext().getHttpRequest().getUri());
             }
         }
     }

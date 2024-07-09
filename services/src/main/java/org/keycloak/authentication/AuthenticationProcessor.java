@@ -720,7 +720,7 @@ public class AuthenticationProcessor {
         if (realm.isBruteForceProtected()) {
             UserModel user = AuthenticationManager.lookupUserForBruteForceLog(session, realm, authenticationSession);
             if (user != null) {
-                getBruteForceProtector().failedLogin(realm, user, connection);
+                getBruteForceProtector().failedLogin(realm, user, connection, session.getContext().getHttpRequest().getUri());
             }
         }
     }
