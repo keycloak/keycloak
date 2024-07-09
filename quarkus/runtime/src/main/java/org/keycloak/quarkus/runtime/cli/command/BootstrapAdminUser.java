@@ -78,6 +78,9 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
             if (!password.equals(confirmPassword)) {
                 throw new PropertyException("Passwords do not match");
             }
+            if (password.isBlank()) {
+                throw new PropertyException("Password must not be blank");
+            }
         } else {
             password = getFromEnv(passwordEnv);
         }
