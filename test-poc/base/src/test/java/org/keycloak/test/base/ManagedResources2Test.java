@@ -23,14 +23,14 @@ public class ManagedResources2Test {
 
     @Test
     public void testCreatedRealm() {
-        Assertions.assertEquals("ManagedResources2Test", realmResource.toRepresentation().getRealm());
+        Assertions.assertEquals(ManagedResources2Test.class.getSimpleName(), realmResource.toRepresentation().getRealm());
     }
 
     @Test
     public void testCreatedClient() {
-        Assertions.assertEquals("ManagedResources2Test", clientResource.toRepresentation().getClientId());
+        Assertions.assertEquals(ManagedResources2Test.class.getSimpleName(), clientResource.toRepresentation().getClientId());
 
-        List<ClientRepresentation> clients = realmResource.clients().findByClientId("ManagedResources2Test");
+        List<ClientRepresentation> clients = realmResource.clients().findByClientId(ManagedResources2Test.class.getSimpleName());
         Assertions.assertEquals(1, clients.size());
     }
 
